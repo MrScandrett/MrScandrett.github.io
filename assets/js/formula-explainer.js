@@ -949,7 +949,7 @@
   (function () {
     var result = { t: 'Drag force', c: 'lhs', is: 'The force of air (or any fluid) pushing back on something moving quickly through it, in newtons.', does: 'It always points against the motion. A falling object stops speeding up when drag grows to equal its weight: that is terminal velocity.' };
     physics({
-      id: 'drag-equation', title: 'The drag equation', match: ['F_d=½ρv^2C_dA', 'F=½ρv^2C_dA'], y: 'the drag', first: 'v^2',
+      id: 'drag-equation', title: 'The drag equation', match: ['F_d=½ρv^2C_dA', 'F=½ρv^2C_dA', 'Fd=½ρv^2CdA', 'F=½ρv^2CdA'], y: 'the drag', first: 'v^2',
       init: { rho: 1.2, v: 10, Cd: 0.47, A: 0.5 }, out: ['F_d', 'N'],
       f: function (s) { return 0.5 * s.rho * s.v * s.v * s.Cd * s.A; },
       line: function (s) { return 'F_d = ½ × ' + fmtNum(s.rho) + ' × ' + fmtNum(s.v) + '² × ' + fmtNum(s.Cd) + ' × ' + fmtNum(s.A) + ' = ' + fmtNum(0.5 * s.rho * s.v * s.v * s.Cd * s.A) + ' N'; },
@@ -1117,6 +1117,365 @@
     PHYSICS_MATCH['F=GMm/r^2'] = 'gravitation';
   })();
 
+  /* ---- Maths, chemistry and electronics pack (same builder as the physics pack) ---- */
+  var PI_TOKEN = function (does) { return { t: 'Pi', c: 'const', is: 'About 3.14159: the distance around any circle divided by the distance across it. Its digits never end and never repeat.', does: does }; };
+  var ROOT = function (does) { return { t: 'Square root', c: 'op', role: 'Operator', is: 'Finds the number that, multiplied by itself, gives what is inside.', does: does }; };
+
+  physics({
+    id: 'circle-area', title: 'Area of a circle', match: ['A=πr^2'], y: 'the area', first: 'r^2',
+    init: { r: 3 }, out: ['A', 'cm²'],
+    f: function (s) { return Math.PI * s.r * s.r; },
+    line: function (s) { return 'A = π × (' + fmtNum(s.r) + ' cm)² = ' + fmtNum(Math.PI * s.r * s.r) + ' cm²'; },
+    tokens: {
+      A: { t: 'Area', c: 'lhs', is: 'How much flat space the circle covers, in square units such as cm².', does: 'It is a little more than three squares whose sides are the radius.' },
+      'π': PI_TOKEN('r² is the area of a square built on the radius. A circle covers π of those squares, about 3.14.'),
+      'r^2': { t: 'Radius squared', c: 'drive', is: 'The radius is the distance from the centre to the edge. Squared means multiplied by itself.', does: 'Double the radius and the area is four times as big. A 30 cm pizza has four times the area of a 15 cm one.', s: ['r', 0.5, 10, 0.5, 'cm'] }
+    }
+  });
+
+  physics({
+    id: 'circumference', title: 'Circumference of a circle', match: ['C=2πr'], y: 'the circumference', first: 'r',
+    init: { r: 3 }, out: ['C', 'cm'],
+    f: function (s) { return 2 * Math.PI * s.r; },
+    line: function (s) { return 'C = 2 × π × ' + fmtNum(s.r) + ' cm = ' + fmtNum(2 * Math.PI * s.r) + ' cm'; },
+    tokens: {
+      C: { t: 'Circumference', c: 'lhs', is: 'The distance all the way around the circle.', does: 'It is how far a wheel rolls in one full turn.' },
+      '2': { t: 'The number 2', c: 'const', is: 'A plain 2.', does: '2 × r is the diameter, the distance straight across. So this formula is also C = π × d.' },
+      'π': PI_TOKEN('This is what π means: the circumference is always π times the diameter, for every circle of every size.'),
+      r: { t: 'Radius', c: 'drive', is: 'The distance from the centre of the circle to its edge.', does: 'Double the radius and the circumference doubles. Unlike area, it is not squared.', s: ['r', 0.5, 10, 0.5, 'cm'] }
+    }
+  });
+
+  physics({
+    id: 'pythagoras', title: 'The Pythagorean theorem', match: ['a^2+b^2=c^2'], y: 'c', first: 'c^2',
+    labels: { lhs: 'The longest side', drive: 'The two shorter sides' },
+    init: { a: 3, b: 4 }, out: ['c', ''],
+    f: function (s) { return Math.sqrt(s.a * s.a + s.b * s.b); },
+    line: function (s) { return 'c² = ' + fmtNum(s.a * s.a) + ' + ' + fmtNum(s.b * s.b) + ' = ' + fmtNum(s.a * s.a + s.b * s.b) + ', so c = ' + fmtNum(Math.sqrt(s.a * s.a + s.b * s.b)); },
+    tokens: {
+      'a^2': { t: 'First short side, squared', c: 'drive', role: 'A shorter side', is: 'The length of one of the two sides that meet at the right angle, multiplied by itself. Picture a square built on that side.', does: 'Its square, added to the square on the other short side, gives the square on the longest side.', s: ['a', 1, 12, 0.5, ''] },
+      'b^2': { t: 'Second short side, squared', c: 'drive', role: 'A shorter side', is: 'The length of the other side that meets the right angle, multiplied by itself.', does: 'It does not matter which short side you call a and which b. The sum is the same.', s: ['b', 1, 12, 0.5, ''] },
+      'c^2': { t: 'Hypotenuse, squared', c: 'lhs', role: 'The longest side', is: 'The hypotenuse is the longest side, the one opposite the right angle. Squared means multiplied by itself.', does: 'The square on this side has exactly the area of the other two squares put together. Take the square root to get c. This only works for right-angled triangles.' }
+    }
+  });
+
+  physics({
+    id: 'line-slope-intercept', title: 'Equation of a straight line', match: ['y=mx+b'], y: 'y', first: 'm',
+    labels: { drive: 'Sets the line', geo: 'The input' },
+    init: { m: 2, x: 3, b: 1 }, out: ['y', ''],
+    f: function (s) { return s.m * s.x + s.b; },
+    line: function (s) { return 'y = ' + fmtNum(s.m) + ' × ' + fmtNum(s.x) + ' + ' + fmtNum(s.b) + ' = ' + fmtNum(s.m * s.x + s.b); },
+    tokens: {
+      y: { t: 'Output', c: 'lhs', is: 'The height of the line at a chosen x. On a graph it is how far up (or down) the point is.', does: 'Pick any x, multiply by the slope, add the intercept, and you get the y that sits on the line.' },
+      m: { t: 'Slope', c: 'drive', role: 'Steepness', is: 'How steep the line is: how much y goes up each time x goes up by 1. “Rise over run”.', does: 'A bigger m is a steeper line. A negative m slopes downhill, and m = 0 is flat.', s: ['m', -5, 5, 0.5, ''] },
+      x: { t: 'Input', c: 'geo', role: 'The input', is: 'The value you choose. On a graph it is how far across the point is.', does: 'Every step of 1 in x changes y by exactly m. That steady change is what makes the graph straight.', s: ['x', -10, 10, 0.5, ''] },
+      b: { t: 'y-intercept', c: 'drive', role: 'Starting height', is: 'The value of y when x is 0: where the line crosses the y-axis.', does: 'It slides the whole line up or down without changing its steepness.', s: ['b', -10, 10, 0.5, ''] }
+    }
+  });
+
+  physics({
+    id: 'rectangle-area', title: 'Area of a rectangle', match: ['A=lw'], y: 'the area', first: 'l',
+    init: { l: 6, w: 4 }, out: ['A', 'cm²'],
+    f: function (s) { return s.l * s.w; },
+    line: function (s) { return 'A = ' + fmtNum(s.l) + ' cm × ' + fmtNum(s.w) + ' cm = ' + fmtNum(s.l * s.w) + ' cm²'; },
+    tokens: {
+      A: { t: 'Area', c: 'lhs', is: 'How much flat space the rectangle covers, in square units such as cm².', does: 'It is the number of unit squares that fit inside: rows times columns.' },
+      l: { t: 'Length', c: 'drive', is: 'How long the rectangle is.', does: 'Each extra unit of length adds one more column of squares. Double the length and the area doubles.', s: ['l', 1, 20, 0.5, 'cm'] },
+      w: { t: 'Width', c: 'drive', is: 'How wide the rectangle is.', does: 'Each extra unit of width adds one more row of squares. Double both sides and the area is four times as big.', s: ['w', 1, 20, 0.5, 'cm'] }
+    }
+  });
+
+  physics({
+    id: 'simple-interest', title: 'Simple interest', match: ['I=Prt'], y: 'the interest', first: 'r',
+    init: { P: 1000, r: 0.05, t: 3 }, out: ['I', 'dollars'],
+    f: function (s) { return s.P * s.r * s.t; },
+    line: function (s) { return 'I = $' + fmtNum(s.P) + ' × ' + fmtNum(s.r) + ' × ' + fmtNum(s.t) + ' years = $' + fmtNum(s.P * s.r * s.t); },
+    tokens: {
+      I: { t: 'Interest', c: 'lhs', is: 'The extra money earned on savings, or owed on a loan, on top of the amount you started with.', does: 'With simple interest it grows by the same amount every year, because it is only ever worked out on the starting amount.' },
+      P: { t: 'Principal', c: 'drive', is: 'The amount of money you start with: what you saved or borrowed.', does: 'Double the principal and the interest doubles.', s: ['P', 100, 10000, 100, 'dollars'] },
+      r: { t: 'Interest rate', c: 'drive', is: 'The fraction added each year, written as a decimal. 5% is 0.05.', does: 'Double the rate and the interest doubles. Remember to turn the percentage into a decimal first.', s: ['r', 0.01, 0.2, 0.01, 'per year'] },
+      t: { t: 'Time', c: 'drive', is: 'How long the money is saved or borrowed, in years.', does: 'Each year adds the same amount again, so twice the time gives twice the interest.', s: ['t', 1, 30, 1, 'years'] }
+    }
+  });
+
+  physics({
+    id: 'average-speed', title: 'Speed', match: ['v=d/t'], y: 'the speed', first: 't',
+    init: { d: 100, t: 20 }, out: ['v', 'm/s'],
+    f: function (s) { return s.d / s.t; },
+    line: function (s) { return 'v = ' + fmtNum(s.d) + ' m ÷ ' + fmtNum(s.t) + ' s = ' + fmtNum(s.d / s.t) + ' m/s'; },
+    tokens: {
+      v: { t: 'Speed', c: 'lhs', is: 'How much distance is covered in each unit of time, such as metres per second.', does: 'It is the average over the whole trip. The speed at any one moment may have been higher or lower.' },
+      d: { t: 'Distance', c: 'drive', is: 'How far something travels.', does: 'It is on top: cover more distance in the same time and the speed is higher.', s: ['d', 10, 500, 10, 'm'] },
+      t: { t: 'Time', c: 'resist', is: 'How long the trip takes.', does: 'It is on the bottom: take twice as long over the same distance and the speed halves.', s: ['t', 1, 100, 1, 's'] }
+    }
+  });
+
+  physics({
+    id: 'percent', title: 'Percentage', match: ['p=(part/whole)100'], y: 'the percentage', first: 'whole',
+    init: { part: 15, whole: 60 }, out: ['p', '%'],
+    f: function (s) { return s.part / s.whole * 100; },
+    line: function (s) { return 'p = (' + fmtNum(s.part) + ' ÷ ' + fmtNum(s.whole) + ') × 100 = ' + fmtNum(s.part / s.whole * 100) + '%'; },
+    tokens: {
+      p: { t: 'Percentage', c: 'lhs', is: 'The part written as “so many out of every hundred”.', does: 'It lets you compare fairly: 15 out of 60 and 25 out of 100 are both 25%.' },
+      part: { t: 'The part', c: 'drive', is: 'The amount you are interested in, such as the questions you got right.', does: 'It is on top: a bigger part of the same whole is a bigger percentage.', s: ['part', 0, 100, 1, ''] },
+      whole: { t: 'The whole', c: 'resist', is: 'The total amount the part is taken from, such as all the questions on the test.', does: 'It is on the bottom: the same part out of a bigger whole is a smaller percentage.', s: ['whole', 1, 200, 1, ''] },
+      '100': { t: 'One hundred', c: 'const', is: 'The number 100.', does: 'Per cent means “out of a hundred”. Multiplying the fraction by 100 turns 0.25 into 25%.' }
+    }
+  });
+
+  (function () {
+    var pt = function (title, key, is) { return { t: title, c: 'geo', role: 'A coordinate', is: is, does: 'Only the difference between the two points along this direction matters, not where they sit on the grid.', s: [key, -10, 10, 1, ''] }; };
+    physics({
+      id: 'distance-formula', title: 'Distance between two points', match: ['d=√((x_2−x_1)^2+(y_2−y_1)^2)', 'd=√((x_2−x_1)+(y_2−y_1))'], y: 'the distance', first: 'x_2',
+      labels: { geo: 'Coordinates of the two points' },
+      init: { x1: 1, y1: 2, x2: 4, y2: 6 }, out: ['d', ''],
+      f: function (s) { return Math.sqrt(Math.pow(s.x2 - s.x1, 2) + Math.pow(s.y2 - s.y1, 2)); },
+      line: function (s) {
+        var dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+        return 'd = √(' + fmtNum(dx) + '² + ' + fmtNum(dy) + '²) = √' + fmtNum(dx * dx + dy * dy) + ' = ' + fmtNum(Math.sqrt(dx * dx + dy * dy));
+      },
+      tokens: {
+        d: { t: 'Distance', c: 'lhs', is: 'The straight-line distance between the two points.', does: 'It is the hypotenuse of a right-angled triangle whose short sides are the gaps across and up. This formula is the Pythagorean theorem on a grid.' },
+        '√': ROOT('Pythagoras gives d². The square root turns that back into d.'),
+        x_2: pt('x of the second point', 'x2', 'How far across the second point is.'),
+        x_1: pt('x of the first point', 'x1', 'How far across the first point is.'),
+        y_2: pt('y of the second point', 'y2', 'How far up the second point is.'),
+        y_1: pt('y of the first point', 'y1', 'How far up the first point is.')
+      }
+    });
+  })();
+
+  physics({
+    id: 'ideal-gas', title: 'The ideal gas law', match: ['PV=nRT'], y: 'the pressure', first: 'T',
+    init: { n: 1, T: 300, V: 25 }, out: ['P', 'kPa'],
+    f: function (s) { return s.n * 8.314 * s.T / s.V; },
+    line: function (s) { return 'P = ' + fmtNum(s.n * 8.314 * s.T / s.V) + ' kPa (normal air pressure is about 101 kPa)'; },
+    tokens: {
+      P: { t: 'Pressure', c: 'lhs', is: 'How hard the gas pushes on each bit of the container wall, from its molecules hitting it. The slider readout uses kilopascals.', does: 'The law ties four things together. Here the sliders change the other three and show what the pressure must become.' },
+      V: { t: 'Volume', c: 'resist', is: 'How much space the gas has. The slider uses litres.', does: 'Squeeze the same gas into half the space and the pressure doubles: the molecules hit the walls twice as often.', s: ['V', 5, 100, 1, 'L'] },
+      n: { t: 'Amount of gas', c: 'drive', is: 'How much gas there is, counted in moles. One mole is about 6 × 10²³ molecules.', does: 'More molecules in the same space means more hits on the walls. Pumping up a tyre raises n.', s: ['n', 0.1, 5, 0.1, 'mol'] },
+      R: { t: 'Gas constant', c: 'const', is: 'A fixed number, 8.314 J/(mol·K), the same for every gas.', does: 'It makes the units agree, so that pressure times volume comes out as an energy.' },
+      T: { t: 'Temperature', c: 'drive', is: 'How hot the gas is, in kelvin. Kelvin starts at absolute zero: 0 °C is 273 K.', does: 'Hotter molecules move faster and hit harder. You must use kelvin: doubling a Celsius temperature does not double the pressure.', s: ['T', 100, 1000, 10, 'K'] }
+    }
+  });
+
+  physics({
+    id: 'dilution', title: 'Matching moles: M₁V₁ = M₂V₂', match: ['M_1V_1=M_2V_2'], y: 'M_2', first: 'M_1',
+    labels: { drive: 'First solution', resist: 'Second solution' },
+    init: { M1: 1, V1: 25, V2: 50 }, out: ['M_2', 'mol/L'],
+    f: function (s) { return s.M1 * s.V1 / s.V2; },
+    line: function (s) { return fmtNum(s.M1) + ' × ' + fmtNum(s.V1) + ' = M_2 × ' + fmtNum(s.V2) + ', so M_2 = ' + fmtNum(s.M1 * s.V1 / s.V2) + ' mol/L'; },
+    tokens: {
+      M_1: { t: 'First concentration', c: 'drive', role: 'First solution', is: 'How concentrated the first solution is, in moles per litre (also written M).', does: 'Concentration times volume is the amount of dissolved substance. This side counts the moles in the first solution.', s: ['M1', 0.1, 5, 0.1, 'mol/L'] },
+      V_1: { t: 'First volume', c: 'drive', role: 'First solution', is: 'The volume of the first solution. Any unit works as long as both volumes use the same one.', does: 'More of the first solution means more moles to match on the other side.', s: ['V1', 1, 100, 1, 'mL'] },
+      M_2: { t: 'Second concentration', c: 'lhs', role: 'Often the unknown', is: 'How concentrated the second solution is, in moles per litre.', does: 'In a titration this is usually what you are trying to find. Divide the moles on the left by V_2 to get it.' },
+      V_2: { t: 'Second volume', c: 'resist', role: 'Second solution', is: 'The volume of the second solution, in the same unit as V_1.', does: 'The same moles spread through a bigger volume give a lower concentration.', s: ['V2', 1, 250, 1, 'mL'] }
+    }
+  });
+
+  physics({
+    id: 'exponential-growth', title: 'Exponential growth and decay', match: ['N(t)=N_0e^(kt)'], y: 'the amount', first: 'k',
+    init: { N0: 100, k: 0.3, t: 5 }, out: ['N', ''],
+    f: function (s) { return s.N0 * Math.exp(s.k * s.t); },
+    line: function (s) {
+      return 'N = ' + fmtNum(s.N0) + ' × e^(' + fmtNum(s.k * s.t) + ') = ' + fmtNum(s.N0 * Math.exp(s.k * s.t)) +
+        (s.k > 0 ? ', doubling every ' + fmtNum(Math.LN2 / s.k) : s.k < 0 ? ', halving every ' + fmtNum(Math.LN2 / -s.k) : ', not changing');
+    },
+    tokens: {
+      N: { t: 'Amount now', c: 'lhs', is: 'How much there is at time t: a population, a bank balance, a number of atoms.', does: 'It changes by the same percentage in every equal step of time, not by the same amount.' },
+      t: { t: 'Time', c: 'drive', is: 'How much time has passed since the start.', does: 'It sits in the exponent, so equal steps of time multiply the amount by the same factor again and again.', s: ['t', 0, 10, 0.5, ''] },
+      N_0: { t: 'Starting amount', c: 'drive', is: 'How much there was at the start, when t = 0.', does: 'It scales everything. Start with twice as much and you have twice as much at every later time.', s: ['N0', 10, 500, 10, ''] },
+      e: { t: "Euler's number", c: 'const', is: 'A fixed number, about 2.71828. It is the natural base for anything that grows in proportion to its own size.', does: 'Raising e to the power kt gives the factor the starting amount has been multiplied by.' },
+      k: { t: 'Growth rate', c: 'drive', role: 'Sets the pace', is: 'How fast the amount changes, as a fraction per unit of time.', does: 'Positive k means growth and negative k means decay. The doubling time (or half-life) is about 0.693 ÷ k.', s: ['k', -1, 1, 0.05, ''] }
+    }
+  });
+
+  physics({
+    id: 'radioactive-decay', title: 'Radioactive decay', match: ['N(t)=N_0e^−λt'], y: 'the atoms left', first: 'e^−λt',
+    init: { N0: 1000, lam: 0.1, t: 5 }, out: ['N', 'atoms'],
+    f: function (s) { return s.N0 * Math.exp(-s.lam * s.t); },
+    line: function (s) { return 'N = ' + fmtNum(s.N0 * Math.exp(-s.lam * s.t)) + ' atoms left. Half-life = 0.693 ÷ λ = ' + fmtNum(Math.LN2 / s.lam); },
+    tokens: {
+      N: { t: 'Atoms remaining', c: 'lhs', is: 'How many atoms of the radioactive element have not yet decayed at time t.', does: 'It falls by the same fraction in every equal step of time: half, then half of that, and so on. It never quite reaches zero.' },
+      t: { t: 'Time', c: 'resist', is: 'How much time has passed since the start.', does: 'After one half-life half the atoms are left, after two a quarter, after three an eighth.', s: ['t', 0, 30, 0.5, ''] },
+      N_0: { t: 'Starting number of atoms', c: 'drive', is: 'How many radioactive atoms there were at the start, when t = 0.', does: 'Start with twice as many and twice as many remain at any later time. The half-life does not change.', s: ['N0', 100, 5000, 100, 'atoms'] },
+      'e^−λt': { t: 'Decay factor', c: 'resist', role: 'Shrinks with time', sym: 'e⁻λt', is: 'e is about 2.718. λ (lambda) is the decay constant: the chance that any one atom decays in a unit of time. The minus sign makes the power negative.', does: 'This factor starts at 1 and shrinks toward 0 as time passes. A bigger λ means a shorter half-life. The slider changes λ.', s: ['lam', 0.01, 1, 0.01, ''], x: 'λ' }
+    }
+  });
+
+  (function () {
+    var growth = { t: 'Growth factor', c: 'drive', role: 'Grows with time', sym: 'e^rt', is: 'e is about 2.718. r is the yearly interest rate as a decimal and t is the time in years. Here r is 0.05 (5%).', does: 'It is what the starting money is multiplied by. The slider changes t: at 5% the money doubles about every 14 years.', s: ['t', 0, 50, 1, 'years'], x: 't' };
+    physics({
+      id: 'continuous-compounding', title: 'Continuously compounded growth', match: ['A=Pe^rt', 'A=Pe^𝑟𝑡'], y: 'the final amount', first: 'P',
+      init: { P: 1000, r: 0.05, t: 10 }, out: ['A', 'dollars'],
+      f: function (s) { return s.P * Math.exp(s.r * s.t); },
+      line: function (s) { return 'A = $' + fmtNum(s.P) + ' × e^(0.05 × ' + fmtNum(s.t) + ') = $' + fmtNum(s.P * Math.exp(s.r * s.t)); },
+      tokens: {
+        A: { t: 'Final amount', c: 'lhs', is: 'How much money there is after time t, including all the interest.', does: 'This is the most that compounding can give: interest is added at every instant, and each bit of interest starts earning interest at once.' },
+        P: { t: 'Principal', c: 'drive', is: 'The amount of money you start with.', does: 'Double the starting money and the final amount doubles.', s: ['P', 100, 10000, 100, 'dollars'] },
+        'e^rt': growth,
+        'e^𝑟𝑡': growth
+      }
+    });
+  })();
+
+  physics({
+    id: 'fibonacci', title: 'The Fibonacci rule', match: ['F(n)=F(n−1)+F(n−2)'], y: 'the term',
+    tokens: {
+      F: { t: 'Fibonacci number', c: 'lhs', role: 'A term of the sequence', is: 'F(n) means “the Fibonacci number in position n”. The sequence runs 1, 1, 2, 3, 5, 8, 13, 21 …', does: 'The rule says each term is the sum of the two before it. It appears three times: once for the new term and twice for the earlier ones it is built from.' },
+      n: { t: 'Position', c: 'geo', role: 'Which term', is: 'The position in the sequence: 1st, 2nd, 3rd and so on.', does: 'n − 1 is the term just before and n − 2 is the one before that. You need the first two terms to get started.' },
+      '1': { t: 'One step back', c: 'const', is: 'The number 1.', does: 'n − 1 points at the term immediately before the one you want.' },
+      '2': { t: 'Two steps back', c: 'const', is: 'The number 2.', does: 'n − 2 points at the term two places before the one you want.' }
+    }
+  });
+
+  physics({
+    id: 'division-check', title: 'Checking a division', match: ['divisorquotient+remainder=dividend'], y: 'the dividend', first: 'quotient',
+    labels: { drive: 'Builds the dividend back up' },
+    init: { divisor: 4, quotient: 5, remainder: 3 }, out: ['dividend', ''],
+    f: function (s) { return s.divisor * s.quotient + s.remainder; },
+    line: function (s) {
+      return fmtNum(s.divisor) + ' × ' + fmtNum(s.quotient) + ' + ' + fmtNum(s.remainder) + ' = ' + fmtNum(s.divisor * s.quotient + s.remainder) +
+        (s.remainder >= s.divisor ? ' (but a remainder of ' + fmtNum(s.remainder) + ' is too big: another group of ' + fmtNum(s.divisor) + ' would fit)' : '');
+    },
+    tokens: {
+      divisor: { t: 'Divisor', c: 'drive', role: 'Size of each group', is: 'The number you divide by: the size of each equal group.', does: 'Multiplying it by the quotient counts everything that went into full groups.', s: ['divisor', 1, 12, 1, ''] },
+      quotient: { t: 'Quotient', c: 'drive', role: 'Number of groups', is: 'The answer to the division: how many full groups you can make.', does: 'Each extra group adds one more divisor to the total.', s: ['quotient', 0, 12, 1, ''] },
+      remainder: { t: 'Remainder', c: 'drive', role: 'Left over', is: 'What is left over after making as many full groups as possible.', does: 'It is added on at the end. It must be smaller than the divisor, or you could have made another group.', s: ['remainder', 0, 11, 1, ''] },
+      dividend: { t: 'Dividend', c: 'lhs', is: 'The number you started with, the one being divided.', does: 'If groups × size + leftovers gets you back to this number, the division is right.' }
+    }
+  });
+
+  physics({
+    id: 'catenary', title: 'The catenary: shape of a hanging chain', match: ['y=acosh(x/a)'], y: 'the height', first: 'a',
+    labels: { drive: 'Sets the shape', geo: 'Position along the span' },
+    init: { a: 2, x: 1 }, out: ['y', ''],
+    f: function (s) { return s.a * (Math.exp(s.x / s.a) + Math.exp(-s.x / s.a)) / 2; },
+    line: function (s) { return 'y = ' + fmtNum(s.a) + ' × cosh(' + fmtNum(s.x / s.a) + ') = ' + fmtNum(s.a * (Math.exp(s.x / s.a) + Math.exp(-s.x / s.a)) / 2); },
+    tokens: {
+      y: { t: 'Height', c: 'lhs', is: 'The height of the chain at position x.', does: 'It traces the curve a chain or cable makes when it hangs under its own weight. Turned upside down it is the strongest shape for an arch.' },
+      a: { t: 'Shape constant', c: 'drive', role: 'Sets the shape', is: 'A length that sets how tight or slack the curve is. It is also the height of the lowest point.', does: 'It appears twice: scaling the curve and dividing x. A large a gives a wide, shallow curve (a tight cable). A small a gives a deep, narrow one.', s: ['a', 0.5, 5, 0.1, ''] },
+      cosh: { t: 'Hyperbolic cosine', c: 'op', is: 'A function built from e: cosh(u) = (e^u + e^−u) ÷ 2. It equals 1 at u = 0 and rises on both sides.', does: 'It gives the curve its shape. It looks like a parabola near the bottom but climbs faster further out.' },
+      x: { t: 'Horizontal position', c: 'geo', role: 'Position along the span', is: 'How far you are, left or right, from the lowest point of the chain.', does: 'At x = 0 the chain is at its lowest. Moving the same distance either way gives the same height, so the curve is symmetrical.', s: ['x', -5, 5, 0.1, ''] }
+    }
+  });
+
+  physics({
+    id: 'voltage-divider', title: 'The voltage divider', match: ['V_out=V_inR2/(R1+R2)', 'V_out=V_inR_2/(R_1+R_2)'], y: 'the output', first: 'R2',
+    init: { Vin: 9, R1: 10, R2: 10 }, out: ['V_out', 'V'],
+    f: function (s) { return s.Vin * s.R2 / (s.R1 + s.R2); },
+    line: function (s) { return 'V_out = ' + fmtNum(s.Vin) + ' V × ' + fmtNum(s.R2) + ' ÷ (' + fmtNum(s.R1) + ' + ' + fmtNum(s.R2) + ') = ' + fmtNum(s.Vin * s.R2 / (s.R1 + s.R2)) + ' V'; },
+    tokens: (function () {
+      var r1 = { t: 'Top resistor', c: 'resist', is: 'The resistor between the input voltage and the output point, in ohms. The slider uses kilohms.', does: 'It only appears on the bottom. Make it bigger and it takes a larger share of the voltage, leaving less at the output.', s: ['R1', 1, 100, 1, 'kΩ'] };
+      var r2 = { t: 'Bottom resistor', c: 'drive', is: 'The resistor between the output point and ground, in ohms. The output is the voltage across this one.', does: 'It appears on top and in the sum below. R2 ÷ (R1 + R2) is its share of the total resistance, and it gets the same share of the voltage.', s: ['R2', 1, 100, 1, 'kΩ'] };
+      return {
+        V_out: { t: 'Output voltage', c: 'lhs', is: 'The voltage at the point between the two resistors, measured from ground.', does: 'It is always a fraction of the input, between 0 and V_in. Two equal resistors give exactly half.' },
+        V_in: { t: 'Input voltage', c: 'drive', is: 'The voltage across both resistors together, from the supply.', does: 'The output is a fixed fraction of it. Double the input and the output doubles.', s: ['Vin', 1, 24, 0.5, 'V'] },
+        R2: r2, R_2: r2, R1: r1, R_1: r1
+      };
+    })()
+  });
+
+  (function () {
+    var part = function (n, key) { return { t: 'Voltage across part ' + n, c: 'drive', role: 'One of the drops', is: 'The voltage used up across one component in the loop.', does: 'Every volt the battery supplies is used somewhere. Raise this drop and the total needed from the battery rises by the same amount.', s: [key, 0, 12, 0.5, 'V'] }; };
+    physics({
+      id: 'kirchhoff-voltage', title: "Kirchhoff's voltage law", match: ['V_battery=V_1+V_2+V_3'], y: 'the total', first: 'V_1',
+      labels: { drive: 'Voltage drops around the loop' },
+      init: { a: 3, b: 2, c: 4 }, out: ['V_battery', 'V'],
+      f: function (s) { return s.a + s.b + s.c; },
+      line: function (s) { return fmtNum(s.a) + ' V + ' + fmtNum(s.b) + ' V + ' + fmtNum(s.c) + ' V = ' + fmtNum(s.a + s.b + s.c) + ' V from the battery'; },
+      tokens: {
+        V_battery: { t: 'Battery voltage', c: 'lhs', is: 'The voltage the battery supplies to the loop.', does: 'Go once around any loop and the voltage rises and drops cancel out. Whatever the battery gives, the components use up, exactly.' },
+        V_1: part(1, 'a'), V_2: part(2, 'b'), V_3: part(3, 'c')
+      }
+    });
+    var branch = function (n, key) { return { t: 'Current in branch ' + n, c: 'drive', role: 'One of the branches', is: 'The current flowing away down one of the branches.', does: 'Charge cannot pile up or vanish at a junction. More current in this branch means more must be flowing in.', s: [key, 0, 100, 5, 'mA'] }; };
+    physics({
+      id: 'kirchhoff-current', title: "Kirchhoff's current law", match: ['I_in=I_a+I_b+I_c'], y: 'the total', first: 'I_a',
+      labels: { drive: 'Currents leaving the junction' },
+      init: { a: 20, b: 30, c: 10 }, out: ['I_in', 'mA'],
+      f: function (s) { return s.a + s.b + s.c; },
+      line: function (s) { return fmtNum(s.a) + ' mA + ' + fmtNum(s.b) + ' mA + ' + fmtNum(s.c) + ' mA = ' + fmtNum(s.a + s.b + s.c) + ' mA flowing in'; },
+      tokens: {
+        I_in: { t: 'Current flowing in', c: 'lhs', is: 'The total current arriving at the junction.', does: 'What flows into a junction must flow out. It is like water in pipes: the flow into a tee equals the flows out of it added together.' },
+        I_a: branch('a', 'a'), I_b: branch('b', 'b'), I_c: branch('c', 'c')
+      }
+    });
+  })();
+
+  var RMS = 'The steady (DC) voltage that would deliver the same heating power as the AC supply. Wall sockets are labelled with this value.';
+  var PEAK = 'The highest voltage the AC wave reaches at the top of each cycle.';
+  var ROOT2 = { t: 'The number 2', c: 'const', is: 'A plain 2, under the square root. √2 is about 1.414.', does: 'For a smooth sine wave the peak is always √2 times the RMS value. Other wave shapes have a different factor.' };
+  physics({
+    id: 'ac-peak', title: 'Peak voltage from RMS', match: ['Vpeak=Vrms√2', 'V_peak=V_rms√2'], y: 'the peak', first: 'Vrms',
+    init: { V: 120 }, out: ['V_peak', 'V'],
+    f: function (s) { return s.V * Math.SQRT2; },
+    line: function (s) { return 'V_peak = ' + fmtNum(s.V) + ' V × 1.414 = ' + fmtNum(s.V * Math.SQRT2) + ' V'; },
+    tokens: (function () {
+      var out = { t: 'Peak voltage', c: 'lhs', is: PEAK, does: 'It is higher than the number on the label. Insulation and components must survive this peak, not just the RMS value.' };
+      var rms = { t: 'RMS voltage', c: 'drive', is: RMS, does: 'Multiply it by √2 to find how high the wave really swings. A 120 V supply peaks near 170 V.', s: ['V', 1, 240, 1, 'V'], x: 'V_rms' };
+      return { Vpeak: out, V_peak: out, Vrms: rms, V_rms: rms, '√': ROOT('√2 is the fixed ratio between the peak and the RMS value of a sine wave.'), '2': ROOT2 };
+    })()
+  });
+  physics({
+    id: 'ac-rms', title: 'RMS voltage from peak', match: ['Vrms=Vpeak/√2', 'V_rms=V_peak/√2'], y: 'the RMS value', first: 'Vpeak',
+    init: { V: 170 }, out: ['V_rms', 'V'],
+    f: function (s) { return s.V / Math.SQRT2; },
+    line: function (s) { return 'V_rms = ' + fmtNum(s.V) + ' V ÷ 1.414 = ' + fmtNum(s.V / Math.SQRT2) + ' V'; },
+    tokens: (function () {
+      var out = { t: 'RMS voltage', c: 'lhs', is: RMS, does: 'It is about 71% of the peak. RMS stands for root mean square: square the wave, average it, take the square root.' };
+      var peak = { t: 'Peak voltage', c: 'drive', is: PEAK, does: 'Divide it by √2 to get the value that matters for power. A wave that peaks at 170 V does the work of a steady 120 V.', s: ['V', 1, 340, 1, 'V'], x: 'V_peak' };
+      return { Vrms: out, V_rms: out, Vpeak: peak, V_peak: peak, '√': ROOT('√2 is the fixed ratio between the peak and the RMS value of a sine wave.'), '2': ROOT2 };
+    })()
+  });
+
+  physics({
+    id: 'spring-energy', title: 'Energy stored in a spring', match: ['E=½kx^2', 'PE=½kx^2'], y: 'the energy', first: 'x^2',
+    init: { k: 200, x: 0.5 }, out: ['E', 'J'],
+    f: function (s) { return 0.5 * s.k * s.x * s.x; },
+    line: function (s) { return 'E = ½ × ' + fmtNum(s.k) + ' N/m × (' + fmtNum(s.x) + ' m)² = ' + fmtNum(0.5 * s.k * s.x * s.x) + ' J'; },
+    tokens: (function () {
+      var out = { t: 'Stored energy', c: 'lhs', is: 'The energy held in a stretched, squashed or bent spring, in joules.', does: 'It is the work you did to deform the spring, ready to be given back when it is released.' };
+      return {
+        E: out, PE: out,
+        '½': HALF('The force starts at zero and builds up as you pull, so the average force is half the final force. That half ends up here.'),
+        k: { t: 'Spring constant', c: 'drive', is: 'How stiff the spring is: the force needed to stretch it by one metre, in newtons per metre.', does: 'A stiffer spring stores more energy for the same stretch.', s: ['k', 10, 1000, 10, 'N/m'] },
+        'x^2': { t: 'Stretch squared', c: 'drive', is: 'How far the spring is stretched or squashed from its rest length, in metres, multiplied by itself.', does: 'Pull twice as far and you store four times the energy: you pull further, and against a larger force.', s: ['x', 0, 2, 0.05, 'm'] }
+      };
+    })()
+  });
+
+  physics({
+    id: 'rocket-equation', title: 'The rocket equation', match: ['Δv=v_eln(m_0/m_f)'], y: 'the speed change', first: 'm_f',
+    init: { ve: 3, m0: 100, mf: 20 }, out: ['Δv', 'km/s'],
+    f: function (s) { return s.ve * Math.log(s.m0 / s.mf); },
+    line: function (s) { return 'Δv = ' + fmtNum(s.ve) + ' km/s × ln(' + fmtNum(s.m0 / s.mf) + ') = ' + fmtNum(s.ve * Math.log(s.m0 / s.mf)) + ' km/s (reaching low Earth orbit takes about 9.4)'; },
+    tokens: {
+      'Δv': { t: 'Change in velocity', c: 'lhs', is: 'How much the rocket can change its speed by burning its fuel. Δ (delta) means “change in”.', does: 'It is the budget for a mission. Every manoeuvre, from launch to landing, spends some of it.' },
+      v_e: { t: 'Exhaust velocity', c: 'drive', is: 'How fast the engine throws its exhaust out the back.', does: 'A faster exhaust gives more push for each kilogram of fuel. Double it and Δv doubles.', s: ['ve', 1, 5, 0.1, 'km/s'] },
+      ln: { t: 'Natural logarithm', c: 'op', is: 'A function that grows very slowly: ln(2.7) is 1, ln(7.4) is 2, ln(20) is 3.', does: 'It is the harsh part of rocketry. To add the same Δv again you must multiply the mass ratio again, so fuel needs grow explosively.' },
+      m_0: { t: 'Starting mass', c: 'drive', is: 'The mass of the rocket at lift-off, with all its fuel.', does: 'It is on top of the ratio: more fuel on board raises Δv, but only through the logarithm.', s: ['m0', 10, 500, 5, 'tonnes'] },
+      m_f: { t: 'Final mass', c: 'resist', is: 'The mass left when the fuel is gone: structure, engines and payload.', does: 'It is on the bottom of the ratio. Every kilogram saved here helps, which is why rockets drop empty stages.', s: ['mf', 5, 100, 1, 'tonnes'] }
+    }
+  });
+
+  physics({
+    id: 'terminal-velocity', title: 'Terminal velocity in air', match: ['v_t=√(2mg/(ρC_dA))'], y: 'the speed', first: 'A',
+    init: { m: 80, g: 9.8, rho: 1.2, Cd: 1.0, A: 0.7 }, out: ['v_t', 'm/s'],
+    f: function (s) { return Math.sqrt(2 * s.m * s.g / (s.rho * s.Cd * s.A)); },
+    line: function (s) { var v = Math.sqrt(2 * s.m * s.g / (s.rho * s.Cd * s.A)); return 'v_t = ' + fmtNum(v) + ' m/s (' + fmtNum(v * 3.6) + ' km/h)'; },
+    tokens: {
+      v_t: { t: 'Terminal velocity', c: 'lhs', is: 'The steady speed a falling object settles at, when air drag has grown to equal its weight.', does: 'Above this speed drag would win and slow it down; below it, weight wins and speeds it up. So it stays here.' },
+      '√': ROOT('Drag grows with v². Solving drag = weight for v leaves a square root, which softens the effect of everything inside.'),
+      '2': { t: 'The number 2', c: 'const', is: 'A plain 2.', does: 'It comes from the ½ in the drag equation, moved to the other side.' },
+      m: { t: 'Mass', c: 'drive', is: 'The mass of the falling object, in kilograms.', does: 'With g it makes the weight, which pulls down. Four times the mass gives twice the terminal speed.', s: ['m', 1, 150, 1, 'kg'] },
+      g: { t: 'Gravitational field strength', c: 'drive', is: 'How hard gravity pulls on each kilogram. ' + G_NOTE, does: 'Stronger gravity means more weight to balance, so a higher terminal speed.', s: ['g', 1.6, 25, 0.1, 'm/s²'] },
+      'ρ': { t: 'Air density', c: 'resist', is: 'How much mass is in each cubic metre of air: about 1.2 kg/m³ at sea level.', does: 'Thicker air drags harder, so the speed is lower. High up, where the air is thin, skydivers fall much faster.', s: ['rho', 0.1, 2, 0.1, 'kg/m³'] },
+      C_d: { t: 'Drag coefficient', c: 'resist', is: 'A number with no units that describes the shape. A skydiver lying flat is about 1.0; head-first is nearer 0.7.', does: 'A draggier shape lowers the terminal speed.', s: ['Cd', 0.1, 1.5, 0.05, ''] },
+      A: { t: 'Frontal area', c: 'resist', is: 'The area the object presents to the air, in square metres.', does: 'A bigger area catches more air and lowers the speed. Opening a parachute makes A huge.', s: ['A', 0.1, 40, 0.1, 'm²'] }
+    }
+  });
+
   function matchPhysics(norm) {
     var bare = norm.replace(/[·⋅×\*]/g, '').replace(/÷/g, '/').replace(/-/g, '−');
     return PHYSICS_MATCH[bare] || null;
@@ -1200,7 +1559,7 @@
      Splits equation DOM nodes while keeping <sub>/<sup> inside each token!
      ------------------------------------------------------------------------ */
   var FUNCTION_RE = /^(?:det|atan2|atan|asin|acos|sqrt|cosh|sinh|tanh|sin|cos|tan|log|exp|lim|max|min|mod|ln)$/;
-  var MULTI_IDENT_RE = /^(?:(?:lambda|theta|omega|alpha|beta|gamma|delta|epsilon|sigma|rho|eta|tau|phi|mu)(?![a-z])|det(?![a-z])|atan2|atan|asin|acos|sqrt|cosh|sinh|tanh|sin|cos|tan|log|exp|lim|max|min|mod|ln|Re|MA|EMF|KE|PE|pOH|pH|dB|ΔΦ|Δt|ΔU|Δv|ΔP|ΔT|∂v|∂t|∇p|∇v)/;
+  var MULTI_IDENT_RE = /^(?:(?:lambda|theta|omega|alpha|beta|gamma|delta|epsilon|sigma|rho|eta|tau|phi|mu)(?![a-z])|det(?![a-z])|atan2|atan|asin|acos|sqrt|cosh|sinh|tanh|sin|cos|tan|log|exp|lim|max|min|mod|ln|RT60|Re|MA|EMF|KE|PE|pOH|pH|dB|ΔΦ|Δt|ΔU|Δv|ΔP|ΔT|∂v|∂t|∇p|∇v)/;
   var OP_CHARS = { '=': 1, '≈': 1, '∝': 1, '→': 1, '←': 1, '↔': 1, '+': 1, '−': 1, '-': 1, '×': 1, '·': 1, '⋅': 1, '*': 1, '/': 1, '÷': 1, '(': 1, ')': 1, '[': 1, ']': 1, '√': 1, '^': 1, '∑': 1, '∫': 1, '±': 1, '≤': 1, '≥': 1, '<': 1, '>': 1 };
 
   function isWordMode(plainText) {
@@ -1305,6 +1664,12 @@
         i += subMatch[0].length;
         continue;
       }
+      var wholeWord = wordMode && rest.match(/^[A-Za-z]{4,}[A-Za-z\-']*/);
+      if (wholeWord && !FUNCTION_RE.test(wholeWord[0]) && !/^(?:atan2|RT60)/.test(rest)) {
+        out.push({ kind: 'atom', text: wholeWord[0], html: escapeHtml(wholeWord[0]), canAttach: true });
+        i += wholeWord[0].length;
+        continue;
+      }
       var fnMatch = rest.match(MULTI_IDENT_RE);
       if (fnMatch) {
         var fn = fnMatch[0];
@@ -1356,6 +1721,11 @@
     return out;
   }
 
+  function closesBracket(segments) {
+    var last = segments[segments.length - 1];
+    return !!last && last.kind === 'atom' && (last.text === ')' || last.text === ']');
+  }
+
   function tokenizeExpression(symEl) {
     var plainText = (symEl.textContent || '').replace(/\s+/g, ' ').trim();
     var wordMode = isWordMode(plainText);
@@ -1374,10 +1744,16 @@
             var prevA = segments[segments.length - 1];
             prevA.text += item.text;
             prevA.html += item.html;
+          } else if (item.kind === 'suffix' && item.kindTag === 'sup' && closesBracket(segments)) {
+            // "(x + 3)²": the power belongs to the whole bracket, so it is a symbol of its own
+            segments.push({ kind: 'atom', text: item.text, html: item.html, isOp: true, isPower: true });
           } else {
             segments.push(item);
           }
         }
+      } else if (chunk.kind === 'sup' && closesBracket(segments)) {
+        var supChar = { '2': '²', '3': '³' }[chunk.text];
+        segments.push({ kind: 'atom', text: supChar || '^' + chunk.text, html: chunk.html, isOp: true, isPower: true });
       } else if ((chunk.kind === 'sub' || chunk.kind === 'sup') && segments.length && segments[segments.length - 1].kind === 'atom') {
         var prev = segments[segments.length - 1];
         prev.text += (chunk.kind === 'sub' ? '_' : '^') + chunk.text;
@@ -1403,6 +1779,19 @@
         continue;
       }
       merged.push(cur);
+    }
+
+    // Everything inside "( … )²" is raised to that power together.
+    for (var pw = 1; pw < merged.length; pw++) {
+      if (!merged[pw].isPower) continue;
+      var pd = 0;
+      for (var pb = pw - 1; pb >= 0; pb--) {
+        var pa = merged[pb];
+        if (pa.kind !== 'atom') continue;
+        if (pa.text === ')' || pa.text === ']') pd++;
+        else if (pa.text === '(' || pa.text === '[') { pd--; if (pd === 0) break; }
+        else if (!pa.isOp && !pa.isNum) pa.inPower = merged[pw].text.replace(/^\^/, '');
+      }
     }
 
     // "Physics equation: d = v² / (2μg)": the label before the colon is plain text.
@@ -1774,6 +2163,13 @@
     return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
   }
 
+  function powerInfo(text) {
+    var n = text.replace(/^\^/, '');
+    if (n === '²') return { t: 'Squared', m: 'Multiplies everything in the brackets by itself.', e: 'Work out the bracket first, then square the answer. It applies to the whole bracket, not just the last symbol in it.', v: 'none' };
+    if (n === '³') return { t: 'Cubed', m: 'Multiplies everything in the brackets by itself, three times over.', e: 'Work out the bracket first, then cube the answer. It applies to the whole bracket, not just the last symbol in it.', v: 'none' };
+    return { t: 'Power of ' + n, m: 'Raises everything in the brackets to the power ' + n + '.', e: 'Work out the bracket first, then apply the power to the answer.' + (/^[−-]/.test(n) ? ' A negative power means “one divided by”, so a bigger bracket gives a smaller result.' : ''), v: 'none' };
+  }
+
   function describeGenericToken(seg, allAtoms, legendMap) {
     var key = seg.key;
     var leg = legendMap[key] || legendMap[key.replace(/\^[0-9n]+$/, '')] || seg.note || '';
@@ -1804,7 +2200,7 @@
         '(': { t: 'Opening bracket', m: 'Brackets mean “work this out first”.', e: 'Whatever is outside the brackets applies to everything inside them.', v: 'none' },
         ')': { t: 'Closing bracket', m: 'Ends the group that began at the opening bracket.', e: 'Treat everything inside the brackets as one number.', v: 'none' },
         '√': { t: 'Square root', m: 'Finds the number that, multiplied by itself, gives what is inside.', e: 'It softens growth: make the inside four times as big and the root only doubles.', v: 'role-sqrt' }
-      }[seg.text] || { t: 'Operator ' + seg.text, m: 'Tells you how to combine the quantities next to it.', e: 'It is part of the structure of the formula.', v: 'none' };
+      }[seg.text] || (seg.isPower ? powerInfo(seg.text) : null) || { t: 'Operator ' + seg.text, m: 'Tells you how to combine the quantities next to it.', e: 'It is part of the structure of the formula.', v: 'none' };
 
       return {
         symbol: seg.text,
@@ -1905,6 +2301,20 @@
           : hasCube
             ? 'role-cubic'
             : 'role-linear';
+
+    if (seg.inPower) {
+      var pName = seg.inPower === '²' ? 'squared' : seg.inPower === '³' ? 'cubed' : 'raised to the power ' + seg.inPower;
+      return {
+        symbol: seg.text,
+        title: genericTitle(seg, leg),
+        role: 'Inside a bracket that is ' + (seg.inPower === '²' || seg.inPower === '³' ? pName : 'raised to a power'),
+        colorRole: 'neutral',
+        meaning: leg ? capitalize(leg) : ('The symbol ' + seg.text + ' stands for one of the quantities in this formula.'),
+        equationRole: 'It sits inside brackets that are ' + pName + ' as a whole. Work out the bracket first, then apply the power, so its effect is not a simple “double it, double the result”.',
+        visualType: 'none',
+        caption: ''
+      };
+    }
 
     if (seg.inRoot && !(seg.groups || []).some(function (g) { return g.hasSum; })) {
       var rootUp = seg.side !== 'denom';
@@ -2631,6 +3041,11 @@
     var catalog = catalogId ? FORMULA_CATALOG[catalogId] : null;
     var parsed = tokenizeExpression(exprEl);
     var atomTokens = parsed.segments.filter(function (s) { return s.kind === 'atom'; });
+    // Second chance by token keys: these are the same however the lesson marked up sub- and superscripts.
+    if (!catalog) {
+      var byKeys = matchPhysics(atomTokens.map(function (a) { return a.key; }).join(''));
+      if (byKeys) { catalogId = byKeys; catalog = FORMULA_CATALOG[byKeys]; }
+    }
     // Take apart only what was fully understood. Anything with leftover symbols, a chain
     // of steps, or no variable at all is left exactly as the lesson wrote it.
     var understood = atomTokens.length > 0 && atomTokens.length <= 30 && !parsed.unparsed && !parsed.chained &&

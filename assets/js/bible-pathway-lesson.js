@@ -8,7 +8,7 @@
       question: 'How does knowing where and when a biblical event happened help us read it more carefully?',
       scripture: 'Genesis 12:1–9 · Joshua 1:1–9 · Luke 3:1–2',
       goals: ['Locate Mesopotamia, Canaan, Egypt, the wilderness, Israel, and the wider Roman world.', 'Place creation, patriarchs, exodus, kingdom, exile, return, Jesus, and the early Church in sequence.', 'Use geography and chronology as context without letting background replace the biblical text.'],
-      lenses: [['Place','Land and movement','Trace Abram’s movement from Mesopotamia toward Canaan. Notice rivers, travel corridors, deserts, and the importance of land in the promise.','Ask: What becomes clearer when this passage is located on a map?'],['Time','Anchor eras','Organize the story around the patriarchs, exodus, judges, monarchy, exile, return, Jesus, and the apostolic Church.','Ask: What came before and what changed afterward?'],['People','Nations and empires','Identify Israel’s neighbors and the empires that shape the setting: Egypt, Assyria, Babylon, Persia, Greece, and Rome.','Ask: Which power relationships are explicit in the text?'],['Story','Promise and fulfillment','Follow creation, fall, covenant, kingdom, exile, Messiah, Church, and new creation without flattening distinct covenants or genres.','Ask: Where does this passage sit in Scripture’s unfolding story?']],
+      lenses: [['Place','Land and movement','Trace Abram’s movement from Mesopotamia toward Canaan. Notice rivers, travel corridors, deserts, and the importance of land in the promise.','Ask: What becomes clearer when this passage is located on a map?', 0, "Compare Abram’s travel with the migration of Jacob’s household in Genesis 46.", "Why does Genesis name stopping places?"],['Time','Anchor eras','Organize the story around the patriarchs, exodus, judges, monarchy, exile, return, Jesus, and the apostolic Church.','Ask: What came before and what changed afterward?', 1, "Compare Joshua 1 with Moses’ farewell in Deuteronomy 34.", "What changes at the opening of Joshua?"],['People','Nations and empires','Identify Israel’s neighbors and the empires that shape the setting: Egypt, Assyria, Babylon, Persia, Greece, and Rome.','Ask: Which power relationships are explicit in the text?', 2, "Compare the rulers named in Luke 3 with the decree and named ruler in Luke 2:1–3.", "How does Luke anchor John’s ministry?"],['Story','Promise and fulfillment','Follow creation, fall, covenant, kingdom, exile, Messiah, Church, and new creation without flattening distinct covenants or genres.','Ask: Where does this passage sit in Scripture’s unfolding story?', 3, "Compare Acts 17’s address in Athens with the promise to all families in Genesis 12:3.", "What does Paul appeal to in Acts 17:24–28?"]],
       check: ['Which practice best uses historical context?',['Let the map determine the passage’s theology','Use place and time to clarify details the passage communicates','Ignore geography because Scripture is theological'],'Use place and time to clarify details the passage communicates','Context serves careful reading; it does not replace the words and claims of the passage.'],
       reflect: 'Choose one biblical event. Explain how its location or place in the timeline helps you understand it.'
     },
@@ -38,7 +38,7 @@
       question: 'How does the Bible develop the hope of God dwelling with humanity?',
       scripture: 'Genesis 2–3 · 1 Kings 8 · John 1:14 · 1 Corinthians 3:16 · Revelation 21–22',
       goals: ['Trace repeated images of presence, holiness, priesthood, life, and access.', 'Identify both continuity and development across the biblical story.', 'Explain how Christ and new creation fulfill the presence theme.'],
-      lenses: [['Eden','Presence lost','Human beings live before God in a garden of life, then are exiled eastward and barred from the tree of life.','Notice garden, river, precious materials, cherubim, life, and exile.'],['Sanctuary','Presence among Israel','Tabernacle and Temple provide covenantal sacred space, yet Solomon confesses that heaven cannot contain God.','Hold together real divine presence and God’s transcendence in 1 Kings 8.'],['Christ and Church','Presence embodied','John announces that the Word became flesh and “dwelt” among us; the New Testament also calls God’s people a temple.','Distinguish Christ’s unique incarnation from the Spirit’s corporate indwelling of the Church.'],['New Creation','Presence without a temple','Revelation’s city has no temple building because God and the Lamb are its temple; the tree and river of life return.','Compare Genesis 2–3 with Revelation 21–22.']],
+      lenses: [['Eden','Presence lost','Human beings live before God in a garden of life, then are exiled eastward and barred from the tree of life.','Notice garden, river, precious materials, cherubim, life, and exile.', 0, "Compare the guarded tree of life with the accessible tree in Revelation 22:1–5.", "What is guarded in Genesis 3:24?"],['Sanctuary','Presence among Israel','Tabernacle and Temple provide covenantal sacred space, yet Solomon confesses that heaven cannot contain God.','Hold together real divine presence and God’s transcendence in 1 Kings 8.', 1, "Compare Solomon’s request that God hear from heaven with Jesus’ appeal to a house of prayer in Mark 11:17.", "What does Solomon say cannot contain God?"],['Christ and Church','Presence embodied','John announces that the Word became flesh and “dwelt” among us; the New Testament also calls God’s people a temple.','Distinguish Christ’s unique incarnation from the Spirit’s corporate indwelling of the Church.', 2, "Compare the glory witnessed in John 1:14 with the glory filling the tent in Exodus 40:34–38.", "Who dwells among the witnesses in John 1?"],['New Creation','Presence without a temple','Revelation’s city has no temple building because God and the Lamb are its temple; the tree and river of life return.','Compare Genesis 2–3 with Revelation 21–22.', 4, "Read Revelation 22:1–5 after 21:22–27 and trace the theme of access.", "What does John see in place of a temple building?"]],
       check: ['What makes a whole-Bible theme responsible?',['Matching every repeated object symbolically','Following textual echoes while respecting each passage’s context','Treating all sanctuaries as identical'],'Following textual echoes while respecting each passage’s context','Good biblical theology notices genuine connections and also respects development and difference.'],
       reflect: 'Trace one repeated image—garden, light, water, cherubim, temple, or dwelling—through at least three moments in the biblical story.'
     },
@@ -67,8 +67,8 @@
       title: 'Elijah: Prophet of the Living God', lede: 'Follow Elijah’s confrontations with Ahab and Baal worship from Mount Carmel to the still small voice at Horeb.',
       question: 'How does Elijah’s ministry confront false worship and reveal who the living God really is?',
       scripture: '1 Kings 17–19 · 1 Kings 21 · 2 Kings 2:1–12',
-      goals: ['Sequence Elijah’s ministry from the drought announcement to his ascension in the chariot of fire.', 'Explain how Cherith, Zarephath, Carmel, and Horeb each reveal God’s provision, power, and character.', 'Compare God’s dramatic self-revelation in fire at Carmel with His quiet self-revelation in the “still small voice” at Horeb.'],
-      lenses: [['Cherith','Provision in hiding','After announcing a drought to King Ahab, Elijah hides at the Kerith Ravine, where ravens bring him bread and meat and he drinks from the brook.','Read 1 Kings 17:2–7 and ask what this hidden scene teaches about obedience before any public confrontation.'],['Zarephath','A widow’s flour and oil','Sent to a foreign widow during the famine, Elijah finds her jar of flour and jug of oil do not run out, and later raises her son to life.','Notice that God’s provision and power reach beyond Israel’s borders even as judgment falls on Israel.'],['Carmel','Fire falls, Baal is silent','Elijah challenges 450 prophets of Baal to a public contest of sacrifice and fire before all Israel; the Lord answers by fire while Baal answers nothing.','Read 1 Kings 18:20–39 and notice the crowd’s response: “The Lord, he is God.”'],['Horeb','The still small voice','Fleeing Jezebel’s threat after his greatest public victory, Elijah journeys forty days to Horeb, where wind, earthquake, and fire precede a quiet voice that recommissions him.','Compare the dramatic fire at Carmel with the quiet voice at Horeb, and ask what both reveal about God.']],
+      goals: ['Sequence Elijah’s ministry from the drought announcement to his departure in the whirlwind.', 'Explain how Cherith, Zarephath, Carmel, and Horeb each reveal God’s provision, power, and character.', 'Compare God’s dramatic self-revelation in fire at Carmel with His quiet self-revelation in the “still small voice” at Horeb.'],
+      lenses: [['Cherith','Provision in hiding','After announcing a drought to King Ahab, Elijah hides at the Kerith Ravine, where ravens bring him bread and meat and he drinks from the brook.','Read 1 Kings 17:2–7 and ask what this hidden scene teaches about obedience before any public confrontation.', 0, "Compare bread beside the brook with bread for the journey in 1 Kings 19:5–8.", "What happens to the brook in 1 Kings 17?"],['Zarephath','A widow’s flour and oil','Sent to a foreign widow during the famine, Elijah finds her jar of flour and jug of oil do not run out, and later raises her son to life.','Notice that God’s provision and power reach beyond Israel’s borders even as judgment falls on Israel.', 4, "Read Luke 4:24–27 for Jesus’ use of the Zarephath episode.", "What does the widow say after her son is restored?"],['Carmel','Fire falls, Baal is silent','Elijah challenges 450 prophets of Baal to a public contest of sacrifice and fire before all Israel; the Lord answers by fire while Baal answers nothing.','Read 1 Kings 18:20–39 and notice the crowd’s response: “The Lord, he is God.”', 1, "Compare the crowd’s declaration here with its silence at the first challenge in 1 Kings 18:21.", "What reason does Elijah give for his prayer?"],['Horeb','The still small voice','Fleeing Jezebel’s threat after his greatest public victory, Elijah journeys forty days to Horeb, where wind, earthquake, and fire precede a quiet voice that recommissions him.','Compare the dramatic fire at Carmel with the quiet voice at Horeb, and ask what both reveal about God.', 2, "Compare the call of Elisha in 1 Kings 19:19–21 with his request in 2 Kings 2:9.", "What follows Elijah’s encounter at Horeb?"]],
       check: ['What does Elijah’s flight to Horeb right after Carmel teach?',['Public victory guarantees lasting confidence','Even a faithful prophet can grow afraid and discouraged after a great victory','Elijah stopped trusting God after Carmel'],'Even a faithful prophet can grow afraid and discouraged after a great victory','Elijah’s flight after his greatest public triumph shows that dramatic success does not remove fear, exhaustion, or the need for God’s renewing word.'],
       reflect: 'Choose one scene—Cherith, Zarephath, Carmel, or Horeb. Describe Elijah’s circumstances, God’s provision, and Elijah’s response.'
     },
@@ -78,7 +78,7 @@
       question: 'How do geography and historical setting clarify the Gospel accounts of Jesus?',
       scripture: 'Matthew 4:12–25 · Luke 9:51–56 · John 4:1–42',
       goals: ['Locate major regions, towns, bodies of water, and travel routes in the Gospels.', 'Explain how terrain, distance, rule, and regional identity affect events.', 'Use historical context to clarify rather than control Gospel interpretation.'],
-      lenses: [['Galilee','Ministry around the lake','Nazareth, Capernaum, the Sea of Galilee, fishing villages, and surrounding roads frame much of Jesus’ public ministry.','Notice movement among towns and the role of boats, crowds, and hillsides.'],['Samaria','A contested region','Samaria lies between Galilee and Judea, yet regional identity and religious history make travel socially significant.','Read John 4 and Luke 9 without reducing Samaritans to a simple label.'],['Judea','Road toward Jerusalem','Judea includes Jerusalem, nearby villages, wilderness, and roads rising through difficult terrain.','Estimate travel by terrain and ancient conditions, not modern driving time.'],['Jerusalem','Temple and Roman rule','The Temple, festivals, leadership groups, crowds, and Roman authority converge in the city.','Name who holds religious or political authority in each scene.']],
+      lenses: [['Galilee','Ministry around the lake','Nazareth, Capernaum, the Sea of Galilee, fishing villages, and surrounding roads frame much of Jesus’ public ministry.','Notice movement among towns and the role of boats, crowds, and hillsides.', 0, "Compare Matthew 4 with Mark 1:16–21 and trace the movement from shore to synagogue.", "Where does Jesus settle after leaving Nazareth in Matthew 4?"],['Samaria','A contested region','Samaria lies between Galilee and Judea, yet regional identity and religious history make travel socially significant.','Read John 4 and Luke 9 without reducing Samaritans to a simple label.', 3, "Compare the village’s response in Luke 9:52–56 with the welcome in John 4:39–42.", "What surprises the woman at the well?"],['Judea','Road toward Jerusalem','Judea includes Jerusalem, nearby villages, wilderness, and roads rising through difficult terrain.','Estimate travel by terrain and ancient conditions, not modern driving time.', 2, "Compare Luke 9:51 with Luke 19:28 as the journey approaches Jerusalem.", "What destination shapes the refusal in Luke 9:53?"],['Jerusalem','Temple and Roman rule','The Temple, festivals, leadership groups, crowds, and Roman authority converge in the city.','Name who holds religious or political authority in each scene.', 5, "Compare the temple authorities’ question in Mark 11:27–33 with Pilate’s question in Luke 23:1–4.", "What do the authorities ask about in Mark 11:28?"]],
       check: ['Why is Jesus’ route through Samaria significant in John 4?',['It was geographically impossible','Place and strained social relationships shape the encounter','Samaria was another name for Rome'],'Place and strained social relationships shape the encounter','The route is geographically intelligible and socially meaningful because of Jewish-Samaritan history.'],
       reflect: 'Choose one Gospel journey. List its places in order and explain one detail made clearer by geography or social setting.'
     },
@@ -122,23 +122,14 @@
       check: ['Which city becomes Paul’s extended base during the third journey?',['Ephesus','Bethlehem','Nineveh'],'Ephesus','Acts presents an extended Ephesian ministry that influences the wider province of Asia.'],
       reflect: 'Choose one travel leg. Record origin, destination, companions, challenge, response, and any letter connected with the city.'
     },
-    {
-      id: 'proverbs-wisdom-decision-lab', code: '6A', stage: 'Stage 6 · Wisdom & Christian Life', grades: 'Grades 4–10', time: '40–60 minutes',
-      title: 'Proverbs: Wisdom Decision Lab', lede: 'Practice wise judgment about speech, friendship, anger, honesty, work, generosity, and money.',
-      question: 'How do biblical proverbs train us to fear the Lord and choose fitting action in real situations?',
-      scripture: 'Proverbs 1:1–7 · 10:1–12 · 15:1–4 · 26:4–5',
-      goals: ['Explain the fear of the Lord as wisdom’s foundation.', 'Read proverbs as concise wisdom observations rather than mechanical guarantees.', 'Compare multiple relevant proverbs and justify a fitting response.'],
-      lenses: [['Observe','What is happening?','Describe the people, words, pressures, relationships, likely outcomes, and missing information without rushing to judgment.','Wisdom begins by listening and seeing accurately.'],['Compare','Which sayings apply?','Gather more than one proverb. Some sayings address different sides of a situation, as Proverbs 26:4–5 demonstrates.','Do not use one line as a slogan detached from the larger wisdom tradition.'],['Discern','What response fits?','Consider timing, motive, audience, consequences, justice, mercy, and faithfulness before choosing a response.','A true saying can still be applied poorly.'],['Practice','Act and reflect','Choose a concrete response, seek counsel when needed, and later examine the fruit without turning formation into a score.','The goal is wise character under God, not merely winning a scenario.']],
-      check: ['How should a proverb usually be read?',['As a mechanical promise with no exceptions','As wisdom requiring context, comparison, and discernment','As a rule that replaces listening'],'As wisdom requiring context, comparison, and discernment','Proverbs form wise judgment; their concise observations must be applied fittingly in the fear of the Lord.'],
-      reflect: 'Describe a realistic decision involving speech or friendship. Compare two proverbs and justify the response that best fits.'
-    },
+    { id: 'proverbs', title: 'Proverbs' },
     {
       id: 'job', code: '6B', stage: 'Stage 6 · Wisdom & Christian Life', grades: 'Grades 6–12', time: '50–70 minutes',
       title: 'Job: Suffering, Wisdom & Faithful Speech', lede: 'Read Job as wisdom literature: lament honestly, test easy explanations, and listen for the book’s answer to suffering and human limits.',
       question: 'How can faithful speech make room for suffering without pretending to know more than we do?',
       scripture: 'Job 1–3 · 38–42',
       goals: ['Trace the movement from Job’s loss and lament through the friends’ explanations to God’s speeches and Job’s response.', 'Distinguish lament, accusation, explanation, and divine wisdom instead of treating every speech as equally authoritative.', 'Practice accompanying suffering with humility, truthful presence, and hope rather than assigning blame.'],
-      lenses: [['Loss','What happens?','The opening scenes establish Job’s losses and preserve his refusal to curse God, but they do not give the reader a simple formula for explaining suffering.','Name what the text says and what it leaves unexplained.'],['Lament','Faithful protest','Job curses the day of his birth, asks hard questions, and directs his speech toward God. Lament is not the same as indifference or silence.','Listen for grief, desire for justice, and continued relationship in the same speech.'],['Friends','Testing explanations','Eliphaz, Bildad, and Zophar repeatedly connect suffering with wrongdoing. Their confidence sounds orderly, but Job 42:7 makes the book’s judgment on their speech part of the lesson.','A plausible principle can become harmful when applied without evidence or compassion.'],['Encounter','Wonder and limits','God answers from the whirlwind with questions about creation, creatures, justice, and human knowledge. Job receives no secret transcript of the heavenly council; he receives an encounter that reorders his confidence.','Do not turn God’s questions into a claim that every sufferer caused their own pain.']],
+      lenses: [['Loss','What happens?','The opening scenes establish Job’s losses and preserve his refusal to curse God, but they do not give the reader a simple formula for explaining suffering.','Name what the text says and what it leaves unexplained.', 0, "Compare God’s description of Job in 1:8 with the verdict on the friends in 42:7.", "How does the narrator first describe Job?"],['Lament','Faithful protest','Job curses the day of his birth, asks hard questions, and directs his speech toward God. Lament is not the same as indifference or silence.','Listen for grief, desire for justice, and continued relationship in the same speech.', 2, "Read Psalm 13 and compare how lament gives voice to distress.", "What does Job curse at the start of chapter 3?"],['Friends','Testing explanations','Eliphaz, Bildad, and Zophar repeatedly connect suffering with wrongdoing. Their confidence sounds orderly, but Job 42:7 makes the book’s judgment on their speech part of the lesson.','A plausible principle can become harmful when applied without evidence or compassion.', 5, "Compare Eliphaz’s claim with the verdict in Job 42:7.", "How does Eliphaz turn a question about the innocent into a claim about Job?"],['Encounter','Wonder and limits','God answers from the whirlwind with questions about creation, creatures, justice, and human knowledge. Job receives no secret transcript of the heavenly council; he receives an encounter that reorders his confidence.','Do not turn God’s questions into a claim that every sufferer caused their own pain.', 3, "Compare Job 38:1–18 with Job’s first words in 42:1–6.", "What does God ask Job about?"]],
       check: ['What does Job most clearly challenge?',['The idea that every person can explain another person’s suffering by pointing to hidden sin','The practice of speaking honestly to God','The value of compassion from friends'],'The idea that every person can explain another person’s suffering by pointing to hidden sin','Job’s friends are rebuked for speaking wrongly about God. The book makes room for honest lament while refusing a mechanical explanation of suffering.'],
       reflect: 'Write a response to a suffering person that includes presence, one honest question, and one limit on what you claim to know.'
     },
@@ -158,7 +149,7 @@
       question: 'How do creation, fall, judgment, and promise set the pattern for the rest of Scripture?',
       scripture: 'Genesis 1–3 · 6–9 · 12:1–3 · 37–50',
       goals: ['Trace Genesis through its repeated generations (“these are the generations of…”) and turning points.', 'Distinguish what the text states from later interpretations or reconstructions.', 'Explain how God’s promise to Abraham carries the story beyond one family.'],
-      lenses: [['Creation','A good world','Genesis begins with ordered life, blessing, image-bearing, and rest.','Observe the repeated pattern before asking what it means.'],['Fall','Broken fellowship','Genesis 3 introduces distrust, shame, and exile from the garden. Chapters 4–11 widen the damage: Cain’s violence, the flood, and Babel’s scattered nations, each followed by a thread of mercy.','Name consequences and the mercy that follows each one without treating every later detail as a direct replay.'],['Promise','A family for blessing','God calls Abram out of Ur’s world and promises land, descendants, and blessing for all the families of the earth: the answer to Babel’s scattering.','Follow the promise through failures, delays, and surprising births (Sarah, Rebekah, Rachel).'],['Providence','Toward Egypt','Joseph’s descent and rise bring the family to Egypt, where the next book begins.','Trace the story’s movement rather than reducing it to isolated heroes.']],
+      lenses: [['Creation','A good world','Genesis begins with ordered life, blessing, image-bearing, and rest.','Observe the repeated pattern before asking what it means.', 1, "Compare Genesis 1:26–31 with Genesis 9:6–7 after the flood.", "Who bears God’s image in Genesis 1?"],['Fall','Broken fellowship','Genesis 3 introduces distrust, shame, and exile from the garden. Chapters 4–11 widen the damage: Cain’s violence, the flood, and Babel’s scattered nations, each followed by a thread of mercy.','Name consequences and the mercy that follows each one without treating every later detail as a direct replay.', 2, "Compare the humans hiding here with their departure in Genesis 3:22–24.", "What do the humans do when they hear God in the garden?"],['Promise','A family for blessing','God calls Abram out of Ur’s world and promises land, descendants, and blessing for all the families of the earth: the answer to Babel’s scattering.','Follow the promise through failures, delays, and surprising births (Sarah, Rebekah, Rachel).', 5, "Compare Genesis 12:3 with the blessing reaching beyond Joseph’s household in Genesis 50:20.", "Who is included in the horizon of Abram’s blessing?"],['Providence','Toward Egypt','Joseph’s descent and rise bring the family to Egypt, where the next book begins.','Trace the story’s movement rather than reducing it to isolated heroes.', 8, "Compare Genesis 50 with Exodus 1 to see what changes for the family in Egypt.", "How does Joseph describe his brothers’ intention?"]],
       check: ['Which thread best connects Genesis 12 to the rest of Scripture?',['A promise to bless the families of the earth through Abraham’s line','A command to build the Jerusalem Temple immediately','A prediction that every event will be easy'],'A promise to bless the families of the earth through Abraham’s line','Genesis gives the family story a wider horizon: blessing is meant to reach beyond Abraham’s household.'],
       reflect: 'Draw a six-stop timeline from creation to Joseph. At each stop, name one fracture and one promise.'
     },
@@ -168,7 +159,7 @@
       question: 'How do rescue and covenant form a people who did not previously exist as a nation?',
       scripture: 'Exodus 1–3 · 12–14 · 19–20',
       goals: ['Sequence oppression, calling, plagues, Passover, sea crossing, wilderness, and Sinai.', 'Notice how Exodus answers Pharaoh’s claim to power with the Lord’s claim on Israel: “Let my people go, that they may serve me.”', 'Explain how deliverance leads to covenant identity rather than merely escape.', 'Connect Exodus 19–20 with the Tabernacle and later biblical memory.'],
-      lenses: [['Oppression','A people under power','Exodus names forced labor, fear, resistance, and the cries of an enslaved people.','Keep the human cost visible before moving to the spectacular scenes.'],['Name','A reluctant calling','At the bush, Moses encounters the God who sees, hears, remembers, and sends.','Compare Moses’ questions with God’s revealed name and promise.'],['Passover','Rescue remembered','The plagues contest Egypt’s power; the Passover meal, blood, haste, and memorial then make deliverance communal and repeatable (Exodus 12:14, 26–27).','Notice how ritual turns history into shared memory that children are taught to ask about.'],['Sinai','A covenant people','Israel is rescued before receiving the law (20:2 comes before 20:3); covenant gives shape to worship, justice, and neighbor-love, and ends with a plan for God to dwell among them (25:8).','Read commands as the vocation of a redeemed people, not a ladder to earn rescue.']],
+      lenses: [['Oppression','A people under power','Exodus names forced labor, fear, resistance, and the cries of an enslaved people.','Keep the human cost visible before moving to the spectacular scenes.', 0, "Compare forced labor in Exodus 1 with the reason for rest in Deuteronomy 5:15.", "What motivates Pharaoh’s oppression in Exodus 1?"],['Name','A reluctant calling','At the bush, Moses encounters the God who sees, hears, remembers, and sends.','Compare Moses’ questions with God’s revealed name and promise.', 2, "Compare Moses’ questions with the later commission of Joshua in Joshua 1:5–9.", "What does God promise Moses in Exodus 3:12?"],['Passover','Rescue remembered','The plagues contest Egypt’s power; the Passover meal, blood, haste, and memorial then make deliverance communal and repeatable (Exodus 12:14, 26–27).','Notice how ritual turns history into shared memory that children are taught to ask about.', 3, "Compare Exodus 12:14 with the explanation given to children in 12:26–27.", "How does Exodus 12 describe the day for later generations?"],['Sinai','A covenant people','Israel is rescued before receiving the law (20:2 comes before 20:3); covenant gives shape to worship, justice, and neighbor-love, and ends with a plan for God to dwell among them (25:8).','Read commands as the vocation of a redeemed people, not a ladder to earn rescue.', 7, "Read Exodus 25:8–9 to see where covenant life points.", "What does God recall before the commandments?"]],
       check: ['What is the order in Exodus?',['Sinai covenant → slavery → Passover → creation','Slavery → calling → Passover and sea → Sinai covenant','Temple building → exile → slavery → Sinai'],'Slavery → calling → Passover and sea → Sinai covenant','Exodus moves from oppression through God’s rescue to covenant identity at Sinai.'],
       reflect: 'Create a route-and-covenant map. Mark one place, one rescue event, and one way Sinai changes Israel’s shared life.'
     },
@@ -178,7 +169,7 @@
       question: 'How can a holy God live among an ordinary people, and what kind of community does that create?',
       scripture: 'Leviticus 1 · 16 · 19 · 23 · 25',
       goals: ['Locate sacrifice, priesthood, purity, the Day of Atonement, holy living, festivals, and Jubilee within the book.', 'Distinguish ritual categories from moral blame and avoid treating impurity as the same thing as sin.', 'Explain how love of neighbor, care for the vulnerable, honest work, and worship belong together.'],
-      lenses: [['Approach','Worship and gift','Leviticus opens with offerings that express dedication, gratitude, fellowship, and atonement. The instructions make approach ordered rather than casual.','Name what each selected passage actually says before importing later assumptions.'],['Clean and unclean','Boundaries, not rankings','Purity language organizes Israel’s worship and embodied life. Ritual impurity is often temporary and is not automatically a moral failure.','Ask whether a passage concerns ritual status, moral wrongdoing, or both.'],['Atonement','Cleansing the sanctuary and people','Leviticus 16 gathers the book’s concerns in the Day of Atonement: confession, cleansing, sacrifice, and removal of sin.','Follow the movements and purposes described in the chapter.'],['Holy life','Love made public','Leviticus 19 joins reverence for God with honest scales, gleaning for the poor, justice, truth, and love of neighbor.','Holiness is not merely separation; the chapter gives it social shape.']],
+      lenses: [['Approach','Worship and gift','Leviticus opens with offerings that express dedication, gratitude, fellowship, and atonement. The instructions make approach ordered rather than casual.','Name what each selected passage actually says before importing later assumptions.', 0, "Compare the offering at the entrance with the sanctuary rites in Leviticus 16.", "Who is addressed at the beginning of Leviticus 1?"],['Clean and unclean','Boundaries, not rankings','Purity language organizes Israel’s worship and embodied life. Ritual impurity is often temporary and is not automatically a moral failure.','Ask whether a passage concerns ritual status, moral wrongdoing, or both.', 6, "Compare Leviticus 15:16–18 with the prohibitions and duties in Leviticus 19.", "What response does Leviticus 15:16 specify?"],['Atonement','Cleansing the sanctuary and people','Leviticus 16 gathers the book’s concerns in the Day of Atonement: confession, cleansing, sacrifice, and removal of sin.','Follow the movements and purposes described in the chapter.', 1, "Compare the two goats in Leviticus 16:7–10 with the fuller sequence in 16:15–22.", "How are the goats assigned their roles?"],['Holy life','Love made public','Leviticus 19 joins reverence for God with honest scales, gleaning for the poor, justice, truth, and love of neighbor.','Holiness is not merely separation; the chapter gives it social shape.', 2, "Compare the gleaning commands with Ruth’s experience in Ruth 2:2–9.", "For whom are the field edges and gleanings left?"]],
       check: ['Which statement best fits Leviticus 19?',['Worship and neighbor-love belong to separate parts of life','Holiness includes worship, justice, truth, generosity, and love of neighbor','Only priests are called to holy living'],'Holiness includes worship, justice, truth, generosity, and love of neighbor','Leviticus 19 repeatedly connects “I am the Lord” with concrete treatment of neighbors, workers, immigrants, the poor, and the vulnerable.'],
       reflect: 'Choose one command from Leviticus 19. Explain what it protects, whom it helps, and how it connects love of God with love of neighbor.'
     },
@@ -188,7 +179,7 @@
       question: 'What does the wilderness reveal about trust, leadership, consequences, and God’s faithfulness?',
       scripture: 'Numbers 1–2 · 11–14 · 20–21 · 27',
       goals: ['Trace the journey from Sinai to the plains of Moab and explain why two censuses frame the book.', 'Compare complaint, fear, rebellion, intercession, judgment, and mercy in their narrative contexts.', 'Explain how the book ends with both loss and renewed preparation.'],
-      lenses: [['Ordered camp','A people around the sanctuary','The opening census and camp arrangement place the Tabernacle at the center as Israel prepares to travel.','Numbers is not only a list of counts; the counts mark generations and readiness.'],['Complaint','Pressure exposes trust','Food, fear, rivalry, and uncertainty repeatedly reveal how the community and its leaders respond under pressure.','Compare each complaint rather than treating every conflict as identical.'],['The spies','Fear and evidence','Numbers 13–14 gives the same land report to the community, but the spies interpret its meaning differently. Fear becomes refusal, with consequences for a generation.','Separate what the scouts observe from the conclusions they draw.'],['New generation','Judgment is not the last scene','A second census, new leadership, and instructions about inheritance prepare children of the wilderness generation to continue the journey.','Notice what changes and what promises remain.']],
+      lenses: [['Ordered camp','A people around the sanctuary','The opening census and camp arrangement place the Tabernacle at the center as Israel prepares to travel.','Numbers is not only a list of counts; the counts mark generations and readiness.', 1, "Compare the arrangement in Numbers 2:1–9 with the order of departure in 10:11–14.", "What is the camp arranged around?"],['Complaint','Pressure exposes trust','Food, fear, rivalry, and uncertainty repeatedly reveal how the community and its leaders respond under pressure.','Compare each complaint rather than treating every conflict as identical.', 2, "Compare Moses’ burden here with the shared responsibility of the elders in Numbers 11:16–17.", "What does Moses say about carrying the people?"],['The spies','Fear and evidence','Numbers 13–14 gives the same land report to the community, but the spies interpret its meaning differently. Fear becomes refusal, with consequences for a generation.','Separate what the scouts observe from the conclusions they draw.', 3, "Read Numbers 14:6–9 to see Joshua and Caleb explain their position.", "What observation and conclusion are distinct?"],['New generation','Judgment is not the last scene','A second census, new leadership, and instructions about inheritance prepare children of the wilderness generation to continue the journey.','Notice what changes and what promises remain.', 6, "Read Joshua 1:1–9 after the commissioning in Numbers 27.", "What does Moses do before the congregation?"]],
       check: ['Why are there two major censuses in Numbers?',['They help frame the wilderness story around an older and a new generation','They prove nothing happened between Sinai and Moab','They count only Israel’s kings'],'They help frame the wilderness story around an older and a new generation','The first generation is counted near Sinai; after wilderness judgment, a new generation is counted near the land.'],
       reflect: 'Make a two-column evidence chart for Numbers 13–14: what all the spies saw and how they interpreted it. What turned observation into fear or trust?'
     },
@@ -215,27 +206,18 @@
       question: 'What does Jesus announce and embody when He says that God’s kingdom has drawn near?',
       scripture: 'Mark 1–4 · Luke 4:14–30 · Matthew 16:13–20',
       goals: ['Sequence the opening movement of Jesus’ public ministry: baptism, wilderness, announcement, calling, a day in Capernaum, growing conflict, and the question at Caesarea Philippi.', 'Compare teaching, healing, exorcism, meals, and calls to discipleship as signs that God’s kingdom has drawn near (Mark 1:15).', 'Notice how each scene raises the Gospels’ central question, “Who is this?” (Mark 1:27; 4:41; 8:29).', 'Read Gospel scenes in context without collapsing the distinct emphases of Mark, Luke, and Matthew.'],
-      lenses: [['Baptism & wilderness','The beloved Son','Mark 1:9–13 is compressed: the heavens are torn open, the Spirit descends, and the Father says, “You are my beloved Son; with you I am well pleased.” Identity is given before any miracle or sermon. The same Spirit then sends Jesus into the wilderness for forty days, a number that recalls Israel’s forty years. Matthew 4 and Luke 4 add the three temptations, each answered from Deuteronomy.','Ask what Jesus is given before He does anything, and why the temptations are about the kind of Son He will be.'],['Announcement','Good news for the poor','Mark 1:14–15 gives the headline: “The time is fulfilled, and the kingdom of God is at hand; repent and believe in the gospel.” In Luke 4:16–21 Jesus reads from Isaiah in Nazareth’s synagogue (good news to the poor, release, sight, liberty) and says, “Today this Scripture has been fulfilled in your hearing.” The hometown first admires Him, then turns furious when He points to Elijah and Naaman: God’s favor also reached outsiders (4:22–30).','Compare the synagogue’s first reaction with its last. What did Jesus say in between?'],['Signs & authority','Restoration and the question “Who is this?”','Mark 1:21–45 follows one day in Capernaum and its aftermath: teaching “with authority,” an unclean spirit silenced, Peter’s mother-in-law raised up, crowds at the door, and a leper touched and cleansed. In Mark 2:1–12 a paralyzed man is lowered through a roof and Jesus forgives before He heals; the scribes object, and conflict builds through 3:6. In 4:35–41 the wind obeys Him and the disciples ask, “Who then is this?”','Do not treat miracles as detachable tricks. For each sign ask who is restored, who objects, and what question it raises about Jesus.'],['Discipleship','A new community and its cost','Jesus calls fishermen to follow Him (Mark 1:16–20), then eats with tax collectors and sinners in Levi’s house: “I came not to call the righteous, but sinners” (2:13–17). At Caesarea Philippi He asks, “Who do you say that I am?” and Peter answers, “You are the Christ” (Matthew 16:13–20; Mark 8:27–30). Mark adds at once that following Him means taking up a cross (8:31–38). Christian traditions read “on this rock” in Matthew 16:18 differently, so read the verse closely and note where readers diverge.','Track both welcome and cost: who is invited, and what is asked of them?']],
+      lenses: [['Baptism & wilderness','The beloved Son','Mark 1:9–13 is compressed: the heavens are torn open, the Spirit descends, and the Father says, “You are my beloved Son; with you I am well pleased.” Identity is given before any miracle or sermon. The same Spirit then sends Jesus into the wilderness for forty days, a number that recalls Israel’s forty years. Matthew 4 and Luke 4 add the three temptations, each answered from Deuteronomy.','Ask what Jesus is given before He does anything, and why the temptations are about the kind of Son He will be.', 0, "Compare the voice at baptism with the voice in Mark 9:7.", "What happens before Jesus announces the kingdom in Mark 1:14–15?"],['Announcement','Good news for the poor','Mark 1:14–15 gives the headline: “The time is fulfilled, and the kingdom of God is at hand; repent and believe in the gospel.” In Luke 4:16–21 Jesus reads from Isaiah in Nazareth’s synagogue (good news to the poor, release, sight, liberty) and says, “Today this Scripture has been fulfilled in your hearing.” The hometown first admires Him, then turns furious when He points to Elijah and Naaman: God’s favor also reached outsiders (4:22–30).','Compare the synagogue’s first reaction with its last. What did Jesus say in between?', 1, "Compare Luke 4:18–19 with Isaiah 61:1–2 and notice Luke’s emphasis on fulfillment.", "What does Jesus say is fulfilled “today”?"],['Signs & authority','Restoration and the question “Who is this?”','Mark 1:21–45 follows one day in Capernaum and its aftermath: teaching “with authority,” an unclean spirit silenced, Peter’s mother-in-law raised up, crowds at the door, and a leper touched and cleansed. In Mark 2:1–12 a paralyzed man is lowered through a roof and Jesus forgives before He heals; the scribes object, and conflict builds through 3:6. In 4:35–41 the wind obeys Him and the disciples ask, “Who then is this?”','Do not treat miracles as detachable tricks. For each sign ask who is restored, who objects, and what question it raises about Jesus.', 4, "Compare the scribes’ objection here with their question about Levi’s meal in Mark 2:16.", "Why does Jesus tell the man to rise?"],['Discipleship','A new community and its cost','Jesus calls fishermen to follow Him (Mark 1:16–20), then eats with tax collectors and sinners in Levi’s house: “I came not to call the righteous, but sinners” (2:13–17). At Caesarea Philippi He asks, “Who do you say that I am?” and Peter answers, “You are the Christ” (Matthew 16:13–20; Mark 8:27–30). Mark adds at once that following Him means taking up a cross (8:31–38). Christian traditions read “on this rock” in Matthew 16:18 differently, so read the verse closely and note where readers diverge.','Track both welcome and cost: who is invited, and what is asked of them?', 8, "Read Mark 8:34–38 alongside the call to the fishermen in Mark 1:16–20.", "What follows Peter’s confession in Mark?"]],
       check: ['What belongs together in Jesus’ ministry?',['Announcement of the kingdom, restoration, teaching, and a call to follow','Only private moral advice with no public setting','A sequence that begins after the resurrection'],'Announcement of the kingdom, restoration, teaching, and a call to follow','The Gospels present Jesus’ words and works together as the kingdom’s arrival and an invitation to discipleship.'],
       reflect: 'Choose one scene before Holy Week. Identify the need, Jesus’ action or word, the response (welcome, wonder, or opposition), and what it reveals about the kingdom. Then name the question the scene raises: “Who is this?”'
     },
-    {
-      id: 'psalms', code: '6D', stage: 'Stage 6 · Wisdom & Christian Life', grades: 'Grades 4–12', time: '45–65 minutes',
-      title: 'Psalms: Learning to Pray the Whole Life', lede: 'Read praise, lament, thanksgiving, wisdom, and protest as truthful speech before God.',
-      question: 'How do the Psalms teach people to speak honestly to God across the whole range of life?',
-      scripture: 'Psalms 1 · 13 · 23 · 51 · 73 · 103 · 150',
-      goals: ['Identify common movements and genres in biblical prayer-poetry.', 'Notice parallelism, image, repetition, and changes in voice.', 'Write a responsible response that makes room for both grief and praise.'],
-      lenses: [['Lament','Where are you?','Psalm 13 moves from complaint through request toward renewed trust without pretending the pain is small.','Treat unanswered questions as part of faithful speech.'],['Praise','Who is God?','Psalms praise God as creator, king, shepherd, redeemer, and merciful covenant Lord.','Let the psalm’s images carry their emotional and theological weight.'],['Wisdom','Which way?','Psalm 1 sets two ways before the reader and uses tree, water, wind, and harvest as moral images.','Compare poetry’s picture with the prose claim it communicates.'],['Practice','What does prayer do?','The Psalms give a community words to remember, confess, protest, celebrate, and hope together.','Writing a psalm is a literary exercise, not a promise that every feeling resolves quickly.']],
-      check: ['What makes a lament a form of faith rather than indifference?',['It turns pain toward God while continuing to ask, remember, or trust','It avoids naming grief so worship stays cheerful','It proves the writer already understands the cause'],'It turns pain toward God while continuing to ask, remember, or trust','Biblical lament speaks honestly to God and often holds complaint, request, memory, and hope together.'],
-      reflect: 'Annotate Psalm 13 with four colors: complaint, request, memory, and trust. Which movement is strongest, and which is hardest to write.'
-    },
+    { id: 'psalms', title: 'Psalms: The Honesty and Beauty of Prayer' },
     {
       id: 'joshua-to-david', code: '3J', stage: 'Stage 3 · Israel, Covenant & Prophets', grades: 'Grades 5–10', time: '55–75 minutes',
       title: 'Joshua to David: Land, Judges & Kings', lede: 'Bridge the story from Joshua’s settlement through Judges, Samuel, Saul, David, and the covenant hope of a king.',
       question: 'Why does Israel’s movement from land to monarchy create both hope and danger?',
       scripture: 'Joshua 1 · Judges 2 · 1 Samuel 8 · 2 Samuel 7',
       goals: ['Place settlement, tribal instability, judges, Saul, and David in sequence, and note the anchor points of covenant renewal at Shechem (Joshua 24) and the promise to David (2 Samuel 7).', 'Distinguish the Bible’s theological pattern from a simplistic “good times/bad times” cycle.', 'Explain both the promise and the risk in Israel’s request for a king.'],
-      lenses: [['Joshua','A land received','Joshua frames courage, inheritance, memory, and covenant faithfulness after Moses.','Read conquest and settlement with attention to the text’s own claims and limits.'],['Judges','A fractured cycle','Judges repeats crisis, crying out, deliverance, and relapse while showing local variation and moral deterioration. Deborah, Gideon, and Samson show very different leaders; the last chapters end in violence, and Ruth shows quiet faithfulness in the same era.','Do not treat “everyone did what was right in his own eyes” (21:25) as a compliment. Notice who is missing: a faithful king.'],['Samuel','A king requested','Israel asks for a king like the nations; the request addresses real insecurity but also reveals misplaced trust.','Hold together God’s warning and God’s continued purpose.'],['David','Promise and failure','David is anointed, defeats Goliath, becomes king, and receives God’s promise of a lasting house (2 Samuel 7), yet his household and kingdom remain morally complicated (2 Samuel 11–12). Later writers hang messianic hope on this promise.','Distinguish promise from approval of every royal action. Compare Psalm 51 with 2 Samuel 12.']],
+      lenses: [['Joshua','A land received','Joshua frames courage, inheritance, memory, and covenant faithfulness after Moses.','Read conquest and settlement with attention to the text’s own claims and limits.', 0, "Compare Joshua’s commission with the public handover in Numbers 27:18–23.", "What is Joshua told to keep close at hand?"],['Judges','A fractured cycle','Judges repeats crisis, crying out, deliverance, and relapse while showing local variation and moral deterioration. Deborah, Gideon, and Samson show very different leaders; the last chapters end in violence, and Ruth shows quiet faithfulness in the same era.','Do not treat “everyone did what was right in his own eyes” (21:25) as a compliment. Notice who is missing: a faithful king.', 2, "Compare Judges 2:10 with Joshua’s call to remember and serve in Joshua 24:14–18.", "What changes after Joshua’s generation dies?"],['Samuel','A king requested','Israel asks for a king like the nations; the request addresses real insecurity but also reveals misplaced trust.','Hold together God’s warning and God’s continued purpose.', 5, "Compare Israel’s request for a king in 1 Samuel 8 with Gideon’s refusal to rule in Judges 8:22–23.", "Which powers does Samuel say a king will claim?"],['David','Promise and failure','David is anointed, defeats Goliath, becomes king, and receives God’s promise of a lasting house (2 Samuel 7), yet his household and kingdom remain morally complicated (2 Samuel 11–12). Later writers hang messianic hope on this promise.','Distinguish promise from approval of every royal action. Compare Psalm 51 with 2 Samuel 12.', 8, "Compare the house promised to David with the house his son will build in 2 Samuel 7:11–13.", "What two meanings of house matter in the promise?"]],
       check: ['What tension does 1 Samuel 8 create?',['A king can provide order, yet imitation of the nations can distort trust and justice','Israel has no need for leadership at all','David is already king before Saul'],'A king can provide order, yet imitation of the nations can distort trust and justice','The narrative neither romanticizes leaderlessness nor treats monarchy as an uncomplicated solution.'],
       reflect: 'Make a four-column comparison of Joshua, a judge, Saul, and David: calling, leadership strength, failure, and consequence.'
     },
@@ -249,16 +231,7 @@
       check: ['What is a responsible first step when reading an epistle?',['Identify its audience, occasion, and argument before applying a sentence','Treat every sentence as a free-floating slogan','Assume all churches faced exactly the same problem'],'Identify its audience, occasion, and argument before applying a sentence','Context reveals what the writer is addressing and how the local instruction fits the letter’s larger gospel reasoning.'],
       reflect: 'Choose one passage. Write its situation, main claim, supporting reason, community practice, and one modern application that respects the context.'
     },
-    {
-      id: 'revelation', code: '6E', stage: 'Stage 6 · Wisdom & Christian Life', grades: 'Grades 7–12', time: '55–75 minutes',
-      title: 'Revelation: Witness, Worship & New Creation', lede: 'Learn to read Revelation’s symbols, letters, heavenly worship, judgment, and new creation with patience and humility.',
-      question: 'How does Revelation encourage faithful witness when empire, suffering, and uncertainty seem to dominate?',
-      scripture: 'Revelation 1–3 · 4–5 · 12–14 · 21–22',
-      goals: ['Identify genre signals (letter, prophecy, apocalypse) and recurring images without treating every symbol as a modern code.', 'Compare the seven churches’ local situations with the book’s worship-centered vision.', 'Trace at least three Old Testament echoes (Eden, Exodus, Daniel, Ezekiel) that Revelation reuses.', 'Explain how Revelation ends the Bible’s story with judgment, presence, healing, and new creation.'],
-      lenses: [['Letters','Seven churches','Jesus speaks to real congregations in Ephesus, Smyrna, Pergamum, Thyatira, Sardis, Philadelphia, and Laodicea. Each letter names strengths, compromises, suffering, and a promise “to the one who conquers.”','Start with the named audience and their city before moving to cosmic imagery.'],['Worship','Who is worthy?','Heavenly worship frames the Lamb’s worthiness and challenges rival claims to ultimate power.','Notice how song, throne, scroll, and witness interpret the crisis.'],['Symbols','Read the images','Dragon, beasts, numbers, lampstands, seals, and cities work through biblical echoes: the plagues recall Exodus, the beasts recall Daniel 7, the river and tree recall Eden. Revelation sometimes interprets its own image (1:20; 12:9; 17:9).','Check whether the text explains the symbol before proposing a meaning, and label interpretations as argued readings.'],['New creation','God dwells with humanity','The final vision answers Eden’s loss with dwelling, river, tree, healing, light, justice, and the end of death.','Connect Revelation 21–22 to Genesis without erasing the newness of the promise.']],
-      check: ['What is a careful way to read Revelation’s symbols?',['Trace their literary and biblical context, then distinguish evidence from interpretation','Assume each number names one modern headline','Ignore the letters to the actual churches'],'Trace their literary and biblical context, then distinguish evidence from interpretation','Revelation invites bold hope and careful reading; symbols should be interpreted with the book’s context and biblical echoes in view.'],
-      reflect: 'Compare one image in Revelation with its earlier biblical echo. State what the connection supports and what remains interpretive.'
-    }
+    { id: 'revelation', title: 'Revelation' }
   ];
 
   var storyAnchors = [
@@ -358,13 +331,6 @@
       now: 'Trace routes, companions, opposition, local responses, and the patient work of strengthening new communities.',
       next: 'The New Testament letters speak into the life of these churches as they learn faithful belief, worship, unity, and practice.'
     },
-    'proverbs-wisdom-decision-lab': {
-      focus: ['covenant', 'kingdom', 'jesus', 'church'],
-      bigIdea: 'Biblical wisdom trains people to fear the Lord, notice reality carefully, and choose fitting faithfulness in ordinary life.',
-      before: 'God forms a covenant people whose worship must shape speech, work, money, friendship, justice, and family life.',
-      now: 'Proverbs offers concise observations that require listening, comparison, context, and discernment—not mechanical use.',
-      next: 'Jesus embodies and teaches God’s wisdom, forming disciples whose inner character and outward practice belong together.'
-    },
     'genesis': {
       focus: ['creation', 'fall', 'covenant', 'exodus'],
       bigIdea: 'Genesis tells how a good creation was fractured and how God answers, not by abandoning the world, but by promising to bless every family on earth through one chosen family.',
@@ -392,13 +358,6 @@
       before: 'Wisdom literature asks how to live well before God, while the Bible’s story also contains a world marked by death, injustice, and human limits.',
       now: 'Job loses what he loves, rejects simplistic explanations from his friends, speaks honestly to God, and encounters God without receiving a tidy cause for every wound.',
       next: 'Jesus does not make suffering easy, but the Gospels show God entering human grief; the Church learns to lament, accompany the suffering, and hope for resurrection.'
-    },
-    'revelation': {
-      focus: ['creation', 'fall', 'exodus', 'exile', 'jesus', 'church', 'new-creation'],
-      bigIdea: 'Revelation unveils the slain and risen Lamb as the true ruler of history, calling churches under pressure to faithful witness and promising God’s dwelling with a healed creation.',
-      before: 'Eden is lost, Israel is rescued and exiled, Daniel sees beasts and a kingdom that will not be destroyed, and the Church spreads through a Roman world that demands loyalty to Caesar.',
-      now: 'John, exiled on Patmos, writes a letter-prophecy to seven churches in Asia Minor: it exposes the empire’s claims, fills heaven with worship, and echoes earlier Scripture on nearly every page.',
-      next: 'The Bible’s story closes where it opened, with a garden-city, a river, and the tree of life, and the Church is sent to live now in light of that promised end.'
     },
     'jesus-ministry': {
       focus: ['covenant', 'kingdom', 'exile', 'jesus'],
@@ -438,31 +397,29 @@
   };
 
   var lessonPassages = {
-    'world-of-the-bible': [['Genesis',12,1,9],['Joshua',1,1,9],['Luke',3,1,2],['Acts',17,24,28]],
+    'world-of-the-bible': [['Genesis',12,1,9],['Joshua',1,1,9],['Luke',3,1,2],['Acts',17,24,28], ['Genesis',46,1,7], ['2 Kings',25,8,12], ['Ezra',1,1,4], ['Luke',2,1,7],['2 Kings',18,13,17]],
     'how-the-bible-reached-us': [['Deuteronomy',31,24,26],['Luke',1,1,4],['2 Timothy',3,14,17],['2 Peter',1,19,21]],
     'the-tabernacle': [['Exodus',25,1,9],['Exodus',40,34,38],['Leviticus',16,29,34],['Hebrews',9,1,12]],
-    'temple-and-gods-presence': [['Genesis',3,22,24],['1 Kings',8,22,30],['John',1,14,18],['1 Corinthians',3,16,17],['Revelation',21,22,27]],
+    'temple-and-gods-presence': [['Genesis',3,22,24],['1 Kings',8,22,30],['John',1,14,18],['1 Corinthians',3,16,17],['Revelation',21,22,27], ['Exodus',40,34,38], ['Revelation',22,1,5], ['John',2,13,22], ['Mark',11,15,19]],
     'kingdoms-prophets-exile': [['1 Samuel',8,4,9],['1 Kings',12,16,20],['2 Kings',17,6,18],['2 Kings',25,8,12],['Ezra',1,1,4]],
     'feasts-of-israel': [['Exodus',12,1,14],['Leviticus',23,4,8],['Leviticus',23,15,22],['Leviticus',23,23,25],['Leviticus',16,29,34],['Leviticus',23,33,43],['Nehemiah',8,13,18],['Deuteronomy',16,16,17],['Acts',2,1,13]],
-    'elijah': [['1 Kings',17,1,16],['1 Kings',18,20,39],['1 Kings',19,9,18],['2 Kings',2,9,12]],
-    'world-of-jesus': [['Matthew',4,12,17],['Luke',4,16,21],['Luke',9,51,56],['John',4,4,10],['John',4,39,42]],
+    'elijah': [['1 Kings',17,1,16],['1 Kings',18,20,39],['1 Kings',19,9,18],['2 Kings',2,9,12], ['1 Kings',17,17,24], ['1 Kings',19,1,8], ['1 Kings',21,1,16], ['Luke',4,24,27]],
+    'world-of-jesus': [['Matthew',4,12,17],['Luke',4,16,21],['Luke',9,51,56],['John',4,4,10],['John',4,39,42], ['Mark',11,27,33], ['Luke',23,1,4], ['Luke',19,28,40]],
     'jesus-parables-lab': [['Matthew',13,1,9],['Matthew',13,31,33],['Luke',10,25,37],['Luke',15,11,24]],
     'holy-week': [['Matthew',21,1,11],['Zechariah',9,9,10],['Mark',14,22,26],['John',13,1,17],['Mark',14,32,50],['John',18,33,38],['Luke',23,32,49],['Mark',15,42,47],['John',20,1,18]],
     'acts-jerusalem-to-nations': [['Acts',1,6,11],['Acts',2,1,12],['Acts',8,26,40],['Acts',10,34,48],['Acts',13,1,3]],
     'pauls-missionary-journeys': [['Acts',13,1,12],['Acts',16,6,15],['Acts',17,16,34],['Acts',20,17,24],['Romans',1,1,7]],
-    'proverbs-wisdom-decision-lab': [['Proverbs',1,1,7],['Proverbs',10,1,12],['Proverbs',15,1,4],['Proverbs',26,4,5],['Proverbs',27,5,10]],
-    'job': [['Job',1,1,22],['Job',2,1,13],['Job',3,1,26],['Job',38,1,18],['Job',42,1,17]],
-    'sermon-on-the-mount': [['Matthew',5,1,12],['Matthew',5,13,20],['Matthew',5,21,26],['Matthew',5,38,48],['Matthew',6,1,18],['Matthew',6,19,34],['Matthew',7,1,12],['Matthew',7,13,23],['Matthew',7,24,29]]
-    ,'genesis': [['Genesis',1,1,5],['Genesis',1,26,31],['Genesis',3,1,15],['Genesis',9,8,17],['Genesis',11,1,9],['Genesis',12,1,9],['Genesis',15,1,6],['Genesis',37,1,11],['Genesis',50,15,21]]
-    ,'exodus': [['Exodus',1,8,14],['Exodus',2,23,25],['Exodus',3,1,15],['Exodus',12,1,14],['Exodus',14,21,31],['Exodus',15,1,13],['Exodus',19,1,8],['Exodus',20,1,17],['Exodus',25,8,9]]
-    ,'leviticus': [['Leviticus',1,1,9],['Leviticus',16,1,10],['Leviticus',19,1,18],['Leviticus',19,32,37],['Leviticus',23,1,8],['Leviticus',25,1,17]]
-    ,'numbers': [['Numbers',1,1,4],['Numbers',2,1,9],['Numbers',11,1,15],['Numbers',13,25,33],['Numbers',14,1,24],['Numbers',21,4,9],['Numbers',27,12,23]]
-    ,'deuteronomy': [['Deuteronomy',1,1,8],['Deuteronomy',5,1,21],['Deuteronomy',6,1,9],['Deuteronomy',8,1,18],['Deuteronomy',10,12,22],['Deuteronomy',15,1,11],['Deuteronomy',17,14,20],['Deuteronomy',18,15,22],['Deuteronomy',26,1,11],['Deuteronomy',30,11,20],['Deuteronomy',31,1,8],['Deuteronomy',34,1,12]]
-    ,'jesus-ministry': [['Mark',1,9,15],['Luke',4,16,30],['Mark',1,16,20],['Mark',1,21,34],['Mark',2,1,12],['Mark',2,13,17],['Mark',4,35,41],['Matthew',16,13,20],['Mark',8,27,38]]
-    ,'psalms': [['Psalms',1,1,6],['Psalms',13,1,6],['Psalms',23,1,6],['Psalms',51,1,12],['Psalms',150,1,6]]
-    ,'joshua-to-david': [['Joshua',1,1,9],['Joshua',24,14,28],['Judges',2,6,23],['Judges',21,25,25],['Ruth',1,16,17],['1 Samuel',8,4,22],['1 Samuel',16,1,13],['1 Samuel',17,45,47],['2 Samuel',7,8,17]]
-    ,'epistles': [['Romans',1,1,17],['1 Corinthians',12,12,27],['1 Corinthians',13,1,13],['Galatians',3,26,29],['Ephesians',2,11,22]]
-    ,'revelation': [['Revelation',1,9,20],['Revelation',2,1,7],['Revelation',3,14,22],['Revelation',4,1,11],['Revelation',5,1,14],['Revelation',7,9,17],['Revelation',12,1,12],['Revelation',21,1,8],['Revelation',22,1,5]]
+    'job': [['Job',1,1,22],['Job',2,1,13],['Job',3,1,26],['Job',38,1,18],['Job',42,1,17], ['Job',4,1,11], ['Job',22,1,11], ['Job',31,1,10], ['Job',40,1,8], ['Job',42,1,7]],
+    'sermon-on-the-mount': [['Matthew',5,1,12],['Matthew',5,13,20],['Matthew',5,21,26],['Matthew',5,38,48],['Matthew',6,1,18],['Matthew',6,19,34],['Matthew',7,1,12],['Matthew',7,13,23],['Matthew',7,24,29]],
+    'genesis': [['Genesis',1,1,5],['Genesis',1,26,31],['Genesis',3,1,15],['Genesis',9,8,17],['Genesis',11,1,9],['Genesis',12,1,9],['Genesis',15,1,6],['Genesis',37,1,11],['Genesis',50,15,21], ['Genesis',2,4,17], ['Genesis',3,22,24], ['Genesis',46,1,7]],
+    'exodus': [['Exodus',1,8,14],['Exodus',2,23,25],['Exodus',3,1,15],['Exodus',12,1,14],['Exodus',14,21,31],['Exodus',15,1,13],['Exodus',19,1,8],['Exodus',20,1,17],['Exodus',25,8,9], ['Exodus',12,24,28], ['Exodus',8,12,15], ['Exodus',9,8,12]],
+    'leviticus': [['Leviticus',1,1,9],['Leviticus',16,1,10],['Leviticus',19,1,18],['Leviticus',19,32,37],['Leviticus',23,1,8],['Leviticus',25,1,17], ['Leviticus',15,16,18], ['Leviticus',16,15,22], ['Leviticus',25,35,43]],
+    'numbers': [['Numbers',1,1,4],['Numbers',2,1,9],['Numbers',11,1,15],['Numbers',13,25,33],['Numbers',14,1,24],['Numbers',21,4,9],['Numbers',27,12,23], ['Numbers',20,1,13], ['Numbers',26,63,65], ['Numbers',10,11,14]],
+    'deuteronomy': [['Deuteronomy',1,1,8],['Deuteronomy',5,1,21],['Deuteronomy',6,1,9],['Deuteronomy',8,1,18],['Deuteronomy',10,12,22],['Deuteronomy',15,1,11],['Deuteronomy',17,14,20],['Deuteronomy',18,15,22],['Deuteronomy',26,1,11],['Deuteronomy',30,11,20],['Deuteronomy',31,1,8],['Deuteronomy',34,1,12]],
+    'jesus-ministry': [['Mark',1,9,15],['Luke',4,16,30],['Mark',1,16,20],['Mark',1,21,34],['Mark',2,1,12],['Mark',2,13,17],['Mark',4,35,41],['Matthew',16,13,20],['Mark',8,27,38], ['Matthew',4,1,11], ['Isaiah',61,1,3], ['Mark',9,2,8]],
+    'joshua-to-david': [['Joshua',1,1,9],['Joshua',24,14,28],['Judges',2,6,23],['Judges',21,25,25],['Ruth',1,16,17],['1 Samuel',8,4,22],['1 Samuel',16,1,13],['1 Samuel',17,45,47],['2 Samuel',7,8,17], ['Ruth',4,13,22], ['2 Samuel',7,18,29]],
+    'epistles': [['Romans',1,1,17],['1 Corinthians',12,12,27],['1 Corinthians',13,1,13],['Galatians',3,26,29],['Ephesians',2,11,22]]
+
   };
 
   var bibleLanguages = [
@@ -497,140 +454,126 @@
 
   var lessonImages = {
     'world-of-the-bible': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/A_general_map_of_Bible_Lands.jpg/1280px-A_general_map_of_Bible_Lands.jpg',
+      src: '../../assets/images/lessons/bible-pathway/a-general-map-of-bible-lands-5c99f1d.webp',
       page: 'https://commons.wikimedia.org/wiki/File:A_general_map_of_Bible_Lands.jpg',
       alt: 'Historic illustrated map of the lands surrounding the eastern Mediterranean and the biblical world',
       caption: 'A 1913 map gives a wide-angle view of the lands, seas, and travel corridors that frame the biblical story.',
       credit: 'Edwin Gardner / Library of Congress', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     'how-the-bible-reached-us': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Great_Isaiah_Scroll.jpg/1280px-Great_Isaiah_Scroll.jpg',
+      src: '../../assets/images/lessons/bible-pathway/great-isaiah-scroll-27774b6.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Great_Isaiah_Scroll.jpg',
       alt: 'The Great Isaiah Scroll opened to show columns of handwritten Hebrew text',
       caption: 'The Great Isaiah Scroll is a manuscript witness from Qumran, copied more than a thousand years before the oldest complete Masoretic codices.',
       credit: 'Ardon Bar Hama / Israel Museum', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     'the-tabernacle': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Bijbels_Museum-Detail_from_a_model_of_the_tabernacle.jpg/1280px-Bijbels_Museum-Detail_from_a_model_of_the_tabernacle.jpg',
+      src: '../../assets/images/lessons/bible-pathway/bijbels-museum-detail-from-a-model-of-the-tabernacle-eeb4b13.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Bijbels_Museum-Detail_from_a_model_of_the_tabernacle.jpg',
       alt: 'Museum model showing the courtyard and tent of the biblical Tabernacle',
       caption: 'A museum model translates Exodus’s spatial description into a visible courtyard and tent. Models are interpretations and should be checked against the text.',
       credit: 'Yair Haklai', license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
     },
     'temple-and-gods-presence': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Temple_of_Solomon_model.jpg/1280px-Temple_of_Solomon_model.jpg',
+      src: '../../assets/images/lessons/bible-pathway/temple-of-solomon-model-33ad1d2.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Temple_of_Solomon_model.jpg',
       alt: 'Architectural model presenting one reconstruction of Solomon’s Temple',
       caption: 'One modern reconstruction of Solomon’s Temple helps students visualize sacred space while remembering that a model includes interpretive decisions.',
       credit: 'SalemOptix', license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
     },
     'kingdoms-prophets-exile': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Judaean_people_are_being_deported_into_exile_after_the_capture_of_Lachish.jpg/1280px-Judaean_people_are_being_deported_into_exile_after_the_capture_of_Lachish.jpg',
+      src: '../../assets/images/lessons/bible-pathway/judaean-people-are-being-deported-into-exile-after-t-3e8af7c.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Judaean_people_are_being_deported_into_exile_after_the_capture_of_Lachish.jpg',
       alt: 'Assyrian stone relief showing Judean captives deported after the capture of Lachish',
       caption: 'This Assyrian palace relief depicts Judeans leaving Lachish after its capture, giving material context to the empire’s warfare and deportation policy.',
       credit: 'Osama Shukir Muhammed Amin FRCP(Glasg)', license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
     },
     'feasts-of-israel': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Feast_of_Tabernacle._Avram%27s_booth._Yehia_seated_in_door_of_tabernacle_booth_LOC_matpc.19879.jpg/1280px-Feast_of_Tabernacle._Avram%27s_booth._Yehia_seated_in_door_of_tabernacle_booth_LOC_matpc.19879.jpg',
+      src: '../../assets/images/lessons/bible-pathway/feast-of-tabernacle-avram-s-booth-yehia-seated-in-do-0c7a019.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Feast_of_Tabernacle._Avram%27s_booth._Yehia_seated_in_door_of_tabernacle_booth_LOC_matpc.19879.jpg',
       alt: 'Historic photograph of a man seated in the doorway of a booth prepared for the Feast of Tabernacles',
       caption: 'A historic Jerusalem photograph shows an inhabited sukkah, an embodied practice of remembrance during the Feast of Booths.',
       credit: 'Matson Collection / Library of Congress', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     'elijah': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Along_the_sea_coast._Elijah%27s_Spring%2C_Mount_Carmel_LOC_matpc.01205.jpg/1280px-Along_the_sea_coast._Elijah%27s_Spring%2C_Mount_Carmel_LOC_matpc.01205.jpg',
+      src: '../../assets/images/lessons/bible-pathway/along-the-sea-coast-elijah-s-spring-mount-carmel-loc-6d7741f.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Along_the_sea_coast._Elijah%27s_Spring,_Mount_Carmel_LOC_matpc.01205.jpg',
       alt: 'Historic photograph of springs and grazing goats near a site traditionally associated with Elijah on Mount Carmel',
       caption: 'A traditional site remembered as “Elijah’s Spring” near Mount Carmel, photographed around 1900. Local tradition preserves the memory; Scripture itself does not name this exact spot.',
       credit: 'Matson Collection / Library of Congress', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     'world-of-jesus': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Landscape_with_Lake_Kinnaret_%28Sea_of_Galilee%29_in_Distance_-_From_Golan_Heights_%285710776912%29.jpg/1280px-Landscape_with_Lake_Kinnaret_%28Sea_of_Galilee%29_in_Distance_-_From_Golan_Heights_%285710776912%29.jpg',
+      src: '../../assets/images/lessons/bible-pathway/landscape-with-lake-kinnaret-sea-of-galilee-in-dista-5003792.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Landscape_with_Lake_Kinnaret_(Sea_of_Galilee)_in_Distance_-_From_Golan_Heights_(5710776912).jpg',
       alt: 'Landscape view across hills toward the Sea of Galilee',
       caption: 'The Sea of Galilee and its surrounding highlands show why boats, shorelines, slopes, and regional routes repeatedly shape Gospel scenes.',
       credit: 'Adam Jones', license: 'CC BY-SA 2.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0/'
     },
     'jesus-parables-lab': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Lupinus_pilosus_with_Mustard_plant_%28Sinapis%29_in_the_background.jpg',
+      src: '../../assets/images/lessons/bible-pathway/lupinus-pilosus-with-mustard-plant-sinapis-in-the-ba-a2786cd.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Lupinus_pilosus_with_Mustard_plant_(Sinapis)_in_the_background.jpg',
       alt: 'Wildflowers and mustard plants growing in the Lower Galilee',
       caption: 'Mustard grows among other plants in the Lower Galilee. Jesus draws on familiar living things like seeds, fields, birds, and harvests to invite attentive hearing.',
       credit: 'Yuvalr', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
     },
     'holy-week': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Jerusalem_panorama_from_Mount_of_Olives_07112018.jpg/1280px-Jerusalem_panorama_from_Mount_of_Olives_07112018.jpg',
+      src: '../../assets/images/lessons/bible-pathway/jerusalem-panorama-from-mount-of-olives-07112018-3e1d8a2.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Jerusalem_panorama_from_Mount_of_Olives_07112018.jpg',
       alt: 'Panoramic view of Jerusalem from the Mount of Olives',
       caption: 'Looking west from the Mount of Olives places the Temple Mount, eastern wall, valleys, and the city’s rising terrain in one geographic frame.',
       credit: 'Beko', license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
     },
     'acts-jerusalem-to-nations': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Jerusalem_old_city_panorama_.jpg/1280px-Jerusalem_old_city_panorama_.jpg',
+      src: '../../assets/images/lessons/bible-pathway/jerusalem-old-city-panorama-36a2cd8.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Jerusalem_old_city_panorama_.jpg',
       alt: 'Wide panorama of Jerusalem’s Old City and surrounding neighborhoods',
       caption: 'Acts begins in Jerusalem, but its witness moves outward through people, roads, households, ports, and cities across the Roman world.',
       credit: 'Nettadi', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
     },
     'pauls-missionary-journeys': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Roman_road_in_Tarsus%2C_Mersin_Province.jpg/1280px-Roman_road_in_Tarsus%2C_Mersin_Province.jpg',
+      src: '../../assets/images/lessons/bible-pathway/roman-road-in-tarsus-mersin-province-545904e.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Roman_road_in_Tarsus,_Mersin_Province.jpg',
       alt: 'Excavated Roman road running through Tarsus in modern Turkey',
       caption: 'An excavated Roman road in Tarsus, Paul’s home city, makes the physical infrastructure of travel across the Roman world visible.',
       credit: 'Nedim Ardoğa', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
     },
-    'proverbs-wisdom-decision-lab': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Proverb_scroll.PNG',
-      page: 'https://commons.wikimedia.org/wiki/File:Proverb_scroll.PNG',
-      alt: 'Open scroll containing the Book of Proverbs in Hebrew',
-      caption: 'A modern Hebrew scroll of Proverbs reminds readers that biblical wisdom is a collected, literary tradition meant to be read in context.',
-      credit: 'Pete Unseth', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/'
-    },
     'job': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/William_Blake_-_Job_and_his_Daughters_-_Google_Art_Project.jpg/1280px-William_Blake_-_Job_and_his_Daughters_-_Google_Art_Project.jpg',
-      page: 'https://commons.wikimedia.org/wiki/File:William_Blake_-_Job_and_his_Daughters_-_Google_Art_Project.jpg',
-      alt: 'William Blake watercolor showing Job and his daughters beneath a radiant heavenly vision',
-      caption: 'William Blake visualizes Job’s restoration with a radiant, symbolic composition. It is a later artistic interpretation—not an illustration made in Job’s ancient setting—so compare its choices with the book’s own words.',
-      credit: 'William Blake, Job and His Daughters, 1805 / 1816', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
-    },
-    'revelation': {
-      src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/77/Cave_of_the_Apocalypse.jpg/1280px-Cave_of_the_Apocalypse.jpg',
-      page: 'https://commons.wikimedia.org/wiki/File:Cave_of_the_Apocalypse.jpg',
-      alt: 'Entrance to the Cave of the Apocalypse on the Greek island of Patmos',
-      caption: 'Tradition names this cave on Patmos as the place where John received his visions (Revelation 1:9). The site is traditional, not proven, but the text itself places John on Patmos “on account of the word of God and the testimony of Jesus.”',
-      credit: 'Vladimir Boskovic', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+      src: '../../assets/images/lessons/bible-pathway/job-and-his-daughters.webp',
+      page: 'https://commons.wikimedia.org/wiki/File:William_Blake_-_Job_and_his_Daughters_-_WGA2229.jpg',
+      alt: 'William Blake engraving of Job seated among his daughters',
+      caption: 'Blake pictures Job with his daughters near the end of the book. Read Job 42:13–15 to see which details the text names and what the artist supplies.',
+      credit: 'William Blake, Job and His Daughters', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     'genesis': {
-      src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d2/001.The_Creation_of_Light.jpg/1280px-001.The_Creation_of_Light.jpg',
+      src: '../../assets/images/lessons/bible-pathway/001-the-creation-of-light-0d18b7a.webp',
       page: 'https://commons.wikimedia.org/wiki/File:001.The_Creation_of_Light.jpg',
       alt: 'Engraving of a figure rising above darkness as rays of light break across the waters',
       caption: 'Gustave Doré pictures Genesis 1:3, “Let there be light.” It is a nineteenth-century artistic interpretation. Compare its drama with the text’s calm, repeated pattern of speaking, separating, naming, and calling good.',
       credit: 'Gustave Doré, 1866', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     'exodus': {
-      src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/87/Mount_Sinai_BW_4.jpg/1280px-Mount_Sinai_BW_4.jpg',
+      src: '../../assets/images/lessons/bible-pathway/mount-sinai-bw-4-e1fcfe2.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Mount_Sinai_BW_4.jpg',
       alt: 'Rugged granite peaks and a dry valley on the Sinai Peninsula on the way to Jebel Musa',
       caption: 'The granite wilderness of the southern Sinai Peninsula, on the way to Jebel Musa, the traditional Mount Sinai. The mountain’s identity is debated, but the biblical story places Israel’s covenant in a wilderness like this one.',
       credit: 'Berthold Werner', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
     },
     'joshua-to-david': {
-      src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1c/Felix-Joseph_Barrias_-_Anointing_of_David_by_Samuel.jpg/1280px-Felix-Joseph_Barrias_-_Anointing_of_David_by_Samuel.jpg',
+      src: '../../assets/images/lessons/bible-pathway/felix-joseph-barrias-anointing-of-david-by-samuel-8ba6e6d.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Felix-Joseph_Barrias_-_Anointing_of_David_by_Samuel.jpg',
       alt: 'Nineteenth-century painting of the prophet Samuel anointing the young David with oil before his brothers',
       caption: 'Barrias pictures Samuel anointing David in front of his brothers (1 Samuel 16:1–13). It is a nineteenth-century interpretation. Notice how the text stresses that God looks at the heart, not at height or appearance.',
       credit: 'Félix-Joseph Barrias', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     'jesus-ministry': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Rembrandt_Christ_in_the_Storm_on_the_Lake_of_Galilee.jpg/1280px-Rembrandt_Christ_in_the_Storm_on_the_Lake_of_Galilee.jpg',
+      src: '../../assets/images/lessons/bible-pathway/rembrandt-christ-in-the-storm-on-the-lake-of-galilee-fd68b92.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Rembrandt_Christ_in_the_Storm_on_the_Lake_of_Galilee.jpg',
       alt: 'Rembrandt painting of a small fishing boat tossed by large waves while frightened disciples struggle with the sails and Jesus is at the stern',
       caption: 'Rembrandt’s 1633 painting of Mark 4:35–41 catches the moment before the disciples ask, “Who then is this, that even the wind and the sea obey him?” It is an artist’s interpretation, not an eyewitness record.',
       credit: 'Rembrandt van Rijn, 1633', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     'sermon-on-the-mount': {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/VIEW_FROM_THE_MOUNT_OF_BEATITUDES_%287723721162%29.jpg/1280px-VIEW_FROM_THE_MOUNT_OF_BEATITUDES_%287723721162%29.jpg',
+      src: '../../assets/images/lessons/bible-pathway/view-from-the-mount-of-beatitudes-7723721162-e564698.webp',
       page: 'https://commons.wikimedia.org/wiki/File:VIEW_FROM_THE_MOUNT_OF_BEATITUDES_(7723721162).jpg',
       alt: 'View across the green slopes toward the Sea of Galilee from the traditional Mount of Beatitudes',
       caption: 'The traditional Mount of Beatitudes overlooks the Sea of Galilee. The exact setting of the sermon is not identified with certainty in Matthew.',
@@ -638,14 +581,8 @@
     }
   };
 
-  lessonImages.leviticus = Object.assign({}, lessonImages['the-tabernacle'], {
-    caption: 'A museum model helps us picture the sanctuary at the center of Leviticus. It is a modern interpretation to compare carefully with Exodus and Leviticus.'
-  });
-  lessonImages.numbers = Object.assign({}, lessonImages.exodus, {
-    caption: 'An artistic depiction of the Exodus tradition introduces the wilderness setting of Numbers. It is later art, not a documentary image of the event.'
-  });
   lessonImages.deuteronomy = {
-    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/View_from_Mount_Nebo_%282007-05-830%29_%281330159327%29.jpg/1280px-View_from_Mount_Nebo_%282007-05-830%29_%281330159327%29.jpg',
+    src: '../../assets/images/lessons/bible-pathway/view-from-mount-nebo-2007-05-830-1330159327-a908ad0.webp',
     page: 'https://commons.wikimedia.org/wiki/File:View_from_Mount_Nebo_(2007-05-830)_(1330159327).jpg',
     alt: 'Hazy view from the ridge of Mount Nebo in Jordan across the Jordan Valley toward the land west of the river',
     caption: 'The view from Mount Nebo toward the land west of the Jordan. Deuteronomy 34 says Moses was shown the land from here and did not enter it. This modern photograph orients the setting; it does not prove which viewpoint the text means.',
@@ -660,7 +597,7 @@
         items: [
           {
             title: 'The Jordan Valley from Mount Nebo', kind: 'Photograph · Jordan · Deuteronomy 34:1–4',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Overhead_view_from_Mount_Nebo_of_the_Dead_Sea_and_Jordan_Valley_area.jpg/1280px-Overhead_view_from_Mount_Nebo_of_the_Dead_Sea_and_Jordan_Valley_area.jpg',
+            src: '../../assets/images/lessons/bible-pathway/overhead-view-from-mount-nebo-of-the-dead-sea-and-jo-2ad3861.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Overhead_view_from_Mount_Nebo_of_the_Dead_Sea_and_Jordan_Valley_area.jpg',
             alt: 'Wide panorama from Mount Nebo showing the Dead Sea at left and the Jordan Valley stretching toward Jericho',
             caption: 'From Nebo the Dead Sea, the Jordan Valley, and the Jericho area lie in one frame. Deuteronomy 34:1–3 lists the regions the Lord showed Moses; trace how many you can place in this view.',
@@ -668,7 +605,7 @@
           },
           {
             title: 'The Testament and Death of Moses', kind: 'Fresco · Luca Signorelli · Deuteronomy 31–34',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Signorelli%2C_Luca_-_Moses%27s_Testament_and_Death_-_1481-82.jpg/1280px-Signorelli%2C_Luca_-_Moses%27s_Testament_and_Death_-_1481-82.jpg',
+            src: '../../assets/images/lessons/bible-pathway/signorelli-luca-moses-s-testament-and-death-1481-82-3bbe48f.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Signorelli,_Luca_-_Moses%27s_Testament_and_Death_-_1481-82.jpg',
             alt: 'Renaissance fresco in which Moses addresses the people, hands over a staff, and is shown dying, in one crowded landscape',
             caption: 'Signorelli, painting in the Sistine Chapel in 1481–82, puts several moments from the book’s ending into one scene, including the handoff and Moses’ death. Deuteronomy 34:6 adds that no one knows his burial place. Which moment can you find, and what did the artist choose to leave out?',
@@ -682,7 +619,7 @@
         items: [
           {
             title: 'The Nash Papyrus', kind: 'Manuscript · 2nd–1st century BC · Deuteronomy 5–6',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/2nd_century_Hebrew_decalogue.jpg',
+            src: '../../assets/images/lessons/bible-pathway/2nd-century-hebrew-decalogue-0218352.webp',
             page: 'https://commons.wikimedia.org/wiki/File:2nd_century_Hebrew_decalogue.jpg',
             alt: 'Torn fragment of papyrus with lines of ancient Hebrew writing',
             caption: 'This Hebrew fragment combines a form of the Ten Commandments, blending Exodus 20 and Deuteronomy 5, with the Shema (6:4–5). It shows these texts were being copied and used together over two thousand years ago.',
@@ -690,7 +627,7 @@
           },
           {
             title: 'Wrapping tefillin before prayer', kind: 'Photograph · Samarkand · c. 1865–72 · Deuteronomy 6:8',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Zeravshan_Okrug._Samarkand._A_Jewish_Man%2C_Wearing_a_Prayer_Shawl%2C_Wrapping_His_Arm_in_Phylactery%2C_in_Preparation_for_Prayer_WDL11152.png/960px-Zeravshan_Okrug._Samarkand._A_Jewish_Man%2C_Wearing_a_Prayer_Shawl%2C_Wrapping_His_Arm_in_Phylactery%2C_in_Preparation_for_Prayer_WDL11152.png',
+            src: '../../assets/images/lessons/bible-pathway/zeravshan-okrug-samarkand-a-jewish-man-wearing-a-pra-1a3e5e8.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Zeravshan_Okrug._Samarkand._A_Jewish_Man,_Wearing_a_Prayer_Shawl,_Wrapping_His_Arm_in_Phylactery,_in_Preparation_for_Prayer_WDL11152.png',
             alt: 'Nineteenth-century photograph of a man in a prayer shawl winding the strap of a small box around his arm',
             caption: 'Tefillin are small boxes holding Torah verses, including Deuteronomy 6:4–9, bound on the arm and head: one Jewish reading of “bind them as a sign on your hand.” This is a later, living practice, not temple-era Israel, and not every tradition reads verse 8 literally.',
@@ -706,7 +643,7 @@
         items: [
           {
             title: 'Leviticus scroll, paleo-Hebrew', kind: 'Dead Sea Scroll · Qumran Cave 11 · Leviticus',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/11QpaleoLev_-_Qumran_Cave_11.jpg/1280px-11QpaleoLev_-_Qumran_Cave_11.jpg',
+            src: '../../assets/images/lessons/bible-pathway/11qpaleolev-qumran-cave-11-1c0ef25.webp',
             page: 'https://commons.wikimedia.org/wiki/File:11QpaleoLev_-_Qumran_Cave_11.jpg',
             alt: 'Close-up of a fragment of a Leviticus scroll written in ancient Hebrew script',
             caption: 'Leviticus 23 is where the appointed times are listed. This scroll fragment from Qumran, written in the older paleo-Hebrew script, shows how the book was copied by hand about two thousand years ago.',
@@ -714,7 +651,7 @@
           },
           {
             title: 'A Passover Seder plate', kind: 'Photograph · Today · Exodus 12; Leviticus 23:4–8',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/98/Passover_Seder_plate%2C_original.jpg/1280px-Passover_Seder_plate%2C_original.jpg',
+            src: '../../assets/images/lessons/bible-pathway/passover-seder-plate-original-f526de5.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Passover_Seder_plate,_original.jpg',
             alt: 'Seder plate with shankbone, egg, bitter herbs, greens, and charoset',
             caption: 'Passover turns an event (the exodus) into a meal that families repeat. Each item on the plate is a small prompt to remember. Judaism today keeps Passover through the Seder, which developed after the temple’s fall.',
@@ -728,7 +665,7 @@
         items: [
           {
             title: 'Blowing the shofar', kind: 'Photograph · Rosh Hashanah · Leviticus 23:23–25',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/Shofar_in_Rosh_Hashanah.jpg/1280px-Shofar_in_Rosh_Hashanah.jpg',
+            src: '../../assets/images/lessons/bible-pathway/shofar-in-rosh-hashanah-5dfb1c2.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Shofar_in_Rosh_Hashanah.jpg',
             alt: 'A man blowing a ram’s-horn shofar',
             caption: 'The text says only “a memorial proclaimed with blasts of trumpets,” and gives no further detail. The shofar, a ram’s horn, became the central sound of Rosh Hashanah in later Jewish practice.',
@@ -736,7 +673,7 @@
           },
           {
             title: 'Jews Praying in the Synagogue on Yom Kippur', kind: 'Painting · Maurycy Gottlieb, 1878 · Leviticus 16; 23:26–32',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1e/Maurycy_Gottlieb_-_Jews_Praying_in_the_Synagogue_on_Yom_Kippur.jpg/1280px-Maurycy_Gottlieb_-_Jews_Praying_in_the_Synagogue_on_Yom_Kippur.jpg',
+            src: '../../assets/images/lessons/bible-pathway/maurycy-gottlieb-jews-praying-in-the-synagogue-on-yo-9ce26dd.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Maurycy_Gottlieb_-_Jews_Praying_in_the_Synagogue_on_Yom_Kippur.jpg',
             alt: 'Nineteenth-century painting of men in prayer shawls praying intently in a synagogue',
             caption: 'Leviticus 16 describes sanctuary rites; after the temple’s destruction, Yom Kippur continued in synagogue prayer, fasting, and repentance. This painting shows that later form, not Israel’s temple service.',
@@ -752,7 +689,7 @@
         items: [
           {
             title: 'The tower of Jericho', kind: 'Photograph · Tell es-Sultan · Joshua 6',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/06/Excavated_walls_of_Jericho.jpg/1280px-Excavated_walls_of_Jericho.jpg',
+            src: '../../assets/images/lessons/bible-pathway/excavated-walls-of-jericho-b05b121.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Excavated_walls_of_Jericho.jpg',
             alt: 'Excavated stone tower at ancient Jericho beneath a blue sky',
             caption: 'This tower is far older than Joshua, from the Neolithic period. Jericho is among the oldest settlements in the world, so the site shows the antiquity of the place, not the walls of Joshua 6. Archaeologists debate how to relate Joshua’s story to the evidence.',
@@ -760,7 +697,7 @@
           },
           {
             title: 'Samson and Delilah', kind: 'Painting · Rembrandt, c. 1628 · Judges 16',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d1/Rembrandt_Samson_and_Delilah_about_1628-29_Gem%C3%A4ldegalerie_Berlin_9407.jpg/1280px-Rembrandt_Samson_and_Delilah_about_1628-29_Gem%C3%A4ldegalerie_Berlin_9407.jpg',
+            src: '../../assets/images/lessons/bible-pathway/rembrandt-samson-and-delilah-about-1628-29-gem-ldega-a5afac1.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Rembrandt_Samson_and_Delilah_about_1628-29_Gem%C3%A4ldegalerie_Berlin_9407.jpg',
             alt: 'Painting of Samson asleep in Delilah’s lap as a man cuts his hair',
             caption: 'The judges are flawed deliverers. Samson is strong and reckless, and his story ends in blindness, a prayer, and death. The book of Judges asks its readers to notice what the nation needs beyond a strong leader.',
@@ -768,7 +705,7 @@
           },
           {
             title: 'Ruth and Naomi', kind: 'Painting · Jan Victors, 1653 · Ruth 1',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/5/57/%27Ruth_and_Naomi%27_by_Jan_Victors%2C_1653.jpg',
+            src: '../../assets/images/lessons/bible-pathway/ruth-and-naomi-by-jan-victors-1653-2cad427.webp',
             page: 'https://commons.wikimedia.org/wiki/File:%27Ruth_and_Naomi%27_by_Jan_Victors%2C_1653.jpg',
             alt: 'Seventeenth-century painting of Ruth and Naomi parting on a road with Orpah',
             caption: 'Ruth is set “in the days when the judges ruled” (1:1). Loyalty (hesed) and a foreign woman’s commitment lead to David’s family line, a quiet counterweight to the violence of Judges.',
@@ -782,7 +719,7 @@
         items: [
           {
             title: 'David with the Head of Goliath', kind: 'Painting · Caravaggio, c. 1607 · 1 Samuel 17',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/70/Caravaggio_-_David_with_the_Head_of_Goliath_-_Vienna.jpg/1280px-Caravaggio_-_David_with_the_Head_of_Goliath_-_Vienna.jpg',
+            src: '../../assets/images/lessons/bible-pathway/caravaggio-david-with-the-head-of-goliath-vienna-f950303.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Caravaggio_-_David_with_the_Head_of_Goliath_-_Vienna.jpg',
             alt: 'Dark painting of a young David holding up the severed head of Goliath',
             caption: 'Caravaggio focuses on the aftermath, not the battle. In 1 Samuel 17:45–47 David names the reason for the fight: “that all the earth may know that there is a God in Israel.”',
@@ -790,7 +727,7 @@
           },
           {
             title: 'Anointing of David', kind: 'Painting · Félix-Joseph Barrias · 1 Samuel 16',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1c/Felix-Joseph_Barrias_-_Anointing_of_David_by_Samuel.jpg/1280px-Felix-Joseph_Barrias_-_Anointing_of_David_by_Samuel.jpg',
+            src: '../../assets/images/lessons/bible-pathway/felix-joseph-barrias-anointing-of-david-by-samuel-8ba6e6d.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Felix-Joseph_Barrias_-_Anointing_of_David_by_Samuel.jpg',
             alt: 'Painting of Samuel anointing the youngest son David with oil',
             caption: '1 Samuel 16:7 says “the LORD looks on the heart.” Samuel is surprised by who is chosen, as are the brothers. David is anointed years before he reigns.',
@@ -804,7 +741,7 @@
         items: [
           {
             title: 'Khirbet Qeiyafa', kind: 'Photograph · Judah · about 1000 BCE',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Khirbet_Qeiyafa_15.jpg',
+            src: '../../assets/images/lessons/bible-pathway/khirbet-qeiyafa-15-dc042ea.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Khirbet_Qeiyafa_15.jpg',
             alt: 'Excavated stone fortification walls and gate at Khirbet Qeiyafa',
             caption: 'This fortified town in the Elah Valley is dated by its excavators to about 1000 BCE, the time often assigned to David. Scholars disagree about whether it was Judahite, Israelite, or Philistine, so it is evidence to weigh, not a proof.',
@@ -812,7 +749,7 @@
           },
           {
             title: 'The Tel Dan Stele', kind: 'Inscription · about 840–800 BCE · Israel Museum',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/%D7%9B%D7%AA%D7%95%D7%91%D7%AA_%D7%91%D7%99%D7%AA_%D7%93%D7%95%D7%93.jpg/1280px-%D7%9B%D7%AA%D7%95%D7%91%D7%AA_%D7%91%D7%99%D7%AA_%D7%93%D7%95%D7%93.jpg',
+            src: '../../assets/images/lessons/bible-pathway/tel-dan-stele.webp',
             page: 'https://commons.wikimedia.org/wiki/File:%D7%9B%D7%AA%D7%95%D7%91%D7%AA_%D7%91%D7%99%D7%AA_%D7%93%D7%95%D7%93.jpg',
             alt: 'Fragments of a basalt stone inscribed with Aramaic letters',
             caption: 'An Aramaic inscription from Tel Dan, written by a rival king about 150 years after David, appears to mention a “house of David” (bytdwd). It is the earliest widely accepted reference outside the Bible to David’s dynasty.',
@@ -828,7 +765,7 @@
         items: [
           {
             title: 'Great Temple of Ramesses II, Abu Simbel', kind: 'Photograph · Egypt · Exodus 1',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/02/Templo_de_Rams%C3%A9s_II%2C_Abu_Simbel%2C_Egipto%2C_2022-04-02%2C_DD_26-28_HDR.jpg/1280px-Templo_de_Rams%C3%A9s_II%2C_Abu_Simbel%2C_Egipto%2C_2022-04-02%2C_DD_26-28_HDR.jpg',
+            src: '../../assets/images/lessons/bible-pathway/templo-de-rams-s-ii-abu-simbel-egipto-2022-04-02-dd-de10b50.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Templo_de_Rams%C3%A9s_II,_Abu_Simbel,_Egipto,_2022-04-02,_DD_26-28_HDR.jpg',
             alt: 'Colossal seated statues carved into the facade of the Great Temple at Abu Simbel',
             caption: 'Colossal monuments show the scale of Egyptian royal power. Exodus does not name its pharaoh, and scholars debate the date, so treat this as the world of Egyptian kingship, not as proof of which ruler is meant.',
@@ -836,7 +773,7 @@
           },
           {
             title: 'The Burning Bush', kind: 'Painting · Sébastien Bourdon · Exodus 3',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/4/49/Bourdon%2C_S%C3%A9bastien_-_Burning_bush.jpg',
+            src: '../../assets/images/lessons/bible-pathway/bourdon-s-bastien-burning-bush-254244e.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Bourdon,_S%C3%A9bastien_-_Burning_bush.jpg',
             alt: 'Seventeenth-century painting of Moses removing his sandals before a bush aflame in a pastoral landscape',
             caption: 'Bourdon shows Moses and his flock. In Exodus 3 the bush burns without being consumed, and God says He has seen the affliction, heard the cry, and come down to deliver. Compare the painting’s calm with the text’s urgency.',
@@ -850,7 +787,7 @@
         items: [
           {
             title: 'The Ninth Plague: Darkness', kind: 'Engraving · Gustave Doré · Exodus 10:21–23',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/35/034.The_Ninth_Plague._Darkness.jpg/1280px-034.The_Ninth_Plague._Darkness.jpg',
+            src: '../../assets/images/lessons/bible-pathway/034-the-ninth-plague-darkness-d1a66af.webp',
             page: 'https://commons.wikimedia.org/wiki/File:034.The_Ninth_Plague._Darkness.jpg',
             alt: 'Engraving of Egyptians groping in gloom while light shines elsewhere',
             caption: 'Exodus 10 says there was darkness over Egypt “but all the people of Israel had light where they lived.” The plagues are presented as a contest between the Lord and Egypt’s claims to power.',
@@ -858,7 +795,7 @@
           },
           {
             title: 'A Passover Seder plate', kind: 'Photograph · Today · Exodus 12',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/98/Passover_Seder_plate%2C_original.jpg/1280px-Passover_Seder_plate%2C_original.jpg',
+            src: '../../assets/images/lessons/bible-pathway/passover-seder-plate-original-f526de5.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Passover_Seder_plate,_original.jpg',
             alt: 'Seder plate holding a shankbone, egg, bitter herbs, greens, and charoset',
             caption: 'Each food on the Seder plate recalls part of the rescue story, such as bitter herbs for bitter slavery. Exodus 12:26–27 expects children to ask “What does this mean?” and anticipates a memory handed down.',
@@ -866,7 +803,7 @@
           },
           {
             title: 'The Crossing of the Red Sea', kind: 'Painting · Possibly Hans Jordaens III · Exodus 14',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a7/Jordaens_Crossing_of_the_Red_Sea.jpg/1280px-Jordaens_Crossing_of_the_Red_Sea.jpg',
+            src: '../../assets/images/lessons/bible-pathway/jordaens-crossing-of-the-red-sea-6a388a2.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Jordaens_Crossing_of_the_Red_Sea.jpg',
             alt: 'Baroque painting of Israelites crossing between walls of water while Egyptian chariots approach',
             caption: 'The artist fills the scene with people and animals. Exodus 14 adds the pillar of cloud, the east wind, and walls of water, and Exodus 15 answers with a song that Revelation 15:3 echoes.',
@@ -880,7 +817,7 @@
         items: [
           {
             title: 'The wilderness way to Sinai', kind: 'Photograph · Sinai Peninsula · Exodus 19',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/87/Mount_Sinai_BW_4.jpg/1280px-Mount_Sinai_BW_4.jpg',
+            src: '../../assets/images/lessons/bible-pathway/mount-sinai-bw-4-e1fcfe2.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Mount_Sinai_BW_4.jpg',
             alt: 'Granite mountains and a dry valley in the southern Sinai Peninsula',
             caption: 'Israel arrives at the mountain three months after leaving Egypt (19:1). The landscape shows why the story keeps asking where bread, water, and guidance will come from.',
@@ -888,7 +825,7 @@
           },
           {
             title: 'Moses with the Ten Commandments', kind: 'Painting · Rembrandt, 1659 · Exodus 20; 32',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3d/Rembrandt_-_Moses_with_the_Ten_Commandments_-_Google_Art_Project.jpg/1280px-Rembrandt_-_Moses_with_the_Ten_Commandments_-_Google_Art_Project.jpg',
+            src: '../../assets/images/lessons/bible-pathway/rembrandt-moses-with-the-ten-commandments-google-art-d050829.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Rembrandt_-_Moses_with_the_Ten_Commandments_-_Google_Art_Project.jpg',
             alt: 'Rembrandt painting of Moses lifting stone tablets overhead with a troubled expression',
             caption: 'Rembrandt’s Moses seems poised to break the tablets, a moment from Exodus 32 after the golden calf. Notice that the law was given to a people already rescued (20:2) and almost immediately broken.',
@@ -904,7 +841,7 @@
         items: [
           {
             title: 'Creation of Light', kind: 'Engraving · Gustave Doré · Genesis 1:3',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d2/001.The_Creation_of_Light.jpg/1280px-001.The_Creation_of_Light.jpg',
+            src: '../../assets/images/lessons/bible-pathway/001-the-creation-of-light-0d18b7a.webp',
             page: 'https://commons.wikimedia.org/wiki/File:001.The_Creation_of_Light.jpg',
             alt: 'Engraving of a figure above dark waters as light breaks through',
             caption: 'Genesis 1 moves in a pattern: God speaks, separates, names, and calls it good. Doré gives the first day a single dramatic moment; the text gives it a rhythm.',
@@ -912,7 +849,7 @@
           },
           {
             title: 'Expulsion from the Garden of Eden', kind: 'Painting · Thomas Cole · Genesis 3:23–24',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/35/Cole_Thomas_Expulsion_from_the_Garden_of_Eden_1828.jpg/1280px-Cole_Thomas_Expulsion_from_the_Garden_of_Eden_1828.jpg',
+            src: '../../assets/images/lessons/bible-pathway/cole-thomas-expulsion-from-the-garden-of-eden-1828-33a00d3.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Cole_Thomas_Expulsion_from_the_Garden_of_Eden_1828.jpg',
             alt: 'Romantic landscape of Adam and Eve leaving a bright garden for a stormy wilderness',
             caption: 'Cole contrasts garden light with wilderness storm. Genesis 3:24 adds cherubim and a flaming sword guarding the way to the tree of life, an image Revelation 22 later answers.',
@@ -926,7 +863,7 @@
         items: [
           {
             title: 'The Tower of Babel', kind: 'Painting · Pieter Bruegel the Elder · Genesis 11:1–9',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_%28Vienna%29_-_Google_Art_Project_-_edited.jpg/1280px-Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_%28Vienna%29_-_Google_Art_Project_-_edited.jpg',
+            src: '../../assets/images/lessons/bible-pathway/pieter-bruegel-the-elder-the-tower-of-babel-vienna-g-df60ddd.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_(Vienna)_-_Google_Art_Project_-_edited.jpg',
             alt: 'Sixteenth-century painting of a vast spiraling tower under construction above a harbor city',
             caption: 'Bruegel paints a Renaissance port and a spiral tower. Genesis says only that people built a city and tower “to make a name for ourselves.” Ask what the painter added and what the text leaves out.',
@@ -934,7 +871,7 @@
           },
           {
             title: 'Ziggurat of Ur', kind: 'Photograph · Mesopotamia · Genesis 11:31',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/Ziggarat_of_Ur_001.jpg/1280px-Ziggarat_of_Ur_001.jpg',
+            src: '../../assets/images/lessons/bible-pathway/ziggarat-of-ur-001-84bc038.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Ziggarat_of_Ur_001.jpg',
             alt: 'Reconstructed stepped mud-brick ziggurat of Ur under a blue sky',
             caption: 'Ur was a major Mesopotamian city with a stepped temple tower like this one. Genesis 11:31 places Abram’s family there; the ziggurat shows the world he is called to leave, not a proof of Babel.',
@@ -948,7 +885,7 @@
         items: [
           {
             title: 'Joseph Sold into Slavery', kind: 'Painting · Károly Ferenczy, 1900 · Genesis 37:25–28',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/5/57/Ferenczy%2C_K%C3%A1roly_-_Joseph_Sold_into_Slavery_by_his_Brothers_%281900%29.jpg',
+            src: '../../assets/images/lessons/bible-pathway/ferenczy-k-roly-joseph-sold-into-slavery-by-his-brot-bb5e731.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Ferenczy,_K%C3%A1roly_-_Joseph_Sold_into_Slavery_by_his_Brothers_(1900).jpg',
             alt: 'Painting of Joseph being handed to traders by his brothers in a desert landscape',
             caption: 'The family story turns on a betrayal. Genesis 50:20 later reads it back: “you meant evil against me, but God meant it for good.” Compare what the painting shows with what the narrator tells us.',
@@ -964,7 +901,7 @@
         items: [
           {
             title: 'Entry into Jerusalem', kind: 'Painting · Giotto, c. 1305 · Matthew 21:1–11; Mark 11:1–11',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Giotto_-_Scrovegni_-_-26-_-_Entry_into_Jerusalem.jpg',
+            src: '../../assets/images/lessons/bible-pathway/giotto-scrovegni-26-entry-into-jerusalem-64ac983.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Giotto_-_Scrovegni_-_-26-_-_Entry_into_Jerusalem.jpg',
             alt: 'Fresco of Jesus riding a donkey into Jerusalem while people lay cloaks before Him and others climb olive trees',
             caption: 'Giotto paints what all four Gospels report: Jesus on a donkey, cloaks spread on the road, branches cut from trees. It is a fourteenth-century interpretation. Compare it with Matthew’s mention of the prophecy in Zechariah 9:9 and ask what the humble animal says about the kind of king He is.',
@@ -972,7 +909,7 @@
           },
           {
             title: 'Old olive trees in the Garden of Gethsemane', kind: 'Photograph · Mount of Olives · Mark 14:32–42',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/%D0%9Eld_Olive_trees_in_the_Garden_of_Gethsemane%2C_05.jpg/1280px-%D0%9Eld_Olive_trees_in_the_Garden_of_Gethsemane%2C_05.jpg',
+            src: '../../assets/images/lessons/bible-pathway/ld-olive-trees-in-the-garden-of-gethsemane-05-06a785c.webp',
             page: 'https://commons.wikimedia.org/wiki/File:%D0%9Eld_Olive_trees_in_the_Garden_of_Gethsemane,_05.jpg',
             alt: 'Gnarled ancient olive trunks with silvery leaves in a walled garden',
             caption: 'Gethsemane means “oil press,” and the slope of the Mount of Olives has long been planted with olives. These gnarled trees are old, but they are not claimed to date from Jesus’ time. They show the setting, an olive grove just east of the city, where Mark 14 places the prayer and the arrest.',
@@ -986,7 +923,7 @@
         items: [
           {
             title: 'The Last Supper', kind: 'Painting · Leonardo da Vinci, 1495–1498 · Mark 14:17–26; John 13',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/Leonardo_da_Vinci_%281452-1519%29_-_The_Last_Supper_%281495-1498%29.jpg/1280px-Leonardo_da_Vinci_%281452-1519%29_-_The_Last_Supper_%281495-1498%29.jpg',
+            src: '../../assets/images/lessons/bible-pathway/leonardo-da-vinci-1452-1519-the-last-supper-1495-149-d4ffdec.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Leonardo_da_Vinci_(1452-1519)_-_The_Last_Supper_(1495-1498).jpg',
             alt: 'Wall painting of Jesus at the center of a long table with twelve disciples reacting in groups of three',
             caption: 'Leonardo freezes the moment after Jesus says one of them will betray Him (Mark 14:18). He seats the Twelve at a long table, which first-century guests would probably not have done: they reclined. Treat it as a Renaissance reading of the scene, and look for the reactions the text actually reports.',
@@ -1000,7 +937,7 @@
         items: [
           {
             title: 'Ossuary of the high priest Joseph Caiaphas', kind: 'Archaeology · Israel Museum · Matthew 26:57–68',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9a/Ossuary_of_the_high_priest_Caiaphas_P1180853.jpg/1280px-Ossuary_of_the_high_priest_Caiaphas_P1180853.jpg',
+            src: '../../assets/images/lessons/bible-pathway/ossuary-of-the-high-priest-caiaphas-p1180853-1c8b28a.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Ossuary_of_the_high_priest_Caiaphas_P1180853.jpg',
             alt: 'Ornately carved limestone bone box with rosettes, displayed in a museum case',
             caption: 'Found in a Jerusalem burial cave in 1990, this carved bone box is inscribed with the name Caiaphas. Many scholars think it belonged to the high priest of the Gospels (Matthew 26:3, 57; John 18:13), though some question the identification. Either way, it shows the wealth and standing of Jerusalem’s priestly families.',
@@ -1008,7 +945,7 @@
           },
           {
             title: 'The Pilate Stone (copy)', kind: 'Archaeology · Caesarea Maritima · Mark 15:1–15; John 18:28–19:16',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Pilate_Stone_copy_Milano.JPG/1280px-Pilate_Stone_copy_Milano.JPG',
+            src: '../../assets/images/lessons/bible-pathway/pilate-stone-copy-milano-9ca1b56.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Pilate_Stone_copy_Milano.JPG',
             alt: 'Weathered limestone block carved with a Latin dedication naming Pontius Pilate',
             caption: 'A Latin dedication found at Caesarea names “Pontius Pilatus, prefect of Judea.” This is a replica of the original in the Israel Museum. It is rare physical evidence outside the Gospels for the Roman governor who judged Jesus (also named by Tacitus and Josephus).',
@@ -1016,7 +953,7 @@
           },
           {
             title: 'Christ Leaving the Praetorium', kind: 'Engraving · Gustave Doré, 1872 · John 19:1–16',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/Christ_leaving_the_praetorium_LCCN2003680648.jpg/1280px-Christ_leaving_the_praetorium_LCCN2003680648.jpg',
+            src: '../../assets/images/lessons/bible-pathway/christ-leaving-the-praetorium-lccn2003680648-c29b7e8.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Christ_leaving_the_praetorium_LCCN2003680648.jpg',
             alt: 'Large engraving of Jesus descending steps from a Roman building past soldiers and an agitated crowd',
             caption: 'Doré crowds the stairs with soldiers, officials, and onlookers, so Jesus is the still figure at the center of a noisy scene. It is a nineteenth-century interpretation of John 19. Ask what it adds that the text does not say, and what it leaves out.',
@@ -1030,7 +967,7 @@
         items: [
           {
             title: 'The Crucifixion', kind: 'Painting · Matthias Grünewald, c. 1512–1516 · Mark 15:33–39; John 19:16–37',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/4/46/Matthias_Gr%C3%BCnewald_-_The_Crucifixion_-_WGA10723.jpg',
+            src: '../../assets/images/lessons/bible-pathway/matthias-gr-newald-the-crucifixion-wga10723-697d344.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Matthias_Gr%C3%BCnewald_-_The_Crucifixion_-_WGA10723.jpg',
             alt: 'Painting of the crucified Jesus with Mary, John, and Mary Magdalene mourning at the foot of the cross',
             caption: 'Grünewald does not soften the suffering, and he adds John the Baptist pointing at the cross, a figure who could not have been there. That is a clue that this is a theological painting and not a reconstruction. Compare the mourners with the women named in Mark 15:40 and John 19:25.',
@@ -1038,79 +975,11 @@
           },
           {
             title: 'Rolling stone at the Tomb of the Herods', kind: 'Photograph · Jerusalem · Mark 15:46; 16:3–4',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/Schijfvormige_steen_bij_het_familiegraf_van_Herodus%2C_Bestanddeelnr_255-2387.jpg/1280px-Schijfvormige_steen_bij_het_familiegraf_van_Herodus%2C_Bestanddeelnr_255-2387.jpg',
+            src: '../../assets/images/lessons/bible-pathway/schijfvormige-steen-bij-het-familiegraf-van-herodus-37823f7.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Schijfvormige_steen_bij_het_familiegraf_van_Herodus,_Bestanddeelnr_255-2387.jpg',
             alt: 'Black-and-white photograph of a large disc-shaped stone beside the entrance to a rock-cut tomb',
             caption: 'A few wealthy first-century tombs in Jerusalem were closed with a disc-shaped rolling stone like this one. Most tombs were closed with a flat blocking stone. The Gospels say a large stone closed Jesus’ tomb (Mark 15:46; 16:3–4). This photograph shows the kind of thing the writers describe, not Jesus’ own tomb.',
             credit: 'Willem van de Poll (Nationaal Archief)', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/'
-          }
-        ]
-      }
-    ],
-    'revelation': [
-      {
-        title: 'Patmos and the seven cities',
-        note: 'Revelation begins with a real prisoner on a real island writing to real cities. Start from the map.',
-        items: [
-          {
-            title: 'The seven churches of Asia', kind: 'Map · Revelation 1:11; 2–3',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Asia_Minor_showing_positions_of_the_Seven_Churches_%28Smith%2C_1915%29.jpg/1280px-Asia_Minor_showing_positions_of_the_Seven_Churches_%28Smith%2C_1915%29.jpg',
-            page: 'https://commons.wikimedia.org/wiki/File:Asia_Minor_showing_positions_of_the_Seven_Churches_(Smith,_1915).jpg',
-            alt: 'Historical map of western Asia Minor marking the seven cities addressed in Revelation 2 and 3',
-            caption: 'The seven cities form a rough circuit: Ephesus, Smyrna, Pergamum, Thyatira, Sardis, Philadelphia, Laodicea. A courier carrying the scroll would visit them in this order, which is the order of the letters.',
-            credit: 'George Adam Smith, 1915', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
-          },
-          {
-            title: 'Monastery of St John, Patmos', kind: 'Photograph · Patmos, Greece',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Monastery_of_St_John%2C_Patmos.jpg/1280px-Monastery_of_St_John%2C_Patmos.jpg',
-            page: 'https://commons.wikimedia.org/wiki/File:Monastery_of_St_John,_Patmos.jpg',
-            alt: 'Fortified whitewashed monastery on a hilltop on the island of Patmos',
-            caption: 'A medieval monastery now crowns Patmos in memory of John. Ask what the book itself says about Patmos (1:9) and what later tradition adds.',
-            credit: 'AJ Alfieri-Crispin', license: 'CC BY-SA 2.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0/'
-          }
-        ]
-      },
-      {
-        title: 'Cities where the first readers lived',
-        note: 'Photographs of the cities show the civic pride, wealth, and imperial religion that the letters address.',
-        items: [
-          {
-            title: 'Library of Celsus, Ephesus', kind: 'Photograph · Church 1 (Revelation 2:1–7)',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/Ephesus_Celsus_Library_Fa%C3%A7ade.jpg/1280px-Ephesus_Celsus_Library_Fa%C3%A7ade.jpg',
-            page: 'https://commons.wikimedia.org/wiki/File:Ephesus_Celsus_Library_Fa%C3%A7ade.jpg',
-            alt: 'Restored two-story marble facade of the Library of Celsus at Ephesus',
-            caption: 'Ephesus was a harbor metropolis and temple city. The church there is praised for hard work and discernment but warned that it has abandoned its first love.',
-            credit: 'Benh LIEU SONG', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
-          },
-          {
-            title: 'Acropolis of Pergamon', kind: 'Photograph · Church 3 (Revelation 2:12–17)',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/64/Pergamon_Acropolis.jpg/1280px-Pergamon_Acropolis.jpg',
-            page: 'https://commons.wikimedia.org/wiki/File:Pergamon_Acropolis.jpg',
-            alt: 'Ruins on the steep hilltop acropolis of Pergamon seen across a valley',
-            caption: 'Pergamum was a provincial capital with a center of emperor worship, which helps explain the phrase “where Satan’s throne is” (2:13) as a statement about allegiance and power.',
-            credit: 'Ingo Mehling', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
-          }
-        ]
-      },
-      {
-        title: 'Artists picture the visions',
-        note: 'These are later interpretations. Compare each artist’s choices with the words of the text before trusting the picture.',
-        items: [
-          {
-            title: 'The Four Horsemen', kind: 'Woodcut · Albrecht Dürer, c. 1498 · Revelation 6:1–8',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/29/Durer_Revelation_Four_Riders.jpg/1280px-Durer_Revelation_Four_Riders.jpg',
-            page: 'https://commons.wikimedia.org/wiki/File:Durer_Revelation_Four_Riders.jpg',
-            alt: 'Woodcut of four riders charging across the sky and trampling people below',
-            caption: 'Dürer shows conquest, war, famine, and death riding together. Revelation 6 releases them one at a time as the Lamb opens each seal; notice what the artist compresses.',
-            credit: 'Albrecht Dürer', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
-          },
-          {
-            title: 'The first horseman', kind: 'Tapestry · Apocalypse of Angers, 14th century',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/Angers-_Apocalypse_%281%29.JPG/1280px-Angers-_Apocalypse_%281%29.JPG',
-            page: 'https://commons.wikimedia.org/wiki/File:Angers-_Apocalypse_(1).JPG',
-            alt: 'Section of a medieval tapestry showing a crowned rider with a bow on a white horse',
-            caption: 'A fragment of the great Angers tapestry, woven in the 1370s, shows the first rider with a bow and a crown (6:2). Medieval weavers treated Revelation as a story to be seen, not only read.',
-            credit: 'Remi Jouan', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
           }
         ]
       }
@@ -1122,7 +991,7 @@
         items: [
           {
             title: 'The Garden of Eden', kind: 'Artistic depiction · Genesis 2–3',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Thomas_Cole_-_The_Garden_of_Eden_-_1828.jpg/960px-Thomas_Cole_-_The_Garden_of_Eden_-_1828.jpg',
+            src: '../../assets/images/lessons/bible-pathway/thomas-cole-the-garden-of-eden-1828-5f15d2d.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Thomas_Cole_-_The_Garden_of_Eden_-_1828.jpg',
             alt: 'Thomas Cole painting of a luminous, mountain-ringed Garden of Eden',
             caption: 'Thomas Cole imagines Eden as a place where garden, river, mountain, light, and human life meet before exile.',
@@ -1136,7 +1005,7 @@
         items: [
           {
             title: 'Mount Sinai', kind: 'Traditional identification · Exodus 19–20',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Mount_Sinai_BW_4.jpg/960px-Mount_Sinai_BW_4.jpg',
+            src: '../../assets/images/lessons/bible-pathway/mount-sinai-bw-4-e1fcfe2.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Mount_Sinai_BW_4.jpg',
             alt: 'Rocky summit of the mountain traditionally identified as Mount Sinai in Egypt',
             caption: 'Sinai recalls God descending in fire and cloud to give the covenant; the mountain’s exact biblical location remains debated.',
@@ -1144,7 +1013,7 @@
           },
           {
             title: 'Mount Tabor', kind: 'Traditional identification · Matthew 17:1–8',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Mount_Tabor4.jpg',
+            src: '../../assets/images/lessons/bible-pathway/mount-tabor4-1da204c.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Mount_Tabor4.jpg',
             alt: 'Rounded green profile of Mount Tabor rising above the surrounding plain in Israel',
             caption: 'Christian tradition connects Tabor with the Transfiguration, when Christ’s glory was revealed to Peter, James, and John.',
@@ -1152,7 +1021,7 @@
           },
           {
             title: 'Mount of Olives', kind: 'Biblical place · Gospels and Acts',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/2013-Aerial-Mount_of_Olives.jpg/960px-2013-Aerial-Mount_of_Olives.jpg',
+            src: '../../assets/images/lessons/bible-pathway/2013-aerial-mount-of-olives-9c46c84.webp',
             page: 'https://commons.wikimedia.org/wiki/File:2013-Aerial-Mount_of_Olives.jpg',
             alt: 'Aerial view of the Mount of Olives and its churches overlooking Jerusalem',
             caption: 'The Mount of Olives frames Jesus’ prayer, teaching, entry into Jerusalem, and ascension in the Gospel and Acts narratives.',
@@ -1166,7 +1035,7 @@
         items: [
           {
             title: 'St. Peter’s Basilica', kind: 'Vatican City · Renaissance and Baroque',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Exterior_of_Saint_Peter%27s_Basilica.jpg/960px-Exterior_of_Saint_Peter%27s_Basilica.jpg',
+            src: '../../assets/images/lessons/bible-pathway/exterior-of-saint-peter-s-basilica-5eebb02.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Exterior_of_Saint_Peter%27s_Basilica.jpg',
             alt: 'Facade and dome of Saint Peter’s Basilica seen from Saint Peter’s Square',
             caption: 'One of Christianity’s most recognized churches, St. Peter’s joins a vast gathering place to imagery of apostles, saints, and the cross.',
@@ -1174,7 +1043,7 @@
           },
           {
             title: 'Notre-Dame de Paris', kind: 'France · Gothic',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Paris%2C_Notre_Dame_--_2014_--_1448.jpg/960px-Paris%2C_Notre_Dame_--_2014_--_1448.jpg',
+            src: '../../assets/images/lessons/bible-pathway/paris-notre-dame-2014-1448-b9a4b87.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Paris,_Notre_Dame_--_2014_--_1448.jpg',
             alt: 'Western facade and twin towers of Notre-Dame Cathedral in Paris',
             caption: 'Notre-Dame’s portals, towers, and rose window turn stone and colored light into a public proclamation of the Christian story.',
@@ -1182,7 +1051,7 @@
           },
           {
             title: 'Sagrada Família', kind: 'Barcelona · Modernisme',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Exterior_of_the_Sagrada_Fam%C3%ADlia_20171225.jpg/960px-Exterior_of_the_Sagrada_Fam%C3%ADlia_20171225.jpg',
+            src: '../../assets/images/lessons/bible-pathway/exterior-of-the-sagrada-fam-lia-20171225-5d2aaa3.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Exterior_of_the_Sagrada_Fam%C3%ADlia_20171225.jpg',
             alt: 'Sculpted towers and facade of the Sagrada Família basilica in Barcelona',
             caption: 'Antoni Gaudí’s basilica uses branching columns, sculpted Scripture scenes, and changing light to join creation with the gospel story.',
@@ -1190,7 +1059,7 @@
           },
           {
             title: 'Church of the Holy Sepulchre', kind: 'Jerusalem · Pilgrimage church',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Jerusalem_Holy_Sepulchre_BW_22.JPG/960px-Jerusalem_Holy_Sepulchre_BW_22.JPG',
+            src: '../../assets/images/lessons/bible-pathway/jerusalem-holy-sepulchre-bw-22-7a8d636.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Jerusalem_Holy_Sepulchre_BW_22.JPG',
             alt: 'Stone entrance facade of the Church of the Holy Sepulchre in Jerusalem',
             caption: 'The Holy Sepulchre gathers Christian memory around the traditional sites of Jesus’ crucifixion, burial, and resurrection.',
@@ -1204,7 +1073,7 @@
         items: [
           {
             title: 'The Baptism of Christ', kind: 'Artistic depiction · Matthew 3:13–17',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/The_Baptism_of_Christ_%28Verrocchio_%26_Leonardo%29.jpg/960px-The_Baptism_of_Christ_%28Verrocchio_%26_Leonardo%29.jpg',
+            src: '../../assets/images/lessons/bible-pathway/the-baptism-of-christ-verrocchio-leonardo-71cd00f.webp',
             page: 'https://commons.wikimedia.org/wiki/File:The_Baptism_of_Christ_(Verrocchio_%26_Leonardo).jpg',
             alt: 'Renaissance painting of Jesus’ baptism, with the Spirit represented as a dove and heaven opening above',
             caption: 'This Renaissance work pictures the Father’s voice, the Spirit descending like a dove, and the Son standing in the Jordan.',
@@ -1212,7 +1081,7 @@
           },
           {
             title: 'The Transfiguration', kind: 'Icon · Matthew 17:1–8',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Transfiguration_by_Feofan_Grek_from_Spaso-Preobrazhensky_Cathedral_in_Pereslavl-Zalessky_%2815th_c%2C_Tretyakov_gallery%29.jpeg/960px-Transfiguration_by_Feofan_Grek_from_Spaso-Preobrazhensky_Cathedral_in_Pereslavl-Zalessky_%2815th_c%2C_Tretyakov_gallery%29.jpeg',
+            src: '../../assets/images/lessons/bible-pathway/transfiguration-by-feofan-grek-from-spaso-preobrazhe-5911d22.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Transfiguration_by_Feofan_Grek_from_Spaso-Preobrazhensky_Cathedral_in_Pereslavl-Zalessky_(15th_c,_Tretyakov_gallery).jpeg',
             alt: 'Fifteenth-century icon of the radiant Christ above the disciples at the Transfiguration',
             caption: 'The icon uses radiating light and height to confess what the Gospel narrates: Christ’s glory disclosed before the disciples.',
@@ -1228,7 +1097,7 @@
         items: [
           {
             title: 'Capernaum synagogue ruins', kind: 'Galilee · Aerial photograph, 1937–38',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4c/Zoltan_Kluger._Ruins_of_the_Synagogue_at_Capernaum.jpg/1280px-Zoltan_Kluger._Ruins_of_the_Synagogue_at_Capernaum.jpg',
+            src: '../../assets/images/lessons/bible-pathway/zoltan-kluger-ruins-of-the-synagogue-at-capernaum-43ac604.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Zoltan_Kluger._Ruins_of_the_Synagogue_at_Capernaum.jpg',
             alt: 'Black-and-white aerial photograph of the excavated stone synagogue and surrounding ruins at Capernaum',
             caption: 'Mark 1:21 places Jesus teaching in the synagogue at Capernaum. The white limestone ruins visible today are from a later building (about the 4th–5th century), which sits near older basalt foundations, so this photograph shows the site, not the synagogue Jesus entered.',
@@ -1236,7 +1105,7 @@
           },
           {
             title: 'Banias, ancient Caesarea Philippi', kind: 'Foot of Mount Hermon · Photograph, 1910',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/8/8b/Banias%2C_Ancient_Caesarea_Philippi.jpg',
+            src: '../../assets/images/lessons/bible-pathway/banias-ancient-caesarea-philippi-5f03dfe.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Banias,_Ancient_Caesarea_Philippi.jpg',
             alt: 'Early twentieth-century photograph of the rocky hillside and ruins at Banias, ancient Caesarea Philippi',
             caption: 'Matthew 16:13 sets Peter’s confession “in the district of Caesarea Philippi,” a city dedicated to Pan and the emperor. Jesus asks who He is in a place full of rival claims about divinity and power.',
@@ -1250,7 +1119,7 @@
         items: [
           {
             title: 'The Calling of Saint Peter and Saint Andrew', kind: 'James Tissot · c. 1886–1894',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Brooklyn_Museum_-_The_Calling_of_Saint_Peter_and_Saint_Andrew_%28Vocation_de_Saint_Pierre_et_Saint_Andr%C3%A9%29_-_James_Tissot_-_overall.jpg',
+            src: '../../assets/images/lessons/bible-pathway/brooklyn-museum-the-calling-of-saint-peter-and-saint-7a2525d.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Brooklyn_Museum_-_The_Calling_of_Saint_Peter_and_Saint_Andrew_(Vocation_de_Saint_Pierre_et_Saint_Andr%C3%A9)_-_James_Tissot_-_overall.jpg',
             alt: 'Watercolor of Jesus beckoning two fishermen at the shore of the lake as they work with their nets',
             caption: 'Mark 1:16–20: Jesus calls working people at their work, with a promise and a task: “Follow me, and I will make you become fishers of men.”',
@@ -1258,7 +1127,7 @@
           },
           {
             title: 'The Palsied Man Let Down through the Roof', kind: 'James Tissot · c. 1886–1894',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/f/fe/Brooklyn_Museum_-_The_Palsied_Man_Let_Down_through_the_Roof_%28Le_paralytique_descendu_du_toit%29_-_James_Tissot_-_overall.jpg',
+            src: '../../assets/images/lessons/bible-pathway/brooklyn-museum-the-palsied-man-let-down-through-the-08d5354.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Brooklyn_Museum_-_The_Palsied_Man_Let_Down_through_the_Roof_(Le_paralytique_descendu_du_toit)_-_James_Tissot_-_overall.jpg',
             alt: 'Watercolor showing a man on a mat lowered through an opening in a roof into a crowded house where Jesus is teaching',
             caption: 'Mark 2:1–12: four friends refuse to let a crowd stop them. Notice the roof, the mat, and the faces below, then ask why Jesus speaks of forgiveness first.',
@@ -1274,7 +1143,7 @@
         items: [
           {
             title: 'Mount of Beatitudes', kind: 'Galilee · Traditional site of Matthew 5–7',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Mount_of_Beatitudes_View_Sea_of_Galilee_200704.JPG/1280px-Mount_of_Beatitudes_View_Sea_of_Galilee_200704.JPG',
+            src: '../../assets/images/lessons/bible-pathway/mount-of-beatitudes-view-sea-of-galilee-200704-7e8b4c0.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Mount_of_Beatitudes_View_Sea_of_Galilee_200704.JPG',
             alt: 'View looking down from the Mount of Beatitudes toward the tranquil waters of the Sea of Galilee',
             caption: 'Looking south from the traditional Mount of Beatitudes over the Sea of Galilee, where Jesus gathered crowds from Galilee, the Decapolis, Jerusalem, and Judea (Matthew 4:25–5:1).',
@@ -1288,7 +1157,7 @@
         items: [
           {
             title: 'The Sermon on the Mount', kind: 'Carl Bloch · 1877',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/96/Bloch-SermonOnTheMount.jpg/1280px-Bloch-SermonOnTheMount.jpg',
+            src: '../../assets/images/lessons/bible-pathway/bloch-sermononthemount-2f78065.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Bloch-SermonOnTheMount.jpg',
             alt: 'Carl Bloch painting of Jesus standing with arm raised on a sunlit hillside teaching diverse men, women, and children',
             caption: 'Danish master Carl Bloch portrays Jesus surrounded by listeners of all ages, capturing the intimate yet cosmic authority of the Beatitudes.',
@@ -1296,7 +1165,7 @@
           },
           {
             title: 'Sermon on the Mount & Healing', kind: 'Cosimo Rosselli · Sistine Chapel (1481–1482)',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Cosimo_Rosselli_Sermone_della_Montagna.jpg/1280px-Cosimo_Rosselli_Sermone_della_Montagna.jpg',
+            src: '../../assets/images/lessons/bible-pathway/cosimo-rosselli-sermone-della-montagna-f3ff39a.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Cosimo_Rosselli_Sermone_della_Montagna.jpg',
             alt: 'Renaissance fresco from the Sistine Chapel showing Jesus on a green hill preaching to gathered Renaissance figures',
             caption: 'Painted opposite the Giving of the Law to Moses on the Sistine Chapel walls, Rosselli’s fresco pairs the proclamation of the new covenant with the healing of the leper (Matthew 8:1–4).',
@@ -1310,7 +1179,7 @@
         items: [
           {
             title: 'Codex Sinaiticus · Matthew 6 (The Lord’s Prayer)', kind: 'Greek Uncial Manuscript · 4th century CE',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/b/be/Codex_Sinaiticus_Matthew_6%2C4-32.JPG',
+            src: '../../assets/images/lessons/bible-pathway/codex-sinaiticus-matthew-6-4-32-7ee2a68.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Codex_Sinaiticus_Matthew_6,4-32.JPG',
             alt: 'Folio page of ancient Greek uncial script on parchment from Codex Sinaiticus containing Matthew 6',
             caption: 'This 4th-century parchment page from Codex Sinaiticus (British Library Add MS 43725) preserves Matthew 6:4–32 in four uncial columns, including Jesus’ teaching on prayer and the Lord’s Prayer.',
@@ -1326,7 +1195,7 @@
         items: [
           {
             title: 'The Great Isaiah Scroll', kind: 'Dead Sea Scrolls · c. 125 BCE',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Great_Isaiah_Scroll.jpg',
+            src: '../../assets/images/lessons/bible-pathway/great-isaiah-scroll-27774b6.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Great_Isaiah_Scroll.jpg',
             alt: 'Parchment scroll opened to reveal columns of ancient Hebrew calligraphy',
             caption: 'Preserved in the caves of Qumran, this 24-foot Hebrew scroll shows how Jewish scribes copied and guarded biblical books a thousand years before medieval codices.',
@@ -1334,7 +1203,7 @@
           },
           {
             title: 'Codex Sinaiticus', kind: 'Greek Bible · 4th century CE',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/b/be/Codex_Sinaiticus_Matthew_6%2C4-32.JPG',
+            src: '../../assets/images/lessons/bible-pathway/codex-sinaiticus-matthew-6-4-32-7ee2a68.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Codex_Sinaiticus_Matthew_6,4-32.JPG',
             alt: 'Ancient four-column Greek uncial text handwritten on fine animal vellum',
             caption: 'Written on fine parchment sheets bound as a codex (book) rather than a scroll, Sinaiticus is the oldest surviving complete manuscript of the Christian New Testament.',
@@ -1348,7 +1217,7 @@
         items: [
           {
             title: 'The Gutenberg Bible', kind: 'Mainz, Germany · c. 1455',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Gutenberg_Bible_-_Library_of_Congress.jpg/1280px-Gutenberg_Bible_-_Library_of_Congress.jpg',
+            src: '../../assets/images/lessons/bible-pathway/gutenberg-bible-library-of-congress-06615fa.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Gutenberg_Bible_-_Library_of_Congress.jpg',
             alt: 'Johannes Gutenberg’s 42-line Latin Bible on display with hand-illuminated capitals in a glass exhibition case',
             caption: 'Johannes Gutenberg’s 42-line Latin Vulgate marked the birth of mass printing in Europe, launching the widespread availability of Scripture across languages and borders.',
@@ -1364,7 +1233,7 @@
         items: [
           {
             title: 'The Areopagus (Mars Hill) in Athens', kind: 'Athens, Greece · Acts 17:16–34',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/20101024_Acropolis_panoramic_view_from_Areopagus_hill_Athens_Greece.jpg/1280px-20101024_Acropolis_panoramic_view_from_Areopagus_hill_Athens_Greece.jpg',
+            src: '../../assets/images/lessons/bible-pathway/20101024-acropolis-panoramic-view-from-areopagus-hil-6edf0b4.webp',
             page: 'https://commons.wikimedia.org/wiki/File:20101024_Acropolis_panoramic_view_from_Areopagus_hill_Athens_Greece.jpg',
             alt: 'View looking up from the rocky Areopagus hill toward the monumental Parthenon and temples of the Athenian Acropolis',
             caption: 'Standing on the limestone outcrop of the Areopagus below the monumental Parthenon, the Apostle Paul addressed the philosophers of the Epicurean and Stoic schools about the “Unknown God.”',
@@ -1378,7 +1247,7 @@
         items: [
           {
             title: 'The Erastus Inscription at Corinth', kind: 'Corinth, Greece · Romans 16:23 / Acts 19:22',
-            src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/Erastus_stone_at_Theater_of_Corinth_%28cropped%29.jpg/1280px-Erastus_stone_at_Theater_of_Corinth_%28cropped%29.jpg',
+            src: '../../assets/images/lessons/bible-pathway/erastus-stone-at-theater-of-corinth-cropped-c281024.webp',
             page: 'https://commons.wikimedia.org/wiki/File:Erastus_stone_at_Theater_of_Corinth_(cropped).jpg',
             alt: 'Carved Latin inscription on a paved limestone plaza near the theater of ancient Corinth',
             caption: 'Carved in limestone paving near the Corinthian theater, this Latin inscription reads: “ERASTVS PRO AEDILITATE SVA PECVNIA STRAVIT” (Erastus in return for his aedileship laid this pavement at his own expense), directly corroborating Erastus, “the city treasurer” greeted in Romans 16:23.',
@@ -1391,72 +1260,130 @@
 
   var geographyMaps = {
     nearEast: {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Map_of_the_Ancient_Near_East.jpg/1280px-Map_of_the_Ancient_Near_East.jpg',
+      src: '../../assets/images/lessons/bible-pathway/map-of-the-ancient-near-east-cf8dbb2.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Map_of_the_Ancient_Near_East.jpg',
       alt: 'Historical map of the ancient Near East from Egypt and the Mediterranean to Mesopotamia',
       credit: 'Dodd, Mead, and Company', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     bibleLands: {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/A_general_map_of_Bible_Lands.jpg/1280px-A_general_map_of_Bible_Lands.jpg',
+      src: '../../assets/images/lessons/bible-pathway/a-general-map-of-bible-lands-5c99f1d.webp',
       page: 'https://commons.wikimedia.org/wiki/File:A_general_map_of_Bible_Lands.jpg',
       alt: 'Historical map showing the broad lands associated with the biblical story',
       credit: 'Edwin Gardner / Library of Congress', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     sinai: {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/7/76/Sinai-peninsula-map.jpg',
+      src: '../../assets/images/lessons/bible-pathway/sinai-peninsula-map-4d8ccac.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Sinai-peninsula-map.jpg',
       alt: 'Shaded relief reference map of the Sinai Peninsula between Egypt and the southern Levant',
       credit: 'U.S. Central Intelligence Agency', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     jerusalem: {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Map_of_the_Old_City_and_surroundings_of_Jerusalem.svg/1280px-Map_of_the_Old_City_and_surroundings_of_Jerusalem.svg.png',
+      src: '../../assets/images/lessons/bible-pathway/map-of-the-old-city-and-surroundings-of-jerusalem-b57b9df.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Map_of_the_Old_City_and_surroundings_of_Jerusalem.svg',
       alt: 'Modern reference map of Jerusalem’s Old City and surrounding valleys and neighborhoods',
       credit: 'Obendorf', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
     },
     kingdoms: {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Kingdoms_of_Israel_and_Judah_%288th_century_BCE%29.svg/1280px-Kingdoms_of_Israel_and_Judah_%288th_century_BCE%29.svg.png',
+      src: '../../assets/images/lessons/bible-pathway/kingdoms-of-israel-and-judah-8th-century-bce-c6ccb44.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Kingdoms_of_Israel_and_Judah_(8th_century_BCE).svg',
       alt: 'Map of Israel, Judah, and neighboring states in the eighth century BCE',
       credit: 'Tobias Schäfer 87', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/'
     },
     tribes: {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/12_Tribes_of_Israel_Map.svg/1280px-12_Tribes_of_Israel_Map.svg.png',
+      src: '../../assets/images/lessons/bible-pathway/12-tribes-of-israel-map-bcaf694.webp',
       page: 'https://commons.wikimedia.org/wiki/File:12_Tribes_of_Israel_Map.svg',
       alt: 'Map presenting the tribal allotments described in Joshua chapters 13 through 19',
       credit: 'Richardprins and contributors', license: 'CC BY-SA 3.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/'
     },
     jesus: {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Palestine_in_the_time_of_Jesus.jpg/1280px-Palestine_in_the_time_of_Jesus.jpg',
+      src: '../../assets/images/lessons/bible-pathway/palestine-in-the-time-of-jesus-b8fb863.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Palestine_in_the_time_of_Jesus.jpg',
       alt: 'Historical map of Galilee, Samaria, Judea, Perea, and neighboring regions around the time of Jesus',
       credit: 'Charles Foster Kent / Library of Congress', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     galilee: {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/0/0f/Sea_of_galilee_map_1903.jpg',
+      src: '../../assets/images/lessons/bible-pathway/sea-of-galilee-map-1903-ae3bbf3.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Sea_of_galilee_map_1903.jpg',
       alt: 'Historical reference map of the Sea of Galilee and surrounding towns and terrain',
       credit: 'Paul Waterhouse', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
     romanEmpire: {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/RomanEmpire_117.svg/1280px-RomanEmpire_117.svg.png',
+      src: '../../assets/images/lessons/bible-pathway/romanempire-117-4439819.webp',
       page: 'https://commons.wikimedia.org/wiki/File:RomanEmpire_117.svg',
       alt: 'Map showing the extent and provinces of the Roman Empire in 117 CE',
       credit: 'ArdadN', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     },
-    sevenChurches: {
-      src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Asia_Minor_showing_positions_of_the_Seven_Churches_%28Smith%2C_1915%29.jpg/1280px-Asia_Minor_showing_positions_of_the_Seven_Churches_%28Smith%2C_1915%29.jpg',
-      page: 'https://commons.wikimedia.org/wiki/File:Asia_Minor_showing_positions_of_the_Seven_Churches_(Smith,_1915).jpg',
-      alt: 'Historical map of western Asia Minor marking the seven cities addressed in Revelation 2 and 3',
-      credit: 'George Adam Smith, 1915', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
-    },
     paulFirstJourney: {
-      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Paul_the_Apostle%2C_first_missionary_journey.svg/1280px-Paul_the_Apostle%2C_first_missionary_journey.svg.png',
+      src: '../../assets/images/lessons/bible-pathway/paul-the-apostle-first-missionary-journey-fdc4756.webp',
       page: 'https://commons.wikimedia.org/wiki/File:Paul_the_Apostle,_first_missionary_journey.svg',
       alt: 'Map tracing Paul and Barnabas’s first missionary journey from Antioch through Cyprus and southern Galatia',
       credit: 'Roberto Reggi', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
     }
   };
+
+  function journeyImage(image, title, kind, caption) {
+    return Object.assign({}, image, { title: title, kind: kind, caption: caption });
+  }
+
+  lessonImages.leviticus = journeyImage(lessonVisualJourneys['feasts-of-israel'][0].items[0],
+    'A Leviticus manuscript', 'Dead Sea Scroll', 'A fragment of Leviticus from Qumran shows how the book was copied by hand. The lesson reader gives the English text for close comparison.');
+  lessonImages.numbers = journeyImage(lessonVisualJourneys.deuteronomy[0].items[0],
+    'From Moab toward the Jordan', 'Modern landscape', 'Looking west from Mount Nebo, use the Dead Sea and Jordan Valley to orient the final setting of Numbers. The view shows the terrain today.');
+  lessonVisualJourneys.leviticus = [{
+    title: 'Atonement across two settings',
+    note: 'Compare the sanctuary described in Leviticus 16 with a much later depiction of the day’s observance.',
+    items: [
+      journeyImage(lessonImages['the-tabernacle'], 'The tent and courtyard', 'Modern model · Leviticus 16:15–19', 'Use the model to locate the courtyard and inner tent. Follow the priest’s movements in the passage and label features that the model supplies.'),
+      lessonVisualJourneys['feasts-of-israel'][1].items[1]
+    ]
+  }];
+  lessonVisualJourneys.numbers = [{
+    title: 'From Sinai to the edge of the land',
+    note: 'Compare wilderness terrain with the broad approach to the Jordan Valley.',
+    items: [
+      journeyImage(lessonImages.exodus, 'Wilderness terrain', 'Modern photograph · Numbers 10:11–14', 'Numbers begins its journey from the wilderness of Sinai. Observe the terrain in this photograph of a traditional Sinai identification. The text gives no exact modern route.'),
+      journeyImage(geographyMaps.tribes, 'The land beyond the Jordan', 'Interpretive map · Numbers 27:12–23', 'Locate the Dead Sea and the Jordan. The tribal allotments are from Joshua and belong to a later point in the story than Moses’ commissioning of Joshua.')
+    ]
+  }];
+  lessonVisualJourneys.elijah = [{
+    title: 'Two mountains, two encounters',
+    note: 'Place the public encounter at Carmel alongside Elijah’s journey to Horeb.',
+    items: [
+      journeyImage(lessonImages.elijah, 'A spring near Mount Carmel', 'Historic photograph · 1 Kings 18:20–39', 'This photograph shows terrain near a site traditionally associated with Elijah. Read the story and identify what the crowd sees and hears.'),
+      journeyImage(lessonImages.exodus, 'A traditional Sinai landscape', 'Modern photograph · 1 Kings 19:8–13', 'Horeb is called the mountain of God. This landscape shows a traditional Sinai location and gives context for the journey. The narrative gives no coordinates for Elijah’s cave.')
+    ]
+  }];
+  lessonVisualJourneys.job = [{
+    title: 'How an artist reads Job',
+    note: 'Compare William Blake’s illustrations with the opening scenes and the ending.',
+    items: [
+      {
+        title: 'Job’s Comforters', kind: 'Print · William Blake · Job 2:11–13',
+        src: '../../assets/images/lessons/bible-pathway/jobs-comforters.webp',
+        page: 'https://commons.wikimedia.org/wiki/File:Blake-Job%27s-Comforters.jpg',
+        alt: 'William Blake print of Job and the friends who come to comfort him',
+        caption: 'Blake gives gestures and expressions to an encounter the narrator describes mainly through weeping, silence and shared time. Which actions can you trace to the passage?',
+        credit: 'William Blake', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+      },
+      journeyImage(lessonImages.job, 'Job and his daughters', 'Engraving · William Blake · Job 42:13–15', 'The book names Job’s daughters and says he gives them a share of his inheritance. Which parts of Blake’s scene are his own interpretation?')
+    ]
+  }];
+  lessonVisualJourneys['world-of-the-bible'] = [{
+    title: 'Landscape and empire',
+    note: 'Compare physical geography with an imperial record of a particular event.',
+    items: [
+      journeyImage(geographyMaps.nearEast, 'Egypt, Canaan and Mesopotamia', 'Reference map · Genesis 12:1–9', 'Locate the Nile and the Euphrates. Use coastal routes, rivers and deserts to explain why movement between these regions matters to the stories.'),
+      journeyImage(lessonImages['kingdoms-prophets-exile'], 'The Lachish relief', 'Assyrian relief · Compare 2 Kings 18:13–17', 'The relief portrays the Assyrian capture of Lachish. Read the biblical notice alongside it and ask whose point of view each source preserves.')
+    ]
+  }];
+  lessonVisualJourneys['world-of-jesus'] = [{
+    title: 'From the lake to Jerusalem',
+    note: 'Compare the settings of early ministry in Galilee and later events in and around Jerusalem.',
+    items: [
+      journeyImage(lessonImages['world-of-jesus'], 'Hills above the Sea of Galilee', 'Modern photograph · Matthew 4:12–22', 'Look at the hills and shore. Name the places, occupations and movements Matthew gives for the opening of Jesus’ ministry.'),
+      journeyImage(lessonImages['holy-week'], 'Jerusalem from the Mount of Olives', 'Modern photograph · Luke 19:28–40', 'Compare the approach in Luke with the modern view across the valley. Buildings and walls have changed since the Gospel period.')
+    ]
+  }];
 
   var lessonMapKeys = {
     'world-of-the-bible': 'nearEast',
@@ -1471,18 +1398,20 @@
     'holy-week': 'jerusalem',
     'acts-jerusalem-to-nations': 'romanEmpire',
     'pauls-missionary-journeys': 'paulFirstJourney',
-    'proverbs-wisdom-decision-lab': 'nearEast',
     'job': 'nearEast',
     'jesus-ministry': 'jesus',
     'sermon-on-the-mount': 'galilee',
-    'revelation': 'sevenChurches',
     'genesis': 'nearEast',
     'exodus': 'sinai',
+    'leviticus': 'sinai',
+    'numbers': 'bibleLands',
     'joshua-to-david': 'tribes',
     'deuteronomy': 'tribes'
   };
 
   var lessonMapNotes = {
+    'leviticus': 'Locate the Sinai Peninsula and the surrounding gulfs. Leviticus is framed around the tent of meeting in Israel’s camp. The map shows the physical region rather than the camp’s location or layout.',
+    'numbers': 'Locate the Sinai Peninsula, the Negev, the Dead Sea and Moab east of the Jordan. Use Numbers 13, 20 and 33 to compare the named stops. The map provides orientation because several wilderness sites are disputed.',
     'deuteronomy': 'Look east of the Jordan: Moses speaks on the plains of Moab opposite Jericho, and Mount Nebo overlooks the land. This map shows the tribal allotments described in Joshua 13–19, so use it for location, not for the situation in Moses’ day.',
     'world-of-the-bible': 'Zoom out: Egypt anchors the southwest, Mesopotamia the east, and the narrow Levantine land bridge lies between them. Locate seas, rivers, deserts, and imperial routes before focusing on Canaan.',
     'how-the-bible-reached-us': 'The biblical writings emerged across connected lands and languages. Use the map to locate Israel between Egypt, Mesopotamia, Anatolia, and the Mediterranean world—then remember that manuscripts later traveled far beyond this frame.',
@@ -1496,12 +1425,10 @@
     'holy-week': 'Use this modern map only for enduring topography and relative position. Locate the Mount of Olives east of the Old City, the Kidron Valley between them, and the city gates; ancient walls and street lines differed.',
     'acts-jerusalem-to-nations': 'This map shows the empire in 117 CE, later than Acts, so its borders should not be treated as an exact Acts-era snapshot. It still reveals the continental scale, seas, and provincial network through which early Christian witness traveled.',
     'pauls-missionary-journeys': 'Begin with one route in detail: Antioch to Cyprus, Asia Minor, and back. Use it as a scale model for reading later journeys—always checking Acts for the sequence and distinguishing mapped reconstruction from explicit text.',
-    'proverbs-wisdom-decision-lab': 'Israel’s wisdom belongs to a wider ancient Near Eastern world of courts, trade, agriculture, households, and scribal learning. Geographic context invites comparison without assuming every neighboring tradition says the same thing.',
     'job': 'Job is set in the land of Uz, whose location is not certain. Use the wider ancient Near Eastern map to see the cultural world of wisdom literature, but do not turn a schematic map into a precise identification of Uz.',
     'joshua-to-david': 'This map presents the tribal allotments of Joshua 13–19. Trace Israel’s entry from the Jordan, then locate Jericho, Shechem, Shiloh, Gibeah in Benjamin (Saul’s home), and Bethlehem and Hebron in Judah (David’s home). The boundaries are a literary and interpretive reconstruction.',
     'exodus': 'Find Egypt and the Nile Delta, the two gulfs of the Red Sea region, and the Sinai Peninsula’s granite interior. Several routes and mountain identifications have been proposed, so treat this map as orientation for the story, not a finished answer.',
     'genesis': 'Trace the world of Genesis: Mesopotamia in the east (Ur, Haran), Canaan along the Mediterranean, and Egypt to the southwest. Abram travels from the first toward the second; Joseph’s family ends in the third. A map locates places; it cannot settle every ancient identification.',
-    'revelation': 'Find Ephesus on the coast, then follow the letters north to Smyrna and Pergamum and southeast through Thyatira, Sardis, Philadelphia, and Laodicea. Patmos lies off the coast to the west. Ask why these seven were chosen, and what “seven” might signal about the whole Church.',
     'jesus-ministry': 'Find Nazareth in the hills of Galilee, then Capernaum on the lake’s northwest shore, where much of Mark 1–4 happens. Caesarea Philippi lies far north, near Mount Hermon. Notice how the story moves from the lake to the north before the road turns south to Jerusalem.',
     'sermon-on-the-mount': 'Locate the lake, Capernaum, surrounding settlements, slopes, and roads. The map clarifies the Galilean setting, but Matthew does not identify the sermon’s exact hillside.'
   };
@@ -1521,7 +1448,6 @@
     'holy-week': ['Mark 15:40–16:8; John 20:1–18', 'How can you compare the resurrection accounts?', ['Name shared claims and each writer’s chosen scene', 'Force both accounts into the same sentence order'], 0, 'Both witness to the empty tomb, but they select and arrange details differently. Compare the witnesses and narrative emphasis before attempting a sequence.', 'Make two columns: details shared and details each Gospel emphasizes.'],
     'acts-jerusalem-to-nations': ['Acts 1:8; 8:26–40', 'How does the Ethiopian official’s story relate to Acts 1:8?', ['It shows witness crossing a social and geographic boundary', 'It proves the whole book happens in Jerusalem'], 0, 'Acts moves outward through particular people and encounters. The official’s story is one example, not a complete map of the mission.', 'Locate the road named in Acts 8 and explain what the text says about the encounter.'],
     'pauls-missionary-journeys': ['Acts 13:4–14', 'Which route is actually named in this passage?', ['From Syrian Antioch to Cyprus and onward to Perga', 'A direct flight from Rome to Jerusalem'], 0, 'The text names Seleucia, Cyprus, Paphos, and Perga. A route map is a reconstruction of travel between named places.', 'List the places in order, then label any connecting line as a reconstruction.'],
-    'proverbs-wisdom-decision-lab': ['Proverbs 26:4–5', 'Two neighboring sayings give opposite instructions. What should a reader do?', ['Consider which situation calls for each response', 'Discard one verse because it must be a copying error'], 0, 'The paired proverbs train discernment. Their tension warns against treating each short saying as a mechanical rule for every circumstance.', 'Describe two situations in which different responses might be wise.'],
     'job': ['Job 2:11–13; 4:7–8; 42:7', 'Job’s friends begin by sitting with him, then offer explanations. What should a careful reader test?', ['Whether their confident explanation is actually supported by the book', 'Whether suffering always proves a person committed a hidden sin'], 0, 'The friends speak at length, but God later says they have not spoken what is right about Him as Job has. Their opening silence models presence; their later certainty becomes part of the book’s critique.', 'Compare one speech from a friend with Job 42:7. Name one claim, its evidence, and the judgment the book gives it.'],
     'joshua-to-david': ['Judges 17:6; 21:25', 'The book ends “In those days there was no king in Israel; everyone did what was right in his own eyes.” How should a reader take this refrain?', ['As the narrator’s diagnosis of moral chaos, shown by the stories just told', 'As praise for individual freedom and independence'], 0, 'The chapters before it describe theft, idolatry, assault, and civil war. The refrain interprets those stories: Israel lacks faithful leadership and has drifted from covenant loyalty.', 'List two episodes from Judges 17–21. For each, say what “right in his own eyes” led to.'],
     'exodus': ['Exodus 20:1–3', 'The Ten Commandments begin with a statement before any command. What does it do?', ['It grounds the law in rescue: “I am the Lord your God, who brought you out of Egypt”', 'It makes the law a payment Israel must make before being freed'], 0, 'Verse 2 recalls what God has already done. Israel is rescued first, then given the covenant. The commands describe how a freed people live, not how a slave earns freedom.', 'Find one earlier verse in Exodus 1–19 where God acts to rescue before any command is given. Explain how 20:2 relies on it.'],
@@ -1529,21 +1455,20 @@
     'numbers': ['Numbers 13:27–33', 'The scouts largely agree about what they see. Where do they differ?', ['In how they interpret the land, its people, and Israel’s ability to continue', 'In whether they traveled to Canaan at all'], 0, 'The report includes shared observations, then competing conclusions. Caleb urges action; other scouts magnify danger and describe themselves as grasshoppers.', 'Make separate lists for observation, interpretation, and proposed response.'],
     'deuteronomy': ['Deuteronomy 6:4–9', 'How is love for God meant to be learned?', ['Through repeated words and practices woven into ordinary family life', 'Only through a once-a-year private test'], 0, 'The Shema joins hearing, wholehearted love, repeated teaching, conversation, and visible reminders throughout the day.', 'Design a simple morning, travel, and evening rhythm based only on actions named in the passage.'],
     'genesis': ['Genesis 12:1–3', 'God calls Abram. Whom is the promised blessing ultimately for?', ['Abram’s family, so that all the families of the earth are blessed through him', 'Abram’s family alone, with no concern for other nations'], 0, 'The promise runs from Abram to “all the families of the earth” (12:3). After Babel scattered the nations, God begins with one family to reach all of them.', 'Underline every “bless” and “blessing” in 12:1–3. Count how many are for Abram and how many reach beyond him.'],
-    'revelation': ['Revelation 5:1–10', 'John weeps because no one can open the scroll, hears that “the Lion of the tribe of Judah has conquered,” then sees a Lamb standing as though slain. How should a reader take this?', ['The announced image (Lion) is reinterpreted by the seen image (Lamb): victory comes through sacrifice', 'The Lion and the Lamb are two rival figures who compete for the scroll'], 0, 'John hears “Lion” but turns and sees a Lamb. The text pairs the two so that kingly conquest is understood through the slain Lamb, whose blood ransoms people from every tribe and language. Hearing and seeing work together.', 'List what John hears and what he sees in 5:5–6. Then name one earlier biblical image (Genesis 49:9–10, Isaiah 53:7, or Exodus 12) that each echoes.'],
     'jesus-ministry': ['Mark 2:1–12', 'Before healing the paralyzed man, Jesus says, “Son, your sins are forgiven.” What question does the scene press on the reader?', ['Who has authority to forgive sins, and does Jesus’ healing show that He has it?', 'Whether the man’s paralysis proves he committed a particular sin'], 0, 'The scribes ask, “Who can forgive sins but God alone?” and Jesus heals “that you may know that the Son of Man has authority on earth to forgive sins” (2:7, 10). The passage never says the man’s condition was a punishment; it joins forgiveness and restoration under Jesus’ authority.', 'List the four groups in the scene (the friends, the man, the scribes, the crowd). Find one verse that shows how each group responds.'],
     'sermon-on-the-mount': ['Matthew 6:1–6', 'What contrast frames Jesus’ teaching about giving and prayer?', ['Performing for public praise versus seeking the Father', 'Galilee versus Jerusalem as the correct place to pray'], 0, 'Jesus repeats the contrast between being seen by people and the Father who sees in secret. The passage examines motive and audience.', 'Find repeated words or actions and explain how they develop the contrast.']
   };
 
   var lessonEntities = {
     'world-of-the-bible': [
-      { title: 'Abraham', kind: 'Biblical figure' },
-      { title: 'Moses', kind: 'Biblical figure' },
-      { title: 'Joshua', kind: 'Biblical figure' },
-      { title: 'Jerusalem', kind: 'Place' },
-      { title: 'Roman Empire', kind: 'Historical setting' }
+      { title: 'Abraham', kind: 'Biblical figure', note: "Trace the named stops in Genesis 12:1–9." },
+      { title: 'Moses', kind: 'Biblical figure', note: "Compare his death in Deuteronomy 34 with the opening of Joshua." },
+      { title: 'Joshua', kind: 'Biblical figure', note: "Read the commission to lead Israel across the Jordan in Joshua 1:1–9." },
+      { title: 'Jerusalem', kind: 'Place', note: "Follow the city from the Babylonian conquest in 2 Kings 25 to the rebuilding decree in Ezra 1." },
+      { title: 'Roman Empire', kind: 'Historical setting', note: "Luke 3:1–2 places John the Baptist’s ministry during the reign of Tiberius." }
     ],
     'how-the-bible-reached-us': [
-      { title: 'Dead Sea Scrolls', kind: 'Manuscript collection', fallback: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Great_Isaiah_Scroll.jpg/1280px-Great_Isaiah_Scroll.jpg' },
+      { title: 'Dead Sea Scrolls', kind: 'Manuscript collection' },
       { title: 'Codex Sinaiticus', kind: 'Biblical manuscript' },
       { title: 'Masoretic Text', kind: 'Textual tradition' },
       { title: 'Jerome', kind: 'Translator and scholar' },
@@ -1557,12 +1482,12 @@
       { title: 'Tabernacle', kind: 'Sacred space' }
     ],
     'temple-and-gods-presence': [
-      { title: 'Solomon', kind: 'Biblical king' },
-      { title: 'David', kind: 'Biblical king' },
-      { title: 'First Temple', kind: 'Sacred space' },
-      { title: 'Second Temple', kind: 'Historical sanctuary' },
-      { title: 'Herod the Great', kind: 'Historical ruler' },
-      { title: 'Temple Mount', kind: 'Place' }
+      { title: 'Solomon', kind: 'Biblical king', note: "Read his prayer at the dedication in 1 Kings 8:22–30." },
+      { title: 'David', kind: 'Biblical king', note: "In 2 Samuel 7, David proposes a house for God and receives the promise of a house of his own." },
+      { title: 'First Temple', kind: 'Sacred space', note: "The temple built by Solomon is dedicated in 1 Kings 8." },
+      { title: 'Second Temple', kind: 'Historical sanctuary', note: "Ezra 6:14–18 describes the completion and dedication after the exile." },
+      { title: 'Herod the Great', kind: 'Historical ruler', note: "The Gospels open the story of Jesus’ family during his reign in Matthew 2." },
+      { title: 'Temple Mount', kind: 'Place', note: "Use the map to locate the temple precinct relative to the Mount of Olives." }
     ],
     'kingdoms-prophets-exile': [
       { title: 'David', kind: 'Biblical king' },
@@ -1581,20 +1506,20 @@
       { title: 'Jerusalem', kind: 'Pilgrimage destination' }
     ],
     'elijah': [
-      { title: 'Elijah', kind: 'Biblical prophet' },
-      { title: 'Ahab', kind: 'Biblical king of Israel' },
-      { title: 'Jezebel', kind: 'Biblical queen' },
-      { title: 'Mount Carmel', kind: 'Place' },
-      { title: 'Mount Horeb', kind: 'Place' },
-      { title: 'Elisha', kind: 'Biblical prophet' }
+      { title: 'Elijah', kind: 'Biblical prophet', note: "Trace his movement from the brook at Cherith to the mountain at Horeb in 1 Kings 17–19." },
+      { title: 'Ahab', kind: 'Biblical king of Israel', note: "Compare his exchange with Elijah on Carmel with the dispute over Naboth’s vineyard." },
+      { title: 'Jezebel', kind: 'Biblical queen', note: "Read her threat after Carmel in 1 Kings 19:1–2." },
+      { title: 'Mount Carmel', kind: 'Place', note: "The crowd gathers here in 1 Kings 18:19–20." },
+      { title: 'Mount Horeb', kind: 'Place', note: "Elijah encounters God here in 1 Kings 19:8–18." },
+      { title: 'Elisha', kind: 'Biblical prophet', note: "His call in 1 Kings 19:19–21 leads into the succession in 2 Kings 2." }
     ],
     'world-of-jesus': [
-      { title: 'Jesus', kind: 'Historical and biblical figure' },
-      { title: 'Herod Antipas', kind: 'Historical ruler' },
-      { title: 'Pontius Pilate', kind: 'Roman governor' },
-      { title: 'Sea of Galilee', kind: 'Place' },
-      { title: 'Jerusalem', kind: 'Place' },
-      { title: 'Pharisees', kind: 'Second Temple Jewish movement' }
+      { title: 'Jesus', kind: 'Historical and biblical figure', note: "Mark his named stops in Matthew 4, John 4 and Luke 9." },
+      { title: 'Herod Antipas', kind: 'Historical ruler', note: "Luke calls him tetrarch of Galilee in Luke 3:1." },
+      { title: 'Pontius Pilate', kind: 'Roman governor', note: "In Luke 23:1–4, Jesus is brought before this Roman official." },
+      { title: 'Sea of Galilee', kind: 'Place', note: "Matthew 4:18–22 places the call of fishermen beside this lake." },
+      { title: 'Jerusalem', kind: 'Place', note: "Luke 9:51 names the city as Jesus’ destination." },
+      { title: 'Pharisees', kind: 'Second Temple Jewish movement', note: "Luke 7:36–50 records a discussion at the table of a Pharisee." }
     ],
     'jesus-parables-lab': [
       { title: 'Jesus', kind: 'Historical and biblical figure' },
@@ -1627,50 +1552,43 @@
       { title: 'Luke the Evangelist', label: 'Luke', kind: 'New Testament figure' },
       { title: 'Priscilla and Aquila', kind: 'Missionary coworkers' }
     ],
-    'proverbs-wisdom-decision-lab': [
-      { title: 'Solomon', kind: 'Biblical king' },
-      { title: 'Book of Proverbs', kind: 'Biblical book', fallback: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Proverb_scroll.PNG' },
-      { title: 'Wisdom literature', kind: 'Literary genre' },
-      { title: 'Hebrew Bible', kind: 'Scriptural collection' },
-      { title: 'Ancient Israel and Judah', kind: 'Historical setting' }
-    ],
     'job': [
-      { title: 'Job', kind: 'Wisdom-literature figure' },
-      { title: 'Eliphaz the Temanite', label: 'Eliphaz', kind: 'Job’s friend' },
-      { title: 'Bildad the Shuhite', label: 'Bildad', kind: 'Job’s friend' },
-      { title: 'Zophar the Naamathite', label: 'Zophar', kind: 'Job’s friend' },
-      { title: 'Elihu', kind: 'Speaker in Job 32–37' },
-      { title: 'Book of Job', kind: 'Wisdom literature' }
+      { title: 'Job', kind: 'Wisdom-literature figure', note: "The narrator introduces him as blameless and upright in Job 1:1." },
+      { title: 'Eliphaz the Temanite', label: 'Eliphaz', kind: 'Job’s friend', note: "Compare his general claim in chapter 4 with his specific allegations in chapter 22." },
+      { title: 'Bildad the Shuhite', label: 'Bildad', kind: 'Job’s friend', note: "In Job 8:3–7, Bildad turns a claim about divine justice into advice for Job." },
+      { title: 'Zophar the Naamathite', label: 'Zophar', kind: 'Job’s friend', note: "Job 11:5–6 shows how far Zophar’s claim about Job’s guilt goes." },
+      { title: 'Elihu', kind: 'Speaker in Job 32–37', note: "Job 32:1–5 introduces a later speaker and explains why he breaks his silence." },
+      { title: 'Book of Job', kind: 'Wisdom literature', note: "The opening narrative, poetic speeches and final narrative give the reader different kinds of evidence." }
     ],
     'joshua-to-david': [
-      { title: 'Book of Joshua', kind: 'Biblical book' },
-      { title: 'Book of Judges', kind: 'Biblical book' },
-      { title: 'Books of Samuel', kind: 'Biblical books' },
-      { title: 'Saul', kind: 'Biblical figure' },
-      { title: 'David', kind: 'Biblical figure' },
-      { title: 'Tel Dan Stele', kind: 'Archaeological inscription' }
+      { title: 'Book of Joshua', kind: 'Biblical book', note: "Joshua 1 and 24 frame the leadership of Joshua with commission and covenant renewal." },
+      { title: 'Book of Judges', kind: 'Biblical book', note: "Judges 2 explains the generational failure that frames the cycle of the book." },
+      { title: 'Books of Samuel', kind: 'Biblical books', note: "First Samuel 8 and 16 trace the request for monarchy and David’s anointing." },
+      { title: 'Saul', kind: 'Biblical figure', note: "Compare Israel’s desire for a king in 1 Samuel 8 with Saul’s public selection in chapter 10." },
+      { title: 'David', kind: 'Biblical figure', note: "Trace his descent in Ruth 4 and the promise to his house in 2 Samuel 7." },
+      { title: 'Tel Dan Stele', kind: 'Archaeological inscription', note: "Compare the inscription shown in the visual journey with the lesson’s question about the name House of David." }
     ],
     'exodus': [
-      { title: 'Book of Exodus', kind: 'Biblical book' },
-      { title: 'Moses', kind: 'Biblical figure' },
-      { title: 'Passover', kind: 'Jewish festival' },
-      { title: 'Mount Sinai', kind: 'Place' },
-      { title: 'Ten Commandments', kind: 'Covenant law' },
-      { title: 'Pharaoh', kind: 'Egyptian office' }
+      { title: 'Book of Exodus', kind: 'Biblical book', note: "Trace the movement from forced labor through deliverance to a sanctuary for worship." },
+      { title: 'Moses', kind: 'Biblical figure', note: "Compare his question in Exodus 3:11 with God’s answer in verse 12." },
+      { title: 'Passover', kind: 'Jewish festival', note: "Exodus 12 links rescue to a recurring meal and explanation for children." },
+      { title: 'Mount Sinai', kind: 'Place', note: "Exodus 19 places Israel at the mountain before introducing the covenant." },
+      { title: 'Ten Commandments', kind: 'Covenant law', note: "Exodus 20:2 grounds the commands in deliverance from Egypt." },
+      { title: 'Pharaoh', kind: 'Egyptian office', note: "Compare the ruler’s fears in Exodus 1 with his later responses to Moses." }
     ],
     'leviticus': [
-      { title: 'Book of Leviticus', kind: 'Biblical book' },
-      { title: 'Aaron', kind: 'Biblical priest' },
-      { title: 'Day of Atonement', kind: 'Holy day' },
-      { title: 'Tabernacle', kind: 'Sacred space' },
-      { title: 'Jubilee (biblical)', label: 'Jubilee', kind: 'Covenant practice' }
+      { title: 'Book of Leviticus', kind: 'Biblical book', note: "Read the instructions for worship in chapter 1 beside the community laws in chapter 19." },
+      { title: 'Aaron', kind: 'Biblical priest', note: "Follow his responsibilities in the atonement rites in Leviticus 16." },
+      { title: 'Day of Atonement', kind: 'Holy day', note: "Compare the stated purpose of the rites in Leviticus 16:29–34 with the two goats’ roles." },
+      { title: 'Tabernacle', kind: 'Sacred space', note: "Leviticus 1:1 places the opening speech at the tent of meeting." },
+      { title: 'Jubilee (biblical)', label: 'Jubilee', kind: 'Covenant practice', note: "Leviticus 25 ties liberty and the return of land to a recurring cycle." }
     ],
     'numbers': [
-      { title: 'Book of Numbers', kind: 'Biblical book' },
-      { title: 'Moses', kind: 'Biblical leader' },
-      { title: 'Miriam', kind: 'Biblical leader' },
-      { title: 'Caleb', kind: 'Biblical scout' },
-      { title: 'Joshua', kind: 'Biblical leader' }
+      { title: 'Book of Numbers', kind: 'Biblical book', note: "Compare the opening census with the generation described at the end of Numbers 26." },
+      { title: 'Moses', kind: 'Biblical leader', note: "Compare his complaint in Numbers 11 with his public commissioning of Joshua in chapter 27." },
+      { title: 'Miriam', kind: 'Biblical leader', note: "Numbers 12 records her challenge alongside Aaron, and Numbers 20:1 records her death." },
+      { title: 'Caleb', kind: 'Biblical scout', note: "Compare what he says alone in Numbers 13:30 with what he and Joshua say in 14:6–9." },
+      { title: 'Joshua', kind: 'Biblical leader', note: "His commission in Numbers 27 prepares for the opening of the next book." }
     ],
     'deuteronomy': [
       { title: 'Book of Deuteronomy', kind: 'Biblical book' },
@@ -1683,33 +1601,25 @@
       { title: 'Joshua', kind: 'Successor to Moses' }
     ],
     'genesis': [
-      { title: 'Book of Genesis', kind: 'Biblical book' },
-      { title: 'Abraham', kind: 'Biblical figure' },
-      { title: 'Joseph (Genesis)', label: 'Joseph', kind: 'Biblical figure' },
-      { title: 'Garden of Eden', kind: 'Biblical place' },
-      { title: 'Tower of Babel', kind: 'Biblical narrative' },
-      { title: 'Ur', kind: 'Mesopotamian city' }
-    ],
-    'revelation': [
-      { title: 'John of Patmos', kind: 'Author of Revelation' },
-      { title: 'Patmos', kind: 'Place' },
-      { title: 'Seven churches of Asia', kind: 'Audience' },
-      { title: 'Ephesus', kind: 'City of the first letter' },
-      { title: 'Pergamon', kind: 'City of the third letter' },
-      { title: 'Book of Revelation', kind: 'Biblical book' }
+      { title: 'Book of Genesis', kind: 'Biblical book', note: "Follow the movement from the creation of the world to a family living in Egypt." },
+      { title: 'Abraham', kind: 'Biblical figure', note: "Genesis 12:1–3 names land, descendants and wider blessing in the call." },
+      { title: 'Joseph (Genesis)', label: 'Joseph', kind: 'Biblical figure', note: "Genesis 50:20 distinguishes his brothers’ intention from God’s purpose." },
+      { title: 'Garden of Eden', kind: 'Biblical place', note: "Compare the humans’ responsibilities in Genesis 2:15–17 with their departure in 3:22–24." },
+      { title: 'Tower of Babel', kind: 'Biblical narrative', note: "Read the builders’ reason in Genesis 11:4 alongside the outcome in 11:8–9." },
+      { title: 'Ur', kind: 'Mesopotamian city', note: "Genesis 11:31 names Ur as the starting point of a family migration through Haran." }
     ],
     'jesus-ministry': [
-      { title: 'Jesus', kind: 'Historical and biblical figure' },
-      { title: 'John the Baptist', kind: 'Biblical figure' },
-      { title: 'Baptism of Jesus', kind: 'Gospel event' },
-      { title: 'Temptation of Christ', kind: 'Gospel event' },
-      { title: 'Kingship and kingdom of God', kind: 'Theme' },
-      { title: 'Calling of the disciples', kind: 'Gospel event' },
-      { title: 'Miracles of Jesus', kind: 'Gospel signs' },
-      { title: 'Capernaum', kind: 'Place' },
-      { title: 'Sea of Galilee', kind: 'Place' },
-      { title: 'Banias', kind: 'Place · ancient Caesarea Philippi' },
-      { title: 'Gospel of Mark', kind: 'Biblical book' }
+      { title: 'Jesus', kind: 'Historical and biblical figure', note: "Compare the voice at his baptism with the disciples’ question after the storm." },
+      { title: 'John the Baptist', kind: 'Biblical figure', note: "Mark 1:4–11 introduces John’s preaching and his baptism of Jesus." },
+      { title: 'Baptism of Jesus', kind: 'Gospel event', note: "Read the voice and the descent of the Spirit in Mark 1:9–11." },
+      { title: 'Temptation of Christ', kind: 'Gospel event', note: "Compare Mark’s brief telling with Jesus’ replies in Matthew 4." },
+      { title: 'Kingship and kingdom of God', kind: 'Theme', note: "Mark 1:14–15 ties the kingdom’s nearness to repentance and belief." },
+      { title: 'Calling of the disciples', kind: 'Gospel event', note: "Compare the call of the fishermen in Mark 1 with the call of Levi in Mark 2." },
+      { title: 'Miracles of Jesus', kind: 'Gospel signs', note: "Compare who responds and what they say after the healing in Mark 2 and the storm in Mark 4." },
+      { title: 'Capernaum', kind: 'Place', note: "Mark 1:21 brings Jesus and the disciples to the synagogue here." },
+      { title: 'Sea of Galilee', kind: 'Place', note: "The disciples cross the lake when the storm rises in Mark 4:35–41." },
+      { title: 'Banias', kind: 'Place · ancient Caesarea Philippi', note: "Use the visual journey to orient Caesarea Philippi, the area where Mark places Peter’s confession." },
+      { title: 'Gospel of Mark', kind: 'Biblical book', note: "Trace how the question of Jesus’ identity develops between Mark 1 and Mark 8." }
     ],
     'sermon-on-the-mount': [
       { title: 'Jesus', kind: 'Historical and biblical figure' },
@@ -1726,11 +1636,12 @@
   var id = main.getAttribute('data-bible-lesson');
   var index = lessons.findIndex(function (lesson) { return lesson.id === id; });
   var lesson = lessons[index];
-  if (!lesson) { main.innerHTML = '<p>Lesson data could not be loaded.</p>'; return; }
+  if (!lesson || !lesson.lenses) { main.innerHTML = '<p>Lesson data could not be loaded.</p>'; return; }
   lesson.image = lessonImages[lesson.id] || lessonImages['world-of-the-bible'];
   lesson.visualJourney = lessonVisualJourneys[lesson.id] || [];
-  lesson.map = geographyMaps[lessonMapKeys[lesson.id]] || geographyMaps.nearEast;
-  lesson.map.note = lessonMapNotes[lesson.id] || 'Use this reference map for broad orientation. It clarifies relative place and scale, but it is not a complete reconstruction of every biblical setting.';
+  lesson.map = Object.assign({}, geographyMaps[lessonMapKeys[lesson.id]] || geographyMaps.nearEast, {
+    note: lessonMapNotes[lesson.id] || 'Use this reference map for broad orientation. It clarifies relative place and scale, but it is not a complete reconstruction of every biblical setting.'
+  });
   lesson.entities = lessonEntities[lesson.id] || [{ title: 'Bible', kind: 'Scriptural library' }];
   lesson.passages = lessonPassages[lesson.id] || [['Genesis',1,1,3]];
   lesson.story = lessonStoryContext[lesson.id] || {
@@ -1747,6 +1658,94 @@
   // [passageIndex, connectForward, hardQuestion]; the fields below then replace the single check,
   // the single notes box, and add a hard-questions panel.
   var lessonChecks = {
+    "world-of-the-bible": [
+      ["Why does Genesis name stopping places?", ["The stops mark movement and worship", "They list Roman provinces", "They give exact travel times"], 0, "Genesis 12 names Shechem, the hills and the Negev, and describes Abram building altars."],
+      ["What changes at the opening of Joshua?", ["Joshua takes responsibility after Moses dies", "The monarchy begins", "Israel returns to Egypt"], 2, "Joshua 1 names Moses’ death and commissions Joshua to lead the crossing."],
+      ["How does Luke anchor John’s ministry?", ["By naming Abraham’s sons", "By naming rulers and offices", "By giving the distance to Rome"], 1, "Luke 3:1–2 situates the word to John alongside several overlapping authorities."],
+      ["What does Paul appeal to in Acts 17:24–28?", ["A Roman census", "The God who made the world and gives life", "The walls of Jericho"], 0, "Paul begins with creation and the life shared by his hearers."],
+      ["Can a named ruler date an account exactly?", ["Can named rulers narrow the setting?", "Does every name give an exact day?"], 0, "Named offices can constrain the period. Dating systems and overlaps still matter."],
+      ["Can a map give Abram’s exact itinerary?", ["Can it identify every campsite?", "Can it locate named places relative to one another?"], 1, "Genesis names some stops. Any connecting line adds an interpretive choice."]
+    ],
+    "temple-and-gods-presence": [
+      ["What is guarded in Genesis 3:24?", ["The way to the tree of life", "An altar in Jerusalem", "The gate to a Roman city"], 0, "The cherubim guard the way after the humans are sent out."],
+      ["What does Solomon say cannot contain God?", ["Even the highest heaven", "Only the courtyard", "The altar alone"], 2, "His dedication prayer holds together God’s presence and the limits of the building."],
+      ["Who dwells among the witnesses in John 1?", ["The Word made flesh", "Solomon", "Moses"], 1, "John describes the witnesses seeing the Word’s glory in the incarnation."],
+      ["What does John see in place of a temple building?", ["God and the Lamb as the city’s temple", "A rebuilt tabernacle", "A new palace for Solomon"], 0, "Revelation 21:22 identifies God and the Lamb as the temple."],
+      ["Who is called a temple in 1 Corinthians 3:16–17?", ["The community Paul addresses", "Only a priest in Jerusalem"], 0, "Paul addresses a community divided by rival loyalties. His warning makes their common life matter."],
+      ["Does an echo make two scenes identical?", ["Treat every repeated detail as a code", "Read each scene in context first"], 1, "A guarded garden and an open city can echo one another precisely because what changes matters."]
+    ],
+    "elijah": [
+      ["What happens to the brook in 1 Kings 17?", ["It dries up", "It carries Elijah to Carmel", "It turns to oil"], 0, "The drought affects Elijah’s own water source, and the next word sends him elsewhere."],
+      ["What does the widow say after her son is restored?", ["The Lord’s word in Elijah’s mouth is true", "Ahab has kept his promise", "The drought never happened"], 2, "Her words in verse 24 interpret what has happened in her household."],
+      ["What reason does Elijah give for his prayer?", ["That the altar may remain dry", "That Israel may know the Lord and turn back", "That Ahab may declare Elijah king"], 1, "Elijah’s prayer in verses 36–37 names what he wants the people to know."],
+      ["What follows Elijah’s encounter at Horeb?", ["He is sent back with assignments", "He is told he is the only faithful Israelite", "He retires permanently"], 0, "The passage gives instructions, names Elisha and speaks of seven thousand."],
+      ["Why does Naboth refuse Ahab’s offer?", ["He invokes his ancestral inheritance", "He has already sold the vineyard"], 0, "First Kings 21:3 makes the inheritance central to the refusal."],
+      ["What separates Elijah and Elisha in 2 Kings 2:11?", ["A drought at Cherith", "A fiery chariot and horses"], 1, "The chariot separates them, and the whirlwind carries Elijah up."]
+    ],
+    "job": [
+      ["How does the narrator first describe Job?", ["Blameless and upright", "Secretly unjust", "A king in Israel"], 0, "Job 1:1 gives this description before Job suffers."],
+      ["What do the friends do on their arrival?", ["They sit with him in silence", "They demand restitution", "They diagnose Job immediately"], 2, "Verse 13 says they sit seven days and nights because his suffering is so great."],
+      ["What does Job curse at the start of chapter 3?", ["The creation of the sea", "The day of his birth", "His friends’ hometowns"], 1, "The poem opens by grieving that he was born."],
+      ["What does God ask Job about?", ["The foundations of the earth and the bounds of the sea", "Which friend brought him food", "How to divide his estate"], 0, "The questions turn toward creation and Job’s limits as an observer."],
+      ["What does God say about the friends’ speech?", ["They have not spoken rightly about God as Job has", "Their diagnosis was entirely correct"], 0, "Job 42:7 directly addresses Eliphaz and the two friends."],
+      ["Does Job 38 give Job the conversation of chapter 1?", ["God recites it to Job from the storm", "The reader hears that conversation in the opening"], 1, "The narrative gives the reader access to a scene Job does not hear."]
+    ],
+    "world-of-jesus": [
+      ["Where does Jesus settle after leaving Nazareth in Matthew 4?", ["Capernaum", "Jericho", "Bethany"], 0, "Matthew 4:13 names Capernaum by the lake."],
+      ["What surprises the woman at the well?", ["That the well has no water", "That she has arrived in Jerusalem", "That Jesus asks her for a drink"], 2, "John 4:9 grounds the surprise in their identities."],
+      ["What destination shapes the refusal in Luke 9:53?", ["Rome", "Capernaum", "Jerusalem"], 1, "The narrator connects the village’s response to Jesus’ destination."],
+      ["What do the authorities ask about in Mark 11:28?", ["Who gave Jesus authority", "Where Nazareth is located", "How to cross the Jordan"], 0, "Their question concerns the authority behind his actions."],
+      ["Can a map recover each overnight stop?", ["Use named locations and distinguish inferred segments", "Treat a modern road route as certain"], 0, "The passages supply endpoints and selected encounters, leaving many details unstated."],
+      ["Do Luke 9 and John 4 describe the same reception?", ["Both stories end with rejection", "The responses differ in the two passages"], 1, "Compare the refusing village in Luke with the invitation to stay in John."]
+    ],
+    "genesis": [
+      ["Who bears God’s image in Genesis 1?", ["Humanity, male and female", "Only rulers", "Only one family"], 0, "Genesis 1:27 applies image-bearing to humanity."],
+      ["What do the humans do when they hear God in the garden?", ["They build an altar", "They name the animals again", "They hide"], 2, "Genesis 3:8 depicts damaged fellowship before the later expulsion."],
+      ["Who is included in the horizon of Abram’s blessing?", ["Only Pharaoh’s officials", "All families of the earth", "Abram alone"], 1, "Genesis 12:3 looks outward from Abram to the families of the earth."],
+      ["How does Joseph describe his brothers’ intention?", ["They intended harm", "They planned to preserve life", "They had no role in his story"], 0, "Joseph distinguishes their intention from God’s purpose in verse 20."],
+      ["What reason does Genesis 11:4 give for building the city?", ["The builders fear being scattered", "The builders want to cross the sea"], 0, "The story puts this concern in their own speech before the scattering."],
+      ["Does Joseph tell his brothers that their act was good?", ["He declares that no harm was intended", "He names their intent as harm and God’s aim as good"], 1, "Verse 20 holds two intentions in view."]
+    ],
+    "exodus": [
+      ["What motivates Pharaoh’s oppression in Exodus 1?", ["Fear of Israel’s growth and potential alliances", "An invitation from Moses", "A famine reported by Joseph"], 0, "Verses 9–10 give Pharaoh’s stated fears before the narrator describes forced work."],
+      ["What does God promise Moses in Exodus 3:12?", ["God’s presence with him", "A route that avoids Pharaoh", "An immediate coronation"], 2, "God responds to “Who am I?” with a promise to be with Moses."],
+      ["How does Exodus 12 describe the day for later generations?", ["A festival restricted to Pharaoh", "A memorial to keep", "A census deadline"], 1, "The instructions establish a remembrance as part of the rescue account."],
+      ["What does God recall before the commandments?", ["Israel’s release from slavery", "Israel’s successful temple building", "Israel’s return from Babylon"], 0, "Exodus 20:2 puts the rescue before the commandments."],
+      ["What changes between Exodus 14:21–31 and 15:1–13?", ["The event becomes a song addressed to God", "A different army arrives"], 0, "The song lets the community retell deliverance as praise."],
+      ["What image of rescue appears in Exodus 19:4?", ["Climbing a royal staircase", "Being borne on eagles’ wings"], 1, "The image leads into God’s covenant proposal in verses 5–6."]
+    ],
+    "leviticus": [
+      ["Who is addressed at the beginning of Leviticus 1?", ["Moses, with instructions for the Israelites", "Solomon, with instructions for builders", "Joshua alone"], 0, "God calls to Moses from the tent and tells him to speak to Israel."],
+      ["What response does Leviticus 15:16 specify?", ["Pay a worker’s wages early", "Leave Israel permanently", "Wash and remain unclean until evening"], 2, "The verse assigns washing and a time limit to a bodily condition."],
+      ["How are the goats assigned their roles?", ["By having each household choose", "By casting lots", "By counting their ages"], 1, "Verses 8–10 distinguish the goat for the Lord from the living goat sent away."],
+      ["For whom are the field edges and gleanings left?", ["The poor and the foreigner", "The priests alone", "The landowner’s household alone"], 0, "Leviticus 19:9–10 names the people who benefit."],
+      ["How do verses 18 and 34 relate?", ["Both require love and verse 34 names the resident foreigner", "Verse 34 revokes verse 18"], 0, "Verse 34 adds Israel’s memory of living in Egypt as a reason."],
+      ["What happens in Leviticus 25:10?", ["Israel leaves Egypt a second time", "Liberty is proclaimed and people return to their holdings and clans"], 1, "The Jubilee passage connects time, freedom and land."]
+    ],
+    "numbers": [
+      ["What is the camp arranged around?", ["The tent of meeting", "A palace", "The city of Jericho"], 0, "Numbers 2:2 locates the tribal encampments in relation to the tent."],
+      ["What does Moses say about carrying the people?", ["The census solved the problem", "No one complained", "The burden is too heavy for him alone"], 2, "Moses’ complaint leads into God’s provision of elders."],
+      ["What observation and conclusion are distinct?", ["Caleb calls the land barren", "Fortified towns are reported, and the scouts disagree about going up", "The scouts disagree whether towns exist"], 1, "The shared report leads to rival judgments about what Israel should do."],
+      ["What does Moses do before the congregation?", ["He commissions Joshua", "He makes Caleb priest", "He appoints himself king"], 0, "Joshua receives a public commission in Numbers 27:22–23."],
+      ["What follows Moses’ intercession in Numbers 14:19–24?", ["Pardon is announced, and the generation still faces consequences", "Everyone enters immediately"], 0, "The passage gives both pardon and an exclusion from the land."],
+      ["Why compare Numbers 13 with Deuteronomy 1?", ["To combine every speech into one speaker’s words", "To see how Moses retells the event for a later audience"], 1, "Read each account’s speaker and purpose before bringing details together."]
+    ],
+    "joshua-to-david": [
+      ["What is Joshua told to keep close at hand?", ["The book of the law", "Saul’s armor", "David’s harp"], 0, "Joshua 1:7–8 connects courage with careful attention to the law."],
+      ["What changes after Joshua’s generation dies?", ["Israel immediately requests Saul as king", "The temple is rebuilt", "A generation arises that does not know the Lord’s work for Israel"], 2, "Judges 2:10 links the generational break to loss of memory."],
+      ["How is Ruth’s son related to David?", ["Obed succeeds David as king", "Obed is David’s grandfather", "Obed is David’s father"], 1, "Ruth 4:17 gives the line from Obed through Jesse to David."],
+      ["What two meanings of house matter in the promise?", ["A dynasty and a sanctuary", "A tent and a farm", "A palace and a city wall"], 0, "God promises David a house, and David’s offspring will build a house for God’s name."],
+      ["What does Samuel warn a king will do in 1 Samuel 8?", ["Take people and property for royal service", "Eliminate every tax and levy"], 0, "The repeated verb “take” gives the warning its force."],
+      ["Why does Samuel initially think Eliab is chosen?", ["He has read the genealogy in Ruth", "He sees Eliab’s appearance"], 1, "First Samuel 16:6–7 contrasts Samuel’s impression with the Lord’s judgment."]
+    ],
+    "jesus-ministry": [
+      ["What happens before Jesus announces the kingdom in Mark 1:14–15?", ["Jesus is baptized and driven into the wilderness", "Peter confesses Jesus as Christ", "The spies return from Canaan"], 0, "Mark places the baptism and wilderness before the public proclamation."],
+      ["What does Jesus say is fulfilled “today”?", ["A request from Pilate", "The promise of a new Roman road", "The Scripture just read in the synagogue"], 2, "Luke ties the claim to the reading before the audience."],
+      ["Why does Jesus tell the man to rise?", ["To settle an argument over travel", "To make his authority to forgive visible", "To test whether the roof is stable"], 1, "Jesus gives his purpose in Mark 2:10."],
+      ["What follows Peter’s confession in Mark?", ["Jesus teaches about suffering and following him", "Peter is sent to govern Capernaum", "Jesus ends the journey"], 0, "Peter’s answer opens further teaching about the Messiah and discipleship."],
+      ["What question closes Mark 4:35–41?", ["Who is this, that even wind and sea obey?", "Which side of the lake has better fishing?"], 0, "The response draws the reader toward Jesus’ identity."],
+      ["What picture does Jesus use to explain his company?", ["A king inspecting his army", "A physician and people who are sick"], 1, "The image explains the purpose of his call in Mark 2:17."]
+    ],
     'deuteronomy': [
       ['Deuteronomy 5:3 says the Lord made this covenant “not with our fathers… but with us, who are all of us here alive today.” What is Moses doing?', ['Claiming Sinai never happened', 'Making the old covenant present and binding on a new generation', 'Replacing the covenant with one that has no connection to Sinai'], 1, 'Retelling makes the Sinai covenant the responsibility of the generation now standing at the Jordan. It neither denies Sinai nor replaces it.'],
       ['The Sabbath command in 5:12–15 gives a different reason than Exodus 20:8–11. What does that show?', ['One book copied the other wrongly', 'Moses retells and applies the law, here tying rest to rescue from slavery', 'The Sabbath is dropped in Deuteronomy'], 1, 'Exodus 20:11 grounds the Sabbath in creation; Deuteronomy 5:15 grounds it in the exodus. Same command, new emphasis for a new audience.'],
@@ -1758,6 +1757,72 @@
     ]
   };
   var lessonReflectFields = {
+    "world-of-the-bible": [
+      ["A route in the text", "Cite a verse and describe one detail you can observe."],
+      ["A generation changes", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["Rulers as time markers", "Explain how a detail in this passage supports one of your claims."],
+      ["The story travels", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
+    "temple-and-gods-presence": [
+      ["A guarded garden", "Cite a verse and describe one detail you can observe."],
+      ["A house for prayer", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["The Word dwells", "Explain how a detail in this passage supports one of your claims."],
+      ["The city’s temple", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
+    "elijah": [
+      ["Cherith in drought", "Cite a verse and describe one detail you can observe."],
+      ["A widow’s household", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["Carmel before Israel", "Explain how a detail in this passage supports one of your claims."],
+      ["Horeb and return", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
+    "job": [
+      ["The narrator’s frame", "Cite a verse and describe one detail you can observe."],
+      ["The friends arrive", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["Job laments", "Explain how a detail in this passage supports one of your claims."],
+      ["Questions from the storm", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
+    "world-of-jesus": [
+      ["Galilee’s towns", "Cite a verse and describe one detail you can observe."],
+      ["Samaria and reception", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["Judea and the road", "Explain how a detail in this passage supports one of your claims."],
+      ["Jerusalem and authority", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
+    "genesis": [
+      ["Image and blessing", "Cite a verse and describe one detail you can observe."],
+      ["After disobedience", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["Promise after Babel", "Explain how a detail in this passage supports one of your claims."],
+      ["Joseph looks back", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
+    "exodus": [
+      ["Labor and memory", "Cite a verse and describe one detail you can observe."],
+      ["Moses sent", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["Passover remembered", "Explain how a detail in this passage supports one of your claims."],
+      ["The covenant opens", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
+    "leviticus": [
+      ["An offering brought", "Cite a verse and describe one detail you can observe."],
+      ["Ritual status", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["The two goats", "Explain how a detail in this passage supports one of your claims."],
+      ["Holiness in the field", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
+    "numbers": [
+      ["The camp’s center", "Cite a verse and describe one detail you can observe."],
+      ["Leadership under strain", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["A divided report", "Explain how a detail in this passage supports one of your claims."],
+      ["A successor", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
+    "joshua-to-david": [
+      ["Leadership after Moses", "Cite a verse and describe one detail you can observe."],
+      ["Judges and memory", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["Ruth and a household", "Explain how a detail in this passage supports one of your claims."],
+      ["Promise to David", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
+    "jesus-ministry": [
+      ["The beloved Son", "Cite a verse and describe one detail you can observe."],
+      ["Nazareth hears Isaiah", "Compare this lens with the first. Name a change and support it with a verse."],
+      ["At the crowded house", "Explain how a detail in this passage supports one of your claims."],
+      ["Confession and cost", "Use this lens to revisit the lesson question. Record one question you would take back to the text."]
+    ],
     'deuteronomy': [
       ['What happened', 'Name one event Moses retells (for example the spies, the manna, or the golden calf) and cite the chapter.'],
       ['What it reveals about God', 'What does the event show about who God is and how God acts? Use a verse as evidence.'],
@@ -1766,6 +1831,72 @@
     ]
   };
   var lessonHardQuestions = {
+    "world-of-the-bible": [
+      ["Where was Abram’s Ur?", "Genesis 11:28–31 calls it Ur of the Chaldeans and names Haran as a stop.", "Readers commonly identify Ur with the southern Mesopotamian city. The text gives no coordinates or road log.", "Label the proposed location and leave the path between named stops open."],
+      ["How much does a chronological anchor tell us?", "Luke 3 names imperial, regional and priestly authorities before John begins to speak.", "An anchor can narrow the setting. Dating the start of a reign can depend on which calendar or starting point is used.", "Explain what Luke’s list establishes even if readers differ on the precise year."],
+      ["How do two sources tell the fall of Lachish?", "Second Kings 18:13–17 mentions the Assyrian campaign and Lachish. The relief depicts the capture and deportation from an Assyrian perspective.", "A royal relief and a biblical narrative select details for different audiences and purposes.", "Find one overlapping detail and one question that only one of the sources addresses."],
+      ["Does a regional label apply in every era?", "Genesis describes Abram traveling to Canaan. Luke 3 identifies several territories under named officials.", "Maps typically represent a particular period or the physical landscape. Political lines change over time.", "Choose a map appropriate to each passage and explain which labels can carry over."]
+    ],
+    "temple-and-gods-presence": [
+      ["Can God inhabit a building?", "The cloud fills the house in 1 Kings 8:10–11, and Solomon asks in verse 27 whether even heaven can contain God.", "Readers distinguish a place where God makes his presence known from a place that encloses him.", "Read verses 28–30 for what Solomon asks God to do when people pray toward the house."],
+      ["Are all temple images interchangeable?", "John 2:21 identifies Jesus’ body as the temple, and 1 Corinthians 3:16 addresses the community as God’s temple.", "Both passages use sanctuary language. The first concerns Jesus and the second explains why destroying a community is serious.", "Name the referent in each passage before drawing a connection."],
+      ["How does Ezekiel picture absence and return?", "Ezekiel 10:18–19 depicts glory departing, and 43:1–5 depicts it returning to the house from the east.", "The visions use movement to frame judgment and hope. Readers debate the relationship between the envisioned temple and later sanctuaries.", "Compare the direction and location of the glory in both scenes before considering fulfillment."],
+      ["Why does the final city lack a sanctuary building?", "Revelation 21:22–25 identifies God and the Lamb as the temple and describes the city’s open gates.", "Many readers see the scene as an expansion of sacred presence to the whole city.", "Compare the city’s access and light with the guarded way in Genesis 3:24."]
+    ],
+    "elijah": [
+      ["What does Carmel establish?", "In 1 Kings 18:36–39 Elijah prays for Israel to turn back, and the people acclaim the Lord.", "The story presents a covenant confrontation within Ahab’s Israel. Its religious claims and the violent aftermath in verse 40 raise distinct questions.", "Track the people’s changing response from verse 21 to verse 39 before discussing the aftermath."],
+      ["Do Carmel and Horeb contradict each other?", "Fire answers prayer at Carmel. At Horeb, 1 Kings 19:11–13 distinguishes the Lord’s presence from the wind, earthquake and fire.", "Some readers emphasize the contrast in intensity. Others emphasize that the two encounters address different needs and audiences.", "Compare who hears, what God says or does, and what each encounter asks of Elijah."],
+      ["Why does the story dwell on Naboth’s vineyard?", "First Kings 21 describes Naboth’s refusal, his death through false accusation, and Elijah’s confrontation with Ahab.", "Readers see prophetic speech addressing the use of royal power as well as the people’s worship.", "Compare what Ahab wants with what Naboth says he has inherited."],
+      ["What does Elisha inherit?", "Elisha asks for a double portion of Elijah’s spirit in 2 Kings 2:9, and he later picks up Elijah’s cloak.", "Some readers hear the language of an heir’s share. The story shows Elisha assuming Elijah’s prophetic role.", "Use 2 Kings 2:13–15 to identify how the other prophets respond to the succession."]
+    ],
+    "job": [
+      ["Does suffering prove guilt?", "Eliphaz links trouble with wrongdoing in Job 4:7–8. Job 1:1 and 2:3 present Job as upright.", "Proverbs often connect conduct and consequence. Job puts pressure on turning that pattern into a diagnosis of another person.", "Cite the speaker of each claim and compare both claims with the verdict in 42:7."],
+      ["Do the speeches answer Job’s question?", "God’s speech asks about creation and its creatures. It gives Job no account of the conversation in chapter 1.", "Readers differ on whether the speeches offer an answer through perspective, relationship, or both.", "Compare what Job says he now knows in 42:1–6 with what the opening lets the reader know."],
+      ["What changes when a friend becomes an accuser?", "Job 2:11–13 depicts the friends sitting in silence. In Job 22:5–11 Eliphaz accuses Job of specific abuses.", "Readers often distinguish the friends’ initial act of solidarity from the claims they make after the debate begins.", "Check Eliphaz’s allegations against the narrator and against Job’s defense in chapter 31."],
+      ["Does restoration undo the opening losses?", "Job 42:10–17 speaks of prosperity and children after Job’s earlier children die in chapter 1.", "Readers may hear the ending as renewed life while also asking how a restored future relates to grief for particular people.", "Compare the two household scenes and name what is restored and what remains painful."]
+    ],
+    "world-of-jesus": [
+      ["What can we infer about travel through Samaria?", "John 4 names a journey through Samaria and a stop at Sychar. Luke 9 describes a village that refuses Jesus.", "The two settings show different responses. A map can locate the region and help explain the journey while the narratives supply social context.", "Mark the named places, then compare what each narrator says about the encounter."],
+      ["Who has authority in Jerusalem?", "Mark 11 names chief priests, scribes and elders. In Luke 23:1–4, Jesus is brought before Pilate.", "The passages focus on different proceedings and kinds of authority within Roman rule.", "Identify the question each group asks and the authority it assumes."],
+      ["What does Luke explain through geography?", "Luke 9:53 connects a village’s refusal with Jesus’ intention to go to Jerusalem.", "Readers look to competing worship centers and regional identity for context. John 4:20 names the dispute over where to worship.", "Distinguish Luke’s stated reason from details a reader learns in John."],
+      ["Why do some Gospel location labels need care?", "Matthew 4:13 locates Capernaum by the sea. The text gives no precise point on the shore for every encounter.", "Archaeological sites and regional maps help readers orient named places. A traditional site can also reflect centuries of commemoration.", "Identify one site the passage names and one detail that comes from a modern map or tradition."]
+    ],
+    "genesis": [
+      ["How do Genesis 1 and 2 focus attention differently?", "Genesis 1 orders creation in days. Genesis 2 follows the human, garden, work and relationships.", "Readers differ on how the sequences fit. Both chapters frame humanity’s place and responsibilities within creation.", "Compare the scope of each account before proposing how they relate."],
+      ["How does promise follow scattering?", "Genesis 11 depicts divided languages and dispersal. Genesis 12 promises blessing to all families through Abram.", "Many readers see the placement as a literary response to Babel. The narrative gives no order to reunite everyone around a single city.", "Compare who seeks a name in Genesis 11:4 with who promises a name in 12:2."],
+      ["What does the flood story say about the future?", "Genesis 9:8–17 describes a covenant with Noah, his descendants and living creatures.", "The promise has a wider scope than Noah’s household and a specific focus on the waters of the flood.", "Name the recipients and the stated promise. Compare its scope with Genesis 12:1–3."],
+      ["How much work can a genealogy do?", "Genesis repeatedly introduces sections with a statement about generations or family history, including Genesis 5:1 and 37:2.", "Readers use these headings to track family descent and the movement of the book. Traditions differ in how they use the lists for chronology.", "Compare the kind of material each heading introduces before using either for a date."]
+    ],
+    "exodus": [
+      ["Who hardens Pharaoh’s heart?", "Exodus 8:15 depicts Pharaoh hardening his heart, and 9:12 attributes hardening to the Lord.", "Readers ask how the narrative holds divine agency and Pharaoh’s responsibility together. The passages place both claims in the story.", "Trace the stated subject and Pharaoh’s responses in several episodes before explaining either claim."],
+      ["Where was the sea crossing?", "Exodus 14 names encampments and gives movement and direction in narrative terms.", "Proposed locations vary with the identification of ancient place names and the meaning of the Hebrew sea name.", "Mark the difference between a location named in the story and a proposed modern identification."],
+      ["Why put questions into the Passover instructions?", "Exodus 12:24–27 anticipates children asking what the observance means.", "Readers see the meal teaching a household to connect an action with a shared story.", "Write the question from the child’s perspective, then answer it using the reasons in verse 27."],
+      ["Why does Exodus keep going after the crossing?", "Exodus 14 ends with rescue, chapter 19 names a covenant vocation and 25:8 looks toward a sanctuary.", "Readers trace a movement from deliverance to a community ordered around worship and service.", "Compare what Israel is delivered from with the responsibilities and practices later named."]
+    ],
+    "leviticus": [
+      ["When does uncleanness carry blame?", "Leviticus 15 prescribes temporary uncleanness and washing after some ordinary bodily processes.", "Ritual status determines participation in worship in this setting. Other laws address injury, injustice and wrongdoing.", "For each example, identify the trigger, required response and any stated duration."],
+      ["How do the goats work together?", "Leviticus 16 depicts blood used to purify the sanctuary and a living goat sent away bearing confessed wrongs.", "Readers distinguish the actions and also see both as parts of the same atonement rite.", "Trace where each goat goes and what the text says happens there."],
+      ["Who counts as a neighbor?", "Leviticus 19:18 commands love for one’s neighbor, and verse 34 gives a parallel command about the resident foreigner.", "The placements invite comparison. The second command expressly recalls Israel’s time as foreigners in Egypt.", "Read both commands with the instructions surrounding them and name what each prohibits."],
+      ["What happens to a sale at Jubilee?", "Leviticus 25:13–17 ties the price to the number of harvests before the next Jubilee.", "Readers distinguish the law’s stated structure from the historical question of when and how widely it was practiced.", "Explain the price of the harvest years in terms of the land’s eventual return."]
+    ],
+    "numbers": [
+      ["How can pardon and judgment coexist?", "Numbers 14:19–24 says God pardons and that the generation will fail to see the land.", "Readers distinguish preserving the people from removing every consequence of rebellion.", "List who is addressed in the verdict and compare the futures stated for the community and Caleb."],
+      ["What does the narrative say Moses did at Meribah?", "Numbers 20:7–13 says Moses strikes the rock and that he and Aaron fail to uphold God’s holiness before the people.", "Readers emphasize different details, including the command to speak, Moses’ words and his striking the rock.", "Underline the command, mark the actual actions and read the reason given in verse 12."],
+      ["Why count the people twice?", "Numbers 1 introduces the first census, and 26:63–65 contrasts the later count with the earlier generation at Sinai.", "The census records serve a practical purpose and mark a generational transition in the narrative.", "Compare the settings and ask what the second count prepares the people to do."],
+      ["How do we tell observation from fear?", "Numbers 13:27–33 moves from fruit and fortified towns to forecasts of defeat and the grasshopper comparison.", "Readers can track the point where agreement about what was seen becomes disagreement about what it means.", "Quote one observation, one prediction and one comparison. Identify who speaks each one."]
+    ],
+    "joshua-to-david": [
+      ["Does Judges give an uncomplicated endorsement of monarchy?", "Judges 21:25 pairs the lack of a king with people doing what is right in their own eyes. First Samuel 8 warns about what a king can take.", "Some readers emphasize the need for faithful leadership. The warning in Samuel makes the character and limits of that leadership important.", "Compare the problems named in each passage before treating monarchy as the solution."],
+      ["What kind of house is promised to David?", "Second Samuel 7:11–16 promises David a dynasty and says his offspring will build a house for God’s name.", "The wordplay connects David’s line and the temple while distinguishing the people who build each house.", "Make a two-column record of builder and meaning for each use."],
+      ["Why does Ruth end with names?", "Ruth 4:17–22 connects a household in Bethlehem to David through Obed and Jesse.", "The closing genealogy gives a local family story national significance while leaving many intervening stories untold.", "Use the tree to trace the named links and explain what the genealogy contributes to the ending."],
+      ["How does Joshua 24 frame covenant choice?", "Joshua reviews what God did and calls the people to choose whom they will serve.", "Readers often notice the order of memory, choice and witness. Joshua also presses the people on the difficulty of what they promise.", "Compare their assurances in verses 16–18 with Joshua’s reply in verses 19–20."]
+    ],
+    "jesus-ministry": [
+      ["Why place forgiveness and healing in one scene?", "In Mark 2:5–12 the scribes question Jesus’ words of forgiveness, and Jesus identifies a purpose for the visible healing.", "Readers connect the healing and Jesus’ claim to authority. Mark gives no cause for the man’s condition.", "Track what the people can see and the conclusion Jesus says the action supports."],
+      ["What does Peter understand by calling Jesus the Christ?", "Peter confesses Jesus in Mark 8:29, then rebukes him after hearing about suffering.", "The confession expresses recognition, and the argument shows that Peter still resists what Jesus says his mission entails.", "Compare Peter’s words with Jesus’ call to take up the cross in 8:34."],
+      ["Why does Nazareth react so sharply?", "Luke 4:22–30 moves from astonishment to anger after Jesus recalls Elijah and Elisha helping people outside Israel.", "Readers debate which part of Jesus’ reply chiefly provokes the crowd. Luke places the examples just before the reversal.", "Trace the responses before and after each example and explain what they share."],
+      ["How much can one Gospel scene tell us about order?", "Mark 1:9–13 summarizes the baptism and testing. Matthew 4:1–11 gives fuller dialogue in the testing.", "A short telling and a detailed telling can emphasize different features. Luke and Matthew also order their last two temptations differently.", "Compare what each author includes and how it frames Jesus’ later ministry."]
+    ],
     'deuteronomy': [
       ['The command to destroy the nations (7:1–6; 20:10–18)',
        'Moses tells Israel to “devote to destruction” the peoples of Canaan and to make no treaties or marriages with them, because their worship would draw Israel away (7:1–6; 20:16–18). The same book offers peace to distant cities (20:10–15) and says God drives the nations out “because of the wickedness of these nations,” not because of Israel’s righteousness (9:4–6).',
@@ -1842,11 +1973,6 @@
       subtitle: 'Follow the week through places, evidence from the period, and artists’ pictures of each scene.',
       note: 'The ossuary, the Pilate Stone replica, and the tomb stone are evidence from the period, and the garden is a real setting, but none is proof of a particular Gospel scene. Giotto, Leonardo, Doré, and Grünewald are later artistic interpretations, so compare them with the text.'
     },
-    'revelation': {
-      title: 'From Patmos to the Seven Cities',
-      subtitle: 'Place the book in its geography, then compare how artists have pictured its visions.',
-      note: 'The map and photographs document real places named in the letters. The woodcut and tapestry are medieval and Renaissance interpretations of Revelation 6, not eyewitness records.'
-    },
     'temple-and-gods-presence': {
       title: 'From garden to gathered Church',
       subtitle: 'Compare biblical places, Christian architecture, and artists’ interpretations of divine presence.',
@@ -1873,6 +1999,15 @@
       note: 'Archaeological photographs document the actual civic spaces, roads, and inscriptions from the first-century Roman provinces named across Acts.'
     }
   };
+
+  function entityReferencesMarkup(entities) {
+    return '<section class="bpl-card bpl-entities"><div class="bpl-entities-head"><div><p class="bpl-label">People, places &amp; sources</p><h2>Reference links</h2></div></div><div class="bpl-entity-grid">' +
+      entities.map(function (entity) {
+        var url = 'https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_'));
+        return '<article class="bpl-entity"><div class="bpl-entity-copy"><span>' + esc(entity.kind) + '</span><h3><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(entity.label || entity.title) + '</a></h3>' +
+          (entity.note ? '<p>' + esc(entity.note) + '</p>' : '') + '</div></article>';
+      }).join('') + '</div></section>';
+  }
 
   function visualJourneyMarkup(groups, lesson) {
     if (!groups || !groups.length) return '';
@@ -1910,18 +2045,87 @@
 
   var ministryScenes = [["Baptism", "Mark 1:9–11", "Israel waits for God to act, and John is calling people to repent.", "Is baptized; the Spirit descends and the Father speaks.", "The voice names Him the beloved Son. Mark records no crowd reaction.", "His identity is given before His work, and He stands with the people He came to save."], ["Wilderness", "Mark 1:12–13 · Matthew 4:1–11", "The Spirit leads Jesus into forty days of testing.", "Resists the tempter; Matthew and Luke show Him answering from Deuteronomy.", "The tempter leaves, and angels serve Him.", "Sonship means trusting the Father rather than seizing shortcuts to power."], ["Nazareth", "Luke 4:16–30", "The poor, captives, blind, and oppressed named in Isaiah.", "Reads Isaiah and says it is fulfilled “today.”", "Admiration turns to fury, and the crowd drives Him out of town.", "The kingdom is good news for the poor and open to outsiders, and that offends."], ["Capernaum", "Mark 1:21–34", "A man with an unclean spirit, Simon’s mother-in-law with a fever, and a city of sick people.", "Teaches with authority, silences the spirit, and lifts her by the hand.", "Amazement: “What is this? A new teaching with authority!” The whole town gathers.", "God’s reign confronts what binds people and restores them."], ["The roof", "Mark 2:1–12", "A paralyzed man carried by four friends into a crowded house.", "Forgives his sins, then tells him to rise and walk.", "Scribes accuse Him of blasphemy; the crowd says, “We never saw anything like this!”", "Authority to forgive and to restore go together, and friends’ faith matters."], ["Levi’s table", "Mark 2:13–17", "A tax collector, an outsider to respectable company.", "Calls Levi, then eats with tax collectors and sinners.", "Scribes ask why He eats with sinners.", "“I came not to call the righteous, but sinners”: the kingdom welcomes the sick to the physician."], ["The storm", "Mark 4:35–41", "Disciples in a boat in a violent windstorm, with Jesus asleep.", "Rebukes the wind and sea: “Peace! Be still!”", "Great fear, and the question, “Who then is this?”", "The question of His identity grows sharper."], ["Caesarea Philippi", "Matthew 16:13–20 · Mark 8:27–38", "The disciples must say who Jesus is, amid rumors that He is a prophet.", "Asks, “Who do you say that I am?” In Mark He then speaks of suffering and the cross.", "Peter answers, “You are the Christ.” In Mark, Peter objects to the talk of suffering.", "Confessing Him leads onto the road of the cross, and the story turns toward Jerusalem."]];
 
-  function sceneBoardMarkup() {
-    if (id !== 'jesus-ministry') return '';
-    var rows = [['Need', 2], ['Jesus’ word or action', 3], ['Response', 4], ['What it reveals', 5]];
-    return '<section class="bpl-card bpl-routes bpl-scenes" aria-labelledby="bpl-scenes-title"><p class="bpl-label">Ministry scene board</p><h2 id="bpl-scenes-title">Walk through eight scenes</h2>' +
-      '<p>Select a scene, read it in the Scripture reader above, then test each box against the text. The order follows the Gospels’ own movement, but Mark, Matthew, and Luke do not arrange every event the same way.</p>' +
-      '<div class="bpl-route-buttons" role="group" aria-label="Ministry scene">' + ministryScenes.map(function (scene, i) { return '<button type="button" data-scene="' + i + '" aria-pressed="' + (i === 0) + '">' + (i + 1) + '. ' + esc(scene[0]) + '</button>'; }).join('') + '</div>' +
-      '<div class="bpl-route-panel bpl-scene-panel" aria-live="polite"><p class="bpl-route-regions bpl-scene-title"></p><dl class="bpl-scene-grid">' + rows.map(function (row) { return '<div><dt>' + esc(row[0]) + '</dt><dd data-scene-field="' + row[1] + '"></dd></div>'; }).join('') + '</dl></div>' +
-      '<ol class="bpl-scene-print" aria-hidden="true">' + ministryScenes.map(function (scene) { return '<li><strong>' + esc(scene[0]) + '</strong> (' + esc(scene[1]) + '). <em>Need:</em> ' + esc(scene[2]) + ' <em>Jesus:</em> ' + esc(scene[3]) + ' <em>Response:</em> ' + esc(scene[4]) + ' <em>Reveals:</em> ' + esc(scene[5]) + '</li>'; }).join('') + '</ol></section>';
+  var sceneBoards = {
+    'jesus-ministry': {
+      title: 'Walk through eight scenes',
+      label: 'Ministry scene board',
+      instructions: 'Select a scene and test each observation against the passage. Mark, Matthew, and Luke arrange some events differently.',
+      fields: ['Need', 'Jesus’ word or action', 'Response', 'What it reveals'],
+      scenes: ministryScenes
+    },
+    'elijah': {
+      title: 'From Cherith to Horeb',
+      label: 'Elijah scene board',
+      instructions: 'Move through four scenes. Compare what Elijah faces, what God provides, and what Elijah does next.',
+      fields: ['Circumstances', 'Provision or word', 'Elijah’s response', 'Compare'],
+      scenes: [
+        ['Cherith', '1 Kings 17:1–7', 'A drought is announced to Ahab.', 'God directs Elijah to a brook and sends food through ravens.', 'Elijah goes as instructed and stays until the brook dries up.', 'The drought reaches Elijah himself. What changes at Zarephath?'],
+        ['Zarephath', '1 Kings 17:8–24', 'A widow and her son face famine. Later her child stops breathing.', 'The flour and oil last through the famine, and God hears Elijah’s prayer for the child.', 'He follows the command to go, stays with the family and petitions God for the boy.', 'Compare what Elijah asks of the widow and what he asks of God.'],
+        ['Carmel', '1 Kings 18:20–39', 'Elijah confronts the divided allegiance of Israel before a crowd.', 'Fire answers the prayer, and the people acknowledge the Lord.', 'He repairs the altar and asks God to turn the people’s hearts back.', 'Compare the crowd’s silence in verse 21 with its response in verse 39.'],
+        ['Horeb', '1 Kings 19:1–18', 'Elijah flees a threat and says he has had enough.', 'He receives food for the journey, hears a quiet voice and receives new assignments.', 'He eats, travels, covers his face and tells God what he fears.', 'What changes between the strength provided at the start and the instructions at the end?']
+      ]
+    },
+    'job': {
+      title: 'Test explanations for Job’s suffering',
+      label: 'Job evidence lab',
+      instructions: 'Choose a claim. Read the evidence and decide how far the claim holds before reading the assessment.',
+      fields: ['Claim', 'Evidence to check', 'Assessment', 'Discuss'],
+      revealField: 2,
+      scenes: [
+        ['Hidden wrongdoing', 'Job 4:7–8; 1:1, 8; 42:7', 'Eliphaz infers that severe suffering points to wrongdoing.', 'Compare his question about the innocent with the narrator’s description of Job.', 'The opening undermines the inference in Job’s case. God later challenges the friends’ speech.', 'What changes when a general pattern is treated as a diagnosis?'],
+        ['Faith depends on reward', 'Job 1:9–11, 20–22; 2:9–10', 'The accuser predicts that Job will curse God if his protection is removed.', 'Compare the prediction with Job’s response to his losses and illness.', 'Job grieves and refuses to curse God. His later lament shows how much that faith costs him.', 'How do chapters 1 and 3 hold worship and grief together?'],
+        ['The storm explains every loss', 'Job 38:1–18; 42:1–7', 'God’s appearance supplies Job with the cause of each loss.', 'List the subjects God asks about. Compare them with the conversation in Job 1.', 'God speaks about creation and knowledge. The conversation in the opening remains known to the reader.', 'What does the encounter give Job that a causal explanation would not give?']
+      ]
+    },
+    'numbers': {
+      title: 'Read the scouts’ report',
+      label: 'Wilderness evidence lab',
+      instructions: 'Select each response to the same land. Track shared observations, interpretations and proposed actions.',
+      fields: ['Shared evidence', 'Interpretation', 'Response', 'Check the wording'],
+      scenes: [
+        ['Shared report', 'Numbers 13:25–29', 'The scouts display the fruit and report strong inhabitants and fortified towns.', 'The land is fruitful and the settlements present a challenge.', 'The report reaches Moses, Aaron and the gathered congregation.', 'Which statements describe what the scouts saw?'],
+        ['Caleb', 'Numbers 13:30; 14:6–9', 'Caleb heard the report and was part of the scouting mission.', 'Caleb urges entry. With Joshua he later frames the decision around trust in God.', 'Go up and take possession of the land.', 'What reason do Joshua and Caleb add in chapter 14?'],
+        ['The other scouts', 'Numbers 13:31–33; 14:1–4', 'The towns and inhabitants are the same ones described in the earlier report.', 'The scouts conclude that the people are stronger and describe themselves as grasshoppers.', 'They oppose going up, and the congregation talks of returning to Egypt.', 'Where does the account shift from observation to comparison and prediction?']
+      ]
+    },
+    'leviticus': {
+      title: 'Compare practices of holiness',
+      label: 'Worship and community lab',
+      instructions: 'Select a practice. Look for who acts, what the passage asks for, and who is affected.',
+      fields: ['Setting', 'Action', 'Who is affected', 'Check the wording'],
+      scenes: [
+        ['Offer an offering', 'Leviticus 1:1–9', 'The Lord speaks to Moses from the tent of meeting.', 'The worshiper brings an animal and the priests handle the blood and altar.', 'The offering is accepted on the worshiper’s behalf.', 'Use verses 4–9 to distinguish the worshiper’s actions from the priests’ actions.'],
+        ['Leave the field edges', 'Leviticus 19:9–10', 'A landowner harvests a field or vineyard.', 'The edges and fallen produce are left for others to gather.', 'Poor people and resident foreigners can glean.', 'Who is named as the reason for the practice?'],
+        ['Proclaim liberty', 'Leviticus 25:8–17', 'Seven cycles of seven years have been counted.', 'Liberty is proclaimed and people return to their property and families.', 'Households and anyone buying or selling land are affected.', 'How does the number of harvests left before Jubilee affect a sale?']
+      ]
+    }
+  };
+
+  function sceneBoardMarkup(board) {
+    if (!board) return '';
+    var scenes = board.scenes;
+    return '<section class="bpl-card bpl-routes bpl-scenes" aria-labelledby="bpl-scenes-title"><p class="bpl-label">' + esc(board.label) + '</p><h2 id="bpl-scenes-title">' + esc(board.title) + '</h2>' +
+      '<p>' + esc(board.instructions) + '</p>' +
+      '<div class="bpl-route-buttons" role="group" aria-label="' + esc(board.label) + '">' + scenes.map(function (scene, i) {
+        return '<button type="button" data-scene="' + i + '" aria-pressed="' + (i === 0) + '">' + esc(scene[0]) + '</button>';
+      }).join('') + '</div>' +
+      '<div class="bpl-route-panel bpl-scene-panel" aria-live="polite"><p class="bpl-route-regions bpl-scene-title"></p><dl class="bpl-scene-grid">' + board.fields.map(function (field, i) {
+        var text = '<span data-scene-field="' + (i + 2) + '"></span>';
+        if (i === board.revealField) text = '<details><summary>Show assessment</summary>' + text + '</details>';
+        return '<div><dt>' + esc(field) + '</dt><dd>' + text + '</dd></div>';
+      }).join('') + '</dl></div>' +
+      '<ol class="bpl-scene-print" aria-hidden="true">' + scenes.map(function (scene) {
+        return '<li><strong>' + esc(scene[0]) + '</strong> (' + esc(scene[1]) + '). ' + board.fields.map(function (field, i) {
+          return '<em>' + esc(field) + ':</em> ' + esc(scene[i + 2]);
+        }).join(' ') + '</li>';
+      }).join('') + '</ol></section>';
   }
 
   var deep = !!(lesson.lenses[0] && lesson.lenses[0].length > 4);
   var checkItems = lessonChecks[lesson.id];
+  if (checkItems && lesson.id !== 'deuteronomy') {
+    checkItems = checkItems.concat([[lesson.check[0], lesson.check[1], lesson.check[1].indexOf(lesson.check[2]), lesson.check[3]]]);
+  }
   var reflectFields = lessonReflectFields[lesson.id];
   var hardItems = lessonHardQuestions[lesson.id];
   var levels = [
@@ -2004,9 +2208,9 @@
     (deep ? exploreMarkup() : '') +
     '<section class="bpl-card bpl-map"><div class="bpl-map-head"><div><p class="bpl-label">Geographic context</p><h2>See the bigger picture</h2></div><p>Select the map to enlarge labels and terrain.</p></div><div class="bpl-map-grid"><figure class="bpl-map-figure" data-zoomable><a class="bpl-map-image" href="' + esc(lesson.map.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(lesson.map.src) + '" alt="' + esc(lesson.map.alt) + '" loading="lazy" referrerpolicy="no-referrer"></a><figcaption>' + esc(lesson.map.note) + '<small>Map: <a href="' + esc(lesson.map.page) + '" target="_blank" rel="noopener noreferrer">' + esc(lesson.map.credit) + '</a> · <a href="' + esc(lesson.map.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(lesson.map.license) + '</a> · Wikimedia Commons</small></figcaption></figure></div></section>' +
     gospelRoutesMarkup() +
-    sceneBoardMarkup() +
+    sceneBoardMarkup(sceneBoards[id]) +
     investigationMarkup(lesson.investigation) +
-    '<section class="bpl-card bpl-entities"><div class="bpl-entities-head"><div><p class="bpl-label">People, places &amp; primary sources</p><h2>Picture the names in context</h2></div><p>Reference summaries and lead images come from Wikipedia.</p></div><aside class="bpl-source-note"><strong>Image accuracy:</strong> No verified contemporary portrait survives for the ancient biblical figures shown here. Person images are later artistic depictions, not documentary likenesses. Places, artifacts, manuscripts, maps, and modern observances are identified separately.</aside><div class="bpl-entity-grid">' + lesson.entities.map(function (entity, entityIndex) { var fallback = entity.fallback || lesson.image.src; return '<article class="bpl-entity" data-entity-index="' + entityIndex + '"><a class="bpl-entity-image" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer"><figure class="bpl-entity-figure" data-zoomable><img src="' + esc(fallback) + '" alt="Reference image for ' + esc(entity.label || entity.title) + '" loading="lazy" referrerpolicy="no-referrer"><figcaption>Reference image for ' + esc(entity.label || entity.title) + '. Read the source article for its origin and image license.</figcaption></figure></a><div class="bpl-entity-copy"><span>' + esc(entity.kind) + '</span><h3>' + esc(entity.label || entity.title) + '</h3><p>Loading a sourced reference summary…</p><a class="bpl-entity-source" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer">Wikipedia reference ↗</a></div></article>'; }).join('') + '</div><p class="bpl-wikipedia-credit">Text excerpts and lead images: <a href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia contributors</a> · Text available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="license noopener noreferrer">CC BY-SA 4.0</a>; image licenses may vary and are listed on each linked article/file page.</p></section>' +
+    entityReferencesMarkup(lesson.entities) +
     (deep ? '' : exploreMarkup()) +
     hardMarkup() +
     '<div class="bpl-practice">' + checkMarkup() + reflectMarkup() + '</div>' +
@@ -2070,12 +2274,14 @@
     selectRoute(0);
   }
 
-  if (id === 'jesus-ministry') {
+  if (sceneBoards[id]) {
     var sceneButtons = Array.prototype.slice.call(main.querySelectorAll('[data-scene]'));
     var scenePanel = main.querySelector('.bpl-scene-panel');
     var selectScene = function (sceneIndex) {
-      var scene = ministryScenes[sceneIndex];
+      var scene = sceneBoards[id].scenes[sceneIndex];
       sceneButtons.forEach(function (button, buttonIndex) { button.setAttribute('aria-pressed', String(buttonIndex === sceneIndex)); });
+      var assessment = scenePanel.querySelector('details');
+      if (assessment) assessment.open = false;
       scenePanel.querySelector('.bpl-scene-title').textContent = scene[0] + ' · ' + scene[1];
       Array.prototype.forEach.call(scenePanel.querySelectorAll('[data-scene-field]'), function (cell) { cell.textContent = scene[Number(cell.getAttribute('data-scene-field'))]; });
     };
@@ -2213,50 +2419,6 @@
   prevPassage.addEventListener('click', function () { passageSelect.selectedIndex -= 1; passageSelect.dispatchEvent(new Event('change')); });
   nextPassage.addEventListener('click', function () { passageSelect.selectedIndex += 1; passageSelect.dispatchEvent(new Event('change')); });
   loadPassage();
-
-  function loadEntityReferences() {
-    var titles = lesson.entities.map(function (entity) { return entity.title; });
-    var endpoint = new URL('https://en.wikipedia.org/w/api.php');
-    endpoint.searchParams.set('action', 'query');
-    endpoint.searchParams.set('prop', 'pageimages|extracts|info');
-    endpoint.searchParams.set('titles', titles.join('|'));
-    endpoint.searchParams.set('pithumbsize', '360');
-    endpoint.searchParams.set('piprop', 'thumbnail');
-    endpoint.searchParams.set('exintro', '1');
-    endpoint.searchParams.set('explaintext', '1');
-    endpoint.searchParams.set('exsentences', '2');
-    endpoint.searchParams.set('inprop', 'url');
-    endpoint.searchParams.set('redirects', '1');
-    endpoint.searchParams.set('format', 'json');
-    endpoint.searchParams.set('origin', '*');
-    fetch(endpoint.toString()).then(function (response) {
-      if (!response.ok) throw new Error('Wikipedia request failed');
-      return response.json();
-    }).then(function (data) {
-      var pages = Object.keys(data.query.pages).map(function (key) { return data.query.pages[key]; });
-      var aliases = {};
-      titles.forEach(function (title) { aliases[title] = title; });
-      (data.query.normalized || []).forEach(function (item) { Object.keys(aliases).forEach(function (key) { if (aliases[key] === item.from) aliases[key] = item.to; }); });
-      (data.query.redirects || []).forEach(function (item) { Object.keys(aliases).forEach(function (key) { if (aliases[key] === item.from) aliases[key] = item.to; }); });
-      lesson.entities.forEach(function (entity, entityIndex) {
-        var page = pages.find(function (candidate) { return candidate.title === aliases[entity.title]; });
-        if (!page) return;
-        var card = main.querySelector('[data-entity-index="' + entityIndex + '"]');
-        var link = page.fullurl || ('https://en.wikipedia.org/wiki/' + encodeURIComponent(page.title.replace(/ /g, '_')));
-        card.querySelectorAll('a').forEach(function (anchor) { anchor.href = link; });
-        if (page.thumbnail && page.thumbnail.source) {
-          var image = card.querySelector('img');
-          var fallback = image.src;
-          image.addEventListener('error', function () { if (image.src !== fallback) image.src = fallback; }, { once: true });
-          image.src = page.thumbnail.source;
-        }
-        card.querySelector('.bpl-entity-copy p').textContent = page.extract || 'Open the linked article for a sourced overview.';
-      });
-    }).catch(function () {
-      main.querySelectorAll('.bpl-entity-copy p').forEach(function (paragraph) { paragraph.textContent = 'The live Wikipedia summary is unavailable. Open the reference article for details.'; });
-    });
-  }
-  loadEntityReferences();
 
   var choices = Array.prototype.slice.call(main.querySelectorAll('.bpl-choice:not(.bpl-multi-choice)'));
   var feedback = main.querySelector('.bpl-feedback');

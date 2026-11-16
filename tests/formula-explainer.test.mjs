@@ -263,7 +263,13 @@ test('Stokes formula highlights every variable and element with synced legend, p
         subtract: roles(make('div', 'kin-eq', 'h = v₀·sin(θ)·t − ½g·t²')),
         nested: roles(make('div', 'wa-eq', 'F_load = F_effort × (R / r)')),
         root: roles(make('div', 'pn-eq', 'T₀ = 2π √(L / g)')),
-        relation: roles(make('div', 'gas-eq', 'PV = nRT')),
+        relation: roles(make('div', 'gas-eq', 'PQ = nJT')),
+        power: roles(make('div', 'sq-eq', 'k = (u + 3)²')),
+        powerSup: roles(make('div', 'sq-eq', 'k = (u + 3)<sup>2</sup> / h')),
+        powerNeg: roles(make('div', 'cl-formula-box', '<span class="cl-formula-sym">k = c · (1 − u / w)<sup>−2.5</sup></span>')),
+        rt60: roles(make('div', 'ac-eq', 'RT60 = 0.161 × V / A')),
+        words: roles(make('div', 'equation-box', 'model = real ÷ scale')),
+        wordFn: roles(make('div', 'equation-box', 'height = distance × tan(angle)')),
         several: roles(make('div', 'equation-box', 'v = g · t | y = ½ · g · t²')),
         inlineIsInline: inline.classList.contains('cos-fx-inline') && !inline.querySelector('.cos-fx-panel'),
         inlinePanelAfterParagraph: para.nextElementSibling.classList.contains('cos-fx-panel') && !para.nextElementSibling.hidden,
@@ -335,6 +341,21 @@ test('Stokes formula highlights every variable and element with synced legend, p
     assert.equal(generic.root['L'], 'Under the square root');
     assert.equal(generic.root['π'], 'Fixed number');
     assert.equal(generic.relation['P'], 'Part of the formula');
+    // A power on a bracket is its own symbol and covers the whole bracket.
+    assert.equal(generic.power['^2'], 'Operator');
+    assert.equal(generic.power['u'], 'Inside a bracket that is squared');
+    assert.equal(generic.power[')'], 'Operator', 'the closing bracket stays a bracket');
+    assert.equal(generic.powerSup['^2'], 'Operator');
+    assert.equal(generic.powerSup['u'], 'Inside a bracket that is squared');
+    assert.equal(generic.powerSup['h'], 'On the bottom: lowers the result');
+    assert.equal(generic.powerNeg['^−2.5'], 'Operator');
+    assert.equal(generic.powerNeg['w'], 'Inside a bracket that is raised to a power');
+    // Names that merely start like a function or contain digits stay whole.
+    assert.equal(generic.rt60['RT60'], 'The result');
+    assert.equal(generic.rt60['R'], undefined);
+    assert.ok('model' in generic.words && !('mod' in generic.words) && !('el' in generic.words));
+    assert.equal(generic.wordFn['tan'], 'Function');
+    assert.ok('angle' in generic.wordFn);
     assert.equal(generic.several['y'], 'The result', 'second equation in a box has its own result');
     assert.equal(generic.inlineIsInline, true);
     assert.equal(generic.inlinePanelAfterParagraph, true);
@@ -342,6 +363,144 @@ test('Stokes formula highlights every variable and element with synced legend, p
 
     assert.deepEqual(errors, []);
     await page.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Formula packs: common physics, maths and electronics formulas get hand-written explanations, real-unit sliders and a computed graph', async (t) => {
+  const browser = await launchBrowser(t);
+  if (!browser) return;
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    page.setDefaultTimeout(5000);
+    const errors = [];
+    page.on('pageerror', err => errors.push(err.message));
+    // As lessons write them: spacing, multiplication signs and <sub> markup all vary.
+    const cases = {
+      'newton-second': 'F = ma',
+      'kinetic-energy': 'KE = ½mv²',
+      'potential-energy': 'PE = mgh',
+      'momentum': 'p = mv',
+      'kinematics-v': 'v = v₀ + at',
+      'kinematics-x': 'x = x₀ + v₀t + ½at²',
+      'kinematics-v2': 'v² = v₀² + 2aΔx',
+      'pendulum-period': 'T = 2π √(L / g)',
+      'ohm-v': 'V = I × R',
+      'ohm-i': 'I = V ÷ R',
+      'ohm-r': 'R = V ÷ I',
+      'power-vi': 'P = V × I',
+      'power-i2r': 'P = I² × R',
+      'power-v2r': 'P = V² ÷ R',
+      'coulomb': 'F = k · q₁q₂ / r²',
+      'density': 'ρ = m ÷ V',
+      'mass-energy': 'E = mc²',
+      'frequency-period': 'f = 1 ÷ T',
+      'wave-frequency': 'f = v / lambda',
+      'work': 'W = F · d · cos(θ)',
+      'torque': 'τ = F · r · sin(θ)',
+      'drag-equation': 'F<sub>d</sub> = ½ · ρ · v² · C<sub>d</sub> · A',
+      'first-law': 'ΔU = Q - W',
+      'lorentz-factor': 'γ = 1 / √(1 − v²/c²)',
+      'hubble-law': 'v = H₀ × d',
+      'boltzmann-entropy': 'S = k ln W',
+      'wheel-axle-ma': 'MA = R / r',
+      'orbital-speed': 'v = √(GM / r)',
+      'faraday-law': 'EMF = −N × ΔΦ / Δt',
+      'de-broglie': 'lambda = h / p',
+      'projectile-x': 'x = v₀·cos(θ)·t',
+      'projectile-y': 'y = v₀·sin(θ)·t − ½g·t²',
+      'gravitation': 'F = GMm/r²',
+      // Maths, chemistry and electronics
+      'circle-area': 'A = πr<sup>2</sup>',
+      'circumference': 'C = 2πr',
+      'pythagoras': 'a<sup>2</sup> + b<sup>2</sup> = c<sup>2</sup>',
+      'line-slope-intercept': 'y = mx + b',
+      'rectangle-area': 'A = l × w',
+      'simple-interest': 'I = P × r × t',
+      'average-speed': 'v = d ÷ t',
+      'percent': 'p = (part ÷ whole) × 100',
+      'distance-formula': 'd = √((x₂−x₁)² + (y₂−y₁)²)',
+      'ideal-gas': 'PV = nRT',
+      'dilution': 'M<sub>1</sub>V<sub>1</sub> = M<sub>2</sub>V<sub>2</sub>',
+      'exponential-growth': 'N(t) = N₀ · e^(kt)',
+      'radioactive-decay': 'N(t) = N₀ · e<sup>−λt</sup>',
+      'continuous-compounding': 'A = Pe<sup>rt</sup>',
+      'fibonacci': 'F(n) = F(n - 1) + F(n - 2)',
+      'division-check': 'divisor × quotient + remainder = dividend',
+      'catenary': 'y = a·cosh(x/a)',
+      'voltage-divider': 'V<sub>out</sub> = V<sub>in</sub> × R2 ÷ (R1 + R2)',
+      'kirchhoff-voltage': 'V<sub>battery</sub> = V<sub>1</sub> + V<sub>2</sub> + V<sub>3</sub>',
+      'kirchhoff-current': 'I<sub>in</sub> = I<sub>a</sub> + I<sub>b</sub> + I<sub>c</sub>',
+      'ac-peak': 'Vpeak = Vrms × √2',
+      'ac-rms': 'Vrms = Vpeak ÷ √2',
+      'spring-energy': 'E = ½kx²',
+      'rocket-equation': 'Δv = v<sub>e</sub> × ln(m<sub>0</sub> / m<sub>f</sub>)',
+      'terminal-velocity': 'v<sub>t</sub> = √( 2 · m · g / ( ρ · C<sub>d</sub> · A ) )'
+    };
+    await page.setContent('<!doctype html><html><head><meta charset="utf-8"></head><body>' +
+      Object.entries(cases).map(([id, html]) => `<div class="cl-formula-box" data-case="${id}"><span class="cl-formula-sym">${html}</span></div>`).join('') +
+      '</body></html>');
+    await page.addStyleTag({ path: CSS_PATH });
+    await page.addScriptTag({ path: SCRIPT_PATH });
+    await page.evaluate(() => window.ClassroomOSFormulaExplainer.upgradeAll());
+
+    const report = await page.evaluate(async () => {
+      const generic = /^(On top|On the bottom|In a part|Inside|Under the|Part of the formula|What the result)/;
+      const out = [];
+      for (const box of document.querySelectorAll('[data-case]')) {
+        const entry = { id: box.dataset.case, tokens: box.querySelectorAll('.cos-fx-token').length, generic: [], sliders: 0, bad: [] };
+        for (const tok of box.querySelectorAll('.cos-fx-token')) {
+          tok.click();
+          const panel = box.querySelector('.cos-fx-panel');
+          const role = panel.querySelector('.cos-fx-role-badge').textContent;
+          if (generic.test(role)) entry.generic.push(tok.dataset.fxKey + ': ' + role);
+          const whatIf = panel.querySelector('.cos-fx-whatif');
+          if (!whatIf.hidden && role !== 'Operator') {
+            entry.sliders++;
+            const slider = panel.querySelector('.cos-fx-whatif-slider');
+            for (const v of [slider.min, slider.max]) {
+              slider.value = v;
+              slider.dispatchEvent(new Event('input', { bubbles: true }));
+              const text = panel.querySelector('.cos-fx-whatif-readout').textContent + ' ' + panel.querySelector('.cos-fx-whatif-val').textContent;
+              if (/NaN|undefined|_/.test(text)) entry.bad.push(tok.dataset.fxKey + ': ' + text);
+            }
+          }
+        }
+        out.push(entry);
+      }
+      await new Promise(r => setTimeout(r, 100));
+      return out;
+    });
+
+    assert.equal(report.length, Object.keys(cases).length);
+    for (const entry of report) {
+      assert.ok(entry.tokens >= 3, `${entry.id} was taken apart`);
+      assert.deepEqual(entry.generic, [], `${entry.id}: every variable has a hand-written explanation`);
+      assert.deepEqual(entry.bad, [], `${entry.id}: slider readouts are clean numbers`);
+      if (entry.id !== 'boltzmann-entropy' && entry.id !== 'fibonacci') assert.ok(entry.sliders >= 1, `${entry.id} has a slider in real units`);
+    }
+
+    // The readout is the formula worked out with units, and it follows the slider.
+    const newton = page.locator('[data-case="newton-second"]');
+    const setSlider = (value) => newton.locator('.cos-fx-whatif-slider').evaluate((el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, value);
+    await newton.locator('.cos-fx-token[data-fx-key="a"]').click();
+    await setSlider('3');
+    await newton.locator('.cos-fx-token[data-fx-key="m"]').click();
+    await setSlider('2');
+    assert.equal(await newton.locator('.cos-fx-title').textContent(), 'Mass');
+    assert.equal(await newton.locator('.cos-fx-whatif-readout').textContent(), 'F = 2 kg × 3 m/s² = 6 N');
+    await setSlider('4');
+    assert.equal(await newton.locator('.cos-fx-whatif-readout').textContent(), 'F = 4 kg × 3 m/s² = 12 N');
+    assert.equal(await newton.locator('.cos-fx-mode-btn').first().isVisible(), false, 'computed graphs have no 3D toggle');
+    const painted = await newton.locator('canvas').evaluate((c) => {
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      let lit = 0;
+      for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] > 150) lit++;
+      return lit;
+    });
+    assert.ok(painted > 50, 'the graph is drawn');
+    assert.deepEqual(errors, []);
   } finally {
     await browser.close();
   }
