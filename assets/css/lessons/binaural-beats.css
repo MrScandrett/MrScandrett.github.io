@@ -1,25 +1,86 @@
-.binaural-controls { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
-.binaural-controls label { display:flex; flex-direction:column; gap:.5rem; font-weight:600; }
-.binaural-controls input,.binaural-controls select { width:100%; min-height:44px; }
-.binaural-controls select { color:var(--text); background:var(--bg); border:1px solid currentColor; border-radius:.4rem; padding:.4rem; }
-.binaural-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; }
-.binaural-actions button { min-height:44px; padding:.6rem 1rem; color:var(--text); background:var(--bg); border:1px solid currentColor; border-radius:.5rem; cursor:pointer; }
-.binaural-actions button:disabled { opacity:.55; cursor:default; }
-.binaural-lab :focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
-#bb-diagram { width:100%; height:auto; border:1px solid var(--line); border-radius:.5rem; color:var(--text); background:var(--bg); }
-#bb-diagram text { fill:currentColor; font:14px sans-serif; }
-#bb-readout { font-weight:700; }
-@media(max-width:600px) { .binaural-controls { grid-template-columns:1fr; } }
+:where(.bb-page) .binaural-lab {
+  --bb-left: light-dark(#006d70, #70e7dc);
+  --bb-right: light-dark(#493cc9, #bbb5ff);
+  --bb-scope: light-dark(#f2f5fa, #171d2a);
+  background: var(--surface-elevated, var(--bg));
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 18px);
+  margin-bottom: 1rem;
+  padding: 1rem clamp(.75rem, 2vw, 1.4rem);
+}
+.binaural-lab > .eyebrow, .binaural-lab > h1 { padding-right: 7.5rem; }
+.binaural-lab h1 { margin: 0 0 .75rem; font-size: clamp(1.45rem, 3vw, 2.15rem); line-height: 1.1; }
+.binaural-lab #binaural-controls { max-width: 1200px; margin-inline: auto; }
+.bb-modes { min-width: 0; border: 0; padding: 0; margin: 0 0 .75rem; }
+.bb-modes legend { padding: 0; margin-bottom: .3rem; font-size: .8rem; font-weight: 700; }
+.bb-mode-options { display: flex; flex-wrap: wrap; gap: .4rem; }
+.bb-mode-options label {
+  display: flex; align-items: center; gap: .35rem; min-height: 44px;
+  padding: .25rem .65rem; border: 1px solid var(--line); border-radius: .55rem;
+  font-size: .87rem; font-weight: 650; cursor: pointer;
+}
+.bb-mode-options input { margin: 0; accent-color: var(--bb-right); }
+.bb-mode-options label:has(:checked) {
+  border-color: var(--bb-right); background: color-mix(in srgb, var(--bb-right) 10%, transparent);
+}
+.bb-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 29%); gap: .75rem; }
+[data-lighting="night"] .binaural-lab { color-scheme: dark; }
+[data-lighting="day"] .binaural-lab { color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  html:not([data-lighting]) .binaural-lab { color-scheme: dark; }
+}
+.bb-scope, .bb-settings { border: 1px solid var(--line); border-radius: .8rem; padding: .75rem; min-width: 0; }
+.bb-scope { background: var(--bb-scope); color: light-dark(#202638, #e7edf7); }
+.bb-page .bb-scope h2 { margin: 0 0 .45rem; font-size: .93rem; }
+.bb-scope h2 small { margin-left: .35rem; font-size: .73rem; font-weight: 500; }
+.bb-channels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-bottom: .65rem; }
+.bb-channel { border: 1px solid currentColor; border-radius: .55rem; padding: .45rem .5rem; }
+.bb-channel > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .1rem .45rem; font-size: .8rem; }
+.bb-channel span, #bb-rate, .binaural-controls output { font-variant-numeric: tabular-nums; }
+.bb-left { color: var(--bb-left); }
+.bb-right { color: var(--bb-right); }
+.bb-scope svg { display: block; width: 100%; height: 58px; margin-top: .25rem; }
+.bb-trace, .bb-grid { fill: none; stroke: currentColor; vector-effect: non-scaling-stroke; }
+.bb-trace { stroke-width: 1.6; }
+.bb-grid { opacity: .24; }
+.bb-beat { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 0 .5rem; }
+.bb-beat svg, .bb-time, #bb-explanation { grid-column: 1 / -1; }
+.bb-beat svg { height: 46px; }
+.bb-time { display: flex; justify-content: space-between; font-size: .7rem; }
+.bb-page #bb-explanation { margin: .35rem 0 0; font-size: .8rem; line-height: 1.35; }
+.binaural-controls label { display: flex; justify-content: space-between; gap: .4rem; font-size: .85rem; font-weight: 650; }
+.binaural-controls input { width: 100%; min-height: 38px; margin: 0; accent-color: var(--bb-right); }
+.bb-noise-settings { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: .5rem; margin-bottom: .45rem; }
+.bb-noise-settings > div { min-width: 0; }
+.bb-noise-settings select {
+  width: 100%; min-height: 38px; padding-inline: .3rem; font: inherit; font-size: .85rem;
+  color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: .4rem;
+}
+.binaural-actions { display: grid; grid-template-columns: 1.35fr 1fr; gap: .4rem; }
+.binaural-actions button {
+  min-height: 44px; padding: .4rem .6rem; font: inherit; font-weight: 700;
+  color: var(--text); background: var(--bg); border: 1px solid currentColor; border-radius: .55rem; cursor: pointer;
+}
+.binaural-actions #bb-play { color: light-dark(#fff, #18132f); background: var(--bb-right); border-color: var(--bb-right); }
+.binaural-actions button:disabled { opacity: .55; cursor: default; }
+#bb-progress { width: 100%; height: .45rem; margin-top: .55rem; accent-color: var(--bb-right); }
+.bb-page #bb-status { margin: .2rem 0 0; font-size: .8rem; line-height: 1.35; }
+.bb-page #bb-listening-note { margin: .65rem 0 .15rem; font-size: .81rem; }
+.bb-lesson-link { font-size: .85rem; }
+.binaural-lab :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 740px) {
+  .bb-workspace { grid-template-columns: minmax(0, 1fr); }
+  .binaural-controls input, .bb-noise-settings select { min-height: 44px; }
+}
 
-/* Lesson page (lessons/physics/waves-and-sound/binaural-beats.html) */
+/* Lesson page */
 .bb-viewport { --ll-panel-w: 260px; --ll-accent: #6366f1; --ll-tab-active: #6366f1; --ll-tab-active-bg: rgba(99,102,241,.12); }
 .bb-page { padding-bottom: 0; }
 .bb-hero { padding: .4rem 0 1.3rem; }
-.bb-hero h1 { max-width: 34ch; margin: 0; font-size: clamp(1.55rem,3.5vw,2.35rem); letter-spacing: -.03em; }
 .bb-meta { display: flex; flex-wrap: wrap; gap: .4rem .7rem; margin: .55rem 0 0; font-size: .82rem; color: var(--text-muted); }
 .bb-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: .42; display: inline-block; align-self: center; }
 .bb-lede { margin: .7rem 0 0; max-width: 72ch; color: var(--text-secondary, var(--text)); font-size: .96rem; line-height: 1.62; }
-.bb-page .music-card { background: var(--surface-elevated, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #6366f1); border-radius: var(--radius, 18px); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+.bb-page .music-card:not(.binaural-lab) { background: var(--surface-elevated, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #6366f1); border-radius: var(--radius, 18px); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
 .bb-page .music-card h2 { margin: 0 0 .55rem; font-size: 1.2rem; letter-spacing: -.02em; }
 .bb-page .music-card h3 { margin: .95rem 0 .32rem; font-size: 1rem; }
 .bb-page .music-card p, .bb-page .music-card li { font-size: .9rem; line-height: 1.65; margin: 0 0 .6rem; }
