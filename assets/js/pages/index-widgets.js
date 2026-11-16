@@ -4,6 +4,7 @@
   'use strict';
   const groups = new Map();
   const scripts = new Map();
+  const preloadMargin = document.documentElement.hasAttribute('data-classroom-board') ? 0 : 200;
   document.querySelectorAll('script[data-home-src]').forEach(template => {
     const root = document.querySelector(template.dataset.homeWidget);
     if (!root) return;
@@ -58,13 +59,13 @@
 
   const observer = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
     entries.forEach(entry => { if (entry.isIntersecting) load(entry.target); });
-  }, { rootMargin: '200px' }) : null;
+  }, { rootMargin: preloadMargin + 'px' }) : null;
 
   function scan() {
     groups.forEach((group, root) => {
       if (group.loaded || group.retry || !available(root)) return;
       const rect = root.getBoundingClientRect();
-      if (!observer || (rect.bottom >= -200 && rect.top <= innerHeight + 200)) load(root);
+      if (!observer || (rect.bottom >= -preloadMargin && rect.top <= innerHeight + preloadMargin)) load(root);
     });
   }
   groups.forEach((group, root) => { if (observer) observer.observe(root); });

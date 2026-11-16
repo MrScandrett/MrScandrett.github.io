@@ -9,6 +9,7 @@
  */
 
 (function () {
+  if (document.documentElement.hasAttribute('data-classroom-board')) return;
   if (window.ClassroomOSCanvasBg && window.ClassroomOSCanvasBg.__ready) return;
 
   var STORAGE_KEY  = 'classroomos-canvas-bg';

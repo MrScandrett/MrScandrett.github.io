@@ -173,6 +173,24 @@
     watcher.observe(html, { attributes: true, attributeFilter: ["data-theme"] });
   }
 
+  function applyBoardMode() {
+    var override = new URLSearchParams(root.location.search).get("board");
+    try {
+      if (override === "1" || override === "0") root.localStorage.setItem("classroomos-board", override);
+      else override = root.localStorage.getItem("classroomos-board");
+    } catch (_) {}
+
+    // Embedded browsers don't always include the model in their user agent.
+    var agent = root.navigator.userAgent;
+    var largeAndroidDisplay = /Android/i.test(agent) &&
+      Math.max(root.screen.width, root.screen.height) >= 1280 &&
+      Math.min(root.screen.width, root.screen.height) >= 720;
+    var enabled = override === "1" || (override !== "0" && (/TT-6521Q/i.test(agent) || largeAndroidDisplay));
+    if (enabled && document.documentElement.dataset.themeScope !== "independent") {
+      document.documentElement.setAttribute("data-classroom-board", "");
+    }
+  }
+
   var api = {
     THEMES: THEMES,
     IDS: ids,
@@ -193,6 +211,7 @@
 
   root.ClassroomOSThemeRegistry = api;
   if (root.document) {
+    applyBoardMode();
     // A shared launcher on every themed page; audio lives in the persistent listening shell.
     var musicSource = document.currentScript;
     if (musicSource && !document.querySelector('script[data-site-music]')) {

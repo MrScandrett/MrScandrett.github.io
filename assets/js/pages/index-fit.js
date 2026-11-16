@@ -17,9 +17,11 @@
       }
     });
   }
-  new ResizeObserver(fit).observe(title.parentElement);
-  document.fonts.ready.then(fit);
-  document.fonts.addEventListener('loadingdone', fit);
+  if ('ResizeObserver' in window) new ResizeObserver(fit).observe(title.parentElement);
+  if (document.fonts) {
+    document.fonts.ready.then(fit);
+    document.fonts.addEventListener('loadingdone', fit);
+  }
   window.addEventListener('resize', fit);
   fit();
 })();

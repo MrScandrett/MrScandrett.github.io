@@ -18,13 +18,13 @@ try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     try {
       await page.goto(new URL(file, base).href, { waitUntil: 'domcontentloaded' });
-      const app = page.locator('[data-creation-app]');
+      const app = page.locator(file === 'index.html#sandbox' ? '#tabpanel-sandbox[data-creation-app]' : '[data-creation-app]');
       await app.waitFor({ state: 'visible' });
       if (!standalone.includes(file)) {
         const first = await app.evaluate(node => node.parentElement.tagName === 'MAIN' && node.parentElement.firstElementChild === node);
         if (!first) throw new Error('Application must precede the lesson.');
       }
-      const button = app.locator('.creation-app-fullscreen').first();
+      const button = app.locator('.creation-app-fullscreen[aria-keyshortcuts="F"]').first();
       if (await app.getAttribute('data-creation-fit') !== null) {
         const primary = app.locator('[data-creation-primary]');
         await primary.waitFor({ state: 'visible' });
@@ -51,6 +51,22 @@ try {
       console.log(`PASS ${file}`);
     } catch (error) { failures.push(`${file}: ${error.message}`); }
     finally { await page.close(); }
+  }
+  if (selected.includes('index.html#sandbox')) {
+    const board = await browser.newPage({ viewport: { width: 1920, height: 1080 }, hasTouch: true });
+    await board.addInitScript(() => {
+      Object.defineProperty(document, 'fullscreenEnabled', { get: () => false });
+      HTMLElement.prototype.showPopover = undefined;
+    });
+    await board.goto(new URL('index.html?board=1#sandbox', base).href);
+    const button = board.locator('#tabpanel-sandbox .creation-app-fullscreen[aria-keyshortcuts="F"]');
+    await button.tap();
+    await board.locator('#tabpanel-sandbox.creation-app-expanded').waitFor();
+    await button.tap();
+    if (await board.locator('#tabpanel-sandbox.creation-app-expanded').count()) {
+      failures.push('Smartboard fullscreen fallback did not exit with its touch control.');
+    }
+    await board.close();
   }
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await page.addInitScript(() => Object.defineProperty(document, 'fullscreenEnabled', { get: () => false }));

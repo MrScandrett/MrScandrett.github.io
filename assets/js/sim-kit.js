@@ -65,7 +65,8 @@
   function canvas2d(canvas, opts) {
     opts = opts || {};
     var box = opts.box || canvas.parentElement;
-    var maxDpr = opts.dpr === false || opts.dpr === 0 ? 0 : (opts.dpr || 2);
+    var boardMode = document.documentElement.hasAttribute('data-classroom-board');
+    var maxDpr = opts.dpr === false || opts.dpr === 0 ? 0 : (opts.dpr || (boardMode ? 1 : 2));
     // Limit the backing store, not the CSS size or simulation coordinates.
     // 1080p worth of pixels also accommodates portrait and ultrawide canvases.
     // maxPixels: 0 opts out; dpr:false retains its existing 1:1 behavior.
@@ -84,7 +85,7 @@
       var cssWidth = Math.max(1, box.clientWidth);
       var cssHeight = Math.max(1, Math.floor(fixedHeight != null ? fixedHeight : box.clientHeight));
       if (maxDpr) {
-        var dpr = Math.min(global.devicePixelRatio || 1, maxDpr);
+        var dpr = Math.min(global.devicePixelRatio || 1, maxDpr, boardMode ? 1 : Infinity);
         if (maxPixels > 0) dpr = Math.min(dpr, Math.sqrt(maxPixels / (cssWidth * cssHeight)));
         canvas.width = Math.floor(cssWidth * dpr);
         canvas.height = Math.floor(cssHeight * dpr);

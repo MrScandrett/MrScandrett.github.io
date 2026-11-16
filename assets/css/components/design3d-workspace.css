@@ -101,6 +101,7 @@
 
 /* Fit previews to short screens without clipping the scrollable workspace controls. */
 [data-creation-app]:is(:fullscreen, .creation-app-expanded) > .d3w .d3w-view canvas {
+ height:clamp(160px, 38vh, 420px);
  height:clamp(160px, 38dvh, 420px);
 }
 
@@ -131,7 +132,7 @@
  padding: .23rem .5rem;
  font-size: .76rem;
 }
-.d3w.d3w-fit[data-mode] .d3w-view canvas { height: clamp(175px, 31dvh, 385px); }
+.d3w.d3w-fit[data-mode] .d3w-view canvas { height: clamp(175px, 31vh, 385px); height: clamp(175px, 31dvh, 385px); }
 .d3w.d3w-fit[data-mode] .d3w-unit { padding: .2rem .45rem; }
 .d3w.d3w-fit[data-mode] .d3w-controls { display: block; }
 .d3w.d3w-fit[data-mode] .d3w-controls > fieldset {
@@ -198,7 +199,7 @@
 }
 @media (max-width: 730px) {
  .d3w.d3w-fit[data-mode] .d3w-layout { grid-template-columns: minmax(0, 1fr); }
- .d3w.d3w-fit[data-mode] .d3w-view canvas { height: clamp(165px, 25dvh, 245px); }
+ .d3w.d3w-fit[data-mode] .d3w-view canvas { height: clamp(165px, 25vh, 245px); height: clamp(165px, 25dvh, 245px); }
 }
 @media (pointer: coarse) {
  .d3w.d3w-fit[data-mode] :is(button,select,input[type="number"],input[type="color"]) { min-height: 44px; }
@@ -250,4 +251,42 @@
  background: #17212be8;
  font-size: .7rem;
  line-height: 1.3;
+}
+
+/* Give the model room on a classroom display without pushing tools out of view. */
+@media (min-width: 1000px) and (min-height: 800px) {
+ html[data-classroom-board] [data-creation-app] > .d3w {
+  --d3-board-stage-height: clamp(310px, 42vh, 740px);
+ }
+ html[data-classroom-board] [data-creation-app]:is(:fullscreen, .creation-app-expanded) > .d3w {
+  --d3-board-stage-height: clamp(400px, 57vh, 1240px);
+  margin-block: 0;
+ }
+ html[data-classroom-board] [data-creation-app]:is(:fullscreen, .creation-app-expanded) > .d3w .d3w-layout {
+  grid-template-columns: minmax(0, 1fr) clamp(20rem, 28vw, 44rem);
+ }
+ html[data-classroom-board] [data-creation-app] > .d3w .d3w-view {
+  min-height: 0;
+ }
+ html[data-classroom-board] [data-creation-app] > .d3w .d3w-view canvas {
+  height: var(--d3-board-stage-height);
+ }
+ html[data-classroom-board] [data-creation-app] > .d3w .d3w-controls {
+  max-height: calc(var(--d3-board-stage-height) + 4rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+ }
+ html[data-classroom-board] [data-creation-app] > .d3w :is(button, select, input[type="number"], input[type="color"]) {
+  min-height: 44px;
+  touch-action: manipulation;
+ }
+}
+@media (min-width: 2600px) and (min-height: 1400px) {
+ html[data-classroom-board] [data-creation-app]:is(:fullscreen, .creation-app-expanded) > .d3w :is(button, select, input[type="number"], input[type="color"]) {
+  min-height: 56px;
+  font-size: 1rem;
+ }
+ html[data-classroom-board] [data-creation-app] > .d3w .d3w-controls label {
+  font-size: 1rem;
+ }
 }

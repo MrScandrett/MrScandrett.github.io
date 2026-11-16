@@ -40,6 +40,38 @@
     buttons.forEach(b => b.addEventListener('click', () => cover(b.dataset.cover)));
   })();
 
+  /* ── Formula wheel: a third of a turn selects the next unknown ── */
+  (function formulaWheel() {
+    const wheel = document.querySelector('[data-ohm-wheel]');
+    if (!wheel) return;
+
+    const cards = Array.from(wheel.querySelectorAll('[data-ohm-formula]'));
+    const controls = wheel.querySelector('.ohm-wheel__controls');
+    const status = wheel.querySelector('.ohm-wheel__status');
+    let selected = 0;
+    let rotation = 0;
+
+    cards.slice(1).forEach(card => card.classList.add('ohm-wheel__inactive'));
+    controls.hidden = false;
+    controls.querySelectorAll('[data-ohm-turn]').forEach(button => {
+      button.addEventListener('click', () => {
+        const step = Number(button.dataset.ohmTurn);
+        const previous = cards[selected];
+        const previousToggle = previous.querySelector('.cos-fx-toggle-btn[aria-expanded="true"]');
+        if (previousToggle) previousToggle.click();
+        previous.classList.add('ohm-wheel__inactive');
+
+        selected = (selected + step + cards.length) % cards.length;
+        rotation -= step * 120;
+        const current = cards[selected];
+        wheel.style.setProperty('--ohm-wheel-rotation', rotation + 'deg');
+        current.classList.remove('ohm-wheel__inactive');
+        status.textContent = current.querySelector('.ohm-formula-label').textContent;
+        if (previousToggle) current.querySelector('.cos-fx-toggle-btn')?.click();
+      });
+    });
+  })();
+
   /* ── Circuit bench ── */
   const lab = document.getElementById('ohm-lab');
   if (!lab) return;

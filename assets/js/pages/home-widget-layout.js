@@ -39,7 +39,7 @@
     for (const item of state) {
       const peers = state.filter(s => s.area === item.area); const card = byId.get(item.id);
       card.querySelector('[data-move="-1"]').disabled = peers[0] === item;
-      card.querySelector('[data-move="1"]').disabled = peers.at(-1) === item;
+      card.querySelector('[data-move="1"]').disabled = peers[peers.length - 1] === item;
     }
     window.dispatchEvent(new Event('resize'));
   }

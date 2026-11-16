@@ -23,16 +23,16 @@ try {
   for(let j=0;j<4;j++){const beacon=new THREE.Mesh(new THREE.SphereGeometry(.28,8,8),new THREE.MeshBasicMaterial({color:0xffffff}));beacon.position.set(Math.cos(j*Math.PI/2)*3,Math.sin(j*Math.PI/2)*3,0);ring.add(beacon);}
   return ring;
  });
- let next=0,running=false,ready=true,yaw=0,pitch=0,drag=null;
- const keys=new Set(),position=new THREE.Vector3(),forward=new THREE.Vector3(),right=new THREE.Vector3();
+ let next=0,running=false,ready=true,dirty=true,yaw=0,pitch=0,drag=null;
+ const keys=new Set(),position=new THREE.Vector3(),previousPosition=new THREE.Vector3(),forward=new THREE.Vector3(),right=new THREE.Vector3();
  const say=t=>{status.textContent=t;};
  function updateRange(){const g=gates[Math.min(next,5)];$('[data-flight-range]').textContent=next===6?'Course cleared':`Ring ${next+1} · ${Math.round(position.distanceTo(new THREE.Vector3(...g)))} units`;}
  function release(){keys.clear();drag=null;for(const b of root.querySelectorAll('[data-hold]'))b.setAttribute('aria-pressed','false');}
  function pause(){running=false;release();$('[data-flight="start"]').textContent=next===6?'Course complete':'Resume flight';}
  function paintRings(){rings.forEach((r,i)=>{r.material.color.setHex(i<next?0x4ee3a1:i===next?0xffd166:0x8399ac);r.material.emissive.setHex(i===next?0x6b4000:0x07151a);});$('[data-flight-count]').textContent=`${next} / 6 rings`;}
- function home(){const g=gates[Math.min(next,5)];position.set(g[0],g[1],g[2]+14);yaw=0;pitch=0;camera.fov=65;camera.updateProjectionMatrix();release();updateRange();}
+ function home(){const g=gates[Math.min(next,5)];position.set(g[0],g[1],g[2]+14);yaw=0;pitch=0;camera.fov=65;camera.updateProjectionMatrix();release();updateRange();dirty=true;}
  function reset(){next=0;pause();home();paintRings();$('[data-flight-debrief]').hidden=true;$('[data-flight="start"]').textContent='Start flight';say('Ready. Pan to line up with the gold ring, then hold Forward.');}
- function zoom(factor){camera.fov=THREE.MathUtils.clamp(camera.fov*factor,35,90);camera.updateProjectionMatrix();say('Lens zoom changed. Camera position and distance to the ring stayed the same.');}
+ function zoom(factor){camera.fov=THREE.MathUtils.clamp(camera.fov*factor,35,90);camera.updateProjectionMatrix();dirty=true;say('Lens zoom changed. Camera position and distance to the ring stayed the same.');}
  function action(name){
   if(!ready)return;
   if(name==='start'){if(next===6)return;if(running){pause();say('Paused. Look at the course, or change lens zoom.');}else{running=true;$('[data-flight="start"]').textContent='Pause flight';say('Flight active. Hold Forward to travel; release to hover.');canvas.focus();}}
@@ -54,15 +54,17 @@ try {
   b.addEventListener('keyup',stop);b.addEventListener('blur',stop);
  }
  canvas.addEventListener('pointerdown',e=>{canvas.focus();canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY};});
- canvas.addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-drag.x)*.004;pitch=THREE.MathUtils.clamp(pitch-(e.clientY-drag.y)*.004,-.7,.7);drag={x:e.clientX,y:e.clientY};});
+ canvas.addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-drag.x)*.004;pitch=THREE.MathUtils.clamp(pitch-(e.clientY-drag.y)*.004,-.7,.7);drag={x:e.clientX,y:e.clientY};dirty=true;});
  canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
  canvas.addEventListener('wheel',e=>{if(document.activeElement!==canvas)return;e.preventDefault();zoom(e.deltaY<0?.95:1.05);},{passive:false});
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&running){pause();say('Flight paused while you were away.');}});
  window.addEventListener('blur',()=>{if(running){pause();say('Flight paused. Resume when ready.');}});
  reset();
  const loop=window.SimKit.loop(dt=>{
-  const step=Math.min(dt,.05),old=position.clone();
-  if(running&&next<6){
+  if(!ready)return;
+  if(running&&keys.size&&next<6){
+   const step=Math.min(dt,.05),old=previousPosition.copy(position);
+   dirty=true;
    yaw+=((keys.has('a')?1:0)-(keys.has('d')?1:0))*step;
    forward.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));right.set(Math.cos(yaw),0,-Math.sin(yaw));
    const speed=Number($('#flight-speed').value)*step;
@@ -77,11 +79,15 @@ try {
     else {pause();home();say('Missed the opening. Recovered before this ring; pan to align, then resume.');}
    }
   }
+  const resized=kit.syncSize();
+  if(!dirty&&!resized)return;
   camera.position.copy(position);camera.rotation.set(pitch,yaw,0,'YXZ');
   updateRange();
-  kit.syncSize();renderer.render(scene,camera);
+  renderer.render(scene,camera);
+  dirty=false;
  },{el:canvas,maxDt:.05});
- canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();ready=false;pause();say('3D flight interrupted. Reload to try again, or continue with the CAD instructions below.');});
+ canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();ready=false;root.dataset.flightReady='false';pause();say('3D flight interrupted. Your checkpoint is saved for this session.');});
+ canvas.addEventListener('webglcontextrestored',()=>{ready=true;dirty=true;root.dataset.flightReady='true';say('3D flight restored. Resume when ready.');});
  window.addEventListener('pagehide',e=>{if(e.persisted)return;loop.stop();scene.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});kit.dispose();},{once:true});
  root.dataset.flightReady='true';
 }catch(error){kit?.dispose();canvas.hidden=true;root.querySelectorAll('button,select').forEach(b=>b.disabled=true);status.textContent='3D flight is unavailable on this device. Continue with the camera workshop and its written navigation steps below.';console.warn('Flight academy unavailable:',error);}

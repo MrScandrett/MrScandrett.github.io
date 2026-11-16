@@ -11,6 +11,9 @@
     var dCtx = drawCanvas.getContext('2d');
     var pCtx = physCanvas.getContext('2d');
     var boardSize = null;
+    var boardMode = document.documentElement.hasAttribute('data-classroom-board');
+    // Board projects and undo snapshots contain only JSON data.
+    var cloneBoard = window.structuredClone || (value => JSON.parse(JSON.stringify(value)));
     function sandboxFullscreen() {
       return document.fullscreenElement === sandboxPanel || sandboxPanel.classList.contains('creation-app-expanded');
     }
@@ -43,7 +46,7 @@
       canvas.style.height = boardSize.height * scale + 'px';
       // Bound raster work independently of saved board coordinates. Recalculate
       // when moving between displays; small on-screen boards need fewer pixels.
-      var DPR = Math.min(window.devicePixelRatio || 1, maxDpr || 2) * scale;
+      var DPR = Math.min(window.devicePixelRatio || 1, maxDpr || 2, boardMode ? 1 : Infinity) * scale;
       DPR = Math.min(DPR, Math.sqrt(1920 * 1080 / (boardSize.width * boardSize.height)));
       canvas.width = Math.max(1, Math.floor(boardSize.width * DPR));
       canvas.height = Math.max(1, Math.floor(boardSize.height * DPR));
@@ -730,7 +733,7 @@
         return { strokes: rStrokes, starts: startPts };
       }
 
-      function rememberCourse(before = structuredClone(courseState())) {
+      function rememberCourse(before = cloneBoard(courseState())) {
         rRedo = []; rHistory.push(before);
         if (rHistory.length > 40) rHistory.shift();
       }
@@ -746,7 +749,7 @@
         e.preventDefault();
         rPointer = e.pointerId; riderCanvas.setPointerCapture(rPointer);
         if(rTool === 'pan') { panAt = {p:canvasPoint(riderCanvas,e),x:camera.x,y:camera.y}; return; }
-        rBeforeEdit = structuredClone(courseState());
+        rBeforeEdit = cloneBoard(courseState());
         rEdited = false;
         resetRide();
         var p = rPoint(e);
@@ -831,7 +834,7 @@
       });
       document.getElementById('prider-undo') && document.getElementById('prider-undo').addEventListener('click', function () {
         rUp();
-        if (rHistory.length) { rRedo.push(structuredClone(courseState())); var state = rHistory.pop(); rStrokes = state.strokes; startPts = state.starts; resetRide(); rebuildSegs(); drawRider(); updateRiderUi(); }
+        if (rHistory.length) { rRedo.push(cloneBoard(courseState())); var state = rHistory.pop(); rStrokes = state.strokes; startPts = state.starts; resetRide(); rebuildSegs(); drawRider(); updateRiderUi(); }
       });
       document.getElementById('prider-clear') && document.getElementById('prider-clear').addEventListener('click', function () {
         rUp(); rememberCourse(); resetRide();
@@ -1082,7 +1085,7 @@
         startPts = [{x:first.x,y:first.y-32}]; camera={x:0,y:0,zoom:1};
         rebuildSegs(); updateRiderUi(); drawRider();
       });
-      document.getElementById('prider-redo').addEventListener('click',function(){rUp();if(!rRedo.length)return;rHistory.push(structuredClone(courseState()));var state=rRedo.pop();rStrokes=state.strokes;startPts=state.starts;resetRide();rebuildSegs();updateRiderUi();drawRider();});
+      document.getElementById('prider-redo').addEventListener('click',function(){rUp();if(!rRedo.length)return;rHistory.push(cloneBoard(courseState()));var state=rRedo.pop();rStrokes=state.strokes;startPts=state.starts;resetRide();rebuildSegs();updateRiderUi();drawRider();});
       document.getElementById('prider-home').addEventListener('click',function(){camera={x:0,y:0,zoom:1};drawRider();});
       document.getElementById('prider-ghost').addEventListener('change',function(){updateRiderUi();drawRider();});
       document.getElementById('prider-lesson').addEventListener('change',function(){document.getElementById('prider-ghost').checked=true;updateRiderUi();drawRider();});
@@ -1142,7 +1145,7 @@
     let openRequest = 0;
 
     function captureBoard() {
-      return structuredClone({
+      return cloneBoard({
         format: projectFormat,
         version: 1,
         board: boardSize,

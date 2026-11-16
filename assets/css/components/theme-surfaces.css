@@ -1,12 +1,12 @@
 /* Shared theme finish. Loaded by theme-lighting after page styles so legacy
    palettes resolve through semantic tokens. Independent student apps opt out. */
 html[data-theme] {
-  --reading-surface: color-mix(in srgb, var(--white) 97%, var(--bg));
-  --reading-inset: color-mix(in srgb, var(--white) 91%, var(--bg));
+  --reading-surface: var(--white);
+  --reading-inset: var(--surface-2, var(--white));
   --control-surface: var(--reading-surface);
   --control-border: var(--border-strong, var(--line));
   --text-secondary: var(--text-body, var(--text));
-  --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--white));
+  --accent-soft: var(--white);
   --theme-surface-bg: var(--reading-surface);
   --theme-surface-border: var(--border-subtle, var(--line));
   --theme-surface-shadow: var(--shadow-1);
@@ -14,6 +14,14 @@ html[data-theme] {
   --theme-active-border: var(--accent);
   --theme-active-text: var(--text);
   --theme-muted-text: var(--text-muted, var(--muted));
+}
+
+@supports (color: color-mix(in srgb, white, black)) {
+  html[data-theme] {
+    --reading-surface: color-mix(in srgb, var(--white) 97%, var(--bg));
+    --reading-inset: color-mix(in srgb, var(--white) 91%, var(--bg));
+    --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--white));
+  }
 }
 
 /* Texture belongs in the margins. The wash softens the existing local artwork. */
@@ -195,3 +203,32 @@ html body .nav-settings-panel .nav-auto-note { color: var(--glass-muted); backgr
 }
 
 html body .nav-settings-panel .nav-theme-preview-line { display: none; }
+
+/* Solid surfaces and static chrome reduce full-screen repainting on smartboards. */
+html[data-classroom-board] {
+  --glass-filter: none;
+  --glass-clear: var(--glass-solid);
+  --glass-regular: var(--glass-solid);
+}
+html[data-classroom-board] body {
+  background: var(--bg) !important;
+  animation: none !important;
+}
+html[data-classroom-board] body::before,
+html[data-classroom-board] body::after,
+html[data-classroom-board] body .site-header::before,
+html[data-classroom-board] body .site-header::after {
+  display: none !important;
+}
+html[data-classroom-board] body :is(.site-header, .nav-settings-panel, .home-tabs) {
+  background: var(--glass-solid) !important;
+}
+html[data-classroom-board] body :is(.site-header, .nav-settings-panel, .home-widget, .home-tabs) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-classroom-board] body .skeleton,
+html[data-classroom-board] body .brand::before,
+html[data-classroom-board] body .brand::after {
+  animation: none !important;
+}

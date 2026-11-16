@@ -65,7 +65,8 @@ async function mount(host){
  // the workshop title is the page heading unless the page already shows its own h1
  const hx=[...document.querySelectorAll('h1')].some(h=>!host.contains(h)&&!h.closest('.d3-original-reference'))?'h2':'h1';
  const pattern=mode==='procedural';
- const fitted=pattern||Boolean(host.closest('[data-creation-fit]'));
+ const fitWrapper=host.closest('[data-creation-fit]');
+ const fitted=pattern||Boolean(fitWrapper&&!fitWrapper.querySelector('[data-creation-primary]'));
  const pairedColors=fitted&&mode!=='character';
  host.classList.toggle('d3w-fit',fitted);
  const support=`<div class="d3w-level"><label for="${id}-level">Support level</label><select id="${id}-level" data-level><option value="guided">Guided practice</option><option value="independent">Independent design</option><option value="extension">Extension challenge</option></select><span data-level-note></span></div>`;
@@ -325,7 +326,9 @@ async function mount(host){
   sceneKit.scene.environmentIntensity=.35;sceneKit.scene.fog=new THREE.Fog(state.background,18,45);
   sceneKit.world.intensity=.65;sceneKit.light.color.set('#fff0de');
   sceneKit.renderer.shadowMap.enabled=true;sceneKit.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  sceneKit.light.castShadow=true;sceneKit.light.shadow.mapSize.set(2048,2048);
+  sceneKit.light.castShadow=true;
+  const shadowSize=document.documentElement.hasAttribute('data-classroom-board')?1024:2048;
+  sceneKit.light.shadow.mapSize.set(shadowSize,shadowSize);
   Object.assign(sceneKit.light.shadow.camera,{left:-6,right:6,top:9,bottom:-4,near:.1,far:35});sceneKit.light.shadow.normalBias=.025;sceneKit.light.shadow.bias=-.00015;sceneKit.light.shadow.radius=4;
   const rim=new THREE.DirectionalLight(0x9ccbea,2.5);rim.position.set(-4,6,-5);sceneKit.scene.add(rim);
   const platform=new THREE.Mesh(new THREE.CylinderGeometry(2.3,2.4,.16,96),new THREE.MeshStandardMaterial({color:0x263442,roughness:.36,metalness:.35}));platform.position.y=-.12;platform.receiveShadow=true;sceneKit.scene.add(platform);
@@ -351,7 +354,8 @@ async function mount(host){
  if(mode==='rig')setupRigStudio({host,edit,getState:()=>state,say,THREE});
  if(mode==='materials')setupMaterialStudio({host,id,edit,getState:()=>state,say,render,sceneKit,controls});
  host.dataset.ready='true';say('Scene ready. Make a design choice, inspect it, then test your technique.');
- canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();playing=false;host.dataset.ready='false';host.dataset.check='revise';$('[data-completion]').textContent='';say('The 3D context was lost. Save your project, reload, or continue in your chosen app.');});
+ canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();playing=false;host.dataset.ready='false';host.dataset.check='revise';$('[data-completion]').textContent='';say('The 3D view was interrupted. Your project is still available to save.');});
+ canvas.addEventListener('webglcontextrestored',()=>{dirty=true;host.dataset.ready='true';say('3D view restored. Continue editing your project.');});
  window.addEventListener('pagehide',event=>{if(event.persisted)return;loop?.stop?.();observer.disconnect();intersection.disconnect();controls.dispose();brushRing?.geometry.dispose();brushRing?.material.dispose();disposeDesign(group);texture.dispose();sceneKit.studioEnvironment?.dispose();sceneKit.dispose();},{once:true});
  }catch(error){host.dataset.ready='false';canvas.hidden=true;const fallback=document.createElement('p');fallback.className='d3w-fallback';fallback.textContent='Interactive 3D is unavailable in this browser. The technique steps, numeric design plan, Tool Rosetta and project saving remain available. Complete the model in your chosen app and test it there.';$('.d3w-view').append(fallback);say('3D unavailable. Use the external-app workflow below.');console.warn('3D workshop fallback:',error.message);}
 }

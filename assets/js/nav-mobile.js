@@ -1568,6 +1568,8 @@
   }
 
   function ensureCanvasBackgroundEngine() {
+    if (document.documentElement.hasAttribute("data-classroom-board")) return;
+    if (document.querySelector('script[src*="/canvas-bg.js"]')) return;
     if (isThemeIndependent || window.ClassroomOSCanvasBg || document.querySelector('script[data-classroomos-canvas-bg="true"]')) return;
 
     var src = "assets/js/canvas-bg.js";

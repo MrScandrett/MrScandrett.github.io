@@ -14,7 +14,9 @@
  */
 
 (function () {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (document.documentElement.hasAttribute('data-classroom-board') ||
+      !('IntersectionObserver' in window) ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const intersectionObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
@@ -104,6 +106,7 @@
     });
 
     mutationObserver.observe(document.body, { childList: true, subtree: true });
+    document.documentElement.classList.add('reveal-enabled');
   }
 
   if (document.readyState === 'loading') {
