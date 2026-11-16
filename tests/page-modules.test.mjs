@@ -28,7 +28,7 @@ test('every host step names a known module and a known timing', () => {
   for (const [host, steps] of Object.entries(PM.HOSTS)) {
     for (const [id, when] of steps) {
       assert.ok(PM.MODULES[id], `${host}: unknown module ${id}`);
-      assert.ok(['now', 'parsed', 'idle'].includes(when), `${host}/${id}: bad timing ${when}`);
+      assert.ok(['now', 'parsed', 'idle', 'visible'].includes(when), `${host}/${id}: bad timing ${when}`);
     }
     for (const mod of Object.values(PM.MODULES)) {
       for (const extra of mod.with || []) assert.ok(PM.MODULES[extra], `unknown "with" module ${extra}`);

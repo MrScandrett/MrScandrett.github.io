@@ -202,7 +202,7 @@ async function audit(browser, base, rel) {
     const offscreen = await sample(page, cdp);
     return { page: rel, ...load, top, offscreen, canvasesStillVisible: stillVisible, errors: errors.slice(0, 3) };
   } catch (e) {
-    return { page: rel, failed: String(e.message || e).slice(0, 200) };
+    return { page: rel, failed: String(e.message || e).slice(0, 200), timedOut: e.name === 'TimeoutError' };
   } finally {
     await context.close();
   }
@@ -214,8 +214,12 @@ function compare(baseline, results) {
   const problems = [];
   const warnings = [];
   for (const r of results) {
+    if (r.failed) {
+      problems.push(`${r.page}: audit failed: ${r.failed}`);
+      continue;
+    }
     const b = baseline.pages[r.page];
-    if (!b || r.failed) continue;
+    if (!b) continue;
     const js = r.bytes.js || 0, bjs = b.bytes.js || 0;
     if (js > bjs * 1.1 + 20 * 1024) problems.push(`${r.page}: JS ${kb(bjs)} KB -> ${kb(js)} KB`);
     if (r.requests > b.requests * 1.2 + 5) problems.push(`${r.page}: requests ${b.requests} -> ${r.requests}`);
@@ -238,7 +242,11 @@ let next = 0;
 await Promise.all(Array.from({ length: Math.min(concurrency, pages.length) }, async () => {
   while (next < pages.length) {
     const rel = pages[next++];
-    const r = await audit(browser, base, rel);
+    let r = await audit(browser, base, rel);
+    if (r.timedOut) {
+      console.log(`  RETRY ${rel}: ${r.failed}`);
+      r = await audit(browser, base, rel);
+    }
     results.push(r);
     if (r.failed) console.log(`  FAIL ${rel}: ${r.failed}`);
     else console.log(`  ${rel}  LCP ${r.lcpMs}ms  TBT ${r.tbtMs}ms  JS ${kb(r.bytes.js)}KB  img ${kb(r.bytes.img)}KB  data ${kb(r.bytes.data)}KB  req ${r.requests}  busy ${r.top.busyMsPerSec}->${r.offscreen.busyMsPerSec}ms/s  rAF ${r.top.rafPerSec}->${r.offscreen.rafPerSec}/s${r.canvasesStillVisible ? " (canvas in view)" : ""}`);

@@ -358,6 +358,11 @@ test('Auto-loads on real viscosimeter and navier-stokes lesson pages without err
         const errors = [];
         page.on('pageerror', e => errors.push(e.message));
         await page.goto(`http://127.0.0.1:${port}${rel}`, { waitUntil: 'domcontentloaded' });
+        if (rel.endsWith('/viscosimeter.html') && width === 1280) {
+          assert.equal(await page.locator('script[data-page-module="formula-explainer"]').count(), 0,
+            'formulas below the fold do not load the explorer at startup');
+        }
+        await page.locator('.cl-formula-box').first().scrollIntoViewIfNeeded();
         await page.waitForSelector('.cos-fx-box .cos-fx-token', { timeout: 6000 });
         const tokenCount = await page.locator('.cos-fx-box .cos-fx-token').count();
         assert.ok(tokenCount >= 8, `Expected tokens on ${rel} (${width}px), got ${tokenCount}`);

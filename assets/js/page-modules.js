@@ -59,6 +59,7 @@
     'timeline': {
       file: 'timeline.js', global: 'ClassroomOSTimeline',
       needs: '[data-timeline], ol[class*="timeline"], ul[class*="timeline"], div[class*="timeline"]',
+      deferWhen: '[data-defer-timeline]',
       why: 'Shared Timeline engine.'
     },
     'family-tree': {
@@ -93,14 +94,14 @@
       ['sim-present', 'idle'],
       ['timeline', 'parsed'],
       ['family-tree', 'parsed'],
-      ['formula-explainer', 'parsed'],
+      ['formula-explainer', 'visible'],
       ['site-glossary', 'parsed']
     ],
     // nav-mobile.js: pages with the site shell.
     site: [
       ['command-palette', 'idle'],
       ['contrast-guard', 'now'],
-      ['formula-explainer', 'idle'],
+      ['formula-explainer', 'visible'],
       ['site-glossary', 'idle'],
       ['vr-mode', 'idle'],
       ['service-worker', 'idle'],
@@ -224,15 +225,37 @@
     else root.addEventListener('load', schedule, { once: true });
   }
 
+  var visibilityObservers = {};
+
+  function loadWhenVisible(id, base) {
+    if (isPresent(id)) return;
+    if (!root.IntersectionObserver) { ensure(id, base); return; }
+    if (!visibilityObservers[id]) {
+      visibilityObservers[id] = new root.IntersectionObserver(function (entries, observer) {
+        if (!entries.some(function (entry) { return entry.isIntersecting && entry.intersectionRatio >= 0.25; })) return;
+        observer.disconnect();
+        delete visibilityObservers[id];
+        load(id, base);
+      }, { threshold: 0.25 });
+    }
+    root.document.querySelectorAll(MODULES[id].needs).forEach(function (target) {
+      visibilityObservers[id].observe(target);
+    });
+  }
+
   // Run a host's plan. Selectors and the VR test are read when each step fires, not at boot,
   // so 'parsed' and 'idle' steps see the finished page.
   function boot(host, base) {
     if (!HOSTS[host]) throw new Error('Unknown page-modules host: ' + host);
     HOSTS[host].forEach(function (step) {
       var id = step[0];
-      var run = function () { ensure(id, base); };
+      var run = function () {
+        var deferWhen = MODULES[id].deferWhen;
+        if (step[1] === 'visible' || (deferWhen && root.document.querySelector(deferWhen))) loadWhenVisible(id, base);
+        else ensure(id, base);
+      };
       if (step[1] === 'now') run();
-      else if (step[1] === 'parsed') whenParsed(run);
+      else if (step[1] === 'parsed' || step[1] === 'visible') whenParsed(run);
       else whenIdle(run);
     });
   }
