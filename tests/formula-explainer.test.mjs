@@ -100,6 +100,10 @@ test('Stokes formula highlights every variable and element with synced legend, p
     await page.addStyleTag({ path: CSS_PATH });
     await page.addScriptTag({ path: SCRIPT_PATH });
 
+    const closedPanel = page.locator('#word-eq .cos-fx-panel');
+    assert.equal(await closedPanel.isVisible(), false);
+    assert.ok((await closedPanel.locator('.cos-fx-title').textContent()).trim());
+
     const stokesTokens = page.locator('[data-formula="stokes-vt"] .cos-fx-token');
     const keys = await stokesTokens.evaluateAll(els => els.map(el => el.getAttribute('data-fx-key')));
     assert.deepEqual(keys, ['v_t', '=', '2', 'r^2', '(', 'ρ_s', '−', 'ρ_f', ')', 'g', '/', '9', 'η']);

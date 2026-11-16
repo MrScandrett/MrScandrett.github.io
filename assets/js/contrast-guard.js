@@ -168,8 +168,12 @@
           if (!(rect.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)) return;
           var box = rect.getBBox();
           if (centerX < box.x || centerX > box.x + box.width || centerY < box.y || centerY > box.y + box.height) return;
-          var fill = parseColor(getComputedStyle(rect).fill);
-          if (fill && fill[3]) result = composite(fill, result);
+          var rectStyle = getComputedStyle(rect);
+          var fill = parseColor(rectStyle.fill);
+          if (fill && fill[3]) {
+            fill[3] *= Number(rectStyle.fillOpacity) * Number(rectStyle.opacity);
+            result = composite(fill, result);
+          }
         });
       } catch (error) {}
     }

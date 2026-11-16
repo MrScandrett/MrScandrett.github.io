@@ -2790,7 +2790,7 @@
         '<div class="cos-fx-head-left">' +
           '<span class="cos-fx-symbol-pill"></span>' +
           '<div class="cos-fx-head-text">' +
-            '<h3 class="cos-fx-title"></h3>' +
+            '<h3 class="cos-fx-title">Formula details</h3>' +
             '<span class="cos-fx-role-badge"></span>' +
           '</div>' +
         '</div>' +
