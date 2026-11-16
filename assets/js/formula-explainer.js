@@ -885,6 +885,14 @@
       'c^2': { t: 'Speed of light, squared', c: 'const', is: 'The speed of light, 299 792 458 m/s, multiplied by itself: about 9 × 10¹⁶.', does: 'It is the exchange rate between mass and energy. It never changes, and its size is why a small mass holds so much energy.' }
     }
   });
+  // "E₀ = mc²" (rest energy written with its subscript) is the same entry.
+  (function () {
+    var t = FORMULA_CATALOG['mass-energy'].tokens;
+    var o = {}; Object.keys(t.E).forEach(function (k) { o[k] = t.E[k]; });
+    o.symbol = 'E₀';
+    t.E_0 = o;
+    PHYSICS_MATCH['E_0=mc^2'] = 'mass-energy';
+  })();
 
   physics({
     id: 'frequency-period', title: 'Frequency and period', match: ['f=1/T'], y: 'the frequency', first: 'T',
@@ -1064,6 +1072,39 @@
         'λ': lam,
         h: { t: "Planck's constant", c: 'const', is: 'A fixed number, 6.626 × 10⁻³⁴ J·s, that sets the scale of quantum effects.', does: 'It is so small that only particles with very little momentum get a wavelength big enough to matter.' },
         p: { t: 'Momentum', c: 'resist', is: 'Mass times velocity of the particle. The slider counts in units of 10⁻²⁴ kg·m/s, typical for electrons in a microscope.', does: 'It is on the bottom: faster electrons have shorter wavelengths, and shorter wavelengths show finer detail. That is why electron microscopes use high voltages.', s: ['p', 1, 100, 1, '× 10⁻²⁴ kg·m/s'] }
+      }
+    });
+  })();
+
+  (function () {
+    var freq = { t: 'Frequency', c: 'drive', is: 'How many waves of the light arrive each second, in hertz. Frequency is what your eye sees as colour. The slider counts in units of 10¹⁴ Hz: red light is about 4.3 and violet about 7.5.', does: 'Double the frequency and each photon carries twice the energy. That is why ultraviolet light can burn skin and red light cannot, however bright it is.', s: ['f', 1, 30, 0.1, '× 10¹⁴ Hz'] };
+    physics({
+      id: 'photon-energy', title: 'Energy of a photon', match: ['E=hf', 'E=hν'], y: 'the energy', first: 'f',
+      init: { f: 5.5 }, out: ['E', 'eV'],
+      f: function (s) { return 0.41357 * s.f; },
+      line: function (s) { return 'E = ' + fmtNum(0.41357 * s.f) + ' eV for each photon (' + fmtNum(0.66261 * s.f) + ' × 10⁻¹⁹ J)'; },
+      tokens: {
+        E: { t: 'Photon energy', c: 'lhs', is: 'The energy carried by one photon, a single packet of light. It is tiny, so it is usually counted in electronvolts (eV).', does: 'It depends only on the frequency. Brighter light means more photons, not bigger ones.' },
+        h: { t: "Planck's constant", c: 'const', is: 'A fixed number, 6.626 × 10⁻³⁴ J·s, that sets the scale of quantum effects.', does: 'It turns a frequency into an energy. Because it is so small, one photon carries very little energy and light looks smooth instead of grainy.' },
+        f: freq,
+        'ν': freq
+      }
+    });
+  })();
+
+  (function () {
+    var lam = { t: 'Wavelength', c: 'drive', role: 'Trades off with f', is: 'The length of one complete wave, from one crest to the next, in metres.', does: 'Its product with the frequency must always equal c. If the frequency goes up, the wavelength has to shrink by the same factor.' };
+    physics({
+      id: 'light-wave-speed', title: 'Speed, wavelength and frequency of light', match: ['c=λf', 'c=fλ', 'c=lambdaf', 'c=flambda'], y: 'the wavelength', first: 'f',
+      labels: { drive: 'Trade off: one up, the other down' },
+      init: { f: 100 }, out: ['λ', 'm'],
+      f: function (s) { return 299.792458 / s.f; },
+      line: function (s) { return 'λ = c ÷ f = ' + fmtNum(299.792458 / s.f) + ' m'; },
+      tokens: {
+        c: { t: 'Speed of light', c: 'lhs', role: 'Always the same', is: 'How fast light and every other electromagnetic wave travels through empty space: 299 792 458 m/s.', does: 'It never changes, so it fixes the product on the other side. Knowing either the wavelength or the frequency tells you the other.' },
+        lambda: lam,
+        'λ': lam,
+        f: { t: 'Frequency', c: 'drive', role: 'Trades off with λ', is: 'How many waves pass a point each second, in hertz. The slider counts in megahertz (MHz), the range used by radio and television.', does: 'Raise the frequency and the wavelength shrinks, because the speed cannot change. An FM station at 100 MHz sends waves about 3 m long.', s: ['f', 10, 1000, 10, 'MHz'] }
       }
     });
   })();

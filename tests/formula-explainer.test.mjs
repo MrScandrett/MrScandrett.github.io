@@ -408,6 +408,8 @@ test('Formula packs: common physics, maths and electronics formulas get hand-wri
       'orbital-speed': 'v = √(GM / r)',
       'faraday-law': 'EMF = −N × ΔΦ / Δt',
       'de-broglie': 'lambda = h / p',
+      'photon-energy': 'E = hf',
+      'light-wave-speed': 'c = λf',
       'projectile-x': 'x = v₀·cos(θ)·t',
       'projectile-y': 'y = v₀·sin(θ)·t − ½g·t²',
       'gravitation': 'F = GMm/r²',
