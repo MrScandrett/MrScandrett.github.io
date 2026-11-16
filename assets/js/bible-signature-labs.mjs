@@ -268,11 +268,12 @@ function kingdoms() {
       [539, 510, 121, '#55763e', 'Persia']
     ];
     const ticks = [900, 800, 700, 600, 520].map((year) => `<text x="${x(year)}" y="176" text-anchor="middle">${year}</text>`).join('');
-    const blocks = bands.map(([start, end, y, color, name]) => `<rect x="${x(start)}" y="${y}" width="${x(end) - x(start)}" height="23" rx="4" fill="${color}"/><title>${name}</title>`).join('');
+    const labels = { Israel: [78, 'Northern kingdom · Israel'], Judah: [78, 'Southern kingdom · Judah'], Assyria: [129, 'Assyria'], Babylon: [552, 'Babylon'] };
+    // Each band is a group that names its own colour as background-color: contrast checkers
+    // (pa11y, contrast-guard.js) read CSS backgrounds, not the rect painted under a label.
+    const blocks = bands.map(([start, end, y, color, name]) => `<g style="background-color:${color}"><title>${name}</title><rect x="${x(start)}" y="${y}" width="${x(end) - x(start)}" height="23" rx="4" fill="${color}"/>${labels[name] ? `<text x="${labels[name][0]}" y="${y + 17}" class="bible-lab-white">${labels[name][1]}</text>` : ''}</g>`).join('');
     const dots = eras.map(({ year }, i) => `<circle cx="${x(year)}" cy="149" r="${index === i ? 7 : 4}" class="${index === i ? 'bible-lab-marker' : 'bible-lab-dot'}"/>`).join('');
-    const drawing = `${blocks}<text x="78" y="70" class="bible-lab-white">Northern kingdom · Israel</text>
-      <text x="78" y="104" class="bible-lab-white">Southern kingdom · Judah</text><text x="129" y="138" class="bible-lab-white">Assyria</text>
-      <text x="552" y="138" class="bible-lab-white">Babylon</text><text x="645" y="114">Persia ↘</text>
+    const drawing = `${blocks}<text x="645" y="114">Persia ↘</text>
       <line x1="${x(era.year)}" y1="38" x2="${x(era.year)}" y2="149" class="bible-lab-cursor"/>${dots}${ticks}<text x="20" y="176">BCE</text>`;
     illustration(output, graphic(740, 194, `Timeline with ${era.date} selected. Israel ends in 722 or 721 BCE and Judah ends in 587 or 586 BCE.`, drawing),
       'Bands show selected periods of power in the region. Dots are spaced by years; several ancient dates are approximate.',
