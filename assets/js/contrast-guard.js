@@ -26,6 +26,7 @@
   var colorProbe = null;
   var modernColorCache = {};
   function parseModernColor(value) {
+    if (!value || /^(?:none|url\()/i.test(value)) return null;
     if (Object.prototype.hasOwnProperty.call(modernColorCache, value)) return modernColorCache[value];
     var parsed = null;
     var srgb = value.match(/^color\(\s*srgb\s+([\d.e-]+)\s+([\d.e-]+)\s+([\d.e-]+)(?:\s*\/\s*([\d.]+%?))?\s*\)$/i);
@@ -39,12 +40,18 @@
           canvas.width = canvas.height = 1;
           colorProbe = canvas.getContext("2d", { willReadFrequently: true });
         }
-        colorProbe.clearRect(0, 0, 1, 1);
+        // Only accept colors the Canvas 2D parser recognizes; unparseable SVG paint servers must not fall back to #000.
         colorProbe.fillStyle = "#000";
         colorProbe.fillStyle = value;
-        colorProbe.fillRect(0, 0, 1, 1);
-        var px = colorProbe.getImageData(0, 0, 1, 1).data;
-        if (px[3]) parsed = [px[0] * 255 / px[3], px[1] * 255 / px[3], px[2] * 255 / px[3], px[3] / 255];
+        var darkCheck = colorProbe.fillStyle;
+        colorProbe.fillStyle = "#fff";
+        colorProbe.fillStyle = value;
+        if (darkCheck === colorProbe.fillStyle) {
+          colorProbe.clearRect(0, 0, 1, 1);
+          colorProbe.fillRect(0, 0, 1, 1);
+          var px = colorProbe.getImageData(0, 0, 1, 1).data;
+          if (px[3]) parsed = [px[0] * 255 / px[3], px[1] * 255 / px[3], px[2] * 255 / px[3], px[3] / 255];
+        }
       } catch (error) {}
     }
     modernColorCache[value] = parsed;

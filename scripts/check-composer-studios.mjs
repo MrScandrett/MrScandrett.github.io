@@ -16,20 +16,21 @@ try {
     const page=await browser.newPage({viewport:{width:390,height:844}}), errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(`${base}/lessons/music/pioneers/${composer}.html`,{waitUntil:'domcontentloaded'});
-    await page.waitForFunction(()=>!!document.querySelector('#bv-score').scorePlayer);
+    await page.waitForFunction(() => !document.querySelector('#bv-work').disabled);
+    const initialScore = await page.locator('#composer-studio').getAttribute('data-initial-score');
+    assert.ok(entry.scores.includes(initialScore), `${composer}: opening score belongs to the catalogue`);
+    assert.equal(await page.locator('#bv-work').inputValue(), initialScore, `${composer}: initial selection`);
+    await page.locator('#bv-score .se-workspace').waitFor();
+    assert.equal(await page.locator('#bv-score').evaluate(figure => figure.scorePlayer.playing), false);
     await page.locator('.bv-settings > summary').click();
-    const intro=await page.locator('main > :first-child').getAttribute('data-composer-intro');
-    if(intro!==null) {
-      assert.equal(await page.locator('main > :nth-child(2)').getAttribute('id'),'composer-studio');
-      assert.equal(await page.locator('main > :first-child figure[data-zoomable] img').count(),1);
-    } else {
-      assert.equal(await page.locator('main > :first-child').getAttribute('id'),'composer-studio');
-    }
+    assert.equal(await page.locator('main > :first-child').getAttribute('id'),'composer-studio');
     assert.equal(await page.locator('main > :first-child h1').count(),1);
-    assert.equal(await page.locator('#bv-work option').count(),entry.scores.length);
+    assert.equal(await page.locator('#bv-work option').count(),entry.scores.length + 1);
     const scores=entry.scores.filter(id=>!scoreFilter||scoreFilter.includes(id));
+    if (!scores.length) { await page.close(); continue; }
     for(const id of scores) {
       await page.selectOption('#bv-work',id);
+      await page.locator('#bv-score .se-workspace').waitFor();
       for(const mode of modes) {
         await page.selectOption('#bv-mode',mode);
         assert.equal(await page.locator('#bv-score .se-error').count(),0,`${id}/${mode}`);
@@ -47,6 +48,18 @@ try {
 
         if (mode === 'guitar' || mode === 'guitar-solo' || mode === 'bass') {
           assert.ok(await page.locator('#bv-score .se-tablature').count(),`${id}/${mode}: tab integrated with notation`);
+          if (display.windowed && !await page.locator('#bv-score .se-tab-note').count()) {
+            const firstNoteBar = await page.locator('#bv-score').evaluate(figure => {
+              const model = figure.scorePlayer.model;
+              const index = model.guitarTabBars.findIndex(bar => bar.some(group => group.notes.length));
+              return index < 0 ? null : model.barNo[index];
+            });
+            assert.notEqual(firstNoteBar, null, `${id}/${mode}: arrangement contains fretted notes`);
+            const measure = page.locator('#bv-score .sn-goto input');
+            await measure.fill(String(firstNoteBar));
+            await measure.press('Enter');
+            await page.locator('#bv-score .se-tab-note').first().waitFor({ state: 'attached' });
+          }
           assert.ok(await page.locator('#bv-score .se-tab-note').count(),`${id}/${mode}: aligned fret numbers`);
           assert.equal(await page.locator('.bv-tab-grid').count(),0,`${id}/${mode}: no separate measure cards`);
           const expectedStrings = mode === 'bass' ? 4 : 6;

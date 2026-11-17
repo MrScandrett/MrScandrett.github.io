@@ -14,7 +14,8 @@
   host.setAttribute('data-score-windowed', '');
   document.querySelectorAll('figure[data-score]').forEach(figure => figure.setAttribute('data-score-windowed', ''));
   const script = document.currentScript.src;
-  let library, player, current, showWork;
+  let titles, sourceScore, player, current, showWork;
+  let selection = 0;
   const openFile = $('open');
   openFile.disabled = true;
   const violinControls = document.createElement('div');
@@ -108,10 +109,10 @@
     }
     function render(dispatchChange = true) {
       const selected = work.value;
-      work.replaceChildren();
+      options(work, [['', 'Choose a piece']]);
       categories.filter(group => filter.value === 'all' || group.key === filter.value).forEach(group => {
         const optgroup = document.createElement('optgroup'); optgroup.label = group.label + ' · ' + group.ids.length;
-        group.ids.forEach(id => { const option = document.createElement('option'); option.value = id; option.textContent = library.scores[id].title; optgroup.append(option); });
+        group.ids.forEach(id => { const option = document.createElement('option'); option.value = id; option.textContent = titles[id]; optgroup.append(option); });
         work.append(optgroup);
       });
       if ([...work.options].some(option => option.value === selected)) work.value = selected;
@@ -132,15 +133,14 @@
     };
   }
 
-  function source() { return library.scores[work.value]; }
   function fillVoices() {
-    const st = source().staves[+staff.value];
+    const st = sourceScore.staves[+staff.value];
     options(voice, (st.voices || [st]).map((_, i) => [i, 'Voice ' + (i + 1)]));
   }
   function fillStaves() {
-    options(staff, source().staves.map((st, i) => [i, st.label || 'Staff ' + (i + 1)]));
+    options(staff, sourceScore.staves.map((st, i) => [i, st.label || 'Staff ' + (i + 1)]));
     // Start from first violin in orchestral works, rather than a wind rest.
-    const violin = source().staves.findIndex(st => st.label === 'Violin I');
+    const violin = sourceScore.staves.findIndex(st => st.label === 'Violin I');
     if (violin >= 0) staff.value = violin;
     fillVoices();
   }
@@ -151,17 +151,23 @@
     const p = document.createElement('p'); p.textContent = 'An introductory I–V accompaniment in concert D major, one chord per written bar. These are teaching choices, not Beethoven’s complete orchestral harmony. Shapes run from low E to high e; x means mute. Play a bass note on beat 1 and a gentle chord on beats 2–4; follow the written repeat.'; tab.append(p);
     const table = document.createElement('table');
     const header = table.createTHead().insertRow(); ['Bar','Chord','Guitar frets','Bass note'].forEach(text => { const th = document.createElement('th'); th.scope = 'col'; th.textContent = text; header.append(th); });
-    chords.forEach((chord,i) => { const row = table.insertRow(); [i+1,chord,shapes[chord],chord === 'D' ? 'D3 · A string fret 5' : 'A2 · open A string'].forEach(value => { row.insertCell().textContent = value; }); }); tab.append(table);
+    const body = table.createTBody();
+    chords.forEach((chord, i) => {
+      const row = body.insertRow();
+      const bass = chord === 'D' ? 'D3 · A string fret 5' : 'A2 · open A string';
+      [i + 1, chord, shapes[chord], bass].forEach(value => { row.insertCell().textContent = value; });
+    });
+    tab.append(table);
   }
   function resultNeedsPianoReduction(src) {
     return !(src.instrument === 'piano' && (src.staves.length <= 2 || src.staves.every(st => /^(Right|Left) hand/i.test(st.label || ''))));
   }
   function update() {
-    if (!library) return;
+    if (!sourceScore) return;
     if (player) player.destroy(); player = null;
     host.after(tab);
     host.replaceChildren(); tab.replaceChildren();
-    const src = source(), m = mode.value, fullGuitar = ['guitar','guitar-solo'].includes(m) && (composer === 'francisco-tarrega' || !!src.guitarArrangement || (m === 'guitar-solo' && src.instrument === 'pluck')), isolated = !fullGuitar && !['original','piano','chords'].includes(m);
+    const src = sourceScore, m = mode.value, fullGuitar = ['guitar','guitar-solo'].includes(m) && (composer === 'francisco-tarrega' || !!src.guitarArrangement || (m === 'guitar-solo' && src.instrument === 'pluck')), isolated = !fullGuitar && !['original','piano','chords'].includes(m);
     pianoControls.hidden = m !== 'piano';
     violinControls.hidden = !['melody','violin'].includes(m);
     violinPosition.disabled = !violinShow.checked;
@@ -225,11 +231,58 @@
         else tab.textContent = 'Prepared chord accompaniment is available for Ode to Joy. Choose that theme to study chord shapes and bass roots; other works retain their source notation.';
       }
       if (!player) throw new Error('The score could not be prepared.');
+      if (workspace.hasAttribute('data-creation-fit')) {
+        host.querySelector('.se-workspace').setAttribute('data-creation-primary', '');
+      }
     } catch (error) { note.textContent = 'This arrangement could not be displayed: ' + error.message; }
   }
-  work.addEventListener('change',() => { if (mode.value === 'chords' && work.value !== 'beethoven-ode-to-joy') mode.value = 'original'; fillStaves(); restoreViolin(); update(); });
+  function clearScore() {
+    if (player) player.destroy();
+    player = null; current = null; sourceScore = null; host.scoreData = null;
+    host.replaceChildren(); tab.replaceChildren();
+  }
+  async function selectWork(restore) {
+    const token = ++selection;
+    const id = work.value;
+    clearScore();
+    if (!id) return;
+    const loading = ScoreEngine.showScoreLoading(host, id, titles[id]);
+    try {
+      const [score] = await Promise.all([ScoreEngine.loadScore(id), ScoreEngine.afterScorePaint()]);
+      if (token !== selection) return;
+      sourceScore = score;
+      if (mode.value === 'chords' && id !== 'beethoven-ode-to-joy') mode.value = 'original';
+      if (restore) mode.value = restore.mode;
+      fillStaves(); restoreViolin();
+      if (restore) {
+        staff.value = restore.staff; fillVoices();
+        voice.value = restore.voice; octave.value = restore.octave;
+        if (restore.piano && Array.isArray(restore.piano.values)) {
+          pianoPrefs[pianoKey()] = { show: restore.piano.show === true, values: restore.piano.values.map(value => typeof value === 'string' ? value : '') };
+        } else delete pianoPrefs[pianoKey()];
+        const v = restore.violin || {};
+        violinShow.checked = !!v.show;
+        violinPosition.value = [...violinPosition.options].some(option => option.value === v.position) ? v.position : 'auto';
+        rememberViolin();
+      }
+      update();
+    } catch (error) {
+      if (token !== selection) return;
+      const failure = document.createElement('p');
+      failure.className = 'se-error'; failure.role = 'status';
+      failure.textContent = 'The score could not load. ';
+      const retry = document.createElement('button');
+      retry.type = 'button'; retry.textContent = 'Retry';
+      retry.addEventListener('click', () => selectWork(restore));
+      failure.append(retry);
+      host.replaceChildren(failure);
+    } finally {
+      loading.remove();
+    }
+  }
+  work.addEventListener('change', () => selectWork());
   [violinShow, violinPosition].forEach(control => control.addEventListener('change', () => { rememberViolin(); update(); }));
-  staff.addEventListener('change',() => { fillVoices(); update(); });
+  staff.addEventListener('change',() => { if (sourceScore) { fillVoices(); update(); } });
   [mode,voice,octave].forEach(select => select.addEventListener('change',update));
   $('print').addEventListener('click',() => {
     if (!current || !ScoreEngine.preparePrintScore(current, host.scoreFingeringPrint ? host.scoreFingeringPrint() : {})) return;
@@ -241,6 +294,7 @@
     window.print();
   });
   $('save').addEventListener('click',() => {
+    if (!current) return;
     const data = { format: 'composer-study-1', composer, work: work.value, mode: mode.value, staff: staff.value, voice: voice.value, octave: octave.value, violin: { show: violinShow.checked, position: violinPosition.value }, piano: pianoPrefs[pianoKey()] };
     const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
     const link = document.createElement('a'); link.href = url; link.download = work.value + '-arrangement.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
@@ -261,36 +315,35 @@
       if (!valid(mode, data.mode) || !valid(octave, data.octave) || (data.mode === 'chords' && data.work !== 'beethoven-ode-to-joy')) {
         throw new Error('Unknown arrangement setting.');
       }
-      const staves = library.scores[data.work].staves;
+      const request = selection;
+      const staves = (await ScoreEngine.loadScore(data.work)).staves;
+      if (request !== selection) return;
       const validIndex = (value, items) => /^(0|[1-9]\d*)$/.test(String(value)) && Number(value) < items.length;
       if (!validIndex(data.staff, staves)) throw new Error('Unknown source staff.');
       const savedStaff = staves[Number(data.staff)];
       if (!validIndex(data.voice, savedStaff.voices || [savedStaff])) throw new Error('Unknown source voice.');
 
       showWork(data.work);
-      fillStaves(); staff.value = data.staff; fillVoices();
-      voice.value = data.voice; mode.value = data.mode; octave.value = data.octave;
-      if (data.piano && Array.isArray(data.piano.values)) {
-        pianoPrefs[pianoKey()] = { show: data.piano.show === true, values: data.piano.values.map(value => typeof value === 'string' ? value : '') };
-      } else delete pianoPrefs[pianoKey()];
-      const v = data.violin || {};
-      violinShow.checked = v.show === true;
-      violinPosition.value = valid(violinPosition, v.position) ? v.position : 'auto';
-      rememberViolin(); update();
+      await selectWork(data);
     } catch (error) { note.textContent = error.message; }
     finally { openFile.disabled = false; }
   });
+  work.disabled = true;
+  options(work, [['', 'Loading piece list…']]);
   Promise.all([
-    ScoreEngine.loadLibrary(),
+    ScoreEngine.loadScoreTitles(),
     fetch(new URL('../../../data/composer-workspaces.json',script)).then(response => { if (!response.ok) throw new Error('Composer index unavailable'); return response.json(); })
   ]).then(([data,index]) => {
-    library = data; allowed = index[composer].scores;
-    options(work,allowed.map(id => [id,data.scores[id].title]));
+    titles = data; allowed = index[composer].scores;
     showWork = organizeWorks(index[composer].groups);
-    showWork(composer === 'beethoven' ? 'beethoven-ode-to-joy' : work.value);
     if (composer === 'francisco-tarrega') mode.value = 'guitar';
-    fillStaves(); update();
+    work.disabled = false;
     openFile.disabled = false;
+    const initialScore = workspace.dataset.initialScore;
+    if (allowed.includes(initialScore)) {
+      showWork(initialScore);
+      selectWork();
+    }
   }).catch(error => {
     primaryFields.after(note);
     note.textContent = 'Unable to open the studio: ' + error.message + '. Reload to try again.';

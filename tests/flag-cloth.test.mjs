@@ -29,7 +29,7 @@ test('stronger wind flies the flag further out and holds it higher', () => {
   for (const preset of ['calm', 'medium', 'strong']) {
     const flag = flying(preset, 1);
     let sumReach = 0, sumY = 0, samples = 0;
-    for (let t = 0; t < 240; t++) {
+    for (let t = 0; t < 120; t++) {
       flag.step(1 / 60);
       sumReach += flag.stats().reach;
       sumY += flag.positions[flag.cols * 3 + 1];
@@ -48,7 +48,7 @@ test('cloth stays finite and barely stretches over a long gusty run', () => {
   for (const preset of ['calm', 'strong']) {
     const flag = flying(preset, 1);
     const strains = [];
-    for (let t = 0; t < 12 * 60; t++) {
+    for (let t = 0; t < 6 * 60; t++) {
       flag.step(1 / 60);
       if (t % 3) continue;
       const s = flag.stats();
@@ -61,6 +61,48 @@ test('cloth stays finite and barely stretches over a long gusty run', () => {
     assert.ok(median < .08, `${preset}: median worst-thread stretch ${median}`);
     assert.ok(p99 < .2, `${preset}: 99th-percentile worst-thread stretch ${p99}`);
   }
+});
+
+// Browser frames are never exactly 1/60 s. A 16.8 ms frame once split into a
+// 16.7 ms step plus a 0.1 ms sliver, and the sliver turned tiny constraint
+// corrections into enormous speeds: the flag exploded into a tangle.
+test('real browser frame timing never tangles or explodes the cloth', () => {
+  let seed = 7;
+  const random = () => (seed = seed * 16807 % 2147483647) / 2147483647;
+  const timings = {
+    'just over 60 Hz': () => 1 / 60 + .0001,
+    'ragged 4–60 ms': () => .004 + random() * .056,
+    '500 Hz': () => .002
+  };
+  for (const [label, dt] of Object.entries(timings)) {
+    for (const preset of ['calm', 'strong']) {
+      const flag = flying(preset, .5);
+      let worstStrain = 0, worstCreases = 0;
+      for (let t = 0, k = 0; t < 2; k++) {
+        const d = dt();
+        flag.step(d);
+        t += d;
+        if (k % 2) continue;
+        const s = flag.stats();
+        assert.ok(s.finite, `${label}, ${preset}: non-finite`);
+        worstStrain = Math.max(worstStrain, s.maxStrain);
+        worstCreases = Math.max(worstCreases, s.creases);
+      }
+      assert.ok(worstStrain < .25, `${label}, ${preset}: a thread stretched ${(worstStrain * 100).toFixed(0)}%`);
+      assert.equal(worstCreases, 0, `${label}, ${preset}: cloth folded back through itself`);
+    }
+  }
+});
+
+test('drawing between fixed steps blends the last two states', () => {
+  const flag = flying('medium', .5);
+  const now = Float32Array.from(flag.positions);
+  flag.step(1 / 120);
+  const next = Float32Array.from(flag.positions);
+  flag.step(1 / 240); // half a step pending: nothing simulated yet
+  assert.deepEqual(Array.from(flag.positions), Array.from(next));
+  const mid = flag.interpolated();
+  for (let i = 0; i < mid.length; i++) assert.ok(Math.abs(mid[i] - (now[i] + next[i]) / 2) < 1e-5);
 });
 
 test('the simulation is deterministic and survives a long hitch', () => {

@@ -13,7 +13,7 @@ const PAGES = [
   { name: 'theory/fake-book', hash: '#tune=ode-to-joy', measure: '.fb-bar', play: '[data-fb-play]', fake: true }
 ];
 
-const browser = await chromium.launch({ executablePath: findChromium(), args: ['--disable-dev-shm-usage'] });
+const browser = await chromium.launch({ executablePath: findChromium(['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH']), args: ['--disable-dev-shm-usage'] });
 try {
   for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }].filter(s => !process.env.SCORE_TEST_WIDTH || s.width === +process.env.SCORE_TEST_WIDTH)) {
     const page = await browser.newPage({ viewport: size, reducedMotion: 'reduce' });

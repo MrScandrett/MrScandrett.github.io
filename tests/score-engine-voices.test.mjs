@@ -7,6 +7,37 @@ require('../assets/js/score-engine.js');
 const library = require('../data/score-library.json').scores;
 const engine = globalThis.ScoreEngine;
 
+test('printed dotted-quarter tempo drives the transport and its duration', () => {
+  const model = engine.prepare(library['debussy-clair-de-lune']);
+  engine.analyse(model);
+  const player = new engine.Player(null, model);
+  assert.equal(player.qpm(), 72);
+  Object.assign(player, { t0: 0, b0: 0 });
+  assert.equal(player.timeOf(1.5), 1.25);
+  assert.equal(player.beatAt(1.25), 1.5);
+  player.rate = player.activeRate = 0.5;
+  assert.equal(player.timeOf(1.5), 2.5);
+  const duration = Math.round(model.perfTotal / 72 * 60);
+  assert.ok(engine.coverageText(model).includes(Math.floor(duration / 60) + ':' + String(duration % 60).padStart(2, '0')));
+});
+
+test('hairpins, accents and chord voicing shape velocities on each pass without shifting beat positions', () => {
+  const model = engine.prepare({
+    time: '4/4',
+    staves: [{ notes: ': !p C4/4 C4/4 C4/4 C4/4 | (C4 E4)/4+> C4/4 C4/4 C4/4 :' }],
+    expressions: {
+      hairpins: [{ from: { bar: 1 }, to: { bar: 2 }, type: 'crescendo' }],
+      directions: [{ bar: 2, dynamic: 'f' }]
+    }
+  });
+  engine.analyse(model);
+  const notes = engine.playList(model);
+  assert.deepEqual(notes.map(note => note.start), [0, 1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 14, 15]);
+  assert.ok(notes[0].vel < notes[1].vel && notes[1].vel < notes[2].vel && notes[2].vel < notes[3].vel);
+  assert.ok(notes[5].vel > notes[4].vel && notes[4].vel > notes[6].vel);
+  assert.deepEqual(notes.slice(0, 9).map(note => note.vel), notes.slice(9).map(note => note.vel));
+});
+
 test('Bach opening sustains independent left-hand voices beneath right-hand arpeggios', () => {
   const model = engine.prepare(library['bach-prelude-c-major']);
   engine.analyse(model);

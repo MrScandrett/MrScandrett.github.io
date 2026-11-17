@@ -4,6 +4,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const { scoreTitles, scorePreview } = require("./lib/score-assets.cjs");
 const { passwordMatches } = require("./portal/safety");
 
 const root = __dirname;
@@ -120,11 +121,13 @@ http
 
     // build:dist publishes each piece of the score library on its own; mirror that here so the
     // score engine fetches the same URLs in development (see loadScore in score-engine.js).
-    const scoreMatch = req.method === "GET" && /^\/data\/scores\/([a-z0-9-]+)\.json$/.exec(urlPath);
+    const scoreMatch = req.method === "GET" && /^\/data\/scores\/([a-z0-9-]+)(\.preview)?\.json$/.exec(urlPath);
     if (scoreMatch) {
       try {
         const library = JSON.parse(fs.readFileSync(path.join(root, "data", "score-library.json"), "utf8"));
-        const score = library.scores && library.scores[scoreMatch[1]];
+        const id = scoreMatch[1];
+        const source = library.scores[id];
+        const score = id === "index" ? scoreTitles(library.scores) : source && scoreMatch[2] ? scorePreview(source) : source;
         res.writeHead(score ? 200 : 404, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
         res.end(score ? JSON.stringify(score) : "{}");
       } catch (error) {

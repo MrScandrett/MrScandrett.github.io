@@ -41,10 +41,10 @@ function pianoWave(context) {
   }
   return wave;
 }
-function pianoSources(context, output, frequency, time) {
+function pianoSources(context, output, frequency, time, touch = 1) {
   const filter = context.createBiquadFilter();
   filter.type = 'lowpass';
-  filter.frequency.value = Math.min(10000, frequency * 6 + 1800);
+  filter.frequency.value = Math.min(10000, frequency * 6 + 1800) * (0.56 + 0.44 * touch);
   filter.connect(output);
   const nodes = [filter];
   const wave = pianoWave(context);
@@ -137,8 +137,8 @@ function lowpass(c, out, freq, q) {
 const SYNTHS = {
   piano: {
     a: 0.003, d: 2.6, s: 0.03, r: 0.35, gain: 0.42,
-    voice(c, f, v, t, out) {
-      const shared = pianoSources(c, out, f, t);
+    voice(c, f, v, t, out, settings) {
+      const shared = pianoSources(c, out, f, t, settings.scoreExpression ? v : 1);
       shared.sources.cleanup = shared.disconnect;
       return shared.sources;
     },
@@ -320,7 +320,8 @@ function startVoice(c, out, instrument, pitch, vel, t, onEnded, settings = {}) {
   const def={...base,a:value('attack',base.a,.002,3),d:value('decay',base.d,.02,4),s:value('sustain',base.s,0,1),r:value('release',base.r,.02,5)};
   const env = c.createGain();
   env.connect(out);
-  const peak = def.gain * (0.3 + 0.7 * vel) * value('level',1,0,1) * (settings.oscToVca===false||settings.vcaToChannel===false?0:1);
+  const touch = settings.scoreExpression ? Math.pow(vel, 1.35) : 0.3 + 0.7 * vel;
+  const peak = def.gain * touch * value('level',1,0,1) * (settings.oscToVca===false||settings.vcaToChannel===false?0:1);
   env.gain.setValueAtTime(0, t);
   env.gain.linearRampToValueAtTime(peak, t + def.a);
   env.gain.setTargetAtTime(peak * def.s, t + def.a, def.d / 3);

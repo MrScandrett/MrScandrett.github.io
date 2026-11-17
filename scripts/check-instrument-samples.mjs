@@ -11,7 +11,7 @@ for(const bank of Object.values(manifest.banks))for(const sample of bank.roots) 
  assert.equal(createHash('sha256').update(contents).digest('hex'),sample.sha256);bytes+=contents.length;files++;
 }
 assert.ok(bytes<8*1024*1024,'whole bank stays below 8 MiB');
-const browser=await chromium.launch({executablePath:findChromium(),headless:true});
+const browser=await chromium.launch({executablePath:findChromium(['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH']),headless:true});
 try {
  const page=await browser.newPage();
  await page.goto((process.env.SCORE_TEST_URL||'http://127.0.0.1:8080')+'/lessons/music/pioneers/charlie-parker.html');
@@ -23,7 +23,7 @@ try {
    const context=new OfflineAudioContext(1,44100,44100);
    const report=await MusicSynth.prepare(context,[{instrument,pitches:bank.roots.map(r=>r.midi)}]);
    const pitch=bank.roots[Math.floor(bank.roots.length/2)].midi;
-   const voice=MusicSynth.startVoice(context,context.destination,instrument,pitch,.7,0);
+   const voice=MusicSynth.startVoice(context,context.destination,instrument,pitch,.7,0,null,{scoreExpression:true});
    if(!voice.sampled)throw new Error(instrument+': sample unavailable');
    voice.release(.55);
    const audio=await context.startRendering(), data=audio.getChannelData(0);

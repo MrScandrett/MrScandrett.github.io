@@ -3,8 +3,9 @@
   const $ = id => document.getElementById(id);
   let revealed = false, stage = 0, evidenceCount = 0;
   const shapes = { ball: 'Ball', disk: 'Flat disk', cube: 'Cube' };
-  const palette = SimKit.theme.colors();
-  const ink = palette.text, gold = palette.accent;
+  const stageStyle = getComputedStyle(document.querySelector('.ll-stage') || document.documentElement);
+  const ink = stageStyle.getPropertyValue('--text').trim() || '#edf3f6';
+  const gold = stageStyle.getPropertyValue('--accent').trim() || '#f7c776';
   function ellipse(ctx,x,y,rx,ry,color) { ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill(); }
   function text(ctx, value, x, y, color=ink, size=16) {ctx.fillStyle=color;ctx.font=`${size}px ${getComputedStyle(document.body).fontFamily}`;ctx.textAlign='center';ctx.fillText(value,x,y);}
   function background(ctx,w,h) {const g=ctx.createLinearGradient(0,0,w,h);g.addColorStop(0,'#0c1824');g.addColorStop(1,'#2a4254');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);ctx.strokeStyle='#384d5c';ctx.lineWidth=1;for(let i=0;i<9;i++){ctx.beginPath();ctx.moveTo(i*w/8,0);ctx.lineTo(i*w/8-35,h);ctx.stroke();}}

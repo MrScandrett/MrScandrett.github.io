@@ -3,6 +3,7 @@
 import { cp, rm, mkdir, rename, readFile, writeFile, readdir, stat } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import os from "node:os";
+import scoreAssets from "../lib/score-assets.cjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import esbuild from "esbuild";
@@ -364,7 +365,12 @@ async function splitScoreLibrary() {
   const outDir = path.join(DIST, "data", "scores");
   await mkdir(outDir, { recursive: true });
   const ids = Object.keys(library.scores || {}).filter((id) => /^[a-z0-9-]+$/.test(id));
-  for (const id of ids) await writeFile(path.join(outDir, `${id}.json`), JSON.stringify(library.scores[id]), "utf8");
+  await writeFile(path.join(outDir, "index.json"), JSON.stringify(scoreAssets.scoreTitles(library.scores)), "utf8");
+  for (const id of ids) {
+    const score = library.scores[id];
+    await writeFile(path.join(outDir, `${id}.json`), JSON.stringify(score), "utf8");
+    await writeFile(path.join(outDir, `${id}.preview.json`), JSON.stringify(scoreAssets.scorePreview(score)), "utf8");
+  }
   console.log(`Scores: ${ids.length} pieces split into data/scores/`);
 }
 

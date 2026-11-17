@@ -18,7 +18,7 @@ function fixture(score, prepare) {
   const root = vm.createContext({
     MusicNotation: globalThis.MusicNotation, AudioContext,
     MusicSynth: { prepare, startVoice(c, out, instrument, midi, velocity, time, ended) {
-      const voice = { instrument, midi, time, release(at) { this.releaseAt = at; }, kill(at) { killed.push(this); ended(this); } };
+      const voice = { instrument, midi, time, t: time, release(at) { this.releaseAt = at; }, kill(at) { killed.push(this); ended(this); } };
       calls.push(voice); return voice;
     } },
     setInterval() { return 1; }, clearInterval() {}, requestAnimationFrame() { return 1; }, cancelAnimationFrame() {}
@@ -32,19 +32,22 @@ function fixture(score, prepare) {
 }
 
 test('resume restores a held voice while skipping completed notes', () => {
-  const { player, calls } = fixture({ staves: [{ voices: [{ notes: 'C4/1' }, { notes: 'E4/4 r/4 G4/2' }] }] });
+  const { player, calls, context } = fixture({ staves: [{ voices: [{ notes: 'C4/1' }, { notes: 'E4/4 r/4 G4/2' }] }] });
   player.pos = 1.5; player.play();
   assert.deepEqual(calls.map(v => v.midi), [60]);
   assert.equal(calls[0].time, .08);
-  assert.ok(Math.abs(calls[0].releaseAt - 2.57) < 1e-8);
+  assert.equal(calls[0].releaseAt, undefined, 'the held note can still follow a speed change');
+  context().currentTime = 2.4;
+  player.schedule();
+  assert.ok(Math.abs(calls[0].releaseAt - 2.58) < 1e-8);
 });
 
 test('a stalled scheduler drops expired attacks and retains sounding polyphony', () => {
   const { player, calls, context } = fixture({ staves: [{ voices: [{ notes: 'C4/1' }, { notes: 'E4/4 F4/4 G4/4 A4/4' }] }] });
   player.play(); calls.length = 0;
-  context().currentTime = 2.4; player.schedule();
+  context().currentTime = 2; player.schedule();
   assert.deepEqual(calls.map(v => v.midi), [67]);
-  assert.equal(calls[0].time, 2.4);
+  assert.equal(calls[0].time, 2.08);
 });
 
 test('dense scores bound audio voices and stop kills all retained voices', () => {

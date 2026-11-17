@@ -6,9 +6,10 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 require(join(ROOT, 'assets/js/music-notation.js'));
 require(join(ROOT, 'assets/js/score-engine.js'));
 const { ScoreEngine } = globalThis;
@@ -23,6 +24,14 @@ for (const id of ids) {
     if (!score.title) throw new Error(`${id}: needs a title`);
     if (!score.source || !score.source.url || !score.source.license) throw new Error(`${id}: needs source.url and source.license`);
     const model = ScoreEngine.prepare(score);
+    const mark = /(♩|♪|half note)(\.{0,3})\s*=\s*(\d+(?:\.\d+)?)/i.exec(score.tempoText || '');
+    if (mark) {
+      const beat = { 'half note': 2, '♩': 1, '♪': 0.5 }[mark[1].toLowerCase()];
+      const markedQpm = Number(mark[3]) * beat * (2 - 0.5 ** mark[2].length);
+      if (Math.abs(model.baseQpm - markedQpm) > 1e-6) {
+        throw new Error(`${id}: displayed tempo ${mark[0]} does not match playback (${model.baseQpm} quarter notes/minute)`);
+      }
+    }
     ScoreEngine.analyse(model);
     const notes = ScoreEngine.playList(model);
     if (!notes.length) throw new Error(`${id}: has no notes to play`);
@@ -94,6 +103,8 @@ for (const [composer, workspace] of Object.entries(workspaces)) {
   const file = `lessons/music/pioneers/${composer}.html`;
   const html = readFileSync(join(ROOT, file), 'utf8');
   if (!workspace.scores.length) errors.push(`${file}: no workspace scores`);
+  const initialScore = html.match(/\bdata-initial-score="([^"]+)"/)?.[1];
+  if (!workspace.scores.includes(initialScore)) errors.push(`${file}: choose an opening score from the workspace catalogue`);
   for (const id of workspace.scores) {
     if (!lib.scores[id]) errors.push(`${file}: unknown workspace score ${id}`);
     else lessonStandard(file, id, lib.scores[id]);

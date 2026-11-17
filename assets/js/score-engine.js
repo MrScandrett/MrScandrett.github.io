@@ -43,6 +43,13 @@
   var DYN_VEL = { pp: 0.32, p: 0.45, mp: 0.58, mf: 0.7, f: 0.85, ff: 1 };
   var EPS = 1e-6;
 
+  function quarterNotesPerMinute(score) {
+    var unit = /^(1|2|4|8|16|32|64|128)(\.{0,3})$/.exec(String(score.tempoUnit || '4'));
+    var tempo = score.tempo == null ? 90 : Number(score.tempo);
+    if (!unit || !Number.isFinite(tempo) || tempo <= 0) fail(score.id || 'score', 'invalid tempo or beat unit');
+    return tempo * BASES[unit[1]] * (2 - Math.pow(0.5, unit[2].length));
+  }
+
   // ── Parsing ───────────────────────────────────────────────────────────────
   function fail(where, msg) { throw new Error(where + ': ' + msg); }
 
@@ -250,7 +257,7 @@
     if (ends.some(function (e) { return Math.abs(e - ends[0]) > EPS; })) throw new Error(id + ': staves end at different points in the last bar');
     var barStart = [], t = 0;
     for (var b = 0; b < count; b++) { barStart.push(t); t += staves[0].bars[b].length; }
-    var model = { score: score, id: id, ts: ts, pickup: pickup, key: ksig, staves: staves, barStart: barStart, total: t, count: count, barMeta: barMeta };
+    var model = { score: score, id: id, ts: ts, pickup: pickup, key: ksig, staves: staves, barStart: barStart, total: t, count: count, barMeta: barMeta, baseQpm: quarterNotesPerMinute(score) };
     model.order = performanceOrder(model);
     var perfStart = [], pt = 0;
     model.order.forEach(function (bi) { perfStart.push(pt); pt += staves[0].bars[bi].length; });
@@ -384,17 +391,61 @@
     });
   }
 
+  function staffDynamics(model, staff, si) {
+    var marks = [], starts = [], segments = [], current = { at: -1, vel: DYN_VEL.mf };
+    var expressions = model.score.expressions || {};
+    function position(mark) { return model.barStart[mark.bar - 1] + (mark.beat || 0); }
+    staff.bars.forEach(function (bar, bi) {
+      bar.events.forEach(function (ev) {
+        if (ev.dyn) marks.push({ at: model.barStart[bi] + ev.start, vel: DYN_VEL[ev.dyn] });
+      });
+    });
+    (expressions.directions || []).forEach(function (mark) {
+      if ((mark.staff || 0) === si && DYN_VEL[mark.dynamic] && Number.isFinite(position(mark))) {
+        marks.push({ at: position(mark), vel: DYN_VEL[mark.dynamic] });
+      }
+    });
+    var ramps = (expressions.hairpins || []).filter(function (span) { return (span.staff || 0) === si; })
+      .map(function (span) { return { at: position(span.from), end: position(span.to), cresc: span.type === 'crescendo' }; })
+      .filter(function (ramp) { return ramp.end > ramp.at + EPS; });
+    function level(segment, at) {
+      if (segment.end == null) return segment.vel;
+      var fraction = Math.min(1, Math.max(0, (at - segment.at) / (segment.end - segment.at)));
+      return segment.vel + (segment.target - segment.vel) * fraction;
+    }
+    marks.concat(ramps).sort(function (a, b) { return a.at - b.at; }).forEach(function (mark) {
+      if (mark.end == null) current = mark;
+      else {
+        var vel = level(current, mark.at);
+        var explicit = marks.find(function (entry) { return Math.abs(entry.at - mark.end) < EPS; });
+        var target = explicit ? explicit.vel : Math.min(1, Math.max(0.22, vel + (mark.cresc ? 0.13 : -0.13)));
+        current = { at: mark.at, end: mark.end, vel: vel, target: target };
+      }
+      starts.push(mark.at); segments.push(current);
+    });
+    return function (at) {
+      var index = floorIndex(starts, at + EPS);
+      return index < 0 ? DYN_VEL.mf : level(segments[index], at);
+    };
+  }
+
   // Notes to sound, in performance time (repeats unrolled): tied notes merge into one long note.
   // `start` is the performance beat; `written` is the beat in the printed score.
   function playList(model) {
     var out = [], order = model.order || model.barStart.map(function (_, i) { return i; });
     var perfStart = model.perfStart || model.barStart;
     model.staves.forEach(function (st, si) {
-      var vel = DYN_VEL.mf;
+      var dynamicAt = staffDynamics(model, st, si);
       order.forEach(function (bi, pos) {
         var off = perfStart[pos] - model.barStart[bi];
+        var meter = model.barMeta[bi].ts;
+        var pulse = 4 / meter.den * (meter.num > 3 && meter.num % 3 === 0 && meter.den >= 8 ? 3 : 1);
         st.bars[bi].events.forEach(function (ev) {
-          if (ev.dyn) vel = DYN_VEL[ev.dyn];
+          if (ev.kind !== 'note' && !ev.graces) return;
+          var phase = (ev.start + (bi === 0 && model.pickup ? meter.len - model.pickup : 0)) / pulse;
+          var weight = phase < EPS ? 1.035 : Math.abs(phase - Math.round(phase)) < EPS ? 1 : 0.94;
+          var vel = dynamicAt(ev.abs) * weight;
+          if (ev.orn && ev.orn.indexOf('>') >= 0) vel = Math.min(1, vel * 1.10);
           (ev.graces || []).forEach(function (g, gi, all) {
             var lead = Math.min(0.12, 0.5 / all.length);
             g.pitches.forEach(function (p) {
@@ -402,7 +453,7 @@
             });
           });
           if (ev.kind !== 'note') return;
-          ev.pitches.forEach(function (p) {
+          ev.pitches.forEach(function (p, pitchIndex) {
             // A tie carried in from the bar written before only counts if that bar was just played.
             if (p.tiedFrom && (p.tiedFromBar === ev.bar || pos === 0 || order[pos - 1] === p.tiedFromBar)) return;
             var dur = ev.dur, cur = ev, tiePos = pos;
@@ -418,7 +469,8 @@
             // Staccato changes the release, not the written rhythm. If a tied
             // chain ends staccato, detach only its final segment.
             if (cur.orn && cur.orn.indexOf('.') >= 0) dur -= cur.dur * 0.5;
-            out.push({ staff: si, start: ev.abs + off, dur: dur, midi: p.midi, vel: vel, fermata: ev.fermata, written: ev.abs });
+            var voiced = pitchIndex === ev.pitches.length - 1 ? vel : vel * 0.92;
+            out.push({ staff: si, start: ev.abs + off, dur: dur, midi: p.midi, vel: Math.min(1, voiced), fermata: ev.fermata, written: ev.abs });
           });
         });
       });
@@ -428,7 +480,11 @@
     out = out.filter(function (n) {
       if (n.grace) return true;
       var k = n.staff + ':' + Math.round(n.start * 960) + ':' + n.midi;
-      if (seen[k]) { seen[k].dur = Math.max(seen[k].dur, n.dur); return false; }
+      if (seen[k]) {
+        seen[k].dur = Math.max(seen[k].dur, n.dur);
+        seen[k].vel = Math.max(seen[k].vel, n.vel);
+        return false;
+      }
       seen[k] = n; return true;
     });
     return out.sort(function (a, b) { return a.start - b.start; });
@@ -1460,6 +1516,9 @@
   }
 
   var players = [];
+  var AUDIO_LOOKAHEAD = 0.25;
+  // Engraving and fullscreen layout can block main-thread scheduling.
+  var REDRAW_LOOKAHEAD = 0.65;
 
   function Player(fig, model) {
     this.fig = fig; this.model = model;
@@ -1471,12 +1530,11 @@
     });
     this.maxVoices = 128;
     var sc = model.score;
-    var unit = { '2': 2, '4': 1, '4.': 1.5, '8': 0.5, '8.': 0.75, '2.': 3 }[sc.tempoUnit || '4'] || 1;
-    this.baseQpm = (sc.tempo || 90) * unit;
-    this.rate = 1; this.pos = 0; this.playing = false; this.voices = new Set();
+    this.baseQpm = model.baseQpm;
+    this.rate = 1; this.activeRate = 1; this.pos = 0; this.playing = false; this.voices = new Set();
     this.mutes = model.staves.map(function () { return false; });
     this.instrument = sc.instrument || 'piano';
-    this.loadToken = 0; this.loading = false; this.samples = true; this.destroyed = false;
+    this.loadToken = 0; this.soundToken = 0; this.loading = false; this.samples = true; this.destroyed = false;
     this.loop = false;
     this.range = null;   // { from, to } in performance beats while a loop range is set
   }
@@ -1494,64 +1552,121 @@
     this.playing = true;
     this.t0 = restartTime === undefined ? c.currentTime + 0.08 : restartTime;
     this.b0 = this.pos;
+    this.activeRate = this.rate;
+    this.previousTempo = null;
+    this.scheduledUntil = c.currentTime;
+    if (!this.staffOutputs) {
+      this.staffOutputs = this.mutes.map(function (muted) {
+        var gain = c.createGain();
+        gain.gain.value = muted ? 0 : 1;
+        gain.connect(audio.out);
+        return gain;
+      });
+    }
     // Include notes already sustaining at a seek/pause position. Prefix maximum
     // note ends let a late seek skip all earlier, fully completed polyphony.
     this.next = floorIndex(this.ends, this.pos + EPS) + 1;
     this.lastUiTime = null;
     this.timer = setInterval(function () { self.schedule(); }, 25);
+    this.schedule();
     this.frame();
     this.ui.update();
-    this.schedule();
   };
   Player.prototype.requestPlay = async function () {
     if (this.destroyed || this.loading || this.playing) return;
     var self = this, token = ++this.loadToken, c = context();
+    this.soundToken++;
+    if (this.soundSelection) Object.assign(this, this.soundSelection);
     players.forEach(function (p) { if (p !== self && (p.playing || p.loading)) p.halt(); });
     // Resume synchronously with the gesture, then load only the roots used by this score.
     this.loading = true; this.ui.update();
-    var report = { loaded: 0, failed: 0 };
-    if (this.samples && root.MusicSynth.prepare) {
-      var grouped = new Map();
-      this.notes.forEach(function (n) {
-        if (self.mutes[n.staff]) return;
-        var instrument = self.instOverride ? self.instrument : (self.model.staves[n.staff].instrument || self.instrument);
-        if (!grouped.has(instrument)) grouped.set(instrument, new Set());
-        grouped.get(instrument).add(n.midi + (Number(self.model.score.playbackTranspose) || 0));
-      });
-      report = await root.MusicSynth.prepare(c, Array.from(grouped, function (pair) { return { instrument: pair[0], pitches: Array.from(pair[1]) }; }));
-    }
+    var report = await this.prepareSound(c, this.instrument, this.instOverride, this.samples);
     if (this.destroyed || token !== this.loadToken) return;
     this.loading = false;
     if (this.ui.soundStatus) this.ui.soundStatus(report);
     this.play();
   };
-  Player.prototype.beatAt = function (time) { return this.b0 + (time - this.t0) * this.qpm() / 60; };
-  Player.prototype.timeOf = function (beat) { return this.t0 + (beat - this.b0) * 60 / this.qpm(); };
-  Player.prototype.schedule = function () {
-    // Safari can stall timers for 100 ms+ while it repaints the score; a late note would bunch with the next, so keep a cushion.
-    var c = audio.ctx, horizon = c.currentTime + 0.45, self = this, span = this.span();
+  Player.prototype.prepareSound = async function (c, instrument, override, samples) {
+    if (!samples || !root.MusicSynth.prepare) return { loaded: 0, failed: 0 };
+    var grouped = new Map(), model = this.model;
+    var transpose = Number(model.score.playbackTranspose) || 0;
+    this.notes.forEach(function (n) {
+      var sound = override ? instrument : (model.staves[n.staff].instrument || instrument);
+      if (!grouped.has(sound)) grouped.set(sound, new Set());
+      grouped.get(sound).add(n.midi + transpose);
+    });
+    return root.MusicSynth.prepare(c, Array.from(grouped, function (pair) {
+      return { instrument: pair[0], pitches: Array.from(pair[1]) };
+    }));
+  };
+  Player.prototype.setSound = async function (instrument, override, samples) {
+    var token = ++this.soundToken;
+    var selection = { instrument: instrument, instOverride: override, samples: samples };
+    this.soundSelection = selection;
+    var loading = this.loading;
+    if (loading) this.halt();
+    // Keep the current sound until the replacement is ready. Already queued
+    // attacks and sounding notes keep their instruments and finish normally.
+    var report = this.playing && samples ? await this.prepareSound(audio.ctx, instrument, override, samples) : null;
+    if (this.destroyed || token !== this.soundToken) return;
+    Object.assign(this, selection);
+    if (loading) this.requestPlay();
+    else if (report && this.playing && this.ui.soundStatus) this.ui.soundStatus(report);
+  };
+  Player.prototype.setMuted = function (staff, muted) {
+    this.mutes[staff] = muted;
+    if (!this.staffOutputs) return;
+    var now = audio.ctx.currentTime, gain = this.staffOutputs[staff].gain;
+    gain.setTargetAtTime(muted ? 0 : 1, now, 0.008);
+  };
+  Player.prototype.beatAt = function (time) {
+    var previous = this.previousTempo;
+    if (previous && time < this.t0) return previous.beat + (time - previous.time) * previous.qpm / 60;
+    return Math.max(this.pos, this.b0 + (time - this.t0) * this.baseQpm * this.activeRate / 60);
+  };
+  Player.prototype.timeOf = function (beat) { return this.t0 + (beat - this.b0) * 60 / (this.baseQpm * this.activeRate); };
+  Player.prototype.schedule = function (lookahead) {
+    var c = audio.ctx, now = c.currentTime, horizon = now + (lookahead || AUDIO_LOOKAHEAD), self = this, span = this.span();
+    // Change tempo at the first unqueued instant. Already sounding attacks
+    // keep their envelopes, and sustaining notes take their new release time.
+    if (this.rate !== this.activeRate && now >= this.t0) {
+      var boundary = Math.max(now, this.scheduledUntil);
+      if (boundary < horizon && boundary < this.timeOf(span.to)) {
+        var beat = this.beatAt(boundary);
+        this.previousTempo = { time: this.t0, beat: this.b0, qpm: this.baseQpm * this.activeRate };
+        this.t0 = boundary; this.b0 = beat; this.activeRate = this.rate;
+      }
+    }
     while (this.next < this.notes.length && this.timeOf(this.notes[this.next].start) < horizon && this.notes[this.next].start < span.to - EPS) {
       var n = this.notes[this.next++];
-      if (this.mutes[n.staff]) continue;
-      var end = Math.min(span.to, n.start + n.dur * (n.fermata ? 1.8 : 1));
-      var release = this.timeOf(end) - 0.01;
-      // After a timer stall, skip expired attacks rather than sounding a burst.
-      if (release <= c.currentTime || end <= this.b0 + EPS) continue;
+      var end = n.start + n.dur * (n.fermata ? 1.8 : 1);
+      var attack = this.timeOf(Math.max(this.pos, n.start));
+      // If a redraw outlasts even the extended buffer, resume the rhythm
+      // without bunching the missed attacks together.
+      if (attack < now - 0.04 || this.timeOf(Math.min(end, span.to)) <= now || end <= this.pos + EPS) continue;
       var st = this.model.staves[n.staff];
       var inst = this.instOverride ? this.instrument : (st.instrument || this.instrument);
-      var t = Math.max(c.currentTime, this.t0, this.timeOf(n.start));
+      var t = Math.max(c.currentTime, attack);
       // Bound the Web Audio graph, including release tails. Steal the earliest
       // ending voice only at extreme density; ordinary scores keep every part.
       if (this.voices.size >= this.maxVoices) {
         var oldest = null;
-        this.voices.forEach(function (voice) { if (!oldest || voice.scoreEnd < oldest.scoreEnd) oldest = voice; });
+        this.voices.forEach(function (voice) { if (!oldest || voice.endBeat < oldest.endBeat) oldest = voice; });
         oldest.kill(c.currentTime); this.voices.delete(oldest);
       }
-      var v = root.MusicSynth.startVoice(c, audio.out, inst, n.midi + (Number(this.model.score.playbackTranspose) || 0), n.vel, t, function (voice) { self.voices.delete(voice); }, { samples: this.samples });
-      v.scoreEnd = release;
-      v.release(Math.max(t + 0.01, release));
+      var v = root.MusicSynth.startVoice(c, this.staffOutputs[n.staff], inst, n.midi + (Number(this.model.score.playbackTranspose) || 0), n.vel, t, function (voice) { self.voices.delete(voice); }, { samples: this.samples, scoreExpression: true });
+      v.endBeat = end;
       this.voices.add(v);
     }
+    this.voices.forEach(function (voice) {
+      if (voice.releaseQueued) return;
+      var end = Math.min(span.to, voice.endBeat);
+      var release = Math.max(voice.t + 0.01, self.timeOf(end), c.currentTime);
+      if (release >= horizon) return;
+      voice.releaseQueued = true;
+      voice.release(release);
+    });
+    this.scheduledUntil = Math.max(this.scheduledUntil, horizon);
     if (this.timeOf(span.to) < c.currentTime) {
       if (this.loop) {
         this.pos = span.from;
@@ -1569,7 +1684,7 @@
   };
   Player.prototype.pause = function () {
     if (!this.playing) return;
-    this.pos = Math.max(this.b0, Math.min(this.model.perfTotal, this.beatAt(audio.ctx.currentTime)));
+    this.pos = Math.min(this.model.perfTotal, this.beatAt(audio.ctx.currentTime));
     this.halt();
   };
   Player.prototype.halt = function () {
@@ -1608,9 +1723,9 @@
   // "Complete piece · 34 bars · about 1:50" or "Excerpt · bars 1–8 of the whole song".
   function coverageText(model) {
     var sc = model.score, lastNo = barNumber(model, model.count - 1), firstNo = Math.max(1, model.firstBar);
-    var unit = { '2': 2, '4': 1, '4.': 1.5, '8': 0.5, '8.': 0.75, '2.': 3 }[sc.tempoUnit || '4'] || 1;
-    var secs = Math.round(model.perfTotal * 60 / ((sc.tempo || 90) * unit));
-    var time = ' · about ' + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0') + ' at the marked tempo';
+    var secs = Math.round(model.perfTotal * 60 / model.baseQpm);
+    var tempoLabel = /practice/i.test(sc.tempoText || '') ? 'practice tempo' : 'marked tempo';
+    var time = ' · about ' + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0') + ' at the ' + tempoLabel;
     var repeats = model.order.length > model.count ? ' with repeats' : '';
     if (sc.complete) return 'Complete piece · ' + lastNo + (lastNo === 1 ? ' bar' : ' bars') + repeats + time;
     if (sc.excerpt) return 'Excerpt · ' + (sc.excerpt.label || ('bars ' + (sc.excerpt.bars || (firstNo + '–' + lastNo)))) + (sc.excerpt.of ? ' of ' + sc.excerpt.of : '') + (repeats ? ' (with repeats)' : '');
@@ -2114,6 +2229,7 @@
         navigation.refresh(); return;
       }
       lastDrawWidth = w; lastDrawHeight = room;
+      if (player.playing) player.schedule(REDRAW_LOOKAHEAD);
       layout = engrave(model, w, fig.hasAttribute('data-score-readable'), windowed);
       screenScale = fitMode ? Math.min(staffScale, paperWidth() / layout.width,
         Math.max(120, paper.clientHeight - 12) / layout.systems[0].bottom) : staffScale;
@@ -2145,9 +2261,11 @@
       eventsByBar = [];
       layout.events.forEach(function (ev) { (eventsByBar[ev.bar] = eventsByBar[ev.bar] || []).push(ev); });
       fig.dispatchEvent(new CustomEvent('score:draw', { detail: { layout: layout } }));
-      if (!player.playing) player.ui.cursor(writtenBeat(model, player.pos));
+      var beat = writtenBeat(model, player.playing ? player.beatAt(audio.ctx.currentTime) : player.pos);
       renderNoteList();
       navigation.refresh();
+      if (player.playing) player.ui.light(beat);
+      player.ui.cursor(beat);
     }
 
     player.ui = {
@@ -2177,7 +2295,7 @@
         if (beat >= 0) {
           var barText = 'Bar ' + barNumber(model, Math.max(0, measure)) + ' / ' + barNumber(model, model.count - 1);
           if (position.textContent !== barText) position.textContent = barText;
-          updateTimeline(Math.max(player.b0, player.beatAt(audio.ctx.currentTime)));
+          updateTimeline(player.beatAt(audio.ctx.currentTime));
         }
         updateNoteList(on[0]);
         if (on.length) {
@@ -2239,28 +2357,20 @@
     tempo.addEventListener('input', function () {
       var r = +tempo.value / 100;
       tempoOut.textContent = tempo.value + '%';
-      if (player.playing) { player.pause(); player.rate = r; player.play(); } else player.rate = r;
-      updateTimeline(player.pos);
+      player.rate = r;
+      updateTimeline(player.playing ? player.beatAt(audio.ctx.currentTime) : player.pos);
     });
-    inst.addEventListener('change', function () {
-      var was = player.playing; player.halt();
-      player.instOverride = !!inst.value; player.instrument = inst.value || score.instrument || 'piano';
-      if (was) player.requestPlay();
-    });
-    quality.addEventListener('change', function () {
-      var was = player.playing; player.halt(); player.samples = quality.value === 'sampled';
-      if (was) player.requestPlay();
-    });
+    function changeSound() { player.setSound(inst.value || score.instrument || 'piano', !!inst.value, quality.value === 'sampled'); }
+    inst.addEventListener('change', changeSound);
+    quality.addEventListener('change', changeSound);
     loop.addEventListener('change', function () { player.loop = loop.checked; navigation.refresh(); });
     clearLoop.addEventListener('click', function () { clearLoopRange(); status.textContent = 'Loop range cleared.'; });
     muteBoxes.forEach(function (cb, i) { cb.addEventListener('change', function () {
-      var was = player.playing; if (was) player.pause();
-      player.mutes[i] = !cb.checked;
-      if (was) player.play();
+      player.setMuted(i, !cb.checked);
     }); });
     // Full screen uses the Fullscreen API where it exists. iPhone Safari has none for elements (and embedded
     // browsers may refuse it), so the figure becomes a fixed overlay that fills the screen instead.
-    var expanded = false;
+    var expanded = false, wasFull = false;
     function isFull() { return expanded || document.fullscreenElement === fig; }
     function setExpanded(on) {
       expanded = on;
@@ -2277,6 +2387,7 @@
       fullscreenChanged();
     }
     full.addEventListener('click', function () {
+      if (player.playing) player.schedule(REDRAW_LOOKAHEAD);
       if (expanded) { setExpanded(false); return; }
       if (document.fullscreenElement === fig) { document.exitFullscreen().catch(function () {}); return; }
       if (fig.requestFullscreen && document.fullscreenEnabled) fig.requestFullscreen().catch(function () { setExpanded(true); });
@@ -2284,12 +2395,14 @@
     });
     function fullscreenChanged() {
       var on = isFull();
+      if (on === wasFull) return;
+      wasFull = on;
       fullText.textContent = on ? 'Exit full screen' : 'Full screen';
       fullIcon.textContent = on ? '✕' : '⛶';
       full.title = on ? 'Exit full screen (Esc)' : 'Full screen';
       full.setAttribute('aria-pressed', String(on));
       full.setAttribute('aria-label', on ? 'Exit full screen' : 'Show the score full screen');
-      layout = null; requestAnimationFrame(draw);
+      queueDraw();
     }
     document.addEventListener('fullscreenchange', fullscreenChanged);
     function onKey(e) {
@@ -2415,6 +2528,7 @@
     else root.addEventListener('resize', draw);
     player.destroy = function () {
       player.stop(); player.destroyed = true;
+      if (player.staffOutputs) player.staffOutputs.forEach(function (gain) { gain.disconnect(); });
       if (observer) observer.disconnect(); else root.removeEventListener('resize', draw);
       document.removeEventListener('fullscreenchange', fullscreenChanged);
       document.removeEventListener('keydown', onKey);
@@ -2450,18 +2564,50 @@
   // Each piece is also published on its own (data/scores/<id>.json, written by build:dist
   // and served by serve-local.js), so a page with one sonata doesn't download the
   // whole 500 KB library. Any other server falls back to the full library.
-  var pieces = {};
+  var pieces = Object.create(null);
+  function fetchScoreAsset(filename) {
+    var url = new URL('../../data/scores/' + filename + '.json', scriptUrl || location.href);
+    return fetch(url).then(function (response) {
+      if (!response.ok) {
+        var error = new Error('Score request failed (' + response.status + ').');
+        error.status = response.status;
+        throw error;
+      }
+      return response.json();
+    });
+  }
   function loadScore(id) {
     if (!pieces[id]) {
-      var url = new URL('../../data/scores/' + encodeURIComponent(id) + '.json', scriptUrl || location.href);
-      pieces[id] = fetch(url).then(function (r) {
-        if (!r.ok) throw new Error('score ' + r.status);
-        return r.json();
-      }).catch(function () {
+      pieces[id] = fetchScoreAsset(encodeURIComponent(id)).catch(function (error) {
+        if (error.status !== 404) throw error;
         return loadLibrary().then(function (lib) { return lib.scores && lib.scores[id]; });
+      }).then(function (score) {
+        if (!score) throw new Error('Unknown score "' + id + '".');
+        return Object.assign({}, score, { id: id });
+      }).catch(function (error) {
+        delete pieces[id];
+        throw error;
       });
     }
     return pieces[id];
+  }
+  var previews = Object.create(null);
+  function loadScorePreview(id) {
+    if (!previews[id]) {
+      previews[id] = fetchScoreAsset(encodeURIComponent(id) + '.preview').catch(function (error) {
+        delete previews[id];
+        throw error;
+      });
+    }
+    return previews[id];
+  }
+  function loadScoreTitles() {
+    return fetchScoreAsset('index').catch(function (error) {
+      if (error.status !== 404) throw error;
+      return loadLibrary().then(function (lib) {
+        return Object.fromEntries(Object.entries(lib.scores).map(function (pair) { return [pair[0], pair[1].title]; }));
+      });
+    });
   }
 
   function injectCss() {
@@ -2470,39 +2616,73 @@
     document.head.appendChild(link);
   }
 
-  function boot() {
-    var figs = document.querySelectorAll('figure[data-score]');
-    if (!figs.length) return;
+  function showScoreLoading(fig, id, title) {
     injectCss();
-    figs.forEach(function (fig) {
-      var id = fig.getAttribute('data-score');
-      loadScore(id).then(function (score) {
-        if (!score) { fig.insertBefore(el('p', { class: 'se-error' }, 'Unknown score "' + id + '".'), fig.firstChild); return; }
-        score.id = id;
-        fig.scoreData = score;
-        function renderOnce() {
-          if (fig.__scoreRendered) return;
-          fig.__scoreRendered = true;
-          var loading = fig.querySelector('.se-loading');
-          if (loading) loading.remove();
-          render(fig, score);
-        }
-        fig.addEventListener('score:reveal', function () {
-          if (fig.__scoreRendered || fig.__scoreRenderPending) return;
-          fig.__scoreRenderPending = true;
-          fig.insertBefore(el('p', { class: 'se-loading', role: 'status' }, 'Engraving the complete score…'), fig.firstChild);
-          // Let the cover open and the loading state paint before a large work is
-          // engraved. This keeps the initiating tap responsive on slower devices.
-          setTimeout(renderOnce, 50);
-        });
-        fig.dispatchEvent(new CustomEvent('score:data', { detail: { score: score } }));
-        // Composer shelves hide full works behind their covers. Their lightweight
-        // opening previews can use scoreData, while the expensive full engraving
-        // waits until a learner actually opens that work.
-        if (!fig.closest('[hidden]')) renderOnce();
-      }).catch(function (err) {
-        fig.insertBefore(el('p', { class: 'se-error' }, 'Sheet music could not load (' + err.message + ').'), fig.firstChild);
-      });
+    var panel = el('div', { class: 'se-selection-loading', 'data-no-print': '' });
+    var status = el('p', { class: 'se-loading', role: 'status' }, title ? 'Loading ' + title + '…' : 'Loading score…');
+    status.prepend(el('span', { class: 'se-spinner', 'aria-hidden': 'true' }));
+    panel.appendChild(status);
+    fig.insertBefore(panel, fig.firstChild);
+    loadScorePreview(id).then(function (score) {
+      if (!status.isConnected || fig.closest('[hidden]')) return;
+      var model = openingModel(previewStaves(score, 12), 12, id + '-loading');
+      var layout = engrave(model, Math.max(280, (panel.clientWidth || 640) - 2));
+      var excerpt = model.count === 1 ? 'Opening measure' : 'Opening ' + model.count + ' measures';
+      if (score.staves.length > model.staves.length) excerpt += ' · selected parts';
+      if (!title) status.lastChild.textContent = 'Loading ' + score.title + '…';
+      panel.appendChild(el('p', { class: 'se-preview-caption' }, excerpt));
+      var preview = el('div', { class: 'se-selection-preview', tabindex: '0', 'aria-label': excerpt });
+      preview.innerHTML = '<svg class="se-score" data-contrast-guard-skip aria-hidden="true" viewBox="0 0 ' +
+        layout.width + ' ' + layout.height + '">' + layout.svg + '</svg>';
+      panel.appendChild(preview);
+    }).catch(function () { /* The full score can still load if the preview is unavailable. */ });
+    return panel;
+  }
+
+  function afterScorePaint() {
+    return new Promise(function (resolve) {
+      requestAnimationFrame(function () { setTimeout(resolve, 0); });
+    });
+  }
+
+  function openScore(fig, title) {
+    if (fig.scorePlayer) return Promise.resolve(fig.scorePlayer);
+    if (fig.scoreRequest) return fig.scoreRequest;
+    var priorError = fig.querySelector(':scope > .se-selection-error');
+    if (priorError) priorError.remove();
+    var id = fig.getAttribute('data-score');
+    var loading = showScoreLoading(fig, id, title);
+    fig.scoreRequest = Promise.all([loadScore(id), afterScorePaint()]).then(function (result) {
+      if (fig.closest('[hidden]') || !fig.isConnected) return null;
+      var group = fig.closest('details.composer-piece-group');
+      if (group && !group.open) return null;
+      loading.remove();
+      var player = render(fig, result[0]);
+      if (player) fig.dispatchEvent(new CustomEvent('score:data', { detail: { score: result[0] } }));
+      return player;
+    }).catch(function () {
+      var retry = el('button', { type: 'button' }, 'Retry');
+      var error = el('p', { class: 'se-error se-selection-error', role: 'status' }, 'Sheet music could not load. ');
+      error.appendChild(retry);
+      fig.insertBefore(error, fig.firstChild);
+      retry.addEventListener('click', function () { openScore(fig, title); });
+      return null;
+    }).finally(function () {
+      loading.remove();
+      fig.scoreRequest = null;
+    });
+    return fig.scoreRequest;
+  }
+
+  function boot() {
+    document.querySelectorAll('figure[data-score]').forEach(function (fig) {
+      if (fig.closest('.composer-work-panel')) return;
+      var group = fig.closest('details.composer-piece-group');
+      if (group) {
+        group.addEventListener('toggle', function () { if (group.open) openScore(fig); });
+        if (!group.open) return;
+      }
+      if (!fig.closest('[hidden]')) openScore(fig);
     });
   }
 
@@ -2596,7 +2776,7 @@
     }
     return { model: model, layout: layout, kept: kept, shownBars: shownBars };
   }
-  function openingFigure(score) {
+  function openingFigure(score, excerpt) {
     var staff = score.staves[0], text = staff.voices ? staff.voices[0].notes : staff.notes;
     var segments = String(text || '').split('|');
     if (segments[segments.length - 1].trim() === '') segments.pop();
@@ -2613,7 +2793,7 @@
     var top = Math.max(0, systems[0].top - layout.S * 1.8);
     var bottom = kept < systems.length ? systems[kept].top : layout.height;
     var first = barNumber(model, 0), last = barNumber(model, shownBars - 1);
-    var whole = shownBars >= total;
+    var whole = !excerpt && shownBars >= total;
     var bars = function (a, b) { return a === b ? 'bar ' + a : 'bars ' + a + '–' + b; };
     var box = el('div', { class: 'se-print-opening', 'aria-hidden': 'true' });
     // A tall system (a big orchestra) is narrowed to share its page with the text: 4.5in, or 5.5in
@@ -2627,12 +2807,21 @@
     box.appendChild(el('p', { class: 'se-print-opening-note' }, note));
     return box;
   }
+  function prepareLessonOpenings() {
+    return Promise.allSettled(Array.from(document.querySelectorAll('figure[data-score][data-score-print="opening"]'), function (fig) {
+      if (fig.scoreData || fig.scorePreviewData) return;
+      return loadScorePreview(fig.dataset.score).then(function (preview) {
+        fig.scorePreviewData = Object.assign({}, preview, { id: fig.dataset.score });
+      });
+    }));
+  }
   function addPrintOpenings() {
     removePrintOpenings();
     if (document.body.classList.contains('se-print-score-active') || document.body.classList.contains('mz-print-rondo')) return;
     document.querySelectorAll('figure[data-score-print="opening"]').forEach(function (fig) {
-      if (!fig.scoreData) return;
-      var box = openingFigure(fig.scoreData);
+      var score = fig.scoreData || fig.scorePreviewData;
+      if (!score) return;
+      var box = openingFigure(score, !fig.scoreData);
       if (!box) return;
       // Chrome strands a heading above an unbreakable box despite break-after: avoid, so the
       // heading just before the figure prints inside the box (the original is hidden in print).
@@ -2672,7 +2861,8 @@
     root.addEventListener('afterprint', removePrintOpenings);
   }
 
-  root.ScoreEngine = { loadLibrary: loadLibrary, previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
+  root.ScoreEngine = { loadLibrary: loadLibrary, loadScore: loadScore, loadScoreTitles: loadScoreTitles,
+    openScore: openScore, prepareLessonOpenings: prepareLessonOpenings, showScoreLoading: showScoreLoading, afterScorePaint: afterScorePaint, previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat, Player: Player };
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', function () { if (document.hidden) players.forEach(function (p) { if (p.playing || p.loading) p.halt(); }); });

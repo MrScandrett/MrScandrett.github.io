@@ -44,7 +44,7 @@
   var choose = element('a',null,'Choose a piece from the display');choose.href='#composer-piece-shelf';area.querySelector('h2').after(choose);
   var panels = element('div','composer-reading'); area.appendChild(panels);
   var controls = [];
-  var active = null;
+  var active = null, activation = 0;
   var headerScorePrint = null;
   function printWork(work) {
     var figure = work && work.figure;
@@ -80,6 +80,7 @@
     panel.querySelectorAll('audio').forEach(function (audio) { audio.pause(); });
   }
   function show(work, focus, listen) {
+    var request = ++activation;
     if (active && active !== work) stop(active.panel);
     controls.forEach(function (item) {
       item.panel.hidden = item !== work;
@@ -89,8 +90,11 @@
     updateHeaderScorePrint();
     var parent = area.parentElement;
     while (parent) { if (parent.tagName === 'DETAILS') parent.open = true; parent = parent.parentElement; }
+    if (listen && window.AudioKit) window.AudioKit.context({ latencyHint: 'playback' });
+    var first;
     work.panel.querySelectorAll('figure[data-score]').forEach(function (figure) {
-      figure.dispatchEvent(new CustomEvent('score:reveal'));
+      var pending = window.ScoreEngine.openScore(figure, work.heading.textContent);
+      if (!first) first = pending;
     });
     window.dispatchEvent(new Event('resize'));
     if (focus) {
@@ -98,9 +102,8 @@
       work.heading.focus({preventScroll:true});
       history.pushState(null,'','#'+work.panel.id);
     }
-    if (listen) requestAnimationFrame(function () {
-      var play = work.panel.querySelector('.se-play');
-      if (play && !work.panel.querySelector('.se-playing')) play.click();
+    if (listen && first) first.then(function (player) {
+      if (request === activation && player) player.requestPlay();
     });
   }
   works.forEach(function (definition) {
@@ -134,9 +137,7 @@
     var composer = element('span','composer-cover-author',document.querySelector('h1').textContent);
     var coverTitle = element('span','composer-cover-title',workTitle.replace(/ · /g,'\u00a0· ').replace(/No\. /g,'No.\u00a0'));
     if (workTitle.length > 26) coverTitle.classList.add('is-very-long'); else if (workTitle.length > 16) coverTitle.classList.add('is-long');
-    var preview = element('span','composer-score-preview'); preview.setAttribute('aria-hidden','true');
-    var previewLabel = element('span','composer-preview-label','Opening bars');
-    button.append(composer,coverTitle,preview,previewLabel);
+    button.append(composer,coverTitle);
     card.appendChild(button);
     card.appendChild(element('div','composer-pedestal')); 
     var hooks = {
@@ -163,31 +164,31 @@
     var hook = element('p','composer-piece-hook',hooks[id] || firstFigure.querySelector('figcaption').textContent.trim()); card.appendChild(hook);
     var actions = element('div','composer-piece-actions');
     var read = element('button',null,'Read & play');read.type='button';read.setAttribute('aria-label','Read and play '+workTitle);
-    var listen = element('button',null,'Listen');listen.type='button';listen.disabled=true;listen.setAttribute('aria-label','Listen to '+workTitle);
-    var print = element('button',null,'Print score');print.type='button';print.disabled=true;
+    var listen = element('button',null,'Listen');listen.type='button';listen.setAttribute('aria-label','Listen to '+workTitle);
+    var print = element('button',null,'Print score');print.type='button';
     print.setAttribute('aria-label','Print a paginated score of '+workTitle);
-    function printReady() { print.disabled = !firstFigure.scoreData; updateHeaderScorePrint(); }
-    firstFigure.addEventListener('score:data',printReady);
-    printReady();
-    print.addEventListener('click',function () { printWork(work); });
+    firstFigure.addEventListener('score:data', updateHeaderScorePrint);
+    print.addEventListener('click',async function () {
+      print.disabled = true; print.textContent = 'Loading score…';
+      try {
+        firstFigure.scoreData = await window.ScoreEngine.loadScore(firstFigure.dataset.score);
+        printWork(work);
+        print.textContent = 'Print score';
+        updateHeaderScorePrint();
+      } catch (error) {
+        print.textContent = 'Retry print';
+      } finally { print.disabled = false; }
+    });
     actions.append(read,listen,print);card.appendChild(actions);grid.appendChild(card);
-    var work = {panel:panel,button:button,heading:heading,preview:preview,figure:firstFigure}; controls.push(work);
+    var work = {panel:panel,button:button,heading:heading,figure:firstFigure}; controls.push(work);
     button.addEventListener('click',function () {show(work,true,false);});
     read.addEventListener('click',function () {show(work,true,false);});
     listen.addEventListener('click',function () {show(work,true,true);});
     back.addEventListener('click',function () {
-      stop(panel);panel.hidden=true;button.setAttribute('aria-expanded','false');active=null;updateHeaderScorePrint();
+      activation++; stop(panel);panel.hidden=true;button.setAttribute('aria-expanded','false');active=null;updateHeaderScorePrint();
       shelf.scrollIntoView({block:'start',behavior:'instant'});button.focus({preventScroll:true});
       history.pushState(null,'','#composer-piece-shelf');
     });
-    // The cover engraves the piece's own opening bars (not a fabricated historical cover).
-    function refreshPreview() {
-      if (firstFigure.scoreData) listen.disabled=false;
-      if (preview.firstChild || !firstFigure.scoreData || !window.ScoreEngine) return;
-      try { preview.innerHTML=window.ScoreEngine.previewSvg(firstFigure.scoreData,2,520); } catch (err) { /* the full score still works */ }
-    }
-    var observer=new MutationObserver(refreshPreview);observer.observe(firstFigure,{childList:true,subtree:true});refreshPreview();
-    firstFigure.addEventListener('score:data', refreshPreview);
   });
   var picker=document.getElementById('musicSection');
   picker.addEventListener('change',function(){if(picker.value==='fl-sec-score' && !active)show(controls[0],false,false);},true);

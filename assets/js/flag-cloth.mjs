@@ -48,7 +48,13 @@ export function createFlagCloth(options = {}) {
   const x0 = options.x ?? 0;
   const yTop = options.y ?? 0;
   const areal = options.areal ?? .2; // kg/m², a sewn nylon flag with seams and embroidery
-  const substeps = options.substeps ?? 10;
+  // The cloth always advances in fixed steps of 1/stepRate seconds, each split
+  // into `substeps`. XPBD turns position corrections into velocity by dividing
+  // by the substep length, so a variable or sliver step (a 16.8 ms browser
+  // frame cut into 16.7 ms + 0.1 ms) multiplies tiny corrections into huge
+  // speeds and the flag explodes. Leftover time waits for the next call.
+  const stepRate = options.stepRate ?? 120;
+  const substeps = options.substeps ?? 6;
   const gravity = options.gravity ?? 9.81;
   const damping = options.damping ?? .12; // 1/s, air drag the pressure model misses
   const drag = options.drag ?? 1.15; // flat-plate normal pressure coefficient
@@ -56,6 +62,11 @@ export function createFlagCloth(options = {}) {
   const stretchCompliance = options.stretchCompliance ?? 0;
   const shearCompliance = options.shearCompliance ?? 1e-6;
   const bendCompliance = options.bendCompliance ?? 3e-4;
+  // Bending pairs give way more easily when pushed together, so the cloth buckles.
+  const buckle = options.buckle ?? 5;
+  // Fraction of the stretching velocity along each thread removed per substep:
+  // the cloth's own internal friction, which settles snaps without slowing waves.
+  const internalDamping = options.internalDamping ?? .2;
   const seed = options.seed ?? 1;
 
   const nx = cols + 1, ny = rows + 1, n = nx * ny;
@@ -84,26 +95,28 @@ export function createFlagCloth(options = {}) {
   // Constraints: [a, b, rest, compliance], packed into typed arrays.
   const list = [];
   const id = (r, c) => r * nx + c;
-  const add = (a, b, compliance) => {
+  const STRETCH = 0, SHEAR = 1, BEND = 2;
+  const add = (a, b, compliance, kind) => {
     const ddx = pos[a * 3] - pos[b * 3], ddy = pos[a * 3 + 1] - pos[b * 3 + 1];
-    list.push(a, b, Math.hypot(ddx, ddy), compliance);
+    list.push(a, b, Math.hypot(ddx, ddy), compliance, kind);
   };
+
   for (let r = 0; r < ny; r++) for (let c = 0; c < nx; c++) {
-    if (c < cols) add(id(r, c), id(r, c + 1), stretchCompliance);
-    if (r < rows) add(id(r, c), id(r + 1, c), stretchCompliance);
+    if (c < cols) add(id(r, c), id(r, c + 1), stretchCompliance, STRETCH);
+    if (r < rows) add(id(r, c), id(r + 1, c), stretchCompliance, STRETCH);
     if (c < cols && r < rows) {
-      add(id(r, c), id(r + 1, c + 1), shearCompliance);
-      add(id(r, c + 1), id(r + 1, c), shearCompliance);
+      add(id(r, c), id(r + 1, c + 1), shearCompliance, SHEAR);
+      add(id(r, c + 1), id(r + 1, c), shearCompliance, SHEAR);
     }
-    if (c < cols - 1) add(id(r, c), id(r, c + 2), bendCompliance);
-    if (r < rows - 1) add(id(r, c), id(r + 2, c), bendCompliance);
+    if (c < cols - 1) add(id(r, c), id(r, c + 2), bendCompliance, BEND);
+    if (r < rows - 1) add(id(r, c), id(r + 2, c), bendCompliance, BEND);
   }
-  const count = list.length / 4;
-  const ca = new Uint32Array(count), cb = new Uint32Array(count);
+  const count = list.length / 5;
+  const ca = new Uint32Array(count), cb = new Uint32Array(count), kind = new Uint8Array(count);
   const rest = new Float32Array(count), compliance = new Float32Array(count);
   for (let k = 0; k < count; k++) {
-    ca[k] = list[k * 4]; cb[k] = list[k * 4 + 1];
-    rest[k] = list[k * 4 + 2]; compliance[k] = list[k * 4 + 3];
+    ca[k] = list[k * 5]; cb[k] = list[k * 5 + 1];
+    rest[k] = list[k * 5 + 2]; compliance[k] = list[k * 5 + 3]; kind[k] = list[k * 5 + 4];
   }
 
   // Long-range attachments (Kim, Chentanez & Müller 2012): no particle may
@@ -198,8 +211,8 @@ export function createFlagCloth(options = {}) {
       if (len < 1e-9) continue;
       const C = len - rest[k];
       // Bending pairs resist compression only weakly, so folds can form.
-      if (C < 0 && compliance[k] > shearCompliance) {
-        const lambda = -C / (wsum + compliance[k] * 5 / h2) / len;
+      if (C < 0 && kind[k] === BEND) {
+        const lambda = -C / (wsum + compliance[k] * buckle / h2) / len;
         pos[a3] += gx * lambda * wa; pos[a3 + 1] += gy * lambda * wa; pos[a3 + 2] += gz * lambda * wa;
         pos[b3] -= gx * lambda * wb; pos[b3 + 1] -= gy * lambda * wb; pos[b3 + 2] -= gz * lambda * wb;
         continue;
@@ -231,23 +244,53 @@ export function createFlagCloth(options = {}) {
       vel[i3 + 1] = (pos[i3 + 1] - prev[i3 + 1]) / h;
       vel[i3 + 2] = (pos[i3 + 2] - prev[i3 + 2]) / h;
     }
+    if (internalDamping > 0) {
+      for (let k = 0; k < count; k++) {
+        if (kind[k] === BEND) continue;
+        const a = ca[k], b = cb[k];
+        const wa = invMass[a], wb = invMass[b], wsum = wa + wb;
+        if (!wsum) continue;
+        const a3 = a * 3, b3 = b * 3;
+        let ex = pos[b3] - pos[a3], ey = pos[b3 + 1] - pos[a3 + 1], ez = pos[b3 + 2] - pos[a3 + 2];
+        const len = Math.sqrt(ex * ex + ey * ey + ez * ez);
+        if (len < 1e-9) continue;
+        ex /= len; ey /= len; ez /= len;
+        const rel = (vel[b3] - vel[a3]) * ex + (vel[b3 + 1] - vel[a3 + 1]) * ey + (vel[b3 + 2] - vel[a3 + 2]) * ez;
+        const j = rel * internalDamping / wsum;
+        vel[a3] += ex * j * wa; vel[a3 + 1] += ey * j * wa; vel[a3 + 2] += ez * j * wa;
+        vel[b3] -= ex * j * wb; vel[b3 + 1] -= ey * j * wb; vel[b3 + 2] -= ez * j * wb;
+      }
+    }
   }
 
-  // Advance by dt seconds. Long frames are split so a hitch never explodes the cloth.
+  const fixed = 1 / stepRate;
+  const before = new Float32Array(pos); // state one fixed step ago, for drawing between steps
+  let pending = 0;
+
+  // Advance the clock by dt seconds (any value, any jitter). Only whole fixed
+  // steps are simulated; a hitch longer than a quarter second is dropped.
   function step(dt) {
-    let remaining = Math.min(Math.max(dt, 0), .25);
-    while (remaining > 1e-6) {
-      const frame = Math.min(remaining, 1 / 60);
-      remaining -= frame;
-      time += frame;
+    pending = Math.min(pending + Math.max(Number.isFinite(dt) ? dt : 0, 0), .25);
+    while (pending >= fixed) {
+      pending -= fixed;
+      time += fixed;
+      before.set(pos);
       sampleWind();
-      const h = frame / substeps;
+      const h = fixed / substeps;
       for (let s = 0; s < substeps; s++) {
         // Pressure is refreshed every other substep: it is smooth on that scale.
         if (!(s & 1)) computeForces();
         substep(h);
       }
     }
+  }
+
+  // Positions blended between the last two fixed steps by the time still
+  // pending, so motion stays smooth whatever the display's frame rate.
+  function interpolated(out = new Float32Array(n * 3)) {
+    const a = pending / fixed;
+    for (let i = 0; i < n * 3; i++) out[i] = before[i] + (pos[i] - before[i]) * a;
+    return out;
   }
 
   // Ease the wind toward a preset (or any {speed, gust, swirl, lift}).
@@ -258,7 +301,7 @@ export function createFlagCloth(options = {}) {
   }
 
   function settle(seconds) {
-    for (let t = 0; t < seconds; t += 1 / 60) step(1 / 60);
+    for (let k = Math.round(seconds * stepRate); k > 0; k--) step(fixed);
   }
 
   // Diagnostics for tests: worst stretch of any warp/weft thread, how far the
@@ -266,7 +309,7 @@ export function createFlagCloth(options = {}) {
   function stats() {
     let maxStrain = 0, finite = true, reach = 0, kinetic = 0;
     for (let k = 0; k < count; k++) {
-      if (compliance[k] !== stretchCompliance) continue;
+      if (kind[k] !== STRETCH) continue;
       const a3 = ca[k] * 3, b3 = cb[k] * 3;
       const len = Math.hypot(pos[a3] - pos[b3], pos[a3 + 1] - pos[b3 + 1], pos[a3 + 2] - pos[b3 + 2]);
       maxStrain = Math.max(maxStrain, Math.abs(len / rest[k] - 1));
@@ -277,10 +320,29 @@ export function createFlagCloth(options = {}) {
       const i3 = i * 3;
       kinetic += .5 * mass * (vel[i3] ** 2 + vel[i3 + 1] ** 2 + vel[i3 + 2] ** 2);
     }
-    return { maxStrain, finite, reach: reach / ny / width, kinetic, time };
+    // Sharp creases: neighbouring cells folded back on each other past 120°.
+    // Real nylon can't fold that tightly over one cell, so these read as glitches.
+    let creases = 0;
+    const cell = new Float32Array(cols * rows * 3);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const a3 = (r * nx + c) * 3, b3 = a3 + (nx + 1) * 3, c3 = a3 + 3, d3 = a3 + nx * 3;
+      const ux = pos[b3] - pos[a3], uy = pos[b3 + 1] - pos[a3 + 1], uz = pos[b3 + 2] - pos[a3 + 2];
+      const vx = pos[d3] - pos[c3], vy = pos[d3 + 1] - pos[c3 + 1], vz = pos[d3 + 2] - pos[c3 + 2];
+      let qx = uy * vz - uz * vy, qy = uz * vx - ux * vz, qz = ux * vy - uy * vx;
+      const ql = Math.hypot(qx, qy, qz) || 1;
+      const o = (r * cols + c) * 3;
+      cell[o] = qx / ql; cell[o + 1] = qy / ql; cell[o + 2] = qz / ql;
+    }
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const o = (r * cols + c) * 3;
+      if (c + 1 < cols && cell[o] * cell[o + 3] + cell[o + 1] * cell[o + 4] + cell[o + 2] * cell[o + 5] < -.5) creases++;
+      const d = o + cols * 3;
+      if (r + 1 < rows && cell[o] * cell[d] + cell[o + 1] * cell[d + 1] + cell[o + 2] * cell[d + 2] < -.5) creases++;
+    }
+    return { maxStrain, finite, reach: reach / ny / width, kinetic, time, creases };
   }
 
-  return { cols, rows, nx, ny, positions: pos, wind: air, step, settle, setWind, stats };
+  return { cols, rows, nx, ny, positions: pos, wind: air, step, settle, setWind, stats, interpolated, stepRate };
 }
 
 // Smooth a (cols+1)×(rows+1) grid of points onto a grid `factor` times finer

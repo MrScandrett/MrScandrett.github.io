@@ -161,7 +161,7 @@ async function createFlag() {
         reflectedLight.directDiffuse += diffuseColor.rgb * uSunColor * uTranslucency * throughCloth * (0.35 + 0.65 * throughCloth);`);
   };
 
-  const sim = createFlagCloth({ width: FLY, height: HOIST, x: HOIST_X, y: TOP_Y, substeps: boardMode ? 8 : 10 });
+  const sim = createFlagCloth({ width: FLY, height: HOIST, x: HOIST_X, y: TOP_Y, substeps: boardMode ? 5 : 6, internalDamping: boardMode ? .3 : .2 });
   const geometry = new THREE.PlaneGeometry(FLY, HOIST, sim.cols * UPSAMPLE, sim.rows * UPSAMPLE);
   const positions = geometry.attributes.position;
   positions.setUsage(THREE.DynamicDrawUsage);
@@ -205,13 +205,14 @@ async function createFlag() {
   }
 
   const render = new Float32Array(positions.array.length);
+  const blended = new Float32Array(sim.nx * sim.ny * 3);
   let target = WIND_PRESETS[stage.dataset.wind] || WIND_PRESETS.calm;
   sim.setWind(target);
   // Fly for a moment before the first frame so the flag opens already in the wind.
   sim.settle(boardMode ? 1 : 1.6);
 
   function updateMesh() {
-    upsampleGrid(sim.positions, sim.nx, sim.ny, UPSAMPLE, render);
+    upsampleGrid(sim.interpolated(blended), sim.nx, sim.ny, UPSAMPLE, render);
     positions.array.set(render);
     positions.needsUpdate = true;
     geometry.computeVertexNormals();

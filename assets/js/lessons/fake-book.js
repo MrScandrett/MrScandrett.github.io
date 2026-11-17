@@ -3243,21 +3243,110 @@
 
   // ---- library
   var LIBRARY_CATEGORIES = ['Traditional & folk', 'Hymns & spirituals', 'Classical themes', 'Seasonal songs', 'Early popular & ragtime', 'Jazz standards', 'Jazz practice charts', 'Original exercises'];
-  var libQuery = '', libLevel = '';
+  var SEASONAL_GROUPS = new Map([
+    ['Christmas (Sacred)', '✝️'], ['Christmas (Secular)', '🎅'],
+    ['Hanukkah', ''], ['Passover', ''], ['New Year', ''], ['Spring', ''], ['Other seasonal songs', '']
+  ]);
+  var FOLK_GROUPS = [
+    ['Children’s songs & rounds', ['Round', 'Nursery song', 'French folk song']],
+    ['Ballads & airs', ['Folk ballad', 'Farewell ballad', 'Ballad', 'Modal ballad', 'Scottish air']],
+    ['American folk, work songs & blues', ['Railroad song', 'Fingerstyle folk', 'Work song', 'Blues folk', 'Folk blues']],
+    ['Dance tunes & waltzes', ['Double jig', 'Folk waltz', 'Hora', 'Reel']]
+  ];
+  var JAZZ_GROUPS = [
+    ['Swing', ['Swing', 'Swing standard', 'Jazz ballad-swing']],
+    ['Ballads', ['Jazz ballad', 'Standard ballad', 'Harlem stride / Jazz ballad', 'Theater ballad']],
+    ['Blues & early jazz', ['Blues', 'Bebop blues', 'Minor blues', 'Dixieland', 'Early jazz']]
+  ];
+  var libQuery = '', libLevel = '', libGenre = '', libSort = 'default', libraryCategories = [];
+  var libraryCollator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
+  function libraryCategory(raw) { return raw.category || 'Other tunes'; }
+  function libraryYear(raw) {
+    if (raw.sortYear !== undefined) return raw.sortYear;
+    // Some entries cite both a tune and lyrics or a later recording. Use the
+    // first dated event named on the card, and leave century-only dates unplaced.
+    var match = /\b(\d{4})(?:s)?\b/.exec(raw.year || '');
+    return match ? Number(match[1]) : null;
+  }
+  function sortLibrarySongs(songs, defaultSort) {
+    var order = libSort === 'default' ? defaultSort : libSort;
+    return songs.sort(function (a, b) {
+      if (order === 'oldest' || order === 'newest') {
+        var aYear = libraryYear(a), bYear = libraryYear(b);
+        var unknown = Infinity;
+        var dateOrder = order === 'oldest'
+          ? (aYear ?? unknown) - (bYear ?? unknown)
+          : (bYear ?? -unknown) - (aYear ?? -unknown);
+        if (dateOrder) return dateOrder;
+      }
+      if (order === 'composer') {
+        var composerOrder = libraryCollator.compare(a.composer || '', b.composer || '');
+        if (composerOrder) return composerOrder;
+      }
+      return libraryCollator.compare(a.title, b.title) * (order === 'title-desc' ? -1 : 1);
+    });
+  }
   function libMatches(raw) {
+    if (libGenre && libraryCategory(raw) !== libGenre) return false;
     if (libLevel && raw.level !== libLevel) return false;
     if (!libQuery) return true;
     var lyr = raw.lyrics && raw.lyrics.verses ? 'lyrics vocal ' + raw.lyrics.verses.map(function (v) { return (v.text || '').replace(/-\s*/g, ''); }).join(' ') : '';
-    var hay = [raw.title, raw.composer, raw.style, raw.category, raw.level, raw.key, lyr].join(' ').toLowerCase();
+    var hay = [raw.title, raw.composer, raw.style, libraryCategory(raw), raw.seasonalGroup, raw.culture, raw.year, raw.level, raw.key, lyr].join(' ').toLowerCase();
     return libQuery.toLowerCase().split(/\s+/).every(function (w) { return hay.indexOf(w) >= 0; });
   }
-  function tuneItem(raw) {
-    return '<div class="fb-tune-item">' +
-      '<button type="button" class="fb-tune" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') + '">' +
+  function tuneButton(raw, imported) {
+    var playback = raw.score ? 'Full score playback' : raw.chordsOnly ? 'Chords only' : 'Melody + chords';
+    var key = raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '');
+    var date = [raw.culture, raw.year].filter(Boolean).join(' · ');
+    var showDate = !imported && date && (libSort === 'oldest' || libSort === 'newest');
+    var description = [showDate ? '' : date, playback, raw.lyrics ? 'Lyrics' : '', raw.style, key, raw.meter.join('/'),
+      imported ? raw.bars + ' bars' : raw.level].filter(Boolean).join(' · ');
+    return '<button type="button" class="fb-tune' + (imported ? ' fb-tune-imported' : '') +
+      '" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') +
+      '" title="' + MN.escape(description) + '" aria-description="' + MN.escape(description) + '">' +
       '<strong>' + MN.escape(raw.title) + '</strong>' +
       '<small>' + MN.escape(raw.composer) + '</small>' +
-      '<span class="fb-tune-tags"><em>' + (raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em>' + (raw.lyrics ? '<em>Lyrics</em>' : '') + '<em>' + MN.escape(raw.style) + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + MN.escape(raw.level) + '</em></span></button>' +
-      '</div>';
+      (showDate ? '<small>' + MN.escape(date) + '</small>' : '') + '</button>';
+  }
+  function tuneGrid(songs) {
+    return '<div class="fb-library-grid">' + songs.map(function (raw) {
+      return '<div class="fb-tune-item">' + tuneButton(raw, false) + '</div>';
+    }).join('') + '</div>';
+  }
+  function groupedTunes(songs, names, groupFor, fallback, defaultSort) {
+    var groups = new Map(names.map(function (name) { return [name, []]; }));
+    if (!groups.has(fallback)) groups.set(fallback, []);
+    songs.forEach(function (raw) {
+      var name = groupFor(raw);
+      groups.get(groups.has(name) ? name : fallback).push(raw);
+    });
+    return Array.from(groups).map(function ([name, tunes]) {
+      if (!tunes.length) return '';
+      var icon = SEASONAL_GROUPS.get(name);
+      return '<section class="fb-library-subgroup" aria-label="' + MN.escape(name) + '">' +
+        '<h4>' + (icon ? '<span aria-hidden="true">' + icon + '</span> ' : '') +
+        MN.escape(name) + '</h4>' + tuneGrid(sortLibrarySongs(tunes, defaultSort)) + '</section>';
+    }).join('');
+  }
+  function categoryTunes(category, songs) {
+    if (libSort !== 'default') return tuneGrid(sortLibrarySongs(songs, 'title'));
+    if (category === 'Seasonal songs') {
+      return groupedTunes(songs, Array.from(SEASONAL_GROUPS.keys()), function (raw) {
+        return raw.seasonalGroup;
+      }, 'Other seasonal songs', 'oldest');
+    }
+    var folk = category === 'Traditional & folk';
+    var groups = folk ? FOLK_GROUPS
+      : (category === 'Jazz standards' || category === 'Jazz practice charts') ? JAZZ_GROUPS : null;
+    if (!groups) return tuneGrid(sortLibrarySongs(songs, 'title'));
+    return groupedTunes(songs, groups.map(function ([name]) { return name; }), function (raw) {
+      if (folk && raw.style === 'Folk song') {
+        return { twinkle: 'Children’s songs & rounds', 'auld-lang-syne': 'Ballads & airs',
+          'railroad-bill': 'American folk, work songs & blues' }[raw.id];
+      }
+      var group = groups.find(function ([, styles]) { return styles.includes(raw.style); });
+      return group && group[0];
+    }, folk ? 'Other folk songs' : 'Other jazz tunes', 'title');
   }
   function renderLibrary() {
     var builtInList = el('[data-fb-library]');
@@ -3265,26 +3354,25 @@
       var openCategories = Array.from(builtInList.querySelectorAll('.fb-library-group[open]')).map(function (group) {
         return group.getAttribute('data-category-index');
       });
-      var categories = LIBRARY_CATEGORIES.concat(defaultTunes.map(function (raw) { return raw.category || 'Other tunes'; }).filter(function (category) {
-        return LIBRARY_CATEGORIES.indexOf(category) < 0;
-      }).filter(function (category, index, all) { return all.indexOf(category) === index; }));
-      var filtering = !!(libQuery || libLevel), shown = 0;
-      // Recently played sits on top while browsing; a search or level filter shows only matches.
+      var filtering = !!(libQuery || libLevel || libGenre), shown = 0;
+      var matches = defaultTunes.filter(libMatches);
+      el('[data-fb-surprise]').disabled = !matches.length;
+      // Recently played sits on top while browsing.
       var recent = filtering ? [] : (opts.recent || []).map(function (id) { return defaultTunes.filter(function (x) { return x.id === id; })[0]; }).filter(Boolean);
       builtInList.innerHTML = (recent.length ? '<details class="fb-library-group fb-library-recent" data-category-index="recent"' + (openCategories.indexOf('recent') >= 0 || !openCategories.length ? ' open' : '') + '>' +
         '<summary class="fb-library-category"><span>Recently played</span><span class="fb-library-count">' + recent.length + '</span></summary>' +
-        '<div class="fb-library-grid">' + recent.map(tuneItem).join('') + '</div></details>' : '') +
-        categories.map(function (category, index) {
-        var songs = defaultTunes.filter(function (raw) { return (raw.category || 'Other tunes') === category && libMatches(raw); });
+        tuneGrid(recent) + '</details>' : '') +
+        libraryCategories.map(function (category, index) {
+        var songs = matches.filter(function (raw) { return libraryCategory(raw) === category; });
         if (!songs.length) return '';
         shown += songs.length;
-        var open = libQuery || openCategories.indexOf(String(index)) >= 0;
+        var open = filtering || openCategories.indexOf(String(index)) >= 0;
         return '<details class="fb-library-group" data-category-index="' + index + '"' + (open ? ' open' : '') + '>' +
           '<summary class="fb-library-category"><span>' + MN.escape(category) + '</span><span class="fb-library-count">' + songs.length + ' ' + (songs.length === 1 ? 'tune' : 'tunes') + '</span></summary>' +
-          '<div class="fb-library-grid">' + songs.map(tuneItem).join('') + '</div></details>';
+          categoryTunes(category, songs) + '</details>';
       }).join('');
       var results = el('[data-fb-library-results]');
-      if (results) results.textContent = !filtering ? '' : shown ? shown + (shown === 1 ? ' tune matches.' : ' tunes match.') : 'No tunes match. Try fewer words or All levels.';
+      if (results) results.textContent = !filtering ? '' : shown ? shown + (shown === 1 ? ' tune matches.' : ' tunes match.') : 'No tunes match. Try changing your filters.';
       root.querySelectorAll('[data-fb-level]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-fb-level') === libLevel)); });
     }
     var importsWrap = el('[data-fb-imports-wrap]');
@@ -3296,10 +3384,7 @@
         if (importsCount) importsCount.textContent = String(importedTunes.length);
         importsList.innerHTML = importedTunes.map(function (raw) {
           return '<div class="fb-tune-item">' +
-            '<button type="button" class="fb-tune fb-tune-imported" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') + '">' +
-            '<strong>' + MN.escape(raw.title) + '</strong>' +
-            '<small>' + MN.escape(raw.composer) + '</small>' +
-            '<span class="fb-tune-tags"><em class="fb-tag-imported">' + (raw.score ? 'Full score playback' : raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + raw.bars + ' bars</em></span></button>' +
+            tuneButton(raw, true) +
             '<button type="button" class="fb-tune-print" data-print-tune="' + raw.id + '" aria-label="Print ' + MN.escape(raw.title) + '" title="Print this score">🖨</button>' +
             '<button type="button" class="fb-tune-remove" data-remove-tune="' + raw.id + '" aria-label="Remove ' + MN.escape(raw.title) + ' from your imports" title="Remove from this browser">✕</button>' +
             '</div>';
@@ -5292,6 +5377,8 @@
     if (shapeBox) shapeBox.addEventListener('toggle', function () { syncShapePicker(true); });
     root.addEventListener('change', function (ev) {
       var t = ev.target, n = t.name;
+      if (t.matches('[data-fb-library-genre]')) { libGenre = t.value; renderLibrary(); return; }
+      if (t.matches('[data-fb-library-sort]')) { libSort = t.value; renderLibrary(); return; }
       if (t.matches('[data-score-mute], [data-score-solo]')) {
         var soloControl = t.hasAttribute('data-score-solo'), idx = Number(t.getAttribute(soloControl ? 'data-score-solo' : 'data-score-mute'));
         var id = tune.raw.score.parts[idx].id;
@@ -5422,7 +5509,9 @@
       var lvl = t.closest('[data-fb-level]');
       if (lvl) { libLevel = lvl.getAttribute('data-fb-level'); renderLibrary(); return; }
       if (t.closest('[data-fb-surprise]')) {
-        var pool = defaultTunes.filter(function (x) { return (!libLevel || x.level === libLevel) && x.id !== opts.tune; });
+        var matchingTunes = defaultTunes.filter(libMatches);
+        var pool = matchingTunes.filter(function (raw) { return raw.id !== opts.tune; });
+        if (!pool.length) pool = matchingTunes;
         if (pool.length) {
           root.querySelector('.fb-library-wrap').open = false;
           selectTune(pool[Math.floor(Math.random() * pool.length)].id, true);
@@ -5828,7 +5917,7 @@
     if (search) search.addEventListener('keydown', function (ev) {
       if (ev.key !== 'Enter') return;
       ev.preventDefault();
-      var first = el('[data-fb-library] [data-tune]');
+      var first = el('[data-fb-library] .fb-library-group[open] [data-tune]');
       if (first) first.click();
     });
     var lastW = 0, rt = 0;
@@ -5855,6 +5944,11 @@
   Promise.all([fetch(DATA_URL).then(function (r) { return r.json(); }), loadImports()]).then(function (loaded) {
     var data = loaded[0];
     defaultTunes = data.tunes;
+    var availableCategories = new Set(defaultTunes.map(libraryCategory));
+    libraryCategories = Array.from(new Set(LIBRARY_CATEGORIES.concat(Array.from(availableCategories))))
+      .filter(function (category) { return availableCategories.has(category); });
+    var genreSelect = el('[data-fb-library-genre]');
+    libraryCategories.forEach(function (category) { genreSelect.add(new Option(category, category)); });
     importedTunes = loaded[1];
     tunes = defaultTunes.concat(importedTunes);
     renderLibrary();

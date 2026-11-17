@@ -9,8 +9,59 @@ const base = process.env.SCORE_TEST_URL || 'http://127.0.0.1:8080';
 const pdf = process.argv.includes('--pdf');
 const out = '/tmp/score-workspace-qa';
 await mkdir(out, { recursive: true });
-const browser = await chromium.launch({ executablePath: findChromium(), args: ['--disable-dev-shm-usage'] });
+const browser = await chromium.launch({ executablePath: findChromium(['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH']), args: ['--disable-dev-shm-usage'] });
 try {
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    const requests = [];
+    page.on('request', request => {
+      const path = new URL(request.url()).pathname;
+      if (/\/data\/(scores\/|score-library\.json)/.test(path)) requests.push(path);
+    });
+    let releaseFirst;
+    const firstScore = new Promise(resolve => { releaseFirst = resolve; });
+    await page.route('**/data/scores/bach-invention-1.json', async route => {
+      await firstScore;
+      await route.continue();
+    });
+    let releaseShelf;
+    const shelfScore = new Promise(resolve => { releaseShelf = resolve; });
+    await page.route('**/data/scores/bach-invention-2.json', async route => {
+      await shelfScore;
+      await route.continue();
+    });
+    await page.goto(`${base}/lessons/music/pioneers/bach.html`, { waitUntil: 'networkidle' });
+    const opening = await page.locator('#composer-studio').getAttribute('data-initial-score');
+    const initialRequests = ['/data/scores/index.json', `/data/scores/${opening}.json`];
+    assert.deepEqual(requests.filter(path => !path.endsWith('.preview.json')).sort(), initialRequests.slice().sort(),
+      'initial visit loads titles and the opening score');
+    await page.selectOption('#bv-work', 'bach-invention-1');
+    const studio = page.locator('#bv-score');
+    const studioPreview = studio.locator('.se-selection-preview');
+    await studioPreview.waitFor();
+    assert.equal(await studioPreview.locator('.se-measure').count(), 12);
+    assert.equal(await studio.locator('.se-spinner').count(), 1);
+    await page.selectOption('#bv-work', 'bach-cello-prelude');
+    await studio.locator('.se-workspace').waitFor();
+    const firstResponse = page.waitForResponse('**/data/scores/bach-invention-1.json');
+    releaseFirst();
+    await (await firstResponse).finished();
+    assert.match(await studio.locator('.se-titles strong').textContent(), /cello|prélude/i);
+
+    await page.locator('.composer-cover[aria-controls="piece-invention-2"]').click();
+    const figure = page.locator('#piece-invention-2 figure[data-score]');
+    await figure.locator('.se-selection-preview').waitFor();
+    assert.equal(await figure.locator('.se-selection-preview .se-measure').count(), 12);
+    assert.equal(await figure.locator('.se-spinner').count(), 1);
+    releaseShelf();
+    await figure.locator('.se-workspace').waitFor();
+    assert.ok(await figure.locator('.se-measure').count() > 12, 'preview is replaced by the complete score');
+    assert.deepEqual(requests.filter(path => !path.endsWith('.preview.json')).sort(), [...initialRequests,
+      '/data/scores/bach-cello-prelude.json', '/data/scores/bach-invention-1.json',
+      '/data/scores/bach-invention-2.json'
+    ].sort(), 'only the opening and requested pieces download');
+    await page.close();
+  }
   // Studio scores are rendered programmatically without data-score. Their paper
   // must still be protected from the night surface pass and skin controls.
   for (const lighting of ['day', 'night']) {
@@ -22,7 +73,8 @@ try {
     }, lighting);
     await page.goto(`${base}/lessons/music/pioneers/chopin.html`, { waitUntil: 'domcontentloaded' });
     const studio = page.locator('#bv-score');
-    await studio.locator('.se-score').waitFor({ state: 'attached' });
+    await page.selectOption('#bv-work', 'chopin-prelude-7');
+    await studio.locator('.se-workspace').waitFor({ state: 'attached' });
     await studio.scrollIntoViewIfNeeded();
     assert.equal(await page.locator('html').getAttribute('data-lighting'), lighting);
     await page.waitForTimeout(1500); // Allow the deferred contrast guard to run.
@@ -47,7 +99,7 @@ try {
       await cover.click();
       const panel = page.locator('#' + await cover.getAttribute('aria-controls'));
       const figure = panel.locator('figure[data-score]').first();
-      await figure.locator('.se-score').waitFor();
+      await figure.locator('.se-workspace').waitFor();
       const paper = figure.locator('.se-paper');
       await figure.locator('[data-sn-zoom="fit"]').click();
       const fit = await figure.evaluate(f => {
@@ -64,6 +116,31 @@ try {
       assert.equal(before.y, after.y, `${name}/${width}: transport stays above scrolling notation`);
       await paper.focus(); await page.keyboard.press('Space');
       await page.waitForFunction(el => el.scorePlayer.playing, await figure.elementHandle());
+      if (name === 'bach' && width === 1440) {
+        const handle = await figure.elementHandle();
+        await page.waitForFunction(f => f.scorePlayer.voices.size > 0, handle);
+        await figure.evaluate(f => {
+          f.playbackCheck = { timer: f.scorePlayer.timer, beat: Number(f.querySelector('.se-timeline input').value) };
+          const speed = f.querySelector('.se-tempo-ctl input');
+          for (const value of [85, 115, 65]) {
+            speed.value = value;
+            speed.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        });
+        await page.waitForFunction(f => f.scorePlayer.activeRate === 0.65 &&
+          Number(f.querySelector('.se-timeline input').value) > f.playbackCheck.beat, handle);
+        await figure.locator('.se-full').click();
+        await page.waitForFunction(f => document.fullscreenElement === f, handle);
+        await figure.locator('.se-full').click();
+        await page.waitForFunction(() => !document.fullscreenElement);
+        await figure.locator('.se-settings > summary').click();
+        await figure.getByLabel('Playback sound quality').selectOption('synth');
+        await figure.getByLabel('Instrument sound').selectOption('organ');
+        await figure.locator('.se-settings > summary').click();
+        assert.ok(await figure.evaluate(f => f.scorePlayer.playing && !f.scorePlayer.loading &&
+          f.scorePlayer.timer === f.playbackCheck.timer && f.scorePlayer.instrument === 'organ' &&
+          !f.scorePlayer.samples), 'tempo, fullscreen and sound changes keep the same transport running');
+      }
       await figure.locator('.se-timeline input').evaluate(input => {
         input.value = Number(input.max) * .6;
         input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -85,7 +162,8 @@ try {
       await page.evaluate(() => document.exitFullscreen());
       await figure.locator('.se-settings > summary').click();
       await page.evaluate(() => { window.print = () => {}; });
-      await figure.locator(name === 'mozart' ? '.mz-print-score-button' : '.se-print-score-button').click();
+      if (name === 'mozart') await figure.locator('.se-fingering-toggle').click();
+      await figure.locator('.se-print-score-button').click();
       await page.waitForSelector('body.se-print-score-active', { state: 'attached' });
       const pages = await page.locator('.se-print-score-page').count();
       assert.ok(pages > 0, 'score has printed pages');

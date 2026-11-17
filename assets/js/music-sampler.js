@@ -88,10 +88,14 @@
     source.loop=sample.loop; if (sample.loop) { source.loopStart=sample.loopStart; source.loopEnd=sample.loopEnd; }
     const rate=Math.pow(2,(pitch-entry.midi)/12); source.playbackRate.setValueAtTime(rate,t);
     filter.type='lowpass'; filter.Q.value=.5;
-    filter.frequency.setValueAtTime(Math.min(c.sampleRate*.45,4500+Math.max(0,Math.min(1,velocity))*11500),t);
+    const touch=Math.max(0,Math.min(1,velocity));
+    // A soft attack has less upper harmonic energy. Reuse the existing filter.
+    const cutoff=settings.scoreExpression ? 1600+pitch*18+touch*touch*12000 : 4500+touch*11500;
+    filter.frequency.setValueAtTime(Math.min(c.sampleRate*.45,cutoff),t);
     const level=Number.isFinite(+settings.level) ? Math.max(0,Math.min(1,+settings.level)) : 1;
-    const peak=.7*Math.pow(Math.max(0,Math.min(1,velocity)),1.35)*level;
-    const attack=Number.isFinite(+settings.attack) ? Math.max(.002,+settings.attack) : .004;
+    const peak=.7*Math.pow(touch,1.35)*level;
+    const attack=Number.isFinite(+settings.attack) ? Math.max(.002,+settings.attack) :
+      settings.scoreExpression ? .003+(1-touch)*(bank.sustain ? .009 : .004) : .004;
     const release=Number.isFinite(+settings.release) ? Math.max(.02,+settings.release) : /piano|pluck|harp/.test(name) ? .3 : .12;
     envelope.gain.setValueAtTime(0,t); envelope.gain.linearRampToValueAtTime(peak,t+attack);
     source.connect(filter); filter.connect(envelope); envelope.connect(out);
@@ -102,7 +106,9 @@
         at=Math.max(at,c.currentTime,t+.002);
         // A scheduled release is replaceable: pause/stop must silence long notes now.
         const initial=peak*Math.max(0,Math.min(1,(at-t)/attack));
-        envelope.gain.cancelScheduledValues(at); envelope.gain.setValueAtTime(initial,at);
+        envelope.gain.cancelScheduledValues(at);
+        if (at<t+attack) envelope.gain.linearRampToValueAtTime(initial,at);
+        else envelope.gain.setValueAtTime(initial,at);
         envelope.gain.setTargetAtTime(0,at,release/4);
         try {source.stop(at+release*2+.02);} catch {}
       },

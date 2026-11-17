@@ -254,7 +254,7 @@
       button.setAttribute('aria-expanded', String(!menu.hidden));
       if (!menu.hidden) menu.querySelector('button').focus();
     });
-    menu.addEventListener('click', function (event) {
+    menu.addEventListener('click', async function (event) {
       if (event.target.closest('[data-print-ink-option]')) {
         setInkSaving(!inkSaving());
         return;
@@ -262,6 +262,11 @@
       var action = event.target.closest('[data-print-action]');
       if (!action) return;
       closeMenu();
+      if (window.ScoreEngine && document.querySelector('figure[data-score][data-score-print="opening"]')) {
+        button.disabled = true;
+        try { await window.ScoreEngine.prepareLessonOpenings(); }
+        finally { button.disabled = false; }
+      }
       document.body.setAttribute('data-print-lesson', '');
       window.print();
     });

@@ -29,10 +29,13 @@
   }
   function text(parent, x, y, str, o) {
     o = o || {};
+    var fill = o.fill || '#fff';
     var t = el('text', {
-      x: x, y: y, fill: o.fill || '#fff', 'font-family': o.family || MONO,
+      x: x, y: y, fill: fill, 'font-family': o.family || MONO,
       'font-size': o.size || 6, 'font-weight': o.weight || 700, 'text-anchor': o.anchor || 'start'
     }, parent);
+    t.style.color = fill;
+    if (o.bg) t.style.backgroundColor = o.bg;
     if (o.rotate) { t.setAttribute('transform', 'rotate(' + o.rotate + ' ' + x + ' ' + y + ')'); }
     if (o.italic) t.setAttribute('font-style', 'italic');
     if (o.spacing) t.setAttribute('letter-spacing', o.spacing);
@@ -42,7 +45,7 @@
   }
 
   var PCB = {
-    teal: ['#0aa2a8', '#00757b', '#005357', '#2bc0c4'],
+    teal: ['#007a80', '#005d62', '#00474b', '#2bc0c4'],
     blue: ['#2b6fbf', '#163f78', '#0e2c55', '#5ea0e8'],
     navy: ['#21508f', '#11305e', '#0a1f40', '#5a8fd6']
   };
@@ -51,7 +54,7 @@
     this.id = 'aa' + (++uid);
     this.opts = opts;
     this.labels = opts.labels !== false;
-    this.g = el('g', { class: 'arduino-art arduino-art-' + model });
+    this.g = el('g', { class: 'arduino-art arduino-art-' + model, 'data-contrast-guard-skip': '' });
     this.pins = {}; this.pinList = []; this.anchors = {}; this.boxes = {};
     this.leds = {}; this.traces = {}; this.matrix = null;
   }
@@ -66,6 +69,8 @@
       '<radialGradient id="' + id + 'green"><stop offset="0" stop-color="#eaffea"/><stop offset=".3" stop-color="#5dff7a" stop-opacity=".8"/><stop offset="1" stop-color="#2bd94a" stop-opacity="0"/></radialGradient>' +
       '<filter id="' + id + 'shadow" x="-10%" y="-10%" width="130%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000" flood-opacity=".4"/></filter>';
     this.palette = p;
+    // Let CSS-only contrast audits see the PCB color behind white silkscreen labels.
+    this.g.style.backgroundColor = p[1];
   };
   Kit.prototype.anchor = function (name, x, y, w, h) {
     if (w != null) { this.boxes[name] = [x, y, w, h]; this.anchors[name] = [x + w / 2, y + h / 2]; }
@@ -109,7 +114,7 @@
     el('circle', { cx: x, cy: y, r: 3.6, fill: '#0b1416' }, this.g);
   };
   Kit.prototype.qfp = function (name, x, y, s, label, sub, rotate) {
-    var g = el('g', { transform: 'translate(' + (x + s / 2) + ' ' + (y + s / 2) + ')' + (rotate ? ' rotate(' + rotate + ')' : '') }, this.g);
+    var g = el('g', { transform: 'translate(' + (x + s / 2) + ' ' + (y + s / 2) + ')' + (rotate ? ' rotate(' + rotate + ')' : ''), style: 'background-color:#16181b' }, this.g);
     var n = Math.max(4, Math.round(s / 3.4)), step = (s - 4) / n;
     for (var i = 0; i < n; i++) {
       var o = -s / 2 + 2 + step * (i + .5) - .6;
@@ -124,7 +129,7 @@
     return body;
   };
   Kit.prototype.dip = function (name, x, y, w, h, legs, label, sub) {
-    var g = el('g', { transform: 'translate(' + x + ' ' + y + ')' }, this.g);
+    var g = el('g', { transform: 'translate(' + x + ' ' + y + ')', style: 'background-color:#16181b' }, this.g);
     var step = (w - 6) / legs;
     for (var j = 0; j < legs; j++) {
       el('rect', { x: 4 + j * step, y: -5, width: 3, height: 6, fill: '#d7dce0' }, g);
@@ -294,8 +299,8 @@
         // ESP32-S3 module: shielded can + PCB antenna
         el('rect', { x: 54, y: 82, width: 52, height: 50, rx: 2, fill: '#1b1d20' }, k.g);
         el('rect', { x: 57, y: 85, width: 46, height: 36, rx: 1.5, fill: k.ref('steel'), stroke: '#6b737a', 'stroke-width': .6 }, k.g);
-        text(k.g, 80, 101, 'ESP32-S3', { size: 6.5, anchor: 'middle', fill: '#3c4248' });
-        text(k.g, 80, 110, 'Wi-Fi · BLE', { size: 5, anchor: 'middle', fill: '#59616a', weight: 600 });
+        text(k.g, 80, 101, 'ESP32-S3', { size: 6.5, anchor: 'middle', fill: '#2a2e33', bg: '#b9c1c8' });
+        text(k.g, 80, 110, 'Wi-Fi · BLE', { size: 5, anchor: 'middle', fill: '#2a2e33', weight: 600, bg: '#b9c1c8' });
         el('path', { d: 'M60 128h6v-4h6v4h6v-4h6v4h6v-4h6v4h4', fill: 'none', stroke: '#e2c46a', 'stroke-width': 1.2 }, k.g);
         k.anchor('wifi', 54, 82, 52, 50);
         k.mcuBody = k.qfp('mcu', 220, 70, 32, 'RA4M1', 'sketch', 0);
@@ -341,7 +346,7 @@
         k.anchor('rpc', 130, 92);
         // wireless module + antenna
         el('rect', { x: 226, y: 66, width: 40, height: 26, rx: 2, fill: k.ref('steel'), stroke: '#6b737a', 'stroke-width': .6 }, k.g);
-        text(k.g, 246, 82, 'Wi-Fi/BT', { size: 5.5, anchor: 'middle', fill: '#3c4248' });
+        text(k.g, 246, 82, 'Wi-Fi/BT', { size: 5.5, anchor: 'middle', fill: '#2a2e33', bg: '#b9c1c8' });
         el('path', { d: 'M228 96h6v4h6v-4h6v4h6v-4h6v4h4', fill: 'none', stroke: '#e2c46a', 'stroke-width': 1.2 }, k.g);
         k.anchor('wireless', 226, 66, 40, 34);
         k.ledMatrix('matrix', 196, 112, 13, 8, 5.2, '#5ab0ff');
