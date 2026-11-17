@@ -59,6 +59,35 @@ test('left-hand octave ascent keeps context rather than restarting on an arbitra
   assert.equal(fs[2], 1);
 });
 
+test('a leap the wrong way past the thumb or little finger is a hand shift, never a crossing', () => {
+  // Für Elise bar 14: LH E2 E3 E4. With the thumb on E3, the little finger cannot land an octave above it.
+  const fe = sequence([40, 52, 64], 'left');
+  assert.ok(fe[2] < fe[1] || fe[1] === 1 && fe[2] <= 2, fe.join(''));
+  const layout = layoutFor('beethoven-fur-elise'), d = F.planDetailed(layout, library['beethoven-fur-elise']);
+  const bar14 = layout.events.filter(e => e.staff === 1 && e.bar === 13 && e.kind === 'note');
+  const e3 = bar14.find(e => e.pitches[0].midi === 52), e4 = bar14.find(e => e.pitches[0].midi === 64);
+  if (d.fingers[e3.i]?.[0] === 1) assert.ok(d.fingers[e4.i][0] <= 2, 'LH ' + d.fingers[e3.i][0] + ' then ' + d.fingers[e4.i][0]);
+  // Pathétique II bar 17 shape (RH): C4 C5 A♭5 G5 F5 must not cross 3 over 5 within reach.
+  const pa = sequence([60, 72, 80, 79, 77], 'right');
+  for (let i = 1; i < pa.length; i++) {
+    const up = [60, 72, 80, 79, 77][i] > [60, 72, 80, 79, 77][i - 1], dist = Math.abs([60, 72, 80, 79, 77][i] - [60, 72, 80, 79, 77][i - 1]);
+    const wrongWay = up ? pa[i] < pa[i - 1] && pa[i] !== 1 : pa[i] > pa[i - 1] && pa[i - 1] !== 1;
+    assert.ok(!wrongWay || dist > 7, 'crossing within reach: ' + pa.join(''));
+  }
+});
+
+test('a held key that forces a crossing no hand can make gets a review marker, not a number', () => {
+  // Thérèse I bar 11 (LH): B2, then C♯3 held under B3. C♯3 must take 4 or 5, which cannot follow B2 legato.
+  const layout = { events: [
+    { i: 0, staff: 0, bar: 0, start: 0, abs: 0, dur: 1, kind: 'note', pitches: [{ midi: 46 }] },
+    { i: 1, staff: 0, bar: 0, start: 1, abs: 1, dur: 1, kind: 'note', pitches: [{ midi: 47 }] },
+    { i: 2, staff: 0, bar: 0, start: 2, abs: 2, dur: 2, kind: 'note', pitches: [{ midi: 49 }] },
+    { i: 3, staff: 0, bar: 0, start: 3, abs: 3, dur: 1, kind: 'note', pitches: [{ midi: 59 }] }] };
+  const d = F.planDetailed(layout, handScore('left'));
+  const b = d.fingers[1]?.[0], cs = d.fingers[2]?.[0];
+  assert.ok(d.reviews[2] || (b && cs && cs < b), 'C#3 after B2: ' + b + ' then ' + cs);
+});
+
 test('wide chords, excessive voices, and selected reach limits get review markers, not numbers', () => {
   for (const ps of [[60, 76], [60, 64, 67, 72, 74, 76]]) {
     const detail = F.planDetailed(notesLayout([ps]), handScore('right'));
@@ -136,10 +165,11 @@ test('every library keyboard score respects simultaneous keys, held fingers and 
         }
         // Trace each sounding key back to its attack and verify fingers stay reserved.
         const sounding = g.notes.map(n => {
+          // The latest attack of this key; it may be a † review with no number.
           const origin = layout.events.findLast(ev => g.staffIndices.includes(ev.staff) && ev.abs <= g.time + 1e-5 &&
-            ev.pitches?.some((p, pi) => p.midi === n.midi && !p.tiedFrom && detail.fingers[ev.i]?.[pi]));
-          const pi = origin?.pitches.findIndex(p => p.midi === n.midi);
-          return origin && detail.fingers[origin.i][pi];
+            ev.kind === 'note' && !ev.hidden && !ev.grace && ev.pitches?.some(p => p.midi === n.midi && !p.tiedFrom));
+          const pi = origin?.pitches.findIndex(p => p.midi === n.midi && !p.tiedFrom);
+          return origin && detail.fingers[origin.i]?.[pi];
         }).filter(Boolean);
         assert.equal(new Set(sounding).size, sounding.length, id + ': a held finger was reused');
       }

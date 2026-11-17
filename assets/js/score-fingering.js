@@ -40,6 +40,8 @@
   // Adjacent long fingers must not be asked to span a sixth; an octave needs 1–5.
   var LIMIT = { '12': 5, '13': 7, '14': 9, '15': 12, '23': 3, '24': 5, '25': 7, '34': 3, '35': 5, '45': 3 };
   var OFF = [0, 0, 2, 4, 5, 7];
+  var SHIFT = 5; // base cost of lifting the hand to a new position on a leap
+  var IMPOSSIBLE = 7; // cost of a legato crossing no hand can make
   function pairLimit(a, b, reach) {
     return Math.min(reach, LIMIT[Math.min(a, b) + '' + Math.max(a, b)] || 0);
   }
@@ -71,7 +73,8 @@
     return out;
   }
 
-  function transition(before, a, after, b, hand, reach) {
+  // info.blocked is set when a legato pair needs a crossing no hand can make.
+  function transition(before, a, after, b, hand, reach, info) {
     var dir = hand === 'left' ? -1 : 1, cost = 0;
     // Held keys keep their fingers. No silent substitution or reuse of a held finger.
     for (var j = 0; j < after.notes.length; j++) {
@@ -86,6 +89,12 @@
         if (!n.attack || p.held) return;
         var semis = (n.midi - p.midi) * dir, pf = a.fingers[pi], nf = b.fingers[ni];
         var move = nf - pf, distance = Math.abs(semis), c = 0;
+        // A leap wider than a fifth that the fingers cannot take in order (the wrong
+        // way past the thumb or little finger, or with the same finger) is played by
+        // lifting the hand to a new position, so it is never planned as a crossing no
+        // hand can make (e.g. LH 1, then 5 an octave higher). The landing term leans
+        // toward the finger that leads the hand: the thumb when moving thumb-wards.
+        var shift = distance > 7 ? SHIFT + Math.min(distance, 24) * 0.1 + (semis < 0 ? (nf - 1) * 0.5 : (5 - nf) * 0.3) : Infinity;
         if (!distance) c = pf === nf ? 0 : 1.8;
         else if (move && Math.sign(move) === Math.sign(semis)) {
           c = Math.abs(distance - Math.abs(OFF[nf] - OFF[pf])) * 0.32;
@@ -95,7 +104,14 @@
           // In scalar motion only the thumb passes under / is crossed over.
           var crossing = distance <= 4 && ((semis > 0 && nf === 1 && pf > 1 && pf < 5) ||
             (semis < 0 && pf === 1 && nf > 1 && nf < 5));
-          c = crossing ? 1.3 + (isBlack(nf === 1 ? n.midi : p.midi) ? 1.5 : 0) : 7 + Math.min(distance, 12) * 0.12;
+          // Crossing a third is far less natural than crossing a step (scales vs arpeggios).
+          if (crossing) c = 1.3 + Math.max(0, distance - 2) * 0.6 + (isBlack(nf === 1 ? n.midi : p.midi) ? 1.5 : 0);
+          else if (distance > 7) c = shift;
+          else {
+            c = IMPOSSIBLE + distance * 0.12;
+            // In a single line this is a real dead end; between chords it is one pair of many.
+            if (info && before.notes.length === 1 && after.notes.length === 1) info.blocked = true;
+          }
         }
         cost += c; pairs++;
       });
@@ -151,6 +167,13 @@
         last.states.forEach(function (s, i) { if (endingCost(s) < endingCost(last.states[idx])) idx = i; });
         for (var at = chain.length - 1; at >= 0; at--) {
           var g = chain[at], state = g.states[idx];
+          // The best path still needs a finger crossing no hand can make (usually a held
+          // note pins a finger): say so rather than print an impossible number.
+          if (state.blocked) {
+            g.events.forEach(function (ev) { if (!ev.fingering) reviews[ev.i] = 'Hand position change: no comfortable finger connects these notes; plan a shift or release with your teacher.'; });
+            idx = state.prev;
+            continue;
+          }
           g.notes.forEach(function (n, ni) {
             n.entries.forEach(function (e) {
               if (e.tied || e.ev.fingering) return;
@@ -194,13 +217,13 @@
         allGroups.push(group);
         var choices = candidates(notes, hand, reach), before = chain[chain.length - 1];
         var states = choices.map(function (choice) {
-          var best = Infinity, prev = 0;
+          var best = Infinity, prev = 0, blocked = false;
           if (!before) best = choice.local;
           else before.states.forEach(function (state, i) {
-            var c = state.cost + choice.local + transition(before, state, group, choice, hand, reach);
-            if (c < best) { best = c; prev = i; }
+            var info = {}, c = state.cost + choice.local + transition(before, state, group, choice, hand, reach, info);
+            if (c < best) { best = c; prev = i; blocked = !!info.blocked; }
           });
-          return { fingers: choice.fingers, cost: best, prev: prev };
+          return { fingers: choice.fingers, cost: best, prev: prev, blocked: blocked };
         });
         var crossStaff = notes.some(function (n) { return n.staff !== events[0].staff; });
         var reason = crossStaff ? 'One hand spans multiple staves: confirm hand distribution and releases with your teacher.' : ornament ? 'Ornament: plan the full gesture with your teacher.' :
