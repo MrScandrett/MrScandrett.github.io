@@ -99,7 +99,9 @@
     var banner = section.querySelector(".module-banner");
     var drawer = banner ? banner.nextElementSibling : null;
     if (!banner || !drawer) return;
-    banner.setAttribute("aria-expanded", open ? "true" : "false");
+    banner.removeAttribute("role");
+    banner.removeAttribute("aria-expanded");
+    banner.tabIndex = -1;
     banner.classList.toggle("open", open);
     drawer.style.maxHeight = open ? "none" : "0";
   }
@@ -116,6 +118,7 @@
   }
 
   function showDirectory(shouldFocus) {
+    var hadSubject = Boolean(activeId);
     activeId = "";
     document.body.classList.add("catalog-directory-view");
     document.body.classList.remove("catalog-module-view");
@@ -128,7 +131,8 @@
     directory.querySelectorAll(".catalog-module-button").forEach(function (button) {
       button.removeAttribute("aria-current");
     });
-    status.textContent = "Choose a subject below. Only that lesson shelf will open.";
+    status.textContent = "Choose a subject to see its lessons.";
+    if (hadSubject) window.dispatchEvent(new CustomEvent("catalogsubjectchange", { detail: { section: null } }));
     if (history.replaceState && location.hash.indexOf("#module-") === 0) history.replaceState(null, "", location.pathname + location.search);
     if (shouldFocus) {
       browser.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -142,13 +146,12 @@
     if (!section || !section.classList.contains("module-section")) return;
     // A subject is a complete shelf. Clear the older volume filter before
     // opening it so previous/next navigation can never land on a hidden shelf.
-    var selectedVolumeTab = document.querySelector(".compendium-volume-tab.is-active[data-volume-filter]");
-    if (typeof window.setCompendiumVolume === "function" &&
-        selectedVolumeTab && selectedVolumeTab.dataset.volumeFilter !== "all") {
+    if (typeof window.setCompendiumVolume === "function" && selectedVolume !== "all") {
       window.setCompendiumVolume("all", { source: "module-browser" });
     }
     section.hidden = false;
     section.classList.remove("volume-collapsed");
+    var changedSubject = activeId !== id;
     activeId = id;
     document.body.classList.remove("catalog-directory-view");
     document.body.classList.add("catalog-module-view");
@@ -163,6 +166,7 @@
       if (button.dataset.moduleTarget === id) button.setAttribute("aria-current", "true");
       else button.removeAttribute("aria-current");
     });
+    if (changedSubject) window.dispatchEvent(new CustomEvent("catalogsubjectchange", { detail: { section: section } }));
     var volume = section.dataset.compendiumVolume;
     var volumeTitle = volumeNames[volume] ? volumeNames[volume][0] : "Lesson library";
     status.textContent = volumeTitle + " → " + text(section, ".module-banner-title") + " · " + text(section, ".module-banner-count") + ".";
@@ -187,12 +191,13 @@
       history.replaceState({ catalogModule: id }, "", "#" + id);
     }
     if (shouldScroll) {
-      window.setTimeout(function () { scrollToShelf(section, "instant"); }, 80);
-      window.setTimeout(function () {
-        var banner = section.querySelector(".module-banner");
+      var previousFocus = document.activeElement;
+      var banner = section.querySelector(".module-banner");
+      window.requestAnimationFrame(function () {
+        if (activeId !== id || document.activeElement !== previousFocus) return;
         if (banner) banner.focus({ preventScroll: true });
         scrollToShelf(section, "instant");
-      }, 260);
+      });
     }
   }
 
@@ -201,12 +206,6 @@
     var selectedTheme = subject ? subject.value : "all";
     var grade = document.getElementById("lesson-grade-filter");
     var selectedGrade = grade ? grade.value : "all";
-    var directoryTitle = document.getElementById("catalog-browser-title");
-    var directoryDescription = browser.querySelector(".catalog-browser-copy > p:not(.catalog-browser-kicker)");
-    if (directoryTitle) directoryTitle.textContent = selectedGrade === "k2" ? "Choose a subject" : "What do you want to explore?";
-    if (directoryDescription) directoryDescription.textContent = selectedGrade === "k2" ?
-      "Choose a subject to open its K–2 lessons." :
-      "Subjects are grouped into six connected volumes. Choose one shelf and its lesson sequence opens in place.";
     // All subjects at once is a one-screen atlas of compact rows. One volume, or
     // K-2 with its large print, has the room for the full description cards.
     directory.classList.toggle("is-atlas", selectedVolume === "all" && selectedGrade !== "k2");
@@ -253,9 +252,9 @@
         }
       }
     } else {
-      var selectedVolumeTitle = volumeNames[selectedVolume] ? volumeNames[selectedVolume][0] : "All six volumes";
-      status.textContent = selectedVolumeTitle + " · " + visibleButtons + " subject " +
-        (visibleButtons === 1 ? "shelf" : "shelves") + ". Choose one to open its lessons.";
+      status.textContent = visibleButtons
+        ? visibleButtons + (visibleButtons === 1 ? " subject" : " subjects") + " available."
+        : "No subjects match. Try another grade, volume, or search.";
     }
   }
 

@@ -84,9 +84,8 @@ N4  C6q Bb5e Ab5e~ Ab5q C7q                       | Ab7
 Uncertain: the intro chords, B1/B9 (D♭ chord over an F bass), and whether B12's top note is B♭5 or C6.
 The Trio (page 2, D♭, 16 bars of quarter-note chords) starts `Ab5q F5q Ab5q F5q` over B♭ → A♮ in the bass.
 
-**Still open:**
-- A15: the hand reading gave `C5e Ab4e C5e C5e~ C5e Ab4e C5q`, but OMR gives `… Ab4e Bb4e …` and a
-  last chord topped by B♭4. Decide from a zoom (scan page 1, system 4, x 300–600). Chords are
-  Bb7 then Eb7.
-- Intro: the 8va, triplet figures and dotted rhythms are unconfirmed; reread before trusting.
-- The B strain, interlude, Trio and Stomp: start from the OMR dumps and correct them bar by bar.
+**Status (completed and added to `data/fake-book.json`):**
+- `original-jelly-roll-blues` (104 bars, B♭ → E♭ Trio) — transcribed from `morton-jelly-1..3.webp` (1915 Will Rossiter edition) and linked from `lessons/music/pioneers/morton.html`.
+- `new-orleans-blues` (48 bars, B♭) — transcribed from `morton-new-orleans-1.webp` (1925 Melrose Bros., plate 573) and linked from `lessons/music/pioneers/morton.html`.
+- `king-porter-stomp` (106 bars, A♭ → D♭ Trio & Stomp) — Intro bar 2 confirmed *loco*, A15 (`C5e Bb4e C5e Bb4e~ Bb4e Bb4e C5q`), B12 (`Bb5q. C6e Bb5e Ab5e G5e F5e`), B14 (`re F5e G5e F5e~ F5e G5e F5q`), Interlude N1–N4 (bass *8vb*, treble *loco*), Trio, and Stomp transcribed from `morton-king-1..2.webp` (1925 Melrose Bros., plate 365) and linked from `lessons/music/pioneers/morton.html`.
+- `black-bottom-stomp` (103 bars, B♭/Gm → E♭ Trio & breaks) — transcribed from `morton-black-bottom-1..2.webp` (1925 Melrose Bros., plate 865) and linked from `lessons/music/pioneers/morton.html`.

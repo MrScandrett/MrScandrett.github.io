@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/electricity-path.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/arduino-studio.css" />
   <style>
     :root {
       --apf-ink: #1c2113;
@@ -173,6 +174,66 @@
             </div>
           </section>
 
+          <section class="apf-card ard-studio" id="ard-studio" aria-labelledby="ard-studio-title" style="--apf-accent:var(--apf-teal);" data-memory-ignore data-present="off">
+            <div class="ast-head">
+              <div>
+                <p class="apf-label">Arduino Studio · write it, run it, upload it</p>
+                <h2 id="ard-studio-title">Build a sketch in blocks</h2>
+              </div>
+              <div class="ast-tools">
+                <label class="ast-name"><span>Sketch</span><input id="ast-name" type="text" value="My sketch" maxlength="60" spellcheck="false" autocomplete="off"></label>
+                <select id="ast-starter" aria-label="Load a starter sketch"><option value="">Starter sketches…</option></select>
+                <button type="button" id="ast-save" disabled>Save</button>
+                <label class="ast-file">Open<input type="file" id="ast-open" accept=".json,application/json"></label>
+                <button type="button" id="ast-ino" disabled>Download .ino</button>
+              </div>
+            </div>
+            <p class="ast-about" id="ast-about">Every Arduino sketch has two parts: <code>setup()</code> runs once, <code>loop()</code> runs forever. Snap blocks into them, press <strong>Upload &amp; run</strong>, and the simulated board below obeys, wired exactly like the class kit.</p>
+            <div class="ast-grid">
+              <div class="ast-blocks" id="ast-blocks" aria-label="Block editor" data-night-keep data-skin-keep><p>Loading the block editor…</p></div>
+              <div class="ast-side" id="ast-board">
+                <div class="ast-runbar">
+                  <button type="button" class="ast-go" id="ast-run" aria-pressed="false" disabled>▶ Upload &amp; run</button>
+                  <span class="ast-power" id="ast-power" data-on="false">Stopped</span>
+                </div>
+                <p class="ast-status" id="ast-status" role="status" aria-live="polite">Loading…</p>
+                <div class="ast-box ast-warn" id="ast-warn-box" hidden>
+                  <h3>On a real board…</h3>
+                  <ul id="ast-warn"></ul>
+                </div>
+                <div class="ast-box ast-kit" data-night-keep>
+                  <div class="ast-uno" id="ast-uno" aria-hidden="true"></div>
+                  <div class="ast-parts">
+                    <div class="ast-part"><span class="ast-led ast-led-y" id="ast-led-13"></span><b>L LED</b><small>pin 13</small></div>
+                    <div class="ast-part"><span class="ast-led ast-led-r" id="ast-led-10"></span><b>Red LED</b><small>pin ~10 · <span id="ast-led-10-v">off</span></small></div>
+                    <div class="ast-part"><span class="ast-led ast-led-g" id="ast-led-6"></span><b>Green LED</b><small>pin ~6 · <span id="ast-led-6-v">off</span></small></div>
+                    <div class="ast-part"><button type="button" class="ast-button" id="ast-button" aria-pressed="false">Hold</button><b>Button</b><small>pin 2 → GND</small></div>
+                    <div class="ast-part"><svg class="ast-servo" viewBox="0 0 100 56" aria-hidden="true"><path d="M8 50 A42 42 0 0 1 92 50" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="3"/><g id="ast-servo-arm"><rect x="47" y="12" width="6" height="40" rx="3" fill="currentColor"/></g><circle cx="50" cy="50" r="6" fill="currentColor"/></svg><b>Servo</b><small>pin 9 · <span id="ast-servo-v">90°</span></small></div>
+                    <div class="ast-part ast-buzz" id="ast-buzz" data-on="false"><span class="ast-buzz-icon" aria-hidden="true">◉</span><b>Buzzer</b><small>pin 8 · <span id="ast-buzz-v">silent</span></small></div>
+                  </div>
+                  <div class="ast-inputs">
+                    <label>Knob <small>A0</small><input type="range" id="ast-pot" min="0" max="1023" value="512"><output id="ast-pot-v">512</output></label>
+                    <label>Light <small>A1</small><input type="range" id="ast-light" min="0" max="1023" value="600"><output id="ast-light-v">600</output></label>
+                    <label>Distance <small>12 / 11</small><input type="range" id="ast-dist" min="2" max="200" value="60"><output id="ast-dist-v">60 cm</output></label>
+                  </div>
+                  <label class="ast-sound"><input type="checkbox" id="ast-sound"> Play the buzzer through the speakers</label>
+                </div>
+                <h3 class="ast-label">Pins 2–13</h3>
+                <div class="ast-pins" id="ast-pins" aria-label="Digital pin states"></div>
+                <h3 class="ast-label">Variables</h3>
+                <dl class="ast-vars" id="ast-vars"></dl>
+                <div class="ast-label-row"><h3 class="ast-label">Serial Monitor</h3><button type="button" id="ast-clear">Clear</button></div>
+                <pre class="ast-serial" id="ast-serial" tabindex="0" aria-label="Serial Monitor output"></pre>
+              </div>
+            </div>
+            <details class="ast-code">
+              <summary>The same sketch in C++ · uploading it to a real UNO</summary>
+              <p>This is exactly what your blocks mean, written the way the Arduino IDE expects. Press <strong>Download .ino</strong>, open it in the Arduino IDE (it will offer to put it in a folder of the same name), choose <strong>Board: Arduino Uno</strong> and the port, then press Upload. Wire the parts as listed at the top of the sketch. Servo sketches use the Servo library, which comes with the IDE.</p>
+              <p>The simulator is a model: it runs your blocks hundreds of times a second rather than thousands, and its sensors are sliders. Test each sketch on the real board before trusting it.</p>
+              <pre class="apf-code ast-cpp" id="ast-code" tabindex="0" aria-label="C++ version of the sketch"></pre>
+            </details>
+          </section>
+
           <section class="apf-card" style="--apf-accent:var(--apf-green);">
             <p class="apf-label">Storing information</p><h2>Variables &amp; data types</h2>
             <p>A <strong>variable</strong> is a named box that holds a value your sketch can read and change. Every variable in C++ (the language Arduino sketches are written in) needs a <strong>data type</strong> that says what kind of value it can hold.</p>
@@ -194,6 +255,8 @@
               <div class="apf-match-row" data-answer="int"><p>Counting how many times a sensor has triggered</p><div class="apf-match-choices"><button class="apf-type-btn" data-type="int">int</button><button class="apf-type-btn" data-type="float">float</button><button class="apf-type-btn" data-type="bool">bool</button></div></div>
               <div class="apf-match-row" data-answer="int"><p>Storing a raw analogRead() value (0–1023)</p><div class="apf-match-choices"><button class="apf-type-btn" data-type="int">int</button><button class="apf-type-btn" data-type="float">float</button><button class="apf-type-btn" data-type="bool">bool</button></div></div>
             </div>
+            <p class="ast-try"><a href="#ard-studio" data-ard-starter="dice">Try it in the Arduino Studio: Button dice</a> keeps a <code>long</code> variable counting your rolls.</p>
+
           </section>
 
           <section class="apf-card" style="--apf-accent:var(--apf-teal);">
@@ -218,6 +281,8 @@ brightness = <span class="f">map</span>(lightLevel, <span class="n">0</span>, <s
 analogWrite(<span class="n">9</span>, brightness);</pre>
               </div>
             </div>
+            <p class="ast-try"><a href="#ard-studio" data-ard-starter="dimmer">Try it in the Arduino Studio: Knob dimmer</a> reads A0, maps it to 0–255 and prints it to the Serial Monitor.</p>
+
           </section>
 
           <section class="apf-card" style="--apf-accent:var(--apf-orange);">
@@ -237,6 +302,8 @@ analogWrite(<span class="n">9</span>, brightness);</pre>
             </div>
             <button class="apf-trace-run" id="apf-trace-run" type="button">▶ Trace one loop() pass</button>
             <p class="apf-trace-status" id="apf-trace-status" aria-live="polite">Ready — press run to trace execution.</p>
+            <p class="ast-try"><a href="#ard-studio" data-ard-starter="sos">Try it in the Arduino Studio: SOS</a> defines <code>dot()</code> and <code>dash()</code> once and calls them nine times.</p>
+
           </section>
 
           <section class="apf-card" style="--apf-accent:var(--apf-purple);">
@@ -248,6 +315,8 @@ analogWrite(<span class="n">9</span>, brightness);</pre>
               <div class="apf-lib-card"><code>&lt;DHT.h&gt;</code><p>Decodes a temperature/humidity sensor's raw timing signal into clean <code>°C</code> and <code>%</code> values.</p></div>
             </div>
             <p style="margin-top:.9rem;">Libraries are installed once (Library Manager) and included once per sketch — but which board you've selected can still matter, since some libraries only work with certain chips (a Wi-Fi library for the ESP32 won't run on an Uno).</p>
+            <p class="ast-try"><a href="#ard-studio" data-ard-starter="sweep">Try it in the Arduino Studio: Servo sweep</a> uses <code>&lt;Servo.h&gt;</code>; open the C++ view to see the <code>#include</code>.</p>
+
           </section>
 
           <section class="apf-card" id="apf-robot-build" style="--apf-accent:var(--apf-orange);">
@@ -446,6 +515,10 @@ void loop() {
   <script src="../../../assets/js/lesson-layout.js"></script>
   <script src="../../../assets/js/lesson-print-button.js"></script>
   <script src="../../../assets/js/electricity-path.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/arduino-art.js"></script>
+  <script src="../../../assets/js/arduino-sim.js"></script>
+  <script src="../../../assets/js/lessons/arduino-studio.js"></script>
 <script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/electronics-glossary.json"></script>
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>

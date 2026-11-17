@@ -3,6 +3,7 @@ import {
   createEmptyState,
   createLikeButton,
   projectAction,
+  projectCreatorName,
   projectMatches,
   projectUrl,
   setActiveNav,
@@ -48,6 +49,28 @@ const FILTER_LABELS = {
   program: "Program",
   cohort: "Class",
 };
+
+function recentProjects(newestFirst) {
+  const categories = new Set();
+  const picks = new Set();
+  for (const project of newestFirst) {
+    const category = COLLECTIONS.find((collection) => collection.categories.includes(project.category))?.title || project.category;
+    if (categories.has(category)) continue;
+    categories.add(category);
+    picks.add(project);
+    if (picks.size === FEATURE_SIZE) return [...picks];
+  }
+  for (const project of newestFirst) {
+    if (picks.size === FEATURE_SIZE) break;
+    picks.add(project);
+  }
+  return [...picks];
+}
+
+function creditLine(project) {
+  const name = projectCreatorName(project);
+  return name ? `by ${name}` : "Student project";
+}
 
 function readCreatorFromQuery() {
   return new URLSearchParams(window.location.search).get("creator") === "teacher" ? "teacher" : "student";
@@ -149,12 +172,13 @@ function getButton(project) {
   const action = projectAction(project);
   const link = el("a", "aps-get", launches ? SHORT_ACTION[action.label] || "Open" : "View");
   link.href = launchHref(project);
-  link.setAttribute("aria-label", `${launches ? action.label : "View project"}: ${project.title} by ${project.student}`);
+  const creator = projectCreatorName(project);
+  link.setAttribute("aria-label", `${launches ? action.label : "View project"}: ${project.title}${creator ? ` by ${creator}` : ""}`);
   if (launches) {
     link.dataset.memoryPlay = "";
     link.dataset.memoryId = project.id;
     link.dataset.memoryTitle = project.title || "";
-    link.dataset.memoryBy = project.student || "";
+    link.dataset.memoryBy = creator;
     if (project.thumbnail) link.dataset.memoryThumb = new URL(project.thumbnail, document.baseURI).href;
   }
   return link;
@@ -169,9 +193,8 @@ function createAppRow(project) {
 
   const main = el("a", "aps-row-main");
   main.href = projectUrl(project.id);
-  main.setAttribute("aria-label", `About ${project.title} by ${project.student}`);
   const text = el("span", "aps-row-text");
-  text.append(el("span", "aps-row-title", project.title), el("span", "aps-row-sub", `by ${project.student}`));
+  text.append(el("span", "aps-row-title", project.title), el("span", "aps-row-sub", creditLine(project)));
   main.append(appIcon(project), text);
 
   const action = el("div", "aps-row-action");
@@ -198,24 +221,20 @@ function createFeatureCard(project) {
   const head = el("a", "aps-feature-head");
   head.href = projectUrl(project.id);
   head.append(
-    el("span", "aps-feature-eyebrow", `New ${EYEBROW[project.category] || "project"}`),
+    el("span", "aps-feature-eyebrow", project.tags.includes("3d-model") ? "3D model" : EYEBROW[project.category] || "Project"),
     el("span", "aps-feature-title", project.title),
-    el("span", "aps-feature-sub", `by ${project.student}`),
+    el("span", "aps-feature-sub", creditLine(project)),
   );
   const media = el("a", "aps-feature-media");
   media.href = launchHref(project);
   media.tabIndex = -1;
   media.setAttribute("aria-hidden", "true");
   media.appendChild(appIcon(project, "aps-feature-shot"));
-  const bar = el("div", "aps-feature-bar");
-  // The guard can't see the screenshot under this glass; the CSS keeps white text ≥4.5:1 over any image.
-  bar.setAttribute("data-contrast-guard-skip", "");
-  const name = el("span", "aps-feature-bar-text");
-  name.append(el("strong", "", project.title), el("span", "", project.tech?.[0] || project.category));
-  bar.append(appIcon(project, "aps-icon aps-icon-sm"), name, getButton(project));
+  const actions = el("div", "aps-feature-actions");
   const like = createLikeButton(project);
-  like.classList.add("aps-like", "aps-like-float");
-  card.append(head, media, bar, like);
+  like.classList.add("aps-like");
+  actions.append(like, getButton(project));
+  card.append(head, media, actions);
   return card;
 }
 
@@ -307,8 +326,8 @@ function init() {
 
   function updateFilterToggle() {
     if (!dom.filterToggle || !dom.filterPanel) return;
-    const count = advancedFilterCount();
-    dom.filterToggle.textContent = `More filters${count ? ` (${count})` : ""} ${dom.filterPanel.hidden ? "▾" : "▴"}`;
+    const count = advancedFilterCount() + (state.sort === "newest" ? 0 : 1);
+    dom.filterToggle.textContent = `Filters${count ? ` (${count})` : ""} ${dom.filterPanel.hidden ? "▾" : "▴"}`;
   }
 
   function resetState() {
@@ -408,7 +427,8 @@ function init() {
           heading.textContent = title;
         }
         const titles = el("div", "shelf-titles");
-        titles.append(heading, el("p", "", description));
+        titles.appendChild(heading);
+        if (description) titles.appendChild(el("p", "", description));
         head.appendChild(titles);
         const row = el("div", `aps-scroll aps-scroll-${variant}`);
         row.setAttribute("role", "list");
@@ -425,13 +445,11 @@ function init() {
       function renderShelves() {
         const source = sortProjects(byCreator(activeCreator), "newest");
         const frag = document.createDocumentFragment();
-        const creatorLabel = activeCreator === "teacher" ? "teacher" : "student";
 
         frag.appendChild(buildShelf({
           id: "shelf-newest",
-          title: "Just added",
-          description: `The newest ${creatorLabel} projects, fresh from class.`,
-          list: source.slice(0, FEATURE_SIZE),
+          title: "Recent projects",
+          list: recentProjects(source),
           total: source.length,
           onSeeAll: () => selectCollection({ categories: [] }, { forceGrid: true }),
           variant: "feature",
@@ -534,7 +552,7 @@ function init() {
         if (surprise) surprise.disabled = discoveryPool.length === 0;
         if (discoveryCount) discoveryCount.textContent = `${plural(discoveryPool.length)} to discover`;
         if (resetLimit) visibleLimit = PAGE_SIZE;
-        dom.search.value = state.q;
+        if (dom.search.value.trim() !== state.q) dom.search.value = state.q;
         dom.sort.value = [...dom.sort.options].some((opt) => opt.value === state.sort) ? state.sort : "newest";
 
         const showGrid = forceGrid || hasCustomState();

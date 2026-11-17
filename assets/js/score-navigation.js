@@ -22,7 +22,7 @@
     var surface = options.surface, selector = options.selector, zoom = options.zoom || null;
     var unit = options.unit || 'Measure', cls = options.classes || {};
     var scroller = options.scroller || surface.closest('.ll-sim') || document.scrollingElement;
-    var listeners = new AbortController();
+    var listeners = new AbortController(), scrollListeners;
     var selected = 0, current = -1, following = options.follow !== false, paused = false;
     var cache = null, cells = [], view = [-1, -1], raf = 0, scrubbing = false, lastScrub = -1;
 
@@ -320,12 +320,19 @@
       if (Math.abs(surface.__snWheel) > 40) { stepZoom(surface.__snWheel < 0 ? 1 : -1); surface.__snWheel = 0; }
     }, { passive: false });
     // The reader scrolling on their own pauses following until they ask for it back.
-    var scrollTarget = isPage(scroller) ? root : scroller;
-    scrollTarget.addEventListener('wheel', function (ev) { if (!ev.ctrlKey) pauseFollow(); }, { passive: true, signal: listeners.signal });
-    scrollTarget.addEventListener('touchmove', pauseFollow, { passive: true, signal: listeners.signal });
-    if (!isPage(scroller)) scroller.addEventListener('pointerdown', function (ev) { if (ev.target === scroller) pauseFollow(); }, { passive: true, signal: listeners.signal });
-    scrollTarget.addEventListener('scroll', queueView, { passive: true, signal: listeners.signal });
-    if (!isPage(scroller) && scroller !== surface) root.addEventListener('scroll', queueView, { passive: true, signal: listeners.signal });
+    function setScroller(next) {
+      if (scrollListeners) scrollListeners.abort();
+      scrollListeners = new AbortController();
+      scroller = next;
+      var config = { passive: true, signal: scrollListeners.signal };
+      var scrollTarget = isPage(scroller) ? root : scroller;
+      scrollTarget.addEventListener('wheel', function (ev) { if (!ev.ctrlKey) pauseFollow(); }, config);
+      scrollTarget.addEventListener('touchmove', pauseFollow, config);
+      if (!isPage(scroller)) scroller.addEventListener('pointerdown', function (ev) { if (ev.target === scroller) pauseFollow(); }, config);
+      scrollTarget.addEventListener('scroll', queueView, config);
+      if (!isPage(scroller) && scroller !== surface) root.addEventListener('scroll', queueView, config);
+    }
+    setScroller(scroller);
     root.addEventListener('resize', queueView, { signal: listeners.signal });
     var scope = options.keyScope || nav.parentNode;
     if (scope) {
@@ -335,8 +342,14 @@
 
     var api = {
       el: nav,
+      setScroller: function (next) {
+        if (scroller === next) return;
+        setScroller(next);
+        queueView();
+      },
       destroy: function () {
         listeners.abort();
+        scrollListeners.abort();
         cancelAnimationFrame(raf);
         instances = instances.filter(function (instance) { return instance !== api; });
         if (active === api) active = null;
