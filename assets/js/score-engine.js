@@ -1955,7 +1955,7 @@
     themeLabel.appendChild(theme);
     displaySettings.appendChild(themeLabel);
     var form = el('form', { class: 'se-practice-form' });
-    var measure = el('h4', {});
+    var measure = el('h4', {}, 'Measure');
     var noteLabel = el('label', {}, 'Measure note');
     var note = el('textarea', { rows: '3', maxlength: '2000' });
     noteLabel.appendChild(note);

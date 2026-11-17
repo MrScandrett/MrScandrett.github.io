@@ -12,10 +12,11 @@ const FORBIDDEN = [
   "serve-local.js", ".pa11yci.json", "AGENTS.md", "CLAUDE.md", "README.md",
   "OSeditor.html", "assets/js/OSeditor-app.js", "assets/css/OSeditor.css", "data/app-sources.json",
 ];
-// The November 2026 public bundle is 482.1 MiB after adding the complete
-// Beethoven, Chopin and Mozart scores. Keep roughly 12 MiB of headroom
+// The November 2026 public bundle is 500.3 MiB after adding the complete
+// Beethoven, Chopin and Mozart scores and the VSCO string-section and timpani
+// samples. Keep roughly 12 MiB of headroom
 // for lesson updates while still catching unexpected growth.
-const MAX_BYTES = 494 * 1024 * 1024;
+const MAX_BYTES = 512 * 1024 * 1024;
 // A single oversized thumbnail (a full-resolution photo dropped in instead of
 // a resized one) can silently eat most of the MAX_BYTES margin on its own —
 // see vla-telescope.jpg, once 9.1 MiB. Cap individual thumbnails well above
