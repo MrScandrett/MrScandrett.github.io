@@ -51,7 +51,22 @@ try {
 
       // Click a measure in the score: it becomes the start, on the map and in the Bar # field.
       await measure.evaluate((e) => e.scrollIntoView({ block: 'center' }));
-      { const r = await measure.boundingBox(); await page.mouse.click(r.x + r.width * 0.5, r.y + r.height * 0.85); }
+      const target = await measure.evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        const paper = el.closest('.se-paper')?.getBoundingClientRect();
+        const left = Math.max(rect.left, paper?.left ?? 0, 0);
+        const right = Math.min(rect.right, paper?.right ?? innerWidth, innerWidth);
+        const y = rect.top + rect.height * .85;
+        // A dense bar can scroll horizontally at reading size. Click the visible
+        // part of its background, where clicking selects the bar rather than a note.
+        for (const fraction of [.5, .25, .75]) {
+          const x = left + (right - left) * fraction;
+          if (!paper || document.elementFromPoint(x, y) === el) return { x, y };
+        }
+        return null;
+      });
+      assert.ok(target, p.name + ': visible measure background');
+      await page.mouse.click(target.x, target.y);
       assert.equal(await startCell(), 2, p.name + ': clicked measure is the start');
       const n = Number(await go.inputValue());
       // Keyboard: the next-measure button, then a typed Bar # jump.

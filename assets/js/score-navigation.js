@@ -193,12 +193,12 @@
       else { for (i = st.length - 1; i >= 0; i--) if (st[i] < cur - 1e-6) return setZoom(st[i]); }
     }
     // The largest zoom (up to 100%) at which the whole score fits in the space it has.
-    function fit() {
+    function fit(preset) {
       if (zoom.fit) {
         var keep = current >= 0 ? current : Math.max(0, sel());
-        zoom.fit(); cache = null;
+        zoom.fit(preset); cache = null;
         scrollToMeasure(keep, { instant: true });
-        paint(); queueView(); announce('Score fitted to the reading pane.'); return;
+        paint(); queueView(); announce(preset === 'reading' ? 'Reading size restored.' : 'Score fitted to the reading pane.'); return;
       }
       var st = steps().filter(function (z) { return z <= 1 + 1e-6; }), pick = st[0];
       var room = options.fitRoom ? options.fitRoom() : (function (v) { return v.bottom - v.top - 40; })(viewport());

@@ -7,7 +7,7 @@
   const base = new URL('../audio/instruments/', document.currentScript.src);
   const aliases = { strings: 'violin' };
   const contexts = new WeakMap();
-  const MAX_BYTES = 48 * 1024 * 1024;
+  const MAX_BYTES = 96 * 1024 * 1024;
   let manifestPromise;
   function manifest() {
     if (!manifestPromise) manifestPromise = fetch(new URL('manifest.json',base)).then(r => {
@@ -31,7 +31,12 @@
   }
   async function load(c,bank,entry) {
     const s = state(c), key = entry.file;
-    if (s.buffers.has(key)) return s.buffers.get(key);
+    if (s.buffers.has(key)) {
+      const cached = s.buffers.get(key);
+      s.buffers.delete(key);
+      s.buffers.set(key, cached);
+      return cached;
+    }
     if (s.pending.has(key)) return s.pending.get(key);
     const promise = limited(async () => {
       const controller = new AbortController(), timer = setTimeout(() => controller.abort(),12000);
@@ -41,13 +46,22 @@
         if (!response.ok) throw new Error('Instrument recording unavailable');
         bytes = await response.arrayBuffer();
       } finally { clearTimeout(timer); }
-      const buffer = await c.decodeAudioData(bytes);
-      const loopEnd = Math.min(3.8,buffer.duration-.2), loopStart = .9;
-      const loop = bank.sustain && loopEnd > loopStart + .5;
+      const decoded = await c.decodeAudioData(bytes);
+      // Sustained voices only need their attack and loop region in memory.
+      // Keeping unused recording tails evicts woodwinds from large symphonies.
+      let buffer = decoded;
+      if (bank.sustain && decoded.duration > 4.2) {
+        buffer = c.createBuffer(decoded.numberOfChannels, Math.ceil(decoded.sampleRate * 4.2), decoded.sampleRate);
+        for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
+          buffer.copyToChannel(decoded.getChannelData(channel).subarray(0, buffer.length), channel);
+        }
+      }
+      const loopEnd = Math.min(3.8,buffer.duration-.25), loopStart = Math.min(1.3, loopEnd - .7);
+      const loop = bank.sustain && loopStart >= .3 && loopEnd > loopStart + .5;
       // Blend the loop tail into the audio immediately before loopStart. The
       // following sample at loopStart then continues without a hard splice.
       if (loop) {
-        const end = Math.floor(loopEnd*buffer.sampleRate), start = Math.floor(loopStart*buffer.sampleRate), size = Math.floor(.08*buffer.sampleRate);
+        const end = Math.floor(loopEnd*buffer.sampleRate), start = Math.floor(loopStart*buffer.sampleRate), size = Math.floor(.12*buffer.sampleRate);
         for (let channel=0;channel<buffer.numberOfChannels;channel++) {
           const data=buffer.getChannelData(channel);
           for (let i=0;i<size;i++) {
@@ -77,7 +91,8 @@
     return {loaded:results.filter(r=>r.status==='fulfilled').length,failed:results.filter(r=>r.status==='rejected').length};
   }
   function startVoice(c,out,instrument,pitch,velocity,t,onEnded,settings={}) {
-    const name=aliases[instrument] || instrument, bank=data && data.banks[name];
+    const requested=settings.sampleInstrument || instrument;
+    const name=aliases[requested] || requested, bank=data && data.banks[name];
     if (!bank || !Number.isFinite(pitch)) return null;
     const entry=nearest(bank.roots,pitch), s=state(c), sample=s.buffers.get(entry.file);
     // Never substitute a far-away cached root while the correct root is loading.
@@ -90,13 +105,13 @@
     filter.type='lowpass'; filter.Q.value=.5;
     const touch=Math.max(0,Math.min(1,velocity));
     // A soft attack has less upper harmonic energy. Reuse the existing filter.
-    const cutoff=settings.scoreExpression ? 1600+pitch*18+touch*touch*12000 : 4500+touch*11500;
+    const cutoff=settings.scoreExpression ? 4200+pitch*22+touch*touch*11000 : 4500+touch*11500;
     filter.frequency.setValueAtTime(Math.min(c.sampleRate*.45,cutoff),t);
     const level=Number.isFinite(+settings.level) ? Math.max(0,Math.min(1,+settings.level)) : 1;
     const peak=.7*Math.pow(touch,1.35)*level;
     const attack=Number.isFinite(+settings.attack) ? Math.max(.002,+settings.attack) :
-      settings.scoreExpression ? .003+(1-touch)*(bank.sustain ? .009 : .004) : .004;
-    const release=Number.isFinite(+settings.release) ? Math.max(.02,+settings.release) : /piano|pluck|harp/.test(name) ? .3 : .12;
+      settings.scoreExpression ? (bank.attack || .003)+(1-touch)*(bank.sustain ? .006 : .004) : .004;
+    const release=Number.isFinite(+settings.release) ? Math.max(.02,+settings.release) : bank.release || (/piano|pluck|harp/.test(name) ? .3 : .12);
     envelope.gain.setValueAtTime(0,t); envelope.gain.linearRampToValueAtTime(peak,t+attack);
     source.connect(filter); filter.connect(envelope); envelope.connect(out);
     let cleaned=false;

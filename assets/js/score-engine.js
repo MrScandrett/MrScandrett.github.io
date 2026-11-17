@@ -431,7 +431,7 @@
 
   // Notes to sound, in performance time (repeats unrolled): tied notes merge into one long note.
   // `start` is the performance beat; `written` is the beat in the printed score.
-  function playList(model) {
+  function playList(model, separateVoices) {
     var out = [], order = model.order || model.barStart.map(function (_, i) { return i; });
     var perfStart = model.perfStart || model.barStart;
     model.staves.forEach(function (st, si) {
@@ -449,7 +449,7 @@
           (ev.graces || []).forEach(function (g, gi, all) {
             var lead = Math.min(0.12, 0.5 / all.length);
             g.pitches.forEach(function (p) {
-              out.push({ staff: si, start: Math.max(0, ev.abs + off - lead * (all.length - gi)), dur: lead, midi: p.midi, vel: vel * 0.85, grace: true, written: ev.abs });
+              out.push({ staff: si, voice: ev.voice, start: Math.max(0, ev.abs + off - lead * (all.length - gi)), dur: lead, midi: p.midi, vel: vel * 0.85, grace: true, written: ev.abs });
             });
           });
           if (ev.kind !== 'note') return;
@@ -470,7 +470,7 @@
             // chain ends staccato, detach only its final segment.
             if (cur.orn && cur.orn.indexOf('.') >= 0) dur -= cur.dur * 0.5;
             var voiced = pitchIndex === ev.pitches.length - 1 ? vel : vel * 0.92;
-            out.push({ staff: si, start: ev.abs + off, dur: dur, midi: p.midi, vel: Math.min(1, voiced), fermata: ev.fermata, written: ev.abs });
+            out.push({ staff: si, voice: ev.voice, start: ev.abs + off, dur: dur, midi: p.midi, vel: Math.min(1, voiced), fermata: ev.fermata, written: ev.abs });
           });
         });
       });
@@ -479,7 +479,7 @@
     var seen = {};
     out = out.filter(function (n) {
       if (n.grace) return true;
-      var k = n.staff + ':' + Math.round(n.start * 960) + ':' + n.midi;
+      var k = n.staff + ':' + (separateVoices ? n.voice + ':' : '') + Math.round(n.start * 960) + ':' + n.midi;
       if (seen[k]) {
         seen[k].dur = Math.max(seen[k].dur, n.dur);
         seen[k].vel = Math.max(seen[k].vel, n.vel);
@@ -730,7 +730,7 @@
     });
   }
 
-  function engrave(model, width, readableSize, windowed) {
+  function engrave(model, width, readableSize, windowed, readingLayout) {
     var M = root.MusicNotation;
     var S = (width < 520 ? 7.5 : width < 820 ? 8.5 : 9.5) * (readableSize ? 1.45 : 1);
     var h = S / 2;
@@ -756,9 +756,10 @@
     var timeW = (tsDigits.length * 1.8 + 1.2) * S;
     var left = 0.5 * S + braceW;
     function headerW(bi) { return 3.6 * S + keyW(model.barMeta[bi].key) + (bi === 0 ? timeW : 0) + 0.6 * S; }
-    // A dense single bar must fit even when the requested viewport is narrow.
-    // The figure can scroll horizontally; cropping the notes loses music.
-    width = Math.max(width, Math.ceil(left + headerW(0) + Math.max.apply(null, bars.map(function (bar) { return bar.width; })) + 2 * S));
+    // In reading view only the system containing a dense bar needs to be wider.
+    // Print and Fit use one width for the whole score.
+    if (!readingLayout) width = Math.max(width, Math.ceil(left + headerW(0) + Math.max.apply(null, bars.map(function (bar) { return bar.width; })) + 2 * S));
+    var lineWidth = width;
 
     // Sections by bar index (score.sections use printed bar numbers).
     var sectionAt = {};
@@ -774,7 +775,11 @@
       var full = cur && cur.used + b.width > cur.avail + 0.5;
       var sectionBreak = cur && sectionAt[bi] && cur.used > cur.avail * 0.72;
       if (!cur || full || sectionBreak) {
-        avail = width - left - hw - 2 * S;
+        avail = lineWidth - left - hw - 2 * S;
+        if (readingLayout) {
+          avail = Math.max(avail, b.width);
+          width = Math.max(width, Math.ceil(left + hw + avail + 2 * S));
+        }
         cur = { bars: [], used: 0, avail: avail, header: hw, first: bi };
         systems.push(cur);
       }
@@ -1126,7 +1131,7 @@
       });
       out.push('</g>');
       var inkBottom = tabBars ? sysBottom + 2 * S : sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h + S;
-      hl.push({ index: sIndex, top: y, bottom: inkBottom, cols: sysCols });
+      hl.push({ index: sIndex, first: sys.first, top: y, bottom: inkBottom, right: x1, cols: sysCols });
       y = inkBottom + 1.2 * S;
     });
 
@@ -1520,14 +1525,18 @@
   // Engraving and fullscreen layout can block main-thread scheduling.
   var REDRAW_LOOKAHEAD = 0.65;
 
-  function Player(fig, model) {
-    this.fig = fig; this.model = model;
-    this.notes = playList(model);
+  function noteEnds(notes) {
     var end = 0;
-    this.ends = this.notes.map(function (n) {
+    return notes.map(function (n) {
       end = Math.max(end, n.start + n.dur * (n.fermata ? 1.8 : 1));
       return end;
     });
+  }
+
+  function Player(fig, model) {
+    this.fig = fig; this.model = model;
+    this.notes = playList(model);
+    this.ends = noteEnds(this.notes);
     this.maxVoices = 128;
     var sc = model.score;
     this.baseQpm = model.baseQpm;
@@ -1586,15 +1595,25 @@
     if (this.ui.soundStatus) this.ui.soundStatus(report);
     this.play();
   };
+  Player.prototype.sampleInstrument = function (staffIndex) {
+    var staff = this.model.staves[staffIndex], instrument = staff.instrument || this.instrument;
+    if (this.model.staves.length < 3 || /solo/i.test(staff.label)) return instrument;
+    var label = staff.label || '';
+    if (instrument === 'viola' || /viola/i.test(label)) return 'viola-section';
+    if (instrument === 'cello' || /cello|continuo bass/i.test(label)) return 'cello-section';
+    if (instrument === 'violin' || instrument === 'strings') return 'violin-section';
+    return instrument;
+  };
+
   Player.prototype.prepareSound = async function (c, instrument, override, samples) {
     if (!samples || !root.MusicSynth.prepare) return { loaded: 0, failed: 0 };
     var grouped = new Map(), model = this.model;
     var transpose = Number(model.score.playbackTranspose) || 0;
     this.notes.forEach(function (n) {
-      var sound = override ? instrument : (model.staves[n.staff].instrument || instrument);
+      var sound = override ? instrument : (model.staves[n.staff].instrument ? this.sampleInstrument(n.staff) : instrument);
       if (!grouped.has(sound)) grouped.set(sound, new Set());
       grouped.get(sound).add(n.midi + transpose);
-    });
+    }, this);
     return root.MusicSynth.prepare(c, Array.from(grouped, function (pair) {
       return { instrument: pair[0], pitches: Array.from(pair[1]) };
     }));
@@ -1654,7 +1673,7 @@
         this.voices.forEach(function (voice) { if (!oldest || voice.endBeat < oldest.endBeat) oldest = voice; });
         oldest.kill(c.currentTime); this.voices.delete(oldest);
       }
-      var v = root.MusicSynth.startVoice(c, this.staffOutputs[n.staff], inst, n.midi + (Number(this.model.score.playbackTranspose) || 0), n.vel, t, function (voice) { self.voices.delete(voice); }, { samples: this.samples, scoreExpression: true });
+      var v = root.MusicSynth.startVoice(c, this.staffOutputs[n.staff], inst, n.midi + (Number(this.model.score.playbackTranspose) || 0), n.vel, t, function (voice) { self.voices.delete(voice); }, { samples: this.samples, scoreExpression: true, sampleInstrument: this.instOverride ? this.instrument : this.sampleInstrument(n.staff) });
       v.endBeat = end;
       this.voices.add(v);
     }
@@ -1895,7 +1914,599 @@
 
   function samplerAssetBase() { return scriptUrl || location.href; }
 
-  function render(fig, score) {
+  var practiceMemory = new Map();
+  var practiceThemeKey = 'classroomos:score-paper';
+  var practiceThemes = { light: 'Light', dark: 'Dark', sepia: 'Sepia', contrast: 'High contrast' };
+
+  function readPractice(key) {
+    if (practiceMemory.has(key)) return practiceMemory.get(key);
+    try { return JSON.parse(root.localStorage.getItem(key)); } catch (err) { return null; }
+  }
+
+  function writePractice(key, value) {
+    try {
+      root.localStorage.setItem(key, JSON.stringify(value));
+      practiceMemory.delete(key);
+      return true;
+    } catch (err) {
+      practiceMemory.set(key, value);
+      return false;
+    }
+  }
+
+  function installPractice(fig, paper, model, id, displaySettings, jump, currentBar) {
+    var marksKey = 'classroomos:score-marks:' + id;
+    var positionKey = 'classroomos:score-position:' + id;
+    var marks = readPractice(marksKey) || {};
+    var lastBar = readPractice(positionKey);
+    var selected = 0;
+    var button = el('button', { type: 'button', class: 'se-practice', 'aria-haspopup': 'dialog', 'aria-label': 'Practice', title: 'Notes, highlights and checkpoints' });
+    button.append(el('span', { class: 'se-narrow-icon', 'aria-hidden': 'true' }, '✎'), el('span', { class: 'se-label' }, 'Practice'));
+    var dialog = el('dialog', { class: 'se-practice-dialog', 'aria-label': 'Score practice' });
+    var header = el('header', {});
+    var heading = el('h3', {}, 'Practice');
+    var close = el('button', { type: 'button', autofocus: '' }, 'Close');
+    header.append(heading, close);
+    var themeLabel = el('label', { class: 'se-practice-theme' }, 'Score paper');
+    var theme = el('select', {});
+    Object.keys(practiceThemes).forEach(function (name) {
+      theme.appendChild(el('option', { value: name }, practiceThemes[name]));
+    });
+    themeLabel.appendChild(theme);
+    displaySettings.appendChild(themeLabel);
+    var form = el('form', { class: 'se-practice-form' });
+    var measure = el('h4', {});
+    var noteLabel = el('label', {}, 'Measure note');
+    var note = el('textarea', { rows: '3', maxlength: '2000' });
+    noteLabel.appendChild(note);
+    var highlightLabel = el('label', { class: 'se-practice-check' });
+    var highlight = el('input', { type: 'checkbox' });
+    highlightLabel.append(highlight, document.createTextNode(' Highlight for practice'));
+    var checkpointLabel = el('label', { class: 'se-practice-check' });
+    var checkpoint = el('input', { type: 'checkbox' });
+    checkpointLabel.append(checkpoint, document.createTextNode(' Mark as a checkpoint'));
+    var save = el('button', { type: 'submit' }, 'Save measure');
+    var feedback = el('p', { role: 'status' });
+    form.append(measure, noteLabel, highlightLabel, checkpointLabel, save, feedback);
+    var saved = el('section', {});
+    var list = el('ul', {});
+    var empty = el('p', {}, 'Your saved measures will appear here.');
+    saved.append(el('h4', {}, 'Saved measures'), empty, list);
+    dialog.append(header, form, saved);
+    fig.appendChild(dialog);
+
+    function valid(index) { return Number.isInteger(index) && index >= 0 && index < model.count; }
+    function measureLabel(index) {
+      var number = barNumber(model, index);
+      return number === 0 ? 'Pickup' : 'Bar ' + number;
+    }
+    function paintMarks() {
+      var svg = paper.querySelector('.se-score');
+      if (!svg) return;
+      var layer = svg.querySelector('.se-practice-marks');
+      layer.replaceChildren();
+      var rects = svg.querySelectorAll('.se-measure');
+      // Draw practice ink below the staff, leaving the measure hit targets intact.
+      Object.keys(marks).forEach(function (index) {
+        var rect = rects[index], mark = marks[index];
+        if (!rect) return;
+        var ink = rect.cloneNode();
+        ink.removeAttribute('data-measure');
+        ink.setAttribute('class', 'se-practice-ink');
+        ink.classList.toggle('se-practice-highlight', !!mark.highlight);
+        ink.classList.toggle('se-practice-note', !!mark.note);
+        ink.classList.toggle('se-practice-checkpoint', !!mark.checkpoint);
+        layer.appendChild(ink);
+      });
+    }
+    function applyTheme() {
+      var name = readPractice(practiceThemeKey);
+      theme.value = Object.hasOwn(practiceThemes, name) ? name : 'light';
+      paper.dataset.scorePaper = theme.value;
+    }
+    function refresh(key) {
+      if (key === practiceThemeKey || key === null) applyTheme();
+      if (key === marksKey || key === null) {
+        marks = readPractice(marksKey) || {};
+        paintMarks();
+        if (dialog.open) showSaved();
+      }
+    }
+    function preferenceChanged(event) { refresh(event.detail); }
+    function storageChanged(event) { refresh(event.key); }
+    function publish(key, value) {
+      var saved = writePractice(key, value);
+      root.dispatchEvent(new CustomEvent('score:practice-change', { detail: key }));
+      return saved;
+    }
+    function showSaved() {
+      list.replaceChildren();
+      Object.keys(marks).map(Number).filter(valid).sort(function (a, b) { return a - b; }).forEach(function (index) {
+        var mark = marks[index];
+        var row = el('li', {});
+        var kinds = [];
+        if (mark.checkpoint) kinds.push('Checkpoint');
+        if (mark.highlight) kinds.push('Highlighted');
+        if (mark.note) kinds.push('Note');
+        var visit = el('button', { type: 'button' }, measureLabel(index) + ' · ' + kinds.join(', '));
+        visit.addEventListener('click', function () { dialog.close(); jump(index); });
+        row.appendChild(visit);
+        if (mark.note) row.appendChild(el('p', {}, mark.note));
+        list.appendChild(row);
+      });
+      empty.hidden = list.childElementCount > 0;
+    }
+    function showMeasure() {
+      var mark = marks[selected] || {};
+      measure.textContent = measureLabel(selected);
+      note.value = mark.note || '';
+      highlight.checked = !!mark.highlight;
+      checkpoint.checked = !!mark.checkpoint;
+    }
+    button.addEventListener('click', function () {
+      selected = currentBar();
+      marks = readPractice(marksKey) || {};
+      showMeasure();
+      showSaved();
+      feedback.textContent = '';
+      dialog.showModal();
+    });
+    close.addEventListener('click', function () { dialog.close(); });
+    // Let the dialog consume Escape before the score or lesson fullscreen handlers.
+    dialog.addEventListener('keydown', function (event) { event.stopPropagation(); });
+    theme.addEventListener('change', function () {
+      publish(practiceThemeKey, theme.value);
+    });
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      marks = { ...readPractice(marksKey) };
+      var annotation = { note: note.value.trim(), highlight: highlight.checked, checkpoint: checkpoint.checked };
+      if (annotation.note || annotation.highlight || annotation.checkpoint) marks[selected] = annotation;
+      else delete marks[selected];
+      feedback.textContent = publish(marksKey, marks) ? measureLabel(selected) + ' updated.' : 'Updated for this visit. Browser storage is unavailable.';
+    });
+    root.addEventListener('score:practice-change', preferenceChanged);
+    root.addEventListener('storage', storageChanged);
+    applyTheme();
+    return {
+      button: button,
+      start: valid(lastBar) ? lastBar : null,
+      paint: paintMarks,
+      remember: function (index) {
+        if (lastBar === index && readPractice(positionKey) === index) return;
+        lastBar = index;
+        writePractice(positionKey, index);
+      },
+      destroy: function () {
+        if (dialog.open) dialog.close();
+        dialog.remove();
+        root.removeEventListener('score:practice-change', preferenceChanged);
+        root.removeEventListener('storage', storageChanged);
+      }
+    };
+  }
+
+  function installPianoRoll(workspace, bar, model, player, onSwitch, notation) {
+    var panel = el('div', { class: 'se-roll', hidden: '', tabindex: '0', role: 'region',
+      'aria-label': 'Piano roll. Notes fall onto the keyboard. Press Space to play or pause.' });
+    var rollButton = el('button', { class: 'se-roll-toggle', type: 'button', 'aria-label': 'Piano roll', 'aria-pressed': 'false', title: 'Piano roll' });
+    rollButton.append(el('span', { class: 'se-icon', 'aria-hidden': 'true' }, '▥'), el('span', { class: 'se-label' }, 'Roll'));
+    var tools = el('div', { class: 'se-roll-tools' });
+    var stripButton = el('button', { type: 'button', 'aria-pressed': 'false' }, 'Score strip');
+    tools.appendChild(stripButton);
+    var stripFollow = el('button', { type: 'button', class: 'se-strip-follow', hidden: '',
+      'aria-label': 'Follow score strip', 'aria-pressed': 'true', title: 'Follow playback in the score strip' }, 'Follow strip');
+    tools.appendChild(stripFollow);
+    var strip = el('div', { class: 'se-roll-strip', hidden: '', role: 'region', tabindex: '0', 'aria-label': 'Sheet music strip. Scroll to read the next system.' });
+    var scene = el('div', { class: 'se-roll-scene', 'aria-hidden': 'true' });
+    panel.append(tools, strip, scene);
+    workspace.appendChild(panel);
+    bar.appendChild(rollButton);
+
+    var colors = ['#48d8f6', '#9ae87d', '#f7ad67', '#bda7ff', '#ff9cb2'];
+    var accidentals = [1, 3, 6, 8, 10];
+    var transpose = Number(model.score.playbackTranspose) || 0;
+    var lo = 60, hi = 71;
+    player.notes.forEach(function (note) { lo = Math.min(lo, note.midi + transpose); hi = Math.max(hi, note.midi + transpose); });
+    lo -= ((lo % 12) + 12) % 12;
+    hi = Math.ceil((hi + 1) / 12) * 12 - 1;
+    var pianoHands = model.staves.length <= 2 && model.staves.some(function (staff) { return staff.instrument === 'piano' || /hand/i.test(staff.label || ''); });
+    function color(index) {
+      return colors[pianoHands ? (rightHandStaff(model.staves[index]) ? 0 : 1) : index % colors.length];
+    }
+    var handLegend = [];
+    if (model.staves.length === 2) {
+      model.staves.forEach(function (staff, index) {
+        var item = el('span', { class: 'se-roll-part' }, staff.label || 'Part ' + (index + 1));
+        item.style.setProperty('--se-roll-part', color(index));
+        tools.appendChild(item);
+        handLegend.push(item);
+      });
+    }
+
+    var voices = model.staves.map(function (staff) { return staff.voices.length; });
+    var horizontal = false, shadeIntervals = true, graphNotes, graphEnds, graphParts, graphLow, graphHigh;
+    if (voices.reduce(function (total, count) { return total + count; }, 0) > 1) {
+      var viewLabel = el('label', { class: 'se-roll-view' }, 'View');
+      var viewSelect = el('select', { 'aria-label': 'Visualization' });
+      viewSelect.append(el('option', { value: 'roll' }, 'Piano roll'), el('option', { value: 'horizontal' }, 'Horizontal score'));
+      viewLabel.appendChild(viewSelect);
+      tools.prepend(viewLabel);
+      var legend = el('details', { class: 'se-graph-legend', hidden: '' });
+      legend.appendChild(el('summary', {}, 'Parts'));
+      var legendPanel = el('div', { class: 'se-graph-legend-panel' });
+      var shadeLabel = el('label', { class: 'se-graph-shades' });
+      var shadeToggle = el('input', { type: 'checkbox', checked: '' });
+      shadeLabel.append(shadeToggle, document.createTextNode(' Interval shading'));
+      var explanation = el('p', {}, 'Brighter shades mean larger pitch changes from the previous attack’s highest note in that voice. First notes use the base shade.');
+      var shadeKey = el('ul', { class: 'se-graph-shade-key', 'aria-label': 'Interval shades' });
+      ['Repeated pitch', '1–2 semitones', '3–5 semitones', '6+ semitones'].forEach(function (label, index) {
+        var item = el('li', { class: 'se-roll-part' }, label);
+        item.style.setProperty('--se-roll-part', graphColor(195, index));
+        shadeKey.appendChild(item);
+      });
+      var partsList = el('ul', { class: 'se-graph-parts', 'aria-label': 'Voice colors' });
+      legendPanel.append(shadeLabel, explanation, shadeKey, partsList);
+      legend.appendChild(legendPanel);
+      shadeToggle.addEventListener('change', function () {
+        shadeIntervals = shadeToggle.checked;
+        paint(currentPerformanceBeat(player));
+      });
+      tools.appendChild(legend);
+      viewSelect.addEventListener('change', function () {
+        horizontal = viewSelect.value === 'horizontal';
+        if (horizontal && !graphNotes) prepareGraph(partsList);
+        legend.hidden = !horizontal;
+        legend.open = false;
+        handLegend.forEach(function (item) { item.hidden = horizontal; });
+        panel.classList.toggle('se-roll-horizontal', horizontal);
+        panel.setAttribute('aria-label', horizontal
+          ? 'Horizontal score. Higher bars are higher pitches. Longer bars are longer notes. Voice colors and interval shades are listed under Parts. Press Space to play or pause.'
+          : 'Piano roll. Notes fall onto the keyboard. Press Space to play or pause.');
+        viewWidth = null;
+        paint(currentPerformanceBeat(player));
+      });
+    }
+
+    var open = false, stripOn = false, followStrip = true, lastSystem, lastLayout, lastWrittenBar, lastKeys;
+    var stripOffsets = new Map(), stripCursor, stripSystem, stripColumns, stripColumnTimes, stripScale;
+    var viewWidth, viewHeight, hit, locations, svg, lanes, falling, whites, blacks;
+    var ns = 'http://www.w3.org/2000/svg';
+    function layer() { return document.createElementNS(ns, 'g'); }
+    function rect(x, y, w, h, fill, radius, extra) {
+      return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + fill +
+        '" rx="' + (radius || 0) + '"' + (extra || '') + '/>';
+    }
+
+    function graphColor(hue, shade) {
+      // Brighter shades indicate wider changes in pitch within the same voice.
+      var lightness = [49, 62, 74, 87][shade];
+      return 'hsl(' + hue + ' 80% ' + lightness + '%)';
+    }
+
+    function prepareGraph(list) {
+      graphNotes = playList(model, true);
+      graphEnds = noteEnds(graphNotes);
+      graphLow = Infinity; graphHigh = -Infinity;
+      graphNotes.forEach(function (note) {
+        graphLow = Math.min(graphLow, note.midi + transpose);
+        graphHigh = Math.max(graphHigh, note.midi + transpose);
+      });
+      if (!Number.isFinite(graphLow)) { graphLow = 60; graphHigh = 72; }
+      graphLow -= 3; graphHigh += 3;
+      var hueOrder = [191, 38, 287, 147, 352, 230, 72, 319, 165, 16, 263, 49, 207, 115, 332, 252, 92, 8];
+      var index = 0;
+      graphParts = model.staves.map(function (staff, si) {
+        return staff.voices.map(function (_, vi) {
+          var hue = hueOrder[index++ % hueOrder.length];
+          var part = { color: graphColor(hue, 1), shades: [0, 1, 2, 3].map(function (shade) { return graphColor(hue, shade); }) };
+          var label = staff.label || 'Staff ' + (si + 1);
+          if (staff.voices.length > 1) label += ' · Voice ' + (vi + 1);
+          var item = el('li', { class: 'se-roll-part' }, label);
+          item.style.setProperty('--se-roll-part', part.color);
+          list.appendChild(item);
+          return part;
+        });
+      });
+
+      // Group chords by onset so notes in one chord share the same preceding reference.
+      var priorAttacks = new Map();
+      graphNotes.forEach(function (note) {
+        var key = note.staff + ':' + note.voice;
+        var attack = priorAttacks.get(key);
+        if (!attack || note.start > attack.time + EPS) {
+          attack = { time: note.start, highest: note.midi, reference: attack?.highest };
+          priorAttacks.set(key, attack);
+        }
+        attack.highest = Math.max(attack.highest, note.midi);
+        var steps = Math.abs(note.midi - attack.reference);
+        note.shade = !Number.isFinite(steps) ? 1 : steps === 0 ? 0 : steps <= 2 ? 1 : steps <= 5 ? 2 : 3;
+      });
+    }
+
+    function graphBar(start, end, y, half) {
+      var radius = Math.min(half, (end - start) / 2);
+      var top = y - half, bottom = y + half;
+      return 'M' + (start + radius) + ' ' + top + ' H' + (end - radius) +
+        ' Q' + end + ' ' + top + ' ' + end + ' ' + y +
+        ' Q' + end + ' ' + bottom + ' ' + (end - radius) + ' ' + bottom +
+        ' H' + (start + radius) + ' Q' + start + ' ' + bottom + ' ' + start + ' ' + y +
+        ' Q' + start + ' ' + top + ' ' + (start + radius) + ' ' + top + ' Z';
+    }
+
+    function paintGraph(beat, width, height) {
+      if (width !== viewWidth || height !== viewHeight) {
+        viewWidth = width; viewHeight = height;
+        svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        falling = layer();
+        var pitchGrid = layer();
+        pitchGrid.classList.add('se-graph-pitch-grid');
+        var pitchLines = '';
+        for (var midi = Math.ceil(graphLow / 12) * 12; midi <= graphHigh; midi += 12) {
+          var y = graphPitchY(midi, height);
+          if (midi % 24 === 0) pitchLines += rect(0, graphPitchY(midi + 12, height), width, y - graphPitchY(midi + 12, height), '#1a2935');
+          pitchLines += rect(0, y, width, 1, '#334554') +
+            '<text x="8" y="' + (y - 4) + '">C' + (midi / 12 - 1) + '</text>';
+        }
+        pitchGrid.innerHTML = pitchLines;
+        svg.append(pitchGrid, falling);
+        scene.replaceChildren(svg);
+      }
+      // Past notes remain to the left of a stationary playhead.
+      var scale = width / Math.max(2, 6 * player.qpm() / 60);
+      var head = Math.round(width * .32), from = beat - head / scale;
+      var span = player.span(), until = Math.min(span.to, from + width / scale);
+      var xAt = function (time) { return head + (time - beat) * scale; };
+      var grid = '', notes = '', sounding = '';
+      for (var barIndex = Math.max(0, floorIndex(model.perfStart, from)); model.perfStart[barIndex] <= until; barIndex++) {
+        var x = xAt(model.perfStart[barIndex]);
+        if (x < 0) continue;
+        grid += rect(Math.round(x), 0, 1, height, '#31343b') +
+          '<text x="' + (x + 5) + '" y="16">' + barNumber(model, model.order[barIndex]) + '</text>';
+      }
+      var spacing = (graphPitchY(graphLow, height) - graphPitchY(graphHigh, height)) / Math.max(1, graphHigh - graphLow);
+      var half = Math.min(10, Math.max(3, spacing * .7));
+      for (var i = Math.max(0, floorIndex(graphEnds, from - EPS)); i < graphNotes.length && graphNotes[i].start <= until; i++) {
+        var note = graphNotes[i];
+        if (player.mutes[note.staff] || note.start < span.from || note.start >= span.to) continue;
+        var end = Math.min(span.to, note.start + note.dur * (note.fermata ? 1.8 : 1));
+        if (end <= from) continue;
+        var startX = xAt(note.start), endX = Math.max(startX + 3, xAt(end));
+        var part = graphParts[note.staff][note.voice];
+        var y = graphPitchY(note.midi + transpose, height);
+        var ink = shadeIntervals ? part.shades[note.shade] : part.color;
+        var active = note.start <= beat + EPS && end > beat && player.playing;
+        var glyph = '<path class="se-graph-note" d="' + graphBar(startX, endX, y, half) + '" fill="' + ink + '"';
+        var attack = '<circle cx="' + (startX + half / 2) + '" cy="' + y + '" r="' + Math.max(1, half * .55) + '"/>';
+        if (active) {
+          sounding += glyph + ' stroke="#d7f2ff" stroke-width=".65"/>' +
+            '<g class="se-graph-attack se-graph-attack-active" fill="' + ink + '">' + attack + '</g>';
+        } else {
+          notes += glyph + ' stroke="' + ink + '" stroke-width=".7" opacity="' + (end <= beat ? '.55' : '.94') + '"/>' +
+            '<g class="se-graph-attack" fill="' + ink + '">' + attack + '</g>';
+        }
+      }
+      falling.innerHTML = grid + rect(head - 3, 0, 7, height, '#78cfed', 0, ' opacity=".10"') +
+        rect(head, 0, 1, height, '#78cfed') + notes + sounding;
+    }
+
+    function graphPitchY(midi, height) {
+      return 27 + (graphHigh - midi) * Math.max(1, height - 43) / Math.max(1, graphHigh - graphLow);
+    }
+
+    function resize(width, height) {
+      viewWidth = width; viewHeight = height; lastKeys = null;
+      hit = height - Math.min(86, Math.max(36, Math.round(height * .17)));
+      var whiteCount = (hi - lo + 1) / 12 * 7, unit = width / whiteCount, x = 0;
+      locations = new Map();
+      var grid = '';
+      for (var midi = lo; midi <= hi; midi++) {
+        var black = accidentals.includes(((midi % 12) + 12) % 12), w = unit * (black ? .61 : 1);
+        locations.set(midi, { x: black ? x - w / 2 : x, width: w, black: black });
+        if (!black) {
+          grid += rect(x, 0, 1, hit, midi % 12 === 0 ? '#3f4b56' : '#293139');
+          x += unit;
+        }
+      }
+      svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+      lanes = layer(); falling = layer(); whites = layer(); blacks = layer();
+      var backdrop = layer();
+      backdrop.innerHTML = grid;
+      svg.append(backdrop, lanes, falling, whites, blacks);
+      scene.replaceChildren(svg);
+    }
+
+    function paintStrip(beat) {
+      if (!stripOn) return;
+      var view = notation();
+      if (!view.layout || !view.source) return;
+      var systems = view.layout.systems;
+      var writtenBar = model.order[Math.max(0, floorIndex(model.perfStart, beat))];
+      if (lastLayout !== view.layout || lastWrittenBar !== writtenBar) {
+        lastWrittenBar = writtenBar;
+        stripSystem = systems.findLastIndex(function (system) { return system.first <= writtenBar; });
+      }
+      if (lastLayout !== view.layout || (followStrip && lastSystem !== stripSystem)) {
+        buildStrip(view, stripSystem);
+      }
+      var offset = stripOffsets.get(stripSystem);
+      if (offset == null) {
+        stripCursor.setAttribute('visibility', 'hidden');
+        return;
+      }
+      var system = systems[stripSystem], printed = writtenBeat(model, beat);
+      var columns = system.cols;
+      if (columns !== stripColumns) {
+        stripColumns = columns;
+        stripColumnTimes = columns.map(function (col) { return col.t; });
+      }
+      // Repeated performance bars point back to the same written columns.
+      var colIndex = Math.max(0, floorIndex(stripColumnTimes, printed + EPS));
+      var from = columns[colIndex], to = columns[colIndex + 1] || from;
+      var fraction = to.t > from.t ? Math.max(0, Math.min(1, (printed - from.t) / (to.t - from.t))) : 0;
+      var x = offset + from.x + fraction * (to.x - from.x);
+      stripCursor.setAttribute('visibility', 'visible');
+      stripCursor.setAttribute('transform', 'translate(' + x + ' 0)');
+      if (followStrip) strip.scrollLeft = x * stripScale - strip.clientWidth * .32;
+    }
+
+    function buildStrip(view, current) {
+      lastLayout = view.layout; lastSystem = current;
+      stripOffsets.clear();
+      var page = document.createElementNS(ns, 'svg');
+      page.setAttribute('aria-hidden', 'true');
+      page.classList.add('se-roll-strip-score');
+      // Measure actual ink after mounting, including ledger lines, ornaments,
+      // dynamics and the lowest staff. System spacing alone can omit that ink.
+      page.setAttribute('width', view.layout.width);
+      page.setAttribute('height', view.layout.height);
+      strip.replaceChildren(page);
+      var width = 0, height = 0;
+      var padding = Math.ceil(view.layout.S);
+      var first = Math.max(0, current - 1);
+      for (var index = first; index < Math.min(view.layout.systems.length, first + 12); index++) {
+        var system = view.layout.systems[index];
+        var group = layer();
+        if (view.layout.notation) group.innerHTML = view.layout.notation[system.index];
+        else view.source.querySelectorAll('[data-se-system="' + system.index + '"]').forEach(function (node) { group.appendChild(node.cloneNode(true)); });
+        group.querySelectorAll('.se-finger-number, .se-measure').forEach(function (node) { node.remove(); });
+        page.appendChild(group);
+        var ink = group.getBBox();
+        var offset = width + padding - ink.x;
+        stripOffsets.set(system.index, offset);
+        group.setAttribute('transform', 'translate(' + offset + ' ' + (padding - ink.y) + ')');
+        width += Math.ceil(ink.width + padding * 2);
+        height = Math.max(height, Math.ceil(ink.height + padding * 2));
+        // Keep enough following systems mounted to fill a wide strip after fitting.
+        if (index >= current + 1 && width * fittedStripScale(height) >= strip.clientWidth * 1.6) break;
+      }
+      stripCursor = layer();
+      stripCursor.classList.add('se-strip-playhead');
+      stripCursor.innerHTML = '<path d="M0 0 V' + height + '"/><path d="M-5 0 H5 L0 8 Z"/>';
+      page.appendChild(stripCursor);
+      page.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+      fitStrip(page);
+    }
+
+    function fittedStripScale(height) {
+      var style = getComputedStyle(strip);
+      var verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      var available = Math.max(40, panel.clientHeight - tools.offsetHeight);
+      // Reserve room for the horizontal scrollbar even when it is always visible.
+      var room = Math.max(20, Math.min(320, available * .54) - verticalPadding - 16);
+      return Math.min(1, room / Math.max(1, height));
+    }
+
+    function fitStrip(page) {
+      var bounds = page.viewBox.baseVal;
+      stripScale = fittedStripScale(bounds.height);
+      page.setAttribute('width', Math.ceil(bounds.width * stripScale));
+      page.setAttribute('height', Math.floor(bounds.height * stripScale));
+    }
+
+    function paint(beat) {
+      if (!open) return;
+      paintStrip(beat);
+      var width = scene.clientWidth, height = scene.clientHeight;
+      if (!width || !height) return;
+      if (horizontal) {
+        if ((width !== viewWidth || height !== viewHeight) && strip.firstElementChild) fitStrip(strip.firstElementChild);
+        if (scene.clientHeight) paintGraph(beat, scene.clientWidth, scene.clientHeight);
+        return;
+      }
+      if (width !== viewWidth || height !== viewHeight) {
+        if (strip.firstElementChild) fitStrip(strip.firstElementChild);
+        resize(scene.clientWidth, scene.clientHeight);
+      }
+      var span = player.span(), secondsAhead = 3.5;
+      var ahead = Math.max(1, secondsAhead * player.qpm() / 60);
+      var scale = hit / ahead, end = Math.min(span.to, beat + ahead);
+      var grid = '', notes = '', active = new Map();
+      var barIndex = Math.max(0, floorIndex(model.perfStart, beat));
+      for (var bi = barIndex; model.perfStart[bi] <= end; bi++) {
+        var start = model.perfStart[bi];
+        if (start < beat) continue;
+        var lineY = hit - (start - beat) * scale;
+        grid += rect(0, lineY, width, 1, '#53606b') + '<text x="7" y="' + Math.min(hit - 4, lineY + 15) + '">' +
+          barNumber(model, model.order[bi]) + '</text>';
+      }
+      var index = Math.max(0, floorIndex(player.ends, beat - EPS));
+      for (; index < player.notes.length && player.notes[index].start <= end; index++) {
+        var note = player.notes[index];
+        if (player.mutes[note.staff] || note.start >= span.to || note.start < span.from) continue;
+        var stop = Math.min(span.to, note.start + note.dur * (note.fermata ? 1.8 : 1));
+        if (stop <= beat) continue;
+        var midi = note.midi + transpose, key = locations.get(midi), ink = color(note.staff);
+        var y = Math.max(0, hit - (stop - beat) * scale), bottom = Math.min(hit, hit - (note.start - beat) * scale);
+        var gutter = Math.min(2, key.width * .12);
+        notes += rect(key.x + gutter, y, key.width - gutter * 2, Math.max(1, bottom - y), ink, gutter);
+        if (note.start <= beat + EPS && (beat > span.from || player.playing)) active.set(midi, ink);
+      }
+      var keys = JSON.stringify(Array.from(active));
+      if (keys !== lastKeys) {
+        lastKeys = keys;
+        paintKeyboard(active, height);
+      }
+      lanes.innerHTML = grid;
+      falling.innerHTML = notes;
+    }
+
+    function paintKeyboard(active, height) {
+      var natural = '', sharp = '', keyHeight = height - hit;
+      locations.forEach(function (key, midi) {
+        var color = active.get(midi), h = keyHeight * (key.black ? .63 : 1);
+        var shape = rect(key.x, hit, key.width, h, color || (key.black ? '#24303b' : '#f3f7fa'), 2, ' stroke="#56616b" stroke-width=".8"');
+        if (key.black) sharp += shape;
+        else {
+          natural += shape;
+          if (midi % 12 === 0 && key.width >= 11) natural += '<text class="se-roll-octave" x="' + (key.x + key.width / 2) +
+            '" y="' + (height - 7) + '">' + 'C' + (midi / 12 - 1) + '</text>';
+        }
+      });
+      whites.innerHTML = natural;
+      blacks.innerHTML = sharp;
+    }
+
+    rollButton.addEventListener('click', function () {
+      open = !open;
+      rollButton.setAttribute('aria-pressed', String(open));
+      panel.hidden = !open;
+      workspace.classList.toggle('se-roll-open', open);
+      onSwitch(open);
+    });
+    stripButton.addEventListener('click', function () {
+      stripOn = !stripOn;
+      stripButton.setAttribute('aria-pressed', String(stripOn));
+      strip.hidden = !stripOn;
+      stripFollow.hidden = !stripOn;
+      if (!stripOn) { strip.replaceChildren(); lastLayout = null; }
+      paint(currentPerformanceBeat(player));
+    });
+    function setStripFollow(on) {
+      followStrip = on;
+      stripFollow.setAttribute('aria-pressed', String(on));
+      if (on) paint(currentPerformanceBeat(player));
+    }
+    stripFollow.addEventListener('click', function () { setStripFollow(!followStrip); });
+    strip.addEventListener('wheel', function (event) {
+      if (event.deltaX || event.shiftKey) setStripFollow(false);
+    }, { passive: true });
+    strip.addEventListener('pointerdown', function (event) {
+      if (event.pointerType === 'touch' || event.target === strip) setStripFollow(false);
+    }, { passive: true });
+    strip.addEventListener('keydown', function (event) {
+      if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) setStripFollow(false);
+    });
+    return { get open() { return open; }, paint: paint };
+  }
+
+  function currentPerformanceBeat(player) {
+    return player.playing ? player.beatAt(audio.ctx.currentTime) : player.pos;
+  }
+
+  function render(fig, score, options) {
     if (fig.scorePlayer && fig.scorePlayer.destroy) fig.scorePlayer.destroy();
     var model;
     try {
@@ -1923,17 +2534,53 @@
     var svgWrap = el('div', { class: 'se-svg' });
     paper.appendChild(svgWrap);
 
-    var workspace = el('div', { class: 'se-workspace' });
+    var practiceId = /\/lessons\/music\/pioneers\//.test(location.pathname) && (options?.practiceId || score.id);
+    var workspace = el('div', { class: practiceId ? 'se-workspace se-reading' : 'se-workspace' });
     var toolbar = el('div', { class: 'se-toolbar' });
     var bar = el('div', { class: 'se-controls', role: 'group', 'aria-label': 'Score player' });
-    var settings = el('details', { class: 'se-settings' });
-    var settingsSummary = el('summary', { title: 'Sound, display & print' });
+    var settings = el(practiceId ? 'dialog' : 'details', { class: 'se-settings' });
+    var settingsLabel = practiceId ? 'Score settings' : 'Sound, display & print';
+    var settingsSummary = el(practiceId ? 'button' : 'summary', { title: settingsLabel, 'aria-label': settingsLabel });
+    if (practiceId) {
+      settingsSummary.type = 'button';
+      settingsSummary.className = 'se-settings-button';
+      settingsSummary.setAttribute('aria-haspopup', 'dialog');
+    }
     settingsSummary.appendChild(el('span', { class: 'se-icon', 'aria-hidden': 'true' }, '⚙'));
-    settingsSummary.appendChild(el('span', { class: 'se-label' }, 'Sound, display & print'));
-    settings.appendChild(settingsSummary);
+    settingsSummary.appendChild(el('span', { class: 'se-label' }, practiceId ? 'Settings' : settingsLabel));
     var settingsBar = el('div', { class: 'se-options se-controls', role: 'group', 'aria-label': 'Sound and notation options' });
+    var displaySettings = settingsBar, soundSettings = settingsBar, partSettings = settingsBar;
+    if (practiceId) {
+      settings.classList.add('se-settings-dialog');
+      settings.setAttribute('aria-label', 'Score settings');
+      var settingsHeader = el('header', {});
+      var dismissSettings = el('button', { type: 'button', autofocus: '' }, 'Done');
+      settingsHeader.append(el('h3', {}, 'Score settings'), dismissSettings);
+      settings.prepend(settingsHeader);
+      displaySettings = el('fieldset', { class: 'se-display-settings' });
+      displaySettings.appendChild(el('legend', {}, 'Notation'));
+      soundSettings = el('fieldset', { class: 'se-sound-settings' });
+      soundSettings.appendChild(el('legend', {}, 'Playback'));
+      settingsBar.append(displaySettings, soundSettings);
+      if (model.staves.length > 1) {
+        partSettings = el('fieldset', { class: 'se-part-settings' });
+        partSettings.appendChild(el('legend', {}, 'Parts to hear'));
+        settingsBar.appendChild(partSettings);
+      }
+      settingsSummary.addEventListener('click', function () { settings.showModal(); });
+      dismissSettings.addEventListener('click', function () { settings.close(); });
+      settings.addEventListener('keydown', function (event) { event.stopPropagation(); });
+    } else {
+      settings.appendChild(settingsSummary);
+    }
     settings.appendChild(settingsBar);
     var playBtn = el('button', { type: 'button', class: 'se-play', 'aria-pressed': 'false' }, '▶ Play');
+    var playIcon = el('span', { class: 'se-narrow-icon', 'aria-hidden': 'true' }, '▶');
+    var playLabel = el('span', { class: 'se-label' }, '▶ Play');
+    if (practiceId) {
+      playBtn.setAttribute('aria-label', 'Play');
+      playBtn.replaceChildren(playIcon, playLabel);
+    }
     var stopBtn = el('button', { type: 'button', class: 'se-stop', 'aria-label': 'Stop and go back to the start' }, '■');
     var tempoLbl = el('label', { class: 'se-tempo-ctl' });
     tempoLbl.appendChild(el('span', {}, 'Speed'));
@@ -1941,27 +2588,31 @@
     var tempoOut = el('output', {}, '100%');
     tempoLbl.appendChild(tempo); tempoLbl.appendChild(tempoOut);
     var instLbl = el('label', { class: 'se-inst' });
-    instLbl.appendChild(el('span', {}, 'Sound'));
+    instLbl.appendChild(el('span', {}, practiceId ? 'Instrument' : 'Sound'));
     var inst = el('select', { 'aria-label': 'Instrument sound' });
     var auto = el('option', { value: '' }, 'As written');
     inst.appendChild(auto);
     root.MusicSynth.instruments.forEach(function (k) { inst.appendChild(el('option', { value: k }, LABELS[k] || (root.MusicSynth.labels && root.MusicSynth.labels[k]) || k)); });
     instLbl.appendChild(inst);
     var qualityLabel = el('label', {});
-    qualityLabel.appendChild(el('span', {}, 'Playback'));
+    qualityLabel.appendChild(el('span', {}, practiceId ? 'Quality' : 'Playback'));
     var quality = el('select', { 'aria-label': 'Playback sound quality' });
-    quality.appendChild(el('option', { value: 'sampled' }, 'Recorded instruments'));
-    quality.appendChild(el('option', { value: 'synth' }, 'Lightweight synthesis'));
-    qualityLabel.appendChild(quality); settingsBar.appendChild(qualityLabel);
+    quality.appendChild(el('option', { value: 'sampled' }, practiceId ? 'Recorded samples' : 'Recorded instruments'));
+    quality.appendChild(el('option', { value: 'synth' }, practiceId ? 'Synthesis' : 'Lightweight synthesis'));
+    qualityLabel.appendChild(quality); soundSettings.appendChild(qualityLabel);
     var sampleCredit = el('p', { class: 'se-sample-credit' });
     sampleCredit.appendChild(el('a', { href: new URL('../audio/instruments/README.md', samplerAssetBase()).href, target: '_blank', rel: 'noopener' }, 'Instrument recordings · sources & licenses'));
-    settingsBar.appendChild(sampleCredit);
+    soundSettings.appendChild(sampleCredit);
     var loopLbl = el('label', { class: 'se-check' });
     var loop = el('input', { type: 'checkbox' });
     var loopText = document.createTextNode(' Loop');
     loopLbl.appendChild(loop); loopLbl.appendChild(loopText);
     var clearLoop = el('button', { type: 'button', class: 'se-toggle se-clear-loop', hidden: '' }, 'Clear loop range');
-    bar.appendChild(playBtn); bar.appendChild(stopBtn); bar.appendChild(tempoLbl); settingsBar.appendChild(instLbl); bar.appendChild(loopLbl); bar.appendChild(clearLoop);
+    bar.append(playBtn, stopBtn);
+    if (practiceId) soundSettings.prepend(tempoLbl, instLbl);
+    else { bar.appendChild(tempoLbl); soundSettings.appendChild(instLbl); }
+    if (practiceId) soundSettings.append(loopLbl, clearLoop);
+    else bar.append(loopLbl, clearLoop);
     var muteBoxes = [];
     if (model.staves.length > 1) {
       model.staves.forEach(function (st, si) {
@@ -1969,7 +2620,7 @@
         var cb = el('input', { type: 'checkbox', checked: '' });
         cb.checked = true;
         l.appendChild(cb); l.appendChild(document.createTextNode(' ' + (st.label || 'Staff ' + (si + 1))));
-        settingsBar.appendChild(l); muteBoxes.push(cb);
+        partSettings.appendChild(l); muteBoxes.push(cb);
       });
     }
     var full = el('button', { type: 'button', class: 'se-full', 'aria-label': 'Show the score full screen', 'aria-pressed': 'false', title: 'Full screen' });
@@ -1980,7 +2631,7 @@
     var more = el('button', { type: 'button', class: 'se-more', 'aria-expanded': 'true', 'aria-label': 'Hide extra controls', title: 'Fewer controls, more score' }, '▴');
     var position = el('output', { class: 'se-position', 'aria-live': 'off' }, 'Bar ' + barNumber(model, 0));
     bar.appendChild(position);
-    bar.appendChild(more);
+    if (practiceId) displaySettings.appendChild(more); else bar.appendChild(more);
     bar.appendChild(full);
     var timeline = el('div', { class: 'se-timeline' });
     var elapsed = el('output', { 'aria-live': 'off' }, '0:00');
@@ -1998,7 +2649,8 @@
     var grip = el('div', { class: 'se-resize', role: 'separator', tabindex: '0', 'aria-orientation': 'horizontal',
       'aria-label': 'Resize the score pane. Up and down arrows change its height; double-click or Home resets it.', title: 'Drag to resize · double-click to reset' });
     workspace.append(toolbar, paper, grip);
-    toolbar.append(bar, timeline, settings);
+    toolbar.append(bar, timeline, practiceId ? settingsSummary : settings);
+    if (practiceId) fig.appendChild(settings);
     fig.insertBefore(status, cap);
     fig.insertBefore(help, cap);
     if (score.source) {
@@ -2029,23 +2681,29 @@
       (model.count >= 150 || model.count * model.staves.length >= 600 || hasDenseNotation());
     var notationLayer, systemTops, windowStart = -1, windowEnd = -1;
     var scrollFrame = 0;
-    var layout = null, eventsByBar = [], eventNodes = [], tabEventNodes = [], cursorColumns = [], cursorTimes = [], lit = new Set(), cursorEl = null, staffScale = 1, screenScale = 1, fitMode = true, lastDrawWidth = null, lastDrawHeight = null;
+    var layout = null, eventsByBar = [], eventNodes = [], tabEventNodes = [], cursorColumns = [], cursorTimes = [], lit = new Set(), cursorEl = null, staffScale = 1, screenScale = 1, fitMode = practiceId ? 'reading' : 'fit', lastDrawWidth = null, lastDrawHeight = null;
     function paperWidth() {
       return Math.max(120, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
     }
     // Zoom sets the staff size; the lines reflow so they still fill the paper. Zooming out
     // engraves more bars per line instead of shrinking a fixed page into one corner.
-    function engraveWidth(z) { return Math.max(280, Math.round(paperWidth() / z)); }
+    function engraveWidth(z) { return Math.max(practiceId && fitMode !== 'fit' ? 240 : 280, Math.round(paperWidth() / z)); }
     function drawWidth() { return engraveWidth(staffScale); }
-    function fitWidth() {
+    function displayedScale() {
+      if (!fitMode) return staffScale;
+      var widthScale = Math.min(staffScale, paperWidth() / layout.width);
+      if (fitMode === 'reading') return Math.min(staffScale, paperWidth() / drawWidth());
+      return Math.min(widthScale, Math.max(120, paper.clientHeight - 12) / layout.systems[0].bottom);
+    }
+    function fitWidth(preset) {
       // Reflow at normal engraving size, then fit the widest bar and one full
       // system. A dense bar on a phone must never disappear beyond the edge.
-      if (document.fullscreenElement !== fig) {
+      if (!isFull() && !document.fullscreenElement?.contains(fig) && !fig.closest('.creation-app-expanded')) {
         var header = document.querySelector('.site-header');
         workspace.style.scrollMarginTop = (header ? Math.max(0, Math.min(100, header.getBoundingClientRect().bottom)) : 8) + 'px';
         workspace.scrollIntoView({ block: 'start', behavior: 'instant' });
       }
-      staffScale = 1; fitMode = true; layout = null; draw();
+      staffScale = 1; fitMode = preset === 'reading' ? 'reading' : 'fit'; layout = null; draw();
     }
     function applyScale() { draw(); }
     function measureAt(beat) { return floorIndex(model.barStart, beat + EPS); }
@@ -2055,6 +2713,19 @@
     (score.sections || []).forEach(function (sec) { var bi = barIndexOf(model, sec.bar); if (bi >= 0) sectionStart[bi] = sec; });
     var guide = buildGuide(model);
     var selectedBar = 0, loopBars = null;
+    var practice = practiceId ? installPractice(fig, paper, model, practiceId, displaySettings,
+      function (index) { navigation.go(index, { source: 'practice' }); },
+      function () {
+        if (!player.playing) return measureAt(writtenBeat(model, player.pos));
+        player.pause();
+        selectedBar = measureAt(writtenBeat(model, player.pos));
+        navigation.select(selectedBar);
+        practice.remember(selectedBar);
+        return selectedBar;
+      }) : null;
+    var restoreBar = practice && practice.start;
+    var playbackBar = -1;
+    if (practice) bar.appendChild(practice.button);
     function setLoopBars(a, b) {
       if (a > b) { var t = a; a = b; b = t; }
       loopBars = { from: a, to: b };
@@ -2062,13 +2733,16 @@
       var to = perfBeat(model, model.barStart[b], from) + model.staves[0].bars[b].length;
       player.range = { from: from, to: Math.max(to, from + model.staves[0].bars[a].length) };
       player.loop = true; loop.checked = true;
-      loopText.textContent = ' Loop bars ' + barNumber(model, a) + '–' + barNumber(model, b);
+      var rangeLabel = 'Loop bars ' + barNumber(model, a) + '–' + barNumber(model, b);
+      if (practiceId) { loopLbl.title = rangeLabel; loop.setAttribute('aria-label', rangeLabel); }
+      else loopText.textContent = ' ' + rangeLabel;
       clearLoop.hidden = false;
       navigation.refresh();
     }
     function clearLoopRange() {
       loopBars = null; player.range = null;
       loopText.textContent = ' Loop'; clearLoop.hidden = true;
+      loopLbl.removeAttribute('title'); loop.removeAttribute('aria-label');
       navigation.refresh();
     }
     var navigation = root.ScoreNavigation({ surface: paper, selector: '.se-measure', scroller: paper, keyScope: fig, ignore: '.se-ev',
@@ -2083,17 +2757,36 @@
           return false;
         }
         selectedBar = i;
+        if (practice && !info.preview) {
+          restoreBar = null;
+          practice.remember(i);
+        }
         showGuide(i);
         if (!info.noSeek && !(info.preview && player.playing)) player.seek(model.barStart[i]);
         position.textContent = 'Bar ' + barNumber(model, i) + ' / ' + barNumber(model, model.count - 1);
         updateTimeline(player.pos);
       },
-      fitLabel: 'Fit view', fitTitle: 'Fit a readable line to the score pane ( F )',
+      fitLabel: practiceId ? 'Fit' : 'Fit view', fitTitle: 'Fit a readable line to the score pane ( F )',
       zoom: { fit: fitWidth, steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2], get: function () { return screenScale; },
         set: function (z) { staffScale = z; fitMode = false; layout = null; applyScale(); } },
       fitRoom: function () { return ((!workspace.classList.contains('se-short') && paper.clientHeight) || root.innerHeight * 0.65) - 8; }
     });
-    toolbar.insertBefore(navigation.el, settings);
+    toolbar.insertBefore(navigation.el, practiceId ? settingsSummary : settings);
+    var roll = practiceId ? installPianoRoll(workspace, bar, model, player, function (show) {
+      paper.inert = show;
+      var beat = writtenBeat(model, currentPerformanceBeat(player));
+      if (show) {
+        fig.dispatchEvent(new Event('score:hide-notation'));
+        roll.paint(currentPerformanceBeat(player));
+        return;
+      }
+      if (windowed) windowStart = -1;
+      draw();
+      navigation.go(measureAt(beat), { source: 'view', preview: true, noSeek: true });
+      if (windowed && showVisibleNotation()) fig.dispatchEvent(new CustomEvent('score:notation-window'));
+      player.ui.light(player.playing ? beat : -1);
+      player.ui.cursor(beat);
+    }, function () { return { layout: fig.scoreLayout, source: svgWrap.querySelector('.se-score') }; }) : null;
     if (guide.length) {
       guideBox = el('section', { class: 'se-guide', 'aria-label': 'Measure-by-measure guide' });
       guideNow = el('div', { class: 'se-guide-now', 'aria-live': 'polite' });
@@ -2208,36 +2901,44 @@
     }
 
     function onPaperScroll() {
+      if (roll?.open) return;
       if (!scrollFrame) scrollFrame = requestAnimationFrame(function () {
         scrollFrame = 0;
-        if (showVisibleNotation()) fig.dispatchEvent(new CustomEvent('score:notation-window'));
+        if (!roll?.open && showVisibleNotation()) fig.dispatchEvent(new CustomEvent('score:notation-window'));
       });
     }
 
     function draw() {
       if (player.destroyed) return;
+      if (roll?.open) { roll.paint(currentPerformanceBeat(player)); return; }
       var w = drawWidth(), room = paper.clientHeight;
       if (layout && lastDrawWidth !== null && Math.abs(lastDrawWidth - w) < 2) {
         if (room === lastDrawHeight) return;
         lastDrawHeight = room;
         if (fitMode) {
-          screenScale = Math.min(staffScale, paperWidth() / layout.width, Math.max(120, room - 12) / layout.systems[0].bottom);
+          screenScale = displayedScale();
           var svg = svgWrap.querySelector('svg');
           svg.setAttribute('width', layout.width * screenScale); svg.setAttribute('height', layout.height * screenScale);
         }
         if (showVisibleNotation()) fig.dispatchEvent(new CustomEvent('score:notation-window'));
         navigation.refresh(); return;
       }
+      var readingLayout = practiceId && fitMode !== 'fit';
+      var previousSystem = readingLayout && layout && paper.scrollTop > 0
+        ? layout.systems.findLast(function (system) { return system.top <= paper.scrollTop / screenScale; }) : null;
       lastDrawWidth = w; lastDrawHeight = room;
       if (player.playing) player.schedule(REDRAW_LOOKAHEAD);
-      layout = engrave(model, w, fig.hasAttribute('data-score-readable'), windowed);
-      screenScale = fitMode ? Math.min(staffScale, paperWidth() / layout.width,
-        Math.max(120, paper.clientHeight - 12) / layout.systems[0].bottom) : staffScale;
+      layout = engrave(model, w, practiceId || fig.hasAttribute('data-score-readable'), windowed, readingLayout);
+      screenScale = displayedScale();
       var label = (score.title || 'Score') + '. ' + model.count + ' bars in ' + model.ts.num + '/' + model.ts.den + (score.keyName ? ', ' + score.keyName : '') + '.';
       // The score is always paper with its own ink, so contrast-guard's text pass stays out: it reads the
       // cursor rect's accent fill without its fill-opacity and would repaint labels under it white.
       svgWrap.innerHTML = '<svg class="se-score" data-contrast-guard-skip role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * screenScale) + '" height="' + (layout.height * screenScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
-        '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + (windowed ? '<g class="se-notation-window"/>' : '') + '</svg>';
+        (practice ? '<g class="se-practice-marks" aria-hidden="true"/>' : '') + '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + (windowed ? '<g class="se-notation-window"/>' : '') + '</svg>';
+      if (previousSystem) {
+        var nextSystem = layout.systems.findLast(function (system) { return system.first <= previousSystem.first; });
+        paper.scrollTo({ top: nextSystem.top * screenScale, left: 0, behavior: 'instant' });
+      }
       // A one-line study doesn't need a 740px reading pane: let the pane shrink to the music.
       // Decided by the piece, never by the drawn size: the fit zoom depends on the pane's height.
       workspace.classList.toggle('se-short', model.count <= 4);
@@ -2264,6 +2965,13 @@
       var beat = writtenBeat(model, player.playing ? player.beatAt(audio.ctx.currentTime) : player.pos);
       renderNoteList();
       navigation.refresh();
+      if (practice) practice.paint();
+      if (restoreBar != null && paper.clientWidth > 0) {
+        var savedBar = restoreBar;
+        restoreBar = null;
+        navigation.go(savedBar, { source: 'practice', preview: true });
+        beat = model.barStart[savedBar];
+      }
       if (player.playing) player.ui.light(beat);
       player.ui.cursor(beat);
     }
@@ -2273,15 +2981,29 @@
         status.textContent = !player.samples ? 'Lightweight synthesized playback.' : report.failed ? 'Some recordings are unavailable; synthesis fills the missing notes.' : 'Recorded instrument playback; synthesis covers unsupported sounds and out-of-range notes.';
       },
       update: function () {
-        playBtn.textContent = player.loading ? 'Cancel loading' : player.playing ? '❚❚ Pause' : '▶ Play';
+        var transportText = player.loading ? 'Cancel loading' : player.playing ? '❚❚ Pause' : '▶ Play';
+        if (practiceId) {
+          playBtn.setAttribute('aria-label', player.loading ? 'Cancel loading' : player.playing ? 'Pause' : 'Play');
+          playIcon.textContent = player.loading ? '…' : player.playing ? '❚❚' : '▶';
+          playLabel.textContent = transportText;
+        } else playBtn.textContent = transportText;
         playBtn.setAttribute('aria-pressed', player.playing ? 'true' : 'false');
         fig.classList.toggle('se-playing', player.playing);
         status.setAttribute('aria-live', player.playing ? 'off' : 'polite');
         updateTimeline(player.pos);
+        if (roll?.open) roll.paint(currentPerformanceBeat(player));
       },
       light: function (beat) {
-        if (!layout) return;
         var measure = measureAt(beat);
+        if (practice && (beat < 0 ? -1 : measure) !== playbackBar) {
+          playbackBar = beat < 0 ? -1 : measure;
+          if (playbackBar >= 0) practice.remember(playbackBar);
+        }
+        if (roll?.open) {
+          if (beat >= 0) updateTimeline(currentPerformanceBeat(player));
+          return;
+        }
+        if (!layout) return;
         navigation.setCurrent(beat < 0 ? -1 : measure);
         if (beat >= 0) showGuide(measure);
         var candidates = beat < 0 ? [] : (eventsByBar[measure] || []);
@@ -2304,6 +3026,7 @@
         }
       },
       cursor: function (beat) {
+        if (roll?.open) { roll.paint(currentPerformanceBeat(player)); return; }
         if (!layout || !cursorEl) return;
         var col = cursorColumns[Math.max(0, floorIndex(cursorTimes, beat + EPS))], best = null;
         if (col && beat <= col.b.t + EPS) {
@@ -2367,6 +3090,7 @@
     clearLoop.addEventListener('click', function () { clearLoopRange(); status.textContent = 'Loop range cleared.'; });
     muteBoxes.forEach(function (cb, i) { cb.addEventListener('change', function () {
       player.setMuted(i, !cb.checked);
+      if (roll?.open) roll.paint(currentPerformanceBeat(player));
     }); });
     // Full screen uses the Fullscreen API where it exists. iPhone Safari has none for elements (and embedded
     // browsers may refuse it), so the figure becomes a fixed overlay that fills the screen instead.
@@ -2407,27 +3131,37 @@
     document.addEventListener('fullscreenchange', fullscreenChanged);
     function onKey(e) {
       if (e.key !== 'Escape' || e.defaultPrevented) return;
-      if (settings.open && settings.contains(e.target)) { e.preventDefault(); settings.open = false; settingsSummary.focus(); return; }
+      if (!practiceId && settings.open && settings.contains(e.target)) { e.preventDefault(); settings.open = false; settingsSummary.focus(); return; }
       // preventDefault also tells creation-app.js to leave its own expanded workspace alone.
       if (expanded) { e.preventDefault(); setExpanded(false); full.focus({ preventScroll: true }); }
     }
     document.addEventListener('keydown', onKey);
     // The options open as a panel over the score, so close it when the reader goes back to the music.
     function onOutside(e) { if (settings.open && !settings.contains(e.target)) settings.open = false; }
-    document.addEventListener('pointerdown', onOutside);
+    if (!practiceId) document.addEventListener('pointerdown', onOutside);
 
     var COMPACT_KEY = 'classroomos:score-compact';
     function setCompact(on, save) {
       workspace.classList.toggle('se-compact', on);
-      more.textContent = on ? '▾' : '▴';
-      more.setAttribute('aria-expanded', String(!on));
-      more.setAttribute('aria-label', on ? 'Show all controls' : 'Hide extra controls');
-      more.title = on ? 'Show all controls' : 'Fewer controls, more score';
-      if (on) settings.open = false;
+      if (practiceId) {
+        more.textContent = 'Focus view';
+        more.setAttribute('aria-pressed', String(on));
+        more.removeAttribute('aria-expanded');
+        more.removeAttribute('aria-label');
+        more.title = 'Show a smaller toolbar with more room for notation';
+      } else {
+        more.textContent = on ? '▾' : '▴';
+        more.setAttribute('aria-expanded', String(!on));
+        more.setAttribute('aria-label', on ? 'Show all controls' : 'Hide extra controls');
+        more.title = on ? 'Show all controls' : 'Fewer controls, more score';
+        if (on) settings.open = false;
+      }
       if (save) try { root.localStorage.setItem(COMPACT_KEY, on ? '1' : '0'); } catch (err) { /* private mode */ }
     }
     more.addEventListener('click', function () { setCompact(!workspace.classList.contains('se-compact'), true); });
-    try { if (root.localStorage.getItem(COMPACT_KEY) === '1') setCompact(true); } catch (err) { /* private mode */ }
+    var compact = false;
+    try { compact = root.localStorage.getItem(COMPACT_KEY) === '1'; } catch (err) { /* private mode */ }
+    setCompact(compact);
 
     var HEIGHT_KEY = 'classroomos:score-pane-height';
     function paneMax() { return Math.max(320, Math.round((root.visualViewport ? root.visualViewport.height : root.innerHeight) - 16)); }
@@ -2484,11 +3218,12 @@
       if (!ev) return;
       var c = context(), st = model.staves[ev.staff];
       if (!player.playing && ev.kind === 'note') ev.pitches.forEach(function (p) {
-        root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi + (Number(score.playbackTranspose) || 0), 0.75, c.currentTime, null, { samples: player.samples }).release(c.currentTime + 0.6);
+        root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi + (Number(score.playbackTranspose) || 0), 0.75, c.currentTime, null, { samples: player.samples, sampleInstrument: player.instOverride ? player.instrument : player.sampleInstrument(ev.staff) }).release(c.currentTime + 0.6);
       });
       player.seek(ev.abs);
       navigation.select(measureAt(ev.abs));
       selectedBar = measureAt(ev.abs); showGuide(selectedBar); updateTimeline(player.pos);
+      if (practice) practice.remember(selectedBar);
       position.textContent = 'Bar ' + barNumber(model, selectedBar) + ' / ' + barNumber(model, model.count - 1);
       status.textContent = eventLabel(ev, model) + (player.playing ? ' — playing from here' : ' — press Play to start here');
       updateNoteList(ev);
@@ -2509,18 +3244,35 @@
 
     draw();
     if (windowed) paper.addEventListener('scroll', onPaperScroll, { passive: true });
-    settingsBar.appendChild(pitchToggle); settingsBar.appendChild(colorToggle); settingsBar.appendChild(noteListToggle);
-    settingsBar.appendChild(printButton);
+    displaySettings.append(pitchToggle, colorToggle, noteListToggle, printButton);
+    if (practiceId) {
+      var readingSize = el('button', { type: 'button' }, 'Reading size');
+      readingSize.addEventListener('click', function () { settings.close(); navigation.fit('reading'); });
+      displaySettings.insertBefore(readingSize, more);
+      noteListToggle.addEventListener('click', function () {
+        settings.close();
+        if (!noteList.hidden) {
+          noteList.scrollIntoView({ block: 'nearest' });
+          noteList.querySelector('button')?.focus({ preventScroll: true });
+        }
+      });
+      printButton.addEventListener('click', function () { settings.close(); }, { capture: true });
+    }
     var offFingering;
     withFingering(function (F) {
-      if (!player.destroyed) offFingering = F.install(fig, score, settingsBar);
+      if (!player.destroyed) offFingering = F.install(fig, score, displaySettings);
     });
     fig.insertBefore(noteList, cap);
     var pieceGroup = fig.closest('details.composer-piece-group');
-    if (pieceGroup) pieceGroup.addEventListener('toggle', function () {
-      if (!pieceGroup.open) { player.stop(); status.textContent = ''; }
+    function onPieceToggle() {
+      if (!pieceGroup.open) {
+        if (practice) { if (player.loading) player.halt(); else player.pause(); }
+        else player.stop();
+        status.textContent = '';
+      }
       else { layout = null; requestAnimationFrame(draw); }
-    });
+    }
+    if (pieceGroup) pieceGroup.addEventListener('toggle', onPieceToggle);
     var drawFrame = 0;
     function queueDraw() { if (!drawFrame) drawFrame = requestAnimationFrame(function () { drawFrame = 0; draw(); }); }
     var observer;
@@ -2536,6 +3288,12 @@
       if (expanded) { expanded = false; fig.classList.remove('se-expanded'); document.documentElement.classList.remove('se-expanded-lock'); if (fig.hasAttribute('popover')) { try { fig.hidePopover(); } catch (err) { /* closed */ } fig.removeAttribute('popover'); } }
       if (offPreferences) offPreferences();
       if (offFingering) offFingering();
+      if (practice) {
+        practice.destroy();
+        if (settings.open) settings.close();
+        settings.remove();
+      }
+      if (pieceGroup) pieceGroup.removeEventListener('toggle', onPieceToggle);
       navigation.destroy();
       fig.removeEventListener('keydown', onSpace);
       root.removeEventListener('score-fingering:change', fingeringSpacingChanged);

@@ -88,6 +88,159 @@ try {
     }, `Underwater/${lighting}: studio preserves readable paper and controls`);
     await page.close();
   }
+  // Practice marks attach to the written measure and survive reflow and reader changes.
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+    await page.goto(`${base}/lessons/music/pioneers/satie.html`, { waitUntil: 'domcontentloaded' });
+    const studio = page.locator('#bv-score');
+    const jump = studio.getByRole('spinbutton', { name: 'Go to measure' });
+    const dialog = page.getByRole('dialog', { name: 'Score practice' });
+    const note = 'Keep the bass soft. <b>Literal text</b>';
+    await jump.fill('12');
+    await jump.press('Enter');
+    await studio.getByRole('button', { name: 'Practice', exact: true }).click();
+    assert.equal(await dialog.locator('form h4').textContent(), 'Bar 12');
+    await dialog.getByLabel('Measure note').fill(note);
+    await dialog.getByLabel('Highlight for practice').check();
+    await dialog.getByLabel('Mark as a checkpoint').check();
+    await dialog.getByRole('button', { name: 'Save measure' }).click();
+    await dialog.getByRole('button', { name: 'Close' }).click();
+    await studio.getByRole('button', { name: 'Score settings' }).click();
+    const settings = page.getByRole('dialog', { name: 'Score settings' });
+    await settings.getByLabel('Score paper').selectOption('dark');
+    await settings.getByRole('button', { name: 'Done' }).click();
+    assert.equal(await studio.locator('.se-score').evaluate(svg => getComputedStyle(svg).color), 'rgb(244, 241, 234)');
+    await studio.getByRole('button', { name: 'Zoom in' }).click();
+    assert.equal(await studio.locator('.se-practice-ink.se-practice-highlight.se-practice-checkpoint').count(), 1);
+    await jump.fill('19');
+    await jump.press('Enter');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.querySelector('#bv-score .sn-goto input')?.value === '19');
+    await page.locator('#bv-mode').selectOption('melody');
+    await studio.getByRole('button', { name: 'Practice', exact: true }).click();
+    assert.equal(await dialog.locator('form h4').textContent(), 'Bar 19');
+    assert.equal(await studio.locator('.se-paper').getAttribute('data-score-paper'), 'dark');
+    await dialog.getByRole('button', { name: 'Close' }).click();
+
+    await page.locator('.composer-cover[aria-controls*="gymnopedie1"]').click();
+    const reader = page.locator('figure[data-score="satie-gymnopedie-1"]');
+    await reader.getByRole('button', { name: 'Practice', exact: true }).click();
+    assert.equal(await dialog.locator('li p').textContent(), note);
+    await dialog.getByRole('button', { name: /Bar 12.*Checkpoint/ }).click();
+    assert.equal(await reader.getByRole('spinbutton', { name: 'Go to measure' }).inputValue(), '12');
+    await reader.getByRole('button', { name: 'Practice', exact: true }).click();
+    await dialog.getByLabel('Measure note').fill('');
+    await dialog.getByLabel('Highlight for practice').uncheck();
+    await dialog.getByLabel('Mark as a checkpoint').uncheck();
+    await dialog.getByRole('button', { name: 'Save measure' }).click();
+    assert.equal(await dialog.locator('li').count(), 0);
+    await dialog.getByRole('button', { name: 'Close' }).click();
+    const toolbar = reader.locator('.se-toolbar');
+    const toolbarHeight = (await toolbar.boundingBox()).height;
+    const staffSize = () => reader.locator('.se-score').evaluate(svg => {
+      const layout = svg.closest('figure').scoreLayout;
+      return layout.S * svg.getBoundingClientRect().width / layout.width;
+    });
+    const originalStaffSize = await staffSize();
+    assert.ok(originalStaffSize >= 10, 'default phone view keeps full-sized staves');
+    await reader.getByRole('button', { name: 'Score settings' }).click();
+    await settings.getByLabel('Score paper').selectOption('sepia');
+    await settings.getByRole('button', { name: 'Focus view' }).click();
+    await settings.getByRole('button', { name: 'Done' }).click();
+    assert.ok((await toolbar.boundingBox()).height < toolbarHeight, 'Focus view gives more room to the notation');
+    assert.equal(await staffSize(), originalStaffSize, 'Focus view leaves the notation at its reading size');
+    assert.equal(await reader.getByRole('spinbutton', { name: 'Go to measure' }).inputValue(), '12');
+    await reader.getByRole('button', { name: 'Score settings' }).click();
+    assert.equal(await settings.getByRole('button', { name: 'Focus view' }).getAttribute('aria-pressed'), 'true');
+    await settings.getByRole('button', { name: 'Reading size' }).click();
+    assert.equal(await studio.locator('.se-practice-highlight').count(), 0);
+    assert.equal(await studio.locator('.se-paper').getAttribute('data-score-paper'), 'sepia');
+    await reader.getByRole('button', { name: 'Score settings' }).click();
+    await settings.getByRole('button', { name: 'Finger numbers' }).click();
+    await settings.getByRole('button', { name: 'Done' }).click();
+    const fingering = reader.locator('.se-ev:has(.se-finger-target + .se-finger-target) .se-finger-target').first();
+    await fingering.hover();
+    const guide = reader.getByRole('tooltip');
+    await guide.waitFor();
+    const tones = await guide.locator('li').allTextContents();
+    assert.ok(tones.length >= 2 && tones.every(tone => /finger [1-5]/.test(tone)), 'chord tones match annotated fingers');
+    assert.equal(await guide.locator('.se-key-active').count(), tones.length);
+    assert.match(await guide.textContent(), /span.*Next top note/);
+    await page.keyboard.press('Escape');
+    await guide.waitFor({ state: 'hidden' });
+    await fingering.focus();
+    await guide.waitFor();
+    await page.keyboard.press('Escape');
+
+    await reader.getByRole('button', { name: 'Score settings' }).click();
+    await settings.getByLabel('Playback sound quality').selectOption('synth');
+    await settings.getByRole('button', { name: 'Done' }).click();
+    const roll = reader.getByRole('button', { name: 'Piano roll' });
+    await roll.click();
+    const scene = reader.locator('.se-roll-scene');
+    await scene.locator('svg').waitFor();
+    await reader.getByRole('button', { name: 'Score strip' }).click();
+    const strip = reader.locator('.se-roll-strip');
+    await strip.locator('svg use').first().waitFor({ state: 'attached' });
+    assert.ok(await strip.evaluate(el => el.scrollWidth > el.clientWidth), 'the score strip can scroll horizontally');
+    assert.ok(await strip.evaluate(element => {
+      const svg = element.firstElementChild;
+      const bounds = svg.viewBox.baseVal;
+      return element.scrollHeight <= element.clientHeight + 1 &&
+        Array.from(svg.children).filter(node => !node.classList.contains('se-strip-playhead')).every(node => {
+          const ink = node.getBBox();
+          const shift = node.transform.baseVal.consolidate().matrix.f;
+          return ink.y + shift >= 0 && ink.y + ink.height + shift <= bounds.height;
+        });
+    }), 'all score strip notation fits vertically without clipping');
+    const playhead = strip.locator('.se-strip-playhead');
+    const cursorAtStart = await playhead.getAttribute('transform');
+    const scoreHandle = await reader.elementHandle();
+    await reader.evaluate(figure => {
+      const notation = figure.querySelector('.se-score');
+      figure.rollCheck = { changes: 0, notes: figure.querySelector('.se-roll-scene svg > g:nth-child(3)').innerHTML };
+      const observer = new MutationObserver(() => { figure.rollCheck.changes++; });
+      observer.observe(notation, { childList: true, attributes: true, subtree: true });
+    });
+    await reader.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.waitForFunction(figure => figure.scorePlayer.playing &&
+      figure.querySelector('.se-roll-scene svg > g:nth-child(3)').innerHTML !== figure.rollCheck.notes, scoreHandle);
+    assert.equal(await reader.evaluate(figure => figure.rollCheck.changes), 0, 'notation stays idle while the roll plays');
+    await page.waitForFunction(({ figure, start }) =>
+      figure.querySelector('.se-strip-playhead').getAttribute('transform') !== start &&
+      figure.querySelector('.se-roll-strip').scrollLeft > 0, { figure: scoreHandle, start: cursorAtStart });
+    const followStrip = reader.getByRole('button', { name: 'Follow score strip' });
+    await followStrip.click();
+    await strip.evaluate(element => { element.scrollLeft = 0; });
+    const cursorBeforeManualScroll = await playhead.getAttribute('transform');
+    await page.waitForFunction(({ figure, start }) =>
+      figure.querySelector('.se-strip-playhead').getAttribute('transform') !== start,
+    { figure: scoreHandle, start: cursorBeforeManualScroll });
+    assert.equal(await strip.evaluate(element => element.scrollLeft), 0, 'manual browsing holds its scroll position');
+    await followStrip.click();
+    assert.ok(await strip.evaluate(element => element.scrollLeft > 0), 're-enabling follow returns to playback');
+    await reader.evaluate(figure => { figure.rollCheck.timer = figure.scorePlayer.timer; });
+    const visualization = reader.getByLabel('Visualization');
+    await visualization.selectOption('horizontal');
+    await scene.locator('path').first().waitFor();
+    await reader.locator('.se-graph-legend summary').click();
+    await reader.locator('.se-graph-legend').getByText('Left hand · Voice 2', { exact: true }).waitFor();
+    const intervalShading = reader.getByLabel('Interval shading');
+    await intervalShading.uncheck();
+    assert.equal(await intervalShading.isChecked(), false);
+    await intervalShading.check();
+    assert.ok(await scene.locator('.se-graph-pitch-grid').isVisible());
+    await reader.locator('.se-graph-legend summary').click();
+    assert.equal(await reader.evaluate(figure => figure.rollCheck.changes), 0, 'engraving stays idle in horizontal view');
+    await visualization.selectOption('roll');
+    await scene.locator('svg > g:nth-child(5)').waitFor();
+    await roll.click();
+    assert.ok(await reader.evaluate(figure => figure.scorePlayer.playing && figure.scorePlayer.timer === figure.rollCheck.timer),
+      'switching views keeps the same transport');
+    assert.equal(await scene.isVisible(), false);
+    await reader.getByRole('button', { name: 'Pause', exact: true }).click();
+    await page.close();
+  }
   for (const width of [1440, 390].filter(w => !process.env.SCORE_TEST_WIDTH || w === +process.env.SCORE_TEST_WIDTH)) {
     for (const name of ['bach', 'gershwin', 'mozart', 'tchaikovsky'].filter(n => !process.env.SCORE_TEST_COMPOSER || n === process.env.SCORE_TEST_COMPOSER)) {
       const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
@@ -133,10 +286,10 @@ try {
         await page.waitForFunction(f => document.fullscreenElement === f, handle);
         await figure.locator('.se-full').click();
         await page.waitForFunction(() => !document.fullscreenElement);
-        await figure.locator('.se-settings > summary').click();
+        await figure.getByRole('button', { name: 'Score settings' }).click();
         await figure.getByLabel('Playback sound quality').selectOption('synth');
         await figure.getByLabel('Instrument sound').selectOption('organ');
-        await figure.locator('.se-settings > summary').click();
+        await figure.getByRole('button', { name: 'Done' }).click();
         assert.ok(await figure.evaluate(f => f.scorePlayer.playing && !f.scorePlayer.loading &&
           f.scorePlayer.timer === f.playbackCheck.timer && f.scorePlayer.instrument === 'organ' &&
           !f.scorePlayer.samples), 'tempo, fullscreen and sound changes keep the same transport running');
@@ -160,7 +313,7 @@ try {
       }), 'Fit retains the selected measure inside the pane');
       await page.screenshot({ path: `${out}/${name}-${width}.png` });
       await page.evaluate(() => document.exitFullscreen());
-      await figure.locator('.se-settings > summary').click();
+      await figure.getByRole('button', { name: 'Score settings' }).click();
       await page.evaluate(() => { window.print = () => {}; });
       if (name === 'mozart') await figure.locator('.se-fingering-toggle').click();
       await figure.locator('.se-print-score-button').click();
@@ -172,7 +325,10 @@ try {
         const ids = new Set([...svg.querySelectorAll('[id]')].map(n => n.id));
         return [...svg.querySelectorAll('use[href]')].every(use => ids.has(use.getAttribute('href').slice(1)));
       })), 'every printed sheet owns its glyph references');
-      if (name === 'mozart') assert.ok(await page.locator('.se-print-score-pages .se-finger-number').count() > 0, 'fingering prints');
+      if (name === 'mozart') {
+        assert.ok(await page.locator('.se-print-score-pages .se-finger-number').count() > 0, 'fingering prints');
+        assert.equal(await page.locator('.se-print-score-pages .se-finger-guide, .se-print-score-pages .se-finger-target').count(), 0);
+      }
       await page.emulateMedia({ media: 'print' });
       const printMetrics = await page.locator('.se-print-score-page').evaluateAll(sections => sections.map(s => ({ height: s.getBoundingClientRect().height, width: s.getBoundingClientRect().width, svg: s.querySelector('svg').getBoundingClientRect().height })));
       assert.ok(printMetrics.every(p => p.height <= 960 && p.svg > 40), `${name}: score pages fit Letter height: ${JSON.stringify(printMetrics)}`);

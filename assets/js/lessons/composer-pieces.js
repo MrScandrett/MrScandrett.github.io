@@ -76,7 +76,12 @@
     updateHeaderScorePrint();
   });
   function stop(panel) {
-    panel.querySelectorAll('.se-stop').forEach(function (button) { button.click(); });
+    panel.querySelectorAll('figure[data-score]').forEach(function (figure) {
+      var player = figure.scorePlayer;
+      if (!player) return;
+      if (player.loading) player.halt();
+      else player.pause();
+    });
     panel.querySelectorAll('audio').forEach(function (audio) { audio.pause(); });
   }
   function show(work, focus, listen) {

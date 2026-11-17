@@ -224,7 +224,7 @@
     if (m === 'piano') pianoGuide(result);
     current = result; note.textContent = message;
     try {
-      player = ScoreEngine.render(host,result);
+      player = ScoreEngine.render(host, result, { practiceId: src.id + (src.guitarArrangement && ['guitar', 'guitar-solo'].includes(m) ? ':guitar' : '') });
       if (['melody','violin'].includes(m) && violinShow.checked) violinGuide(result);
       if (m === 'chords') {
         if (work.value === 'beethoven-ode-to-joy') chordStudy();

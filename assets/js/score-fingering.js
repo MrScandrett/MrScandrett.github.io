@@ -31,7 +31,7 @@
   }
 
   var REACH_KEY = 'classroomos-score-fingering-reach';
-  var KEY_TEXT = 'Suggested piano fingering: 1 thumb · 2 index · 3 middle · 4 ring · 5 little finger. Chord numbers read from top note to bottom note. † = plan with your teacher: a wide reach, held voice, ornament or hand redistribution needs individual fingering. Never stretch to reach a number. Your teacher should adapt these generated suggestions for your hand and phrasing.';
+  var KEY_TEXT = 'Suggested piano fingering: 1 thumb · 2 index · 3 middle · 4 ring · 5 little finger. Chord numbers read from top note to bottom note. Hover, focus or tap a number for the keyboard guide. † = plan with your teacher: a wide reach, held voice, ornament or hand redistribution needs individual fingering. Never stretch to reach a number. Your teacher should adapt these generated suggestions for your hand and phrasing.';
   var PRINT_TEXT = 'Generated fingering suggestions: 1 thumb · 2 index · 3 middle · 4 ring · 5 little finger. Chord numbers read from highest note to lowest. † = teacher review for reach, held voices, ornaments or hand distribution. Adapt for your hand and phrasing; never force a stretch.';
   var EPS = 1e-5;
   function isBlack(midi) { return !!BLACK[((midi % 12) + 12) % 12]; }
@@ -259,7 +259,7 @@
     detail.groups.forEach(function (onset) {
       var events = onset.events.filter(function (ev) { return !ev.fingering && (fingers[ev.i] || detail.reviews[ev.i]); });
       if (!events.length) return;
-      var ev = events[0], group = svg.querySelector('.se-ev[data-i="' + ev.i + '"]');
+      var ev = events[0], group = groups.get(ev.i);
       if (!group) return;
       var above = onset.hand === 'right', S = layout.S, h = S / 2;
       var edge = above ? ev.bottom - 4 * S : ev.bottom;
@@ -296,6 +296,200 @@
     });
   }
 
+  function pitchName(pitch) {
+    return 'CDEFGAB'[pitch.l] + (['𝄫', '♭', '', '♯', '𝄪'][pitch.a + 2] || '') + pitch.o;
+  }
+
+  function interval(from, to) {
+    var steps = Math.abs(to.diatonic - from.diatonic);
+    var simple = steps % 7;
+    var expected = [0, 2, 4, 5, 7, 9, 11][simple] + Math.floor(steps / 7) * 12;
+    var difference = Math.abs(to.midi - from.midi) - expected;
+    var perfect = simple === 0 || simple === 3 || simple === 4;
+    var quality = difference === 0 ? (perfect ? 'P' : 'M') : difference === -1 && !perfect ? 'm'
+      : difference > 0 ? 'A'.repeat(difference) : 'd'.repeat(-difference - (perfect ? 0 : 1));
+    return { label: quality + (steps + 1), family: simple === 0 && steps ? 8 : simple + 1 };
+  }
+
+  function writtenFinger(ev, midi) {
+    if (!ev.fingering) return null;
+    var ordered = ev.pitches.slice().sort(function (a, b) { return a.midi - b.midi; });
+    return Number(ev.fingering.split('/')[ordered.findIndex(function (pitch) { return pitch.midi === midi; })]) || null;
+  }
+
+  function attackTones(onset, plan) {
+    return onset.notes.flatMap(function (note) {
+      var attacks = note.entries.filter(function (entry) { return !entry.tied; });
+      if (!attacks.length) return [];
+      var entry = attacks.find(function (attack) { return attack.ev.fingering; }) || attacks[0];
+      var written = writtenFinger(entry.ev, note.midi);
+      return [{ pitch: entry.ev.pitches[entry.pi], finger: written || plan.fingers[entry.ev.i]?.[entry.pi],
+        written: !!written }];
+    });
+  }
+
+  function keyboard(container, tones) {
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('aria-hidden', 'true');
+    var white = document.createElementNS(NS, 'g'), black = document.createElementNS(NS, 'g');
+    var byMidi = new Map(tones.map(function (tone) { return [tone.pitch.midi, tone]; }));
+    var lo = tones[0].pitch.midi - 2, hi = tones[tones.length - 1].pitch.midi + 2;
+    while (isBlack(lo)) lo--;
+    while (isBlack(hi)) hi++;
+    var x = 0;
+    function shape(tag, parent, attrs, content) {
+      var node = document.createElementNS(NS, tag);
+      Object.entries(attrs).forEach(function (pair) { node.setAttribute(pair[0], pair[1]); });
+      if (content != null) node.textContent = content;
+      parent.appendChild(node);
+    }
+    for (var midi = lo; midi <= hi; midi++) {
+      var sharp = isBlack(midi), width = sharp ? 17 : 27, height = sharp ? 39 : 64;
+      var left = sharp ? x - width / 2 : x, layer = sharp ? black : white, tone = byMidi.get(midi);
+      shape('rect', layer, { x: left, y: 0, width: width, height: height, rx: 2,
+        class: (sharp ? 'se-key-black' : 'se-key-white') + (tone ? ' se-key-active' : ''),
+        'data-interval': tone ? tone.interval.family : '' });
+      if (tone?.finger) shape('text', layer, { x: left + width / 2, y: height - 9 }, tone.finger);
+      if (!sharp) x += width;
+    }
+    svg.setAttribute('viewBox', '0 0 ' + x + ' 65');
+    svg.style.width = x + 'px';
+    svg.append(white, black);
+    container.appendChild(svg);
+  }
+
+  function installGuide(fig, getPlan) {
+    var panel = document.createElement('div');
+    panel.className = 'se-finger-guide';
+    panel.id = 'se-finger-guide-' + (++guideId);
+    panel.setAttribute('role', 'tooltip');
+    panel.setAttribute('popover', 'manual');
+    panel.setAttribute('data-contrast-guard-skip', '');
+    panel.hidden = true;
+    fig.appendChild(panel);
+    var anchor, timer;
+    function hide() {
+      clearTimeout(timer);
+      if (!anchor) return;
+      anchor.removeAttribute('aria-describedby');
+      anchor = null;
+      if (panel.hidePopover) panel.hidePopover();
+      panel.hidden = true;
+      if (hideActiveGuide === hide) hideActiveGuide = null;
+    }
+    function line(tag, content, parent) {
+      var node = document.createElement(tag);
+      node.textContent = content;
+      (parent || panel).appendChild(node);
+      return node;
+    }
+    function show(mark) {
+      clearTimeout(timer);
+      if (mark === anchor) return;
+      hide();
+      var eventIndex = Number(mark.closest('.se-ev').dataset.i);
+      var data = getPlan(), position = data.byEvent.get(eventIndex);
+      if (!position) return;
+      var onset = position.onset, tones = attackTones(onset, data.plan);
+      if (!tones.length) return;
+      if (hideActiveGuide) hideActiveGuide();
+      hideActiveGuide = hide;
+      var low = tones[0].pitch, top = tones[tones.length - 1].pitch;
+      tones.forEach(function (tone, i) { tone.interval = i ? interval(low, tone.pitch) : { label: 'Low', family: 1 }; });
+      panel.replaceChildren();
+      var source = tones.every(function (tone) { return tone.written; }) ? 'Written fingering'
+        : tones.some(function (tone) { return tone.written; }) ? 'Written & suggested fingering'
+          : tones.some(function (tone) { return tone.finger; }) ? 'Suggested fingering' : 'Teacher review';
+      line('strong', (onset.hand === 'right' ? 'Right hand' : 'Left hand') + ' · ' + source);
+      keyboard(panel, tones);
+      var legend = line('ul', '');
+      tones.forEach(function (tone) {
+        var label = pitchName(tone.pitch) + (tones.length > 1 ? ' · ' + tone.interval.label : '') +
+          (tone.finger ? ' · finger ' + tone.finger : '');
+        line('li', label, legend).dataset.interval = tone.interval.family;
+      });
+      if (tones.length > 1) line('p', 'Intervals from ' + pitchName(low) + ' · span ' + interval(low, top).label);
+      var nextTones = position.next ? attackTones(position.next, data.plan) : [];
+      if (nextTones.length) {
+        var next = nextTones[nextTones.length - 1].pitch;
+        var motion = next.midi === top.midi ? 'same pitch' : (next.midi > top.midi ? 'up ' : 'down ') + interval(top, next).label;
+        line('p', (tones.length > 1 || nextTones.length > 1 ? 'Next top note: ' : 'Next note: ') + pitchName(next) + ' · ' + motion);
+      }
+      if (data.plan.reviews[eventIndex]) line('p', data.plan.reviews[eventIndex]);
+      anchor = mark;
+      anchor.setAttribute('aria-describedby', panel.id);
+      panel.hidden = false;
+      if (panel.showPopover) panel.showPopover();
+      place();
+    }
+    function place() {
+      if (!anchor) return;
+      var rect = anchor.getBoundingClientRect();
+      var paper = anchor.closest('.se-paper')?.getBoundingClientRect();
+      if (!anchor.isConnected || !rect.width || rect.bottom <= Math.max(0, paper?.top || 0) ||
+        rect.top >= Math.min(root.innerHeight, paper?.bottom ?? root.innerHeight) ||
+        rect.right <= Math.max(0, paper?.left || 0) || rect.left >= Math.min(root.innerWidth, paper?.right ?? root.innerWidth)) {
+        hide();
+        return;
+      }
+      var width = panel.offsetWidth, height = panel.offsetHeight;
+      var left = rect.left + (rect.width - width) / 2;
+      var topPosition = rect.top - height - 7;
+      if (topPosition < 8) topPosition = Math.min(rect.bottom + 7, root.innerHeight - height - 8);
+      panel.style.left = Math.max(8, Math.min(left, root.innerWidth - width - 8)) + 'px';
+      panel.style.top = Math.max(8, topPosition) + 'px';
+    }
+    function markFrom(target) { return target.closest?.('.se-finger-target'); }
+    function onEnter(event) {
+      var mark = markFrom(event.target);
+      if (mark && event.pointerType !== 'touch') show(mark);
+    }
+    function onLeave(event) {
+      if (markFrom(event.target) === anchor && anchor !== document.activeElement) delayHide();
+    }
+    function delayHide() { clearTimeout(timer); timer = setTimeout(hide, 140); }
+    function onFocus(event) { var mark = markFrom(event.target); if (mark) show(mark); }
+    function onBlur(event) { if (markFrom(event.target) === anchor) delayHide(); }
+    function onClick(event) {
+      var mark = markFrom(event.target);
+      if (!mark) { if (!panel.contains(event.target)) hide(); return; }
+      event.stopPropagation();
+      show(mark);
+    }
+    function onKey(event) {
+      if (event.key === 'Escape' && anchor) { hide(); event.preventDefault(); event.stopPropagation(); }
+      else if (fig.contains(event.target) && markFrom(event.target) && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault(); event.stopPropagation(); show(event.target);
+      }
+    }
+    function onScroll(event) { if (!(event.target instanceof Node && panel.contains(event.target))) place(); }
+    panel.addEventListener('pointerenter', function () { clearTimeout(timer); });
+    panel.addEventListener('pointerleave', delayHide);
+    fig.addEventListener('pointerover', onEnter);
+    fig.addEventListener('pointerout', onLeave);
+    fig.addEventListener('focusin', onFocus);
+    fig.addEventListener('focusout', onBlur);
+    fig.addEventListener('click', onClick, true);
+    document.addEventListener('keydown', onKey, true);
+    root.addEventListener('scroll', onScroll, true);
+    root.addEventListener('resize', hide);
+    document.addEventListener('fullscreenchange', hide);
+    return { hide: hide, destroy: function () {
+      hide();
+      panel.remove();
+      fig.removeEventListener('pointerover', onEnter);
+      fig.removeEventListener('pointerout', onLeave);
+      fig.removeEventListener('focusin', onFocus);
+      fig.removeEventListener('focusout', onBlur);
+      fig.removeEventListener('click', onClick, true);
+      document.removeEventListener('keydown', onKey, true);
+      root.removeEventListener('scroll', onScroll, true);
+      root.removeEventListener('resize', hide);
+      document.removeEventListener('fullscreenchange', hide);
+    } };
+  }
+  var guideId = 0, hideActiveGuide;
+
   function install(fig, score, bar) {
     if (!isKeyboard(score) || bar.querySelector('.se-fingering-toggle')) return;
     var enabled = false, reach = 12;
@@ -326,19 +520,48 @@
       key.hidden = !enabled;
       reachLabel.hidden = !enabled;
     }
-    var planned, plannedLayout, plannedReach;
+    var planned, plannedLayout, plannedReach, byEvent;
+    function getPlan() {
+      if (plannedLayout !== fig.scoreLayout || plannedReach !== reach) {
+        plannedLayout = fig.scoreLayout;
+        plannedReach = reach;
+        planned = planDetailed(plannedLayout, score, { reach: reach });
+        byEvent = new Map();
+        var nextByHand = new Map();
+        planned.groups.slice().reverse().forEach(function (onset) {
+          var next = nextByHand.get(onset.staffIndices);
+          onset.events.forEach(function (event) { byEvent.set(event.i, { onset: onset, next: next }); });
+          nextByHand.set(onset.staffIndices, onset);
+        });
+        plannedLayout.events.forEach(function (event) {
+          var staff = score.staves[event.staff];
+          // A written fingering can also sit on a sustained pitch with no attack.
+          if (!event.fingering || byEvent.has(event.i) || !staff || !keyboardStaff(staff)) return;
+          var notes = event.pitches.map(function (pitch, pi) {
+            return { midi: pitch.midi, entries: [{ ev: event, pi: pi }] };
+          }).sort(function (a, b) { return a.midi - b.midi; });
+          byEvent.set(event.i, { onset: { hand: handOf(staff), notes: notes } });
+        });
+      }
+      return { plan: planned, byEvent: byEvent };
+    }
+    var guide = installGuide(fig, getPlan);
     function mark() {
       var svg = fig.querySelector('.se-score');
       if (!fig.scoreLayout || !svg) return;
-      if (enabled) {
-        if (plannedLayout !== fig.scoreLayout || plannedReach !== reach) {
-          plannedLayout = fig.scoreLayout;
-          plannedReach = reach;
-          planned = planDetailed(plannedLayout, score, { reach: reach });
-        }
-        addMarks(svg, fig.scoreLayout, score, { reach: reach }, planned);
-      }
+      guide.hide();
+      if (enabled) addMarks(svg, fig.scoreLayout, score, { reach: reach }, getPlan().plan);
       else svg.querySelectorAll('.se-finger-number').forEach(function (n) { n.remove(); });
+      svg.querySelectorAll('.se-finger-number, .se-fingering').forEach(function (node) {
+        var ev = fig.scoreLayout.events[Number(node.closest('.se-ev').dataset.i)];
+        if (!keyboardStaff(score.staves[ev.staff])) return;
+        node.classList.add('se-finger-target');
+        node.querySelector('title')?.remove();
+        var name = node.textContent === '†' ? 'Fingering review' : 'Fingering ' + node.textContent;
+        node.setAttribute('aria-label', name + ', show keyboard guide');
+        node.setAttribute('role', 'button');
+        if (!node.previousElementSibling?.classList.contains('se-finger-target')) node.setAttribute('tabindex', '0');
+      });
     }
     button.addEventListener('click', function () {
       enabled = !enabled;
@@ -359,6 +582,7 @@
     }
     root.addEventListener('score-fingering:change', onChange);
     fig.addEventListener('score:draw', mark);
+    fig.addEventListener('score:hide-notation', guide.hide);
     fig.addEventListener('score:notation-window', mark);
     // The engine's print button asks for this so numbers reach the paper too.
     fig.scoreFingeringPrint = function () {
@@ -370,8 +594,10 @@
     bar.appendChild(key);
     paint(); mark();
     return function () {
+      guide.destroy();
       root.removeEventListener('score-fingering:change', onChange);
       fig.removeEventListener('score:draw', mark);
+      fig.removeEventListener('score:hide-notation', guide.hide);
       fig.removeEventListener('score:notation-window', mark);
       delete fig.scoreFingeringPrint;
     };

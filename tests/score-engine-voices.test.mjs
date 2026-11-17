@@ -49,6 +49,17 @@ test('Bach opening sustains independent left-hand voices beneath right-hand arpe
      [2.5, 67], [2.75, 72], [3, 76], [3.25, 67], [3.5, 72], [3.75, 76]]);
 });
 
+test('horizontal score retains separate voices at a shared pitch while playback merges them', () => {
+  const model = engine.prepare({
+    time: '4/4',
+    staves: [{ voices: [{ notes: 'C4/1' }, { notes: 'C4/2 E4/2' }] }]
+  });
+  engine.analyse(model);
+  assert.deepEqual(engine.playList(model).filter(note => note.start === 0).map(note => note.dur), [4]);
+  assert.deepEqual(engine.playList(model, true).filter(note => note.start === 0).map(note => [note.voice, note.dur]),
+    [[0, 4], [1, 2]]);
+});
+
 test('closing bars keep held left-hand notes while the right hand descends', () => {
   const model = engine.prepare(library['bach-prelude-c-major']);
   engine.analyse(model);
@@ -83,4 +94,23 @@ test('imported isolated timing ratios do not appear as finger-like tuplet number
     assert.doesNotMatch(layout.svg, /NaN|undefined/);
   }
   assert.deepEqual(engine.playList(model).map(({ start, dur, midi }) => [start, dur, midi]), before);
+});
+
+test('orchestral playback selects section samples and preserves the solo violin', () => {
+  for (const id of ['beethoven-symphony-7-allegretto', 'beethoven-symphony-5-1']) {
+    const model = engine.prepare(library[id]);
+    engine.analyse(model);
+    const player = new engine.Player(null, model);
+    assert.equal(player.sampleInstrument(7), 'violin-section');
+    assert.equal(player.sampleInstrument(9), 'viola-section');
+    assert.equal(player.sampleInstrument(10), 'cello-section');
+    assert.equal(player.sampleInstrument(0), 'flute');
+  }
+  const model = engine.prepare(library['vivaldi-winter-2']);
+  engine.analyse(model);
+  const player = new engine.Player(null, model);
+  assert.equal(player.sampleInstrument(0), 'strings');
+  assert.equal(player.sampleInstrument(1), 'violin-section');
+  assert.equal(player.sampleInstrument(3), 'viola-section');
+  assert.equal(player.sampleInstrument(4), 'cello-section');
 });
