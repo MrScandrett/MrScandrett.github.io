@@ -2682,11 +2682,20 @@
       <button type="button" data-catalog-tab="browse" aria-pressed="true">Browse books</button>
       <button type="button" data-catalog-tab="personal" aria-pressed="false">My Library Profile</button>
     </nav>
+    <div class="catalog-search">
+      <div class="lib-search-bar" role="search" aria-label="Search the library">
+        <span class="lib-search-icon" aria-hidden="true">⌕</span>
+        <input class="lib-search-input" id="librarySearch" type="search" aria-label="Search the library" placeholder="Search the library…" autocomplete="off" />
+        <span class="lib-search-stats" id="librarySearchStats" aria-live="polite"></span>
+        <button class="lib-search-clear" id="librarySearchClear" type="button" aria-label="Clear library search" hidden>×</button>
+        <kbd class="lib-search-kbd" aria-hidden="true">/</kbd>
+      </div>
+      <p class="lib-empty-state" id="libEmptyState">Try a different keyword or <button type="button" class="lib-empty-clear" onclick="document.getElementById('librarySearchClear').click()">clear the search</button> to browse the current collection.</p>
+    </div>
     <aside class="catalog-sidebar" aria-label="Library filters">
       <section class="lib-reading-path" aria-labelledby="readingPathTitle">
-        <h2 id="readingPathTitle">Reading path</h2>
-        <p id="readingPathHelp">Search and saved shelves follow your grade. Each visit starts in Kindergarten.</p>
-        <div class="lib-seg lib-grade-options" role="group" aria-label="Choose a grade" aria-describedby="readingPathHelp">
+        <h2 id="readingPathTitle">Choose a reading grade</h2>
+        <div class="lib-seg lib-grade-options" role="group" aria-labelledby="readingPathTitle">
           <button type="button" data-grade="0-0" aria-pressed="true">Kindergarten</button>
           <button type="button" data-grade="1-2" aria-pressed="false">Grades 1–2</button>
           <button type="button" data-grade="3-5" aria-pressed="false">Grades 3–5</button>
@@ -2694,50 +2703,54 @@
           <button type="button" data-grade="9-12" aria-pressed="false">Grades 9–12</button>
           <button type="button" data-grade="all" aria-pressed="false">Educator: all grades</button>
         </div>
-        <label for="libReadingDemand">Narrow by reading demand</label>
-        <select id="libReadingDemand" aria-describedby="readingDemandHelp">
-          <option value="all">Any reading demand</option>
-          <option value="early">Early / read together · K–2</option>
-          <option value="developing">Developing · grades 3–5</option>
-          <option value="extended">Extended · grades 6–8</option>
-          <option value="advanced">Advanced · grades 9–12</option>
-        </select>
-        <p id="readingDemandHelp">Groups use recommended starting grades, not tested reading levels. Older-grade books stay hidden. Preview unfamiliar books with an adult.</p>
         <p id="libGradeStatus" role="status"></p>
-        <button type="button" class="library-hero-action" id="libBrowseReading">Browse this path →</button>
+        <details class="lib-reading-filters">
+          <summary>Reading filters<span id="libDemandStatus" class="lib-filter-status"></span></summary>
+          <label for="libReadingDemand">Reading demand</label>
+          <select id="libReadingDemand" aria-describedby="readingDemandHelp">
+            <option value="all">Any reading demand</option>
+            <option value="early">Early / read together · K–2</option>
+            <option value="developing">Developing · grades 3–5</option>
+            <option value="extended">Extended · grades 6–8</option>
+            <option value="advanced">Advanced · grades 9–12</option>
+          </select>
+          <p id="readingDemandHelp">Groups use recommended starting grades, not tested reading levels. Older-grade books stay hidden. Preview unfamiliar books with an adult.</p>
+        </details>
         <noscript><p>Grade filtering needs JavaScript. Ask an educator to select a book before opening a reading link.</p></noscript>
       </section>
-      <h2>Collections</h2>
-      <div class="lib-entry-grid" id="libEntryGrid">
-        <button class="lib-entry-card" type="button" data-room="classics" aria-controls="section-classics" aria-expanded="false">
-          <span class="entry-topline"><span class="entry-icon" aria-hidden="true">✦</span><span class="entry-room">Collection 01</span></span>
-          <span class="entry-purpose">Read &amp; imagine</span>
-          <span class="entry-heading">K–12 STEAM reading</span>
-          <span class="entry-desc">Renowned fiction and nonfiction paired with lessons in science, math, engineering, art, and human systems.</span>
-          <span class="entry-count">106 reading resources</span>
-        </button>
-        <button class="lib-entry-card" type="button" data-room="nasa" aria-controls="section-nasa" aria-expanded="false">
-          <span class="entry-topline"><span class="entry-icon" aria-hidden="true">◉</span><span class="entry-room">Collection 02</span></span>
-          <span class="entry-purpose">Discover real science</span>
-          <span class="entry-heading">NASA science library</span>
-          <span class="entry-desc">Mission books, activity packs, astronomy, Earth science, and astrophysics from NASA.</span>
-          <span class="entry-count">14 public resources</span>
-        </button>
-        <button class="lib-entry-card" type="button" data-room="recipes" aria-controls="section-recipes" aria-expanded="false">
-          <span class="entry-topline"><span class="entry-icon" aria-hidden="true">⌁</span><span class="entry-room">Collection 03</span></span>
-          <span class="entry-purpose">Make something</span>
-          <span class="entry-heading">Project recipe collection</span>
-          <span class="entry-desc">Start-to-finish builds for robotics, electronics, games, 3D design, and creative challenges.</span>
-          <span class="entry-count">22 guided builds</span>
-        </button>
-        <button class="lib-entry-card" type="button" data-room="manuals" aria-controls="section-manuals" aria-expanded="false">
-          <span class="entry-topline"><span class="entry-icon" aria-hidden="true">⌘</span><span class="entry-room">Collection 04</span></span>
-          <span class="entry-purpose">Learn your tools</span>
-          <span class="entry-heading">Manuals &amp; quick starts</span>
-          <span class="entry-desc">Official help for classroom software, creative tools, coding platforms, CAD, and game engines.</span>
-          <span class="entry-count">18 official guides</span>
-        </button>
-      </div>
+      <details class="lib-collections" id="libCollections">
+        <summary>Collections</summary>
+        <div class="lib-entry-grid" id="libEntryGrid">
+          <button class="lib-entry-card" type="button" data-room="classics" aria-controls="section-classics" aria-expanded="false">
+            <span class="entry-topline"><span class="entry-icon" aria-hidden="true">✦</span><span class="entry-room">Collection 01</span></span>
+            <span class="entry-purpose">Read &amp; imagine</span>
+            <span class="entry-heading">K–12 STEAM reading</span>
+            <span class="entry-desc">Renowned fiction and nonfiction paired with lessons in science, math, engineering, art, and human systems.</span>
+            <span class="entry-count">106 reading resources</span>
+          </button>
+          <button class="lib-entry-card" type="button" data-room="nasa" aria-controls="section-nasa" aria-expanded="false">
+            <span class="entry-topline"><span class="entry-icon" aria-hidden="true">◉</span><span class="entry-room">Collection 02</span></span>
+            <span class="entry-purpose">Discover real science</span>
+            <span class="entry-heading">NASA science library</span>
+            <span class="entry-desc">Mission books, activity packs, astronomy, Earth science, and astrophysics from NASA.</span>
+            <span class="entry-count">14 public resources</span>
+          </button>
+          <button class="lib-entry-card" type="button" data-room="recipes" aria-controls="section-recipes" aria-expanded="false">
+            <span class="entry-topline"><span class="entry-icon" aria-hidden="true">⌁</span><span class="entry-room">Collection 03</span></span>
+            <span class="entry-purpose">Make something</span>
+            <span class="entry-heading">Project recipe collection</span>
+            <span class="entry-desc">Start-to-finish builds for robotics, electronics, games, 3D design, and creative challenges.</span>
+            <span class="entry-count">22 guided builds</span>
+          </button>
+          <button class="lib-entry-card" type="button" data-room="manuals" aria-controls="section-manuals" aria-expanded="false">
+            <span class="entry-topline"><span class="entry-icon" aria-hidden="true">⌘</span><span class="entry-room">Collection 04</span></span>
+            <span class="entry-purpose">Learn your tools</span>
+            <span class="entry-heading">Manuals &amp; quick starts</span>
+            <span class="entry-desc">Official help for classroom software, creative tools, coding platforms, CAD, and game engines.</span>
+            <span class="entry-count">18 official guides</span>
+          </button>
+        </div>
+      </details>
     </aside>
     <section id="catalogPersonal" hidden aria-label="My Library Profile">      <div class="lib-personal" id="libPersonal" aria-label="Your reading shelves">
         <header class="library-profile-header">
@@ -2781,27 +2794,21 @@
         <h2>Find your next read</h2>
         <p>Choose a collection, or search within your selected reading path. Project recipes and tool manuals are separate reference collections.</p>
       </div>
-      <div class="lib-search-bar" role="search" aria-label="Search the library">
-        <span class="lib-search-icon" aria-hidden="true">⌕</span>
-        <input class="lib-search-input" id="librarySearch" type="search" aria-label="Search the library" placeholder="Search the library…" autocomplete="off" />
-        <span class="lib-search-stats" id="librarySearchStats" aria-live="polite"></span>
-        <button class="lib-search-clear" id="librarySearchClear" type="button" aria-label="Clear library search" hidden>×</button>
-        <kbd class="lib-search-kbd" aria-label="Press slash to focus search">/</kbd>
-      </div>
-      <p class="lib-empty-state" id="libEmptyState">No titles matched that search.<br>Try a different keyword or <button type="button" class="lib-empty-clear" onclick="document.getElementById('librarySearchClear').click()">clear the search</button> to browse by room.</p>
-
-      <div class="lib-tools">
-        <label class="catalog-sort" for="catalogSort">Sort titles
-          <select id="catalogSort"><option value="curated">Curated order</option><option value="title">Title A–Z</option><option value="author">Author A–Z</option></select>
-        </label>
-        <div class="lib-seg lib-view-toggle" role="group" aria-label="How to show titles">
-          <span class="lib-tools-label">Show titles as</span>
-          <button type="button" data-view="covers" aria-pressed="true">Covers</button>
-          <button type="button" data-view="shelf" aria-pressed="false">Bookshelf</button>
-          <button type="button" data-view="list" aria-pressed="false">Easy-read list</button>
+      <details class="lib-display-options" id="libDisplayOptions">
+        <summary>Display options</summary>
+        <div class="lib-tools">
+          <label class="catalog-sort" for="catalogSort">Sort titles
+            <select id="catalogSort"><option value="curated">Curated order</option><option value="title">Title A–Z</option><option value="author">Author A–Z</option></select>
+          </label>
+          <div class="lib-seg lib-view-toggle" role="group" aria-label="How to show titles">
+            <span class="lib-tools-label">Show titles as</span>
+            <button type="button" data-view="covers" aria-pressed="true">Covers</button>
+            <button type="button" data-view="shelf" aria-pressed="false">Bookshelf</button>
+            <button type="button" data-view="list" aria-pressed="false">Easy-read list</button>
+          </div>
+          <a class="lib-own-file" href="reader.html">Read your own EPUB, PDF or text file <span aria-hidden="true">→</span></a>
         </div>
-        <a class="lib-own-file" href="reader.html">Read your own EPUB, PDF or text file <span aria-hidden="true">→</span></a>
-      </div>
+      </details>
 
 
 
@@ -5918,20 +5925,12 @@
 
       /* ── Hero stat line ── */
       if (statRow) {
-        var recipeCount = document.querySelectorAll('#section-recipes .book').length;
-        statRow.textContent = LIBRARY_DATA.length + ' titles · 4 collections · ' + recipeCount + ' project recipes';
+        statRow.textContent = LIBRARY_DATA.length + ' catalog entries across 4 collections';
       }
 
-      /* ── Seed search stat ── */
-      if (searchStats) searchStats.textContent = LIBRARY_DATA.length + ' titles';
-
-      function updateSearchStats(visibleCount, totalCount, query) {
+      function updateSearchStats(visibleCount, query) {
         if (!searchStats) return;
-        if (query) {
-          searchStats.textContent = visibleCount + ' / ' + totalCount + ' matches';
-        } else {
-          searchStats.textContent = totalCount + ' titles';
-        }
+        searchStats.textContent = query ? visibleCount + (visibleCount === 1 ? ' match' : ' matches') : '';
         if (searchClear) searchClear.hidden = !query;
         if (emptyState) emptyState.classList.toggle('is-visible', !!query && visibleCount === 0);
       }
@@ -5970,13 +5969,15 @@
             room.hidden = !room.querySelector('.book.is-search-hit');
           });
         }
-        updateSearchStats(visibleCount, LIBRARY_DATA.length, normalized);
+        updateSearchStats(visibleCount, normalized);
       }
 
       /* ── Grade bands (reading room) ──────────────
          Use the start of each path as its age floor; unknown grades stay educator-only. */
       var gradeButtons = Array.from(document.querySelectorAll('[data-grade]'));
       var gradeStatus = document.getElementById('libGradeStatus');
+      var readingDemand = document.getElementById('libReadingDemand');
+      var demandStatus = document.getElementById('libDemandStatus');
       var readingBooks = Array.from(document.querySelectorAll('#section-classics .book, #section-nasa .book'));
       readingBooks.forEach(function (book) {
         var tag = book.querySelector('.book-popup-tag');
@@ -5997,7 +5998,7 @@
 
       function applyGrade(band) {
         var range = band === 'all' ? null : band.split('-').map(Number);
-        var demand = document.getElementById('libReadingDemand').value;
+        var demand = readingDemand.value;
         var shown = 0;
         readingBooks.forEach(function (book) {
           var lo = Number(book.dataset.gradeLo);
@@ -6013,10 +6014,10 @@
         gradeButtons.forEach(function (btn) {
           btn.setAttribute('aria-pressed', btn.dataset.grade === band ? 'true' : 'false');
         });
-        if (gradeStatus) {
-          var label = gradeButtons.find(function (btn) { return btn.dataset.grade === band; }).textContent;
-          gradeStatus.textContent = label + ' · ' + shown + ' reading resources. ' + (shown ? (range ? 'Only titles recommended from the start of this grade path are included.' : 'All grade recommendations are included. Preview content before assigning.') : 'No books fit these choices. Try another reading demand or ask an educator.');
-        }
+        var label = gradeButtons.find(function (btn) { return btn.dataset.grade === band; }).textContent;
+        gradeStatus.textContent = shown + (shown === 1 ? ' reading resource' : ' reading resources') + ' · ' + label;
+        if (!shown) gradeStatus.textContent += '. Try a different reading filter.';
+        demandStatus.textContent = demand === 'all' ? '' : ' · ' + readingDemand.selectedOptions[0].textContent;
         document.documentElement.dataset.libraryGrade = band;
         document.dispatchEvent(new Event('library:path-change'));
         if (searchInput) applyArchiveSearch(searchInput.value);
@@ -6027,14 +6028,8 @@
         btn.addEventListener('click', function () { applyGrade(btn.dataset.grade); });
       });
       var savedGrade = '0-0';
-      document.getElementById('libReadingDemand').addEventListener('change', function () {
+      readingDemand.addEventListener('change', function () {
         applyGrade(document.documentElement.dataset.libraryGrade || '0-0');
-      });
-      document.getElementById('libBrowseReading').addEventListener('click', function () {
-        openRoom('classics');
-        var heading = document.querySelector('#section-classics h2');
-        heading.tabIndex = -1;
-        heading.focus({ preventScroll: true });
       });
 
       function popupActions(book) {
@@ -6228,13 +6223,17 @@
       }());
 
       /* ── Entry card progressive disclosure ──────── */
+      var collectionsMenu = document.getElementById('libCollections');
+      var compactCatalog = window.matchMedia('(max-width: 800px)');
+      collectionsMenu.open = !compactCatalog.matches;
+      document.getElementById('libDisplayOptions').open = !compactCatalog.matches;
       var entryGrid     = document.getElementById('libEntryGrid');
       var libRooms      = Array.from(document.querySelectorAll('.lib-anchor'));
       var extraSections = Array.from(document.querySelectorAll('[data-room-extra]'));
       var entryCardEls  = Array.from(document.querySelectorAll('.lib-entry-card'));
       var activeRoomId  = null;
 
-      function openRoom(roomId, scrollToRoom) {
+      function openRoom(roomId) {
         activeRoomId = roomId;
         if (entryGrid) entryGrid.classList.add('is-compact');
         libRooms.forEach(function (s) { s.hidden = s.id !== 'section-' + roomId; });
@@ -6247,8 +6246,6 @@
         if (backBtn) backBtn.classList.add('is-visible');
         /* Keep the open room in the URL so it can be bookmarked or shared. */
         try { if (document.readyState !== 'loading') history.replaceState(history.state, '', '#section-' + roomId); } catch (e) { /* ignore */ }
-        var target = document.getElementById('section-' + roomId);
-        if (target && scrollToRoom !== false) setTimeout(function () { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
       }
 
       function closeAllRooms() {
@@ -6269,12 +6266,24 @@
 
       /* library.html#section-classics (e.g. the reader's Library link) opens that room */
       var hashRoom = (location.hash.match(/^#section-([a-z]+)$/) || [])[1];
-      if (hashRoom && entryCardEls.some(function (c) { return c.dataset.room === hashRoom; })) openRoom(hashRoom, false);
-      else openRoom('classics', false);
+      if (hashRoom && entryCardEls.some(function (c) { return c.dataset.room === hashRoom; })) openRoom(hashRoom);
+      else openRoom('classics');
 
       entryCardEls.forEach(function (card) {
         card.addEventListener('click', function () {
-          openRoom(card.dataset.room, false);
+          openRoom(card.dataset.room);
+          if (searchInput.value) {
+            searchInput.value = '';
+            applyArchiveSearch('');
+            syncQueryParam();
+          }
+          selectCatalogTab('browse');
+          if (compactCatalog.matches) {
+            var heading = document.querySelector('#section-' + card.dataset.room + ' h2');
+            heading.tabIndex = -1;
+            heading.focus({ preventScroll: true });
+            heading.closest('.lib-anchor').scrollIntoView();
+          }
         });
       });
 
@@ -6320,7 +6329,6 @@
         button.addEventListener('click', function () { selectCatalogTab(button.dataset.catalogTab); });
       });
       document.querySelector('a[href="#libPersonal"]').addEventListener('click', function () { selectCatalogTab('personal'); });
-      document.getElementById('libBrowseReading').addEventListener('click', function () { selectCatalogTab('browse'); });
       document.getElementById('catalogSort').addEventListener('change', function (event) {
         var sort = event.target.value;
         document.querySelectorAll('.shelf-row, .bookcase-flex').forEach(function (row) {
@@ -6357,6 +6365,7 @@
           if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
           if (welcome && !welcome.hidden) return;
           event.preventDefault();
+          selectCatalogTab('browse');
           searchInput.focus();
           searchInput.select();
         });
@@ -6365,7 +6374,6 @@
           searchInput.value = initialQuery;
           searchInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
-        searchInput.placeholder = 'Search the library… (press / to focus)';
       }
 
       /* ── Classics gold-leaf labels ───────────────── */
@@ -6454,22 +6462,6 @@
         }
         if (e.key === 'Escape' && readerBackdrop && readerBackdrop.classList.contains('is-open')) {
           closeReader();
-          return;
-        }
-        /* / focuses the search bar; Escape clears and blurs it */
-        if (e.key === '/' && document.activeElement !== searchInput && !e.metaKey && !e.ctrlKey) {
-          var tag = document.activeElement && document.activeElement.tagName;
-          if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
-            e.preventDefault();
-            if (searchInput) { searchInput.focus(); searchInput.select(); }
-          }
-        }
-        if (e.key === 'Escape' && document.activeElement === searchInput) {
-          searchInput.value = '';
-          applyArchiveSearch('');
-          searchInput.blur();
-          if (activeRoomId) { openRoom(activeRoomId); }
-          else { libRooms.forEach(function (s) { s.hidden = true; }); extraSections.forEach(function (s) { s.hidden = true; }); }
         }
       });
 

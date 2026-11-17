@@ -37,9 +37,10 @@
   });
   var canvas = $('rc-sim'), ctx = canvas.getContext('2d');
 
-  function drawSim() {
-    var W = canvas.width, H = canvas.height, s = W / sim.room.w;
-    var css = getComputedStyle(document.documentElement);
+  // Draws the room into the cockpit canvas, or into another one (the Code studio preview).
+  function drawSim(target) {
+    var cv = target || canvas, ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height, s = W / sim.room.w;
     ctx.save();
     ctx.fillStyle = '#e9e4d8'; ctx.fillRect(0, 0, W, H);
     ctx.strokeStyle = 'rgba(18,32,42,.08)'; ctx.lineWidth = 1;
@@ -73,13 +74,10 @@
     ctx.fillStyle = '#12202a'; ctx.font = '600 12px "IBM Plex Mono", monospace';
     ctx.fillText('mode: ' + sim.mode + (sim.bumped ? ' · BUMP!' : ''), 10, H - 10);
     var pose = $('rc-pose');
-    if (pose && state.kind === 'sim') pose.textContent = 'x ' + sim.x.toFixed(0) + ' cm · y ' + sim.y.toFixed(0) + ' cm · heading ' + ((sim.heading * 180 / Math.PI % 360 + 360) % 360).toFixed(0) + '° · from start ' + Math.hypot(sim.x - 40, sim.y - 100).toFixed(0) + ' cm';
+    if (pose && !target && state.kind === 'sim') pose.textContent = 'x ' + sim.x.toFixed(0) + ' cm · y ' + sim.y.toFixed(0) + ' cm · heading ' + ((sim.heading * 180 / Math.PI % 360 + 360) % 360).toFixed(0) + '° · from start ' + Math.hypot(sim.x - 40, sim.y - 100).toFixed(0) + ' cm';
   }
 
-  // The simulated car is a world, not an animation: it must keep moving while the
-  // canvas is scrolled away (the Mission panel is far below it), or a mission's
-  // timed steps run out while the car stands still. So physics runs on its own
-  // clock, only while something is moving, and only the drawing pauses off-screen.
+  // Keep mission timing and physics in sync when the canvas is off-screen.
   var lastPhysics = performance.now();
   setInterval(function () {
     var now = performance.now(), dt = Math.min(0.25, (now - lastPhysics) / 1000);
@@ -114,7 +112,7 @@
   };
   document.querySelectorAll('[data-rc-link]').forEach(function (btn) {
     var kind = btn.dataset.rcLink;
-    if (!E.links[kind].supported()) { btn.disabled = true; btn.title = why[kind]; btn.insertAdjacentHTML('beforeend', '<small>not in this browser</small>'); }
+    if (!E.links[kind].supported()) { btn.disabled = true; btn.title = why[kind]; }
     btn.addEventListener('click', function () { connect(kind); });
   });
   $('rc-disconnect').addEventListener('click', function () { disconnect(true); });
@@ -188,21 +186,27 @@
 
   function updatePanels() {
     var kind = state.kind;
+    var showSim = kind === 'sim';
+    var showCam = kind === 'wifi';
     $('rc-latency').disabled = kind !== 'sim';
-    $('rc-pose').hidden = kind !== 'sim';
     document.querySelectorAll('[data-rc-link]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.rcLink === kind)); });
     $('rc-disconnect').hidden = !kind;
     var cam = $('rc-camera'), img = $('rc-camera-img');
-    var showCam = kind === 'wifi';
+    var viewMessage = $('rc-view-message');
     cam.hidden = !showCam;
-    canvas.hidden = kind && kind !== 'sim';
-    $('rc-sim-note').hidden = !!kind && kind !== 'sim';
+    canvas.hidden = !showSim;
+    $('rc-sim-reset').hidden = !showSim;
+    $('rc-sim-note').hidden = !showSim;
+    $('rc-view-title').textContent = showSim ? 'Simulator room' : showCam ? 'Live camera' : 'Car view';
+    viewMessage.hidden = showSim || showCam;
+    viewMessage.textContent = kind ? 'Camera available over Wi-Fi. Use Sensors for live readings.' : 'Choose a connection to get started.';
     if (showCam) {
       img.onerror = function () { $('rc-camera-msg').textContent = 'No camera picture. (The simulated bridge has no camera; on a real car, check that the camera board’s light is on.)'; };
       img.onload = function () { $('rc-camera-msg').textContent = ''; };
       img.src = state.link.cameraUrl() + '?t=' + Date.now();
     } else if (img.src) { img.removeAttribute('src'); }
     document.querySelectorAll('.rc-needs-car').forEach(function (el) { el.disabled = !kind; });
+    changeListeners.forEach(function (fn) { fn(kind); });
   }
 
   // ---- Sending, with a safety stop -----------------------------------------
@@ -299,22 +303,53 @@
 
   // ---- Keyboard ------------------------------------------------------------
   var KEYMAP = { ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down', ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' };
-  function typing(t) { return t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !/range|checkbox|radio|button/.test(t.type || '')); }
   var cockpit = $('rc-cockpit');
+  var tablist = cockpit.querySelector('.rc-tabs');
+  var tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+  function selectTool(tab) {
+    tabs.forEach(function (item) {
+      var selected = item === tab;
+      item.setAttribute('aria-selected', String(selected));
+      item.tabIndex = selected ? 0 : -1;
+      $(item.getAttribute('aria-controls')).hidden = !selected;
+    });
+    if (tab.id === 'rc-tab-messages' && !$('rc-log-pause').checked) logEl.scrollTop = logEl.scrollHeight;
+  }
+  tablist.addEventListener('click', function (e) {
+    var tab = e.target.closest('[role="tab"]');
+    if (tab) selectTool(tab);
+  });
+  tablist.addEventListener('keydown', function (e) {
+    var index = tabs.indexOf(e.target);
+    if (index === -1) return;
+    if (e.key === 'Home') index = 0;
+    else if (e.key === 'End') index = tabs.length - 1;
+    else if (e.key === 'ArrowLeft') index = (index + tabs.length - 1) % tabs.length;
+    else if (e.key === 'ArrowRight') index = (index + 1) % tabs.length;
+    else return;
+    e.preventDefault();
+    selectTool(tabs[index]);
+    tabs[index].focus();
+  });
   function cockpitInView() {
     var r = cockpit.getBoundingClientRect();
     return r.bottom > 80 && r.top < window.innerHeight - 80;
   }
   document.addEventListener('keydown', function (e) {
-    if (typing(e.target)) return;
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    var editing = e.target.isContentEditable || e.target.closest('input, select, textarea');
     if (e.key === ' ' || e.key === 'Escape') {
-      if (!state.car || !cockpitInView()) return;
-      if (e.target.closest && e.target.closest('button,a') && e.key === ' ') return;
-      e.preventDefault(); stopNow(); return;
+      // A running program (Mission tab or Code studio) stops from anywhere on the page.
+      if (!state.car || !(cockpitInView() || state.mission)) return;
+      if (e.key === ' ' && (editing || e.target.closest('button, a, summary, .rc-log'))) return;
+      stopNow();
+      if (e.key === ' ') e.preventDefault();
+      return;
     }
     var dir = KEYMAP[e.key];
     if (!dir || !state.car || !cockpitInView()) return;
-    if (e.target.type === 'range') return;
+    if (editing || e.target.closest('.rc-tabs, .rc-log')) return;
+    if (e.key.startsWith('Arrow') && e.target.closest('.rc-tool-panel:not(#rc-tool-drive)')) return;
     e.preventDefault();
     inputLocked = false;
     state.keys[dir] = true;
@@ -444,10 +479,10 @@
   function addStep(action, secs) {
     var li = document.createElement('li');
     var opts = Object.keys(ACTIONS).map(function (k) { return '<option value="' + k + '"' + (k === action ? ' selected' : '') + '>' + ACTIONS[k].label + '</option>'; }).join('');
-    li.innerHTML = '<select aria-label="Action">' + opts + '</select>' +
-      '<label class="rc-secs">for <input type="number" min="0" max="10" step="0.1" value="' + (secs == null ? 1 : secs) + '" aria-label="Seconds"> s</label>' +
+    li.innerHTML = '<div class="rc-step-controls"><select aria-label="Action">' + opts + '</select>' +
+      '<label class="rc-secs"><input type="number" min="0" max="10" step="0.1" value="' + (secs == null ? 1 : secs) + '" aria-label="Seconds"> s</label>' +
       '<button type="button" class="rc-mini" data-up aria-label="Move step up">↑</button>' +
-      '<button type="button" class="rc-mini" data-del aria-label="Delete step">✕</button>';
+      '<button type="button" class="rc-mini" data-del aria-label="Delete step">✕</button></div>';
     li.querySelector('[data-del]').addEventListener('click', function () { li.remove(); });
     li.querySelector('[data-up]').addEventListener('click', function () { if (li.previousElementSibling) steps.insertBefore(li, li.previousElementSibling); });
     steps.appendChild(li);
@@ -457,10 +492,12 @@
   $('rc-preset').addEventListener('change', function () { if (this.value) loadPreset(this.value); this.value = ''; });
   loadPreset('square');
 
-  var missionTimer = 0;
+  var missionTimer = 0, programStop = null;
   function stopMission() {
     if (!state.mission) return;
     state.mission = false;
+    // A Code studio program is running: STOP, Space, Escape, blur and hiding the tab all end it.
+    if (programStop) { var end = programStop; programStop = null; end(); }
     clearTimeout(missionTimer);
     steps.querySelectorAll('li').forEach(function (li) { li.classList.remove('is-running'); });
     $('rc-run').textContent = '▶ Run mission';
@@ -509,6 +546,27 @@
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(location.hostname)) {
     if (location.port) $('rc-bridge').value = 'ws://' + location.host;
   }
+  // ---- Hooks for the Code studio (robot-car-studio.js) ---------------------
+  var changeListeners = [];
+  window.RobotCarPilot = {
+    car: function () { return state.car; },
+    kind: function () { return state.kind; },
+    speed: speed,
+    drawInto: function (cv) { drawSim(cv); },
+    resetSim: function () { stopNow(); sim.reset(); drawSim(); },
+    // A program takes the wheel: the joystick loop stays quiet and line sensors aren't polled.
+    begin: function (onStop) { stopNow(); state.mission = true; programStop = onStop; },
+    end: function () { programStop = null; state.mission = false; state.moving = false; },
+    stop: stopNow,
+    sent: function (c) { if (c.N === 3 || c.N === 4 || c.N === 100) showCommand(c); },
+    log: function (text) { log('note', text); },
+    announce: announce,
+    onChange: function (fn) { changeListeners.push(fn); },
+    missionSteps: function () {
+      return Array.prototype.map.call(steps.querySelectorAll('li'), function (li) { return [li.querySelector('select').value, Number(li.querySelector('input').value) || 0]; });
+    }
+  };
+
   var params = new URLSearchParams(location.search);
   updatePanels();
   if (params.get('link') === 'wifi') connect('wifi');

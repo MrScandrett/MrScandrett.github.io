@@ -143,7 +143,8 @@ export function createProjectCard(project, options = {}) {
     link.dataset.memoryPlay = "";
     memoryAttrs(link, project);
   }
-  link.setAttribute("aria-label", `${launchesProject ? action.label : "View project"}: ${project.title} by ${project.student}`);
+  const creator = projectCreatorName(project);
+  link.setAttribute("aria-label", `${launchesProject ? action.label : "View project"}: ${project.title}${creator ? ` by ${creator}` : ""}`);
   link.addEventListener("click", (e) => {
     // Call the global modal function if it exists
     if (!launchesProject && typeof openProjectModal === 'function') {
@@ -194,7 +195,7 @@ export function createProjectCard(project, options = {}) {
   creditOverlay.className = "card-credit-overlay";
   const studentName = document.createElement("p");
   studentName.className = "card-student-name";
-  studentName.textContent = project.student;
+  studentName.textContent = creator || "Student project";
   const yearGroup = document.createElement("p");
   yearGroup.className = "card-year-group";
   yearGroup.textContent = `${project.year} • ${project.term}`;
@@ -210,7 +211,7 @@ export function createProjectCard(project, options = {}) {
 
   const sub = document.createElement("p");
   sub.className = "card-sub";
-  sub.textContent = `${project.student} • ${project.year} ${project.term}`;
+  sub.textContent = `${creator || "Student project"} • ${project.year} ${project.term}`;
 
   const badges = document.createElement("div");
   badges.className = "badge-row";
@@ -465,6 +466,11 @@ export function mapById(projects) {
   const map = new Map();
   projects.forEach((project) => map.set(project.id, project));
   return map;
+}
+
+export function projectCreatorName(project) {
+  const name = project.student?.trim();
+  return name && !/^(unassigned|student)$/i.test(name) ? name : "";
 }
 
 export function projectMatches(project, state) {

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pilot the ELEGOO Robot Car · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Drive the ELEGOO Smart Robot Car V4.0 from a browser over Bluetooth or Wi-Fi: joystick, keyboard or gamepad, live sensors, the camera, and mission programs, plus the JSON protocol that carries every command." />
+  <meta name="description" content="Drive the ELEGOO Smart Robot Car V4.0 from a browser over Bluetooth or Wi-Fi: joystick, keyboard or gamepad, live sensors, the camera, mission programs and a block-coding studio with sensors, loops and variables (also exported as an Arduino sketch), plus the JSON protocol that carries every command." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/robot-autonomy.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/robot-car-pilot.css" />
-<link rel="stylesheet" href="../../../assets/css/creation-app.css">
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -30,98 +30,181 @@
     <div class="ll-stage">
       <div class="ll-sim">
         <main id="main-content" class="ra-page" data-glossary-root>
-<div class="creation-app" data-creation-app aria-label="Creation workspace">
-<section class="ra-card" id="rc-cockpit-card" style="--ra-accent:var(--ra-lime);">
-            <p class="ra-label">Cockpit</p><h2>Drive it</h2>
-            <p data-ra-for="explorer">Start with the <strong>Simulator</strong>, the pretend car on the screen. Hold an arrow or drag the yellow knob. Let go to stop. When it's your turn with the real car, your teacher will press Bluetooth or Wi-Fi.</p>
-            <p data-ra-for="builder engineer">Pick a connection. The simulator runs the same commands as the real car, so everyone can practice while one team drives. Drive with the joystick, the arrow buttons, <kbd>W A S D</kbd> or arrow keys, or a USB/Bluetooth gamepad. <kbd>Space</kbd> or the red button stops. Watch the green line under the view: that's the exact message that just left.</p>
-            <div class="ra-sim" id="rc-cockpit" data-memory-ignore>
-              <div class="rc-connect" role="group" aria-label="Connect to a car">
-                <button type="button" class="rc-link" data-rc-link="sim" aria-pressed="false">Simulator<small>practice car on screen</small></button>
-                <button type="button" class="rc-link" data-rc-link="bluetooth" aria-pressed="false">Bluetooth<small>kits with the BLE module</small></button>
-                <button type="button" class="rc-link" data-rc-link="wifi" aria-pressed="false">Wi-Fi<small>through the bridge</small></button>
-                <button type="button" class="rc-link" data-rc-link="usb" aria-pressed="false">USB cable<small>car on blocks</small></button>
-                <p class="rc-status" id="rc-status" role="status" aria-live="polite">Not connected.</p>
-                <button type="button" class="rc-btn" id="rc-disconnect" hidden>Disconnect</button>
-              </div>
-              <details class="rc-bridge">
-                <summary>Wi-Fi bridge address</summary>
-                <label>Bridge <input id="rc-bridge" type="text" value="ws://localhost:8787" spellcheck="false" autocomplete="off"></label>
-                <p class="rc-note">The bridge is a small program on the laptop that's joined to the car's <code>ELEGOO-xxxx</code> Wi-Fi. Start it with <code>node scripts/robot-car-bridge.mjs</code>. See <a class="ra-more" href="#rc-setup" style="color:#f2d27a">Setting up the real car</a>.</p>
-              </details>
-
-              <div class="rc-grid">
-                <div class="rc-view">
-                  <canvas id="rc-sim" width="600" height="400" role="img" aria-label="Top-down view of the simulated car in a room with a black tape loop on the right and a wall with a gap on the left. The dashed line is the ultrasonic beam."></canvas>
-                  <p class="rc-note" id="rc-sim-note">Simulator room: 3 m × 2 m. Black loop = tape line. Brown = walls. Dashed line = ultrasonic echo beam (red when something is closer than 20 cm). <button type="button" class="rc-btn" id="rc-sim-reset" style="padding:.2rem .5rem;font-size:.75rem">Reset car</button></p>
-                  <figure data-zoomable class="rc-camera" id="rc-camera" hidden>
-                    <img id="rc-camera-img" alt="Live video from the robot car's camera" />
-                    <figcaption id="rc-camera-msg">Live camera, through the bridge.</figcaption>
-                  </figure>
-                  <p id="rc-pose" class="rc-pose" aria-live="off"></p>
-                  <p class="rc-command" id="rc-command" aria-live="off">{"N":100}</p>
-                  <p class="rc-note" id="rc-pad-note">Tip: plug in a gamepad and press any button to use it.</p>
-                </div>
-                <div class="rc-drive">
-                  <div class="rc-stick" id="rc-stick" role="img" aria-label="Joystick. Drag the knob to drive; let go to stop. Keyboard users: hold the arrow keys or W A S D."><div class="rc-knob"></div></div>
-                  <div class="rc-dpad" role="group" aria-label="Hold to drive">
-                    <button type="button" data-rc-hold="up" aria-label="Hold to drive forward">▲</button>
-                    <button type="button" data-rc-hold="left" aria-label="Hold to spin left">◀</button>
-                    <button type="button" data-rc-hold="down" aria-label="Hold to drive backward">▼</button>
-                    <button type="button" data-rc-hold="right" aria-label="Hold to spin right">▶</button>
+          <div class="creation-app rc-workspace" data-creation-app data-creation-fit aria-labelledby="rc-workspace-title">
+            <section class="ra-sim" id="rc-cockpit-card" data-creation-primary>
+              <div id="rc-cockpit" data-memory-ignore>
+                <header class="rc-heading">
+                  <h2 id="rc-workspace-title">Robot Car Pilot</h2>
+                </header>
+                <div class="rc-connection">
+                  <div class="rc-connect" role="group" aria-label="Connect to a car">
+                    <button type="button" class="rc-link" data-rc-link="sim" aria-pressed="false">Simulator</button>
+                    <button type="button" class="rc-link" data-rc-link="bluetooth" aria-pressed="false">Bluetooth</button>
+                    <button type="button" class="rc-link" data-rc-link="wifi" aria-pressed="false">Wi-Fi</button>
+                    <button type="button" class="rc-link" data-rc-link="usb" aria-pressed="false">USB</button>
                   </div>
-                  <button type="button" class="rc-stop" id="rc-stop">STOP</button>
-                  <div class="ra-controls rc-controls-extra" style="width:100%">
-                    <label>Top speed: <output id="rc-speed-out">150</output> / 255<input id="rc-speed" type="range" min="60" max="255" step="5" value="150"></label>
-                    <fieldset><legend>Drive itself</legend>
-                      <div class="rc-row">
-                        <button type="button" class="rc-btn rc-needs-car" data-rc-mode="line" aria-pressed="false">Follow line</button>
-                        <button type="button" class="rc-btn rc-needs-car" data-rc-mode="avoid" aria-pressed="false">Avoid walls</button>
-                        <button type="button" class="rc-btn rc-needs-car" data-rc-mode="follow" aria-pressed="false">Follow me</button>
+                  <p class="rc-status" id="rc-status" role="status">Connecting to simulator…</p>
+                  <div class="rc-connection-actions">
+                    <button type="button" class="rc-btn" id="rc-disconnect" hidden>Disconnect</button>
+                    <details class="rc-bridge">
+                      <summary>Bridge</summary>
+                      <div class="rc-bridge-settings">
+                        <label for="rc-bridge">Wi-Fi bridge address</label>
+                        <input id="rc-bridge" type="text" value="ws://localhost:8787" spellcheck="false" autocomplete="off">
+                        <p class="rc-note">Start the bridge on the laptop connected to the car’s Wi-Fi. <a href="#rc-setup">Setup instructions</a></p>
                       </div>
-                    </fieldset>
-                    <fieldset><legend>Head &amp; light</legend>
-                      <label>Look: <output id="rc-pan-out">90°</output><input id="rc-pan" type="range" min="10" max="170" step="10" value="90" aria-describedby="rc-pan-hint"></label>
-                      <p class="rc-note" id="rc-pan-hint">170° = left, 90° = ahead, 10° = right</p>
-                      <div class="rc-light"><label for="rc-light" style="display:inline">Light</label><input id="rc-light" type="color" value="#2fd06b"><button type="button" class="rc-btn" id="rc-light-off">Off</button></div>
-                    </fieldset>
-                    <label>Simulator command delay<select id="rc-latency"><option value="0">None (real time)</option><option value="300">0.3 s (busy Wi-Fi)</option><option value="1300">1.3 s (Earth to Moon)</option><option value="3000">3 s (scaled space challenge)</option></select></label>
-                    <p class="rc-note">Delay applies only to simulator movement. STOP cancels queued moves immediately. Real Mars delays take minutes; this model keeps the view live.</p>
+                    </details>
+                  </div>
+                </div>
+                <div class="rc-grid">
+                  <section class="rc-view" aria-labelledby="rc-view-title">
+                    <div class="rc-view-bar">
+                      <h3 id="rc-view-title">Simulator room</h3>
+                      <button type="button" class="rc-btn" id="rc-sim-reset">Reset car</button>
+                    </div>
+                    <div class="rc-stage">
+                      <canvas id="rc-sim" width="600" height="400" role="img" aria-label="Top-down view of the simulated car in a room with a black tape loop on the right and a wall with a gap on the left. The dashed line is the ultrasonic beam."></canvas>
+                      <figure data-zoomable class="rc-camera" id="rc-camera" hidden>
+                        <img id="rc-camera-img" alt="Live video from the robot car's camera" />
+                        <figcaption id="rc-camera-msg">Live camera, through the bridge.</figcaption>
+                      </figure>
+                      <p class="rc-note rc-view-message" id="rc-view-message" hidden></p>
+                    </div>
+                    <div class="rc-telemetry">
+                      <div class="rc-sim-readout" id="rc-sim-note">
+                        <p class="rc-note">3 m × 2 m · Black tape · Brown walls · Dashed ultrasonic beam</p>
+                        <p id="rc-pose" class="rc-pose"></p>
+                      </div>
+                      <div class="rc-command"><span>Last command</span><code id="rc-command">{"N":100}</code></div>
+                    </div>
+                  </section>
+
+                  <div class="rc-tools">
+                    <div class="rc-tool-bar">
+                      <div class="rc-tool-heading">
+                        <h3>Controls</h3>
+                        <button type="button" class="rc-stop" id="rc-stop" aria-keyshortcuts="Space Escape">Stop</button>
+                      </div>
+                      <div class="rc-tabs" role="tablist" aria-label="Cockpit tools">
+                        <button type="button" role="tab" id="rc-tab-drive" aria-controls="rc-tool-drive" aria-selected="true">Drive</button>
+                        <button type="button" role="tab" id="rc-tab-auto" aria-controls="rc-tool-auto" aria-selected="false" tabindex="-1">Autonomy</button>
+                        <button type="button" role="tab" id="rc-tab-mission" aria-controls="rc-tool-mission" aria-selected="false" tabindex="-1">Mission</button>
+                        <button type="button" role="tab" id="rc-tab-sensors" aria-controls="rc-tool-sensors" aria-selected="false" tabindex="-1">Sensors</button>
+                        <button type="button" role="tab" id="rc-tab-messages" aria-controls="rc-tool-messages" aria-selected="false" tabindex="-1">Log</button>
+                      </div>
+                    </div>
+                    <div class="rc-tool-panel" role="tabpanel" id="rc-tool-drive" aria-labelledby="rc-tab-drive" tabindex="0">
+                      <div class="rc-drive">
+                        <div class="rc-stick" id="rc-stick" role="img" aria-label="Joystick. Drag the knob to drive; let go to stop. Keyboard users: hold the arrow keys or W A S D."><div class="rc-knob"></div></div>
+                        <div class="rc-dpad" role="group" aria-label="Hold to drive">
+                          <button type="button" data-rc-hold="up" aria-label="Hold to drive forward">▲</button>
+                          <button type="button" data-rc-hold="left" aria-label="Hold to spin left">◀</button>
+                          <button type="button" data-rc-hold="down" aria-label="Hold to drive backward">▼</button>
+                          <button type="button" data-rc-hold="right" aria-label="Hold to spin right">▶</button>
+                        </div>
+                      </div>
+                      <div class="ra-controls">
+                        <label>Top speed <output id="rc-speed-out">150</output> / 255<input id="rc-speed" type="range" min="60" max="255" step="5" value="150"></label>
+                      </div>
+                      <p class="rc-note">Hold to drive. Release to stop. Use arrow keys, WASD, or a gamepad.</p>
+                    </div>
+                    <div class="rc-tool-panel ra-controls" role="tabpanel" id="rc-tool-auto" aria-labelledby="rc-tab-auto" tabindex="0" hidden>
+                      <fieldset><legend>Drive itself</legend>
+                        <div class="rc-row">
+                          <button type="button" class="rc-btn rc-needs-car" data-rc-mode="line" aria-pressed="false">Follow line</button>
+                          <button type="button" class="rc-btn rc-needs-car" data-rc-mode="avoid" aria-pressed="false">Avoid walls</button>
+                          <button type="button" class="rc-btn rc-needs-car" data-rc-mode="follow" aria-pressed="false">Follow me</button>
+                        </div>
+                      </fieldset>
+                      <fieldset><legend>Head &amp; light</legend>
+                        <label>Look: <output id="rc-pan-out">90°</output><input id="rc-pan" type="range" min="10" max="170" step="10" value="90" aria-describedby="rc-pan-hint"></label>
+                        <p class="rc-note" id="rc-pan-hint">170° = left, 90° = ahead, 10° = right</p>
+                        <div class="rc-light"><label for="rc-light">Light</label><input id="rc-light" type="color" value="#2fd06b"><button type="button" class="rc-btn" id="rc-light-off">Off</button></div>
+                      </fieldset>
+                      <label>Simulator command delay<select id="rc-latency"><option value="0">None (real time)</option><option value="300">0.3 s (busy Wi-Fi)</option><option value="1300">1.3 s (Earth to Moon)</option><option value="3000">3 s (scaled space challenge)</option></select></label>
+                      <p class="rc-note">Delay applies only to simulator movement. STOP cancels queued moves immediately. Real Mars delays take minutes; this model keeps the view live.</p>
+                    </div>
+                    <div class="rc-tool-panel" role="tabpanel" id="rc-tool-mission" aria-labelledby="rc-tab-mission" tabindex="0" hidden>
+                      <p class="rc-note">Steps run in order. Speed comes from the Top speed slider.</p>
+                      <div class="rc-row">
+                        <button type="button" class="rc-btn rc-needs-car" id="rc-run">▶ Run mission</button>
+                        <button type="button" class="rc-btn" id="rc-add-step">+ Step</button>
+                        <select id="rc-preset" aria-label="Load an example mission"><option value="">Load example…</option><option value="square">Square</option><option value="zigzag">Zigzag</option><option value="dance">Dance</option></select>
+                      </div>
+                      <ol class="rc-steps" id="rc-steps"></ol>
+                      <button type="button" class="rc-btn" id="rc-to-studio">Turn this mission into blocks ↓</button>
+                    </div>
+                    <div class="rc-tool-panel" role="tabpanel" id="rc-tool-sensors" aria-labelledby="rc-tab-sensors" tabindex="0" hidden>
+                      <label class="ra-check"><input type="checkbox" id="rc-poll"> Read sensors live</label>
+                      <p class="rc-note rc-sensor-label">Distance ahead</p>
+                      <div class="rc-dist" id="rc-dist" aria-live="off">—</div>
+                      <div class="rc-bar" id="rc-dist-bar" data-near="false"></div>
+                      <p class="rc-note rc-sensor-label">Line sensors (dark = on the tape)</p>
+                      <div class="rc-line">
+                        <div id="rc-line-L">Left<b>—</b></div><div id="rc-line-M">Middle<b>—</b></div><div id="rc-line-R">Right<b>—</b></div>
+                      </div>
+                      <p class="rc-note" id="rc-line-note"></p>
+                    </div>
+                    <div class="rc-tool-panel" role="tabpanel" id="rc-tool-messages" aria-labelledby="rc-tab-messages" tabindex="0" hidden>
+                      <p class="rc-note">→ Sent to car · ← Received from car</p>
+                      <pre class="rc-log" id="rc-log" aria-label="Message log" tabindex="0"></pre>
+                      <div class="rc-row">
+                        <label class="ra-check"><input type="checkbox" id="rc-log-pause"> Pause log</label>
+                        <button type="button" class="rc-btn" id="rc-log-clear">Clear</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
+            </section>
+          </div>
 
-              <div class="rc-sensors">
-                <div class="rc-panel">
-                  <h3>Sensors</h3>
-                  <label class="ra-check" style="display:flex;gap:.45rem;align-items:center;color:#d4e0df;font-size:.85rem"><input type="checkbox" id="rc-poll"> Read sensors live</label>
-                  <p style="margin:.5rem 0 0;color:#d4e0df;font-size:.8rem">Distance ahead</p>
-                  <div class="rc-dist" id="rc-dist" aria-live="off">—</div>
-                  <div class="rc-bar" id="rc-dist-bar" data-near="false"></div>
-                  <p style="margin:.6rem 0 .3rem;color:#d4e0df;font-size:.8rem">Line sensors (dark = on the tape)</p>
-                  <div class="rc-line">
-                    <div id="rc-line-L">Left<b>—</b></div><div id="rc-line-M">Middle<b>—</b></div><div id="rc-line-R">Right<b>—</b></div>
-                  </div>
-                  <p class="rc-note" id="rc-line-note"></p>
-                </div>
-                <div class="rc-panel">
-                  <h3>Mission program</h3>
-                  <p class="rc-note">Steps run in order. Speed comes from the Top speed slider.</p>
-                  <ol class="rc-steps" id="rc-steps"></ol>
-                  <div class="rc-row">
-                    <button type="button" class="rc-btn rc-needs-car" id="rc-run">▶ Run mission</button>
-                    <button type="button" class="rc-btn" id="rc-add-step">+ Step</button>
-                    <select id="rc-preset" aria-label="Load an example mission"><option value="">Load example…</option><option value="square">Square</option><option value="zigzag">Zigzag</option><option value="dance">Dance</option></select>
-                  </div>
-                </div>
+          <section class="rc-workspace rc-studio" id="rc-studio" aria-labelledby="rc-studio-title" data-memory-ignore data-present="off">
+            <header class="rc-studio-head">
+              <div>
+                <p class="rc-studio-kicker">Code studio</p>
+                <h2 id="rc-studio-title">Program the car with blocks</h2>
               </div>
-
-              <details class="rc-log-wrap" open>
-                <summary style="cursor:pointer;font-weight:600">Message log: what the page says (→) and what the car answers (←)</summary>
-                <pre class="rc-log" id="rc-log" aria-live="off" tabindex="0"></pre>
-                <div class="rc-row" style="margin-top:.4rem"><label class="ra-check" style="display:flex;gap:.4rem;align-items:center;font-size:.8rem"><input type="checkbox" id="rc-log-pause"> Pause log</label><button type="button" class="rc-btn" id="rc-log-clear">Clear</button></div>
-              </details>
+              <div class="rc-row rc-studio-tools">
+                <label class="rc-studio-name"><span>Name</span><input id="rcs-name" type="text" value="My program" maxlength="60" spellcheck="false" autocomplete="off"></label>
+                <select id="rcs-starter" aria-label="Load a starter program"><option value="">Starter programs…</option></select>
+                <button type="button" class="rc-btn" id="rcs-save" disabled>Save</button>
+                <label class="rc-btn rc-file">Open<input type="file" id="rcs-open" accept=".json,application/json"></label>
+                <button type="button" class="rc-btn" id="rcs-ino" disabled>Arduino sketch (.ino)</button>
+              </div>
+            </header>
+            <p class="rc-note" id="rcs-about">Drag blocks from the menu on the left and snap them under <strong>when ▶ Run is pressed</strong>. The program runs on whatever the cockpit is connected to: the simulator or the real car.</p>
+            <div class="rc-studio-grid">
+              <div class="rc-studio-blocks" id="rcs-blocks" aria-label="Block editor" data-night-keep data-skin-keep><p class="rc-note">Loading the block editor…</p></div>
+              <div class="rc-studio-side">
+                <div class="rc-row rc-studio-run">
+                  <button type="button" class="rc-btn rc-studio-go" id="rcs-run" aria-pressed="false" disabled>▶ Run</button>
+                  <button type="button" class="rc-btn" id="rcs-reset">Reset car</button>
+                </div>
+                <label class="ra-check rc-studio-ready" id="rcs-ready-row" hidden><input type="checkbox" id="rcs-ready"> The car is on the floor with room to move, and a spotter is at its power switch.</label>
+                <p class="rc-status" id="rcs-status" role="status" aria-live="polite">Loading…</p>
+                <canvas id="rc-studio-sim" width="600" height="400" role="img" aria-label="The simulator room, the same one the cockpit shows, so you can watch the program drive the car."></canvas>
+                <p class="rc-note" id="rcs-where"></p>
+                <p class="rc-note">Speeds above the cockpit’s Top speed (<b id="rcs-cap">180</b>) are cut to it. Programs stop themselves after 2 minutes. Stop, <kbd>Space</kbd> and <kbd>Esc</kbd> stop them at once.</p>
+                <h3 class="rc-studio-label">Variables</h3>
+                <dl class="rc-studio-vars" id="rcs-vars"></dl>
+                <h3 class="rc-studio-label">Output <span>(the show block)</span></h3>
+                <pre class="rc-log rc-studio-out" id="rcs-out" tabindex="0" aria-label="Program output"></pre>
+              </div>
             </div>
+            <details class="rc-studio-code">
+              <summary>The same program in Arduino C++</summary>
+              <p class="rc-note">This is your program written as a sketch for the car’s own Arduino UNO, so it runs with no computer at all. Uploading it <strong>replaces ELEGOO’s factory program</strong>: Bluetooth, Wi-Fi, the app and this cockpit stop working until you upload the factory sketch again from ELEGOO’s download for the kit. Upload with the Arduino IDE (board: Arduino Uno). Slide the shield’s switch to “upload” first and back after. Programs with a light block need the FastLED library. The pin numbers come from ELEGOO’s V4.0 code; try each new sketch with the wheels off the ground.</p>
+              <p class="rc-note">One difference to look for: in your own sketch, reading a line sensor does not stop the motors. The factory program does stop them, so the live version sends the drive again after each reading.</p>
+              <pre class="rc-log rc-studio-cpp" id="rcs-code" tabindex="0" aria-label="Arduino C++ version of the program"></pre>
+            </details>
+          </section>
+
+          <section class="ra-card" style="--ra-accent:var(--ra-lime);">
+            <h2>Try the cockpit</h2>
+            <p data-ra-for="explorer">Start with the <strong>Simulator</strong>, the pretend car on the screen. Hold an arrow or drag the yellow knob. Let go to stop. When it's your turn with the real car, your teacher will press Bluetooth or Wi-Fi.</p>
+            <p data-ra-for="builder engineer">Pick a connection. The simulator runs the same commands as the real car, so everyone can practice while one team drives. Drive with the joystick, the arrow buttons, <kbd>W A S D</kbd> or arrow keys, or a USB/Bluetooth gamepad. <kbd>Space</kbd> or the red button stops. Watch Last command under the view to see the exact message just sent.</p>
+            <p>The simulator room is 3 m × 2 m. The black loop is tape, the brown blocks are walls, and the dashed line shows the ultrasonic beam. The beam turns red when an obstacle is within 20 cm.</p>
             <div class="ra-cols" data-ra-for="explorer">
               <article><h3>1 · Drive to the loop</h3><p>Drive the pretend car through the gap in the wall to the black loop.</p></article>
               <article><h3>2 · Let it drive</h3><p>Park it on the black line. Press <strong>Follow line</strong>. Bolt drives around the loop by itself!</p></article>
@@ -133,8 +216,6 @@
               <article><h3>3 · Program a square</h3><p>Load <strong>Square</strong>. Tune the spin times until the car ends up where it started. Will the same times work on the real car?</p></article>
             </div>
           </section>
-</div>
-
 
           <section class="ra-hero" aria-labelledby="ra-title">
             <div>
@@ -207,7 +288,7 @@
               <article><h3>3 · Defend your result</h3><p>Record speed, duration, distance, and one explanation. This ideal model is approximately proportional. Real motors have friction, battery changes, and wheel slip. Test the real car on a clear floor with a spotter and a ruler.</p></article>
             </div>
             <p><strong>Crew roles:</strong> pilot holds controls; spotter watches the route and power switch; recorder notes evidence. Rotate each run. Before hardware driving, test STOP with wheels raised on a stable stand.</p>
-            <a class="ra-more" href="#rc-cockpit-card">Open the cockpit ↓</a>
+            <a class="ra-more" href="#rc-cockpit-card">Return to the cockpit ↑</a>
           </section>
 
 
@@ -375,6 +456,7 @@
             <div class="ll-info"><strong>Teleoperate safely</strong>Drive a real robot through a course, using stop and speed limits on purpose.</div>
             <div class="ll-info"><strong>Read a protocol</strong>Decode JSON commands and replies, and explain what N, D1, D2, and H do.</div>
             <div class="ll-info"><strong>Trace the path</strong>Follow one command from the browser through radio, serial, and motor driver to the wheels.</div>
+            <div class="ll-info"><strong>Program with feedback</strong>Build a block program that reads the distance or line sensors and decides, then compare it with a timed (open-loop) mission.</div>
             <div class="ll-info"><strong>Feel latency</strong>Explain why delay makes remote driving hard, and how planners and autonomy help.</div>
           </div>
           <div class="ll-pane" id="rc-teacher">
@@ -384,6 +466,7 @@
             <div class="ll-info"><strong>Setup</strong>See “Setting up the real car” on the page. For Wi-Fi: <code>node scripts/robot-car-bridge.mjs</code> on a laptop on the car's network. Try <code>--mock</code> first.</div>
             <div class="ll-info"><strong>Levels</strong>Explorer: drive, follow line, run the dance. Builder: read the log, program a square. Engineer: deep dive, bandwidth math, and the left/right label bug.</div>
             <div class="ll-info"><strong>Assessment</strong>Students write the JSON for “spin right at speed 120” and “how far is the wall?”, then predict the car's reply.</div>
+            <div class="ll-info"><strong>Code studio</strong>Below the cockpit. Programs run on whatever the cockpit is connected to, capped at the Top speed slider and 2 minutes. Real-car runs need the spotter checkbox. “Arduino sketch” exports the same program for the UNO, but uploading it replaces the factory firmware until you reflash ELEGOO’s sketch.</div>
             <div class="ll-info"><strong>Extension</strong>Students edit the factory firmware so <code>N:22</code> no longer stops line-following, and test it on blocks.</div>
           </div>
         </div>
@@ -394,7 +477,9 @@
   <script src="../../../assets/js/sim-kit.js"></script>
   <script src="../../../assets/js/lessons/robot-autonomy-common.js"></script>
   <script src="../../../assets/js/elegoo-car.js"></script>
+  <script src="../../../assets/js/elegoo-program.js"></script>
   <script src="../../../assets/js/lessons/robot-car-pilot.js"></script>
+  <script src="../../../assets/js/lessons/robot-car-studio.js"></script>
   <script src="../../../assets/js/arduino-art.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>

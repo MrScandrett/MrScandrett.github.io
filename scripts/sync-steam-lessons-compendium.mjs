@@ -20,70 +20,70 @@ const sectionIds = MODULE_SECTION_IDS;
 
 const icons = ["📐", "⚛️", "🌿", "🛠️", "💻", "📚"];
 const modulePresentations = {
-  "2d-design": { subtitle: "Painters, animators and pixel artists: color, line and layout on a flat surface, drawings that move, and a finished 2D game", level: "K–12 · Pioneers → Make It Move → Make It Play" },
-  "3d-design": { subtitle: "Shared spatial skills, then a printable object, a finished scene, or game-ready assets", level: "Grades 7–12 · Foundation → Three Outcome Tracks" },
+  "2d-design": { subtitle: "Drawing, layout, animation, and 2D game art.", level: "K–12 · Pioneers → Make It Move → Make It Play" },
+  "3d-design": { subtitle: "CAD, 3D printing, Blender, and game assets.", level: "Grades 7–12 · Foundation → Three Outcome Tracks" },
   mathematics: {
-    subtitle: "Number, proportion, geometry, measurement, probability, and patterns as languages for describing reality",
+    subtitle: "Numbers, measurement, algebra, geometry, statistics, and calculus.",
     level: "K–12 Progression · Mathematics Foundations",
   },
   cosmology: {
-    subtitle: "From naked-eye sky patterns and geometric models to planetary systems, deep space, and cosmic perspective",
+    subtitle: "Constellations, planetary orbits, telescopes, and the expanding universe.",
     level: "K–12 Progression · Earth & Space Science",
   },
   physics: {
-    subtitle: "Motion, forces, fields, waves, energy, and modern physics as increasingly powerful models of the natural world",
+    subtitle: "Motion, energy, waves, electricity, and modern physics.",
     level: "K–12 Progression · Physical Science",
   },
   chemistry: {
-    subtitle: "Atoms, elements, bonds, reactions, and the transformations that connect microscopic structure to visible matter",
+    subtitle: "Atoms, bonding, reactions, and chemical calculations.",
     level: "K–12 Progression · Chemistry Foundations",
   },
   "life-sciences": {
-    subtitle: "Cells, heredity, organisms, adaptation, evolution, and the information systems shared by living things",
+    subtitle: "Cells, heredity, ecosystems, evolution, and body systems.",
     level: "K–12 Progression · Life Science",
   },
   "earth-science": {
-    subtitle: "Materials, cycles, climate, geology, deep time, and the interacting systems of a changing planet",
+    subtitle: "Rocks, weather, oceans, plate tectonics, and climate.",
     level: "K–12 Progression · Earth & Environmental Science",
   },
   engineering: {
-    subtitle: "Circuits, mechanisms, structures, sensors, and feedback systems that turn scientific understanding into working machines",
+    subtitle: "Mechanisms, circuits, robotics, structures, and feedback control.",
     level: "K–12 Progression · Engineering Design",
   },
   "fabrication-materials": {
-    subtitle: "Materials, tools, CAD, fabrication, optics, fluids, and immersive technologies learned through practical craft",
+    subtitle: "Workshop tools, material properties, optics, and fabrication.",
     level: "K–12 Progression · Fabrication & Materials",
   },
   "technical-elements": {
-    subtitle: "Sound, acoustics, signal flow, light, and production systems where physical principles become designed experiences",
+    subtitle: "Stagecraft, sound, lighting, cameras, and live production.",
     level: "K–12 Progression · Production Technology",
   },
   "computer-science": {
-    subtitle: "Symbols, algorithms, search, simulation, and artificial intelligence as machines for organizing thought",
+    subtitle: "Programming, algorithms, web development, and AI.",
     level: "K–12 Progression · Computer Science & AI",
   },
   "game-development": {
-    subtitle: "Design rules, tools, engines, and interactive worlds that unite code, systems thinking, art, and play",
+    subtitle: "Game mechanics, programming, engines, testing, and release.",
     level: "K–12 Progression · Game Design",
   },
   "visual-design": {
-    subtitle: "Color, perception, composition, and experience design as ways of shaping what people notice and understand",
+    subtitle: "Color, typography, visual perception, and media.",
     level: "K–12 Progression · Visual Art & Design",
   },
   music: {
-    subtitle: "Vibration, harmonics, real instruments, composers, and electronic sound design, gathered in one place for music students",
+    subtitle: "Sound, notation, instruments, composers, and production.",
     level: "K–12 Progression · Music",
   },
   "language-literature": {
-    subtitle: "Sound, symbol, story, evidence, and interpretation as foundations for communicating and testing meaning",
+    subtitle: "Languages, writing systems, literature, and media literacy.",
     level: "K–12 Progression · Communication & Critical Literacy",
   },
   "complex-systems-humanities": {
-    subtitle: "Ideas, civilizations, institutions, markets, media, and shared resources viewed as connected human systems",
+    subtitle: "History, philosophy, economics, and social systems.",
     level: "K–12 Progression · Social Studies & Systems Thinking",
   },
   "bible-studies": {
-    subtitle: "Scripture, history, geography, theology, and Christian formation explored as one connected story",
+    subtitle: "Biblical geography, history, literature, and theology.",
     level: "K–12 Progression · Bible Studies",
   },
 };
@@ -197,13 +197,16 @@ function matchingSectionEnd(source, start) {
 }
 
 function buildVolumeNav(planData, indent) {
-  const links = planData.volumes.map((volume) =>
-    `${indent}  <button type="button" class="compendium-volume-tab" data-volume-filter="${volume.number}" style="--volume-link:${volume.theme.accent}" role="tab" aria-selected="false"><span>${roman(volume.number)}</span>${escapeHtml(shortTitle(volume.title))}</button>`).join("\n");
+  const options = planData.volumes.map((volume) =>
+    `${indent}    <option value="${volume.number}">${escapeHtml(shortTitle(volume.title))}</option>`).join("\n");
   return `${indent}<!-- COMPENDIUM VOLUME NAV:START -->
-${indent}<nav class="compendium-volume-tabs" aria-label="Filter subjects by compendium volume" role="tablist">
-${indent}  <button type="button" class="compendium-volume-tab is-active" data-volume-filter="all" role="tab" aria-selected="true"><span>All</span>All subjects</button>
-${links}
-${indent}</nav>
+${indent}<label class="catalog-volume-filter">
+${indent}  <span class="visually-hidden">Filter subjects by volume</span>
+${indent}  <select id="compendium-volume-filter">
+${indent}    <option value="all">All volumes</option>
+${options}
+${indent}  </select>
+${indent}</label>
 ${indent}<!-- COMPENDIUM VOLUME NAV:END -->`;
 }
 

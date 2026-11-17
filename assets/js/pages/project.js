@@ -4,6 +4,7 @@ import {
   createLikeButton,
   createMetaPill,
   createProjectRow,
+  projectCreatorName,
   setActiveNav,
   sortProjects,
 } from "../ui.js";
@@ -70,7 +71,7 @@ function renderMetadata(project, mount) {
   dl.className = "meta-list";
 
   const entries = [
-    ["Student", project.student],
+    ["Creator", projectCreatorName(project) || "Credit pending"],
     ["Category", project.category],
     ["Difficulty", project.difficulty],
     ["Program", project.program],
@@ -175,7 +176,8 @@ async function init() {
     const subtitle = document.createElement("p");
     subtitle.className = "result-count reveal";
     subtitle.style.setProperty("--i", "1");
-    subtitle.textContent = `${project.student} • ${project.year} ${project.term}`;
+    const creator = projectCreatorName(project);
+    subtitle.textContent = `${creator || "Student project"} • ${project.year} ${project.term}`;
 
     const heroMeta = document.createElement("div");
     heroMeta.className = "hero-meta";
@@ -233,7 +235,7 @@ async function init() {
     renderGallery(project, slot);
 
     const similar = relatedProjects(projects, project).slice(0, 12);
-    const sameStudent = projects.filter((item) => item.student === project.student && item.id !== project.id);
+    const sameStudent = creator ? projects.filter((item) => projectCreatorName(item) === creator && item.id !== project.id) : [];
 
     if (similar.length > 0) {
       rowsSlot.appendChild(
