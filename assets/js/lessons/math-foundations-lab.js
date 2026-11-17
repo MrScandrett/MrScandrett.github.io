@@ -3,16 +3,16 @@
     var level='3', solved=new Set(), current={}, mode='explore', assisted=new Set(), userPickedGrade=false, singleStationFocus=true;
 
     var hashConfig={
-      '#counting':{grade:'1',num:'01',title:'Counting to Operations Lab',strand:'counting',id:'counting'},
-      '#patterns':{grade:'2',num:'02',title:'Patterns, Shapes & Rules',strand:'patterns',id:'patterns'},
-      '#place-value':{grade:'2',num:'03',title:'Place Value & Operation Sense',strand:'place',id:'place-value'},
-      '#multiplication':{grade:'3',num:'04',title:'Groups, Arrays & Division',strand:'multiply',id:'multiplication'},
-      '#fractions':{grade:'4',num:'05',title:'Fraction Sense Lab',strand:'fractions',id:'fractions'},
-      '#geometry':{grade:'4',num:'06',title:'Geometry & Measurement Studio',strand:'geometry',id:'geometry'},
-      '#data':{grade:'5',num:'07',title:'Data Stories & Graphs',strand:'data',id:'data'},
-      '#integers':{grade:'6',num:'08',title:'Integers & Rational Numbers',strand:'integers',id:'integers'},
-      '#equations':{grade:'7',num:'09',title:'Balance, Variables & Equations',strand:'equations',id:'equations'},
-      '#functions':{grade:'8',num:'10',title:'Patterns to Functions',strand:'functions',id:'functions'}
+      '#counting':{grade:'1',num:'01',title:'Counting to Operations Lab',strand:'counting'},
+      '#patterns':{grade:'2',num:'02',title:'Patterns, Shapes & Rules',strand:'patterns'},
+      '#place-value':{grade:'2',num:'03',title:'Place Value & Operation Sense',strand:'place'},
+      '#multiplication':{grade:'3',num:'04',title:'Groups, Arrays & Division',strand:'multiply'},
+      '#fractions':{grade:'4',num:'05',title:'Fraction Sense Lab',strand:'fractions'},
+      '#geometry':{grade:'4',num:'06',title:'Geometry & Measurement Studio',strand:'geometry'},
+      '#data':{grade:'5',num:'07',title:'Data Stories & Graphs',strand:'data'},
+      '#integers':{grade:'6',num:'08',title:'Integers & Rational Numbers',strand:'integers'},
+      '#equations':{grade:'7',num:'09',title:'Balance, Variables & Equations',strand:'equations'},
+      '#functions':{grade:'8',num:'10',title:'Patterns to Functions',strand:'functions'}
     };
 
     var activeStrand='counting',session=null,reviewItem=null,attempted=new Set(),mistakes=[],saved={};
@@ -29,14 +29,22 @@
       document.getElementById('score-text').textContent=right+' / '+total+' correct on first try';
       document.getElementById('math-review').hidden=!mistakes.length;
       var item=current[activeStrand];document.getElementById('math-recommendation').textContent=item?'Next: '+item.goal+'. Try five questions, then revisit any mistakes.':'Choose one activity to begin.';
-      document.getElementById('math-session').textContent=session?(session.review?'Mistake review':'Practice set')+' · Question '+Math.min(session.index+(session.answered?0:1),session.items.length)+' of '+session.items.length+' · '+session.right+' correct on first try':'Free practice · choose any activity below.';
+      document.getElementById('math-session').textContent=session?(session.review?'Mistake review':'Practice set')+' · Question '+Math.min(session.index+(session.answered?0:1),session.items.length)+' of '+session.items.length+' · '+session.right+' correct on first try':'Free practice';
     }
     function endSet(){session=null;mistakes=[];attempted.clear();}
+    function focusAnswer(station){
+      var answer=station.querySelector('.response input'), pane=station.closest('.station-grid');
+      answer.focus({preventScroll:true});
+      var bounds=answer.getBoundingClientRect(), frame=pane.getBoundingClientRect();
+      if(bounds.top<frame.top||bounds.bottom>frame.bottom){
+        pane.scrollBy({top:bounds.top-frame.top-8,behavior:'instant'});
+      }
+    }
     function startSet(review){
       var items=review?mistakes.slice():Array.from({length:5},function(){return exercise(activeStrand,level);});
       if(!items.length)return;
       mistakes=[];attempted.clear();session={items:items,index:0,right:0,answered:false,review:review};reviewItem=items[0];
-      var station=document.querySelector('.station[data-strand="'+activeStrand+'"]');render(station);updateTrainer();station.querySelector('.response input').focus();
+      var station=document.querySelector('.station[data-strand="'+activeStrand+'"]');render(station);updateTrainer();focusAnswer(station);
     }
     function finishSet(){var result=session;session=null;updateTrainer();document.getElementById('math-session').textContent='Set complete · '+result.right+' of '+result.items.length+' correct on first try. '+(mistakes.length?'Review mistakes to try those questions again.':'Try another activity or a new set.');}
     function recordAttempt(strand,correct){
@@ -45,7 +53,7 @@
         try{localStorage.setItem('math-foundations-trainer-v1',JSON.stringify(saved));}catch(e){}
         if(session){session.index++;session.answered=true;if(correct)session.right++;}
       }
-      if(session){var station=document.querySelector('.station[data-strand="'+strand+'"]');station.querySelector('.new-btn').disabled=false;station.querySelector('.new-btn').textContent=session.index===session.items.length?'Finish set':'Next question →';}
+      if(session){var station=document.querySelector('.station[data-strand="'+strand+'"]');station.querySelector('.new-btn').disabled=false;station.querySelector('.new-btn').textContent=session.index===session.items.length?'Finish set':'Next';}
       updateTrainer();
     }
     document.getElementById('math-start').addEventListener('click',function(){startSet(false);});
@@ -454,22 +462,37 @@
       station.querySelector('.station-head h2').textContent=item.goal;station.querySelector('.station-openmoji').alt='Illustration for '+item.goal;station.querySelector('.station-openmoji').setAttribute('aria-label','Enlarge illustration for '+item.goal);
       station.querySelector('.station-head small').textContent=item.label+' · '+strand;
       var prompt=mode==='apply'?item.apply:item.prompt;
-      station.querySelector('.workbench').innerHTML='<p class="problem">'+escape(prompt)+'</p><button type="button" class="model-toggle" aria-expanded="'+(mode==='explore')+'">'+(mode==='explore'?'Hide model':'Inspect model')+'</button><div class="model" '+(mode==='explore'?'':'hidden')+'>'+item.visual+'</div>'+'<p class="answer-format">'+(item.answer==='blue'?'Enter a color word.':'Enter a number or an exact fraction such as 3/5. Equivalent fractions and decimals are accepted.')+(item.unit?' Report in '+escape(item.unit)+'.':'')+'</p><div class="response"><input type="text" aria-label="Answer: '+escape(item.goal)+'" placeholder="Your answer"/><button class="check-btn" type="button">Check</button><button class="new-btn" type="button">New</button><button class="hint-btn" type="button" aria-expanded="false">Need a hint?</button><p class="hint" hidden>'+escape(item.hint)+'</p><p class="feedback" aria-live="polite"></p></div><div class="reasoning"><div class="reasoning-head"><label for="reason-'+strand+'">Explain your thinking</label><span class="wb-ai-pill">✨ AI Smart Blackboard</span></div><p>'+escape(item.reason)+'</p><div class="ai-whiteboard" data-wb-strand="'+strand+'"><div class="wb-toolbar" role="toolbar" aria-label="Smart Blackboard Controls"><button type="button" class="wb-tool-btn active" data-wb-action="pen" title="Draw chalk strokes">🖊️ Chalk Pen</button><button type="button" class="wb-tool-btn" data-wb-action="counter" title="Click on board to stamp a counter">🔘 Counter Stamp</button><button type="button" class="wb-tool-btn" data-wb-action="eraser" title="Erase strokes or counters">🧹 Eraser</button><button type="button" class="wb-tool-btn" data-wb-action="clear" title="Clear board">Clear</button><div style="flex:1;"></div><button type="button" class="wb-tool-btn wb-btn-insert" data-wb-action="insert" title="Write AI-detected math explanation into text box">📝 Use in Explanation</button><button type="button" class="wb-tool-btn wb-btn-voice" data-wb-action="voice" title="Read AI explanation aloud">🔊 AI Voice</button></div><div class="wb-canvas-wrap"><canvas class="wb-canvas" aria-label="Interactive math blackboard for explaining your thinking"></canvas><div class="wb-live-badge">✨ AI Ready: Draw or stamp counters to model reasoning</div></div><div class="wb-detection-card"><div class="wb-det-header"><span class="wb-det-title">✨ Detected Pattern:</span> <strong class="wb-det-name">Waiting for marks...</strong></div><p class="wb-det-reasoning">Model your thinking above. The AI blackboard will identify patterns according to this math concept and prove your answer.</p></div></div><textarea id="reason-'+strand+'" rows="3" placeholder="Use words, equations, or describe your drawing (or click Use in Explanation above to transcribe your blackboard work)..."></textarea><details class="worked-solution"><summary>Study a worked solution</summary><p>'+escape(item.solution)+'</p><p>Close this solution, choose New, and test the method independently.</p></details></div>';
+      station.querySelector('.workbench').innerHTML='<p class="problem">'+escape(prompt)+'</p><button type="button" class="model-toggle" aria-expanded="'+(mode==='explore')+'">'+(mode==='explore'?'Hide model':'Inspect model')+'</button><div class="model" '+(mode==='explore'?'':'hidden')+'>'+item.visual+'</div><div class="response"><input type="text" aria-label="Answer: '+escape(item.goal)+'" aria-describedby="answer-format-'+strand+'" placeholder="Your answer"/><button class="check-btn" type="button">Check</button><button class="new-btn" type="button">New</button><button class="hint-btn" type="button" aria-expanded="false">Need a hint?</button><p class="hint" hidden>'+escape(item.hint)+'</p><p class="feedback" aria-live="polite"></p></div><p class="answer-format" id="answer-format-'+strand+'">'+(item.answer==='blue'?'Enter a color word.':'Enter a number or an exact fraction such as 3/5. Equivalent fractions and decimals are accepted.')+(item.unit?' Report in '+escape(item.unit)+'.':'')+'</p><div class="reasoning"><div class="reasoning-head"><label for="reason-'+strand+'">Explain your thinking</label><span class="wb-ai-pill">✨ AI Smart Blackboard</span></div><p>'+escape(item.reason)+'</p><div class="ai-whiteboard" data-wb-strand="'+strand+'"><div class="wb-toolbar" role="toolbar" aria-label="Smart Blackboard Controls"><button type="button" class="wb-tool-btn active" data-wb-action="pen" title="Draw chalk strokes">🖊️ Chalk Pen</button><button type="button" class="wb-tool-btn" data-wb-action="counter" title="Click on board to stamp a counter">🔘 Counter Stamp</button><button type="button" class="wb-tool-btn" data-wb-action="eraser" title="Erase strokes or counters">🧹 Eraser</button><button type="button" class="wb-tool-btn" data-wb-action="clear" title="Clear board">Clear</button><div style="flex:1;"></div><button type="button" class="wb-tool-btn wb-btn-insert" data-wb-action="insert" title="Write AI-detected math explanation into text box">📝 Use in Explanation</button><button type="button" class="wb-tool-btn wb-btn-voice" data-wb-action="voice" title="Read AI explanation aloud">🔊 AI Voice</button></div><div class="wb-canvas-wrap"><canvas class="wb-canvas" aria-label="Interactive math blackboard for explaining your thinking"></canvas><div class="wb-live-badge">✨ AI Ready: Draw or stamp counters to model reasoning</div></div><div class="wb-detection-card"><div class="wb-det-header"><span class="wb-det-title">✨ Detected Pattern:</span> <strong class="wb-det-name">Waiting for marks...</strong></div><p class="wb-det-reasoning">Model your thinking above. The AI blackboard will identify patterns according to this math concept and prove your answer.</p></div></div><textarea id="reason-'+strand+'" rows="3" placeholder="Use words, equations, or describe your drawing (or click Use in Explanation above to transcribe your blackboard work)..."></textarea><details class="worked-solution"><summary>Study a worked solution</summary><p>'+escape(item.solution)+'</p><p>Close this solution, choose New, and test the method independently.</p></details></div>';
       var modelEl=station.querySelector('.model');
       if(window.MathWorksheetViz&&modelEl&&modelEl.querySelector('.dot-expression,.array,.sequence,.place-model,.fraction-visual,.shape,.bars,.numberline,.balance,.machine')){window.MathWorksheetViz.render(modelEl,{prompt:prompt});}
-      station.querySelector('.new-btn').textContent='Next question →';station.querySelector('.new-btn').disabled=Boolean(session&&!session.answered);
+      station.querySelector('.new-btn').textContent='Next';station.querySelector('.new-btn').disabled=Boolean(session&&!session.answered);
       setupSmartWhiteboard(station);
       station.querySelector('.worked-solution').addEventListener('toggle',function(){if(this.open){assisted.add(strand);updateScore();}});
     }
     function updateRoute(){var g=Number(level),p=FoundationTasks.profiles[g];document.getElementById('route-title').textContent=(g===0?'Kindergarten':'Grade '+g)+' · '+p[1];document.getElementById('route-focus').textContent=p[2];document.getElementById('route-prerequisite').textContent=g===0?'Start with objects: pair each spoken number with one object. An adult can read prompts and record oral explanations.':'Prerequisite check: explain one task from '+(g===1?'Kindergarten':'Grade '+(g-1))+', then return here. Choose a model when a method stops making sense.';}
+    function revealActiveActivity(){
+      var stop=document.querySelector('.journey-stop[aria-current]');
+      if(!stop)return;
+      var track=stop.parentElement, menu=track.parentElement;
+      var bounds=stop.getBoundingClientRect(), frame=track.getBoundingClientRect();
+      if(bounds.left<frame.left)track.scrollBy({left:bounds.left-frame.left,behavior:'instant'});
+      if(bounds.right>frame.right)track.scrollBy({left:bounds.right-frame.right,behavior:'instant'});
+      var menuBounds=menu.getBoundingClientRect();
+      if(bounds.top<menuBounds.top)menu.scrollBy({top:bounds.top-menuBounds.top,behavior:'instant'});
+      if(bounds.bottom>menuBounds.bottom)menu.scrollBy({top:bounds.bottom-menuBounds.bottom,behavior:'instant'});
+    }
     function syncHashFocus(fromInit){
       var cfg=hashConfig[location.hash],focusBar=document.getElementById('pathway-focus-bar'),grid=document.querySelector('.station-grid'),gradeSelect=document.getElementById('grade-level');
-      document.querySelectorAll('.station').forEach(function(st){st.classList.toggle('is-focused-station',Boolean(cfg&&st.id===cfg.id));});
       document.querySelectorAll('.journey-stop').forEach(function(stop){stop.classList.toggle('is-active-stop',Boolean(cfg&&stop.getAttribute('href')===location.hash));});
       if(!cfg){cfg=hashConfig['#counting'];}
       activeStrand=cfg.strand;
       document.querySelectorAll('.station').forEach(function(st){st.hidden=st.dataset.strand!==activeStrand;});
-      document.querySelectorAll('.journey-stop').forEach(function(stop){if(stop.dataset.mapStrand===activeStrand)stop.setAttribute('aria-current','true');else stop.removeAttribute('aria-current');});
+      grid.scrollTop=0;
+      document.querySelectorAll('.journey-stop').forEach(function(stop){
+        if(stop.dataset.mapStrand!==activeStrand){stop.removeAttribute('aria-current');return;}
+        stop.setAttribute('aria-current','true');
+      });
+      revealActiveActivity();
       if(focusBar)focusBar.hidden=true;
       updateTrainer();
       if(!userPickedGrade&&location.hash&&level!==cfg.grade){
@@ -485,7 +508,14 @@
     function updateScore(){updateTrainer();}
 
     updateRoute();document.querySelectorAll('.station').forEach(render);syncHashFocus(true);
-    window.addEventListener('hashchange',function(){endSet();syncHashFocus(false);});
+    if(window.ResizeObserver){
+      new ResizeObserver(revealActiveActivity).observe(document.querySelector('.math-workspace .journey-map'));
+    }
+    window.addEventListener('hashchange',function(){
+      endSet();
+      syncHashFocus(false);
+      if(hashConfig[location.hash])document.querySelector('.ll-sim').scrollTo({top:0,behavior:'instant'});
+    });
     document.addEventListener('click',function(e){
       var focusBtn=e.target.closest('[data-focus-action]');
       if(focusBtn){
@@ -495,7 +525,7 @@
         return;
       }
       var station=e.target.closest('.station');if(!station)return;var strand=station.dataset.strand;
-      if(e.target.closest('.new-btn')){if(session&&!session.answered)return;if(session&&session.index===session.items.length){finishSet();return;}if(session){reviewItem=session.items[session.index];session.answered=false;}attempted.delete(strand);solved.delete(strand);assisted.delete(strand);render(station);station.querySelector('.response input').focus();updateScore();return}
+      if(e.target.closest('.new-btn')){if(session&&!session.answered)return;if(session&&session.index===session.items.length){finishSet();return;}if(session){reviewItem=session.items[session.index];session.answered=false;}attempted.delete(strand);solved.delete(strand);assisted.delete(strand);render(station);focusAnswer(station);updateScore();return}
       if(e.target.closest('.model-toggle')){var model=station.querySelector('.model');model.hidden=!model.hidden;e.target.textContent=model.hidden?'Inspect model':'Hide model';e.target.setAttribute('aria-expanded',String(!model.hidden));return}
       if(e.target.closest('.hint-btn')){var hint=station.querySelector('.hint');hint.hidden=!hint.hidden;e.target.textContent=hint.hidden?'Need a hint?':'Hide hint';e.target.setAttribute('aria-expanded',String(!hint.hidden));return}
       if(e.target.closest('.check-btn')){var input=station.querySelector('.response input'),feedback=station.querySelector('.feedback'),actual=input.value.trim(),expected=current[strand].answer;if(!actual){feedback.textContent='Enter an answer first.';return;}if(session&&session.answered)return;var correct=FoundationTasks.check(actual,expected);recordAttempt(strand,correct);if(correct){feedback.textContent='Correct. Explain your method, then choose Next question.';feedback.className='feedback good';solved.add(strand)}else{feedback.textContent=actual?'Not yet. '+current[strand].hint+' Check your units and calculation, then try again.':'Enter an answer first. Use a number, fraction, or the requested word.';feedback.className='feedback try';solved.delete(strand)}updateScore()}

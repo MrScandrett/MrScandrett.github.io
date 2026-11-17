@@ -1,272 +1,238 @@
-/**
- * Living Things Explorer — interactive games
- * Click-to-select, click-to-place sorting (no native drag/drop, so it
- * works the same on touchscreens and desktops for young students).
- */
-(function () {
+(() => {
   'use strict';
 
-  var score = { sort: { correct: 0, total: 0 }, habitat: { correct: 0, total: 0 }, cycle: { correct: 0, total: 0 } };
+  const score = { sort: [0, 0], habitat: [0, 0], cycle: [0, 0] };
 
-  function updateScorePanel() {
-    var total = score.sort.correct + score.habitat.correct + score.cycle.correct;
-    var totalPossible = score.sort.total + score.habitat.total + score.cycle.total;
-    var el = document.getElementById('lte-score-total');
-    if (el) el.textContent = total + ' / ' + totalPossible;
-    var s1 = document.getElementById('lte-score-sort');
-    if (s1) s1.textContent = score.sort.correct + ' / ' + score.sort.total;
-    var s2 = document.getElementById('lte-score-habitat');
-    if (s2) s2.textContent = score.habitat.correct + ' / ' + score.habitat.total;
-    var s3 = document.getElementById('lte-score-cycle');
-    if (s3) s3.textContent = score.cycle.correct + ' / ' + score.cycle.total;
+  function updateScore(key, correct, total) {
+    score[key] = [correct, total];
+    document.getElementById('lte-score-' + key).textContent = correct + ' / ' + total;
+    const counts = Object.values(score);
+    document.getElementById('lte-score-total').textContent =
+      counts.reduce((sum, count) => sum + count[0], 0) + ' / ' +
+      counts.reduce((sum, count) => sum + count[1], 0);
   }
 
-  /* ── Click-to-sort game (used for Living/Nonliving and Habitat) ── */
-  function SortGame(root, opts) {
-    this.root = root;
-    this.items = opts.items;
-    this.bins = opts.bins;
-    this.scoreKey = opts.scoreKey;
-    this.selected = null;
-    this.placedCount = 0;
-    score[this.scoreKey].total = this.items.length;
-    this.render();
-  }
-
-  SortGame.prototype.render = function () {
-    var self = this;
-    var pool = this.root.querySelector('.lte-pool');
-    var binsWrap = this.root.querySelector('.lte-bins');
-    pool.innerHTML = '';
-    binsWrap.innerHTML = '';
-
-    this.items.forEach(function (item) {
-      var card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'lte-item';
-      card.dataset.id = item.id;
-      card.innerHTML = '<span class="lte-item-emoji" aria-hidden="true">' + item.emoji + '</span><span>' + item.label + '</span>';
-      card.setAttribute('aria-pressed', 'false');
-      card.addEventListener('click', function () { self.selectItem(card, item); });
-      pool.appendChild(card);
-    });
-
-    this.bins.forEach(function (bin) {
-      var binEl = document.createElement('div');
-      binEl.className = 'lte-bin';
-      binEl.dataset.bin = bin.id;
-      binEl.setAttribute('role', 'button');
-      binEl.setAttribute('tabindex', '0');
-      binEl.innerHTML =
-        '<div class="lte-bin-label">' + bin.emoji + ' ' + bin.label + '</div>' +
-        '<div class="lte-bin-sub" style="font-size:.78rem;color:var(--lte-text-light);margin-bottom:.4rem;">' + (bin.sub || '') + '</div>' +
-        '<div class="lte-bin-contents"></div>';
-      binEl.addEventListener('click', function () { self.placeInBin(bin); });
-      binEl.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); self.placeInBin(bin); }
-      });
-      binsWrap.appendChild(binEl);
-    });
-  };
-
-  SortGame.prototype.selectItem = function (card, item) {
-    if (card.classList.contains('placed')) return;
-    var pool = this.root.querySelectorAll('.lte-item');
-    pool.forEach(function (c) { c.classList.remove('selected'); c.setAttribute('aria-pressed', 'false'); });
-    card.classList.add('selected');
-    card.setAttribute('aria-pressed', 'true');
-    this.selected = item;
-    this.root.querySelectorAll('.lte-bin').forEach(function (b) { b.classList.add('ready'); });
-  };
-
-  SortGame.prototype.placeInBin = function (bin) {
-    if (!this.selected) {
-      this.feedback('Tap a card first, then tap the bin where it belongs.', 'incorrect');
-      return;
+  function shuffle(items) {
+    const deck = items.slice();
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
     }
-    var item = this.selected;
-    var binEl = this.root.querySelector('.lte-bin[data-bin="' + bin.id + '"]');
-    var cardEl = this.root.querySelector('.lte-item[data-id="' + item.id + '"]');
-    this.root.querySelectorAll('.lte-bin').forEach(function (b) { b.classList.remove('ready'); });
-
-    if (item.bin === bin.id) {
-      cardEl.classList.remove('selected');
-      cardEl.classList.add('placed');
-      cardEl.setAttribute('aria-pressed', 'false');
-      cardEl.disabled = true;
-      var chip = document.createElement('span');
-      chip.className = 'lte-bin-chip';
-      chip.innerHTML = item.emoji + ' ' + item.label;
-      binEl.querySelector('.lte-bin-contents').appendChild(chip);
-      binEl.classList.add('correct-flash');
-      setTimeout(function () { binEl.classList.remove('correct-flash'); }, 500);
-      this.feedback(item.emoji + ' ' + item.label + ' is correct! ' + bin.label + ' it is.', 'correct');
-      this.placedCount++;
-      score[this.scoreKey].correct++;
-      updateScorePanel();
-      this.selected = null;
-      if (this.placedCount === this.items.length) this.celebrate();
-    } else {
-      binEl.classList.add('wrong-flash');
-      cardEl.classList.add('shake');
-      setTimeout(function () {
-        binEl.classList.remove('wrong-flash');
-        cardEl.classList.remove('shake');
-      }, 450);
-      this.feedback('Not quite — try a different spot for ' + item.label + '.', 'incorrect');
-    }
-  };
-
-  SortGame.prototype.feedback = function (msg, kind) {
-    var el = this.root.querySelector('.lte-feedback');
-    el.textContent = msg;
-    el.className = 'lte-feedback ' + kind;
-  };
-
-  SortGame.prototype.celebrate = function () {
-    var el = this.root.querySelector('.lte-feedback');
-    el.textContent = '🎉 Great job! Every card found its home.';
-    el.className = 'lte-feedback celebration';
-  };
-
-  SortGame.prototype.reset = function () {
-    this.selected = null;
-    this.placedCount = 0;
-    score[this.scoreKey].correct = 0;
-    updateScorePanel();
-    this.render();
-    this.feedback('', '');
-  };
-
-  /* ── Life-cycle sequencing game ── */
-  function CycleGame(root, cycles) {
-    this.root = root;
-    this.cycles = cycles;
-    this.activeKey = Object.keys(cycles)[0];
-    this.placed = [];
-    var total = 0;
-    Object.keys(cycles).forEach(function (k) { total += cycles[k].stages.length; });
-    score.cycle.total = cycles[this.activeKey].stages.length;
-    this.renderTabs();
-    this.renderRound();
+    return deck;
   }
 
-  CycleGame.prototype.renderTabs = function () {
-    var self = this;
-    var tabWrap = this.root.querySelector('.lte-cycle-tabs');
-    tabWrap.innerHTML = '';
-    Object.keys(this.cycles).forEach(function (key) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'lte-cycle-tab';
-      btn.textContent = self.cycles[key].label;
-      btn.setAttribute('aria-selected', key === self.activeKey ? 'true' : 'false');
-      btn.setAttribute('role', 'tab');
-      btn.addEventListener('click', function () {
-        self.activeKey = key;
-        Array.prototype.forEach.call(tabWrap.children, function (c) { c.setAttribute('aria-selected', 'false'); });
-        btn.setAttribute('aria-selected', 'true');
-        self.renderRound();
-      });
-      tabWrap.appendChild(btn);
-    });
-  };
+  function feedback(root, message, kind = '') {
+    const status = root.querySelector('.lte-feedback');
+    status.className = ('lte-feedback ' + kind).trim();
+    status.textContent = message;
+  }
 
-  CycleGame.prototype.renderRound = function () {
-    var self = this;
-    var cycle = this.cycles[this.activeKey];
-    this.placed = [];
-    var seqRow = this.root.querySelector('.lte-sequence-row');
-    var pool = this.root.querySelector('.lte-pool');
-    seqRow.innerHTML = '';
-    pool.innerHTML = '';
+  function emoji(symbol) {
+    return '<span class="lte-item-emoji" aria-hidden="true">' + symbol + '</span>';
+  }
 
-    var shuffled = cycle.stages.slice().sort(function () { return Math.random() - 0.5; });
-    shuffled.forEach(function (stage) {
-      var card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'lte-item';
-      card.dataset.order = stage.order;
-      card.innerHTML = '<span class="lte-item-emoji" aria-hidden="true">' + stage.emoji + '</span><span>' + stage.label + '</span>';
-      card.addEventListener('click', function () { self.pick(stage, card); });
-      pool.appendChild(card);
+  function initSort(key, items, bins) {
+    const root = document.getElementById('lte-' + key + '-game');
+    const card = root.querySelector('.lte-sort-card');
+    const choices = root.querySelector('.lte-bins');
+    const restart = document.getElementById('lte-' + key + '-reset');
+    let deck;
+    let current;
+
+    const buttons = bins.map((bin) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'lte-bin';
+      button.dataset.bin = bin.id;
+      button.innerHTML = emoji(bin.emoji) + '<strong>' + bin.label +
+        '</strong><span class="lte-bin-sub">' + bin.sub + '</span>';
+      button.addEventListener('click', () => choose(bin, button));
+      choices.append(button);
+      return button;
     });
 
-    this.feedback('', '');
-  };
+    function showCard() {
+      const item = deck[current];
+      const progress = '<span class="lte-round-count">' + current + ' / ' + deck.length + ' matched</span>';
+      card.innerHTML = progress + (item
+        ? emoji(item.emoji) + '<strong>' + item.label + '</strong>'
+        : emoji('🎉') + '<strong>All cards matched!</strong>');
+      updateScore(key, current, deck.length);
+    }
 
-  CycleGame.prototype.pick = function (stage, cardEl) {
-    var cycle = this.cycles[this.activeKey];
-    var nextOrder = this.placed.length + 1;
-
-    if (stage.order === nextOrder) {
-      cardEl.classList.add('placed');
-      cardEl.disabled = true;
-      var slot = document.createElement('span');
-      slot.className = 'lte-sequence-slot';
-      slot.innerHTML = '<span class="lte-seq-num">' + stage.order + '</span>' + stage.emoji + ' ' + stage.label;
-      this.root.querySelector('.lte-sequence-row').appendChild(slot);
-      this.placed.push(stage.order);
-      score.cycle.correct++;
-      updateScorePanel();
-      this.feedback(stage.label + ' is next — nicely done!', 'correct');
-
-      if (this.placed.length === cycle.stages.length) {
-        this.feedback('🎉 You put the whole ' + cycle.label.toLowerCase() + ' life cycle in order!', 'celebration');
+    function choose(bin, button) {
+      const item = deck[current];
+      if (!item) return;
+      buttons.forEach((choice) => choice.classList.remove('wrong'));
+      const answer = bins.find((candidate) => candidate.id === item.bin);
+      if (bin !== answer) {
+        button.classList.add('wrong');
+        const clue = key === 'sort'
+          ? 'Can this grow on its own and use energy to stay alive?'
+          : 'Look for this clue: ' + answer.sub;
+        feedback(root, 'Try again. ' + clue, 'incorrect');
+        return;
       }
-    } else {
-      cardEl.classList.add('shake');
-      var self = this;
-      setTimeout(function () { cardEl.classList.remove('shake'); }, 450);
-      this.feedback('Look for what happens first. Try again!', 'incorrect');
+      current++;
+      showCard();
+      const next = deck[current];
+      feedback(root, item.label + ' → ' + answer.label + '. ' +
+        (next ? 'Next card: ' + next.label + '.' : 'You matched every card!'),
+        next ? 'correct' : 'celebration');
+      if (!next) {
+        restart.focus();
+        buttons.forEach((choice) => { choice.disabled = true; });
+      }
     }
-  };
 
-  CycleGame.prototype.feedback = function (msg, kind) {
-    var el = this.root.querySelector('.lte-feedback');
-    el.textContent = msg;
-    el.className = 'lte-feedback ' + kind;
-  };
-
-  CycleGame.prototype.reset = function () {
-    score.cycle.correct = 0;
-    score.cycle.total = this.cycles[this.activeKey].stages.length;
-    updateScorePanel();
-    this.renderRound();
-  };
-
-  /* ── Quiz ── */
-  function initQuiz() {
-    var checkBtn = document.getElementById('lte-quiz-check');
-    var clearBtn = document.getElementById('lte-quiz-clear');
-    var result = document.getElementById('lte-quiz-result');
-    if (!checkBtn) return;
-
-    checkBtn.addEventListener('click', function () {
-      var questions = document.querySelectorAll('.lte-quiz-question');
-      var correct = 0;
-      questions.forEach(function (q) {
-        var chosen = q.querySelector('input[type="radio"]:checked');
-        if (chosen && chosen.value === 'correct') correct++;
+    function reset() {
+      deck = shuffle(items);
+      current = 0;
+      buttons.forEach((button) => {
+        button.disabled = false;
+        button.classList.remove('wrong');
       });
-      result.style.display = 'block';
-      if (correct === questions.length) {
-        result.className = 'lte-quiz-result good';
-        result.textContent = '🌟 Perfect! ' + correct + ' out of ' + questions.length + ' correct.';
+      showCard();
+      feedback(root, 'First card: ' + deck[0].label + '.');
+    }
+
+    restart.addEventListener('click', () => {
+      reset();
+      buttons[0].focus();
+    });
+    reset();
+  }
+
+  function initCycles(cycles) {
+    const root = document.getElementById('lte-cycle-game');
+    const picker = root.querySelector('.lte-cycle-tabs');
+    const sequence = root.querySelector('.lte-sequence-row');
+    const pool = root.querySelector('.lte-pool');
+    const restart = document.getElementById('lte-cycle-reset');
+    const rounds = Object.values(cycles).map((cycle) => ({
+      cycle, deck: shuffle(cycle.stages), count: 0
+    }));
+    const total = rounds.reduce((sum, round) => sum + round.deck.length, 0);
+    let active = rounds[0];
+
+    rounds.forEach((round) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'lte-cycle-tab';
+      button.addEventListener('click', () => {
+        active = round;
+        render();
+      });
+      round.button = button;
+      picker.append(button);
+    });
+
+    function render(moveFocus = false) {
+      const { cycle, deck, count } = active;
+      rounds.forEach((round) => {
+        round.button.setAttribute('aria-pressed', String(round === active));
+        round.button.textContent = round.cycle.label + ' · ' + round.count + '/' + round.deck.length;
+      });
+      sequence.replaceChildren();
+      cycle.stages.forEach((stage) => {
+        const slot = document.createElement('li');
+        slot.className = 'lte-sequence-slot';
+        if (stage.order <= count) slot.classList.add('filled');
+        slot.innerHTML = '<span class="lte-seq-num">' + stage.order + '</span>' +
+          (stage.order <= count ? emoji(stage.emoji) + '<strong>' + stage.label + '</strong>' : '—');
+        sequence.append(slot);
+      });
+
+      pool.replaceChildren();
+      deck.filter((stage) => stage.order > count).forEach((stage) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'lte-item';
+        button.innerHTML = emoji(stage.emoji) + '<span>' + stage.label + '</span>';
+        button.addEventListener('click', () => {
+          const expected = cycle.stages[active.count];
+          if (stage !== expected) {
+            pool.querySelectorAll('.wrong').forEach((card) => card.classList.remove('wrong'));
+            button.classList.add('wrong');
+            feedback(root, 'Try again. ' + expected.hint, 'incorrect');
+            return;
+          }
+          active.count++;
+          render(true);
+          if (active.count < deck.length) {
+            feedback(root, stage.label + ' goes in spot ' + stage.order +
+              '. What goes in spot ' + (stage.order + 1) + '?', 'correct');
+          }
+        });
+        pool.append(button);
+      });
+
+      updateScore('cycle', rounds.reduce((sum, round) => sum + round.count, 0), total);
+      if (count === deck.length) {
+        feedback(root, 'You completed the ' + cycle.label.toLowerCase() + ' life cycle!', 'celebration');
       } else {
-        result.className = 'lte-quiz-result okay';
-        result.textContent = 'You got ' + correct + ' out of ' + questions.length + ' correct. Review the highlighted lesson and try again!';
+        feedback(root, 'Choose the stage for spot ' + (count + 1) + '.');
       }
+      if (moveFocus) (pool.querySelector('button') || restart).focus();
+    }
+
+    restart.addEventListener('click', () => {
+      active.count = 0;
+      active.deck = shuffle(active.cycle.stages);
+      render(true);
+    });
+    render();
+  }
+
+  function initQuiz() {
+    const questions = [...document.querySelectorAll('.lte-quiz-question')];
+    const result = document.getElementById('lte-quiz-result');
+    const hints = [
+      'Which one grows from a young animal into an adult?',
+      'Think about the needs that plants and animals share.',
+      'Look for the word that means a living thing’s natural home.',
+      'Think about the stage before the caterpillar hatches.',
+      'Moving or changing shape can happen to nonliving things too.'
+    ];
+
+    function clearFeedback(question) {
+      delete question.dataset.result;
+      question.querySelector('.lte-quiz-note').textContent = '';
+      result.hidden = true;
+      result.textContent = '';
+    }
+
+    questions.forEach((question) => {
+      question.addEventListener('change', () => clearFeedback(question));
     });
 
-    clearBtn.addEventListener('click', function () {
-      document.querySelectorAll('.lte-quiz-question input[type="radio"]').forEach(function (i) { i.checked = false; });
-      result.style.display = 'none';
+    document.getElementById('lte-quiz-check').addEventListener('click', () => {
+      let correct = 0;
+      questions.forEach((question, index) => {
+        const selected = question.querySelector('input:checked');
+        const right = selected?.value === 'correct';
+        if (right) correct++;
+        question.dataset.result = right ? 'correct' : 'retry';
+        question.querySelector('.lte-quiz-note').textContent = right ? '✓ Correct!' :
+          selected ? 'Try again. ' + hints[index] : 'Choose an answer.';
+      });
+      result.className = 'lte-quiz-result ' + (correct === questions.length ? 'good' : 'okay');
+      result.hidden = false;
+      result.textContent = correct + ' out of ' + questions.length + ' correct.' +
+        (correct === questions.length ? ' Great work!' : ' See the clues beside each question.');
+    });
+
+    document.getElementById('lte-quiz-clear').addEventListener('click', () => {
+      questions.forEach((question) => {
+        question.querySelectorAll('input').forEach((input) => { input.checked = false; });
+        clearFeedback(question);
+      });
+      questions[0].querySelector('input').focus();
     });
   }
 
   /* ── Data ── */
-  var LIVING_NONLIVING_ITEMS = [
+  const LIVING_NONLIVING_ITEMS = [
     { id: 'dog', label: 'Dog', emoji: '🐶', bin: 'living' },
     { id: 'tree', label: 'Oak Tree', emoji: '🌳', bin: 'living' },
     { id: 'fish', label: 'Goldfish', emoji: '🐠', bin: 'living' },
@@ -280,67 +246,53 @@
     { id: 'toycar', label: 'Toy Car', emoji: '🚗', bin: 'nonliving' },
     { id: 'water', label: 'River Water', emoji: '💧', bin: 'nonliving' }
   ];
-  var LIVING_NONLIVING_BINS = [
-    { id: 'living', label: 'Living', emoji: '🌱', sub: 'Breathes, eats, grows, and can make more of its kind.' },
-    { id: 'nonliving', label: 'Nonliving', emoji: '🧱', sub: 'Does not breathe, eat, grow on its own, or reproduce.' }
+  const LIVING_NONLIVING_BINS = [
+    { id: 'living', label: 'Living', emoji: '🌱', sub: 'Grows, uses energy, and responds to its surroundings.' },
+    { id: 'nonliving', label: 'Nonliving', emoji: '🧱', sub: 'May move or change shape without being alive.' }
   ];
 
-  var HABITAT_ITEMS = [
+  const HABITAT_ITEMS = [
     { id: 'clownfish', label: 'Clownfish', emoji: '🐠', bin: 'ocean' },
     { id: 'octopus', label: 'Octopus', emoji: '🐙', bin: 'ocean' },
     { id: 'owl', label: 'Owl', emoji: '🦉', bin: 'forest' },
     { id: 'deer', label: 'Deer', emoji: '🦌', bin: 'forest' },
     { id: 'camel', label: 'Camel', emoji: '🐫', bin: 'desert' },
-    { id: 'lizard', label: 'Lizard', emoji: '🦎', bin: 'desert' },
+    { id: 'lizard', label: 'Desert Lizard', emoji: '🦎', bin: 'desert' },
     { id: 'polarbear', label: 'Polar Bear', emoji: '🐻‍❄️', bin: 'arctic' },
-    { id: 'penguin', label: 'Penguin', emoji: '🐧', bin: 'arctic' }
+    { id: 'arcticfox', label: 'Arctic Fox', emoji: '🦊', bin: 'arctic' }
   ];
-  var HABITAT_BINS = [
+  const HABITAT_BINS = [
     { id: 'ocean', label: 'Ocean', emoji: '🌊', sub: 'Salty water, deep and wide.' },
     { id: 'forest', label: 'Forest', emoji: '🌲', sub: 'Trees, shade, and shelter.' },
     { id: 'desert', label: 'Desert', emoji: '🏜️', sub: 'Hot and dry with little water.' },
     { id: 'arctic', label: 'Arctic', emoji: '🧊', sub: 'Icy cold, snow and wind.' }
   ];
 
-  var LIFE_CYCLES = {
+  const LIFE_CYCLES = {
     butterfly: {
       label: 'Butterfly',
       stages: [
-        { order: 1, label: 'Egg', emoji: '🥚' },
-        { order: 2, label: 'Caterpillar', emoji: '🐛' },
-        { order: 3, label: 'Chrysalis', emoji: '🍃' },
-        { order: 4, label: 'Butterfly', emoji: '🦋' }
+        { order: 1, label: 'Egg', emoji: '🥚', hint: 'Look for the stage before the animal hatches.' },
+        { order: 2, label: 'Caterpillar', emoji: '🐛', hint: 'Look for what hatches from a butterfly egg.' },
+        { order: 3, label: 'Chrysalis', emoji: '🍃', hint: 'After feeding and growing, the caterpillar forms a protective case.' },
+        { order: 4, label: 'Butterfly', emoji: '🦋', hint: 'Look for the adult that comes out of the chrysalis.' }
       ]
     },
     frog: {
       label: 'Frog',
       stages: [
-        { order: 1, label: 'Egg', emoji: '🥚' },
-        { order: 2, label: 'Tadpole', emoji: '🐟' },
-        { order: 3, label: 'Froglet', emoji: '🐸' },
-        { order: 4, label: 'Frog', emoji: '🐸' }
+        { order: 1, label: 'Egg', emoji: '🥚', hint: 'Look for the stage before the animal hatches.' },
+        { order: 2, label: 'Tadpole', emoji: '🐟', hint: 'After the egg hatches, look for the stage that swims with a tail.' },
+        { order: 3, label: 'Froglet', emoji: '🐸', hint: 'The tadpole grows legs while it still has a short tail.' },
+        { order: 4, label: 'Frog', emoji: '🐸', hint: 'Look for the adult after the tail disappears.' }
       ]
     }
   };
 
-  document.addEventListener('DOMContentLoaded', function () {
-    var sortRoot = document.getElementById('lte-sort-game');
-    var habitatRoot = document.getElementById('lte-habitat-game');
-    var cycleRoot = document.getElementById('lte-cycle-game');
-
-    var sortGame = sortRoot ? new SortGame(sortRoot, { items: LIVING_NONLIVING_ITEMS, bins: LIVING_NONLIVING_BINS, scoreKey: 'sort' }) : null;
-    var habitatGame = habitatRoot ? new SortGame(habitatRoot, { items: HABITAT_ITEMS, bins: HABITAT_BINS, scoreKey: 'habitat' }) : null;
-    var cycleGame = cycleRoot ? new CycleGame(cycleRoot, LIFE_CYCLES) : null;
-
-    updateScorePanel();
-
-    var r1 = document.getElementById('lte-sort-reset');
-    if (r1) r1.addEventListener('click', function () { sortGame.reset(); });
-    var r2 = document.getElementById('lte-habitat-reset');
-    if (r2) r2.addEventListener('click', function () { habitatGame.reset(); });
-    var r3 = document.getElementById('lte-cycle-reset');
-    if (r3) r3.addEventListener('click', function () { cycleGame.reset(); });
-
+  document.addEventListener('DOMContentLoaded', () => {
+    initSort('sort', LIVING_NONLIVING_ITEMS, LIVING_NONLIVING_BINS);
+    initSort('habitat', HABITAT_ITEMS, HABITAT_BINS);
+    initCycles(LIFE_CYCLES);
     initQuiz();
   });
 })();
