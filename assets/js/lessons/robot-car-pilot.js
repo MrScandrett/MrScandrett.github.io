@@ -76,9 +76,19 @@
     if (pose && state.kind === 'sim') pose.textContent = 'x ' + sim.x.toFixed(0) + ' cm · y ' + sim.y.toFixed(0) + ' cm · heading ' + ((sim.heading * 180 / Math.PI % 360 + 360) % 360).toFixed(0) + '° · from start ' + Math.hypot(sim.x - 40, sim.y - 100).toFixed(0) + ' cm';
   }
 
-  var simRunning = false;
-  function simLoop(dt) { sim.step(Math.min(0.05, dt)); drawSim(); }
-  if (window.SimKit && SimKit.loop) SimKit.loop(function (dt) { if (simRunning || state.kind === 'sim') simLoop(dt); }, { el: SimKit.stage('#rc-sim') });
+  // The simulated car is a world, not an animation: it must keep moving while the
+  // canvas is scrolled away (the Mission panel is far below it), or a mission's
+  // timed steps run out while the car stands still. So physics runs on its own
+  // clock, only while something is moving, and only the drawing pauses off-screen.
+  var lastPhysics = performance.now();
+  setInterval(function () {
+    var now = performance.now(), dt = Math.min(0.25, (now - lastPhysics) / 1000);
+    lastPhysics = now;
+    if (state.kind !== 'sim') return;
+    if (!sim.left && !sim.right && sim.mode !== 'line' && sim.mode !== 'avoid' && sim.mode !== 'follow') return;
+    while (dt > 1e-6) { var h = Math.min(0.05, dt); sim.step(h); dt -= h; }
+  }, 30);
+  if (window.SimKit && SimKit.loop) SimKit.loop(function () { if (state.kind === 'sim') drawSim(); }, { el: SimKit.stage('#rc-sim') });
   drawSim();
 
   // ---- Log -----------------------------------------------------------------

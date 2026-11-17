@@ -24,6 +24,13 @@ test('joystick mixing: dead zone, straight, arcs, spins, reverse', () => {
   const arcLeft = E.mixJoystick(-0.5, 0.8, 200);
   assert.equal(arcLeft.N, 4);
   assert.ok(arcLeft.D1 > arcLeft.D2, 'turning left: right side (D1) faster');
+  // The lower half of the stick never drives forward.
+  for (const [x, y] of [[0.3, -0.3], [-0.3, -0.2], [0.5, -0.1], [0.3, 0], [-0.25, 0.05], [0.1, -0.5]]) {
+    const c = E.mixJoystick(x, y, 200);
+    assert.ok(c.N === 3 && c.D1 !== 3, `stick (${x}, ${y}) gave ${JSON.stringify(c)}`);
+  }
+  assert.deepEqual(E.mixJoystick(0.3, 0, 200).D1, 2, 'small push right spins right');
+  assert.deepEqual(E.mixJoystick(0.1, -0.5, 200).D1, 4, 'mostly down reverses');
 });
 
 test('frame reader splits a byte stream and keeps partial frames', () => {
@@ -117,7 +124,34 @@ test('bridge relays WebSocket <-> TCP, and stops the car when the page goes quie
   second.onmessage = (e) => secondMsgs.push(String(e.data));
   await waitFor(() => secondMsgs.some((m) => m.includes('busy')));
   second.close();
+
+  // A curve with one side stopped is still moving: the watchdog must stop it too.
+  const stopsBefore = fake.got.join('').split('{"N":100}').length;
+  ws.send('{"H":"11","N":4,"D1":120,"D2":0}');
+  await waitFor(() => fake.got.join('').split('{"N":100}').length > stopsBefore, 2500);
   ws.close();
+});
+
+test('a page turned away by a busy bridge hears why at once', async (t) => {
+  const bridge = await startBridge({ car: 'x', port: 0, mock: true, lan: false, origins: [] }, () => {});
+  t.after(() => bridge.close());
+  const url = `ws://127.0.0.1:${bridge.address().port}`;
+  const first = new E.links.wifi(url);
+  await first.connect();
+  const started = Date.now();
+  await assert.rejects(new E.links.wifi(url).connect(), /else is driving/);
+  assert.ok(Date.now() - started < 1500, 'no 4-second timeout');
+  first.close();
+});
+
+test('ask() hears a reply that arrives before write() resolves', async () => {
+  const link = { connect: async () => 'x', close() {}, write(text) {
+    const tag = JSON.parse(text).H;
+    link.onText(`{${tag}_42}`);           // answers synchronously
+    return Promise.resolve();
+  } };
+  const car = new E.Car(link);
+  assert.equal(await car.ask(E.cmd.distance(), 200), '42');
 });
 
 async function waitFor(fn, ms = 1500) {

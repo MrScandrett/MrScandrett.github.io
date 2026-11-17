@@ -74,7 +74,12 @@
     var mag = Math.min(1, Math.hypot(x, y));
     if (mag < 0.15) return cmd.stop();
     var speed = Math.round(max * mag);
-    if (y < -0.35) return cmd.move(4, speed);
+    // At or below the stick's middle the car never goes forward: mostly down
+    // reverses, mostly sideways spins in place.
+    if (y < 0.15) {
+      if (y < -0.35 || -y >= Math.abs(x)) return cmd.move(4, speed);
+      return cmd.move(x < 0 ? 1 : 2, speed);
+    }
     if (Math.abs(x) > 0.55 && y < 0.45) return cmd.move(x < 0 ? 1 : 2, speed);
     if (Math.abs(x) < 0.2) return cmd.move(3, speed);
     // Slow the inside wheels: a full side push leaves them at 20% of the outside.
@@ -334,7 +339,7 @@
           var info; try { info = JSON.parse(text); } catch (err) { info = null; }
           if (info) {
             if (!settled && info.bridge === 'car-connected') { settled = true; clearTimeout(timer); resolve(info.car === 'simulator' ? 'Wi-Fi bridge (simulated car)' : 'Wi-Fi car at ' + info.car); }
-            else if (!settled && info.bridge === 'car-unreachable') { settled = true; clearTimeout(timer); ws.close(); reject(new Error(info.message)); }
+            else if (!settled && /^(car-unreachable|busy|car-lost)$/.test(info.bridge)) { settled = true; clearTimeout(timer); ws.close(); reject(new Error(info.message)); }
             if (self.onStatus) self.onStatus(info);
             return;
           }
@@ -342,7 +347,10 @@
         if (self.onText) self.onText(text);
       };
       ws.onerror = function () { if (!settled) { settled = true; clearTimeout(timer); reject(new Error('Could not reach the bridge at ' + self.url + '. Is it running?')); } };
-      ws.onclose = function () { if (settled && self.onClose) self.onClose(); };
+      ws.onclose = function () {
+        if (!settled) { settled = true; clearTimeout(timer); reject(new Error('The bridge at ' + self.url + ' hung up before the car connected.')); return; }
+        if (self.onClose) self.onClose();
+      };
     });
   };
   WifiLink.prototype.write = function (text) {
@@ -441,11 +449,12 @@
   // Send a command and wait for its tagged reply (sensor reads). Resolves null on timeout.
   Car.prototype.ask = function (command, timeoutMs) {
     var self = this;
+    // Listen before sending: a fast link can answer before write() resolves.
+    var tag = String(this.nextTag % 1000);
     return new Promise(function (resolve) {
-      self.send(command).then(function (tag) {
-        var timer = setTimeout(function () { if (self.waiting[tag]) { delete self.waiting[tag]; resolve(null); } }, timeoutMs || 800);
-        self.waiting[tag] = function (v) { clearTimeout(timer); resolve(v); };
-      });
+      var timer = setTimeout(function () { if (self.waiting[tag]) { delete self.waiting[tag]; resolve(null); } }, timeoutMs || 800);
+      self.waiting[tag] = function (v) { clearTimeout(timer); resolve(v); };
+      self.send(command).catch(function () { if (self.waiting[tag]) { delete self.waiting[tag]; clearTimeout(timer); resolve(null); } });
     });
   };
 

@@ -262,10 +262,14 @@ export function startBridge(opts, log = console.log) {
 
     ws.onmessage = (text) => {
       for (const one of String(text).match(/\{[^}]*\}/g) || []) {
-        let n = null;
-        try { n = Number(JSON.parse(one).N); } catch { /* not JSON: pass it through */ }
-        // N2 stops itself after T ms, so it doesn't need repeating.
-        if (MOTION.has(n)) { lastMotion = Date.now(); moving = n !== 2 && !/"D2":0[,}]/.test(one); }
+        let n = null, c = {};
+        try { c = JSON.parse(one); n = Number(c.N); } catch { /* not JSON: pass it through */ }
+        // N2 stops itself after T ms, so it doesn't need repeating. N4 carries a
+        // speed per side (D1 right, D2 left): it moves if either one is non-zero.
+        if (MOTION.has(n)) {
+          lastMotion = Date.now();
+          moving = n === 4 ? Number(c.D1) > 0 || Number(c.D2) > 0 : n !== 2 && Number(c.D2) !== 0;
+        }
         if (n === 100) moving = false;
         thisCar.write(one);
       }
