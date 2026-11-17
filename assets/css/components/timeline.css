@@ -211,11 +211,12 @@
   height: 8px;
   border-radius: 50%;
   background: var(--tl-accent);
-  animation: tl-now-pulse 2.4s ease-out infinite;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent) 24%, transparent);
+  animation: tl-now-pulse 2.4s ease-in-out infinite;
 }
 @keyframes tl-now-pulse {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--tl-accent) 60%, transparent); }
-  70%, 100% { box-shadow: 0 0 0 10px transparent; }
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.28); opacity: 1; }
 }
 .tl-tick.tl-tick-start { transform: translateX(-4px); }
 .tl-tick.tl-tick-start::before { left: 4px; }
@@ -316,16 +317,32 @@
 /* An approximate date (c. 627 BC, 1452?) is a ring, not a solid dot. */
 .tl-stem.tl-approx::after { background: var(--tl-paper); box-shadow: inset 0 0 0 2.5px var(--tl-c, var(--tl-accent)), 0 0 0 2px var(--tl-paper); }
 .tl .tl-mark.tl-compact.tl-approx { background: var(--tl-paper); border-color: var(--tl-c, var(--tl-accent)); }
-.tl-stem.tl-approx.is-current::after { animation-name: tl-ring-pulse; }
-@keyframes tl-ring-pulse {
-  0% { box-shadow: inset 0 0 0 2.5px var(--tl-c, var(--tl-accent)), 0 0 0 2px var(--tl-paper), 0 0 0 2px color-mix(in srgb, var(--tl-c, var(--tl-accent)) 70%, transparent); }
-  70%, 100% { box-shadow: inset 0 0 0 2.5px var(--tl-c, var(--tl-accent)), 0 0 0 2px var(--tl-paper), 0 0 0 12px transparent; }
+/* The selected event's dot pulses via compositor-only transform/opacity, so it stays cheap off-frame too. */
+.tl-stem.is-current::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--tl-c, var(--tl-accent));
+  box-sizing: border-box;
+  pointer-events: none;
+  animation: tl-dot-pulse 2.4s ease-out infinite;
 }
-/* The selected event's dot pulses, so the eye finds it on a projector. */
-.tl-stem.is-current::after, .tl .tl-mark.tl-compact[aria-current="true"] { animation: tl-dot-pulse 2.4s ease-out infinite; }
+.tl-stem.tl-major.is-current::before { left: -6px; bottom: -7px; width: 14px; height: 14px; }
 @keyframes tl-dot-pulse {
-  0% { box-shadow: 0 0 0 2px var(--tl-paper), 0 0 0 2px color-mix(in srgb, var(--tl-c, var(--tl-accent)) 70%, transparent); }
-  70%, 100% { box-shadow: 0 0 0 2px var(--tl-paper), 0 0 0 12px transparent; }
+  0% { transform: scale(1); opacity: .75; }
+  70%, 100% { transform: scale(2.4); opacity: 0; }
+}
+.tl .tl-mark.tl-compact[aria-current="true"] {
+  box-shadow: 0 0 0 2px var(--tl-paper), 0 0 0 4px color-mix(in srgb, var(--tl-c, var(--tl-accent)) 35%, transparent);
+  animation: tl-compact-pulse 2.4s ease-in-out infinite;
+}
+@keyframes tl-compact-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.22); }
 }
 
 /* Ranges (1717–23, 335–175 Ma): a span on the axis from start to end; hatched where more than
@@ -623,7 +640,7 @@ html.tl-scroll-lock, html.tl-scroll-lock body { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .tl-viewport { scroll-behavior: auto; }
   .tl .tl-mark, .tl-stem, .tl-cosmic-pin { transition: none; }
-  .tl-tick.tl-now::after, .tl-stem.is-current::after, .tl .tl-mark.tl-compact[aria-current="true"] { animation: none; }
+  .tl-tick.tl-now::after, .tl-stem.is-current::before, .tl .tl-mark.tl-compact[aria-current="true"] { animation: none; }
 }
 
 /* ---------- print: always the list */

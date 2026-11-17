@@ -203,6 +203,9 @@
     return raw;
   }
 
+  var NUM_FMT = typeof Intl !== 'undefined' && Intl.NumberFormat ? new Intl.NumberFormat('en-US') : null;
+  function fmtNum(n) { return NUM_FMT ? NUM_FMT.format(n) : String(n); }
+
   function trimNumber(n) {
     return String(Math.round(n * 100) / 100);
   }
@@ -213,14 +216,14 @@
     if (yearsAgo >= 1e6) return trimNumber(yearsAgo / 1e6) + (short ? 'M' : ' million') + ' yrs ago';
     if (short && yearsAgo >= 1e3) return trimNumber(yearsAgo / 1e3) + 'k yrs ago';
     var n = Math.round(yearsAgo);
-    return n.toLocaleString('en-US') + (n === 1 ? ' yr ago' : ' yrs ago');
+    return fmtNum(n) + (n === 1 ? ' yr ago' : ' yrs ago');
   }
 
   // Tick label for year t. ctx: { deep, bc, short }
   function formatTick(t, ctx) {
     if (ctx.deep) return t >= NOW - 0.5 ? 'today' : formatAgo(NOW - t, ctx.short);
     var y = Math.round(t);
-    if (y < 0) return (-y).toLocaleString('en-US') + ' BC';
+    if (y < 0) return fmtNum(-y) + ' BC';
     if (y === 0) return 'BC | AD';
     if (ctx.bc) return 'AD ' + y;
     return String(y);
@@ -248,10 +251,10 @@
     var out;
     if (parsed.start < DEEP) out = formatAgo(ago);
     else if (ago < 1) out = parsed.start > NOW ? 'in the future' : 'this year';
-    else out = Math.round(ago).toLocaleString('en-US') + ' year' + (Math.round(ago) === 1 ? '' : 's') + ' ago';
+    else out = fmtNum(Math.round(ago)) + ' year' + (Math.round(ago) === 1 ? '' : 's') + ' ago';
     var length = parsed.end - parsed.start;
     if (length >= 1) {
-      out += ' · lasted ' + (length >= 1e6 ? formatAgo(length).replace(' ago', '') : Math.round(length).toLocaleString('en-US') + ' years');
+      out += ' · lasted ' + (length >= 1e6 ? formatAgo(length).replace(' ago', '') : fmtNum(Math.round(length)) + ' years');
     }
     return (parsed.approx ? 'about ' : '') + out;
   }
@@ -261,7 +264,7 @@
     if (!(gap >= 1)) return '';
     if (gap >= 1e6) return formatAgo(gap).replace(' ago', '') + ' later';
     var g = Math.round(gap);
-    return g.toLocaleString('en-US') + ' year' + (g === 1 ? '' : 's') + ' later';
+    return fmtNum(g) + ' year' + (g === 1 ? '' : 's') + ' later';
   }
 
   // Carl Sagan's Cosmic Calendar: the universe's whole history squeezed into one year,
@@ -553,7 +556,7 @@
     this.followHash();
 
     if (typeof ResizeObserver === 'function') {
-      var lastW = 0;
+      var lastW = this.root.dataset.tlView === 'track' ? this.viewport.clientWidth : 0;
       new ResizeObserver(function () {
         var w = self.viewport.clientWidth;
         if (w && w !== lastW) { lastW = w; self.widths = null; self.cardMin = 0; self.layout(); }
@@ -564,9 +567,10 @@
   Timeline.prototype.build = function () {
     var self = this;
     var list = this.list;
+    var listParent = list.parentNode;
+    var listNext = list.nextSibling;
     var root = el('div', 'tl');
     root.setAttribute('data-memory-ignore', '');
-    list.parentNode.insertBefore(root, list);
     this.root = root;
 
     // Toolbar
@@ -811,6 +815,7 @@
     });
 
     this.renderGaps();
+    listParent.insertBefore(root, listNext);
 
     // Keyboard, wheel zoom and drag-to-pan on the track.
     root.addEventListener('keydown', function (e) {
@@ -1794,6 +1799,13 @@
       label.hidden = false;
       widths.set(era, { full: exact(label) });
     });
+    if (!this.tickFont && this.ticks) {
+      var probe = el('span', 'tl-tick', '0');
+      this.ticks.appendChild(probe);
+      var pcs = getComputedStyle(probe);
+      this.tickFont = pcs.fontWeight + ' ' + pcs.fontSize + ' ' + pcs.fontFamily;
+      probe.remove();
+    }
     marks.forEach(function (m) { m.classList.remove('tl-measure'); });
     widths.type = type;
     this.widths = widths;
@@ -1961,6 +1973,8 @@
     var toX = function (t) { return PAD + p.norm(t) * inner; };
     var inView = function (px) { return px >= vis0 - 2 && px <= vis1 + 2 && px >= PAD - 1 && px <= W - PAD + 1; };
     var list = [], minors = [], first = [];
+    var ticksFrag = document.createDocumentFragment();
+    var gridFrag = document.createDocumentFragment();
     if (this.scale === 'log') {
       // Round "years ago" values, coarsest first: 1, 2, 5 × 10^k; then 3, 4, 6–9 × 10^k where a
       // decade is wide enough; then tenths of a decade (4,100 … 4,900) deep in a zoom. Labels
@@ -2033,8 +2047,9 @@
       }
     }
     minors.forEach(function (px) {
-      var minor = ticks.appendChild(el('span', 'tl-minor'));
+      var minor = el('span', 'tl-minor');
       minor.style.left = px + 'px';
+      ticksFrag.appendChild(minor);
     });
     first.concat(list).forEach(function (t) {
       var px = toX(t);
@@ -2052,12 +2067,15 @@
       else if (px + w / 2 > vis1 - 2) { tick.classList.add('tl-tick-end'); a = px + 4 - w; }
       if (taken.some(function (r) { return a < r[1] + 10 && a + w > r[0] - 10; })) return;
       taken.push([a, a + w]);
-      ticks.appendChild(tick);
+      ticksFrag.appendChild(tick);
       if (t !== 0) {
-        var line = grid.appendChild(el('span', 'tl-gridline'));
+        var line = el('span', 'tl-gridline');
         line.style.left = px + 'px';
+        gridFrag.appendChild(line);
       }
     });
+    if (ticksFrag.childNodes.length) ticks.appendChild(ticksFrag);
+    if (gridFrag.childNodes.length) grid.appendChild(gridFrag);
   };
 
   // The reading line through the selected event and its date on the axis. Returns the date's
@@ -2437,15 +2455,26 @@
   });
 
   // Theme switches change the page colour behind the labels.
+  var themeFrame = 0;
   new MutationObserver(function () {
-    all.forEach(function (t) { t.layout(); });
+    if (themeFrame) return;
+    themeFrame = requestAnimationFrame(function () {
+      themeFrame = 0;
+      all.forEach(function (t) { t.layout(); });
+    });
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-lighting', 'class'] });
 
   // Labels are sized to their text, so measure again once a web font arrives (a weight first
   // used by the track starts loading only when the track is measured with the fallback font).
   if (document.fonts && document.fonts.addEventListener) {
+    var fontFrame = 0;
     document.fonts.addEventListener('loadingdone', function () {
-      all.forEach(function (t) { t.widths = null; t.layout(); });
+      if (document.fonts.status === 'loading') return;
+      if (fontFrame) return;
+      fontFrame = requestAnimationFrame(function () {
+        fontFrame = 0;
+        all.forEach(function (t) { t.widths = null; t.layout(); });
+      });
     });
   }
 

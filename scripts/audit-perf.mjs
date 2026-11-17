@@ -113,7 +113,7 @@ function serve() {
 // Runs in the page before any of its scripts: counts rAF callbacks and long tasks, records LCP.
 function instrument() {
   // The site background (canvas-bg.js) is counted apart from lesson loops.
-  const stats = { raf: 0, bgRaf: 0, longTaskMs: 0, lcp: 0 };
+  const stats = { raf: 0, bgRaf: 0, longTaskMs: 0, lcp: null };
   window.__perf = stats;
   const raf = window.requestAnimationFrame.bind(window);
   window.requestAnimationFrame = (cb) => {
@@ -121,12 +121,18 @@ function instrument() {
     return raf((t) => { if (bg) stats.bgRaf++; else stats.raf++; cb(t); });
   };
   try {
-    new PerformanceObserver((list) => {
+    const longTaskObserver = new PerformanceObserver((list) => {
       for (const e of list.getEntries()) stats.longTaskMs += Math.max(0, e.duration - 50);
-    }).observe({ type: "longtask", buffered: true });
-    new PerformanceObserver((list) => {
+    });
+    longTaskObserver.observe({ type: "longtask", buffered: true });
+    const lcpObserver = new PerformanceObserver((list) => {
       for (const e of list.getEntries()) stats.lcp = e.startTime;
-    }).observe({ type: "largest-contentful-paint", buffered: true });
+    });
+    lcpObserver.observe({ type: "largest-contentful-paint", buffered: true });
+    window.__perfFlush = () => {
+      for (const e of longTaskObserver.takeRecords()) stats.longTaskMs += Math.max(0, e.duration - 50);
+      for (const e of lcpObserver.takeRecords()) stats.lcp = e.startTime;
+    };
   } catch {}
 }
 
@@ -163,7 +169,14 @@ async function audit(browser, base, rel) {
   try {
     await page.goto(`${base}/${rel}`, { waitUntil: "load", timeout: 60000 });
     await page.waitForTimeout(1500);
-    const load = await page.evaluate(() => {
+    const load = await page.evaluate(async () => {
+      if (window.__perfFlush) window.__perfFlush();
+      // If heavy post-load work pushed first paint presentation past waitForTimeout(1500),
+      // let two animation frames + a task turn run so Chromium flushes LCP before reading it.
+      if (window.__perf.lcp === null) {
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 0))));
+        if (window.__perfFlush) window.__perfFlush();
+      }
       const bytes = {};
       let requests = 0;
       for (const r of performance.getEntriesByType("resource")) {
@@ -175,7 +188,8 @@ async function audit(browser, base, rel) {
       }
       const nav = performance.getEntriesByType("navigation")[0];
       bytes.html = nav ? nav.decodedBodySize : 0;
-      return { lcpMs: Math.round(window.__perf.lcp), tbtMs: Math.round(window.__perf.longTaskMs), requests, bytes };
+      const lcp = window.__perf.lcp;
+      return { lcpMs: lcp === null ? null : Math.round(lcp), tbtMs: Math.round(window.__perf.longTaskMs), requests, bytes };
     });
     const top = await sample(page, cdp);
     // Find a scroll position with no canvas within 250 px of the screen (SimKit's gate margin is
@@ -234,7 +248,11 @@ function compare(baseline, results) {
 
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
-const browser = await playwright.chromium.launch({ executablePath: findChromium(), args: ["--autoplay-policy=no-user-gesture-required"] });
+const executablePath = findChromium(["PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH", "PUPPETEER_EXECUTABLE_PATH"]);
+const browser = await playwright.chromium.launch({
+  ...(executablePath ? { executablePath } : {}),
+  args: ["--autoplay-policy=no-user-gesture-required"],
+});
 console.log(`Serving ${path.relative(repo, dir) || "."} at ${base}; ${pages.length} page(s), CPU x${cpu}, ${windowMs} ms windows`);
 
 const results = [];
@@ -249,7 +267,7 @@ await Promise.all(Array.from({ length: Math.min(concurrency, pages.length) }, as
     }
     results.push(r);
     if (r.failed) console.log(`  FAIL ${rel}: ${r.failed}`);
-    else console.log(`  ${rel}  LCP ${r.lcpMs}ms  TBT ${r.tbtMs}ms  JS ${kb(r.bytes.js)}KB  img ${kb(r.bytes.img)}KB  data ${kb(r.bytes.data)}KB  req ${r.requests}  busy ${r.top.busyMsPerSec}->${r.offscreen.busyMsPerSec}ms/s  rAF ${r.top.rafPerSec}->${r.offscreen.rafPerSec}/s${r.canvasesStillVisible ? " (canvas in view)" : ""}`);
+    else console.log(`  ${rel}  LCP ${r.lcpMs == null ? "n/a" : `${r.lcpMs}ms`}  TBT ${r.tbtMs}ms  JS ${kb(r.bytes.js)}KB  img ${kb(r.bytes.img)}KB  data ${kb(r.bytes.data)}KB  req ${r.requests}  busy ${r.top.busyMsPerSec}->${r.offscreen.busyMsPerSec}ms/s  rAF ${r.top.rafPerSec}->${r.offscreen.rafPerSec}/s${r.canvasesStillVisible ? " (canvas in view)" : ""}`);
   }
 }));
 await browser.close();

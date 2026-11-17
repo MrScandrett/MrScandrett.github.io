@@ -144,27 +144,36 @@
     return (lighter + 0.05) / (darker + 0.05);
   }
 
-  function effectiveBackground(element) {
-    var layers = [];
-    var current = element;
-    while (current && current.nodeType === 1) {
-      layers.push(current);
-      current = current.parentElement;
+  function readStyle(element, cache) {
+    if (!cache || !cache.styles) return getComputedStyle(element);
+    var style = cache.styles.get(element);
+    if (!style) {
+      style = getComputedStyle(element);
+      cache.styles.set(element, style);
     }
+    return style;
+  }
 
-    // Transparent page and gradient layers reveal the browser's color-scheme
-    // canvas. Starting every walk from white made dark themes look light and
-    // could turn already-readable text black on a dark panel.
+  function effectiveBackground(element, cache) {
+    var bgs = cache && cache.bgs;
     var isDarkCanvas = document.documentElement.dataset.lighting === "night" ||
       document.documentElement.style.colorScheme === "dark";
-    var result = isDarkCanvas ? [0, 0, 0, 1] : [255, 255, 255, 1];
-    for (var index = layers.length - 1; index >= 0; index -= 1) {
-      var layerStyle = getComputedStyle(layers[index]);
+    var rootBase = isDarkCanvas ? [0, 0, 0, 1] : [255, 255, 255, 1];
+
+    function resolveNode(node) {
+      if (!node || node.nodeType !== 1) return rootBase;
+      if (bgs && bgs.has(node)) return bgs.get(node);
+      var result = resolveNode(node.parentElement);
+      var layerStyle = readStyle(node, cache);
       var color = parseColor(layerStyle.backgroundColor);
       if (color && color[3]) result = composite(color, result);
       var gradient = averageGradient(layerStyle.backgroundImage, result);
       if (gradient) result = gradient;
+      if (bgs) bgs.set(node, result);
+      return result;
     }
+
+    var result = resolveNode(element);
 
     if (element.namespaceURI === "http://www.w3.org/2000/svg" && element.ownerSVGElement) {
       try {
@@ -175,7 +184,7 @@
           if (!(rect.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)) return;
           var box = rect.getBBox();
           if (centerX < box.x || centerX > box.x + box.width || centerY < box.y || centerY > box.y + box.height) return;
-          var rectStyle = getComputedStyle(rect);
+          var rectStyle = readStyle(rect, cache);
           var fill = parseColor(rectStyle.fill);
           if (fill && fill[3]) {
             fill[3] *= Number(rectStyle.fillOpacity) * Number(rectStyle.opacity);
@@ -187,11 +196,11 @@
     return result;
   }
 
-  function isVisible(element, style) {
+  function isVisible(element, style, ancestorChecked) {
     // Opacity is deliberately not checked: fade-in reveals start at 0 and finish by CSS animation, which fires no
     // DOM change, so an element skipped while transparent would keep its unfixed color once it appears.
     if (style.display === "none" || style.visibility === "hidden") return false;
-    if (element.closest("[hidden], [aria-hidden=\"true\"]")) return false;
+    if (!ancestorChecked && element.closest("[hidden], [aria-hidden=\"true\"]")) return false;
     var rect = element.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0;
   }
@@ -432,59 +441,68 @@
     if (!element.hasAttribute(TOUCHED_ATTR)) element.setAttribute(TOUCHED_ATTR, "");
   }
 
-  function inspect(element) {
+  function captureOriginal(element) {
+    return {
+      colorValue: element.style.getPropertyValue("color"),
+      colorPriority: element.style.getPropertyPriority("color"),
+      fillValue: element.style.getPropertyValue("fill"),
+      fillPriority: element.style.getPropertyPriority("fill")
+    };
+  }
+
+  function applyPendingWrites(pending) {
+    for (var i = 0; i < pending.length; i += 1) {
+      var item = pending[i];
+      var element = item.element;
+      if (!originals.has(element)) remember(element, item.original);
+      if (item.color != null) element.style.setProperty("color", item.color, "important");
+      if (item.fill != null) element.style.setProperty("fill", item.fill, "important");
+      if (item.attr) element.setAttribute("data-contrast-guard", item.attr);
+    }
+  }
+
+  function inspect(element, pending, ancestorChecked, cache) {
     if (element.closest("[data-contrast-guard-skip]")) return;
     if (element.matches("#step-1 svg text, #curved svg text, #double svg text, .bb-anatomy-svg > text, #eg-gauge-value, .ml-waveform-btn:first-child")) return;
-    var style = getComputedStyle(element);
-    if (!isVisible(element, style)) return;
+    var style = readStyle(element, cache);
+    if (!isVisible(element, style, ancestorChecked)) return;
 
     var isSvgText = element.namespaceURI === "http://www.w3.org/2000/svg" && element.tagName.toLowerCase() === "text";
     var foreground = parseColor(isSvgText && style.fill !== "none" ? style.fill : style.color);
     if (!foreground || foreground[3] === 0) return;
 
-    if (isSvgText) {
-      remember(element, {
-        colorValue: element.style.getPropertyValue("color"),
-        colorPriority: element.style.getPropertyPriority("color"),
-        fillValue: element.style.getPropertyValue("fill"),
-        fillPriority: element.style.getPropertyPriority("fill")
-      });
-      element.style.setProperty("color", style.fill, "important");
-      element.setAttribute("data-contrast-guard", "svg");
-    }
-
-    var background = effectiveBackground(element);
+    var original = isSvgText && !originals.has(element) ? captureOriginal(element) : null;
+    var background = effectiveBackground(element, cache);
     foreground = composite(foreground, background);
     var currentContrast = contrast(foreground, background);
     if (currentContrast >= MIN_NORMAL) {
+      if (!isSvgText) return;
       // HTML_CodeSniffer evaluates SVG text through `color`, while browsers paint
       // it through `fill`. Keep both channels synchronized for diagrams.
-      if (!isSvgText || contrast(parseColor(style.color) || foreground, background) >= MIN_NORMAL) return;
+      if (contrast(parseColor(style.color) || foreground, background) >= MIN_NORMAL) {
+        pending.push({ element: element, color: style.fill, fill: null, attr: "svg", original: original });
+        return;
+      }
       var paintedColor = "rgb(" + foreground.slice(0, 3).map(Math.round).join(", ") + ")";
-      if (!originals.has(element)) remember(element, {
-        colorValue: element.style.getPropertyValue("color"), colorPriority: element.style.getPropertyPriority("color"),
-        fillValue: element.style.getPropertyValue("fill"), fillPriority: element.style.getPropertyPriority("fill")
-      });
-      element.style.setProperty("color", paintedColor, "important");
-      element.style.setProperty("fill", paintedColor, "important");
-      element.setAttribute("data-contrast-guard", "svg");
+      pending.push({ element: element, color: paintedColor, fill: paintedColor, attr: "svg", original: original });
       return;
     }
 
     var darkContrast = contrast(DARK_INK, background);
     var lightContrast = contrast(LIGHT_INK, background);
     var replacement = darkContrast >= lightContrast ? "#000000" : "#ffffff";
-    if (Math.max(darkContrast, lightContrast) < MIN_NORMAL) return;
+    if (Math.max(darkContrast, lightContrast) < MIN_NORMAL) {
+      if (isSvgText) pending.push({ element: element, color: style.fill, fill: null, attr: "svg", original: original });
+      return;
+    }
 
-    if (!originals.has(element)) remember(element, {
-      colorValue: element.style.getPropertyValue("color"),
-      colorPriority: element.style.getPropertyPriority("color"),
-      fillValue: element.style.getPropertyValue("fill"),
-      fillPriority: element.style.getPropertyPriority("fill")
+    pending.push({
+      element: element,
+      color: replacement,
+      fill: isSvgText ? replacement : null,
+      attr: replacement === "#000000" ? "dark" : "light",
+      original: original || captureOriginal(element)
     });
-    element.style.setProperty("color", replacement, "important");
-    if (isSvgText) element.style.setProperty("fill", replacement, "important");
-    element.setAttribute("data-contrast-guard", replacement === "#000000" ? "dark" : "light");
   }
 
   // Each pass strips its inline colors and re-applies them. On an element with
@@ -509,21 +527,33 @@
     scheduled = false;
     var started = window.performance ? performance.now() : 0;
     var root = document.documentElement;
+    var hadState = originals.size > 0 || surfaceOriginals.size > 0;
+    var pending = [];
     ensurePassStyle();
     root.setAttribute(PASS_ATTR, "");
     try {
       restore();
       softenSurfaces();
-      // Skipped regions are never entered, so a big drawing (a long score) costs nothing per pass.
+      // Skipped, hidden, and display:none subtrees are never entered, so large hidden panels
+      // (inactive chapters, collapsed lists, or long scores) cost nothing per pass.
       if (document.body) {
+        var passCache = { styles: new WeakMap(), bgs: new WeakMap() };
         var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
-          acceptNode: function (node) { return node.hasAttribute(SKIP_ATTR) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+          acceptNode: function (node) {
+            if (node.hasAttribute(SKIP_ATTR) || node.hasAttribute("hidden") || node.getAttribute("aria-hidden") === "true") {
+              return NodeFilter.FILTER_REJECT;
+            }
+            if (/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/i.test(node.tagName)) return NodeFilter.FILTER_REJECT;
+            if (readStyle(node, passCache).display === "none") return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+          }
         });
         for (var element = walker.nextNode(); element; element = walker.nextNode()) {
-          if (containsReadableText(element)) inspect(element);
+          if (containsReadableText(element)) inspect(element, pending, true, passCache);
         }
       }
-      void root.offsetWidth; // flush the final colors while transitions are still off
+      applyPendingWrites(pending);
+      if (hadState || pending.length || surfaceOriginals.size) void root.offsetWidth; // flush the final colors while transitions are still off
     } finally {
       root.removeAttribute(PASS_ATTR);
       if (window.performance) { lastRun = performance.now(); lastCost = lastRun - started; }
@@ -571,9 +601,11 @@
   function runText() {
     textScheduled = false;
     if (scheduled) { textTargets.clear(); return; }
+    var pending = [];
     textTargets.forEach(function (element) {
-      if (element.isConnected && containsReadableText(element)) inspect(element);
+      if (element.isConnected && containsReadableText(element)) inspect(element, pending, false);
     });
+    applyPendingWrites(pending);
     textTargets.clear();
   }
 

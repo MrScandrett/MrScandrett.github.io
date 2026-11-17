@@ -105,7 +105,8 @@
 
   function firstMatch(entry, text) {
     var best = null;
-    entry.patterns.forEach(function (pattern) {
+    var patterns = entry.patterns || (entry.patterns = compilePatterns(entry));
+    patterns.forEach(function (pattern) {
       var match = pattern.exec(text);
       if (match && (!best || match.index < best.index)) best = match;
     });
@@ -147,12 +148,21 @@
     node.parentNode.replaceChild(fragment, node);
   }
 
-  function isEligibleTextNode(node, root) {
-    if (!node.nodeValue || !node.nodeValue.trim()) return false;
-    var parent = node.parentElement;
-    if (!parent || !root.contains(parent)) return false;
-    if (parent.closest('a, button, h1, h2, h3, h4, code, pre, kbd, samp, script, noscript, style, textarea, input, select, option, label, nav, header, footer, dialog, [contenteditable], [data-no-glossary], .cos-glossary-card, .cos-glossary-term')) return false;
-    return true;
+  var EXCLUDE_SELECTOR = 'a, button, h1, h2, h3, h4, code, pre, kbd, samp, script, noscript, style, textarea, input, select, option, label, nav, header, footer, dialog, [contenteditable], [data-no-glossary], .cos-glossary-card, .cos-glossary-term';
+
+  function collectEligibleTextNodes(root) {
+    if (!root || (root.closest && root.closest(EXCLUDE_SELECTOR))) return [];
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          return node.matches && node.matches(EXCLUDE_SELECTOR) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+        }
+        return node.nodeValue && node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    return nodes;
   }
 
   function markExplicitTerms(root) {
@@ -172,37 +182,34 @@
   }
 
   function markAutomaticTerms(root) {
-    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode: function (node) {
-        return isEligibleTextNode(node, root) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-      }
-    });
-    var nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
+    var nodes = collectEligibleTextNodes(root);
+    if (!nodes.length) return;
 
     // One sense per word: the best fit for this page, and only if it fits at all.
     var senses = new Map();
     state.terms.forEach(function (entry) {
-      var key = normalize(entry.term);
+      var key = entry._key || (entry._key = normalize(entry.term));
       if (!senses.has(key)) senses.set(key, bestSense(state.byKey.get(key), state.contexts));
     });
-    var candidates = state.terms.filter(function (entry) {
-      var sense = senses.get(normalize(entry.term));
-      return sense.entry === entry && sense.score > 0;
-    });
     // Words the page already marks by hand aren't marked a second time.
-    var marked = new Set();
     var handMarked = new Set();
     root.querySelectorAll('[data-glossary]').forEach(function (element) {
       handMarked.add(normalize(element.dataset.glossary));
     });
-    for (var i = 0; i < nodes.length && marked.size < MAX_AUTOMATIC_TERMS; i += 1) {
+    var candidates = state.terms.filter(function (entry) {
+      var key = entry._key;
+      if (handMarked.has(key)) return false;
+      var sense = senses.get(key);
+      return sense.entry === entry && sense.score > 0;
+    });
+    var marked = new Set();
+    for (var i = 0; i < nodes.length && marked.size < MAX_AUTOMATIC_TERMS && candidates.length; i += 1) {
       var node = nodes[i];
       if (!node.isConnected) continue;
       for (var j = 0; j < candidates.length; j += 1) {
         var entry = candidates[j];
-        var key = normalize(entry.term);
-        if (marked.has(key) || handMarked.has(key)) continue;
+        var key = entry._key;
+        if (marked.has(key)) continue;
         var match = firstMatch(entry, node.nodeValue);
         if (!match) continue;
         var exactMatch = { index: match.index + match[0].indexOf(match[1]), 0: match[1] };
@@ -373,9 +380,9 @@
     state.contexts = pageContexts(payload.contexts);
     state.terms = (payload.terms || []).slice().sort(function (a, b) { return b.term.length - a.term.length; });
     state.terms.forEach(function (entry) {
-      addKey(entry.term, entry);
+      entry._key = normalize(entry.term);
+      addKey(entry._key, entry);
       (entry.aliases || []).forEach(function (alias) { addKey(alias, entry); });
-      entry.patterns = compilePatterns(entry);
     });
     addStylesheet();
     state.card = createCard();
