@@ -279,6 +279,50 @@
   var REST_RE = /^r\d?([whqes])(3)?(\.)?$/;
   var CHORD_RE = /^([A-G])(##|bb|#|b)?([^\/: \t\r\n]*)(?:\/([A-G])(##|bb|#|b)?)?(?::([\d.]+))?$/;
 
+  function parseChordBar(text, song, bar) {
+    var sb = song.scoreBars && song.scoreBars.find(function (b) { return b.bar === bar; });
+    var barLen = sb ? sb.len : song.M;
+    var pos = sb ? sb.start : (bar - 1) * song.M;
+    var toks = text.split(/\s+/).filter(Boolean), parsed = [], fixed = 0, free = 0;
+    toks.forEach(function (tok) {
+      var m = CHORD_RE.exec(tok);
+      if (!m) throw new Error('Check the chord “' + tok + '”. Try a name like C, Am or G7.');
+      var beats = m[6] ? Number(m[6]) : null;
+      if (beats !== null && (!Number.isFinite(beats) || beats <= 0)) throw new Error('Use chord durations greater than zero.');
+      if (beats) fixed += beats; else free++;
+      var q = mapQuality(m[3]);
+      var display = formatDisplayQuality(m[3]);
+      var bass = m[4] ? { l: LETTERS.indexOf(m[4]), a: m[5] ? (m[5][0] === '#' ? m[5].length : -m[5].length) : 0 } : null;
+      parsed.push({
+        root: { l: LETTERS.indexOf(m[1]), a: m[2] ? (m[2][0] === '#' ? m[2].length : -m[2].length) : 0 },
+        q: q,
+        display: display,
+        bass: bass,
+        beats: beats
+      });
+    });
+    if (parsed.length && (fixed > barLen + EPS || (!free && !near(fixed, barLen)) || (free && fixed >= barLen - EPS))) {
+      throw new Error('Check your chord durations. They must fill measure ' + bar + ' (' + barLen + ' quarter-note beats).');
+    }
+    var share = free ? (barLen - fixed) / free : 0;
+    return parsed.map(function (c) {
+      var dur = c.beats || share;
+      var entry = { start: pos, dur: dur, root: c.root, q: c.q, display: c.display, bass: c.bass, bar: bar };
+      pos += dur;
+      return entry;
+    });
+  }
+
+  function shiftChord(chord, from, to) {
+    var sh = shiftBetween(from, to), flat = keySig(to) < 0;
+    function move(note) {
+      var p = shiftPitch(pitch(note.l + 28, note.a), sh.letters, sh.semis, flat);
+      if (Math.abs(p.a) > 1) p = respell(p.midi, flat);
+      return { l: p.l, a: p.a };
+    }
+    return Object.assign({}, chord, { root: move(chord.root), bass: chord.bass && move(chord.bass) });
+  }
+
   function parseTune(raw) {
     var t = {
       raw: raw, id: raw.id, key: parseKey(raw.key, raw.mode === 'minor'),
@@ -321,34 +365,8 @@
     t.len = t.scoreBars ? time : t.bars * t.M;
 
     var chords = [];
-    raw.chords.split('|').map(function (s) { return s.trim(); }).forEach(function (bar, bi) {
-      var toks = bar.split(/\s+/).filter(Boolean), parsed = [], fixed = 0, free = 0;
-      toks.forEach(function (tok) {
-        var m = CHORD_RE.exec(tok);
-        if (!m) throw new Error(raw.id + ': bad chord "' + tok + '"');
-        var beats = m[6] ? Number(m[6]) : null;
-        if (beats !== null && (!Number.isFinite(beats) || beats <= 0)) throw new Error(raw.id + ': chord durations must be positive');
-        if (beats) fixed += beats; else free++;
-        var q = mapQuality(m[3]);
-        var display = formatDisplayQuality(m[3]);
-        var bass = m[4] ? { l: LETTERS.indexOf(m[4]), a: m[5] ? (m[5][0] === '#' ? m[5].length : -m[5].length) : 0 } : null;
-        parsed.push({
-          root: { l: LETTERS.indexOf(m[1]), a: m[2] ? (m[2][0] === '#' ? m[2].length : -m[2].length) : 0 },
-          q: q,
-          display: display,
-          bass: bass,
-          beats: beats
-        });
-      });
-      var sb = t.scoreBars && t.scoreBars.filter(function (b) { return b.bar === bi + 1; })[0];
-      var barLen = sb ? sb.len : t.M;
-      if (fixed > barLen + EPS || (!free && !near(fixed, barLen)) || (free && fixed >= barLen - EPS)) throw new Error(raw.id + ': chord durations must fill bar ' + (bi + 1));
-      var pos = sb ? sb.start : bi * t.M, share = free ? (barLen - fixed) / free : 0;
-      parsed.forEach(function (c) {
-        var d = c.beats || share;
-        chords.push({ start: pos, dur: d, root: c.root, q: c.q, display: c.display, bass: c.bass, bar: bi + 1 });
-        pos += d;
-      });
+    raw.chords.split('|').forEach(function (bar, bi) {
+      chords.push.apply(chords, parseChordBar(bar, t, bi + 1));
     });
     t.chords = chords;
 
@@ -762,7 +780,7 @@
     showBass: true, bassFor: 'concert', showFingers: false, showTab: null, tabPos: 'auto', tabPosKey: null, tabStyle: null, tabPick: false, tabPins: {}, tabPinScope: 'bar', tabOctave: 0, bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, showLyrics: true, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
-    guitarForm: 'open', guitarVoice: 'manual', chordShapes: {}, pianoShapes: {}, saxShapes: {},
+    guitarForm: 'open', guitarVoice: 'manual', chordShapes: {}, chordEdits: {}, pianoShapes: {}, saxShapes: {},
     triadInv: 0,
     triadSet: '123',
     lowBass: true,
@@ -886,31 +904,32 @@
     var octaveShift = wK - wBase;                 // octaves from the original, for the second voice
     var octaveLimited = !!ins.range && wK !== wWant, octaveOut = 0;
     if (ins.range) wOut.forEach(function (e) { if (e.p && (e.p.midi < ins.range[0] || e.p.midi > ins.range[1])) octaveOut++; });
-    function moveChords(sh, flat) {
-      return permuteChords(t.chords, t.key, opts).map(function (c) {
-        var r = shiftPitch(pitch(c.root.l + 28, c.root.a), sh.letters, sh.semis, flat);
-        if (Math.abs(r.a) > 1) r = respell(r.midi, flat);
-        var bass = null;
-        if (c.bass) {
-          var b = shiftPitch(pitch(c.bass.l + 28, c.bass.a), sh.letters, sh.semis, flat);
-          if (Math.abs(b.a) > 1) b = respell(b.midi, flat);
-          bass = { l: b.l, a: b.a };
-        }
-        return {
-          start: c.start, dur: c.dur, bar: c.bar, q: c.q,
-          display: c.display || null,
-          bass: bass,
-          root: { l: r.l, a: r.a }
-        };
+    var savedEdits = opts.chordEdits && opts.chordEdits[t.id] || {}, edits = {};
+    Object.keys(savedEdits).forEach(function (bar) {
+      var edit = savedEdits[bar];
+      if (Number(bar) < 1 || Number(bar) > t.bars) return;
+      try {
+        edits[bar] = { key: parseKey(edit.key, t.key.minor), chords: parseChordBar(edit.text, t, Number(bar)) };
+      } catch (err) { /* A library update may change measure lengths. */ }
+    });
+    var baseChords = permuteChords(t.chords, t.key, opts).filter(function (c) {
+      return !edits[c.bar];
+    });
+    function moveChords(key) {
+      var chords = baseChords.map(function (c) { return shiftChord(c, t.key, key); });
+      Object.keys(edits).forEach(function (bar) {
+        var edit = edits[bar];
+        edit.chords.forEach(function (c) { chords.push(shiftChord(c, edit.key, key)); });
       });
+      return chords.sort(function (a, b) { return a.start - b.start; });
     }
     view = {
       concertKey: concertKey, writtenKey: writtenKey,
       concert: cOut,
       written: wOut,
       octaveLimited: octaveLimited, octaveOut: octaveOut,
-      concertChords: moveChords(cs, cFlat),
-      writtenChords: moveChords(ws, wFlat)
+      concertChords: moveChords(concertKey),
+      writtenChords: moveChords(writtenKey)
     };
     view.voicings = voiceChords(view.concertChords, opts.voicing);
     applyPianoShapes();
@@ -1503,6 +1522,8 @@
   function renderSheet() {
     sheetEl.dispatchEvent(new Event('fakebook:before-render'));
     if (!view) return;
+    var sizeControl = el('[data-fb-sheet-size]');
+    if (sizeControl) sizeControl.value = String(opts.zoom || 1);
     hideBarPop();
     root.classList.toggle('is-original-score', opts.sheetView === 'arrangement' && !!(tune.raw.score && tune.raw.score.musicxml));
     if (opts.sheetView === 'arrangement' && tune.raw.score && tune.raw.score.musicxml) {
@@ -1713,7 +1734,7 @@
         rowsBottom = helpTop + helpH;
       }
       var x = header;
-      out.push('<g class="fb-system">');
+      out.push('<g class="fb-system"' + (si === 0 ? ' data-creation-primary' : '') + '>');
       // bar backgrounds (click / highlight targets)
       var bx = header;
       sys.forEach(function (b, k) {
@@ -3569,7 +3590,11 @@
     tune = parsed; startBar = 0;
     if (window.FakeBookGPPlayer) window.FakeBookGPPlayer.select(raw);
     scorePractice = {};
-    if (reset) { opts.mode = raw.score ? 'score' : 'all'; opts.sheetView = raw.score && raw.score.musicxml ? 'arrangement' : 'lead'; }
+    if (reset) {
+      var hasEdits = opts.chordEdits && opts.chordEdits[raw.id];
+      opts.mode = raw.score ? (hasEdits ? 'changes' : 'score') : 'all';
+      opts.sheetView = raw.score && raw.score.musicxml && !hasEdits ? 'arrangement' : 'lead';
+    }
     if (reset && raw.guitarPro) { opts.guitarVoice = 'smooth'; opts.voicing = 'smooth'; }
     // A score that brings its own tab: chord diagrams default to the frets that tab plays.
     if (reset) {
@@ -3642,11 +3667,6 @@
     sel.value = custom ? 'custom' : (opts.player || '');
     el('[data-fb-setup]').classList.toggle('is-asking', !opts.player);
     el('[data-fb-player-ask]').hidden = !!opts.player;
-    var mode = el('[data-fb-mode]'), keySel = el('[data-fb-key]');
-    var keyText = keySel.selectedIndex >= 0 ? keySel.options[keySel.selectedIndex].textContent.replace(/\s*\(.*\)$/, '') : '';
-    var modeText = mode.selectedIndex >= 0 ? mode.options[mode.selectedIndex].textContent.replace(/:.*$/, '') : '';
-    var part = { bb: 'B♭ part', eb: 'E♭ part', f: 'F part', bass: 'bass clef' }[opts.instr];
-    el('[data-fb-settings-text]').textContent = keyText + (part ? ' (' + part + ')' : '') + ' · ' + modeText;
     root.querySelectorAll('[data-fb-speedup]').forEach(function (c) { c.checked = !!opts.speedUp; });
     // Guitar tab is guitar notation: a player who picked a horn, voice or keyboard doesn't need the switch.
     if (opts.player && !custom && !PLAYERS[opts.player].tab && !tabOn()) el('[data-fb-tab-toolbar]').hidden = true;
@@ -3719,13 +3739,14 @@
     if (clickCur) clickCur.textContent = CLICK_NAMES[opts.click] || (clickBtn ? clickBtn.textContent : 'Every beat');
     syncListen();
     var ct = el('[data-fb-click-toggle]'); if (ct) { ct.setAttribute('aria-pressed', String(opts.click !== 'none')); ct.classList.toggle('is-off', opts.click === 'none'); }
-    var hasChords = !!(tune.raw && typeof tune.raw.chords === 'string' ? tune.raw.chords.trim() : (Array.isArray(tune.chords) ? tune.chords.length : (typeof tune.chords === 'string' && tune.chords.trim())));
+    var hasChords = tune.chords.length || Object.keys(opts.chordEdits && opts.chordEdits[tune.id] || {}).length;
     el('[data-fb-mode] option[value="score"]').disabled = !tune.raw.score;
     el('[data-fb-mode] option[value="changes"]').disabled = !tune.raw.score || !hasChords;
     var mixedMeter = tune.scoreBars && (STYLES[opts.style].meters.indexOf(tune.M) < 0 || tune.scoreBars.some(function (b) { return b.meter.join('/') !== tune.meter.join('/') || (b.bar > 0 && !near(b.len, tune.M)); }));
     el('[data-fb-mode]').querySelectorAll('option').forEach(function (o) { if (o.value !== 'score' && o.value !== 'changes') o.disabled = !!mixedMeter; });
     if (mixedMeter && opts.mode !== 'score' && opts.mode !== 'changes') { opts.mode = 'score'; el('[data-fb-mode]').value = 'score'; }
     syncSetup();
+    el('[data-fb-guitar-diagrams]').setAttribute('aria-pressed', String(opts.posInst === 'guitar' && opts.measureShapes && !opts.saxFingers && opts.sheetView === 'lead'));
     renderScoreParts();
     el('[data-fb-loop]').checked = !!opts.loop;
     var r = loopRange();
@@ -3903,6 +3924,7 @@
       if (input.type === 'checkbox') input.checked = !!value; else input.value = value;
     });
     computeView();
+    syncChordEditor();
     syncTabTools();
     feedMelodyView();
     renderSheet();
@@ -5340,8 +5362,72 @@
     }
   });
 
+  var workspace = root.closest('[data-creation-app]');
+  function syncScoreScroller() {
+    var expanded = workspace && (document.fullscreenElement === workspace || workspace.classList.contains('creation-app-expanded'));
+    scoreNav.setScroller(expanded ? workspace : musicScroller);
+  }
+  document.addEventListener('creation-app-resize', syncScoreScroller);
+
   // Tools drawer lives in fake-book-layout.js; ask it to open on a tab.
-  function openTools(tab) { root.dispatchEvent(new CustomEvent('fakebook:tools', { detail: { tab: tab } })); }
+  function openTools(tab, opener) { root.dispatchEvent(new CustomEvent('fakebook:tools', { detail: { tab: tab, opener: opener } })); }
+  function chordEditText(text) {
+    return text.replace(/[♭♯𝄫𝄪]/gu, function (symbol) {
+      return { '♭': 'b', '♯': '#', '𝄫': 'bb', '𝄪': '##' }[symbol];
+    }).replace(/(^|[\s/])([a-g])/g, function (_, before, note) { return before + note.toUpperCase(); }).trim();
+  }
+
+  function syncChordEditor(bar) {
+    var input = el('[data-fb-edit-bar]');
+    var current = bar || (input.dataset.tune === tune.id ? Number(input.value) : 1);
+    current = Math.max(1, Math.min(tune.bars, current || 1));
+    var key = keyLabel(view.writtenKey);
+    var signature = tune.id + ':' + current + ':' + key;
+    if (!bar && input.dataset.display === signature) return;
+    input.dataset.tune = tune.id;
+    input.dataset.display = signature;
+    input.max = tune.bars;
+    input.value = current;
+    var chords = view.writtenChords.filter(function (c) { return c.bar === current; });
+    var even = chords.every(function (c) { return near(c.dur, chords[0].dur); });
+    el('[data-fb-edit-symbols]').value = chords.map(function (c) {
+      return chordEditText(chordName(c)) + (even ? '' : ':' + Number(c.dur.toFixed(8)));
+    }).join(' ');
+    el('[data-fb-edit-symbols]').removeAttribute('aria-invalid');
+    el('[data-fb-edit-key]').textContent = key;
+    var edits = opts.chordEdits && opts.chordEdits[tune.id];
+    el('[data-fb-edit-restore]').disabled = !(edits && edits[current]);
+    el('[data-fb-edit-status]').textContent = '';
+  }
+
+  function saveChordEdit(restore) {
+    var measure = el('[data-fb-edit-bar]'), field = el('[data-fb-edit-symbols]'), status = el('[data-fb-edit-status]');
+    if (!measure.reportValidity()) return;
+    var bar = Number(measure.value), text = chordEditText(field.value);
+    if (!restore) {
+      try {
+        if (!text) throw new Error('Enter a chord, for example C or Am.');
+        parseChordBar(text, tune, bar);
+      } catch (err) {
+        field.setAttribute('aria-invalid', 'true');
+        status.textContent = err.message;
+        field.focus();
+        return;
+      }
+    }
+    if (!opts.chordEdits) opts.chordEdits = {};
+    var edits = opts.chordEdits[tune.id] || (opts.chordEdits[tune.id] = {});
+    if (restore) delete edits[bar];
+    else edits[bar] = { text: text, key: chordEditText(noteName(view.writtenKey)) };
+    if (!Object.keys(edits).length) delete opts.chordEdits[tune.id];
+    opts.sheetView = 'lead';
+    if (tune.raw.score && opts.mode === 'score' && (!restore || tune.chords.length)) opts.mode = 'changes';
+    if (opts.mode === 'changes' && !tune.chords.length && !Object.keys(edits).length) opts.mode = 'score';
+    syncControls(); refresh(); syncChordEditor(bar); respin();
+    if (restore) field.focus();
+    status.textContent = restore ? 'Measure ' + bar + ' restored.' : 'Chords saved in measure ' + bar + '.';
+  }
+
   function modeOk(m) { var o = el('[data-fb-mode] option[value="' + m + '"]'); return !!o && !o.disabled; }
   // The "Fifteen minutes with one tune" plan as buttons: each one sets up its step.
   function practiceStep(step) {
@@ -5373,10 +5459,20 @@
   }
 
   function bind() {
+    ZOOM_STEPS.forEach(function (zoom) {
+      el('[data-fb-sheet-size]').add(new Option(Math.round(zoom * 100) + '%', zoom));
+    });
     var shapeBox = el('[data-fb-shape-picker]');
     if (shapeBox) shapeBox.addEventListener('toggle', function () { syncShapePicker(true); });
+    el('[data-fb-edit-symbols]').addEventListener('input', function (ev) {
+      ev.target.removeAttribute('aria-invalid');
+      el('[data-fb-edit-status]').textContent = '';
+    });
+    el('[data-fb-chord-editor]').addEventListener('submit', function (ev) { ev.preventDefault(); if (tune) saveChordEdit(false); });
     root.addEventListener('change', function (ev) {
       var t = ev.target, n = t.name;
+      if (t.matches('[data-fb-edit-bar]')) { if (view && t.validity.valid) syncChordEditor(Number(t.value)); return; }
+      if (t.matches('[data-fb-sheet-size]')) { opts.zoom = Number(t.value); renderSheet(); save(); return; }
       if (t.matches('[data-fb-library-genre]')) { libGenre = t.value; renderLibrary(); return; }
       if (t.matches('[data-fb-library-sort]')) { libSort = t.value; renderLibrary(); return; }
       if (t.matches('[data-score-mute], [data-score-solo]')) {
@@ -5503,7 +5599,19 @@
         stop(); var selected = startBar || loopRange().from;
         showBarPop(selected, barEls[selected]); return;
       }
-      if (t.closest('[data-fb-settings-sum]')) { openTools('key'); return; }
+      var editButton = t.closest('[data-fb-edit-open]');
+      if (editButton) {
+        if (editButton.getAttribute('aria-expanded') !== 'true') syncChordEditor(startBar || loopRange().from);
+        openTools('chords', editButton);
+        return;
+      }
+      if (t.closest('[data-fb-edit-restore]')) { saveChordEdit(true); return; }
+      if (t.closest('[data-fb-guitar-diagrams]')) {
+        opts.measureShapes = !(opts.posInst === 'guitar' && opts.measureShapes && !opts.saxFingers && opts.sheetView === 'lead');
+        opts.posInst = opts.engineInst = 'guitar';
+        opts.saxFingers = false; opts.sheetView = 'lead';
+        syncControls(); refresh(); renderBarPop(); return;
+      }
       var planStep = t.closest('[data-fb-plan-step]');
       if (planStep) { practiceStep(planStep.getAttribute('data-fb-plan-step')); return; }
       var lvl = t.closest('[data-fb-level]');
@@ -5588,7 +5696,7 @@
         reanchor(function () { opts.tempo = v; }); if (P) P.spb = 60 / v;
         el('[data-fb-tempo]').value = v; el('[data-fb-tempo-num]').value = v; save(); return;
       }
-      if (t.closest('[data-fb-reset]')) { opts.theorySevenths = opts.theoryNinths = opts.theoryApproach = opts.theoryTritone = false; opts.theoryInterval = 'off'; opts.melody = 'original'; opts.rhythm = 'written'; opts.key = tune.raw.key; opts.octave = 0; syncControls(); refresh(); respin(); return; }
+      if (t.closest('[data-fb-reset]')) { if (opts.chordEdits) delete opts.chordEdits[tune.id]; if (opts.mode === 'changes' && !tune.chords.length) opts.mode = 'score'; opts.theorySevenths = opts.theoryNinths = opts.theoryApproach = opts.theoryTritone = false; opts.theoryInterval = 'off'; opts.melody = 'original'; opts.rhythm = 'written'; opts.key = tune.raw.key; opts.octave = 0; syncControls(); refresh(); syncChordEditor(Number(el('[data-fb-edit-bar]').value)); respin(); return; }
       var step = t.closest('[data-fb-chord-step]');
       if (step) { stepChord(Number(step.getAttribute('data-fb-chord-step'))); return; }
       var chip = t.closest('[data-strip-ci]');
