@@ -1298,3 +1298,122 @@ body.theme-steam .shelf-nav .shelf-find input::placeholder {
 
 /* Keep the icon, title and count in stable positions across module themes. */
 body.lessons-view-index:not(.grade-band-k2) .module-section .module-cluster-label > .chapter-icon { grid-column: 1; }
+
+/* Decorative plates sit behind the subject header. The lesson surfaces keep
+   their own contrast, and the drawing never sits over a link or control. */
+#module-design2d { --module-accent: #e285c8; --module-secondary: #ffb679; --module-deep: #2a1836; }
+#module-design3d { --module-accent: #5bd5d4; --module-secondary: #7ba8fc; --module-deep: #102a36; }
+#module-music { --module-accent: #ba9cff; --module-secondary: #f6a2d1; --module-deep: #25173d; }
+
+body.theme-liquid-woodland.theme-steam.catalog-module-view .catalog-active-module .module-banner:has(.module-atmosphere) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: clamp(7rem, 12vw, 10rem);
+  background:
+    linear-gradient(105deg, color-mix(in srgb, var(--module-accent) 12%, var(--surface-elevated)), transparent 72%),
+    var(--surface-elevated);
+}
+body.theme-steam .module-banner:has(.module-atmosphere) .module-banner-text { max-width: 64%; }
+body.theme-steam .module-banner:has(.module-atmosphere) .module-banner-icon { flex-shrink: 0; }
+
+.module-atmosphere {
+  --subject-tint: color-mix(in srgb, var(--module-accent) 76%, var(--accent));
+  --subject-line: color-mix(in srgb, var(--subject-tint) 77%, #fff);
+  --subject-mark: color-mix(in srgb, var(--module-secondary) 78%, #fff);
+  --subject-planet-shadow: color-mix(in srgb, var(--module-deep) 70%, var(--module-accent));
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0 32%;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(90deg, transparent, #000 27%);
+}
+.module-atmosphere::before {
+  content: "";
+  position: absolute;
+  inset: -24% -9%;
+  background:
+    radial-gradient(ellipse at 65% 38%, color-mix(in srgb, var(--subject-tint) 39%, transparent), transparent 55%),
+    radial-gradient(ellipse at 84% 86%, color-mix(in srgb, var(--module-secondary) 34%, transparent), transparent 56%),
+    radial-gradient(ellipse at 53% 78%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 63%);
+}
+.module-atmosphere.is-drifting::before {
+  animation: steam-subject-glow 22s ease-in-out infinite alternate;
+}
+@keyframes steam-subject-glow {
+  from { transform: translate3d(3%, -4%, 0) scale(0.94); }
+  to { transform: translate3d(-4%, 5%, 0) scale(1.12); }
+}
+
+html[data-lighting="night"] .module-atmosphere {
+  --subject-line: color-mix(in srgb, var(--subject-tint) 65%, #fff);
+  --subject-mark: color-mix(in srgb, var(--module-secondary) 70%, #fff);
+}
+
+html .module-atmosphere[data-subject="space"] {
+  --subject-line: #adcaff;
+  --subject-mark: #e1caff;
+  background:
+    radial-gradient(ellipse at 71% 13%, color-mix(in srgb, var(--accent) 40%, transparent), transparent 57%),
+    radial-gradient(ellipse at 76% 66%, #5952a8, transparent 50%),
+    linear-gradient(105deg, transparent, #0c1234 39%, #080d28);
+}
+.module-atmosphere-art {
+  position: absolute;
+  display: block;
+  inset: 0 0 0 auto;
+  width: min(100%, 34rem);
+  height: 100%;
+  opacity: 0.82;
+  transform-origin: 76% 55%;
+}
+.module-atmosphere.is-drifting .module-atmosphere-art {
+  animation: steam-subject-drift 17s ease-in-out infinite alternate;
+}
+@keyframes steam-subject-drift {
+  from { transform: translate3d(-1.4%, 2%, 0) rotate(-1deg) scale(0.97); opacity: 0.72; }
+  to { transform: translate3d(2%, -2%, 0) rotate(1.5deg) scale(1.06); opacity: 0.9; }
+}
+
+body.theme-liquid-woodland.theme-steam .catalog-active-module:has(.module-atmosphere) .module-tile-grid {
+  background:
+    radial-gradient(ellipse 65% 23rem at 100% 0, color-mix(in srgb, var(--module-secondary) 16%, transparent), transparent 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--module-accent) 9%, transparent), transparent 27rem),
+    var(--glass-fill-soft);
+}
+
+@media (max-width: 640px) {
+  .module-atmosphere { left: 22%; mask-image: linear-gradient(90deg, transparent 14%, #000 68%); }
+  .module-atmosphere-art { width: min(100%, 22rem); opacity: 0.62; }
+  .module-atmosphere.is-drifting .module-atmosphere-art { animation-name: steam-subject-drift-small; }
+  body.theme-steam .module-banner:has(.module-atmosphere) .module-banner-text { max-width: 72%; }
+  @keyframes steam-subject-drift-small {
+    from { transform: translate3d(0, 2%, 0) scale(0.97); opacity: 0.53; }
+    to { transform: translate3d(2%, -2%, 0) scale(1.04); opacity: 0.68; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .module-atmosphere.is-drifting::before,
+  .module-atmosphere.is-drifting .module-atmosphere-art { animation: none; }
+}
+@media (forced-colors: active), print {
+  .module-atmosphere { display: none; }
+}
+
+/* The glow drifts behind the line art and leaves the title on a quiet surface. */
+.module-atmosphere::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 84% 50%, transparent 36%, rgb(6 10 28 / 0.16) 100%),
+    linear-gradient(90deg, rgb(6 10 28 / 0.2), transparent 36%);
+}
+.module-atmosphere[data-subject="space"]::before {
+  background:
+    radial-gradient(ellipse at 74% 41%, rgb(118 133 239 / 0.58), transparent 40%),
+    radial-gradient(ellipse at 54% 68%, color-mix(in srgb, var(--accent) 42%, transparent), transparent 56%),
+    radial-gradient(ellipse at 91% 82%, rgb(118 72 164 / 0.49), transparent 47%);
+}

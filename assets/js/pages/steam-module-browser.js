@@ -118,6 +118,7 @@
   }
 
   function showDirectory(shouldFocus) {
+    var hadSubject = Boolean(activeId);
     activeId = "";
     document.body.classList.add("catalog-directory-view");
     document.body.classList.remove("catalog-module-view");
@@ -131,6 +132,7 @@
       button.removeAttribute("aria-current");
     });
     status.textContent = "Choose a subject to see its lessons.";
+    if (hadSubject) window.dispatchEvent(new CustomEvent("catalogsubjectchange", { detail: { section: null } }));
     if (history.replaceState && location.hash.indexOf("#module-") === 0) history.replaceState(null, "", location.pathname + location.search);
     if (shouldFocus) {
       browser.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -149,6 +151,7 @@
     }
     section.hidden = false;
     section.classList.remove("volume-collapsed");
+    var changedSubject = activeId !== id;
     activeId = id;
     document.body.classList.remove("catalog-directory-view");
     document.body.classList.add("catalog-module-view");
@@ -163,6 +166,7 @@
       if (button.dataset.moduleTarget === id) button.setAttribute("aria-current", "true");
       else button.removeAttribute("aria-current");
     });
+    if (changedSubject) window.dispatchEvent(new CustomEvent("catalogsubjectchange", { detail: { section: section } }));
     var volume = section.dataset.compendiumVolume;
     var volumeTitle = volumeNames[volume] ? volumeNames[volume][0] : "Lesson library";
     status.textContent = volumeTitle + " → " + text(section, ".module-banner-title") + " · " + text(section, ".module-banner-count") + ".";

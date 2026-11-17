@@ -281,7 +281,13 @@
       if (query && ranker) {
         keep = new Set(ranker.rank(shelfTiles, query, {
           fields: {
-            title: function (tile) { var s = tile.querySelector("strong"); return s ? s.textContent : ""; },
+            title: function (tile) {
+              var title = tile.querySelector("strong");
+              if (!title) return "";
+              return Array.from(title.childNodes).filter(function (part) {
+                return part.nodeType !== Node.ELEMENT_NODE || !part.classList.contains("tile-new-badge");
+              }).map(function (part) { return part.textContent; }).join("");
+            },
             keywords: function (tile) { return kickerParts(tile).concat(tile.dataset.lessonTopics || ""); },
             // The topic group ("Robotics") and kind ("person"), but not the chapter
             // title: "…& Robotics" would make every lesson in it match "robot".
