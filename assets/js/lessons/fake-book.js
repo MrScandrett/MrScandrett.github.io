@@ -2312,6 +2312,16 @@
         c.setAttribute('viewBox', '0 ' + r[0].toFixed(1) + ' ' + W + ' ' + (r[1] - r[0]).toFixed(1));
         c.setAttribute('focusable', 'false');
         c.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+        // The page box is usually taller than the slice (it fills whatever the title leaves), and an SVG draws
+        // past its viewBox there, so clip to this page's systems or the next page's first one peeks in below.
+        var NS = 'http://www.w3.org/2000/svg', cid = 'fb-print-clip-' + clones.length;
+        var cp = document.createElementNS(NS, 'clipPath'), cr = document.createElementNS(NS, 'rect'), cg = document.createElementNS(NS, 'g');
+        cp.setAttribute('id', cid);
+        cr.setAttribute('x', 0); cr.setAttribute('y', r[0].toFixed(1)); cr.setAttribute('width', W); cr.setAttribute('height', (r[1] - r[0]).toFixed(1));
+        cp.appendChild(cr);
+        cg.setAttribute('clip-path', 'url(#' + cid + ')');
+        while (c.firstChild) cg.appendChild(c.firstChild);
+        c.appendChild(cp); c.appendChild(cg);
         // Click targets and playback highlights are screen-only.
         Array.prototype.forEach.call(c.querySelectorAll('.fb-bar, .fb-tn-hit, .fb-tab-hand, .fb-tab-pin'), function (node) { node.remove(); });
         Array.prototype.forEach.call(c.querySelectorAll('.is-sel, .is-now'), function (node) { node.classList.remove('is-sel', 'is-now'); });
