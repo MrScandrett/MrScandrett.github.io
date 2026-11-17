@@ -2413,6 +2413,7 @@
   <script type="module">
   import { THREE, OrbitControls } from '../../assets/vendor/three-bundle.min.js';
   import { createDepthFieldMesh } from '../../assets/js/liquid-engine-three.mjs';
+  import { createVolcanoTerrain } from '../../assets/js/lessons/volcano-terrain.mjs';
   window.THREE = THREE;
   window.OrbitControls = OrbitControls;
   (function () {
@@ -2424,29 +2425,6 @@
     ══════════════════════════════════════════ */
     const heightmaps = {};
     const imgLoader = new THREE.ImageLoader();
-
-    // High-precision smooth Hermite bilinear heightmap sampler
-    function sampleHeightmap(hmap, u, v) {
-      if (!hmap || !hmap.data) return 0;
-      const fx = Math.max(0, Math.min(1, u)) * (hmap.width - 1);
-      const fy = Math.max(0, Math.min(1, v)) * (hmap.height - 1);
-      const x0 = Math.floor(fx), y0 = Math.floor(fy);
-      const x1 = Math.min(x0 + 1, hmap.width - 1);
-      const y1 = Math.min(y0 + 1, hmap.height - 1);
-      const tx = fx - x0, ty = fy - y0;
-      // Hermite S-curve smoothing
-      const sx = tx * tx * (3 - 2 * tx);
-      const sy = ty * ty * (3 - 2 * ty);
-      const d = hmap.data;
-      const w = hmap.width;
-      const h00 = d[y0 * w + x0];
-      const h10 = d[y0 * w + x1];
-      const h01 = d[y1 * w + x0];
-      const h11 = d[y1 * w + x1];
-      const top = h00 + (h10 - h00) * sx;
-      const bot = h01 + (h11 - h01) * sx;
-      return top + (bot - top) * sy;
-    }
 
     function fetchHeightmap(id) {
         if (!id) return Promise.resolve(null);
@@ -2951,315 +2929,14 @@
     const TERRAIN_SIZE = 40;
 
     // Advanced Geomorphological Volcano Elevation Model
-    function volcanoH(x, z, vtype, stage = 0) {
+    // Height field and vertex colours live in volcano-terrain.mjs.
+    const terrain = createVolcanoTerrain({ size: TERRAIN_SIZE, fbm });
+    function activeHeightmap() {
       const isProcedural = (state.mode === 'exploration' && !activeEruption);
-      const hmap = !isProcedural ? heightmaps[activeEruption] : null;
-
-      if (hmap) {
-        // Continuous UV coordinate mapping
-        const u = (x + TERRAIN_SIZE / 2) / TERRAIN_SIZE;
-        const v = (z + TERRAIN_SIZE / 2) / TERRAIN_SIZE;
-        let rawH = sampleHeightmap(hmap, u, v) * 12.0;
-
-        // Sub-grid geological micro-relief to eliminate 8-bit stairstepping
-        const micro = (fbm(x * 0.45 + 12.3, z * 0.45 + 87.1, 3) - 0.5) * 0.14
-                    + (fbm(x * 1.4 + 54.1, z * 1.4 + 21.7, 2) - 0.5) * 0.04;
-        rawH += micro;
-
-        // Dynamic historical morphological changes:
-        if (activeEruption === 'sthelenr1980') {
-          if (stage < 0.15 && z < 0) {
-            // March-May cryptodome bulge growth on north flank
-            const dBulge = Math.hypot(x, z + 2.0);
-            if (dBulge < 3.8) {
-              rawH += (stage / 0.15) * 1.6 * Math.pow(1 - dBulge / 3.8, 2);
-            }
-          } else if (stage >= 0.15 && z < 0) {
-            // Catastrophic debris avalanche and north amphitheater collapse
-            const collapse = Math.min(1, (stage - 0.15) / 0.12);
-            const r = Math.hypot(x, z);
-            const R = TERRAIN_SIZE * 0.38;
-            const blastR = r / R;
-            if (blastR < 1.0) {
-              const sector = Math.abs(z) / (r + 0.001);
-              const chute = Math.max(0, 1 - Math.abs(x) / 4.2);
-              const sink = collapse * 5.2 * Math.pow(Math.max(0, 1 - blastR * 0.85), 1.6) * sector * (0.6 + chute * 0.4);
-              rawH -= sink;
-            }
-          }
-        }
-
-        if ((activeEruption === 'tambora1815' || activeEruption === 'krakatoa1883') && stage > 0) {
-          const collapseStart = activeEruption === 'tambora1815' ? 0.52 : 0.62;
-          const collapseStage = Math.min(1, Math.max(0, (stage - collapseStart) / 0.22));
-          if (collapseStage > 0) {
-            const r = Math.hypot(x, z);
-            const collR = activeEruption === 'tambora1815' ? 7.2 : 6.0;
-            if (r < collR) {
-              const depth = activeEruption === 'tambora1815' ? 8.2 : 9.5;
-              rawH -= Math.pow(1 - r / collR, 1.7) * collapseStage * depth;
-            }
-          }
-        }
-
-        if (activeEruption === 'eyja2010' && stage >= 0.14) {
-          const meltStage = Math.min(1, (stage - 0.14) / 0.20);
-          const r = Math.hypot(x, z);
-          if (r < 3.5) {
-            rawH -= meltStage * 1.5 * Math.pow(1 - r / 3.5, 2);
-          }
-        }
-
-        // Smooth perimeter falloff to ambient landscape (eliminates floating slab / cliff edges)
-        const boxDist = Math.max(Math.abs(x), Math.abs(z)) / (TERRAIN_SIZE * 0.5);
-        const isIsland = (vtype === 'shield' || activeEruption === 'krakatoa1883' || activeEruption === 'maunaloa2022');
-        if (isIsland && activeEruption === 'krakatoa1883') {
-          rawH = Math.max(-0.55, rawH - 0.28);
-        }
-        const baseH = isIsland ? -0.45 : 0.08;
-        if (boxDist <= 0.65) return rawH;
-        if (boxDist >= 0.98) return baseH;
-        const t = (boxDist - 0.65) / 0.33;
-        const s = t * t * t * (t * (t * 6 - 15) + 10);
-        return lerp(rawH, baseH, s);
-      }
-
-      // Procedural Geomorphological Models (Exploration Mode)
-      const r = Math.hypot(x, z);
-      const R = TERRAIN_SIZE * 0.38;
-      const theta = Math.atan2(z, x);
-      const noise = (fbm(x * 0.16 + 1.7, z * 0.16 + 4.9, 5) - 0.5) * 1.1;
-      const micro = (fbm(x * 0.65 + 99.1, z * 0.65 + 33.4, 3) - 0.5) * 0.28;
-      const base  = (fbm(x * 0.07, z * 0.07, 3) - 0.5) * 0.5;
-
-      let h = 0;
-      switch (vtype) {
-        case 'shield': {
-          // Broad, low-angle basaltic shield (slopes 4°-8°)
-          const normR = r / (R * 1.15);
-          const shieldSlope = Math.exp(-Math.pow(normR, 1.6) * 2.8);
-          h = 5.2 * shieldSlope + noise * 0.22 + micro * 0.12;
-
-          // Southwest & Northeast rift zone swells
-          const riftAngle = 0.55;
-          const xRot = x * Math.cos(riftAngle) - z * Math.sin(riftAngle);
-          const zRot = x * Math.sin(riftAngle) + z * Math.cos(riftAngle);
-          const riftSwell = 0.65 * Math.exp(-Math.pow(xRot / 2.0, 2)) * Math.exp(-Math.pow(zRot / 12.0, 2));
-          h += riftSwell;
-
-          // Summit caldera (Moku'aweoweo style pit crater)
-          const craterR = R * 0.14;
-          if (r < craterR) {
-            const pitDepth = 1.35 * Math.pow(1 - r / craterR, 0.4);
-            h -= pitDepth;
-          }
-          const rim = Math.exp(-Math.pow((r - craterR) / 0.5, 2)) * 0.45;
-          h += rim;
-          break;
-        }
-        case 'strato': {
-          // Concave composite cone with steepening slopes toward the summit (10° to 33°)
-          const k = clamp(1 - r / R, 0, 1);
-          const cone = 11.8 * (Math.pow(k, 2.5) * 0.78 + Math.pow(k, 1.4) * 0.22);
-
-          // Deep radial barrancos (drainage erosion ribs)
-          const ribHarmonics = Math.sin(theta * 7 + Math.sin(theta * 3) * 0.5) * 0.7
-                             + Math.sin(theta * 14 + 1.8) * 0.3;
-          const valleys = ribHarmonics * 0.85 * Math.pow(k, 1.5) * (1 - Math.exp(-r / 2.2));
-
-          // Asymmetric summit crater with central dacite dome
-          const craterR = R * 0.10;
-          let crater = 0;
-          if (r < craterR) {
-            crater = -2.6 * Math.pow(1 - r / craterR, 1.8);
-            const domeR = craterR * 0.55;
-            if (r < domeR) {
-              crater += 1.4 * Math.exp(-Math.pow(r / (domeR * 0.65), 2));
-            }
-          }
-          const rim = Math.exp(-Math.pow((r - craterR) / 0.65, 2)) * (0.95 + Math.sin(theta * 4) * 0.25);
-
-          // Flank adventive cinder cone on lower flank
-          const adventDist = Math.hypot(x - 5.5, z - 4.5);
-          const adventCone = 1.6 * Math.exp(-Math.pow(adventDist / 1.8, 2));
-
-          h = cone + valleys + crater + rim + adventCone + noise * 0.35 + micro * 0.16;
-          break;
-        }
-        case 'caldera': {
-          // Stratocone with colossal collapsed caldera depression
-          const k = clamp(1 - r / R, 0, 1);
-          const outerFlanks = 8.5 * Math.pow(k, 2.2) + noise * 0.32;
-          const cRim = R * 0.28;
-          let caldera = 0;
-          if (r < cRim) {
-            const wallT = r / cRim;
-            const sink = -5.8 * (1 - Math.pow(wallT, 4.0));
-            caldera = sink;
-
-            // Central resurgent cone (Wizard Island style)
-            const resurgR = cRim * 0.38;
-            if (r < resurgR) {
-              const resurgCone = 2.2 * Math.pow(1 - r / resurgR, 1.8);
-              const resurgCrater = r < resurgR * 0.25 ? -0.5 * (1 - r / (resurgR * 0.25)) : 0;
-              caldera += resurgCone + resurgCrater;
-            }
-          }
-          const rim = Math.exp(-Math.pow((r - cRim) / 0.7, 2)) * 0.9;
-          h = outerFlanks + caldera + rim + micro * 0.14;
-          break;
-        }
-        case 'super': {
-          // Resurgent supervolcano (Yellowstone-scale caldera basin)
-          const rimR = R * 0.65;
-          const rimScarp = 4.2 * Math.exp(-Math.pow((r - rimR) / (R * 0.22), 2)) + noise * 0.45;
-          const basinFloor = 2.4 + (fbm(x * 0.12, z * 0.12, 3) - 0.5) * 0.6;
-          const dome1 = 2.1 * Math.exp(-(Math.pow(x - 2.5, 2) + Math.pow(z + 1.5, 2)) / 8.0);
-          const dome2 = 1.8 * Math.exp(-(Math.pow(x + 3.0, 2) + Math.pow(z - 2.0, 2)) / 7.0);
-          h = Math.max(rimScarp, basinFloor + dome1 + dome2) + micro * 0.18;
-          break;
-        }
-        case 'cinder': {
-          // Steep monogenetic scoria cone at 32° angle of repose
-          const k = clamp(1 - r / (R * 0.58), 0, 1);
-          const cone = 6.2 * Math.pow(k, 1.8);
-          const cR = R * 0.16;
-          let crater = 0;
-          if (r < cR) {
-            crater = -2.2 * Math.pow(1 - r / cR, 1.6);
-          }
-          let breach = 0;
-          if (z > 0 && Math.abs(x) < 2.0 && r > cR * 0.8) {
-            breach = -1.5 * (1 - Math.abs(x) / 2.0) * Math.min(1, (r - cR * 0.8) / 3.0);
-          }
-          const rim = Math.exp(-Math.pow((r - cR) / 0.5, 2)) * 0.7;
-          h = cone + crater + breach + rim + noise * 0.18 + micro * 0.1;
-          break;
-        }
-      }
-
-      // Smooth edge falloff to ambient landscape
-      const boxDist = Math.max(Math.abs(x), Math.abs(z)) / (TERRAIN_SIZE * 0.5);
-      const isIsland = (vtype === 'shield' || activeEruption === 'krakatoa1883' || activeEruption === 'maunaloa2022');
-      const baseH = isIsland ? -0.45 : 0.08;
-      if (boxDist <= 0.65) {
-        return Math.max(baseH, h);
-      } else if (boxDist >= 0.98) {
-        return baseH;
-      } else {
-        const t = (boxDist - 0.65) / 0.33;
-        const s = t * t * t * (t * (t * 6 - 15) + 10);
-        return Math.max(baseH, lerp(h, baseH, s));
-      }
+      return !isProcedural ? heightmaps[activeEruption] || null : null;
     }
-
-    // High-Fidelity Geological Vertex Coloring & Slope Shading
-    function terrainColor(x, z, y, maxH, vtype, lavaIntensity, stage = 0) {
-      const r = Math.hypot(x, z);
-      const theta = Math.atan2(z, x);
-      const hFrac = clamp(y / Math.max(0.1, maxH), 0, 1);
-
-      // Local slope grade calculation
-      const eps = 0.25;
-      const hL = volcanoH(x - eps, z, vtype, stage);
-      const hR = volcanoH(x + eps, z, vtype, stage);
-      const hD = volcanoH(x, z - eps, vtype, stage);
-      const hU = volcanoH(x, z + eps, vtype, stage);
-      const slopeGrade = Math.hypot(hL - hR, hD - hU) / (eps * 2.0);
-      const cliff = clamp((slopeGrade - 0.25) / 0.55, 0, 1);
-
-      // Procedural height noise variance
-      const nH = clamp(hFrac + (fbm(x * 0.35, z * 0.35, 3) - 0.5) * 0.12, 0, 1);
-
-      // Geological strata layering for cliffs & rock faces
-      const strata = Math.sin(y * 6.5 + fbm(x * 0.8, z * 0.8, 2) * 2.2) * 0.5 + 0.5;
-      const rockTone = lerp(0.24, 0.46, strata);
-      const cliffColor = [rockTone * 1.05, rockTone * 0.98, rockTone * 0.92];
-
-      let rC, gC, bC;
-
-      if (activeEruption === 'eyja2010') {
-        // Icelandic subglacial volcano: summit glacier, retreat, jökulhlaup mudflows, mossy tundra
-        const melt = clamp(stage / 0.35, 0, 1);
-        const snowLine = 0.48 + melt * 0.38;
-        if (nH > snowLine) {
-          // Summit glacier ice cap with cyan crevasse shading
-          rC = 0.92; gC = 0.95; bC = 0.98;
-          if (cliff > 0.4) { rC = 0.65; gC = 0.78; bC = 0.88; }
-        } else if (nH > snowLine - 0.22 && melt > 0.04) {
-          // Dynamic jökulhlaup meltwater runout / wet basalt tephra
-          rC = 0.14; gC = 0.14; bC = 0.15;
-        } else if (nH < 0.20) {
-          // Mossy arctic tundra
-          rC = 0.26; gC = 0.34; bC = 0.20;
-        } else {
-          // Dark basaltic volcanic rock
-          rC = 0.32; gC = 0.30; bC = 0.29;
-        }
-      } else if (vtype === 'shield' || activeEruption === 'maunaloa2022') {
-        // Hawaiian basalt: dark pahoehoe/a'a, oxidized spatter, coastal fringe
-        if (nH < 0.08 && r > TERRAIN_SIZE * 0.28) {
-          rC = 0.22; gC = 0.32; bC = 0.18; // tropical coastal fringe
-        } else if (cliff > 0.6 || (r < TERRAIN_SIZE * 0.15 && Math.sin(theta * 5.0) > 0.2)) {
-          rC = 0.38; gC = 0.18; bC = 0.12; // oxidized reddish spatter rampart
-        } else {
-          rC = 0.12; gC = 0.12; bC = 0.13; // dark tholeiitic basalt
-        }
-      } else if (vtype === 'cinder') {
-        // Scoria cone: rusty oxidized iron lapilli and charcoal cinder
-        const scoria = lerp(0.36, 0.18, nH);
-        rC = scoria; gC = scoria * 0.55; bC = scoria * 0.45;
-      } else if (vtype === 'strato') {
-        // Stratovolcano: Lush basal forest, subalpine talus, craggy rock, snow/glacier summit
-        if (nH < 0.20) {
-          rC = 0.22; gC = 0.38; bC = 0.18; // forest
-        } else if (nH < 0.55) {
-          rC = 0.44; gC = 0.39; bC = 0.34; // volcanic dirt & colluvium
-        } else if (nH < 0.78) {
-          rC = 0.54; gC = 0.51; bC = 0.48; // andesite bedrock
-        } else {
-          rC = 0.94; gC = 0.95; bC = 0.98; // summit snow cap
-        }
-        // Fumarolic sulfur staining near summit vent
-        if (r < 2.5 && nH > 0.75) {
-          rC = lerp(rC, 0.85, 0.6);
-          gC = lerp(gC, 0.82, 0.6);
-          bC = lerp(bC, 0.25, 0.6);
-        }
-      } else {
-        // Caldera / Supervolcano: Ignimbrite tuff, hydrothermal terraces
-        if (nH < 0.18) {
-          rC = 0.32; gC = 0.36; bC = 0.28;
-        } else if (nH < 0.65) {
-          rC = 0.54; gC = 0.50; bC = 0.44; // pumice tuff
-        } else {
-          rC = 0.62; gC = 0.58; bC = 0.52; // pale rhyolite
-        }
-        // Hydrothermal basin yellow/orange sinter terraces
-        if (r < 4.0 && nH > 0.25 && nH < 0.50) {
-          rC = 0.78; gC = 0.65; bC = 0.22;
-        }
-      }
-
-      // Blend in exposed cliff rock on steep angles (preserving summit glacial ice/snow)
-      const isSnow = (rC > 0.85 && gC > 0.88 && bC > 0.90);
-      if (isSnow) {
-        rC = lerp(rC, 0.65, cliff * 0.45);
-        gC = lerp(gC, 0.78, cliff * 0.45);
-        bC = lerp(bC, 0.90, cliff * 0.45);
-      } else {
-        rC = lerp(rC, cliffColor[0], cliff * 0.75);
-        gC = lerp(gC, cliffColor[1], cliff * 0.75);
-        bC = lerp(bC, cliffColor[2], cliff * 0.75);
-      }
-
-      // Micro-noise color variance
-      const colorNoise = (fbm(x * 0.85, z * 0.85, 2) - 0.5) * 0.08;
-      return [
-        clamp(rC + colorNoise, 0, 1),
-        clamp(gC + colorNoise, 0, 1),
-        clamp(bC + colorNoise, 0, 1)
-      ];
+    function volcanoH(x, z, vtype, stage = 0) {
+      return terrain.height(x, z, vtype, stage, activeHeightmap(), activeEruption);
     }
 
     // Ocean plane for island volcanoes
@@ -3605,9 +3282,12 @@
       resetEnvironments();
     }
 
+    // The lava grids sample the same points every time, so their ground heights are cached.
+    const lavaHeight = terrain.createHeightSampler();
+    const lavaGroundAt = (x, z) => lavaHeight(x, z, state.vtype, state.timeline, activeHeightmap(), activeEruption);
     function rebuildLavaStreams() {
-      lavaField.setGround(terrainHeightAt);
-      lavaDeposit.setGround(terrainHeightAt);
+      lavaField.setGround(lavaGroundAt);
+      lavaDeposit.setGround(lavaGroundAt);
       lavaField.clearSources();
       const rimRadius = state.vtype === 'super' ? 9 : state.vtype === 'caldera' ? 2.7 : 1.5;
       for (let sector = 0; sector < 5; sector++) {
@@ -3822,42 +3502,36 @@
       buildEnvironments();
     }
 
+    let terrainGrid = null, terrainOut = null;
     function updateTerrain(vtype, lavaIntensity, stage) {
       if (!terrainMesh) return;
       const geo = terrainMesh.geometry;
       const pos = geo.attributes.position;
       const colors = geo.attributes.color || new THREE.BufferAttribute(new Float32Array(pos.count * 3), 3);
 
-      let maxH = 0;
-      for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i), z = pos.getZ(i);
-        const h = volcanoH(x, z, vtype, stage);
-        pos.setY(i, h);
-        if (h > maxH) maxH = h;
+      const hasColormap = !!(activeEruption && colormaps[activeEruption]);
+      // The grid caches everything the timeline can't change, so scrubbing and playback only
+      // redo the cheap part, and the mesh is re-uploaded only when its shape or colour moved.
+      if (!terrainGrid || terrainGrid.count !== pos.count) {
+        const xs = new Float64Array(pos.count), zs = new Float64Array(pos.count);
+        for (let i = 0; i < pos.count; i++) { xs[i] = pos.getX(i); zs[i] = pos.getZ(i); }
+        terrainGrid = terrain.createTerrainGrid(xs, zs);
+        terrainOut = { heights: new Float32Array(pos.count), colors: new Float32Array(pos.count * 3) };
       }
+      const fresh = !geo.attributes.color;
+      const { maxH, changed } = terrainGrid.update({
+        vtype, stage, hmap: activeHeightmap(), eruption: activeEruption, hasColormap, force: fresh
+      }, terrainOut);
       currentMaxH = maxH;
 
-      const hasColormap = !!(activeEruption && colormaps[activeEruption]);
-      for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-        let [r, g, b] = terrainColor(x, z, y, maxH, vtype, lavaIntensity, stage);
-
-        if (hasColormap) {
-          // Provide subtle geological relief and cliff modulation under satellite texture
-          const slopeGrade = terrainSlope(x, z);
-          const cliffShade = clamp(1.0 - slopeGrade * 0.28, 0.72, 1.05);
-          const strataNoise = 0.96 + (fbm(x * 0.7, z * 0.7, 2) - 0.5) * 0.10;
-          const factor = cliffShade * strataNoise;
-          r = factor; g = factor; b = factor;
-        }
-
-        colors.setXYZ(i, r, g, b);
+      if (changed) {
+        for (let i = 0; i < pos.count; i++) pos.setY(i, terrainOut.heights[i]);
+        colors.array.set(terrainOut.colors);
+        geo.setAttribute('color', colors);
+        pos.needsUpdate = true;
+        colors.needsUpdate = true;
+        geo.computeVertexNormals();
       }
-
-      geo.setAttribute('color', colors);
-      pos.needsUpdate = true;
-      colors.needsUpdate = true;
-      geo.computeVertexNormals();
 
       craterPos.set(0, maxH, 0);
       if (activeEruption === 'sthelenr1980' && stage >= 0.15) {
@@ -3902,7 +3576,8 @@
         if (u.uWind) u.uWind.value.set(wind.x, wind.z);
       }
 
-      rebuildLavaStreams(lavaIntensity);
+      // The lava flow re-reads the ground (and picks its vents) only when the ground moved.
+      if (changed) rebuildLavaStreams();
     }
 
     function terrainHeightAt(x, z) {
@@ -5029,6 +4704,14 @@
 
     function applyPhase() {
       const record = window.VolcanoHistory[activeEruption];
+      if (!record) {
+        // A parametric volcano (Explore mode type tab) has no recorded phases to follow.
+        const pct = Math.round(state.timeline * 100) + '% through the eruption';
+        document.getElementById('phase-label').textContent = 'Parametric model: ' + pct;
+        document.getElementById('s-timeline').setAttribute('aria-valuetext', pct);
+        conduitEngine?.setTimeline(state.timeline, state.intensity);
+        return;
+      }
       const frames = record.timeline;
       let n = frames.findLastIndex(f => state.timeline >= f.at);
       n = Math.max(0, n);
@@ -5086,24 +4769,29 @@
 
     function updateTimelinePips() {
       const record = window.VolcanoHistory[activeEruption];
-      if (!record || !record.timeline) return;
-
-      const frames = record.timeline;
-      let activeIdx = frames.findLastIndex(f => state.timeline >= f.at);
-      if (activeIdx < 0) activeIdx = 0;
-
-      const pips = document.querySelectorAll('.tl-pip');
-      pips.forEach((p, idx) => {
-        p.classList.toggle('active', idx === activeIdx);
-        p.classList.toggle('passed', idx < activeIdx);
-      });
+      const frames = record?.timeline;
 
       const phasePill = document.getElementById('tl-phase-pill');
       const phaseTitle = document.getElementById('tl-phase-title');
       const timestampEl = document.getElementById('tl-timestamp');
 
-      if (phasePill) phasePill.textContent = `PHASE ${activeIdx + 1} / ${frames.length}`;
-      if (phaseTitle) phaseTitle.textContent = frames[activeIdx]?.label || 'Active Phase';
+      if (frames) {
+        let activeIdx = frames.findLastIndex(f => state.timeline >= f.at);
+        if (activeIdx < 0) activeIdx = 0;
+
+        const pips = document.querySelectorAll('.tl-pip');
+        pips.forEach((p, idx) => {
+          p.classList.toggle('active', idx === activeIdx);
+          p.classList.toggle('passed', idx < activeIdx);
+        });
+
+        if (phasePill) phasePill.textContent = `PHASE ${activeIdx + 1} / ${frames.length}`;
+        if (phaseTitle) phaseTitle.textContent = frames[activeIdx]?.label || 'Active Phase';
+      } else {
+        // A parametric volcano has no recorded phases.
+        if (phasePill) phasePill.textContent = 'MODEL';
+        if (phaseTitle) phaseTitle.textContent = 'Parametric ' + vtypeName(state.vtype) + ' · no recorded phases';
+      }
 
       if (timestampEl) {
         const ev = ERUPTIONS.find(e => e.id === activeEruption);
@@ -5546,6 +5234,9 @@
       resetLavaField();
       resetPdcField();
       rebuildTerrain();
+      rebuildTimelinePips();
+      updateTimelinePips();
+      applyPhase();
       updateReadouts();
     });
 
