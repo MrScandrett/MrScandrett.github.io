@@ -9,7 +9,7 @@
   /* Stylesheet revision. daily-puzzles.mjs reads this and re-fetches the CSS if it is older than the
      script (a cached old sheet next to new JS left the Rubik's cube unstyled). Bump it with any
      change that new markup in daily-puzzles.mjs depends on. */
-  --dp-css-rev: 2;
+  --dp-css-rev: 3;
   --dp-ink: var(--text-main, #17233a);
   --dp-muted: var(--text-muted, #5b6b85);
   --dp-accent: var(--theme-accent, var(--accent, #0071e3));
@@ -80,6 +80,8 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
 
 .dp-tabs {
   display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--dp-line);
@@ -117,6 +119,7 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
 }
 .dp-tab--sudoku .dp-tab-icon { --g1: #14b8a6; --g2: #0f766e; }
 .dp-tab--daily-double .dp-tab-icon { --g1: #fbbf24; --g2: #d97706; }
+.dp-tab--geo .dp-tab-icon { --g1: #3190a5; --g2: #215277; }
 .dp-tab--chess .dp-tab-icon { --g1: #4d8b7b; --g2: #1f4d43; }
 .dp-tab:not([aria-selected="true"]) .dp-tab-icon { filter: saturate(0.75); }
 .dp-ico { display: grid; }
@@ -142,7 +145,7 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
 }
 .dp-tab.is-done .dp-tick { display: grid; }
 
-.dp-tab-text { display: flex; flex-direction: column; line-height: 1.15; }
+.dp-tab-text { min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
 .dp-tab-full { font-weight: 800; font-size: 0.92rem; white-space: nowrap; }
 .dp-tab-short { display: none; font-weight: 800; }
 .dp-tab-sub { font-size: 0.7rem; color: var(--dp-muted); white-space: nowrap; }
@@ -1304,7 +1307,7 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
 
 @media (max-width: 520px) {
   .dp-bar { gap: 0.55rem; margin-bottom: 0.75rem; }
-  .dp-tabs { width: 100%; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .dp-tabs { width: 100%; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
   .dp-tab {
     flex-direction: column;
     justify-content: center;
@@ -1734,7 +1737,7 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
     gap: 0.45rem 0.6rem;
     padding-inline: max(0.6rem, env(safe-area-inset-left, 0px)) max(0.6rem, env(safe-area-inset-right, 0px));
   }
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tabs { justify-self: stretch; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tabs { justify-self: stretch; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab { min-width: 0; }
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-nav { padding: 0; min-width: 0; }
 }
@@ -1909,3 +1912,88 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
   .dp-rubik-stage { height: 195px; --rubik-scale: .85; }
 }
 @media (prefers-reduced-motion: reduce) { .dp-rubik-layer { transition: none; } }
+
+/* Daily GeoGuess */
+.dp-geo {
+  width: min(100%, 48rem);
+  margin-inline: auto;
+  color: var(--dp-ink);
+}
+
+.dp-geo-step {
+  padding: clamp(0.7rem, 2vw, 1.2rem);
+  border: 1px solid var(--dp-line);
+  border-radius: 18px;
+  background: var(--dp-paper);
+  box-shadow: var(--dp-raise);
+}
+
+#home-puzzles .dp-geo [hidden] { display: none; }
+
+.dp-geo-heading, .dp-geo-caption, .dp-geo-actions, .dp-geo-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dp-geo-heading, .dp-geo-caption, .dp-geo-actions { justify-content: space-between; }
+.dp-geo-heading { margin-bottom: 0.7rem; }
+.dp-geo-heading h4 { margin: 0; font-size: 1.15rem; }
+.dp-geo-heading p, .dp-geo-clue p { margin: 0.2rem 0 0; font-size: 0.89rem; color: var(--dp-muted); }
+.dp-geo-caption { margin-block: 0.55rem; }
+.dp-geo-caption small { color: var(--dp-muted); font-size: 0.75rem; }
+.dp-geo-status { margin: 0; font-weight: 700; font-size: 0.88rem; }
+.dp-geo .dp-btn { min-height: 2.5rem; }
+.dp-geo-clue { margin-top: 0.65rem; }
+.dp-geo-clue summary { cursor: pointer; font-size: 0.88rem; font-weight: 700; }
+
+.dp-geo-panorama, .dp-geo-board {
+  overflow: hidden;
+  border: 1px solid var(--dp-line);
+  border-radius: 12px;
+  background: var(--dp-tile);
+}
+
+.dp-geo-panorama iframe {
+  display: block;
+  width: 100%;
+  height: clamp(15rem, 49vw, 24rem);
+  border: 0;
+}
+
+.dp-geo-board { background: #dceef5; }
+.dp-geo-loading { padding: 1rem; color: #17364a; }
+.dp-geo-board > .dp-btn { margin: 0 1rem 1rem; color: var(--dp-ink); }
+
+.dp-geo-map {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.dp-geo-map:focus-visible { outline-offset: -3px; }
+.dp-geo-map > * { pointer-events: none; }
+.dp-geo-grid, .dp-geo-land, .dp-geo-route { vector-effect: non-scaling-stroke; }
+.dp-geo-grid { fill: none; stroke: #b2d1df; stroke-width: 0.8; }
+.dp-geo-land { fill: #a9c8a3; stroke: #547b63; stroke-width: 0.65; }
+.dp-geo-route { fill: none; stroke: #374a61; stroke-width: 1.6; stroke-dasharray: 4 4; }
+.dp-geo-pin path, .dp-geo-actual circle { vector-effect: non-scaling-stroke; stroke: #fff; stroke-width: 1.75; }
+.dp-geo-pin path { fill: #a21e3c; }
+.dp-geo-pin circle, .dp-geo-actual .dp-geo-center { fill: #fff; }
+.dp-geo-actual circle { fill: #205587; }
+
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-geo-board {
+  width: min(100%, max(21rem, calc((100cqh - 17rem) * 2)));
+  margin-inline: auto;
+}
+
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-geo-panorama iframe {
+  height: clamp(14rem, calc(100cqh - 9rem), 31rem);
+}
+
+@media (max-width: 520px) {
+  .dp-geo .dp-btn { min-height: 2.75rem; }
+}

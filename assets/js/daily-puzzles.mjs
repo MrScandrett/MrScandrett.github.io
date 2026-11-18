@@ -1,6 +1,5 @@
-// Home-page daily puzzles (#home-puzzles): crossword, sudoku, Daily Double, chess, and
-// Sokoban and Rubik’s, generated in the browser from the date.
-// Progress lives in one localStorage key; nothing leaves the browser.
+// Home-page daily puzzles (#home-puzzles), selected or generated from the date.
+// Puzzle progress lives in one localStorage key.
 
 import {
   dayKey, parseDayKey, shiftDayKey, makeSudoku, makeCrossword, sudokuConflicts, entryCells, PEERS,
@@ -71,6 +70,7 @@ const ICONS = {
   'daily-double': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.6h6.3L9.6 22l9.9-12.4h-6.6z" fill="currentColor"/></svg>',
   rubik: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 7v10l-10 5-10-5V7zM2 7l10 5 10-5M12 12v10M7 4.5l10 5v10M17 4.5l-10 5v10M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
   sokoban: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.8 4.8l14.4 14.4M19.2 4.8 4.8 19.2" stroke="currentColor" stroke-width="1.6"/><path d="M4 9.5h16M4 14.5h16" stroke="currentColor" stroke-width="1" opacity=".5"/></svg>',
+  geo: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="4" ry="9" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3 12h18M5 7h14M5 17h14" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>',
   chess: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20.5h11.5v-1.8c0-4.3-1.2-8-3.3-10.6l.9-3.1-2.8 1.5C11.7 5.2 9.6 6 8.2 7.7L5.4 11c-.6.8-.4 1.9.4 2.4l.7.4c.7.4 1.6.3 2.1-.3l1.3-1.4c.4 1.5-.4 3.1-1.8 4.5C7.2 17.5 7 18.8 7 20.5z" fill="currentColor"/><circle cx="10.3" cy="9.3" r="1" fill="var(--dp-icon-eye, #fff)"/></svg>'
 };
 const icon = (name) => { const s = el('span', { class: 'dp-ico', 'aria-hidden': 'true' }); s.innerHTML = ICONS[name]; return s; };
@@ -145,7 +145,8 @@ function mount(root, bank, doubleBank, chessBank) {
   const app = root.querySelector('[data-dp-app]');
   const store = loadStore();
   const today = dayKey(new Date());
-  const validTabs = ['crossword', 'sudoku', 'daily-double', 'chess', 'sokoban', 'rubik'];
+  const progressKey = { crossword: 'cross', sudoku: 'sudoku', 'daily-double': 'double', chess: 'chess', sokoban: 'soko', rubik: 'rubik', geo: 'geo' };
+  const validTabs = Object.keys(progressKey);
   const state = { key: today, tab: validTabs.includes(store.tab) ? store.tab : 'crossword' };
   const cache = new Map();
 
@@ -171,7 +172,8 @@ function mount(root, bank, doubleBank, chessBank) {
   const isDone = (key, which) => !!(store.days[key] && store.days[key][which] && store.days[key][which].done);
   // A day counts toward the streak when a puzzle was solved without "Reveal all".
   const counts = (key, which) => isDone(key, which) && !store.days[key][which].gaveUp;
-  const played = (key) => counts(key, 'cross') || counts(key, 'sudoku') || counts(key, 'double') || counts(key, 'chess') || counts(key, 'soko') || counts(key, 'rubik');
+  const progressKeys = Object.values(progressKey);
+  const played = (key) => progressKeys.some((which) => counts(key, which));
   function streak() {
     let n = 0, k = played(today) ? today : shiftDayKey(today, -1);
     while (played(k)) { n++; k = shiftDayKey(k, -1); }
@@ -196,8 +198,11 @@ function mount(root, bank, doubleBank, chessBank) {
   const tabChess = makeTab('chess', 'Chess Quest', 'Chess', 'Find the mate');
   const tabSoko = makeTab('sokoban', 'Sokoban', 'Sokoban', 'Push the crates');
   const tabRubik = makeTab('rubik', 'Daily Rubik’s', 'Rubik’s', 'Twist & solve');
+  const tabGeo = makeTab('geo', 'Daily GeoGuess', 'Geo', 'Find the place');
+  tabGeo.setAttribute('aria-label', 'Daily GeoGuess');
+  const tabButtons = { crossword: tabCross, sudoku: tabSudoku, 'daily-double': tabDouble, chess: tabChess, sokoban: tabSoko, rubik: tabRubik, geo: tabGeo };
   const bar = el('div', { class: 'dp-bar' },
-    el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, tabCross, tabSudoku, tabDouble, tabChess, tabSoko, tabRubik),
+    el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, ...validTabs.map((id) => tabButtons[id])),
     el('div', { class: 'dp-nav', role: 'group', 'aria-label': 'Choose a day' },
       el('div', { class: 'dp-daypick' }, prevBtn, dateLabel, nextBtn), todayBtn, streakEl));
   const panel = el('div', { class: 'dp-panel', id: 'dp-panel', role: 'tabpanel' });
@@ -216,24 +221,12 @@ function mount(root, bank, doubleBank, chessBank) {
     const n = streak();
     streakEl.hidden = n === 0;
     streakEl.textContent = `🔥 ${n}-day streak`;
-    tabCross.setAttribute('aria-selected', String(cur === 'crossword'));
-    tabSudoku.setAttribute('aria-selected', String(cur === 'sudoku'));
-    tabDouble.setAttribute('aria-selected', String(cur === 'daily-double'));
-    tabChess.setAttribute('aria-selected', String(cur === 'chess'));
-    tabSoko.setAttribute('aria-selected', String(cur === 'sokoban'));
-    tabCross.tabIndex = (cur === 'crossword' || !started) ? 0 : -1;
-    tabSudoku.tabIndex = cur === 'sudoku' ? 0 : -1;
-    tabDouble.tabIndex = cur === 'daily-double' ? 0 : -1;
-    tabChess.tabIndex = cur === 'chess' ? 0 : -1;
-    tabRubik.setAttribute('aria-selected', String(cur === 'rubik'));
-    tabRubik.tabIndex = cur === 'rubik' ? 0 : -1;
-    tabRubik.classList.toggle('is-done', isDone(state.key, 'rubik'));
-    tabSoko.tabIndex = cur === 'sokoban' ? 0 : -1;
-    tabCross.classList.toggle('is-done', isDone(state.key, 'cross'));
-    tabSudoku.classList.toggle('is-done', isDone(state.key, 'sudoku'));
-    tabDouble.classList.toggle('is-done', isDone(state.key, 'double'));
-    tabChess.classList.toggle('is-done', isDone(state.key, 'chess'));
-    tabSoko.classList.toggle('is-done', isDone(state.key, 'soko'));
+    validTabs.forEach((id, index) => {
+      const tab = tabButtons[id];
+      tab.setAttribute('aria-selected', String(cur === id));
+      tab.tabIndex = cur === id || (!started && index === 0) ? 0 : -1;
+      tab.classList.toggle('is-done', isDone(state.key, progressKey[id]));
+    });
     panel.hidden = !started;
     root.classList.toggle('dp-collapsed', !started);
     if (started) panel.setAttribute('aria-labelledby', `dp-tab-${state.tab}`);
@@ -244,6 +237,18 @@ function mount(root, bank, doubleBank, chessBank) {
     teardown = () => {};
     refreshChrome();
     if (!started) { panel.replaceChildren(); return; }
+    if (state.tab === 'geo') {
+      const key = state.key;
+      const loading = el('p', { class: 'dp-status', role: 'status', text: 'Loading Daily GeoGuess…' });
+      panel.replaceChildren(loading);
+      import('./daily-geo.mjs').then(({ buildDailyGeo }) => {
+        if (loading.isConnected) buildDailyGeo(panel, key, dayState(key), persist, refreshChrome, el);
+      }).catch(() => {
+        if (loading.isConnected) loading.textContent = 'Daily GeoGuess is unavailable. Reload the page to try again.';
+      });
+      if (!reducedMotion()) replay(panel, 'is-enter');
+      return;
+    }
     const p = puzzlesFor(state.key);
     teardown = state.tab === 'crossword'
       ? buildCrossword(panel, p.cw, dayState(state.key), persist, refreshChrome)
@@ -264,22 +269,16 @@ function mount(root, bank, doubleBank, chessBank) {
   nextBtn.addEventListener('click', () => goDay(shiftDayKey(state.key, 1)));
   todayBtn.addEventListener('click', () => goDay(today));
 
-  const tabButtons = { 'crossword': tabCross, 'sudoku': tabSudoku, 'daily-double': tabDouble, chess: tabChess, sokoban: tabSoko, rubik: tabRubik };
   const setTab = (tab, focus) => {
     started = true; state.tab = tab; store.tab = tab; persist(); show();
     if (focus && tabButtons[tab]) tabButtons[tab].focus();
   };
-  tabCross.addEventListener('click', () => setTab('crossword'));
-  tabSudoku.addEventListener('click', () => setTab('sudoku'));
-  tabDouble.addEventListener('click', () => setTab('daily-double'));
-  tabChess.addEventListener('click', () => setTab('chess'));
-  tabSoko.addEventListener('click', () => setTab('sokoban'));
-  tabRubik.addEventListener('click', () => setTab('rubik'));
+  for (const id of validTabs) tabButtons[id].addEventListener('click', () => setTab(id));
 
   bar.querySelector('[role="tablist"]').addEventListener('keydown', (ev) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(ev.key)) return;
     ev.preventDefault();
-    const currIdx = validTabs.indexOf(state.tab);
+    const currIdx = validTabs.indexOf(started ? state.tab : validTabs[0]);
     let nextIdx = currIdx;
     if (ev.key === 'Home') nextIdx = 0;
     else if (ev.key === 'End') nextIdx = validTabs.length - 1;
@@ -296,7 +295,7 @@ function mount(root, bank, doubleBank, chessBank) {
   let staged = false;
   document.addEventListener('creation-app-resize', () => {
     const now = root.matches(':fullscreen, .creation-app-expanded');
-    if (now && !staged) panel.querySelector('.dp-xinput, .dp-scell[tabindex="0"], .dp-dcell[tabindex="0"], .dp-chess-square, .dp-soko-board, .dp-rubik-stage')?.focus({ preventScroll: true });
+    if (now && !staged) panel.querySelector('.dp-xinput, .dp-scell[tabindex="0"], .dp-dcell[tabindex="0"], .dp-chess-square, .dp-soko-board, .dp-rubik-stage, .dp-geo-step:not([hidden]) :is(.dp-geo-map:not([hidden]), .dp-geo-next)')?.focus({ preventScroll: true });
     staged = now;
   });
   root.addEventListener('keydown', (ev) => {
@@ -1876,7 +1875,7 @@ function buildRubik(panel, pz, saved, persist, onChange) {
 // This script loads lazily, so it can be newer than the stylesheet the page already has (a deploy
 // inside the host's cache window, or an old service-worker entry). Keep this in step with
 // --dp-css-rev in daily-puzzles.css. Resolves once the sheet is current, or after a short wait.
-const CSS_REV = 2;
+const CSS_REV = 3;
 function ensureCurrentCss(root) {
   const have = parseInt(getComputedStyle(root).getPropertyValue('--dp-css-rev'), 10) || 0;
   if (have >= CSS_REV) return Promise.resolve();
