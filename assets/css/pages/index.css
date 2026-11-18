@@ -9650,3 +9650,115 @@ body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title {
   .today-shortcuts a { justify-content: center; padding-inline: .25rem; font-size: .75rem; text-align: center; }
   .today-shortcuts a > span { display: none; }
 }
+
+
+/* Ambient hero art: index-atmosphere.js floats STEAM objects out of a starfield
+   void behind the launch bar, with film grain and flicker (still under reduced motion). */
+.cos-home .home-launch-bar {
+  --steam-s: #2f7fe0;
+  --steam-t: #0f9c8c;
+  --steam-e: #d06d0e;
+  --steam-a: #cc3f8c;
+  --steam-m: #7352e0;
+  --atmo-star: color-mix(in srgb, var(--accent) 50%, var(--text));
+  --atmo-shade: color-mix(in srgb, var(--steam-s) 40%, #0b1230);
+  --atmo-ink: color-mix(in srgb, var(--text) 82%, var(--accent));
+  --atmo-void: var(--surface-elevated, #fff);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  align-items: start;
+}
+.cos-home .home-launch-bar:has(> .home-atmosphere)::after { display: none; }
+
+/* Balanced hero: name and the two actions centred over the void, the
+   "welcome back" row centred beneath, cards reading top-down in line. */
+.cos-home .home-launch-bar:has(> .home-atmosphere) {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 1rem;
+  padding: clamp(1.75rem, 4.5vw, 3.25rem) clamp(1rem, 3vw, 1.75rem) clamp(1rem, 2.5vw, 1.5rem);
+  text-align: center;
+}
+.cos-home .home-launch-bar:has(> .home-atmosphere) .home-launch-brand {
+  width: 100%;
+  text-shadow: 0 2px 18px color-mix(in srgb, var(--atmo-void) 70%, transparent);
+}
+body.theme-home .cos-home .home-launch-bar:has(> .home-atmosphere) .home-launch-brand .eyebrow { text-align: center; }
+body.theme-home .cos-home .home-launchpad .home-launch-bar:has(> .home-atmosphere) .home-launch-brand .home-hero-title {
+  font-size: clamp(2.2rem, 6vw, 4.25rem);
+  text-align: center;
+}
+.cos-home .home-launch-bar:has(> .home-atmosphere) .home-launch-actions {
+  justify-content: center;
+  margin-top: clamp(.25rem, 1.5vw, 1rem);
+  margin-bottom: clamp(1.5rem, 6vw, 4.5rem);
+}
+.cos-home .home-launch-bar:has(> .home-atmosphere) > [data-memory-continue] {
+  justify-self: stretch;
+  margin-top: 0;
+  text-align: left;
+}
+.cos-home .home-launch-bar .memory-continue__eyebrow { justify-content: center; }
+.cos-home .home-launch-bar .memory-continue__card { justify-content: flex-start; }
+html[data-lighting="night"] .cos-home .home-launch-bar {
+  --steam-s: #8ec0ff;
+  --steam-t: #5fe0cf;
+  --steam-e: #ffb36b;
+  --steam-a: #ff8fc8;
+  --steam-m: #b9a3ff;
+  --atmo-star: color-mix(in srgb, var(--accent) 35%, #fff);
+  --atmo-shade: #141a3f;
+  --atmo-ink: #eef1f8;
+  --atmo-void: #03040a;
+}
+
+.cos-home .home-launch-bar > .home-atmosphere {
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 auto 0;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(180deg, #000 78%, transparent);
+}
+.home-atmosphere::before {
+  content: "";
+  position: absolute;
+  inset: -30% -10%;
+  background:
+    radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--steam-m) 24%, transparent), transparent 46%),
+    radial-gradient(ellipse at 22% 55%, color-mix(in srgb, var(--steam-s) 16%, transparent), transparent 42%),
+    radial-gradient(ellipse at 78% 55%, color-mix(in srgb, var(--steam-a) 16%, transparent), transparent 42%);
+  transition: opacity 300ms ease;
+}
+html[data-lighting="night"] .home-atmosphere::before {
+  background:
+    radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--steam-m) 18%, #05060d), transparent 60%),
+    radial-gradient(ellipse 70% 90% at 50% 42%, #03040a 30%, transparent 78%);
+}
+.home-atmosphere-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0.88;
+  transform-origin: 70% 55%;
+}
+.home-atmosphere-probe { position: absolute; visibility: hidden; }
+.home-atmosphere.is-drifting::before { animation: home-atmo-glow 24s ease-in-out infinite alternate; }
+@keyframes home-atmo-glow {
+  from { transform: translate3d(3%, -4%, 0) scale(0.95); }
+  to { transform: translate3d(-4%, 4%, 0) scale(1.1); }
+}
+
+@media (max-width: 780px) {
+  .home-atmosphere-art { opacity: .7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-atmosphere.is-drifting::before { animation: none; }
+}
+@media (forced-colors: active), print {
+  .home-atmosphere { display: none; }
+}

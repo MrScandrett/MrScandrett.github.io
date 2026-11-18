@@ -8,6 +8,7 @@
   let currentWeather = null;
   let currentAirQuality = null;
   let activeCharacteristic = 'temperature';
+  let unitSystem = 'imperial';
   let activeLocation = window.WeatherEngine.DEFAULT_LOCATION;
   let weatherRequestId = 0;
   let drivingSpeed = 55;
@@ -35,7 +36,10 @@
     geoBtn: document.getElementById('ww-geo-btn'),
     presetChips: document.querySelectorAll('.ww-preset-chip'),
 
-    // Cockpit
+    // Station Observatory
+    stationCoords: document.getElementById('ww-station-coords'),
+    stationFeed: document.getElementById('ww-station-feed'),
+    unitBtns: document.querySelectorAll('.ww-unit-btn'),
     dialCity: document.getElementById('ww-dial-city'),
     heroCity: document.getElementById('ww-hero-city'),
     heroTemp: document.getElementById('ww-hero-temp'),
@@ -45,6 +49,8 @@
     dialIcon: document.getElementById('ww-dial-icon'),
     dialCondition: document.getElementById('ww-dial-condition'),
     dialFeels: document.getElementById('ww-dial-feels'),
+    dialSpread: document.getElementById('ww-dial-spread'),
+    dialRain: document.getElementById('ww-dial-rain'),
     dialLo: document.getElementById('ww-dial-lo'),
     dialHi: document.getElementById('ww-dial-hi'),
 
@@ -60,7 +66,9 @@
     statUV: document.getElementById('ww-stat-uv'),
     statUVSub: document.getElementById('ww-stat-uv-sub'),
     statHumidity: document.getElementById('ww-stat-humidity'),
+    statHumiditySub: document.getElementById('ww-stat-humidity-sub'),
     statVisibility: document.getElementById('ww-stat-visibility'),
+    statVisibilitySub: document.getElementById('ww-stat-visibility-sub'),
     statPollen: document.getElementById('ww-stat-pollen'),
     statPollenSub: document.getElementById('ww-stat-pollen-sub'),
     statAqi: document.getElementById('ww-stat-aqi'),
@@ -69,10 +77,12 @@
     // Hourly & Daily
     hourlyStrip: document.getElementById('ww-hourly-strip'),
     dailyGrid: document.getElementById('ww-daily-grid'),
+    dailyTitle: document.querySelector('#forecast .ww-hourly-title'),
 
     // Solar & Lunar
     sunriseTime: document.getElementById('ww-sunrise-time'),
     sunsetTime: document.getElementById('ww-sunset-time'),
+    daylightDuration: document.getElementById('ww-daylight-duration'),
     solarFill: document.getElementById('ww-solar-fill'),
     solarSun: document.getElementById('ww-solar-sun'),
     moonEmoji: document.getElementById('ww-moon-emoji'),
@@ -447,6 +457,32 @@
     }
   }
 
+  function renderAirQualityCards() {
+    if (!els.statAqi || !els.statPollen) return;
+    if (!currentAirQuality) {
+      els.statAqi.textContent = 'Unavailable';
+      els.statAqiSub.textContent = 'Air-quality feed unavailable';
+      els.statPollen.textContent = 'Unavailable';
+      els.statPollenSub.textContent = 'No regional pollen forecast';
+      return;
+    }
+    const aq = currentAirQuality;
+    els.statAqi.innerHTML = aq.aqi != null
+      ? formatStatValue(String(aq.aqi), 'US AQI', aqiLabel(aq.aqi))
+      : 'Unavailable';
+    els.statAqiSub.textContent = aq.pm25 != null
+      ? `PM2.5 ${aq.pm25} μg/m³ · O₃ ${aq.ozone || 0} μg/m³`
+      : 'No current pollutant reading';
+    const pollen = aq.pollen;
+    if (pollen && Number.isFinite(pollen.peak)) {
+      els.statPollen.innerHTML = formatStatValue(String(Math.round(pollen.peak)), 'grains/m³', pollen.category);
+      els.statPollenSub.textContent = 'Peak regional aeroallergen forecast';
+    } else {
+      els.statPollen.textContent = pollen ? pollen.value : 'Unavailable';
+      els.statPollenSub.textContent = pollen ? pollen.sub : 'No regional pollen forecast';
+    }
+  }
+
   async function loadAirQuality(location) {
     if (!els.statAqi || !els.statPollen || !location) return;
     const url = new URL('https://air-quality-api.open-meteo.com/v1/air-quality');
@@ -462,11 +498,7 @@
       const data = await response.json();
       const current = data.current || {};
       const aqi = Number(current.us_aqi);
-      els.statAqi.textContent = Number.isFinite(aqi) ? `${Math.round(aqi)} · ${aqiLabel(aqi)}` : 'Unavailable';
-      els.statAqiSub.textContent = Number.isFinite(Number(current.pm2_5)) ? `PM2.5 ${Number(current.pm2_5).toFixed(1)} μg/m³ · O₃ ${Math.round(Number(current.ozone) || 0)} μg/m³` : 'No current pollutant reading';
       const pollen = pollenSummary(data.hourly);
-      els.statPollen.textContent = pollen.value;
-      els.statPollenSub.textContent = pollen.sub;
       currentAirQuality = {
         aqi: Number.isFinite(aqi) ? Math.round(aqi) : null,
         aqiText: Number.isFinite(aqi) ? `${Math.round(aqi)} (${aqiLabel(aqi)})` : 'Unavailable',
@@ -474,15 +506,13 @@
         ozone: Number.isFinite(Number(current.ozone)) ? Math.round(Number(current.ozone)) : null,
         pollen
       };
+      renderAirQualityCards();
       if (window.WWCockpitViz) window.WWCockpitViz.renderAir({ aqi }, pollen);
       renderCharInspector(activeCharacteristic);
     } catch (err) {
       console.warn('Air quality load error:', err);
       currentAirQuality = null;
-      els.statAqi.textContent = 'Unavailable';
-      els.statAqiSub.textContent = 'Air-quality feed unavailable';
-      els.statPollen.textContent = 'Unavailable';
-      els.statPollenSub.textContent = 'No regional pollen forecast';
+      renderAirQualityCards();
       if (window.WWCockpitViz) window.WWCockpitViz.renderAir(null, null);
       renderCharInspector(activeCharacteristic);
     }
@@ -518,40 +548,95 @@
     connectLightning(location);
   }
 
-  // ── RENDER COCKPIT ──────────────────────────────────────────────────────────
+  // ── UNIT HELPERS & STATION RENDERING ────────────────────────────────────────
+  function fToC(f) {
+    return Math.round(((f - 32) * 5) / 9);
+  }
+
+  function mphToKmh(mph) {
+    return Math.round(mph * 1.60934);
+  }
+
+  function miToKm(mi) {
+    return (Number(mi) * 1.60934).toFixed(1);
+  }
+
+  function formatStatValue(numText, unitText, badgeText) {
+    const badge = badgeText ? `<span class="ww-stat-badge">${escapeHtml(badgeText)}</span>` : '';
+    return `<span class="ww-stat-reading"><span class="ww-stat-num">${escapeHtml(numText)}</span><span class="ww-stat-unit">${escapeHtml(unitText)}</span>${badge}</span>`;
+  }
+
   function renderCockpit(data) {
     if (!els.dialCity) return;
 
+    const isMetric = unitSystem === 'metric';
+    const tempUnit = isMetric ? '°C' : '°F';
+    const speedUnit = isMetric ? 'km/h' : 'mph';
+    const tempVal = (f) => (isMetric ? fToC(f) : Math.round(f));
+    const dewSpreadF = Math.max(0, data.temperature - data.dewPoint);
+    const dewSpreadDisplay = isMetric ? ((dewSpreadF * 5) / 9).toFixed(1) : Math.round(dewSpreadF);
+    const windVal = isMetric ? mphToKmh(data.wind) : data.wind;
+    const gustVal = isMetric ? mphToKmh(data.windGusts) : data.windGusts;
+    const visMiles = data.visibilityMiles != null ? data.visibilityMiles : 10;
+    const rhBand = data.humidity >= 80 ? 'Very Humid' : data.humidity >= 60 ? 'Humid' : data.humidity >= 30 ? 'Comfortable' : 'Dry';
+    const visSub = visMiles >= 6 ? 'Clear visual range (≥ 6 mi)' : visMiles >= 3 ? 'Light haze or mist' : visMiles >= 1 ? 'Reduced visibility' : 'Dense fog / low ceiling';
+
+    if (els.stationCoords && data.location) {
+      const lat = Number(data.location.latitude);
+      const lon = Number(data.location.longitude);
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        const latStr = `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? 'N' : 'S'}`;
+        const lonStr = `${Math.abs(lon).toFixed(2)}°${lon >= 0 ? 'E' : 'W'}`;
+        els.stationCoords.textContent = `${latStr}, ${lonStr} · ${data.location.climate || 'Surface Station'}`;
+      }
+    }
+    if (els.stationFeed) {
+      els.stationFeed.textContent = data.isSimulated ? 'Simulated Climate Model' : 'Live Open-Meteo Telemetry';
+    }
+
     els.dialCity.textContent = data.location.label;
     els.dialStation.textContent = data.location.stationId;
-    els.dialTemp.textContent = `${data.temperature}°`;
+    els.dialTemp.textContent = `${tempVal(data.temperature)}${tempUnit}`;
     els.dialIcon.textContent = data.icon;
     els.dialCondition.textContent = data.condition;
     if (els.heroCity) els.heroCity.textContent = data.location.label;
-    if (els.heroTemp) els.heroTemp.textContent = `${data.temperature}°`;
+    if (els.heroTemp) els.heroTemp.textContent = `${tempVal(data.temperature)}${tempUnit}`;
     if (els.heroCondition) els.heroCondition.textContent = data.condition;
-    els.dialFeels.textContent = `FEELS LIKE ${data.feelsLike}° · ${data.dewComfort.category.toUpperCase()}`;
-    els.dialLo.textContent = `${data.min}°`;
-    els.dialHi.textContent = `${data.max}°`;
+    els.dialFeels.textContent = `Feels like ${tempVal(data.feelsLike)}${tempUnit}`;
+    if (els.dialSpread) els.dialSpread.textContent = `Dew spread ${dewSpreadDisplay}${tempUnit} · ${data.dewComfort.category}`;
+    if (els.dialRain) els.dialRain.textContent = `Rain chance ${data.rainChance}%`;
+    els.dialLo.textContent = `${tempVal(data.min)}${tempUnit}`;
+    els.dialHi.textContent = `${tempVal(data.max)}${tempUnit}`;
 
-    // Telemetry
-    els.statDew.textContent = `${data.dewPoint}°F`;
-    els.statDewSub.textContent = data.dewComfort.category;
+    // Grouped Topic Telemetry Cards
+    els.statDew.innerHTML = isMetric
+      ? formatStatValue(`${((data.dewPoint - 32) * 5 / 9).toFixed(1)}`, '°C', data.dewComfort.category)
+      : formatStatValue(`${Math.round(data.dewPoint)}`, '°F', data.dewComfort.category);
+    els.statDewSub.textContent = `Spread ${dewSpreadDisplay}${tempUnit} below air temp`;
 
-    els.statCloudBase.textContent = `${data.cloudBase.feet.toLocaleString()} FT`;
-    els.statCloudBaseSub.textContent = `~${data.cloudBase.meters.toLocaleString()} m altitude`;
+    els.statHumidity.innerHTML = formatStatValue(`${data.humidity}`, '%', rhBand);
+    if (els.statHumiditySub) els.statHumiditySub.textContent = 'Water vapor saturation ratio';
 
-    els.statWind.textContent = `${data.wind} MPH ${data.windCompass.short}`;
-    els.statWindSub.textContent = `Gusts: ${data.windGusts} MPH · Beaufort: ${data.beaufort.name}`;
+    els.statCloudBase.innerHTML = isMetric
+      ? formatStatValue(`${data.cloudBase.meters.toLocaleString()}`, 'm', `~${data.cloudBase.feet.toLocaleString()} ft`)
+      : formatStatValue(`${data.cloudBase.feet.toLocaleString()}`, 'ft', `~${data.cloudBase.meters.toLocaleString()} m`);
+    els.statCloudBaseSub.textContent = 'Lifting Condensation Level';
 
-    els.statPressure.textContent = `${data.pressure.inHg} inHg`;
-    els.statPressureSub.textContent = `${data.pressure.hPa} hPa · ${data.pressure.system}`;
+    els.statWind.innerHTML = formatStatValue(`${windVal}`, speedUnit, data.windCompass.short);
+    els.statWindSub.textContent = `Gusts ${gustVal} ${speedUnit} · Bft ${data.beaufort.number} (${data.beaufort.name})`;
 
-    els.statUV.textContent = `${data.uvIndex} ${data.uvInfo.category}`;
-    els.statUVSub.textContent = `Burn: ${data.uvInfo.burnTime}`;
+    els.statPressure.innerHTML = isMetric
+      ? formatStatValue(`${data.pressure.hPa}`, 'hPa', `${data.pressure.inHg} inHg`)
+      : formatStatValue(`${data.pressure.inHg}`, 'inHg', `${data.pressure.hPa} hPa`);
+    els.statPressureSub.textContent = data.pressure.system;
 
-    els.statHumidity.textContent = `${data.humidity}%`;
-    els.statVisibility.textContent = `${data.visibilityMiles} MI`;
+    els.statUV.innerHTML = formatStatValue(`${data.uvIndex}`, 'UV', data.uvInfo.category);
+    els.statUVSub.textContent = `Unprotected burn: ${data.uvInfo.burnTime}`;
+
+    els.statVisibility.innerHTML = isMetric
+      ? formatStatValue(`${miToKm(visMiles)}`, 'km', `${visMiles} mi`)
+      : formatStatValue(`${visMiles}`, 'mi', `${miToKm(visMiles)} km`);
+    if (els.statVisibilitySub) els.statVisibilitySub.textContent = visSub;
 
     if (window.WWCockpitViz) window.WWCockpitViz.render(data);
 
@@ -561,13 +646,16 @@
         <div class="ww-hourly-slot${i === 0 ? ' is-now' : ''}">
           <span class="ww-hourly-time">${i === 0 ? 'Now' : h.timeLabel}</span>
           <span class="ww-hourly-icon" aria-hidden="true">${h.icon}</span>
-          <span class="ww-hourly-temp">${h.temp}°</span>
+          <span class="ww-hourly-temp">${tempVal(h.temp)}${tempUnit}</span>
           <span class="ww-hourly-pop">${h.precipProb > 0 ? `${h.precipProb}%` : ''}</span>
         </div>
       `).join('');
     }
 
     // 7-day daily forecast
+    if (els.dailyTitle) {
+      els.dailyTitle.textContent = `7-Day Synoptic Outlook & Temperature Range (${tempUnit})`;
+    }
     if (els.dailyGrid && data.daily) {
       // One compact row per day; each bar spans that day's low-high on a shared week scale.
       const weekLo = Math.min(...data.daily.map((d) => d.min));
@@ -583,9 +671,9 @@
           <span class="ww-daily-day">${d.dayName}</span>
           <span class="ww-daily-icon" aria-hidden="true">${d.icon}</span>
           <span class="ww-daily-rain">${rain}</span>
-          <span class="ww-daily-lo">${d.min}°</span>
+          <span class="ww-daily-lo">${tempVal(d.min)}°</span>
           <span class="ww-daily-bar" aria-hidden="true"><span class="ww-daily-fill" style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%;background-size:${(10000 / width).toFixed(0)}% 100%;background-position:${pos.toFixed(1)}% 0"></span></span>
-          <span class="ww-daily-hi">${d.max}°</span>
+          <span class="ww-daily-hi">${tempVal(d.max)}°</span>
         </div>`;
       }).join('');
     }
@@ -596,6 +684,13 @@
       const set = new Date(data.sunsetEpoch).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
       els.sunriseTime.textContent = rise;
       els.sunsetTime.textContent = set;
+
+      if (els.daylightDuration) {
+        const totalMin = Math.max(0, Math.round((data.sunsetEpoch - data.sunriseEpoch) / 60000));
+        const hrs = Math.floor(totalMin / 60);
+        const mins = totalMin % 60;
+        els.daylightDuration.textContent = `Daylight: ${hrs}h ${mins}m`;
+      }
 
       const now = Date.now();
       let pct = 0;
@@ -1122,17 +1217,22 @@
   function getCharacteristicSpec(key) {
     const d = currentWeather;
     const aq = currentAirQuality;
+    const isMetric = unitSystem === 'metric';
     const specs = {
       temperature: {
         icon: '🌡️',
         title: 'Air Temperature & Apparent Thermal Load',
-        reading: d ? `${d.temperature}°F (Feels like ${d.feelsLike}°F)` : 'Loading station telemetry…',
+        reading: d
+          ? (isMetric
+            ? `${fToC(d.temperature)}°C (Feels like ${fToC(d.feelsLike)}°C · ${d.temperature}°F)`
+            : `${d.temperature}°F (Feels like ${d.feelsLike}°F · ${fToC(d.temperature)}°C)`)
+          : 'Loading station telemetry…',
         wing: 'Wing I · Observatory → Wing V · Layering',
         instrument: 'Shielded Aspiration Thermometer / Thermistor',
         units: '°F / °C (measured 1.5–2 m above grass in shade)',
         mechanism: 'Measures the average translational kinetic energy of nitrogen and oxygen molecules, combined with wind and humidity for apparent temperature.',
         significance: d
-          ? `Today's range is ${d.min}°F to ${d.max}°F (${d.condition}). Large diurnal swings occur under clear, dry skies; humid air damps cooling.`
+          ? `Today's range is ${d.min}°F to ${d.max}°F / ${fToC(d.min)}°C to ${fToC(d.max)}°C (${d.condition}). Large diurnal swings occur under clear, dry skies; humid air damps cooling.`
           : 'Thermal energy sets air density, saturation capacity, and human metabolic heat loss.',
         href: '#clothing',
         cta: 'Open Exhibit 10 · Thermal Layering →'
@@ -1140,7 +1240,11 @@
       dew: {
         icon: '💧',
         title: 'Dew Point Temperature (Absolute Moisture)',
-        reading: d ? `${d.dewPoint}°F (${d.dewComfort.category})` : 'Loading station telemetry…',
+        reading: d
+          ? (isMetric
+            ? `${((d.dewPoint - 32) * 5 / 9).toFixed(1)}°C (${d.dewPoint}°F · ${d.dewComfort.category})`
+            : `${d.dewPoint}°F (${((d.dewPoint - 32) * 5 / 9).toFixed(1)}°C · ${d.dewComfort.category})`)
+          : 'Loading station telemetry…',
         wing: 'Wing I · Observatory → Wing II · Cloud Lab',
         instrument: 'Chilled-Mirror Hygrometer / Capacitive Psychrometer',
         units: '°F / °C (vapor pressure saturation temperature)',
@@ -1160,7 +1264,7 @@
         units: 'Percent (%) of equilibrium vapor pressure at current T',
         mechanism: 'Ratio of actual water vapor pressure to the maximum saturation vapor pressure possible at that temperature — which doubles roughly every 20°F.',
         significance: d
-          ? `At ${d.temperature}°F with ${d.dewPoint}°F dew point, the air holds ${d.humidity}% of its maximum vapor capacity.`
+          ? `At ${d.temperature}°F (${fToC(d.temperature)}°C) with ${d.dewPoint}°F dew point, the air holds ${d.humidity}% of its maximum vapor capacity.`
           : 'Relative humidity routinely rises at night simply because temperature falls, even when no moisture is added.',
         href: '#clouds',
         cta: 'Compare RH vs Dew Point in Exhibit 02 →'
@@ -1168,13 +1272,17 @@
       cloudbase: {
         icon: '☁️',
         title: 'Cloud Base Altitude (LCL Ceiling)',
-        reading: d ? `${d.cloudBase.feet.toLocaleString()} ft (~${d.cloudBase.meters.toLocaleString()} m)` : 'Loading station telemetry…',
+        reading: d
+          ? (isMetric
+            ? `${d.cloudBase.meters.toLocaleString()} m (~${d.cloudBase.feet.toLocaleString()} ft)`
+            : `${d.cloudBase.feet.toLocaleString()} ft (~${d.cloudBase.meters.toLocaleString()} m)`)
+          : 'Loading station telemetry…',
         wing: 'Wing II · Hall of Water & Sky',
         instrument: 'Laser Ceilometer & LCL Thermodynamic Calculation',
         units: 'Feet or meters above ground level (AGL)',
         mechanism: 'Rising convective parcels cool faster than their dew point by ~4.4°F per 1,000 ft. Condensation begins at H = ((T − Td) / 4.4) × 1,000 ft.',
         significance: d
-          ? `A current T − Td spread of ${Math.max(0, d.temperature - d.dewPoint)}°F places convective cloud bases near ${d.cloudBase.feet.toLocaleString()} ft.`
+          ? `A current T − Td spread of ${Math.max(0, d.temperature - d.dewPoint)}°F places convective cloud bases near ${d.cloudBase.feet.toLocaleString()} ft (${d.cloudBase.meters.toLocaleString()} m).`
           : 'Lower cloud bases mean damp air near saturation; high bases indicate dry boundary layers.',
         href: '#clouds',
         cta: 'Calculate LCL in Exhibit 02 →'
@@ -1182,13 +1290,17 @@
       pressure: {
         icon: '🧭',
         title: 'Barometric Pressure (Atmospheric Column Weight)',
-        reading: d ? `${d.pressure.inHg} inHg (${d.pressure.hPa} hPa · ${d.pressure.system})` : 'Loading station telemetry…',
+        reading: d
+          ? (isMetric
+            ? `${d.pressure.hPa} hPa (${d.pressure.inHg} inHg · ${d.pressure.system})`
+            : `${d.pressure.inHg} inHg (${d.pressure.hPa} hPa · ${d.pressure.system})`)
+          : 'Loading station telemetry…',
         wing: 'Wing III · Hall of Air in Motion',
         instrument: 'Aneroid / Silicon Piezoresistive Barometer',
         units: 'Hectopascals (hPa / mb) or inches of mercury (inHg)',
         mechanism: 'Measures the downward gravitational weight of the entire column of atmosphere above the station, corrected to mean sea level (standard = 1013.25 hPa).',
         significance: d
-          ? `Current column reads ${d.pressure.hPa} hPa (${d.pressure.system}). Rapid drops > 4 hPa in 3 hours signal an intensifying cyclone or front.`
+          ? `Current column reads ${d.pressure.hPa} hPa / ${d.pressure.inHg} inHg (${d.pressure.system}). Rapid drops > 4 hPa in 3 hours signal an intensifying cyclone or front.`
           : 'Horizontal pressure differences (gradients) initiate wind from High toward Low pressure.',
         href: '#fronts',
         cta: 'Explore Wing III · Air Masses & Fronts →'
@@ -1196,10 +1308,14 @@
       wind: {
         icon: '🌬️',
         title: 'Surface Wind Speed, Direction & Gusts',
-        reading: d ? `${d.wind} MPH ${d.windCompass.short} (Gusts ${d.windGusts} MPH · Beaufort ${d.beaufort.number})` : 'Loading station telemetry…',
+        reading: d
+          ? (isMetric
+            ? `${mphToKmh(d.wind)} km/h ${d.windCompass.short} (${d.wind} mph · Gusts ${mphToKmh(d.windGusts)} km/h · Bft ${d.beaufort.number})`
+            : `${d.wind} mph ${d.windCompass.short} (${mphToKmh(d.wind)} km/h · Gusts ${d.windGusts} mph · Beaufort ${d.beaufort.number})`)
+          : 'Loading station telemetry…',
         wing: 'Wing III · Air Motion → Wing IV · Storm Steering',
         instrument: 'Ultrasonic Anemometer & Wind Vane (10 m tower)',
-        units: 'MPH, knots, or m/s; named for direction air blows FROM',
+        units: 'mph, km/h, knots, or m/s; named for direction air blows FROM',
         mechanism: 'Driven by the Pressure Gradient Force and deflected right (Northern Hemisphere) by Earth\'s rotation (Coriolis effect), slowed by ground friction.',
         significance: d
           ? `Flow is ${d.windCompass.full} (${d.beaufort.name}). Upper winds near 700 hPa steer storms, while low-level shear tilts updrafts.`
@@ -1224,13 +1340,17 @@
       visibility: {
         icon: '🌫️',
         title: 'Horizontal Atmospheric Visibility',
-        reading: d ? `${d.visibilityMiles} miles visual range` : 'Loading station telemetry…',
+        reading: d
+          ? (isMetric
+            ? `${miToKm(d.visibilityMiles)} km (${d.visibilityMiles} mi)`
+            : `${d.visibilityMiles} mi (${miToKm(d.visibilityMiles)} km)`)
+          : 'Loading station telemetry…',
         wing: 'Wing II · Moisture → Wing V · Road Friction Physics',
         instrument: 'Optical Forward-Scatter Transmissometer / ASOS',
         units: 'Statute miles (mi) or kilometers (km)',
         mechanism: 'Measures light extinction (scattering + absorption) across the lowest boundary layer caused by fog droplets, mist, blowing dust, snow, or smoke.',
         significance: d
-          ? `Current runway visual range is ${d.visibilityMiles} mi. Under 1/4 mile activates dense fog advisories requiring low-beam headlights.`
+          ? `Current runway visual range is ${d.visibilityMiles} mi (${miToKm(d.visibilityMiles)} km). Under 1/4 mile activates dense fog advisories requiring low-beam headlights.`
           : 'Fog forms when surface temperature cools all the way to the dew point (spread ≤ 2°F).',
         href: '#driving',
         cta: 'Inspect Fog & Braking in Exhibit 11 →'
@@ -1283,6 +1403,13 @@
       card.classList.toggle('is-inspected', card.dataset.charCard === activeCharacteristic);
     });
 
+    document.querySelectorAll('.ww-stat-inspect-btn[data-char-target]').forEach((btn) => {
+      const match = btn.dataset.charTarget === activeCharacteristic;
+      btn.classList.toggle('is-active', match);
+      btn.setAttribute('aria-pressed', String(match));
+      btn.textContent = match ? '● Active' : 'Inspect';
+    });
+
     body.innerHTML = `
       <div class="ww-char-summary">
         <div class="ww-char-title-row">
@@ -1331,11 +1458,34 @@
     });
 
     inspectBtns.forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
         const target = btn.dataset.charTarget;
         renderCharInspector(target);
         const guide = document.getElementById('ww-char-inspector');
         if (guide) guide.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    });
+
+    document.querySelectorAll('[data-char-card]').forEach((card) => {
+      card.addEventListener('click', (event) => {
+        if (event.target.closest('button, a, input, select')) return;
+        renderCharInspector(card.dataset.charCard);
+      });
+    });
+
+    els.unitBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const nextUnit = btn.dataset.unitSystem;
+        if (!nextUnit || nextUnit === unitSystem) return;
+        unitSystem = nextUnit;
+        els.unitBtns.forEach((b) => {
+          const active = b.dataset.unitSystem === unitSystem;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-pressed', String(active));
+        });
+        if (currentWeather) renderCockpit(currentWeather);
+        renderAirQualityCards();
       });
     });
 
@@ -1728,6 +1878,11 @@
     });
 
     detectActiveExhibit();
+
+    const initialHash = window.location.hash.slice(1);
+    if (initialHash === 'cockpit' || initialHash === 'cockpit-title') {
+      setActiveExhibit('observatory', '1');
+    }
   }
 
   // ── INTERACTIVE QUIZ CONTROLLER (EXHIBIT 13 CERTIFICATION) ────────────────
