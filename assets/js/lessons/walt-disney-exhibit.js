@@ -40,7 +40,15 @@
       const outside = frame < 0 || frame > finalFrame;
       button.disabled = outside;
       button.setAttribute('aria-disabled', String(outside));
-      if (outside) return;
+      if (outside) {
+        // Empty slot past either end of the reel: still needs an accessible name.
+        delete button.dataset.frame;
+        button.setAttribute('aria-label', frame < 0 ? 'No frame before the first' : 'No frame after the last');
+        button.removeAttribute('aria-current');
+        thumb.style.backgroundPosition = '';
+        label.textContent = '';
+        return;
+      }
       button.dataset.frame = frame;
       button.setAttribute('aria-label', 'Film frame ' + (frame + 1));
       button.setAttribute('aria-current', String(frame === reelFrame));
