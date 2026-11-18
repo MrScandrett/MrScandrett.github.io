@@ -939,6 +939,83 @@
             </div>
           </section>
 
+          <section class="sm-card" id="grove-beginner-kit" style="--sm-accent:#34c759;">
+            <h2>Another Kit: The Grove Beginner Kit</h2>
+            <p>The Seeed Studio <strong>Grove Beginner Kit for Arduino</strong> (Seeed part 110061162) does the same job a different way. It is one board instead of a bag of modules: an Arduino-compatible <strong>Seeeduino Lotus</strong> in the middle, with ten modules around it that are <em>already wired</em> to it through the circuit board. You plug in the USB cable, choose <strong>Arduino Uno</strong> as the board in the Arduino IDE, and every module works. Nothing to wire, and nothing to wire wrong.</p>
+
+            <div class="sm-overview-grid">
+              <div class="sm-overview-card">
+                <strong>Jumper-wire kit (above)</strong>
+                <small>Many more modules, and you learn how each one is wired. More can go wrong: a loose wire or a swapped pin looks exactly like broken code.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Grove Beginner Kit</strong>
+                <small>Fewer modules, but it works the moment it is plugged in. Start with the code and the data; learn the wiring later.</small>
+              </div>
+              <div class="sm-overview-card">
+                <strong>Using both</strong>
+                <small>Get a sketch working on the Grove board first, then rebuild it from jumper-wire modules. If the rebuild fails, you know the problem is the wiring, not the code.</small>
+              </div>
+            </div>
+
+            <h3>Which pin each module uses</h3>
+            <p>Because the modules are wired for you, each one always uses the same pin. Write these in your sketch exactly as shown.</p>
+            <table class="sm-table" aria-label="Grove Beginner Kit modules and their pins">
+              <thead>
+                <tr>
+                  <th>Module</th>
+                  <th>Type</th>
+                  <th>Connection</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>LED</td><td>Output</td><td>Digital pin <code>4</code></td></tr>
+                <tr><td>Buzzer</td><td>Output</td><td>Digital pin <code>5</code></td></tr>
+                <tr><td>Button</td><td>Input</td><td>Digital pin <code>6</code></td></tr>
+                <tr><td>Rotary potentiometer</td><td>Input</td><td>Analog pin <code>A0</code></td></tr>
+                <tr><td>Sound sensor</td><td>Sensor</td><td>Analog pin <code>A2</code></td></tr>
+                <tr><td>Light sensor</td><td>Sensor</td><td>Analog pin <code>A6</code></td></tr>
+                <tr><td>Temperature &amp; humidity</td><td>Sensor</td><td>Older kits (DHT11): digital pin <code>3</code>. Kits made after October 2025 (black DHT20): I2C</td></tr>
+                <tr><td>Air pressure</td><td>Sensor</td><td>I2C. Older kits: BMP280 at address <code>0x77</code>. Kits made after October 2025: SPA06-003</td></tr>
+                <tr><td>3-axis accelerometer (LIS3DHTR)</td><td>Sensor</td><td>I2C, address <code>0x19</code></td></tr>
+                <tr><td>0.96″ OLED display</td><td>Output</td><td>I2C, address <code>0x78</code> as Seeed lists it (<code>0x3C</code> in 7-bit form)</td></tr>
+              </tbody>
+            </table>
+
+            <div class="sm-callout info">
+              <strong>Check which version you have</strong>
+              Seeed changed two sensors in October 2025. If the temperature &amp; humidity sensor on your board is <strong>black</strong>, it is the newer DHT20, and the code examples marked “new version” on Seeed's Grove Beginner Kit wiki page are the ones to use. The four I2C modules all share the board's SDA and SCL lines. Each has its own address, so the Arduino can talk to one at a time on the same two wires.
+            </div>
+
+            <div class="sm-callout warn">
+              <strong>Pin 3 is already taken</strong>
+              On older kits the temperature sensor uses digital pin 3. If you plug an extra LED or module into D3, you can't use the temperature sensor at the same time.
+            </div>
+
+            <h3>Breaking the modules out</h3>
+            <p>Each module is joined to the main board by three small tabs. Once students are comfortable, they can cut a module free with flush cutters (cut <em>outside</em> the holes, never through them) and reconnect it with one of the six Grove cables in the box. A Grove cable is four wires in one plug: power, ground and two signals. It only fits one way, so it can't be plugged in backwards. If the OLED stops working after you break modules out, Seeed's fix is to slow the I2C bus with <code>u8x8.setBusClock(100000)</code>.</p>
+
+            <h3>First projects on this board</h3>
+            <div class="sm-project-grid">
+              <div class="sm-project-card">
+                <strong>Night Light</strong>
+                <small>Read the light sensor on A6 and turn on the LED on D4 when it gets dark. Then add hysteresis (see the Sensor Lab below) so the LED doesn't flicker at dusk.</small>
+              </div>
+              <div class="sm-project-card">
+                <strong>Clap Counter</strong>
+                <small>Watch the sound sensor on A2 for spikes above the room's background level and show the count on the OLED.</small>
+              </div>
+              <div class="sm-project-card">
+                <strong>Tilt Alarm</strong>
+                <small>Use the accelerometer to notice when the board is tipped and sound the buzzer on D5. Press the button on D6 to reset it.</small>
+              </div>
+              <div class="sm-project-card">
+                <strong>Classroom Weather Station</strong>
+                <small>Show temperature, humidity and air pressure on the OLED, and use the potentiometer on A0 to switch between screens.</small>
+              </div>
+            </div>
+          </section>
+
           <section class="sm-card" style="--sm-accent:#007aff;">
             <h2>How To Think About Sensor Modules</h2>
             <p>Not every board in a sensor kit is actually a sensor. Some are <strong>inputs</strong> that measure the world, some are <strong>outputs</strong> that create light or sound, and some are <strong>support modules</strong> that handle display, power, or communication.</p>
