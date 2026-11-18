@@ -1,152 +1,221 @@
-// NASA Astronomy Picture of the Day — api.nasa.gov/planetary/apod
-// DEMO_KEY: 30 req/hour, 50/day — fine for classroom use.
-// Get a free personal key at https://api.nasa.gov if you hit limits.
-const APOD_API_KEY = "DEMO_KEY";
-const APOD_API_URL = `https://api.nasa.gov/planetary/apod?api_key=${APOD_API_KEY}`;
-const APOD_CACHE_KEY = "apod_cache";
+const NASA_APOD = "https://science.nasa.gov/wp-json/wp/v2/apod-basic?per_page=7&_fields=date,title,media_type,hdurl,permalink,alt,explanation,credit,copyright";
+const NASA_EPIC = "https://epic.gsfc.nasa.gov";
+const CLEVELAND_ART_API = "https://openaccess-api.clevelandart.org/api/artworks";
+// A fixed set of classroom-friendly landscapes and nature studies.
+const ARTWORK_IDS = [169767, 125249, 142734, 171296, 154264];
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const SOURCE_KEY = "home-picture-source";
+const CACHE_PREFIX = "home-picture-v1:";
 
-// Local copy avoids a blank "fallback" when the classroom is offline.
-// NASA/JPL/Caltech, 1990 — public domain, reprocessed 2020 by the Planetary Society.
-const APOD_FALLBACK = {
+const FALLBACK = {
   title: "Pale Blue Dot",
-  explanation: "Look again at that dot. That's here. That's home. That's us. On it everyone you love, everyone you know, everyone you ever heard of, every human being who ever was, lived out their lives.",
+  explanation: "Voyager 1 took this portrait of Earth from about 3.7 billion miles away. Look for our planet as a tiny point of light in the sunbeam.",
   url: "assets/thumbs/pale-blue-dot.png",
-  hdurl: "assets/thumbs/pale-blue-dot.png",
   date: "1990-02-14",
-  media_type: "image",
-  copyright: "NASA / JPL / Carl Sagan",
-  offline: true,
+  credit: "NASA / JPL-Caltech",
+  sourceUrl: "https://science.nasa.gov/resource/voyager-1s-pale-blue-dot/",
 };
 
-function withTimeout(ms = 8000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  return { signal: controller.signal, clear: () => clearTimeout(timer) };
+function readStorage(name, key) {
+  try { return window[name].getItem(key); } catch { return null; }
 }
 
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+function writeStorage(name, key, value) {
+  try { window[name].setItem(key, value); } catch { /* Storage may be disabled. */ }
 }
 
-function loadCache() {
+function calendarDay() {
+  const now = new Date();
+  return Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function httpsUrl(value, hosts) {
+  if (!value) return null;
   try {
-    const raw = sessionStorage.getItem(APOD_CACHE_KEY);
-    if (!raw) return null;
-    const { key, data } = JSON.parse(raw);
-    if (key === todayKey() && data?.url) return data;
-  } catch { /* ignore */ }
-  return null;
-}
-
-function saveCache(data) {
-  try {
-    sessionStorage.setItem(APOD_CACHE_KEY, JSON.stringify({ key: todayKey(), data }));
-  } catch { /* ignore */ }
-}
-
-async function fetchApod() {
-  const cached = loadCache();
-  if (cached) return cached;
-
-  const { signal, clear } = withTimeout();
-  try {
-    const res = await fetch(APOD_API_URL, { signal });
-    if (!res.ok) throw new Error(`APOD HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data?.url) throw new Error("Malformed APOD response");
-    saveCache(data);
-    return data;
-  } finally {
-    clear();
+    const url = new URL(value);
+    return url.protocol === "https:" && hosts.includes(url.hostname) ? url.href : null;
+  } catch {
+    return null;
   }
 }
 
-function formatApodDate(dateStr) {
-  if (!dateStr) return "";
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+function plainText(html) {
+  // Template contents are inert. Render only extracted text, never feed markup.
+  const template = document.createElement("template");
+  template.innerHTML = String(html ?? "").replace(/<br\s*\/?\s*>/gi, " ");
+  return template.content.textContent.replace(/\s+/g, " ").trim();
 }
 
-function truncate(text, limit = 260) {
-  if (!text || text.length <= limit) return { short: text, full: text, truncated: false };
-  const cut = text.lastIndexOf(" ", limit);
-  return { short: text.slice(0, cut > 0 ? cut : limit) + "…", full: text, truncated: true };
+async function getJson(url, signal) {
+  const response = await fetch(url, { signal });
+  if (!response.ok) throw new Error(`Picture feed HTTP ${response.status}`);
+  return response.json();
 }
 
-function renderApod(data) {
-  const d = data || APOD_FALLBACK;
-
-  const dateEl    = document.getElementById("apod-date");
-  const imageWrap = document.getElementById("apod-image-wrap");
-  const titleEl   = document.getElementById("apod-title");
-  const explEl    = document.getElementById("apod-explanation");
-  const copyEl    = document.getElementById("apod-copyright");
-  const hdLink    = document.getElementById("apod-hd");
-  const expandBtn = document.getElementById("apod-expand");
-  const badgeEl   = document.getElementById("apod-offline-badge");
-
-  if (badgeEl) badgeEl.hidden = !d.offline;
-  if (dateEl)  dateEl.textContent = formatApodDate(d.date);
-  if (titleEl) titleEl.textContent = d.title || "Today's Image";
-  if (copyEl)  copyEl.textContent = d.copyright ? `© ${d.copyright.trim()}` : "NASA / Public Domain";
-  if (hdLink)  { hdLink.href = d.hdurl || d.url; }
-
-  if (imageWrap) {
-    if (d.media_type === "video") {
-      // YouTube embed — extract video ID
-      const ytMatch = (d.url || "").match(/(?:youtube\.com\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-      if (ytMatch) {
-        imageWrap.innerHTML = `<iframe class="apod-video" src="https://www.youtube.com/embed/${ytMatch[1]}" title="${d.title || 'APOD Video'}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-      } else {
-        imageWrap.innerHTML = `<a class="apod-video-link" href="${d.url}" target="_blank" rel="noreferrer noopener">Watch Today's Video ↗</a>`;
-      }
-      if (hdLink) hdLink.hidden = true;
-    } else {
-      imageWrap.innerHTML = `<a href="${d.hdurl || d.url}" target="_blank" rel="noreferrer noopener" aria-label="View full resolution: ${d.title}"><img class="apod-img" src="${d.url}" alt="${d.title || 'Astronomy Picture of the Day'}" loading="lazy" /></a>`;
-    }
-  }
-
-  if (explEl) {
-    const { short, full, truncated } = truncate(d.explanation);
-    explEl.textContent = short;
-    explEl.removeAttribute("aria-busy");
-
-    if (truncated && expandBtn) {
-      expandBtn.hidden = false;
-      let expanded = false;
-      expandBtn.addEventListener("click", () => {
-        expanded = !expanded;
-        explEl.textContent = expanded ? full : short;
-        expandBtn.textContent = expanded ? "Show Less" : "Read More";
-      });
-    } else if (expandBtn) {
-      expandBtn.hidden = true;
-    }
+async function astronomy(signal) {
+  const posts = await getJson(NASA_APOD, signal);
+  // On video days show the latest still image with its original date.
+  for (const post of posts) {
+    if (post.media_type !== "image" || !DATE_PATTERN.test(post.date)) continue;
+    const url = httpsUrl(post.hdurl, ["assets.science.nasa.gov", "apod.nasa.gov", "science.nasa.gov"]);
+    const sourceUrl = httpsUrl(post.permalink, ["science.nasa.gov"]);
+    if (!url || !sourceUrl || !post.title) continue;
+    return {
+      title: plainText(post.title),
+      explanation: plainText(post.explanation).replace(/^Explanation:\s*/i, "").split(/\s+Tomorrow.s picture:/i)[0],
+      alt: plainText(post.alt),
+      credit: plainText(post.credit || post.copyright) || "NASA Astronomy Picture of the Day",
+      date: post.date,
+      url,
+      sourceUrl,
+    };
   }
 }
 
-// Show useful content fast: render the local fallback if the live fetch hasn't
-// resolved within SKELETON_BUDGET, but let the fetch keep running underneath so
-// a fast-but-not-instant response still replaces it with today's real image.
-const SKELETON_BUDGET = 1800;
+async function earth(signal) {
+  const images = await getJson(`${NASA_EPIC}/api/natural`, signal);
+  const photo = images.find(item => DATE_PATTERN.test(item.date?.slice(0, 10)) && /^epic_1b_\d+$/.test(item.image));
+  if (!photo) return;
+  const date = photo.date.slice(0, 10);
+  return {
+    title: "Earth from Space",
+    alt: "The sunlit disk of Earth photographed from space",
+    explanation: "NASA’s EPIC camera aboard NOAA’s DSCOVR spacecraft photographed the sunlit side of Earth. Where can you spot clouds, oceans, and land?",
+    credit: "NASA EPIC / NOAA DSCOVR",
+    date,
+    url: `${NASA_EPIC}/archive/natural/${date.replaceAll("-", "/")}/jpg/${photo.image}.jpg`,
+    sourceUrl: `${NASA_EPIC}/?date=${date}`,
+    contain: true,
+  };
+}
 
-async function initApod() {
-  let settled = false;
-  const fallbackTimer = setTimeout(() => {
-    if (!settled) renderApod(APOD_FALLBACK);
-  }, SKELETON_BUDGET);
+async function artwork(signal, day) {
+  const id = ARTWORK_IDS[(day / MS_PER_DAY) % ARTWORK_IDS.length];
+  const { data } = await getJson(`${CLEVELAND_ART_API}/${id}`, signal);
+  const imageHosts = ["openaccess-cdn.clevelandart.org"];
+  const url = httpsUrl(data?.images?.web?.url, imageHosts);
+  const sourceUrl = httpsUrl(data?.url, ["www.clevelandart.org", "clevelandart.org"]);
+  if (data?.share_license_status !== "CC0" || !data.title || !url || !sourceUrl) return;
+  return {
+    title: data.title,
+    explanation: [data.technique, data.creation_date].filter(Boolean).join(" · "),
+    credit: [data.creators?.[0]?.description, "Cleveland Museum of Art", "CC0"].filter(Boolean).join(" · "),
+    url,
+    fullUrl: httpsUrl(data.images.print?.url, imageHosts),
+    sourceUrl,
+    contain: true,
+  };
+}
+
+const sources = { astronomy, earth, artwork };
+const byId = id => document.getElementById(`apod-${id}`);
+const select = byId("source");
+const status = byId("status");
+const date = byId("date");
+const imageWrap = byId("image-wrap");
+const title = byId("title");
+const explanation = byId("explanation");
+const credit = byId("copyright");
+const imageLink = byId("hd");
+const sourceLink = byId("source-link");
+const expand = byId("expand");
+let activeRequest;
+
+function formatDate(value) {
+  return value ? new Date(`${value}T12:00:00`).toLocaleDateString(undefined, {
+    month: "long", day: "numeric", year: "numeric",
+  }) : "";
+}
+
+function showLoading() {
+  status.hidden = false;
+  status.textContent = "Loading picture…";
+  title.textContent = "";
+  explanation.textContent = "";
+  date.textContent = "";
+  credit.textContent = "";
+  expand.hidden = imageLink.hidden = sourceLink.hidden = true;
+  const skeleton = document.createElement("span");
+  skeleton.className = "skeleton apod-img-skeleton";
+  imageWrap.replaceChildren(skeleton);
+}
+
+function render(picture, message = "", onFailure, onLoad) {
+  status.textContent = message;
+  status.hidden = !message;
+  title.textContent = picture.title;
+  date.textContent = formatDate(picture.date);
+  credit.textContent = picture.credit;
+  imageLink.href = picture.fullUrl || picture.url;
+  sourceLink.href = picture.sourceUrl;
+  imageLink.hidden = sourceLink.hidden = false;
+
+  const full = picture.explanation;
+  const limit = 260;
+  const cut = full.lastIndexOf(" ", limit);
+  const short = full.length > limit ? full.slice(0, cut > 0 ? cut : limit) + "…" : full;
+  explanation.textContent = short;
+  expand.hidden = short === full;
+  expand.textContent = "Read More";
+  expand.setAttribute("aria-expanded", "false");
+  expand.onclick = () => {
+    const expanded = expand.getAttribute("aria-expanded") === "false";
+    expand.setAttribute("aria-expanded", String(expanded));
+    expand.textContent = expanded ? "Show Less" : "Read More";
+    explanation.textContent = expanded ? full : short;
+  };
+
+  const link = document.createElement("a");
+  link.href = imageLink.href;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  const photo = document.createElement("img");
+  photo.className = "apod-img";
+  photo.classList.toggle("apod-img--contain", Boolean(picture.contain));
+  photo.alt = picture.alt || picture.title;
+  if (onFailure) photo.addEventListener("error", onFailure, { once: true });
+  if (onLoad) photo.addEventListener("load", onLoad, { once: true });
+  photo.src = picture.url;
+  link.append(photo);
+  imageWrap.replaceChildren(link);
+}
+
+async function loadPicture() {
+  activeRequest?.abort();
+  const request = new AbortController();
+  activeRequest = request;
+  const source = select.value;
+  const cacheKey = CACHE_PREFIX + source;
+  const day = calendarDay();
+  showLoading();
+
+  const showFallback = () => {
+    if (activeRequest !== request) return;
+    writeStorage("sessionStorage", cacheKey, "");
+    render(FALLBACK, "Source unavailable · Showing an offline picture");
+  };
 
   try {
-    const data = await fetchApod();
-    settled = true;
-    clearTimeout(fallbackTimer);
-    renderApod(data);
-  } catch (err) {
-    console.warn("[apod] Falling back to static image:", err);
-    settled = true;
-    clearTimeout(fallbackTimer);
-    renderApod(APOD_FALLBACK);
+    const cached = JSON.parse(readStorage("sessionStorage", cacheKey) || "null");
+    const picture = cached?.day === day
+      ? cached.picture
+      : await sources[source](AbortSignal.any([request.signal, AbortSignal.timeout(8000)]), day);
+    if (activeRequest !== request) return;
+    if (!picture) return showFallback();
+    render(picture, "", showFallback, () => {
+      if (activeRequest === request) writeStorage("sessionStorage", cacheKey, JSON.stringify({ day, picture }));
+    });
+  } catch {
+    showFallback();
   }
 }
 
-initApod();
+const saved = readStorage("localStorage", SOURCE_KEY);
+if (Object.hasOwn(sources, saved)) select.value = saved;
+select.disabled = false;
+select.addEventListener("change", () => {
+  writeStorage("localStorage", SOURCE_KEY, select.value);
+  loadPicture();
+});
+loadPicture();

@@ -120,6 +120,7 @@
                     <label class="ra-check"><input id="mp-global" type="checkbox" checked> Follow an A* global route</label>
                     <label class="ra-check"><input id="mp-moving" type="checkbox"> Obstacles move</label>
                   </fieldset>
+                  <label class="ra-check" id="mp-smooth-wrap"><input id="mp-smooth" type="checkbox"> Smooth tree path (shortcut)</label>
                   <div class="ra-btns"><button class="ra-btn" id="mp-run" type="button">Pause</button><button class="ra-btn" id="mp-restart" type="button">Restart</button></div>
                   <p class="ra-hint" id="mp-explain"></p>
                 </div>
@@ -172,10 +173,20 @@
                 <p class="ra-readout" id="kin-plain"></p>
                 <p class="ra-readout" id="kin-readout" aria-live="off" data-ra-for="builder engineer"></p></div>
                 <div class="ra-controls">
-                  <fieldset><legend>Wheels</legend>
+                  <fieldset><legend>Drive mode</legend>
+                    <div class="ra-btns">
+                      <button class="ra-btn" type="button" data-kin-mode="manual" aria-pressed="true">Manual wheels</button>
+                      <button class="ra-btn" type="button" data-kin-mode="pursuit" aria-pressed="false">Pure Pursuit track</button>
+                    </div>
+                  </fieldset>
+                  <fieldset id="kin-manual-opts"><legend>Wheels</legend>
                     <label>Left wheel v<sub>L</sub>: <output id="kin-left-out">60</output> px/s<input id="kin-left" type="range" min="-100" max="100" value="60"></label>
                     <label>Right wheel v<sub>R</sub>: <output id="kin-right-out">80</output> px/s<input id="kin-right" type="range" min="-100" max="100" value="80"></label>
                     <label>Wheel spacing L: <output id="kin-base-out">40</output> px<input id="kin-base" type="range" min="16" max="80" value="40"></label>
+                  </fieldset>
+                  <fieldset id="kin-pursuit-opts" hidden><legend>Pure Pursuit</legend>
+                    <label>Lookahead distance L<sub>d</sub>: <output id="kin-ld-out">55</output> px<input id="kin-lookahead" type="range" min="20" max="120" step="5" value="55"></label>
+                    <label class="ra-check"><input id="kin-profile" type="checkbox" checked> Trapezoidal ramp (smooth start/stop)</label>
                   </fieldset>
                   <div class="ra-btns">
                     <button class="ra-btn" type="button" data-kin="70,70">Straight</button>
@@ -197,6 +208,16 @@
               <article><h3>Predict first</h3><p>Before pressing Pivot (left wheel stopped), predict: what point does the robot circle around?</p></article>
               <article><h3>Dynamics</h3><p>Kinematics ignores mass. <strong>Dynamics</strong> adds it: motors can only change speed so fast. That acceleration limit is what makes DWA's "window" small.</p></article>
               <article><h3>Close the loop</h3><p>Commanding 60 px/s doesn't guarantee 60 px/s. A <a class="ra-more" href="../arduino-and-electronics/pid-control.html">PID controller</a> on each wheel reads the encoder and corrects the motor power.</p></article>
+            </div>
+          </section>
+
+          <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-lime);">
+            <p class="ra-label">Competition path tracking</p><h2>Winning Autonomous Races: Pure Pursuit, Motion Profiling &amp; Drivetrain Choice</h2>
+            <p>Finding a jagged path in RRT or A* is only half the battle—a competition robot has to drive that path cleanly at match speed without skidding or clipping field barriers.</p>
+            <div class="ra-cols">
+              <article style="--ra-accent:var(--ra-blue);"><h3>1 · Path smoothing &amp; Pure Pursuit</h3><p>Greedy <strong>shortcutting</strong> replaces wiggly RRT segments with straight lines of sight. Then <strong>Pure Pursuit</strong> steers toward a moving point <code>L<sub>d</sub></code> ahead on the path with curvature <code>κ = 2·y<sub>local</sub> / L<sub>d</sub>²</code>. Small <code>L<sub>d</sub></code> tracks tightly but oscillates; large <code>L<sub>d</sub></code> rides smoothly while cutting sharp corners.</p></article>
+              <article style="--ra-accent:var(--ra-copper);"><h3>2 · Trapezoidal velocity profiling</h3><p>Commanding full speed from a standstill spins wheels and ruins odometry. A <strong>trapezoidal profile</strong> ramps speed smoothly up (bounded acceleration), cruises at max velocity, and ramps down to zero at the scoring dock so the robot arrives without overshoot.</p></article>
+              <article style="--ra-accent:var(--ra-yellow);"><h3>3 · Tank vs. Mecanum vs. Swerve</h3><p><strong>Tank / differential drive</strong> has simple mechanics and high pushing traction. <strong>Mecanum</strong> adds sideways holonomic strafing via 45° rollers at lower traction. <strong>Swerve drive</strong> (four independently steered powered modules) combines holonomic agility with full traction and dominates FRC autonomous scoring.</p></article>
             </div>
           </section>
 
@@ -229,6 +250,7 @@
               <a href="../mechanical-and-civil-design/robotics-engineering-intro.html"><b>Robotics Intro</b>Sensor, controller, actuator, feedback</a>
               <a href="robot-build-studio.html"><b>Robot Build Studio</b>Chassis, 3D printing, gears, servos &amp; integration</a>
               <a href="robot-car-pilot.html"><b>Pilot the Robot Car</b>Drive the ELEGOO car by Bluetooth or Wi-Fi</a>
+              <a href="nxt-robot-lab.html"><b>NXT Robot Lab</b>Sequence &amp; block programming, sensors, NXC</a>
               <a href="robot-mapping-localization.html"><b>Mapping &amp; Localization</b>Occupancy grids, particle filters, SLAM</a>
               <a href="sensor-fusion.html"><b>Sensor Fusion</b>Complementary &amp; Kalman filters</a>
               <a href="../../computer-science/algorithms-and-ai/pathfinding.html"><b>A* Pathfinding</b>Global route on a grid</a>
@@ -252,6 +274,16 @@
               <div class="ra-question" data-ra-for="builder engineer" data-answer="d" data-explanation="The window is limited by how fast the motors can accelerate in the next time step."><p>3. In the Dynamic Window Approach, what limits the "window" of speeds?</p><div class="ra-options"><button class="ra-option" data-choice="a">The size of the map</button><button class="ra-option" data-choice="b">The number of obstacles</button><button class="ra-option" data-choice="c">The goal's distance</button><button class="ra-option" data-choice="d">How much the motors can speed up or slow down right now</button></div><p class="ra-feedback" aria-live="polite"></p></div>
               <div class="ra-question" data-ra-for="builder engineer" data-answer="b" data-explanation="ω = (vR − vL)/L = (50 − (−50))/L, which is nonzero, while v = (50 + −50)/2 = 0. It spins in place."><p>4. The left wheel runs at −50 and the right at +50. What does the robot do?</p><div class="ra-options"><button class="ra-option" data-choice="a">Drives straight</button><button class="ra-option" data-choice="b">Spins in place</button><button class="ra-option" data-choice="c">Slides sideways</button><button class="ra-option" data-choice="d">Stays still</button></div><p class="ra-feedback" aria-live="polite"></p></div>
               <div class="ra-question" data-ra-for="engineer" data-answer="c" data-explanation="v = 70, ω = 40/40 = 1 rad/s, so R = v/ω = 70 px. The turning centre sits 70 px to the robot's left."><p>5. With L = 40 px, v<sub>L</sub> = 50 and v<sub>R</sub> = 90, what is the turn radius?</p><div class="ra-options"><button class="ra-option" data-choice="a">40 px</button><button class="ra-option" data-choice="b">1 px</button><button class="ra-option" data-choice="c">70 px</button><button class="ra-option" data-choice="d">Infinite</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="b" data-explanation="Shorter lookahead distances make Pure Pursuit steer aggressively back toward the path (oscillating/fishtailing), while longer lookahead distances smooth turns at the cost of cutting corners.">
+                <p>6. In Pure Pursuit, what usually happens if you shrink the lookahead distance L<sub>d</sub> too far?</p>
+                <div class="ra-options">
+                  <button class="ra-option" data-choice="a">The robot cuts corners widely</button>
+                  <button class="ra-option" data-choice="b">The robot hunts and oscillates left-right around the path</button>
+                  <button class="ra-option" data-choice="c">The robot slides sideways without turning</button>
+                  <button class="ra-option" data-choice="d">The robot slows down to zero immediately</button>
+                </div>
+                <p class="ra-feedback" aria-live="polite"></p>
+              </div>
             </div>
           </section>
         </main>

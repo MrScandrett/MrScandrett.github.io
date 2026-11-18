@@ -76,7 +76,30 @@ try {
         if(mode==='violin') {
           assert.ok(await page.locator('.bv-violin-controls').isVisible(),`${id}: violin position controls`);
           await page.check('#bv-violin-show');
-          assert.ok(await page.locator('.bv-violin-bar').count(),`${id}: violin position guide`);
+          await page.locator('.bv-violin-bar').first().waitFor({ state: 'attached' });
+          const figure = page.locator('#bv-score');
+          const marks = figure.locator('.se-violin-finger');
+          if (display.windowed && !await marks.count()) {
+            const first = await figure.evaluate(fig => {
+              const model = fig.scorePlayer.model;
+              const event = fig.scoreLayout.events.find(note => model.violinFingerings.has(note));
+              return event ? ScoreEngine.barNumber(model, event.bar) : null;
+            });
+            assert.notEqual(first, null, `${id}: arrangement contains violin marks`);
+            const measure = figure.locator('.sn-goto input');
+            await measure.fill(String(first));
+            await measure.press('Enter');
+            await marks.first().waitFor({ state: 'attached' });
+          }
+          assert.ok(await marks.count(), `${id}: finger numbers are engraved`);
+          const marked = await figure.evaluate(fig => {
+            const plan = fig.scorePlayer.model.violinFingerings;
+            return [...fig.querySelectorAll('.se-violin-finger')].every(mark => {
+              const event = fig.scoreLayout.events[mark.closest('.se-ev').dataset.i];
+              return plan.get(event)?.description === mark.getAttribute('aria-label');
+            });
+          });
+          assert.ok(marked, `${id}: score marks match the violin plan`);
           await page.uncheck('#bv-violin-show');
         }
         checked++;

@@ -128,6 +128,7 @@
                   <div class="ra-btns">
                     <button class="ra-btn" id="arm-grip" type="button" aria-pressed="false">Close gripper</button>
                     <button class="ra-btn" id="arm-reset" type="button">Reset blocks</button>
+                    <button class="ra-btn" id="arm-challenge" type="button">⏱ Start 3-block timer</button>
                   </div>
                   <p class="ra-readout" id="arm-score" aria-live="polite">0 / 3 blocks home</p>
                   <fieldset data-ra-for="builder engineer"><legend>Try a pose</legend>
@@ -137,6 +138,7 @@
                       <button class="ra-btn" type="button" data-arm-pose="60,150,-120">Folded</button>
                     </div>
                   </fieldset>
+                  <label class="ra-check"><input id="arm-spring" type="checkbox"> Counterbalance spring at shoulder</label>
                   <label class="ra-check"><input id="arm-reach" type="checkbox" checked> Show how far it can reach</label>
                 </div>
               </div>
@@ -193,6 +195,16 @@
             </div>
           </section>
 
+          <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-lime);">
+            <p class="ra-label">Competition manipulators</p><h2>Linkages, Elevators, Gravity Feedforward &amp; Presets</h2>
+            <p>In timed scoring matches, fighting gravity with raw motor power overheats gearboxes and drops game pieces. Championship teams design mechanical geometry and software presets together so scoring takes one button press.</p>
+            <div class="ra-cols">
+              <article style="--ra-accent:var(--ra-blue);"><h3>Serial arm vs. 4-bar vs. elevator</h3><p>A <strong>serial arm</strong> is versatile but needs wrist compensation and fights changing leverage. A <strong>parallel 4-bar linkage</strong> keeps the claw naturally level at any height with no wrist motor. A <strong>cascade linear elevator</strong> extends straight up vertically in tight defense zones with constant gravity load.</p></article>
+              <article style="--ra-accent:var(--ra-copper);"><h3>Gravity feedforward &amp; spring counterbalances</h3><p>Shoulder gravity torque peaks horizontally (<code>cos θ = 1</code>). Software adds a cosine <strong>feedforward</strong> term <code>k<sub>G</sub>·cos(θ<sub>shoulder</sub>)</code> before PID so the arm never sags, while surgical tubing or constant-force springs mechanically carry ~60–70% of dead weight.</p></article>
+              <article style="--ra-accent:var(--ra-yellow);"><h3>Single-button driver presets</h3><p>Never make the operator eyeball three sliders during a match. Store tested joint targets for <strong>Intake</strong>, <strong>Stow / Travel</strong> (tucked low inside the frame), and <strong>High Basket</strong>—and return to Stow before driving fast across bumps.</p></article>
+            </div>
+          </section>
+
           <section class="ra-card" style="--ra-accent:var(--ra-copper);">
             <p class="ra-label">Where you’ll see it</p><h2>Arms at work</h2>
             <p>Click any photo to enlarge it.</p>
@@ -219,6 +231,7 @@
               <a href="../mechanical-and-civil-design/robotics-engineering-intro.html"><b>Robotics Intro</b>Sensor, controller, actuator, feedback</a>
               <a href="robot-build-studio.html"><b>Robot Build Studio</b>Chassis, 3D printing, gears, servos &amp; integration</a>
               <a href="robot-car-pilot.html"><b>Pilot the Robot Car</b>Drive the ELEGOO car by Bluetooth or Wi-Fi</a>
+              <a href="nxt-robot-lab.html"><b>NXT Robot Lab</b>Sequence &amp; block programming, sensors, NXC</a>
               <a href="robot-mapping-localization.html"><b>Mapping &amp; Localization</b>Occupancy grids, particle filters, SLAM</a>
               <a href="sensor-fusion.html"><b>Sensor Fusion</b>Complementary &amp; Kalman filters</a>
               <a href="../../computer-science/algorithms-and-ai/pathfinding.html"><b>A* Pathfinding</b>Global route on a grid</a>
@@ -241,6 +254,16 @@
               <div class="ra-question" data-ra-for="builder engineer" data-answer="d" data-explanation="Three numbers for position (x, y, z) plus three for orientation (roll, pitch, yaw) means six independent joints."><p>3. Why do most factory arms have six joints?</p><div class="ra-options"><button class="ra-option" data-choice="a">Six motors are cheaper than four</button><button class="ra-option" data-choice="b">It's tradition</button><button class="ra-option" data-choice="c">So they can walk</button><button class="ra-option" data-choice="d">Three for position and three for orientation</button></div><p class="ra-feedback" aria-live="polite"></p></div>
               <div class="ra-question" data-ra-for="builder engineer" data-answer="b" data-explanation="In C-space the entire arm is one point, so planning an arm move becomes planning a path for a point around obstacle regions."><p>4. Why do engineers plan arm motions in configuration space?</p><div class="ra-options"><button class="ra-option" data-choice="a">It makes the rocks smaller</button><button class="ra-option" data-choice="b">The whole arm becomes a single point to move</button><button class="ra-option" data-choice="c">C-space has no obstacles</button><button class="ra-option" data-choice="d">It is always two-dimensional</button></div><p class="ra-feedback" aria-live="polite"></p></div>
               <div class="ra-question" data-ra-for="engineer" data-answer="c" data-explanation="det J = L1·L2·sin θ2 is zero at θ2 = 0° or 180°, when the arm is fully stretched or folded back on itself."><p>5. For a two-link arm, when is the Jacobian singular?</p><div class="ra-options"><button class="ra-option" data-choice="a">When θ1 = 90°</button><button class="ra-option" data-choice="b">When the gripper is closed</button><button class="ra-option" data-choice="c">When θ2 = 0° or 180°</button><button class="ra-option" data-choice="d">Never</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="a" data-explanation="Gravity pulls straight down, so the horizontal moment arm (and therefore shoulder torque) is largest when the arm is extended horizontally (θ1 ≈ 0°).">
+                <p>6. When does gravity demand the highest holding torque from a robot arm's shoulder motor?</p>
+                <div class="ra-options">
+                  <button class="ra-option" data-choice="a">When the arm is stretched horizontally with a payload</button>
+                  <button class="ra-option" data-choice="b">When the arm points straight up at 90°</button>
+                  <button class="ra-option" data-choice="c">When the gripper is empty and folded straight over the base</button>
+                  <button class="ra-option" data-choice="d">Shoulder torque is identical at every angle</button>
+                </div>
+                <p class="ra-feedback" aria-live="polite"></p>
+              </div>
             </div>
           </section>
         </main>

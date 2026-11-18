@@ -60,7 +60,10 @@
                   <section class="rc-view" aria-labelledby="rc-view-title">
                     <div class="rc-view-bar">
                       <h3 id="rc-view-title">Simulator room</h3>
-                      <button type="button" class="rc-btn" id="rc-sim-reset">Reset car</button>
+                      <div class="rc-row">
+                        <button type="button" class="rc-btn" id="rc-scrimmage-btn" aria-pressed="false">⏱ Scrimmage</button>
+                        <button type="button" class="rc-btn" id="rc-sim-reset">Reset car</button>
+                      </div>
                     </div>
                     <div class="rc-stage">
                       <canvas id="rc-sim" width="600" height="400" role="img" aria-label="Top-down view of the simulated car in a room with a black tape loop on the right and a wall with a gap on the left. The dashed line is the ultrasonic beam."></canvas>
@@ -105,6 +108,7 @@
                       </div>
                       <div class="ra-controls">
                         <label>Top speed <output id="rc-speed-out">150</output> / 255<input id="rc-speed" type="range" min="60" max="255" step="5" value="150"></label>
+                        <label class="ra-check"><input type="checkbox" id="rc-expo"> Fine-control curve (cubic stick response)</label>
                       </div>
                       <p class="rc-note">Hold to drive. Release to stop. Use arrow keys, WASD, or a gamepad.</p>
                     </div>
@@ -372,12 +376,24 @@
             </div>
           </section>
 
+          <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-copper);">
+            <p class="ra-label">Competition match strategy</p><h2>Autonomous + Teleop + Endgame</h2>
+            <p>In FIRST Tech Challenge (FTC), FIRST Robotics Competition (FRC), and VEX matches, every round splits into three phases: an untethered <strong>Autonomous period</strong> (15–30 seconds), a high-speed <strong>Teleop period</strong> (90–120 seconds), and a precision <strong>Endgame</strong> park or climb. Turn on <strong>⏱ Scrimmage</strong> in the cockpit above to practice full timed runs.</p>
+            <div class="ra-cols">
+              <article style="--ra-accent:var(--ra-blue);"><h3>1 · Cubic stick response &amp; deadbands</h3><p>Linear joysticks make fine alignment twitchy at low speed. Competition drivers shape stick input with a cubic curve <code>y = 0.35·x + 0.65·x³</code> plus a small center deadband so tiny thumb motions steer gently while full throw still delivers 100% sprint speed.</p></article>
+              <article style="--ra-accent:var(--ra-lime);"><h3>2 · Nose-in steering reversal</h3><p>When the robot turns back toward the driver station, left and right flip on screen—that is why teams practice Gate 3 → Gate 4 return runs in Scrimmage mode or use field-oriented drive (requiring an IMU yaw heading).</p></article>
+              <article style="--ra-accent:var(--ra-yellow);"><h3>3 · Drive team roles &amp; communication</h3><p>Championship drive teams assign distinct voices: the <strong>Driver</strong> steers the chassis, the <strong>Operator</strong> triggers mechanisms, and the <strong>Coach / Spotter</strong> watches the match clock, announces Endgame with 20 seconds left, and calls out field hazards.</p></article>
+              <article style="--ra-accent:var(--ra-copper);"><h3>4 · Autonomous to Endgame reliability</h3><p>Use the Code Studio below to build a consistent sensor-checked autonomous routine, export the <code>.ino</code> sketch for zero-latency onboard execution, and reserve the final 10 seconds of every scrimmage for a clean stop inside the return dock.</p></article>
+            </div>
+          </section>
+
           <section class="ra-card" style="--ra-accent:var(--ra-blue);">
             <p class="ra-label">Robot autonomy series</p><h2>Sense · Think · Act</h2>
             <nav class="ra-series" aria-label="Robot autonomy lessons">
               <a href="../mechanical-and-civil-design/robotics-engineering-intro.html"><b>Robotics Intro</b>Sensor, controller, actuator, feedback</a>
               <a href="robot-build-studio.html"><b>Robot Build Studio</b>Chassis, 3D printing, gears, servos &amp; integration</a>
               <a href="robot-car-pilot.html" aria-current="page"><b>Pilot the Robot Car</b>Drive the ELEGOO car by Bluetooth or Wi-Fi</a>
+              <a href="nxt-robot-lab.html"><b>NXT Robot Lab</b>Sequence &amp; block programming, sensors, NXC</a>
               <a href="robot-mapping-localization.html"><b>Mapping &amp; Localization</b>Occupancy grids, particle filters, SLAM</a>
               <a href="sensor-fusion.html"><b>Sensor Fusion</b>Complementary &amp; Kalman filters</a>
               <a href="../../computer-science/algorithms-and-ai/pathfinding.html"><b>A* Pathfinding</b>Global route on a grid</a>
@@ -443,6 +459,7 @@
               <div class="ra-question" data-ra-for="builder engineer" data-answer="d" data-explanation="A drive command lasts until replaced. Repeating it lets the bridge notice silence and send stop if the page freezes or the Wi-Fi drops."><p>3. Why does the page keep re-sending the drive command while you hold a control?</p><div class="ra-options"><button class="ra-option" data-choice="a">The car forgets after each wheel turn</button><button class="ra-option" data-choice="b">To make the car faster</button><button class="ra-option" data-choice="c">Bluetooth needs it to stay paired</button><button class="ra-option" data-choice="d">So the car can be stopped automatically if the messages stop</button></div><p class="ra-feedback" aria-live="polite"></p></div>
               <div class="ra-question" data-ra-for="builder engineer" data-answer="b" data-explanation="Web pages can't open raw TCP sockets for security reasons. The bridge turns WebSocket messages into TCP and back."><p>4. Why does Wi-Fi driving need the bridge program?</p><div class="ra-options"><button class="ra-option" data-choice="a">The car's Wi-Fi is too slow</button><button class="ra-option" data-choice="b">Web pages aren't allowed to open the raw TCP connection the car listens on</button><button class="ra-option" data-choice="c">The bridge makes the motors stronger</button><button class="ra-option" data-choice="d">The camera needs a password</button></div><p class="ra-feedback" aria-live="polite"></p></div>
               <div class="ra-question" data-ra-for="engineer" data-answer="c" data-explanation="9600 baud ÷ 10 bits per byte = 960 bytes/s. 4 × 32 = 128 bytes/s, which is about 13% of the link."><p>5. At 9600 baud (10 bits per byte), what share of the link do four 32-byte drive messages per second use?</p><div class="ra-options"><button class="ra-option" data-choice="a">About 1%</button><button class="ra-option" data-choice="b">About 50%</button><button class="ra-option" data-choice="c">About 13%</button><button class="ra-option" data-choice="d">More than 100%</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="b" data-explanation="A cubic curve compresses small stick pushes near the center for smooth alignment while still reaching 100% power at full deflection."><p>6. Why do competition drivers enable a cubic (exponential) joystick curve during Teleop?</p><div class="ra-options"><button class="ra-option" data-choice="a">To double the battery voltage</button><button class="ra-option" data-choice="b">For fine low-speed precision near center while keeping full top speed at full stick throw</button><button class="ra-option" data-choice="c">To disable the ultrasonic sensor</button><button class="ra-option" data-choice="d">To force the robot to drive backward only</button></div><p class="ra-feedback" aria-live="polite"></p></div>
             </div>
           </section>
         </main>

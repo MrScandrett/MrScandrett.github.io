@@ -227,14 +227,15 @@
                 <div>
                   <canvas id="pf-canvas" width="640" height="400" role="application" aria-roledescription="localization sim" aria-label="Particle filter localization simulator. Click, or use arrow keys and Enter, to send the robot to a spot. The line beside the map says how sure the filter is."></canvas>
                   <p class="ra-keys">Keyboard: same as the mapping sim. Arrows move the crosshair, <kbd>Enter</kbd> sends the robot.</p>
-                  <ul class="ra-legend"><li><i style="background:#d94b41"></i>Particles (guesses)</li><li><i style="background:#146b8c"></i>True robot</li><li><i style="background:#f2bf3f"></i>Filter's best estimate</li></ul>
+                  <ul class="ra-legend"><li><i style="background:#d94b41"></i>Particles (guesses)</li><li><i style="background:#146b8c"></i>True robot</li><li><i style="background:#f2bf3f"></i>Filter's best estimate</li><li><i style="background:#70c8e5"></i>AprilTag (#1–#4)</li></ul>
                 </div>
                 <div class="ra-controls">
                   <fieldset><legend>Filter</legend>
                     <label>Sensor trust σ (px): <output id="pf-sigma-out">20</output><input id="pf-sigma" type="range" min="4" max="80" value="20"></label>
                     <label class="ra-check"><input id="pf-inject" type="checkbox" checked> Add 4% random guesses each cycle</label>
+                    <label class="ra-check"><input id="pf-tags" type="checkbox"> Use AprilTag landmarks (IDs #1–#4)</label>
                   </fieldset>
-                  <div class="ra-btns"><button class="ra-btn" id="pf-run" type="button" aria-pressed="false">Pause</button><button class="ra-btn" id="pf-kidnap" type="button">Kidnap robot</button><button class="ra-btn" id="pf-reset" type="button">Scatter again</button></div>
+                  <div class="ra-btns"><button class="ra-btn" id="pf-run" type="button" aria-pressed="false">Pause</button><button class="ra-btn" id="pf-kidnap" type="button">Kidnap robot</button><button class="ra-btn" id="pf-symmetric" type="button" aria-pressed="false">Symmetric arena</button><button class="ra-btn" id="pf-reset" type="button">Scatter again</button></div>
                   <p class="ra-readout" id="pf-readout" aria-live="off"></p>
                   <p class="ra-hint">Small σ trusts the laser completely; big σ shrugs at mismatches.</p>
                 </div>
@@ -269,6 +270,16 @@
             <p style="margin-top:.9rem;"><a class="ra-more" href="sensor-fusion.html">Next → Sensor Fusion: combine noisy wheels, gyros, and accelerometers into one good estimate</a></p>
           </section>
 
+          <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-lime);">
+            <p class="ra-label">Competition field localization</p><h2>Known Maps, AprilTags &amp; Wall Resets</h2>
+            <p>Unlike an explorer mapping a cave, a competition robot enters a known field built from published CAD drawings. The real problem is not mapping—it is breaking field symmetry and correcting wheel slip before scoring.</p>
+            <div class="ra-cols">
+              <article style="--ra-accent:var(--ra-blue);"><h3>1 · Known CAD map beats blind mapping</h3><p>FRC, FTC, and VEX fields have exact wall and obstacle coordinates before build season begins. Teams preload the field geometry into their localizer instead of wasting match seconds running SLAM from scratch.</p></article>
+              <article style="--ra-accent:var(--ra-copper);"><h3>2 · Breaking symmetry with AprilTags</h3><p>Tournament fields are mirror- or rotation-symmetric between Red and Blue alliances, so LiDAR or distance beams alone leave two identical candidate spots. Camera-detected <strong>AprilTags</strong> (numbered visual fiducials like <code>#1–#4</code>) carry unique IDs and give 6-DOF pose <code>(x, y, z, roll, pitch, yaw)</code>, collapsing ambiguity instantly.</p></article>
+              <article style="--ra-accent:var(--ra-lime);"><h3>3 · 100 Hz odometry + vision + wall resets</h3><p>Combine fast wheel/IMU odometry (100 Hz) with camera AprilTag updates (15–30 Hz) to reject defensive bumps, and add ultrasonic or Time-of-Flight (ToF) perimeter checks when approaching scoring targets to zero out residual drift to &lt; 1 cm.</p></article>
+            </div>
+          </section>
+
           <section class="ra-card" style="--ra-accent:var(--ra-copper);">
             <p class="ra-label">Where you’ll see it</p><h2>Mapping robots in the real world</h2>
             <p>Click any photo to enlarge it.</p>
@@ -298,6 +309,7 @@
               <a href="../mechanical-and-civil-design/robotics-engineering-intro.html"><b>Robotics Intro</b>Sensor, controller, actuator, feedback</a>
               <a href="robot-build-studio.html"><b>Robot Build Studio</b>Chassis, 3D printing, gears, servos &amp; integration</a>
               <a href="robot-car-pilot.html"><b>Pilot the Robot Car</b>Drive the ELEGOO car by Bluetooth or Wi-Fi</a>
+              <a href="nxt-robot-lab.html"><b>NXT Robot Lab</b>Sequence &amp; block programming, sensors, NXC</a>
               <a href="robot-mapping-localization.html" aria-current="page"><b>Mapping &amp; Localization</b>Occupancy grids, particle filters, SLAM</a>
               <a href="sensor-fusion.html"><b>Sensor Fusion</b>Complementary &amp; Kalman filters</a>
               <a href="../../computer-science/algorithms-and-ai/pathfinding.html"><b>A* Pathfinding</b>Global route on a grid</a>
@@ -319,6 +331,7 @@
               <div class="ra-question" data-ra-for="builder engineer" data-answer="c" data-explanation="The beam traveled through those cells without hitting anything, so they are evidence of free space."><p>2. A laser beam travels 3 m before hitting a wall. What do the cells along the first 3 m get?</p><div class="ra-options"><button class="ra-option" data-choice="a">Nothing — only the hit matters</button><button class="ra-option" data-choice="b">A vote for "occupied"</button><button class="ra-option" data-choice="c">A vote for "free"</button><button class="ra-option" data-choice="d">They are deleted</button></div><p class="ra-feedback" aria-live="polite"></p></div>
               <div class="ra-question" data-ra-for="builder engineer" data-answer="a" data-explanation="Each position update adds a small error to the last one, so errors accumulate instead of canceling out."><p>3. Why does odometry drift get worse over time?</p><div class="ra-options"><button class="ra-option" data-choice="a">Each small error builds on the previous estimate</button><button class="ra-option" data-choice="b">Wheels shrink as they spin</button><button class="ra-option" data-choice="c">The map gets bigger</button><button class="ra-option" data-choice="d">The LiDAR gets tired</button></div><p class="ra-feedback" aria-live="polite"></p></div>
               <div class="ra-question" data-ra-for="builder engineer" data-answer="d" data-explanation="Resampling copies guesses in proportion to how well their predicted scans matched the real scan."><p>4. In a particle filter, which guesses get copied most during resampling?</p><div class="ra-options"><button class="ra-option" data-choice="a">The oldest ones</button><button class="ra-option" data-choice="b">The ones closest to the map's center</button><button class="ra-option" data-choice="c">A random few, evenly</button><button class="ra-option" data-choice="d">The ones whose imagined scan best matches the real scan</button></div><p class="ra-feedback" aria-live="polite"></p></div>
+              <div class="ra-question" data-ra-for="builder engineer" data-answer="c" data-explanation="Each AprilTag carries a unique numeric ID and known field coordinates, immediately distinguishing identical-looking Red and Blue halves of a symmetric arena."><p>5. On a symmetric competition field, why do teams add AprilTag cameras alongside wheel odometry and distance sensors?</p><div class="ra-options"><button class="ra-option" data-choice="a">AprilTags increase motor torque</button><button class="ra-option" data-choice="b">Distance sensors cannot detect walls</button><button class="ra-option" data-choice="c">Unique Tag IDs break field symmetry and correct accumulated odometry drift</button><button class="ra-option" data-choice="d">Odometry never has any error</button></div><p class="ra-feedback" aria-live="polite"></p></div>
             </div>
           </section>
         </main>

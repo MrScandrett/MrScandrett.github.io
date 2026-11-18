@@ -153,7 +153,7 @@
     Object.keys(err).forEach(function (k) { lastErr[k] = Math.sqrt(err[k] / n) * DEG; });
     ui.readout.textContent = 'Average error (last ' + SPAN + ' s): ' + Object.keys(err).map(function (k) {
       return SERIES[k].label.toLowerCase() + ' ' + (Math.sqrt(err[k] / n) * DEG).toFixed(1) + '°';
-    }).join(' · ');
+    }).join(' · ') + ' · Kalman learned bias: ' + (kf.bias * DEG).toFixed(1) + '°/s (true ' + (+ui.bias.value).toFixed(1) + '°/s)';
   }
 
   [['alpha', 3], ['bias', 1], ['noise', 0], ['tilt', 0]].forEach(function (pair) {
@@ -189,4 +189,240 @@
     if (running) { acc += dt; while (acc >= DT) { acc -= DT; sample(); } }
     draw();
   }, canvas);
+
+  /* ── Sim 2: Competition autonomous navigation & gyro turn ──────── */
+  (function navSim() {
+    var navCanvas = document.getElementById('sf-nav-canvas');
+    if (!navCanvas) return;
+    var nctx = navCanvas.getContext('2d'), NW = navCanvas.width, NH = navCanvas.height;
+    var nui = {
+      modes: document.querySelectorAll('[data-sf-nav]'),
+      asym: document.getElementById('sf-asym'),
+      asymOut: document.getElementById('sf-asym-out'),
+      bump: document.getElementById('sf-nav-bump'),
+      cal: document.getElementById('sf-nav-cal'),
+      run: document.getElementById('sf-nav-run'),
+      all: document.getElementById('sf-nav-all'),
+      readout: document.getElementById('sf-nav-readout')
+    };
+
+    var MODES = {
+      timed: { label: 'Open-loop timed', color: '#ff9a6b', dash: [8, 4] },
+      encoders: { label: 'Wheel encoders only', color: '#70c8e5', dash: [4, 4] },
+      rawgyro: { label: 'Uncalibrated gyro', color: '#f2bf3f', dash: [10, 4, 2, 4] },
+      fused: { label: 'Fused IMU + Encoders', color: '#b8d84b', dash: [] }
+    };
+    var START = { x: 85, y: 255 }, GOAL = { x: 470, y: 100 };
+    var BUMP = { x: 245, w: 36 }, PX_PER_CM = 2; // 2 px = 1 cm
+
+    var activeMode = 'fused';
+    var runs = [];
+    var playing = false;
+
+    function createAgent(modeKey) {
+      return {
+        mode: modeKey,
+        x: START.x, y: START.y, a: 0,
+        estHeading: 0, estDist: 0,
+        phase: 0, // 0: straight1 (385px), 1: turn -90°, 2: straight2 (155px), 3: done
+        t: 0, bumpDone: false, encSlip: 0,
+        pts: [{ x: START.x, y: START.y }],
+        done: false, ptsEarned: 0, errCm: 0
+      };
+    }
+
+    function scoreAgent(ag) {
+      var errPx = Math.hypot(ag.x - GOAL.x, ag.y - GOAL.y);
+      ag.errCm = errPx / PX_PER_CM;
+      ag.ptsEarned = ag.errCm <= 12 ? 40 : ag.errCm <= 25 ? 20 : ag.errCm <= 45 ? 10 : 0;
+    }
+
+    function stepAgent(ag, dt) {
+      if (ag.done) return;
+      ag.t += dt;
+      var asym = (+nui.asym.value) / 100;
+      var bumpOn = nui.bump.checked;
+      var calOn = nui.cal.checked;
+      var gyroBias = (ag.mode === 'rawgyro' || (ag.mode === 'fused' && !calOn)) ? (3.8 / DEG) : 0;
+      var V = 135, W = 1.9, TRACK = 26;
+
+      var vL = 0, vR = 0;
+      if (ag.phase === 0) {
+        if (ag.mode === 'timed') {
+          vL = V; vR = V;
+          if (ag.t >= 385 / V) ag.phase = 1;
+        } else if (ag.mode === 'encoders') {
+          // Encoder loop balances wheel speeds, eliminating motor asymmetry!
+          vL = V; vR = V;
+          ag.estDist += V * dt * (ag.inBump ? 0.65 : 1);
+          if (ag.estDist >= 385) ag.phase = 1;
+        } else {
+          // Gyro heading hold keeps heading near 0
+          var err0 = 0 - ag.estHeading;
+          var corr0 = Math.max(-45, Math.min(45, err0 * 140));
+          vL = V + corr0; vR = V - corr0;
+          ag.estDist += V * dt * (ag.mode === 'fused' ? 1 : (ag.inBump ? 0.85 : 1));
+          if (ag.estDist >= 385) ag.phase = 1;
+        }
+      } else if (ag.phase === 1) {
+        var turnW = W;
+        // Screen y points down, so turning upward toward GOAL (-90°) needs negative ω (vL < vR).
+        if (ag.mode === 'timed') {
+          vL = -turnW * TRACK / 2; vR = turnW * TRACK / 2;
+          if (ag.t >= 385 / V + (Math.PI / 2) / turnW) { ag.phase = 2; ag.estDist = 0; }
+        } else if (ag.mode === 'encoders') {
+          vL = -turnW * TRACK / 2; vR = turnW * TRACK / 2;
+          ag.encTurn = (ag.encTurn || 0) + turnW * dt;
+          if (ag.encTurn >= Math.PI / 2) { ag.phase = 2; ag.estDist = 0; }
+        } else {
+          vL = -turnW * TRACK / 2; vR = turnW * TRACK / 2;
+          if (ag.estHeading <= -Math.PI / 2) { ag.phase = 2; ag.estDist = 0; }
+        }
+      } else if (ag.phase === 2) {
+        if (ag.mode === 'timed') {
+          vL = V; vR = V;
+          if (ag.t >= 385 / V + (Math.PI / 2) / W + 155 / V) ag.phase = 3;
+        } else if (ag.mode === 'encoders') {
+          vL = V; vR = V;
+          ag.estDist += V * dt;
+          if (ag.estDist >= 155) ag.phase = 3;
+        } else {
+          var err2 = (-Math.PI / 2) - ag.estHeading;
+          var corr2 = Math.max(-45, Math.min(45, err2 * 140));
+          vL = V + corr2; vR = V - corr2;
+          ag.estDist += V * dt;
+          if (ag.estDist >= 155) ag.phase = 3;
+        }
+      }
+
+      if (ag.phase === 3) {
+        ag.done = true;
+        scoreAgent(ag);
+        return;
+      }
+
+      // Physical chassis motion with motor asymmetry (encoders/gyro cancel it via feedback, timed does not)
+      var trueL = vL * (ag.mode === 'timed' ? (1 - asym * 0.65) : 1);
+      var trueR = vR * (ag.mode === 'timed' ? (1 + asym * 0.65) : 1);
+      var vTrue = (trueL + trueR) / 2;
+      var wTrue = (trueL - trueR) / TRACK;
+
+      ag.inBump = bumpOn && ag.x >= BUMP.x && ag.x <= BUMP.x + BUMP.w && ag.y > 210;
+      if (ag.inBump && !ag.bumpDone) {
+        ag.bumpDone = true;
+        // Floor seam kicks the robot 12° off course instantaneously
+        var kick = 12 / DEG;
+        ag.a += kick;
+        if (ag.mode === 'rawgyro' || ag.mode === 'fused') ag.estHeading += kick;
+      }
+
+      ag.a += wTrue * dt;
+      ag.estHeading += (wTrue + gyroBias) * dt;
+      ag.x += Math.cos(ag.a) * vTrue * dt;
+      ag.y += Math.sin(ag.a) * vTrue * dt;
+      var last = ag.pts[ag.pts.length - 1];
+      if (!last || Math.hypot(last.x - ag.x, last.y - ag.y) > 4) ag.pts.push({ x: ag.x, y: ag.y });
+    }
+
+    function launch(modeList, instant) {
+      runs = modeList.map(createAgent);
+      playing = true;
+      if (instant || RA.reducedMotion) {
+        for (var k = 0; k < 600 && runs.some(function (r) { return !r.done; }); k++) {
+          runs.forEach(function (r) { stepAgent(r, 0.02); });
+        }
+        playing = false;
+        reportNav();
+      }
+      drawNav();
+    }
+
+    function reportNav() {
+      if (!runs.length) return;
+      var summary = runs.map(function (r) {
+        return MODES[r.mode].label + ': ' + r.errCm.toFixed(1) + ' cm err (' + r.ptsEarned + ' pts)';
+      }).join(' · ');
+      nui.readout.textContent = summary;
+      if (!playing) RA.announce(summary);
+    }
+
+    function drawNav() {
+      nctx.fillStyle = '#0f1d23'; nctx.fillRect(0, 0, NW, NH);
+      nctx.strokeStyle = 'rgba(112,200,229,.08)'; nctx.lineWidth = 1;
+      for (var gx = 0; gx < NW; gx += 40) { nctx.beginPath(); nctx.moveTo(gx, 0); nctx.lineTo(gx, NH); nctx.stroke(); }
+      for (var gy = 0; gy < NH; gy += 40) { nctx.beginPath(); nctx.moveTo(0, gy); nctx.lineTo(NW, gy); nctx.stroke(); }
+
+      // Ideal planned route
+      nctx.setLineDash([5, 5]); nctx.strokeStyle = 'rgba(232,246,251,.3)'; nctx.lineWidth = 2;
+      nctx.beginPath(); nctx.moveTo(START.x, START.y); nctx.lineTo(GOAL.x, START.y); nctx.lineTo(GOAL.x, GOAL.y); nctx.stroke();
+      nctx.setLineDash([]);
+
+      // Floor bump hazard strip
+      if (nui.bump.checked) {
+        nctx.fillStyle = 'rgba(198,94,46,.32)';
+        nctx.fillRect(BUMP.x, 195, BUMP.w, 120);
+        nctx.strokeStyle = '#c65e2e'; nctx.lineWidth = 2;
+        nctx.strokeRect(BUMP.x, 195, BUMP.w, 120);
+        nctx.fillStyle = '#ffd6b8'; nctx.font = '700 10px "IBM Plex Mono", monospace'; nctx.textAlign = 'center';
+        nctx.fillText('FLOOR SEAM', BUMP.x + BUMP.w / 2, 188);
+      }
+
+      // Scoring target concentric boxes
+      [
+        { r: 45 * PX_PER_CM, col: 'rgba(112,200,229,.12)', stroke: 'rgba(112,200,229,.45)', label: '10 pts' },
+        { r: 25 * PX_PER_CM, col: 'rgba(242,191,63,.16)', stroke: 'rgba(242,191,63,.65)', label: '20 pts' },
+        { r: 12 * PX_PER_CM, col: 'rgba(184,216,75,.28)', stroke: '#b8d84b', label: '40 pts' }
+      ].forEach(function (z) {
+        nctx.fillStyle = z.col; nctx.strokeStyle = z.stroke; nctx.lineWidth = 1.5;
+        nctx.beginPath(); nctx.arc(GOAL.x, GOAL.y, z.r, 0, Math.PI * 2); nctx.fill(); nctx.stroke();
+      });
+      nctx.fillStyle = '#e8f6fb'; nctx.font = '700 11px "IBM Plex Mono", monospace'; nctx.textAlign = 'center';
+      nctx.fillText('40 PT BULLSEYE', GOAL.x, GOAL.y - 12 * PX_PER_CM - 6);
+
+      // Start pad
+      RA.drawPad(nctx, START.x, START.y, 16, '#3fa6cc', 'START');
+
+      // Agent paths & bots
+      runs.forEach(function (ag) {
+        var meta = MODES[ag.mode];
+        nctx.strokeStyle = meta.color; nctx.lineWidth = 3; nctx.setLineDash(meta.dash);
+        nctx.beginPath();
+        ag.pts.forEach(function (p, i) { if (i) nctx.lineTo(p.x, p.y); else nctx.moveTo(p.x, p.y); });
+        nctx.stroke(); nctx.setLineDash([]);
+        RA.drawRobot(nctx, ag.x, ag.y, ag.a, 10, { body: meta.color, outline: '#0f1d23', ghost: ag.done ? 0.95 : 1 });
+      });
+
+      if (playing && runs.every(function (r) { return r.done; })) {
+        playing = false;
+        reportNav();
+      }
+    }
+
+    nui.modes.forEach(function (b) {
+      b.addEventListener('click', function () {
+        activeMode = b.dataset.sfNav;
+        nui.modes.forEach(function (m) { m.setAttribute('aria-pressed', String(m === b)); });
+        launch([activeMode], false);
+      });
+    });
+    nui.asym.addEventListener('input', function () { nui.asymOut.textContent = nui.asym.value + '%'; });
+    nui.run.addEventListener('click', function () { launch([activeMode], false); });
+    nui.all.addEventListener('click', function () { launch(['timed', 'encoders', 'rawgyro', 'fused'], false); });
+    [nui.asym, nui.bump, nui.cal].forEach(function (el) {
+      el.addEventListener('change', function () { launch(runs.length > 1 ? ['timed', 'encoders', 'rawgyro', 'fused'] : [activeMode], true); });
+    });
+
+    launch(['timed', 'encoders', 'rawgyro', 'fused'], true);
+    RA.loop(function (dt) {
+      if (playing) {
+        var stepDt = 0.02, rem = Math.min(0.05, dt);
+        while (rem > 0) {
+          var h = Math.min(stepDt, rem);
+          runs.forEach(function (r) { stepAgent(r, h); });
+          rem -= h;
+        }
+        drawNav();
+      }
+    }, navCanvas);
+  })();
 })();

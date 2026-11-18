@@ -10,15 +10,17 @@
   var ACTIONS = [[0, -1], [1, 0], [0, 1], [-1, 0]]; // up right down left
   var EMPTY = 0, WALL = 1, PIT = 2, GOAL = 3;
   var ui = {
+    algo: document.getElementById('rl-algo'),
     alpha: document.getElementById('rl-alpha'), gamma: document.getElementById('rl-gamma'),
     eps: document.getElementById('rl-eps'), speed: document.getElementById('rl-speed'),
+    stepCost: document.getElementById('rl-step-cost'), decay: document.getElementById('rl-decay'),
     slip: document.getElementById('rl-slip'), tool: document.querySelectorAll('[data-rl-tool]'),
     run: document.getElementById('rl-run'), reset: document.getElementById('rl-reset'),
     greedy: document.getElementById('rl-greedy'), readout: document.getElementById('rl-readout'),
     chart: document.getElementById('rl-chart'), showQ: document.getElementById('rl-values')
   };
   var chartCtx = ui.chart.getContext('2d');
-  var grid, Q, start = { x: 0, y: ROWS - 1 }, robot, episode, steps, epReward, history, running = false, tool = 'wall', greedyRun = false, acc = 0;
+  var grid, Q, start = { x: 0, y: ROWS - 1 }, robot, episode, steps, epReward, history, running = false, tool = 'wall', greedyRun = false, acc = 0, nextAction = null;
 
   function layout() {
     grid = new Uint8Array(COLS * ROWS);
@@ -30,7 +32,7 @@
     Q = new Float32Array(COLS * ROWS * 4);
     episode = 0; history = []; firstWin = false; newEpisode();
   }
-  function newEpisode() { robot = { x: start.x, y: start.y }; steps = 0; epReward = 0; }
+  function newEpisode() { robot = { x: start.x, y: start.y }; steps = 0; epReward = 0; nextAction = null; }
 
   function cell(x, y) { return grid[y * COLS + x]; }
   function best(s) {
@@ -39,27 +41,43 @@
     return b;
   }
   function maxQ(s) { return Q[s * 4 + best(s)]; }
+  function pickAction(s, eps) { return Math.random() < eps ? (Math.random() * 4) | 0 : best(s); }
 
   function step() {
     var s = robot.y * COLS + robot.x;
     var eps = greedyRun ? 0 : +ui.eps.value;
-    var a = Math.random() < eps ? (Math.random() * 4) | 0 : best(s);
+    var sarsa = ui.algo && ui.algo.value === 'sarsa';
+    var a = (!greedyRun && sarsa && nextAction != null) ? nextAction : pickAction(s, eps);
     // Wheel slip: sometimes the robot lurches sideways instead.
     var act = a;
     if (Math.random() < +ui.slip.value) act = (a + (Math.random() < 0.5 ? 1 : 3)) % 4;
-    var nx = robot.x + ACTIONS[act][0], ny = robot.y + ACTIONS[act][1], r = -0.01;
+    var baseStepR = ui.stepCost ? +ui.stepCost.value : -0.01;
+    var nx = robot.x + ACTIONS[act][0], ny = robot.y + ACTIONS[act][1], r = baseStepR;
     if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS || cell(nx, ny) === WALL) { nx = robot.x; ny = robot.y; r = -0.1; }
     var kind = cell(nx, ny), done = false;
     if (kind === GOAL) { r = 1; done = true; }
     if (kind === PIT) { r = -1; done = true; }
     var s2 = ny * COLS + nx;
+    var aNext = (!done && !greedyRun && sarsa) ? pickAction(s2, eps) : null;
     if (!greedyRun) {
-      var target = r + (done ? 0 : +ui.gamma.value * maxQ(s2));
+      var future = done ? 0 : +ui.gamma.value * (sarsa ? Q[s2 * 4 + aNext] : maxQ(s2));
+      var target = r + future;
       Q[s * 4 + a] += +ui.alpha.value * (target - Q[s * 4 + a]);
     }
+    nextAction = aNext;
     robot.x = nx; robot.y = ny; steps++; epReward += r;
     if (done || steps > 200) {
-      if (!greedyRun) { episode++; history.push({ reward: epReward, steps: steps, goal: kind === GOAL }); if (history.length > 400) history.shift(); }
+      if (!greedyRun) {
+        episode++;
+        history.push({ reward: epReward, steps: steps, goal: kind === GOAL });
+        if (history.length > 400) history.shift();
+        if (ui.decay && ui.decay.checked) {
+          var nextEps = Math.max(0.02, +ui.eps.value * 0.992);
+          ui.eps.value = nextEps.toFixed(2);
+          var epsOut = document.getElementById('rl-eps-out');
+          if (epsOut) epsOut.textContent = (+ui.eps.value).toFixed(2);
+        }
+      }
       else { greedyRun = false; ui.greedy.textContent = 'Test the policy'; running = false; syncRun(); lastTest = kind === GOAL ? 'Test run: reached the charger in ' + steps + ' steps.' : 'Test run: ' + (kind === PIT ? 'fell down the stairs.' : 'wandered for 200 steps without finding the charger.'); RA.announce(lastTest, true); }
       if (!greedyRun && kind === GOAL && !firstWin) { firstWin = true; RA.announce('Episode ' + episode + ': the robot reached the charger for the first time.'); }
       mood = kind === GOAL ? 'happy' : kind === PIT ? 'oops' : mood; moodT = 0.6;
@@ -221,9 +239,13 @@
   });
   ui.reset.addEventListener('click', function () { lastTest = ''; resetBrain(); });
   document.getElementById('rl-layout').addEventListener('click', function () { layout(); start = { x: 0, y: ROWS - 1 }; resetBrain(); });
-  [['alpha', 2], ['gamma', 2], ['eps', 2], ['slip', 2], ['speed', 0]].forEach(function (pair) {
-    var el = ui[pair[0]], out = document.getElementById('rl-' + pair[0] + '-out');
-    el.addEventListener('input', function () { out.textContent = (+el.value).toFixed(pair[1]); });
+  [['alpha', 2], ['gamma', 2], ['eps', 2], ['stepCost', 2], ['slip', 2], ['speed', 0]].forEach(function (pair) {
+    var el = ui[pair[0]], id = pair[0] === 'stepCost' ? 'rl-step-cost-out' : 'rl-' + pair[0] + '-out', out = document.getElementById(id);
+    if (el && out) el.addEventListener('input', function () { out.textContent = (+el.value).toFixed(pair[1]); });
+  });
+  if (ui.algo) ui.algo.addEventListener('change', function () {
+    lastTest = ''; resetBrain();
+    RA.announce((ui.algo.value === 'sarsa' ? 'SARSA on-policy' : 'Q-learning off-policy') + ' selected and brain reset.', true);
   });
 
   layout(); resetBrain(); syncRun();

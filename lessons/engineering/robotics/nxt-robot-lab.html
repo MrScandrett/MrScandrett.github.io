@@ -86,7 +86,59 @@
 <ol><li><strong>0–8 min · Be the robot.</strong> One partner gives three exact instructions; the other follows literally. Identify input (information), program (instructions), output (action).</li><li><strong>8–18 min · Sequence.</strong> Run “Hello, robot” in the simulator. Predict what changes if the tone comes first. Move steps with the arrow buttons, then test. Explain why order matters.</li><li><strong>18–30 min · Repeat and calibrate.</strong> Load “Square experiment.” A 193° wheel spin approximates a 90° robot turn for the model geometry. Repeat the pair of steps four times. On the real build, measure the turn, adjust motor degrees and record three trials. Use wheel circumference = π × wheel diameter to predict forward distance.</li><li><strong>30–40 min · Sense, decide, act.</strong> Load “Touch to go.” Run, then toggle the simulated touch input. With the real robot, press the sensor on port 1. The program waits for input, with a ten-second timeout; it does not automatically avoid collisions. Why is waiting for an input different from waiting one second?</li><li><strong>40–50 min · Design a delivery.</strong> Create a route to a taped destination, add an arrival tone, save the project, and let a partner reproduce it. Submit your saved file, prediction, measured results and one revision.</li></ol>
 <h2>What the blocks teach</h2><dl><dt>Sequence</dt><dd>The ordered list runs from top to bottom; the highlighted row is the current instruction.</dd><dt>Loop</dt><dd>Repeat runs the whole sequence 1–8 times. Change one step rather than copying it four times.</dd><dt>Input and condition</dt><dd>Wait for touch repeatedly reads a switch until pressed, or stops with a timeout. It works only with the NXT touch sensor on input 1.</dd><dt>Output and feedback</dt><dd>Motor encoders report rotation. The browser checks motor status before continuing. Power changes speed; motor degrees change travel.</dd><dt>Abstraction and protocol</dt><dd>“Forward 180°” becomes two SetOutputState messages. Port B is encoded as 1; port C as 2. The command inspector reveals those messages.</dd></dl>
 <h2>Safety, limits &amp; troubleshooting</h2><p>STOP, Escape, hiding the tab or leaving the window asks the brick to brake all three motors. A broken connection can prevent that message arriving. Each move has a finite limit of at most two motor rotations; this is <strong>not a hardware emergency stop</strong>, and a stalled motor may stay powered until the teacher turns the brick off. Keep an adult within reach of the brick's power control. Do not use this with heavy, fast, elevated or hazardous mechanisms.</p><p>Real-robot mode requires the readiness checkbox every connection. If a command times out, reconnect and inspect the robot before trying again. A touch timeout usually means input 1 is unplugged or the wrong sensor is attached. Tone blocks play in the browser simulator and on a connected brick. Sound-file blocks refer to files on the brick; use the Sounds panel to prepare a recording or audio file as .rso, then send it under Brick files.</p><p><strong>What this replaces:</strong> an introductory sequence editor and live control environment. Projects are saved as this lab's JSON files. They are not NXT-G files or compiled .rxe programs; they cannot run independently after disconnecting. Sensor logic, variables, arithmetic, measurement logs, motor attachments, tones and custom sounds are available in Blocks mode. On-brick execution uses exported NXC compiled to .rxe; the optional local companion connects an installed free compiler to the website. The website does not bundle a compiler or install firmware.</p>
-<h2>Adapt &amp; assess</h2><p><strong>Explorer:</strong> arrange three steps and explain a prediction aloud. <strong>Builder:</strong> use repetition and a touch input; measure two trials. <strong>Engineer:</strong> derive turn calibration from wheel diameter and track width, explain Bluetooth framing, and compare model error with measured encoder travel. Success means the student can explain their sequence, demonstrate STOP, interpret an input, and use evidence to revise a program.</p><h2>Documentation &amp; sources</h2><ul><li><a href="https://www.xatlantis.ch/doc/nxt/Appendix%202-LEGO%20MINDSTORMS%20NXT%20Direct%20commands.pdf">LEGO NXT Direct Commands specification (LEGO, 2006; mirrored PDF)</a> — message fields, motor limits and sensor replies.</li><li><a href="https://developer.chrome.com/blog/serial-over-bluetooth/">Chrome: serial over Bluetooth Classic</a> and <a href="https://developer.chrome.com/docs/capabilities/usb">WebUSB device access</a> — browser connection requirements.</li><li><a href="https://github.com/schodet/nxt-python">NXT-Python project</a> — independent protocol and USB transport reference.</li><li><a href="https://en.wikipedia.org/wiki/Lego_Mindstorms_NXT">NXT background and kit history</a>.</li></ul><p>Connection notes researched November 11, 2026. LEGO and MINDSTORMS are trademarks of the LEGO Group; this classroom tool is independent.</p>
+<h2>Adapt &amp; assess</h2><p><strong>Explorer:</strong> arrange three steps and explain a prediction aloud. <strong>Builder:</strong> use repetition and a touch input; measure two trials. <strong>Engineer:</strong> derive turn calibration from wheel diameter and track width, explain Bluetooth framing, and compare model error with measured encoder travel. Success means the student can explain their sequence, demonstrate STOP, interpret an input, and use evidence to revise a program.</p>
+<section class="nxt-playbook" aria-labelledby="nxt-comp-title">
+<h2 id="nxt-comp-title">Competition Autonomous Playbook: Scoring Reliably on the Match Table</h2>
+<p>In FIRST LEGO League (FLL), World Robot Olympiad (WRO), and classroom table-run tournaments, a 2.5-minute match leaves zero time for fragile guesses. Winning teams treat every autonomous run like a repeatable science experiment—eliminating sensor, alignment, and mechanical slack errors before the timer starts.</p>
+<div class="nxt-playbook-grid">
+<article>
+<h3>1 · Launch Jig &amp; Mechanical Wall Squaring</h3>
+<p>Never eyeball robot placement in base. Build a <strong>LEGO beam launch jig</strong> that squares the chassis against two perpendicular walls, and program mid-run <strong>wall-squaring</strong>: drive gently backward against a flat field border for 0.6 s at 25% power so both bumpers sit flush. Mechanically resetting heading error θ to 0° wipes out accumulated wheel-slip drift before the next precision mission.</p>
+</article>
+<article>
+<h3>2 · Two-Point Light Calibration &amp; Proportional Edge-Following</h3>
+<p>Venue spotlights and shadows shift reflected light readings every round. Right before a match, record the raw light reading over black tape and white mat, then compute <code>threshold = (black + white) / 2</code>. Instead of jerky bang-bang zigzags, use proportional steering on the tape's edge: <code>turn = K<sub>p</sub> × (light − threshold)</code>, or stop two sensors simultaneously on a black cross-line (<strong>line squaring</strong>) to re-align heading mid-field.</p>
+</article>
+<article>
+<h3>3 · Encoder Turn Math &amp; Backlash Pre-Tensioning</h3>
+<p>Dead-reckoned turns follow exact wheel geometry: <code>Δθ<sub>wheel</sub> = Δθ<sub>robot</sub> × (L<sub>track</sub> / D<sub>wheel</sub>)</code>. For the lab model (track <code>L = 120 mm</code>, wheel <code>D = 56 mm</code>), a 90° point turn requires <code>90° × (120 / 56) ≈ 193°</code> on each wheel in opposite directions. Before starting a run, roll the robot slightly forward by hand until gear backlash locks against the teeth—otherwise the first 5–10° of motor spin only eats slack on one side and makes the robot veer on launch.</p>
+</article>
+<article>
+<h3>4 · Mission Grouping &amp; Pinless Drop-On Attachments</h3>
+<p>In timed matches, changing bolted attachments wastes 15–20 seconds per pit stop. Use <strong>pinless gravity drop-on attachments</strong> that key onto a universal Motor A dog-gear or frame notch in under 2 seconds, and combine nearby tasks into single out-and-back runs scored by <strong>Points Per Second (PPS)</strong>.</p>
+</article>
+</div>
+<div class="nxt-capabilities-wrap" role="region" aria-label="Mission selection priority table" tabindex="0">
+<table class="nxt-capabilities">
+<thead><tr><th>Run Strategy</th><th>Typical Match Time</th><th>Points-per-Second (PPS)</th><th>Reliability Rule</th></tr></thead>
+<tbody>
+<tr><td>Run 1 · Wall-follow + 2 nearby passive pushes</td><td>18 s</td><td>3.3–4.5 pts/s</td><td>Use wall guides; zero open-floor turns before first score</td></tr>
+<tr><td>Run 2 · Line-square + Motor A lift/drop</td><td>24 s</td><td>2.8–3.8 pts/s</td><td>Calibrate light threshold at venue table; re-zero encoder A at hard stop</td></tr>
+<tr><td>Run 3 · High-value far-table mission</td><td>28 s</td><td>2.5–4.0 pts/s</td><td>Square against a border midway; never stack &gt;2 unverified turns in a row</td></tr>
+<tr><td>Endgame · Park on target zone</td><td>8 s</td><td>2.5–3.5 pts/s</td><td>Keep a standalone 8-second safe park program ready if earlier runs slip</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+<h2>Documentation &amp; sources</h2><ul><li><a href="https://www.xatlantis.ch/doc/nxt/Appendix%202-LEGO%20MINDSTORMS%20NXT%20Direct%20commands.pdf">LEGO NXT Direct Commands specification (LEGO, 2006; mirrored PDF)</a> — message fields, motor limits and sensor replies.</li><li><a href="https://developer.chrome.com/blog/serial-over-bluetooth/">Chrome: serial over Bluetooth Classic</a> and <a href="https://developer.chrome.com/docs/capabilities/usb">WebUSB device access</a> — browser connection requirements.</li><li><a href="https://github.com/schodet/nxt-python">NXT-Python project</a> — independent protocol and USB transport reference.</li><li><a href="https://en.wikipedia.org/wiki/Lego_Mindstorms_NXT">NXT background and kit history</a>.</li></ul><p>Connection notes researched November 11, 2026. LEGO and MINDSTORMS are trademarks of the LEGO Group; this classroom tool is independent.</p>
+<section class="nxt-pathway" aria-labelledby="nxt-series-title">
+<h2 id="nxt-series-title">Robotics &amp; Autonomy Pathway</h2>
+<p>Continue building competition robotics skills across mechanics, teleoperation, sensing, planning, and control:</p>
+<nav class="nxt-series" aria-label="Robot autonomy lessons">
+<a href="../mechanical-and-civil-design/robotics-engineering-intro.html"><b>Robotics Intro</b>Sensor, controller, actuator, feedback</a>
+<a href="robot-build-studio.html"><b>Robot Build Studio</b>Chassis, 3D printing, gears, servos &amp; integration</a>
+<a href="robot-car-pilot.html"><b>Pilot the Robot Car</b>Drive the ELEGOO car by Bluetooth or Wi-Fi</a>
+<a href="nxt-robot-lab.html" aria-current="page"><b>NXT Robot Lab</b>Sequence &amp; block programming, sensors, NXC</a>
+<a href="sensor-fusion.html"><b>Sensor Fusion</b>Complementary &amp; Kalman filters</a>
+<a href="robot-mapping-localization.html"><b>Mapping &amp; Localization</b>Occupancy grids, particle filters, SLAM</a>
+<a href="../../computer-science/algorithms-and-ai/pathfinding.html"><b>A* Pathfinding</b>Global route on a grid</a>
+<a href="motion-planning.html"><b>Motion Planning</b>RRT, potential fields, DWA, kinematics</a>
+<a href="robot-arms.html"><b>Robot Arms</b>Joints, reach, forward &amp; inverse kinematics</a>
+<a href="../arduino-and-electronics/pid-control.html"><b>PID Control</b>Hold a target with feedback</a>
+<a href="../../computer-science/algorithms-and-ai/state-machines.html"><b>State Machines</b>Organize robot behaviors</a>
+<a href="robot-reinforcement-learning.html"><b>Reinforcement Learning</b>Learn a policy from rewards</a>
+</nav>
+</section>
 <p><a href="robot-build-studio.html">Continue: Robot Build Studio</a> · <a href="../../../steam-lessons.html">All lessons</a></p>
 </article>
 </main>

@@ -16,19 +16,37 @@
     { x: 250, y: 300, w: 30, h: 30 }, { x: 520, y: 60, w: 40, h: 70 }
   ];
 
-  function freeSpot() {
+  // Symmetric competition-style arena (180° rotational symmetry around center).
+  var SYMMETRIC_WORLD = [
+    { x: 0, y: 0, w: W, h: 8 }, { x: 0, y: H - 8, w: W, h: 8 },
+    { x: 0, y: 0, w: 8, h: H }, { x: W - 8, y: 0, w: 8, h: H },
+    { x: W / 2 - 6, y: 8, w: 12, h: 112 }, { x: W / 2 - 6, y: H - 120, w: 12, h: 112 },
+    { x: 115, y: 78, w: 50, h: 50 }, { x: W - 165, y: H - 128, w: 50, h: 50 },
+    { x: 175, y: 255, w: 60, h: 24 }, { x: W - 235, y: H - 279, w: 60, h: 24 }
+  ];
+
+  var TAGS = [
+    { id: 1, x: 16, y: 80, label: '#1' },
+    { id: 2, x: 16, y: H - 80, label: '#2' },
+    { id: 3, x: W - 16, y: 80, label: '#3' },
+    { id: 4, x: W - 16, y: H - 80, label: '#4' }
+  ];
+
+  function freeSpot(world) {
+    var rects = world || WORLD;
     for (var i = 0; i < 500; i++) {
       var x = 20 + Math.random() * (W - 40), y = 20 + Math.random() * (H - 40);
-      if (!RA.hitsRect(x, y, ROBOT_R + 4, WORLD)) return { x: x, y: y };
+      if (!RA.hitsRect(x, y, ROBOT_R + 4, rects)) return { x: x, y: y };
     }
     return { x: 80, y: 80 };
   }
 
   // Shared wander behaviour: drive forward, turn toward open space when blocked,
   // or steer toward a clicked waypoint.
-  function steer(pose, target, dt) {
+  function steer(pose, target, dt, world) {
+    var rects = world || WORLD;
     var v = 70, w = 0;
-    var front = Math.min(RA.rayCast(pose.x, pose.y, pose.a, WORLD, 200), RA.rayCast(pose.x, pose.y, pose.a - 0.35, WORLD, 200), RA.rayCast(pose.x, pose.y, pose.a + 0.35, WORLD, 200));
+    var front = Math.min(RA.rayCast(pose.x, pose.y, pose.a, rects, 200), RA.rayCast(pose.x, pose.y, pose.a - 0.35, rects, 200), RA.rayCast(pose.x, pose.y, pose.a + 0.35, rects, 200));
     if (target) {
       var desired = Math.atan2(target.y - pose.y, target.x - pose.x);
       var err = Math.atan2(Math.sin(desired - pose.a), Math.cos(desired - pose.a));
@@ -40,17 +58,18 @@
       w = pose.wander;
     }
     if (front < 45) {
-      var left = RA.rayCast(pose.x, pose.y, pose.a - 1.2, WORLD, 200);
-      var right = RA.rayCast(pose.x, pose.y, pose.a + 1.2, WORLD, 200);
+      var left = RA.rayCast(pose.x, pose.y, pose.a - 1.2, rects, 200);
+      var right = RA.rayCast(pose.x, pose.y, pose.a + 1.2, rects, 200);
       w = (left > right ? -1 : 1) * 2.6;
       v = front < 22 ? 0 : 25;
     }
     return { v: v, w: w };
   }
 
-  function move(pose, v, w, dt) {
+  function move(pose, v, w, dt, world) {
+    var rects = world || WORLD;
     var nx = pose.x + Math.cos(pose.a) * v * dt, ny = pose.y + Math.sin(pose.a) * v * dt;
-    if (!RA.hitsRect(nx, ny, ROBOT_R, WORLD)) { pose.x = nx; pose.y = ny; }
+    if (!RA.hitsRect(nx, ny, ROBOT_R, rects)) { pose.x = nx; pose.y = ny; }
     pose.a += w * dt;
   }
 
@@ -59,15 +78,17 @@
   }
 
   // Keyboard: arrows move a crosshair; Enter sends the robot there.
-  function keyTarget(canvas, setTarget) {
+  function keyTarget(canvas, setTarget, getWorld) {
     var cur = RA.keyCursor(canvas, {
       step: 20, x: W / 2, y: H / 2,
       describe: function (c) {
-        return 'Crosshair at ' + Math.round(c.x / W * 100) + '% across, ' + Math.round(c.y / H * 100) + '% down' + (RA.hitsRect(c.x, c.y, ROBOT_R, WORLD) ? ', inside a wall.' : '. Press Enter to send the robot here.');
+        var rects = getWorld ? getWorld() : WORLD;
+        return 'Crosshair at ' + Math.round(c.x / W * 100) + '% across, ' + Math.round(c.y / H * 100) + '% down' + (RA.hitsRect(c.x, c.y, ROBOT_R, rects) ? ', inside a wall.' : '. Press Enter to send the robot here.');
       },
       onKey: function (k, c) {
         if (k !== 'Enter') return false;
-        var ok = !RA.hitsRect(c.x, c.y, ROBOT_R, WORLD);
+        var rects = getWorld ? getWorld() : WORLD;
+        var ok = !RA.hitsRect(c.x, c.y, ROBOT_R, rects);
         setTarget(ok ? { x: c.x, y: c.y } : null);
         RA.announce(ok ? 'Robot sent to the crosshair.' : 'That spot is inside a wall. The robot will wander instead.', true);
         return true;
@@ -76,9 +97,9 @@
     return cur;
   }
 
-  function drawWorld(ctx, style) {
+  function drawWorld(ctx, style, world) {
     ctx.fillStyle = style;
-    WORLD.forEach(function (r) { ctx.fillRect(r.x, r.y, r.w, r.h); });
+    (world || WORLD).forEach(function (r) { ctx.fillRect(r.x, r.y, r.w, r.h); });
   }
 
   /* ── Sim 1: occupancy grid mapping ─────────────────────────────── */
@@ -209,32 +230,73 @@
     var ui = {
       sigma: document.getElementById('pf-sigma'), run: document.getElementById('pf-run'),
       kidnap: document.getElementById('pf-kidnap'), reset: document.getElementById('pf-reset'),
-      inject: document.getElementById('pf-inject'), readout: document.getElementById('pf-readout')
+      inject: document.getElementById('pf-inject'), tags: document.getElementById('pf-tags'),
+      symmetric: document.getElementById('pf-symmetric'), readout: document.getElementById('pf-readout')
     };
-    var pose, particles, running = true, timer = 0, updates = 0, target = null;
+    var pose, particles, running = true, timer = 0, updates = 0, target = null, symmetric = false, visibleTags = [];
+
+    function activeWorld() { return symmetric ? SYMMETRIC_WORLD : WORLD; }
+    function wrapA(a) { return Math.atan2(Math.sin(a), Math.cos(a)); }
 
     function scatter() {
       particles = [];
-      for (var i = 0; i < N; i++) { var s = freeSpot(); particles.push({ x: s.x, y: s.y, a: Math.random() * Math.PI * 2, w: 1 / N }); }
+      var rects = activeWorld();
+      for (var i = 0; i < N; i++) { var s = freeSpot(rects); particles.push({ x: s.x, y: s.y, a: Math.random() * Math.PI * 2, w: 1 / N }); }
       updates = 0;
     }
-    function reset() { var s = freeSpot(); pose = { x: s.x, y: s.y, a: Math.random() * 6.28 }; scatter(); target = null; }
+    function reset() {
+      var rects = activeWorld();
+      var s = freeSpot(rects);
+      pose = { x: s.x, y: s.y, a: Math.random() * 6.28 };
+      visibleTags = [];
+      scatter();
+      target = null;
+    }
 
     function sense(p) {
-      var out = [];
-      for (var k = 0; k < BEAMS; k++) out.push(RA.rayCast(p.x, p.y, p.a + k * 2 * Math.PI / BEAMS, WORLD, MAXR));
+      var out = [], rects = activeWorld();
+      for (var k = 0; k < BEAMS; k++) out.push(RA.rayCast(p.x, p.y, p.a + k * 2 * Math.PI / BEAMS, rects, MAXR));
       return out;
     }
 
+    function seeTags(p) {
+      if (!ui.tags || !ui.tags.checked) return [];
+      var rects = activeWorld(), seen = [];
+      for (var i = 0; i < TAGS.length; i++) {
+        var tg = TAGS[i], dx = tg.x - p.x, dy = tg.y - p.y, dist = Math.hypot(dx, dy);
+        if (dist > 320) continue;
+        var absAng = Math.atan2(dy, dx), rel = wrapA(absAng - p.a);
+        if (Math.abs(rel) > 0.85) continue; // ~±49° forward camera FOV
+        var wallD = RA.rayCast(p.x, p.y, absAng, rects, dist + 10);
+        if (wallD >= dist - 14) seen.push({ tag: tg, range: dist, bearing: rel });
+      }
+      return seen;
+    }
+
     function update() {
-      var sigma = +ui.sigma.value;
+      var sigma = +ui.sigma.value, rects = activeWorld();
       var z = sense(pose).map(function (r) { return Math.max(0, r + RA.gauss() * 6); });
+      visibleTags = seeTags(pose).map(function (obs) {
+        return { tag: obs.tag, range: Math.max(4, obs.range + RA.gauss() * 4), bearing: obs.bearing + RA.gauss() * 0.04 };
+      });
       var total = 0;
       particles.forEach(function (p) {
-        if (RA.hitsRect(p.x, p.y, 2, WORLD) || p.x < 0 || p.y < 0 || p.x > W || p.y > H) { p.w = 1e-300; return; }
+        if (RA.hitsRect(p.x, p.y, 2, rects) || p.x < 0 || p.y < 0 || p.x > W || p.y > H) { p.w = 1e-300; return; }
         var zh = sense(p), e = 0;
         for (var k = 0; k < BEAMS; k++) e += (z[k] - zh[k]) * (z[k] - zh[k]);
-        p.w = Math.exp(-e / (2 * sigma * sigma * 3)) + 1e-300;
+        var w = Math.exp(-e / (2 * sigma * sigma * 3));
+        if (visibleTags.length) {
+          for (var t = 0; t < visibleTags.length; t++) {
+            var obs = visibleTags[t], tg = obs.tag;
+            var pr = Math.hypot(tg.x - p.x, tg.y - p.y);
+            var pb = wrapA(Math.atan2(tg.y - p.y, tg.x - p.x) - p.a);
+            var dr = obs.range - pr, db = wrapA(obs.bearing - pb);
+            var clear = RA.rayCast(p.x, p.y, Math.atan2(tg.y - p.y, tg.x - p.x), rects, pr + 10) >= pr - 14;
+            if (!clear || Math.abs(pb) > 1.15) w *= 0.02;
+            else w *= Math.exp(-(dr * dr) / (2 * Math.max(12, sigma) * Math.max(12, sigma)) - (db * db) / (2 * 0.25 * 0.25));
+          }
+        }
+        p.w = w + 1e-300;
         total += p.w;
       });
       // Low-variance resampling, plus a few random particles so a kidnapped
@@ -248,7 +310,7 @@
         var src = particles[i];
         next.push({ x: src.x, y: src.y, a: src.a, w: 1 / N });
       }
-      while (next.length < N) { var s = freeSpot(); next.push({ x: s.x, y: s.y, a: Math.random() * 6.28, w: 1 / N }); }
+      while (next.length < N) { var s = freeSpot(rects); next.push({ x: s.x, y: s.y, a: Math.random() * 6.28, w: 1 / N }); }
       particles = next;
       updates++;
     }
@@ -262,19 +324,22 @@
         particles.forEach(function (p) { if (Math.abs(p.x - c.x) < 40 && Math.abs(p.y - c.y) < 40) count++; });
         if (count > bestCount) { bestCount = count; best = c; }
       }
-      var sx = 0, sy = 0, sc = 0, ss = 0, n = 0;
+      var sx = 0, sy = 0, sc = 0, ss = 0, n = 0, clump = [];
       particles.forEach(function (p) {
-        if (Math.abs(p.x - best.x) < 40 && Math.abs(p.y - best.y) < 40) { sx += p.x; sy += p.y; sc += Math.cos(p.a); ss += Math.sin(p.a); n++; }
+        if (Math.abs(p.x - best.x) < 40 && Math.abs(p.y - best.y) < 40) { sx += p.x; sy += p.y; sc += Math.cos(p.a); ss += Math.sin(p.a); n++; clump.push(p); }
       });
-      return { x: sx / n, y: sy / n, a: Math.atan2(ss, sc), agree: n / particles.length };
+      var mx = sx / n, my = sy / n, v2 = 0;
+      clump.forEach(function (p) { v2 += (p.x - mx) * (p.x - mx) + (p.y - my) * (p.y - my); });
+      return { x: mx, y: my, a: Math.atan2(ss, sc), agree: n / particles.length, r95: Math.min(48, Math.max(12, 2 * Math.sqrt(v2 / Math.max(1, n)))) };
     }
 
     function step(dt) {
       if (!running) return;
-      var cmd = steer(pose, target, dt);
+      var rects = activeWorld();
+      var cmd = steer(pose, target, dt, rects);
       if (cmd.arrived) target = null;
       var before = { x: pose.x, y: pose.y, a: pose.a };
-      move(pose, cmd.v, cmd.w, dt);
+      move(pose, cmd.v, cmd.w, dt, rects);
       var dist = Math.hypot(pose.x - before.x, pose.y - before.y), dA = pose.a - before.a;
       // Motion update: every particle moves the way the odometry says, plus noise.
       particles.forEach(function (p) {
@@ -287,8 +352,30 @@
     }
 
     function draw() {
+      var rects = activeWorld();
       ctx.fillStyle = '#e8efec'; ctx.fillRect(0, 0, W, H);
-      drawWorld(ctx, '#29424b');
+      drawWorld(ctx, '#29424b', rects);
+      if (ui.tags && ui.tags.checked) {
+        // Draw AprilTag landmarks and active camera sight lines
+        visibleTags.forEach(function (obs) {
+          ctx.save();
+          ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(20, 107, 140, 0.7)'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(pose.x, pose.y); ctx.lineTo(obs.tag.x, obs.tag.y); ctx.stroke();
+          ctx.restore();
+        });
+        TAGS.forEach(function (tg) {
+          var active = visibleTags.some(function (obs) { return obs.tag.id === tg.id; });
+          ctx.fillStyle = active ? '#70c8e5' : '#233b45';
+          ctx.strokeStyle = active ? '#0f1d23' : '#70c8e5';
+          ctx.lineWidth = 2;
+          ctx.fillRect(tg.x - 13, tg.y - 10, 26, 20);
+          ctx.strokeRect(tg.x - 13, tg.y - 10, 26, 20);
+          ctx.fillStyle = active ? '#0f1d23' : '#e8f6fb';
+          ctx.font = '700 10px "IBM Plex Mono", monospace';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(tg.label, tg.x, tg.y + 0.5);
+        });
+      }
       ctx.fillStyle = 'rgba(217,75,65,.75)';
       particles.forEach(function (p) {
         ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
@@ -301,27 +388,48 @@
       var est = estimate();
       drawRobot(ctx, pose, '#146b8c', '#0b2a36');
       var sure = est.agree > 0.6;
-      if (sure) drawRobot(ctx, est, 'rgba(242,191,63,.6)', '#8a6400');
+      if (sure) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(242,191,63,.85)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.arc(est.x, est.y, est.r95, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+        drawRobot(ctx, est, 'rgba(242,191,63,.6)', '#8a6400');
+      }
       RA.drawCursor(ctx, pfCursor, '#12202a');
       var err = Math.hypot(est.x - pose.x, est.y - pose.y);
       var news = sure ? 'The guesses agree: the robot is localized.' : '';
       if (news && !wasSure) RA.announce(news);
       wasSure = sure;
+      var tagStatus = ui.tags && ui.tags.checked ? (' · AprilTags seen: ' + (visibleTags.length ? visibleTags.map(function (o) { return o.tag.label; }).join(', ') : 'none')) : '';
       ui.readout.textContent = 'Sensor updates: ' + updates + ' · ' + Math.round(est.agree * 100) + '% of guesses agree · ' +
-        (sure ? 'best guess is ' + (err / 20).toFixed(2) + ' m from the true robot' : 'still unsure: several places look alike');
+        (sure ? 'best guess is ' + (err / 20).toFixed(2) + ' m from the true robot' : (symmetric && !(ui.tags && ui.tags.checked) ? 'symmetric arena: LiDAR sees twin halves' : 'still unsure: several places look alike')) + tagStatus;
     }
 
     canvas.addEventListener('pointerdown', function (e) {
       var p = RA.canvasPoint(canvas, e);
-      target = RA.hitsRect(p.x, p.y, ROBOT_R, WORLD) ? null : p;
+      target = RA.hitsRect(p.x, p.y, ROBOT_R, activeWorld()) ? null : p;
     });
     ui.run.addEventListener('click', function () {
       running = !running;
       ui.run.textContent = running ? 'Pause' : 'Resume';
       ui.run.setAttribute('aria-pressed', String(!running));
     });
-    var pfCursor = keyTarget(canvas, function (t) { target = t; }), wasSure = false;
-    ui.kidnap.addEventListener('click', function () { var s = freeSpot(); pose.x = s.x; pose.y = s.y; pose.a = Math.random() * 6.28; target = null; RA.announce('Robot kidnapped to a random spot.', true); });
+    var pfCursor = keyTarget(canvas, function (t) { target = t; }, activeWorld), wasSure = false;
+    ui.kidnap.addEventListener('click', function () { var s = freeSpot(activeWorld()); pose.x = s.x; pose.y = s.y; pose.a = Math.random() * 6.28; target = null; RA.announce('Robot kidnapped to a random spot.', true); });
+    if (ui.symmetric) {
+      ui.symmetric.addEventListener('click', function () {
+        symmetric = !symmetric;
+        ui.symmetric.setAttribute('aria-pressed', String(symmetric));
+        reset();
+        RA.announce(symmetric ? 'Symmetric competition arena loaded.' : 'Asymmetric office map loaded.', true);
+      });
+    }
+    if (ui.tags) {
+      ui.tags.addEventListener('change', function () {
+        visibleTags = [];
+        RA.announce(ui.tags.checked ? 'AprilTag landmarks enabled.' : 'AprilTag landmarks disabled.', true);
+      });
+    }
     ui.reset.addEventListener('click', reset);
     ui.sigma.addEventListener('input', function () { document.getElementById('pf-sigma-out').textContent = ui.sigma.value; });
     reset();

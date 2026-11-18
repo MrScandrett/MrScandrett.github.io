@@ -204,8 +204,11 @@ function mount(root, bank, doubleBank, chessBank) {
   app.replaceChildren(bar, panel);
 
   let teardown = () => {};
+  // Collapsed until the student picks a puzzle: only the tab row shows.
+  let started = false;
 
   function refreshChrome() {
+    const cur = started ? state.tab : '';
     dateLabel.textContent = state.key === today ? `Today · ${longDate(state.key)}` : longDate(state.key);
     prevBtn.disabled = state.key <= shiftDayKey(today, -BACK_DAYS);
     nextBtn.disabled = state.key >= today;
@@ -213,30 +216,34 @@ function mount(root, bank, doubleBank, chessBank) {
     const n = streak();
     streakEl.hidden = n === 0;
     streakEl.textContent = `🔥 ${n}-day streak`;
-    tabCross.setAttribute('aria-selected', String(state.tab === 'crossword'));
-    tabSudoku.setAttribute('aria-selected', String(state.tab === 'sudoku'));
-    tabDouble.setAttribute('aria-selected', String(state.tab === 'daily-double'));
-    tabChess.setAttribute('aria-selected', String(state.tab === 'chess'));
-    tabSoko.setAttribute('aria-selected', String(state.tab === 'sokoban'));
-    tabCross.tabIndex = state.tab === 'crossword' ? 0 : -1;
-    tabSudoku.tabIndex = state.tab === 'sudoku' ? 0 : -1;
-    tabDouble.tabIndex = state.tab === 'daily-double' ? 0 : -1;
-    tabChess.tabIndex = state.tab === 'chess' ? 0 : -1;
-    tabRubik.setAttribute('aria-selected', String(state.tab === 'rubik'));
-    tabRubik.tabIndex = state.tab === 'rubik' ? 0 : -1;
+    tabCross.setAttribute('aria-selected', String(cur === 'crossword'));
+    tabSudoku.setAttribute('aria-selected', String(cur === 'sudoku'));
+    tabDouble.setAttribute('aria-selected', String(cur === 'daily-double'));
+    tabChess.setAttribute('aria-selected', String(cur === 'chess'));
+    tabSoko.setAttribute('aria-selected', String(cur === 'sokoban'));
+    tabCross.tabIndex = (cur === 'crossword' || !started) ? 0 : -1;
+    tabSudoku.tabIndex = cur === 'sudoku' ? 0 : -1;
+    tabDouble.tabIndex = cur === 'daily-double' ? 0 : -1;
+    tabChess.tabIndex = cur === 'chess' ? 0 : -1;
+    tabRubik.setAttribute('aria-selected', String(cur === 'rubik'));
+    tabRubik.tabIndex = cur === 'rubik' ? 0 : -1;
     tabRubik.classList.toggle('is-done', isDone(state.key, 'rubik'));
-    tabSoko.tabIndex = state.tab === 'sokoban' ? 0 : -1;
+    tabSoko.tabIndex = cur === 'sokoban' ? 0 : -1;
     tabCross.classList.toggle('is-done', isDone(state.key, 'cross'));
     tabSudoku.classList.toggle('is-done', isDone(state.key, 'sudoku'));
     tabDouble.classList.toggle('is-done', isDone(state.key, 'double'));
     tabChess.classList.toggle('is-done', isDone(state.key, 'chess'));
     tabSoko.classList.toggle('is-done', isDone(state.key, 'soko'));
-    panel.setAttribute('aria-labelledby', `dp-tab-${state.tab}`);
+    panel.hidden = !started;
+    root.classList.toggle('dp-collapsed', !started);
+    if (started) panel.setAttribute('aria-labelledby', `dp-tab-${state.tab}`);
   }
 
   function show() {
     teardown();
+    teardown = () => {};
     refreshChrome();
+    if (!started) { panel.replaceChildren(); return; }
     const p = puzzlesFor(state.key);
     teardown = state.tab === 'crossword'
       ? buildCrossword(panel, p.cw, dayState(state.key), persist, refreshChrome)
@@ -259,7 +266,7 @@ function mount(root, bank, doubleBank, chessBank) {
 
   const tabButtons = { 'crossword': tabCross, 'sudoku': tabSudoku, 'daily-double': tabDouble, chess: tabChess, sokoban: tabSoko, rubik: tabRubik };
   const setTab = (tab, focus) => {
-    state.tab = tab; store.tab = tab; persist(); show();
+    started = true; state.tab = tab; store.tab = tab; persist(); show();
     if (focus && tabButtons[tab]) tabButtons[tab].focus();
   };
   tabCross.addEventListener('click', () => setTab('crossword'));

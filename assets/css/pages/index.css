@@ -883,7 +883,7 @@
   background: rgba(46, 125, 50, 0.06);
 }
 
-/* ─── NASA APOD Widget ─────────────────────────────────────────────────────── */
+/* ─── STEAM Picture of the Day ─────────────────────────────────────────────────────── */
 
 .home-widget--apod {
   grid-column: 1 / -1;
@@ -905,7 +905,8 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
   padding: 0.85rem 1.25rem 0.65rem;
   border-bottom: 1px solid rgba(100, 130, 200, 0.12);
 }
@@ -941,6 +942,33 @@
   white-space: nowrap;
 }
 
+.apod-source-picker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  padding: 0.55rem 1.25rem;
+  color: #d9e6ff;
+  font-size: 0.78rem;
+}
+
+.apod-source-picker select {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.4rem;
+  color: #edf3ff;
+  background: #141c34;
+  border: 1px solid #7385b0;
+  border-radius: 0.35rem;
+  font: inherit;
+  color-scheme: dark;
+}
+
+.apod-shell [hidden] {
+  display: none;
+}
+
 .apod-datestamp {
   font-family: var(--font-mono, monospace);
   font-size: 0.68rem;
@@ -972,6 +1000,10 @@
   object-position: center;
   display: block;
   transition: transform 0.4s ease;
+}
+
+.apod-img--contain {
+  object-fit: contain;
 }
 
 .apod-image-wrap a:hover .apod-img {
@@ -1250,9 +1282,6 @@ html[data-theme="bark"] .home-tab.is-active {
 }
 
 @media (max-width: 780px) {
-  .cos-hero-grid {
-    grid-template-columns: 1fr;
-  }
   .cos-hero-copy {
     min-height: auto;
   }
@@ -2186,25 +2215,6 @@ html[data-theme="bark"] .home-tab.is-active {
 @keyframes apod-shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
-}
-
-.apod-video {
-  width: 100%;
-  height: 100%;
-  border: none;
-  display: block;
-}
-
-.apod-video-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: #7ab3ff;
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  text-decoration: none;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -4517,14 +4527,6 @@ html[data-lighting="night"] .home-widget--weather .home-weather-shell {
   pointer-events: none;
 }
 
-.cos-hero-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
-  gap: clamp(1rem, 3vw, 2rem);
-  align-items: stretch;
-}
 
 .cos-hero-copy,
 .updates-card,
@@ -5099,19 +5101,7 @@ html[data-lighting="night"] .command-anchor kbd {
   letter-spacing: 0;
 }
 
-.today-panel > .section-heading {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-}
-
-.today-panel > .section-heading > .home-widget-eyebrow,
-.today-panel > .section-heading > h2 {
-  grid-column: 1;
-}
-
 .today-pledge-link {
-  grid-column: 2;
-  grid-row: 1 / 3;
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
@@ -5128,19 +5118,6 @@ html[data-lighting="night"] .command-anchor kbd {
 .today-pledge-link:focus-visible {
   border-color: var(--theme-accent, #0071e3);
   color: var(--theme-accent, #0071e3);
-}
-
-@media (max-width: 600px) {
-  .today-panel > .section-heading {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .today-pledge-link {
-    grid-column: 1;
-    grid-row: auto;
-    justify-self: start;
-    margin-top: 0.35rem;
-  }
 }
 
 .today-panel,
@@ -5160,7 +5137,6 @@ html[data-lighting="night"] .command-anchor kbd {
   grid-column: 1 / -1;
 }
 
-.cos-hero-grid > .home-widget,
 .today-grid > .home-widget,
 .media-spotlight-grid > .home-widget {
   grid-column: auto;
@@ -5170,70 +5146,7 @@ html[data-lighting="night"] .command-anchor kbd {
   grid-column: 1 / -1;
 }
 
-/* "Also today" disclosure — keeps the daily-glance dashboard (schedule,
-   weather, verse) short by default and tucks lower-priority widgets
-   (astronomy, science briefing, word/lesson of the day, timer) behind a
-   native <details> toggle instead of one long stacked column. */
-.today-more {
-  margin-top: 1.4rem;
-}
 
-.today-more-summary {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.75rem;
-  padding: 0.9rem 1.1rem;
-  border: 1px solid var(--cos-card-border);
-  border-radius: var(--cos-card-radius);
-  background: var(--cos-card-bg);
-  box-shadow: var(--cos-card-shadow);
-  cursor: pointer;
-  list-style: none;
-}
-
-.today-more-summary::-webkit-details-marker {
-  display: none;
-}
-
-.today-more-summary .home-widget-eyebrow {
-  color: var(--theme-accent, #0071e3);
-  margin: 0;
-}
-
-.today-more-summary-title {
-  flex: 1 1 auto;
-  min-width: 0;
-  color: var(--text-primary, var(--text));
-  font-weight: 650;
-}
-
-.today-more-chevron {
-  transition: transform 180ms ease;
-  color: var(--text-muted, var(--muted));
-}
-
-.today-more[open] .today-more-chevron {
-  transform: rotate(180deg);
-}
-
-.today-more-summary:hover,
-.today-more-summary:focus-visible {
-  border-color: var(--theme-accent, #0071e3);
-  outline: none;
-}
-
-.today-grid--more {
-  margin-top: 1rem;
-}
-
-/* Explicit display toggle: an author rule setting `display` on a child of
-   <details> overrides the browser's native open/closed collapse regardless
-   of selector specificity (user-agent styles always lose to author styles),
-   so the grid's own `display: grid` above would otherwise defeat it. */
-.today-more:not([open]) .today-grid--more {
-  display: none;
-}
 
 .cos-home .home-widget {
   padding: clamp(1rem, 2vw, 1.25rem);
@@ -5761,9 +5674,6 @@ body.theme-liquid-woodland .cos-home .section-heading .home-widget-eyebrow {
   padding-top: var(--cos-section-gap);
 }
 
-.cos-hero-grid {
-  gap: clamp(1rem, 2.4vw, 1.65rem);
-}
 
 .cos-hero-copy {
   isolation: isolate;
@@ -5880,7 +5790,6 @@ html[data-lighting="night"] .cos-hero-copy {
 }
 
 @media (max-width: 900px) {
-  .cos-hero-grid,
   .media-spotlight-grid,
   .today-grid {
     gap: 0.85rem;
@@ -8036,9 +7945,6 @@ html[data-lighting="night"] .cos-home :is(.timer-btn, .timer-preset-btn, .timer-
 }
 
 @media (max-width: 780px) {
-  .cos-hero-grid {
-    grid-template-columns: 1fr;
-  }
   .cos-hero-copy {
     min-height: auto;
   }
@@ -8053,17 +7959,6 @@ html[data-lighting="night"] .cos-home :is(.timer-btn, .timer-preset-btn, .timer-
 /* =============================================================
    Homepage refinement — denser discovery layout and calmer mobile chrome
    ============================================================= */
-.daily-discovery-stack {
-  display: grid;
-  align-content: start;
-  gap: 1rem;
-  min-width: 0;
-}
-
-.daily-discovery-stack > .home-widget {
-  width: 100%;
-  grid-column: auto;
-}
 
 .cos-home .lotd-cta {
   background: #005ea8;
@@ -8077,27 +7972,13 @@ html[data-lighting="night"] .cos-home :is(.timer-btn, .timer-preset-btn, .timer-
   color: #fff;
 }
 
-@media (min-width: 1101px) {
-  .daily-discovery-stack .home-widget--lotd {
-    grid-template-columns: 1fr;
-  }
-
-  .daily-discovery-stack .lotd-photo {
-    min-height: 118px;
-    aspect-ratio: 16 / 5;
-  }
-}
 
 @media (max-width: 560px) {
   .spotlight-preview { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .cos-hero-grid .updates-card:not([data-updates-ready]) .updates-entry:nth-child(n + 4) { display: none; }
+  .home-support-grid .updates-card:not([data-updates-ready]) .updates-entry:nth-child(n + 4) { display: none; }
 }
 
 @media (max-width: 780px) {
-  .daily-discovery-stack {
-    gap: 0.85rem;
-  }
-
   .home-widget-schedule-header {
     align-items: flex-start;
     flex-direction: column;
@@ -8429,8 +8310,8 @@ body.theme-liquid-woodland[data-lighting="night"] .cos-home .today-grid > .home-
   outline-offset: 2px;
 }
 
-/* Readable regular glass for the update feed. */
-html body .updates-card.home-widget {
+/* Shared surface for the homepage's updates and lesson improvement cards. */
+html body :is(.updates-card, .lesson-help-card).home-widget {
   min-width: 0;
   padding: clamp(1rem, 3vw, 1.55rem);
   display: flex;
@@ -8523,7 +8404,7 @@ html body .updates-card.home-widget {
 .updates-description { grid-column: 1 / -1; margin: 0; font: .8rem/1.45 system-ui, sans-serif; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .updates-status:empty { display: none; }
 .updates-archive-link { color: inherit; font-weight: 700; }
-.updates-card :is(a,button):focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+:is(.updates-card, .lesson-help-card) :is(a, button):focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
 .updates-archive { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
 .updates-archive .updates-description { display: block; }
 
@@ -8616,8 +8497,6 @@ html body .updates-card.home-widget[data-updates-panel] .updates-list .updates-d
   text-align: left;
 }
 
-/* Keep the launch area at its natural height beside the compact update feed. */
-.cos-hero-grid { align-items: start; }
 .cos-hero-copy {
   min-height: 0;
   justify-content: flex-start;
@@ -8633,7 +8512,7 @@ html body .updates-card.home-widget[data-updates-panel] .updates-list .updates-d
 }
 .cos-hero-copy .hero-ticker { margin-bottom: 0; }
 .cos-home .cos-hero-copy .home-start-class { margin-top: 1.25rem; }
-html body .cos-hero-grid .updates-card.home-widget {
+html body .home-support-grid :is(.updates-card, .lesson-help-card).home-widget {
   gap: .65rem;
   padding: 1.15rem 1.25rem;
   border-radius: 20px;
@@ -8642,7 +8521,7 @@ html body .cos-hero-grid .updates-card.home-widget {
     0 2px 8px -2px color-mix(in srgb, var(--glass-ink) 4%, transparent),
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.7);
 }
-.cos-hero-grid .updates-card .home-widget-eyebrow {
+.home-support-grid .updates-card .home-widget-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: .35rem;
@@ -8653,13 +8532,13 @@ html body .cos-hero-grid .updates-card.home-widget {
   color: var(--glass-muted);
   margin: 0;
 }
-.cos-hero-grid .updates-card .home-widget-title {
+.home-support-grid :is(.updates-card, .lesson-help-card) .home-widget-title {
   font-size: 1.45rem;
   font-weight: 800;
   letter-spacing: -0.015em;
   margin: 0;
 }
-.cos-hero-grid .updates-entry {
+.home-support-grid .updates-entry {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: .25rem .55rem;
@@ -8669,32 +8548,32 @@ html body .cos-hero-grid .updates-card.home-widget {
   border-bottom: 1px solid color-mix(in srgb, var(--glass-ink) 7%, transparent);
   transition: background 0.16s ease, transform 0.16s ease;
 }
-.cos-hero-grid .updates-entry:last-child {
+.home-support-grid .updates-entry:last-child {
   border-bottom: none;
 }
-.cos-hero-grid .updates-entry:hover {
+.home-support-grid .updates-entry:hover {
   background: color-mix(in srgb, var(--glass-ink) 4%, transparent);
 }
-.cos-hero-grid .updates-badge {
+.home-support-grid .updates-badge {
   grid-column: 1;
   grid-row: 1;
   font-size: .58rem;
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.cos-hero-grid .updates-entry:hover .updates-badge {
+.home-support-grid .updates-entry:hover .updates-badge {
   transform: scale(1.04);
 }
-.cos-hero-grid .updates-item-link {
+.home-support-grid .updates-item-link {
   grid-column: 2;
   grid-row: 1;
   font-size: .88rem;
   font-weight: 700;
   transition: color 0.16s ease;
 }
-.cos-hero-grid .updates-entry:hover .updates-item-link {
+.home-support-grid .updates-entry:hover .updates-item-link {
   color: var(--theme-accent, var(--glass-ink));
 }
-.cos-hero-grid .updates-entry time {
+.home-support-grid .updates-entry time {
   grid-column: 3;
   grid-row: 1;
   font-size: .7rem;
@@ -8702,20 +8581,19 @@ html body .cos-hero-grid .updates-card.home-widget {
   color: var(--glass-muted);
   white-space: nowrap;
 }
-html body .cos-hero-grid .updates-card.home-widget[data-updates-panel] .updates-list .updates-description {
+html body .home-support-grid .updates-card.home-widget[data-updates-panel] .updates-list .updates-description {
   grid-column: 2 / -1;
   font-size: .8rem;
   -webkit-line-clamp: 1;
 }
-.cos-hero-grid .updates-thumb {
+.home-support-grid .updates-thumb {
   width: 28px;
   height: 28px;
   border-radius: 6px;
   border: 1px solid color-mix(in srgb, var(--glass-ink) 12%, transparent);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
-.cos-hero-grid .updates-card .command-anchor { min-height: 2.75rem; padding: .65rem; font-size: .8rem; }
-.cos-hero-grid .updates-card .updates-archive-link {
+.home-support-grid .updates-card .updates-archive-link {
   display: inline-flex;
   align-items: center;
   gap: .3rem;
@@ -8727,17 +8605,82 @@ html body .cos-hero-grid .updates-card.home-widget[data-updates-panel] .updates-
   padding: .15rem 0;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.18s ease;
 }
-.cos-hero-grid .updates-card .updates-archive-link:hover {
+.home-support-grid .updates-card .updates-archive-link:hover {
   color: var(--theme-accent, #0071e3);
   transform: translateX(3px);
   text-decoration: none;
 }
 @media (max-width: 780px) {
-  .cos-hero-grid .updates-entry { grid-template-columns: minmax(0, 1fr) auto; }
-  .cos-hero-grid .updates-item-link { grid-column: 1 / -1; grid-row: 2; }
-  .cos-hero-grid .updates-entry time { grid-column: 2; }
-  html body .cos-hero-grid .updates-card.home-widget[data-updates-panel] .updates-list .updates-description { grid-column: 1 / -1; }
+  .home-support-grid .updates-entry { grid-template-columns: minmax(0, 1fr) auto; }
+  .home-support-grid .updates-item-link { grid-column: 1 / -1; grid-row: 2; }
+  .home-support-grid .updates-entry time { grid-column: 2; }
+  html body .home-support-grid .updates-card.home-widget[data-updates-panel] .updates-list .updates-description { grid-column: 1 / -1; }
 }
+
+.lesson-help-card {
+  font: .875rem/1.45 system-ui, sans-serif;
+}
+
+html body .lesson-help-card :is(h2, h3, a) {
+  color: var(--glass-ink);
+  text-shadow: none;
+}
+
+.lesson-help-list {
+  display: grid;
+  gap: .55rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lesson-help-list > li {
+  border-block-start: 1px solid var(--glass-border);
+  padding-block-start: .55rem;
+}
+
+.lesson-help-list > li:first-child {
+  background: color-mix(in srgb, var(--glass-ink) 5%, var(--glass-solid));
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: .55rem .7rem;
+}
+
+.lesson-help-list :is(h3, p) {
+  margin: 0;
+}
+
+.lesson-help-list h3 {
+  font: 700 .95rem/1.35 system-ui, sans-serif;
+  margin-block: .18rem;
+}
+
+/* The launch hero normally limits and enlarges its closing paragraphs. */
+body.theme-home .home-support-grid .lesson-help-card .lesson-help-list p:last-child {
+  max-width: none;
+  margin: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+.lesson-help-label {
+  color: var(--glass-muted);
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.lesson-help-card a {
+  text-decoration: underline;
+  text-underline-offset: .15em;
+}
+
+.lesson-help-action {
+  align-self: start;
+  font-weight: 700;
+  padding-block: .35rem;
+}
+
+
 
 
 /* ── Weather widget on iPhone-width screens ─────────────────────────────
@@ -8879,14 +8822,14 @@ html body .cos-hero-grid .updates-card.home-widget[data-updates-panel] .updates-
 }
 
 /* A deliberate two-column control instead of an uneven wrapped pill. */
-.cos-hero-grid .updates-filters {
+.home-support-grid .updates-filters {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   border-radius: 16px;
   gap: 0.25rem;
   padding: 0.3rem;
 }
-.cos-hero-grid .updates-filter {
+.home-support-grid .updates-filter {
   min-width: 0;
   min-height: 36px;
   padding: 0.35rem 0.4rem;
@@ -9519,4 +9462,191 @@ html[data-skin]:not([data-skin="glass"]) body .home-start-class-pill {
     min-height: 56px;
     font-size: 1rem;
   }
+}
+
+
+/* Compact launch area and the daily dashboard. */
+body.theme-home main.homepage-main {
+  padding-top: 0;
+}
+
+body.theme-home .cos-home .home-launchpad.hero {
+  padding-block: 1rem .7rem;
+}
+
+.cos-home .home-launch-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .65rem 1rem;
+  padding: clamp(.75rem, 2vw, 1.2rem);
+  border-radius: 20px;
+}
+
+.cos-home .home-launch-brand { min-width: 0; }
+
+body.theme-home .cos-home .home-launch-brand .eyebrow {
+  margin: 0 0 .15rem;
+  text-align: left;
+}
+
+body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title {
+  margin: 0;
+  font-size: clamp(1.8rem, 3.4vw, 2.75rem);
+  line-height: 1.04;
+}
+
+.home-launch-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .65rem;
+}
+
+.cos-home .home-launch-actions .home-start-class {
+  width: auto;
+  min-height: 58px;
+  margin: 0;
+  padding: .55rem .7rem;
+  gap: .55rem;
+  border-radius: 14px;
+}
+
+.cos-home .home-launch-actions .home-start-class-stage,
+.cos-home .home-launch-actions .home-start-class-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.cos-home .home-launch-actions .home-start-class .card-emoji { font-size: 1.1rem; }
+.cos-home .home-launch-actions .home-start-class .home-launch-title { font-size: 1.05rem; }
+.cos-home .home-launch-actions .home-start-class .home-launch-desc { font-size: .75rem; }
+
+.cos-home .home-launch-actions .command-anchor {
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: .55rem .7rem;
+  font-size: .82rem;
+}
+
+.home-launch-bar > [data-memory-continue] { grid-column: 1 / -1; }
+
+.cos-home .home-tabs { margin-bottom: 0; }
+.cos-home .today-panel { padding-top: .9rem; }
+
+.today-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .25rem 1rem;
+  margin-bottom: .65rem;
+}
+
+.today-heading h2 {
+  margin: 0;
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  line-height: 1.15;
+  color: var(--text-strong, var(--text));
+}
+
+.today-heading time {
+  color: var(--text-secondary, var(--text));
+  font-size: .9rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.today-shortcuts ul {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .4rem;
+  margin: 0 0 .8rem;
+  padding: 0;
+  list-style: none;
+}
+
+.today-shortcuts a {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 44px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: .35rem .65rem;
+  border: 1px solid var(--cos-card-border);
+  border-radius: 10px;
+  background: var(--surface-elevated);
+  color: var(--text-strong, var(--text));
+  text-decoration: none;
+  font-size: .88rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.today-shortcuts a:is(:hover, :focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.today-shortcuts a > span { flex: none; }
+
+.today-tools {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cos-card-border);
+}
+
+.today-grid > [tabindex="-1"],
+.home-support-grid > [tabindex="-1"],
+.today-tools {
+  scroll-margin-top: calc(var(--site-header-height, 65px) + .75rem);
+}
+
+.today-grid > [tabindex="-1"]:target,
+.home-support-grid > [tabindex="-1"]:target {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.home-support-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1rem;
+  width: min(var(--cos-home-w), calc(100% - 2rem));
+  margin: 1.5rem auto 0;
+}
+
+.home-support-grid > .home-widget { min-width: 0; }
+
+@media (max-width: 780px) {
+  .cos-home .home-launch-bar { grid-template-columns: minmax(0, 1fr); }
+  .home-support-grid { grid-template-columns: minmax(0, 1fr); }
+  body.theme-home main.homepage-main :is(.home-launchpad.hero, .home-tabs, .today-panel, .home-support-grid) { width: 100%; }
+  .today-shortcuts ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .home-launch-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cos-home .home-launch-actions .home-start-class { grid-template-columns: auto minmax(0, 1fr); }
+  .cos-home .home-launch-actions .home-start-class-action { display: none; }
+  .cos-home .home-launch-actions .home-start-class :is(.home-launch-title, .home-launch-desc) { white-space: normal; }
+  .cos-home .home-launch-actions .command-anchor { height: 100%; grid-template-columns: auto minmax(0, 1fr); }
+  .home-launch-actions .command-anchor kbd { display: none; }
+  .cos-home .home-launch-actions .home-start-class .home-launch-title { font-size: .9rem; }
+  .today-shortcuts ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 360px) {
+  .cos-home .home-launch-bar { grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; }
+  body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title { font-size: 1.35rem; }
+  .home-launch-actions { display: block; }
+  .cos-home .home-launch-actions .home-start-class { min-height: 44px; grid-template-columns: 1fr; }
+  .cos-home .home-launch-actions :is(.command-anchor, .home-start-class-stage, .home-launch-desc) { display: none; }
+  .today-shortcuts ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .today-shortcuts a { justify-content: center; padding-inline: .25rem; font-size: .75rem; text-align: center; }
+  .today-shortcuts a > span { display: none; }
 }

@@ -9,7 +9,7 @@ import { minify } from 'html-minifier-terser';
 const origin = process.env.HOME_TEST_URL || 'http://localhost:8080/';
 const browser = await chromium.launch({ executablePath: findChromium(), headless: true });
 try {
-  const viewports = process.argv.includes('--minified-only') ? [] : [{ width: 1366, height: 900 }, { width: 390, height: 844 }];
+  const viewports = process.argv.includes('--minified-only') ? [] : [{ width: 1280, height: 720 }, { width: 390, height: 844 }];
   for (const viewport of viewports) {
     const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
     // Keep external services out of this local interaction check; widgets have fallbacks.
@@ -31,16 +31,29 @@ try {
       };
     });
     await page.goto(origin);
-    for (const name of ['index-sandbox.js', 'apod.js', 'science-news.js', 'index-wotd.js', 'index-lotd.js', 'index-timer.js']) {
-      assert(!requests.some(url => url.endsWith('/' + name)), `${name} should wait until its panel is shown`);
+    for (const name of ['index-sandbox.js', 'apod.js', 'science-news.js', 'index-timer.js']) {
+      assert(!requests.some(url => url.endsWith('/' + name)), `${name} should wait until its widget is approached`);
     }
-    assert(!requests.some(url => url.endsWith('/daily-puzzles.mjs')), 'Puzzles below the screen wait until approached');
+    await page.waitForFunction(() => document.getElementById('wotd-term').textContent.trim() !== 'Word of the Day');
+    await page.waitForFunction(() => document.getElementById('lotd-link').getAttribute('href') !== '#');
+    assert(await page.locator('.today-shortcuts').evaluate(nav =>
+      nav.getBoundingClientRect().bottom <= innerHeight && document.documentElement.scrollWidth <= innerWidth
+    ), 'Daily shortcuts fit in the first view');
+    assert(await page.locator('.today-shortcuts a').evaluateAll(links => links.every(link => {
+      const target = document.getElementById(link.hash.slice(1));
+      return target && target.getClientRects().length && !target.closest('details:not([open])');
+    })), 'Every daily shortcut points to a visible widget');
 
     // Native links preserve modified clicks and do not schedule a delayed redirect.
     assert.equal(await page.locator('.home-start-class').evaluate(link => {
+      let handled;
+      window.addEventListener('click', event => {
+        handled = event.defaultPrevented;
+        event.preventDefault();
+      }, { once: true });
       const event = new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true });
       link.dispatchEvent(event);
-      return event.defaultPrevented;
+      return handled;
     }), false);
     await page.evaluate(() => {
       document.addEventListener('click', event => {
@@ -74,7 +87,8 @@ try {
       console.log(`PASS ${label}`);
     }
     await page.setViewportSize({ width: viewport.width, height: 300 });
-    await page.evaluate(() => scrollTo(0, 0));
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForFunction(() => document.getElementById('tabpanel-sandbox').getBoundingClientRect().bottom < -200);
     await expectStopped('Physics stops when scrolled off screen');
     await page.setViewportSize(viewport);
     await page.locator('#pphys-demo').scrollIntoViewIfNeeded();
@@ -108,11 +122,11 @@ try {
     await expectStopped('Drawing does not keep an animation loop alive');
     await page.locator('#hometab-today').click();
 
-    await page.locator('#home-calendar').scrollIntoViewIfNeeded();
+    await page.getByRole('link', { name: 'Class Calendar', exact: true }).click();
     await page.waitForFunction(() => document.getElementById('home-calendar').classList.contains('is-ready'));
-    await page.locator('#home-puzzles').scrollIntoViewIfNeeded();
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'home-calendar');
+    await page.getByRole('link', { name: 'Daily Puzzles', exact: true }).click();
     await page.waitForFunction(() => !!document.querySelector('#home-puzzles [role="tablist"]'));
-    await page.locator('#today-more > summary').click();
     for (const [selector, src] of [['.home-widget--apod', 'apod.js'], ['.home-widget--science-news', 'science-news.js'], ['.home-widget--wotd', 'index-wotd.js'], ['#lotd-widget', 'index-lotd.js'], ['#classroom-timer', 'index-timer.js']]) {
       await page.locator(selector).scrollIntoViewIfNeeded();
       await page.waitForFunction(src => [...document.scripts].some(script => script.src.endsWith('/' + src)), src);

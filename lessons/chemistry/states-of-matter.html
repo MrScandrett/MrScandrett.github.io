@@ -1,9 +1,741 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>States of Matter · ClassroomOS</title><link rel="icon" href="../../assets/images/favicon.svg"><link rel="stylesheet" href="../../assets/css/classroom-home.css"><link rel="stylesheet" href="../../assets/css/lesson-layout.css"><style>
-.chem-page{max-width:980px;margin:auto;padding:1rem 1rem 3rem}.hero{padding:1rem 0 1.4rem}.hero h1{max-width:24ch}.lede{max-width:70ch;line-height:1.65;color:var(--text-secondary,#475569)}.card{background:var(--white,#fff);border:1px solid var(--line,#d2d2d7);border-left:4px solid #22d3a7;border-radius:16px;padding:1.1rem 1.3rem;margin:1rem 0;box-shadow:var(--shadow,0 8px 24px #0001)}.card h2{margin:.1rem 0 .55rem;font-size:1.2rem}.card p,.card li{line-height:1.65;color:var(--text-secondary,#475569)}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem}.phase{padding:.8rem;border:1px solid var(--line,#d2d2d7);border-radius:12px}.phase strong{display:block;margin-bottom:.25rem}.phase small{line-height:1.5;color:var(--text-muted,#64748b)}.lab{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:center}.lab-box{padding:1rem;border-radius:14px;background:linear-gradient(135deg,#0f766e,#164e63);color:#fff;min-height:180px;position:relative;overflow:hidden}.particle{position:absolute;width:12px;height:12px;border-radius:50%;background:#fef08a;box-shadow:0 0 10px #fef08a;animation:drift 4s infinite alternate ease-in-out}.particle:nth-child(1){left:15%;top:30%}.particle:nth-child(2){left:48%;top:55%;animation-delay:-1s}.particle:nth-child(3){left:72%;top:24%;animation-delay:-2s}.particle:nth-child(4){left:35%;top:78%;animation-delay:-3s}@keyframes drift{to{transform:translate(45px,-25px)}}.readout{font-size:1.6rem;font-weight:800;color:#14b8a6}input[type=range]{width:100%}.answer{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}.answer input{width:7rem;padding:.45rem;border:1px solid var(--line);border-radius:8px}.btn{border:0;border-radius:8px;padding:.5rem .8rem;background:#0f766e;color:#fff;font-weight:700;cursor:pointer}.feedback{font-weight:700}.sr{position:absolute;width:1px;height:1px;overflow:hidden}.footer{margin-top:2rem}@media(max-width:650px){.grid,.lab{grid-template-columns:1fr}}
-</style><style>@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
-</head><body class="theme-liquid-woodland theme-steam"><a class="skip-link" href="#main-content">Skip to content</a><div class="chem-page"><header class="site-header"><div class="nav-wrap"><a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a><nav class="site-nav" aria-label="Primary"><ul><li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../paths.html">Paths</a></li><li><a href="../../library.html">Library</a></li></ul></nav></div></header><main id="main-content"><section class="hero"><p class="eyebrow">Chemistry · Lesson 10 · Matter &amp; Energy</p><h1>States of Matter: Motion Makes the Difference</h1><p class="lede">Predict how particles move in a solid, liquid, and gas. Then change temperature in a simple model and explain why a phase change is a change in arrangement and energy—not a new substance.</p></section><section class="card"><h2>1. Observe before you name</h2><p>Draw three boxes in your notebook. In each one, sketch ten particles: tightly ordered, close but able to slide, and far apart. Label your prediction: which state has the greatest average particle motion?</p><div class="grid"><div class="phase"><strong>Solid</strong><small>Fixed shape and volume; particles vibrate around places.</small></div><div class="phase"><strong>Liquid</strong><small>Fixed volume; particles remain close and flow past one another.</small></div><div class="phase"><strong>Gas</strong><small>No fixed shape or volume; particles spread through the container.</small></div></div></section><section class="card"><h2>2. Test the particle model</h2><div class="lab"><div><label for="temp"><strong>Temperature: <span id="tempVal">20</span> °C</strong></label><input id="temp" type="range" min="-20" max="120" value="20" step="5"><p id="stateText" role="status">At this temperature the model shows a liquid: particles are close and can rearrange.</p><p><strong>Model boundary:</strong> the transition temperatures are illustrative for a generic substance. Real substances have different melting and boiling points.</p></div><div class="lab-box" id="particleBox" role="img" aria-label="Animated particles in a container"><span class="particle"></span><span class="particle"></span><span class="particle"></span><span class="particle"></span></div></div></section><section class="card"><h2>3. Explain the energy story</h2><p>Heating usually increases average kinetic energy. During melting or boiling, added energy is used to overcome attractions between particles, so temperature can pause while the arrangement changes. Cooling reverses the process. The particles themselves are still the same substance.</p><ol><li>Why does a gas fill its container?</li><li>Why can a liquid flow while keeping nearly the same volume?</li><li>What changes during boiling: particle identity, spacing, motion, or some combination?</li></ol></section><section class="card"><h2>4. Exit check</h2><p>At 80 °C, this model is showing a gas. Which explanation best fits?</p><div class="answer"><select id="answer" aria-label="Choose an explanation"><option value="">Choose…</option><option value="wrong">The particles became a different element.</option><option value="right">The particles have enough energy to separate and move throughout the container.</option><option value="wrong2">The particles stopped moving.</option></select><button class="btn" id="check">Check</button><span class="feedback" id="feedback" role="status"></span></div></section></main><footer class="footer"><a href="../../steam-lessons.html">Back to the lesson library</a></footer></div><script src="../../assets/js/theme-registry.js"></script><script src="../../assets/js/nav-mobile.js"></script><script src="../../assets/js/lesson-layout.js"></script><script src="../../assets/js/lesson-print-button.js"></script><script>
-const temp=document.querySelector('#temp'), val=document.querySelector('#tempVal'), text=document.querySelector('#stateText'), box=document.querySelector('#particleBox'); function update(){const t=+temp.value;val.textContent=t;const state=t<0?'solid':t<100?'liquid':'gas';const desc={solid:'a solid: particles vibrate in an ordered arrangement.',liquid:'a liquid: particles are close and can rearrange.',gas:'a gas: particles are spread out and move throughout the container.'}[state];text.textContent='At this temperature the model shows '+desc;box.dataset.state=state;box.style.setProperty('--speed',Math.max(.8,4-(t+20)/45)+'s');}temp.addEventListener('input',update);update();document.querySelector('#check').addEventListener('click',()=>{const ok=document.querySelector('#answer').value==='right';document.querySelector('#feedback').textContent=ok?'✓ Correct: the substance changed state, not identity.':'Try again: focus on spacing and motion, not a new substance.';});
-</script><script src="../../assets/js/chemistry-nav.js"></script>
-<script src="../../assets/js/sim-reset.js" data-groups='[["temp"]]'></script>
-</body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>States of Matter: Motion Makes the Difference · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Explore solids, liquids, gases, and plasma with a real-time molecular dynamics chamber, Maxwell–Boltzmann speed distribution, latent heat calorimetry curve, and P–T phase diagrams." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 300px; }
+    .cl-page { max-width: 1040px; margin: 0 auto; padding: 0.5rem 0.75rem 2.5rem; color: var(--text-body); }
+
+    .cl-hero { padding: 0.4rem 0 1.25rem; text-align: left; }
+    .cl-hero .eyebrow {
+      margin: 0 0 0.35rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .cl-hero h1 {
+      margin: 0;
+      max-width: 24ch;
+      font-size: clamp(1.65rem, 3.6vw, 2.45rem);
+      line-height: 1.15;
+      color: var(--text-strong);
+    }
+    .cl-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem 0.7rem;
+      margin: 0.55rem 0 0;
+      font-size: 0.84rem;
+      color: var(--text-muted);
+    }
+    .cl-hero-meta .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.5;
+      display: inline-block;
+    }
+    .cl-lede {
+      margin: 0.7rem 0 0;
+      max-width: 72ch;
+      color: var(--text-body);
+      font-size: 0.98rem;
+      line-height: 1.65;
+    }
+
+    .cl-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border-subtle);
+      border-left: 4px solid var(--card-accent, var(--accent));
+      border-radius: var(--radius-md, 14px);
+      padding: 1.2rem 1.35rem;
+      margin-bottom: 1.1rem;
+      box-shadow: var(--shadow, 0 8px 24px rgba(0, 0, 0, 0.06));
+      color: var(--text-body);
+    }
+    .cl-card h2 {
+      margin: 0 0 0.6rem;
+      font-size: 1.24rem;
+      letter-spacing: -0.02em;
+      color: var(--text-strong);
+    }
+    .cl-card h3 {
+      margin: 1rem 0 0.4rem;
+      font-size: 1.02rem;
+      color: var(--text-strong);
+    }
+    .cl-card p, .cl-card li {
+      margin: 0 0 0.65rem;
+      font-size: 0.92rem;
+      line-height: 1.65;
+      color: var(--text-body);
+    }
+    .cl-card p:last-child, .cl-card ul:last-child, .cl-card ol:last-child { margin-bottom: 0; }
+    .cl-card ul, .cl-card ol { padding-left: 1.35rem; margin: 0.35rem 0 0.75rem; }
+
+    .som-phase-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    @media (max-width: 820px) { .som-phase-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 500px) { .som-phase-grid { grid-template-columns: 1fr; } }
+
+    .som-phase-tile {
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 0.85rem 0.95rem;
+    }
+    .som-phase-tile strong {
+      display: block;
+      margin-bottom: 0.3rem;
+      font-size: 0.96rem;
+      color: var(--text-strong);
+    }
+    .som-phase-tile p {
+      margin: 0;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    .som-figure {
+      margin: 1rem 0 0.4rem;
+      padding: 0.75rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+    }
+    .som-figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+    }
+    .som-figure figcaption {
+      margin-top: 0.65rem;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      color: var(--text-muted);
+    }
+    .som-figure figcaption strong { color: var(--text-strong); }
+
+    .som-callout {
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      margin: 0.8rem 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: var(--text-body);
+    }
+    .som-callout strong { color: var(--text-strong); }
+
+    .som-canvas-wrap {
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 0.75rem 0;
+      background: #0b1322;
+    }
+    .som-canvas-wrap canvas {
+      display: block;
+      width: 100%;
+      touch-action: none;
+    }
+
+    .som-controls-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem 1rem;
+      margin: 0.65rem 0;
+      align-items: end;
+    }
+    @media (max-width: 760px) { .som-controls-grid { grid-template-columns: 1fr; } }
+
+    .som-ctrl-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 0.65rem 0.8rem;
+    }
+    .som-ctrl-group label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-strong);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .som-ctrl-group select,
+    .som-ans-input {
+      background: var(--surface-1);
+      color: var(--text-strong);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 0.45rem 0.6rem;
+      font-size: 0.88rem;
+      font-family: inherit;
+      min-height: 40px;
+    }
+
+    .som-toggle-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem 1.15rem;
+      align-items: center;
+      margin: 0.6rem 0;
+    }
+    .som-check-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--text-strong);
+      cursor: pointer;
+    }
+    .som-check-label input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
+    .som-btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin: 0.65rem 0;
+    }
+    .som-btn {
+      background: var(--accent);
+      color: var(--accent-contrast);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 0.48rem 0.85rem;
+      min-height: 40px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .som-btn:hover { opacity: 0.92; }
+    .som-btn-secondary {
+      background: var(--surface-2);
+      color: var(--text-strong);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 0.42rem 0.78rem;
+      min-height: 38px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .som-btn-secondary:hover { border-color: var(--accent); }
+
+    .som-readouts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin: 0.75rem 0;
+    }
+    @media (max-width: 680px) { .som-readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .som-readout {
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 0.55rem 0.7rem;
+      text-align: center;
+    }
+    .som-readout-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.2rem;
+    }
+    .som-readout-val {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: var(--text-strong);
+    }
+
+    .som-status {
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: var(--text-strong);
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      margin: 0.5rem 0;
+    }
+    .som-model-note {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .som-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.88rem;
+    }
+    .som-data-table caption {
+      text-align: left;
+      font-weight: 700;
+      color: var(--text-strong);
+      margin-bottom: 0.35rem;
+    }
+    .som-data-table th, .som-data-table td {
+      padding: 0.5rem 0.6rem;
+      border-bottom: 1px solid var(--border-subtle);
+      text-align: left;
+      color: var(--text-body);
+    }
+    .som-data-table th {
+      color: var(--text-strong);
+      background: var(--surface-2);
+      font-weight: 700;
+    }
+
+    .som-practice .som-problem {
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .som-problem-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.55rem;
+      margin-top: 0.45rem;
+    }
+    .som-feedback { font-size: 0.86rem; font-weight: 700; color: var(--text-strong); }
+    .som-feedback.ok { color: var(--success); }
+    .som-feedback.err { color: var(--danger); }
+    .som-hint {
+      margin-top: 0.45rem;
+      font-size: 0.84rem;
+      color: var(--text-muted);
+    }
+    .som-badge {
+      display: inline-block;
+      border-radius: 6px;
+      padding: 0.14rem 0.45rem;
+      font-size: 0.74rem;
+      font-weight: 700;
+      margin-right: 0.45rem;
+      background: var(--accent);
+      color: var(--accent-contrast);
+    }
+
+    details {
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 0.65rem 0.9rem;
+      margin: 0.65rem 0;
+    }
+    summary {
+      font-weight: 700;
+      color: var(--text-strong);
+      cursor: pointer;
+    }
+    details p { margin-top: 0.5rem; }
+
+    button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid var(--focus-ring, var(--accent));
+      outline-offset: 2px;
+    }
+    .site-footer {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 0.86rem;
+      color: var(--text-muted);
+    }
+    .site-footer a { color: var(--accent); font-weight: 600; }
+  </style>
+  <style>@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}}</style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../paths.html">Paths</a></li>
+            <li><a href="../../showcase.html">Showcase</a></li>
+            <li><a href="../../applications.html">Apps</a></li>
+            <li><a href="../../library.html">Library</a></li>
+            <li><a href="../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="cl-page">
+          <section class="hero cl-hero">
+            <p class="eyebrow">Chemistry · Lesson 10 · Matter &amp; Energy</p>
+            <h1>States of Matter: Motion Makes the Difference</h1>
+            <div class="cl-hero-meta">
+              <span>Kinetic Molecular Theory</span><span class="dot"></span>
+              <span>Maxwell–Boltzmann Speeds</span><span class="dot"></span>
+              <span>Latent Heat</span><span class="dot"></span>
+              <span>Phase Diagrams</span>
+            </div>
+            <p class="cl-lede">Every substance is built from particles in perpetual motion. Explore how thermal kinetic energy competes against intermolecular attraction to produce solids, liquids, gases, and plasma—without changing the identity of the molecules themselves.</p>
+          </section>
+
+          <section class="cl-card">
+            <h2>1. Observe before you name</h2>
+            <p>Every macroscopic phase you see comes from a tug-of-war between two microscopic effects: <strong>intermolecular attractions</strong> pulling particles together and <strong>thermal kinetic energy</strong> pushing them apart.</p>
+            <div class="som-phase-grid">
+              <div class="som-phase-tile">
+                <strong>Solid</strong>
+                <p>Fixed shape and volume. Attractions win; particles vibrate around locked crystal lattice positions.</p>
+              </div>
+              <div class="som-phase-tile">
+                <strong>Liquid</strong>
+                <p>Fixed volume, fluid shape. Particles stay close and continuously break and reform neighbor contacts.</p>
+              </div>
+              <div class="som-phase-tile">
+                <strong>Gas</strong>
+                <p>No fixed shape or volume. Kinetic energy wins; fast particles spread across the entire container.</p>
+              </div>
+              <div class="som-phase-tile">
+                <strong>Plasma</strong>
+                <p>Extreme energy strips valence electrons from atoms, creating positive ions (+) and free electrons (e⁻).</p>
+              </div>
+            </div>
+
+            <figure class="som-figure" data-zoomable>
+              <img src="../../assets/images/lessons/chemistry/states-phase-transitions.svg" width="920" height="340" alt="Diagram of Solid, Liquid, Gas, and Plasma states showing endothermic transitions (melting, vaporization, sublimation, ionization) and exothermic transitions (freezing, condensation, deposition, recombination)." />
+              <figcaption><strong>Phase transitions are physical changes.</strong> Endothermic transitions (amber arrows, ΔH &gt; 0) absorb energy to overcome particle attractions; exothermic transitions (blue arrows, ΔH &lt; 0) release energy as attractions lock particles closer together. Click to enlarge.</figcaption>
+            </figure>
+          </section>
+
+          <section class="cl-card" id="lab-md">
+            <h2>2. Molecular dynamics chamber &amp; speed distribution</h2>
+            <p>Change the substance, adjust temperature, or compress the piston. Watch how particle spacing and collisions shift—and notice on the Maxwell–Boltzmann curve that particles at any single temperature travel across a wide range of speeds.</p>
+
+            <div class="som-controls-grid">
+              <div class="som-ctrl-group">
+                <label for="substanceSelect">Substance</label>
+                <select id="substanceSelect">
+                  <option value="water">Water (H₂O) · Tm 0 °C / Tb 100 °C</option>
+                  <option value="argon">Argon (Ar) · Tm −189 °C / Tb −186 °C</option>
+                  <option value="nitrogen">Nitrogen (N₂) · Tm −210 °C / Tb −196 °C</option>
+                  <option value="iron">Iron (Fe) · Tm 1538 °C / Tb 2862 °C</option>
+                </select>
+              </div>
+              <div class="som-ctrl-group">
+                <label for="temp"><span>Temperature</span><span><span id="tempVal">20</span> °C (<span id="kelvinVal">293 K</span>)</span></label>
+                <input id="temp" type="range" min="-240" max="3200" value="20" step="5" />
+              </div>
+              <div class="som-ctrl-group">
+                <label for="pistonCompression"><span>Container Volume (Piston)</span><span id="pistonVal">100%</span></label>
+                <input id="pistonCompression" type="range" min="40" max="100" value="100" step="2" />
+              </div>
+            </div>
+
+            <div class="som-btn-row" aria-label="Phase presets">
+              <button type="button" class="som-btn-secondary md-preset-btn" data-preset="solid">Solid</button>
+              <button type="button" class="som-btn-secondary md-preset-btn" data-preset="melting">Melting Point</button>
+              <button type="button" class="som-btn-secondary md-preset-btn" data-preset="liquid">Liquid</button>
+              <button type="button" class="som-btn-secondary md-preset-btn" data-preset="boiling">Boiling Point</button>
+              <button type="button" class="som-btn-secondary md-preset-btn" data-preset="gas">Gas</button>
+              <button type="button" class="som-btn-secondary md-preset-btn" data-preset="plasma">Plasma (3150 °C)</button>
+              <button type="button" class="som-btn" id="mdPauseBtn" aria-pressed="false">⏸ Pause</button>
+            </div>
+
+            <div class="som-toggle-row">
+              <label class="som-check-label"><input id="showBondsToggle" type="checkbox" checked /> Show intermolecular bonds</label>
+              <label class="som-check-label"><input id="showVectorsToggle" type="checkbox" /> Show velocity vectors</label>
+            </div>
+
+            <div class="som-canvas-wrap">
+              <canvas id="md-canvas" height="360" role="img" aria-label="Interactive 2D molecular dynamics chamber paired with a live Maxwell–Boltzmann speed distribution histogram"></canvas>
+            </div>
+
+            <div class="som-readouts">
+              <div class="som-readout"><span class="som-readout-label">Current State</span><span class="som-readout-val" id="phaseBadge">Liquid (Fluid)</span></div>
+              <div class="som-readout"><span class="som-readout-label">RMS Speed</span><span class="som-readout-val" id="vrmsVal">637 m/s</span></div>
+              <div class="som-readout"><span class="som-readout-label">Chamber Pressure</span><span class="som-readout-val" id="pressureVal">0.09 atm</span></div>
+              <div class="som-readout"><span class="som-readout-label">Identity</span><span class="som-readout-val">Unchanged</span></div>
+            </div>
+
+            <p id="stateText" class="som-status" role="status">At 20 °C (293 K), Water (H₂O) is a liquid: particles stay close together under cohesive attractions while sliding past one another to take the container shape.</p>
+            <p id="substanceNote" class="som-model-note">Hydrogen bonds give H₂O unusually high melting (0 °C) and boiling (100 °C) points for its small molar mass.</p>
+          </section>
+
+          <section class="cl-card" id="lab-heating">
+            <h2>3. Where does the heat go? (Latent heat &amp; heating curve)</h2>
+            <p>Adding thermal energy does not always raise temperature. On the <strong>sloped</strong> segments, heat speeds particles up (increasing average kinetic energy). On the <strong>flat plateaus</strong>, temperature pauses while added energy breaks intermolecular attractions (increasing potential energy).</p>
+
+            <div class="som-controls-grid">
+              <div class="som-ctrl-group" style="grid-column: span 2;">
+                <label for="heatSlider"><span>Heat Added to 1.0 g of H₂O (starting at −25 °C)</span><span id="heatQVal">580 J/g</span></label>
+                <input id="heatSlider" type="range" min="0" max="3135" value="580" step="5" />
+              </div>
+              <div class="som-ctrl-group">
+                <button type="button" class="som-btn" id="heatPlayBtn" aria-pressed="false">▶ Auto-Heat Sample</button>
+              </div>
+            </div>
+
+            <div class="som-btn-row" aria-label="Heating curve stage presets">
+              <button type="button" class="som-btn-secondary heat-preset-btn" data-q="10">Ice (−20 °C)</button>
+              <button type="button" class="som-btn-secondary heat-preset-btn" data-q="220">Melting Plateau (0 °C)</button>
+              <button type="button" class="som-btn-secondary heat-preset-btn" data-q="580">Liquid Water (46 °C)</button>
+              <button type="button" class="som-btn-secondary heat-preset-btn" data-q="1900">Boiling Plateau (100 °C)</button>
+              <button type="button" class="som-btn-secondary heat-preset-btn" data-q="3100">Superheated Steam</button>
+            </div>
+
+            <div class="som-canvas-wrap">
+              <canvas id="heating-canvas" height="310" role="img" aria-label="Heating curve of water plotting temperature from -25 to 135 degrees Celsius versus heat added in joules per gram, with phase fraction and kinetic versus potential energy meters"></canvas>
+            </div>
+
+            <div class="som-readouts" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+              <div class="som-readout"><span class="som-readout-label">Sample Temperature</span><span class="som-readout-val" id="heatTempVal">46.3 °C</span></div>
+              <div class="som-readout"><span class="som-readout-label">Active Phase(s)</span><span class="som-readout-val" id="heatPhaseVal">Liquid Water</span></div>
+            </div>
+            <p id="heatEvidence" class="som-status" aria-live="polite">All crystal bonds are broken. Added thermal energy increases molecular kinetic speed from 0 °C to 100 °C.</p>
+
+            <table class="som-data-table">
+              <caption>Standard calorimetry constants for H₂O at 1.00 atm</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Stage</th>
+                  <th scope="col">Constant</th>
+                  <th scope="col">Energy Change for 1.0 g</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Warming solid ice (−25 °C → 0 °C)</td><td>c<sub>ice</sub> ≈ 2.10 J/(g·K)</td><td>52.5 J</td></tr>
+                <tr><td>Melting plateau at 0 °C (Fusion)</td><td>ΔH<sub>fus</sub> = 334 J/g</td><td>334 J</td></tr>
+                <tr><td>Warming liquid water (0 °C → 100 °C)</td><td>c<sub>water</sub> ≈ 4.18 J/(g·K)</td><td>418 J</td></tr>
+                <tr><td>Boiling plateau at 100 °C (Vaporization)</td><td>ΔH<sub>vap</sub> = 2,260 J/g</td><td>2,260 J</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="cl-card" id="lab-pt">
+            <h2>4. Pressure–temperature (P–T) phase diagram explorer</h2>
+            <p>Temperature is only half of the story—<strong>pressure</strong> shifts phase boundaries too. Click or drag directly inside the diagram to see why dry ice (solid CO₂) sublimates at room pressure while ice can melt under extreme pressure.</p>
+
+            <div class="som-controls-grid">
+              <div class="som-ctrl-group">
+                <label for="ptSubstance">Phase Diagram Substance</label>
+                <select id="ptSubstance">
+                  <option value="water">Water (H₂O) · Triple Pt 0.006 atm</option>
+                  <option value="co2">Carbon Dioxide (CO₂) · Triple Pt 5.11 atm</option>
+                </select>
+              </div>
+              <div class="som-ctrl-group">
+                <label for="ptTemp"><span>Temperature (T)</span><span id="ptTempVal">20.0 °C</span></label>
+                <input id="ptTemp" type="range" min="-50" max="440" value="20" step="1" />
+              </div>
+              <div class="som-ctrl-group">
+                <label for="ptPress"><span>Pressure (P, log scale)</span><span id="ptPressVal">1.00 atm</span></label>
+                <input id="ptPress" type="range" min="-3" max="2.6" value="0" step="0.05" />
+              </div>
+            </div>
+
+            <div class="som-btn-row" aria-label="Phase diagram presets">
+              <button type="button" class="som-btn-secondary pt-preset-btn" data-pt="room">Room (20 °C, 1 atm)</button>
+              <button type="button" class="som-btn-secondary pt-preset-btn" data-pt="triple">Triple Point</button>
+              <button type="button" class="som-btn-secondary pt-preset-btn" data-pt="critical">Critical Point</button>
+              <button type="button" class="som-btn-secondary pt-preset-btn" data-pt="supercritical">Supercritical Fluid</button>
+              <button type="button" class="som-btn-secondary pt-preset-btn" data-pt="sublimate">Sublimation Region</button>
+            </div>
+
+            <div class="som-canvas-wrap">
+              <canvas id="pt-canvas" height="320" role="img" aria-label="Interactive pressure-temperature phase diagram showing solid, liquid, gas, and supercritical regions along with the triple point and critical point"></canvas>
+            </div>
+
+            <p class="som-status" role="status"><strong id="ptReadoutState">Liquid</strong> — <span id="ptReadoutDesc">Water (H₂O) at 20.0 °C and 1.00 atm: Inside the liquid stability window between the melting and vaporization boundaries.</span></p>
+            <p class="som-model-note"><strong>Note on water's melting slope:</strong> The leftward tilt of H₂O's solid–liquid boundary is visually amplified here so the anomaly is easy to observe; because ice is less dense than liquid water, high pressure favors the denser liquid phase.</p>
+          </section>
+
+          <section class="cl-card">
+            <h2>5. Predict → test → explain</h2>
+            <ol>
+              <li><strong>Compare attractions across substances.</strong> In Sim 2, switch between <strong>Water</strong> and <strong>Argon</strong> at 20 °C. Why is water a liquid while argon is a fast-moving gas at the exact same temperature?</li>
+              <li><strong>Test piston compression.</strong> Set Water to Gas (160 °C) and drag Piston Volume from 100% down to 40%. How do collision frequency and chamber pressure respond?</li>
+              <li><strong>Contrast melting and boiling energy.</strong> In Sim 3, compare the length of the 0 °C melting plateau (334 J/g) with the 100 °C boiling plateau (2,260 J/g). Why does boiling require nearly seven times more energy?</li>
+              <li><strong>Compare dry ice and water at 1 atm.</strong> In Sim 4, switch to CO₂ and trace the horizontal <code>1 atm</code> dashed line from −100 °C to +40 °C. Why does liquid CO₂ never form on an open lab bench?</li>
+            </ol>
+            <details>
+              <summary>Compare your explanations</summary>
+              <p><strong>1.</strong> Water's hydrogen bonds are far stronger than argon's weak dispersion forces, so at 20 °C water particles lack enough kinetic energy to break free completely. <strong>2.</strong> Compressing gas to 40% volume packs particles 2.5× closer, causing 2.5× more frequent wall collisions and proportionally higher pressure (Boyle's law). <strong>3.</strong> Melting only loosens a rigid lattice into sliding neighbors, whereas boiling must completely separate molecules against attractions and expand against atmospheric pressure. <strong>4.</strong> CO₂'s triple point lies at 5.11 atm, so at 1 atm the substance crosses straight from solid to gas (sublimation at −78.5 °C).</p>
+            </details>
+            <p class="som-model-note">Read further: <a href="water-molecule.html">Water: The Architecture of H₂O</a> · <a href="feynman-atoms.html">Atoms: Structure, Motion, and Matter</a> · <a href="https://openstax.org/books/chemistry-2e/pages/10-4-phase-diagrams">OpenStax Chemistry: Phase Diagrams</a></p>
+          </section>
+
+          <section class="cl-card">
+            <h2>6. Check your understanding</h2>
+            <div class="som-practice">
+              <div class="som-problem">
+                <p><span class="som-badge">Easy</span>1. When liquid water boils into steam at 100 °C, what happens to the H₂O molecules themselves?</p>
+                <div class="som-problem-row">
+                  <select class="som-ans-input" id="som-ans-1" aria-label="Answer to question 1">
+                    <option value="">Choose…</option>
+                    <option value="split">Covalent O–H bonds break into separate hydrogen and oxygen gases.</option>
+                    <option value="intact">The covalent O–H bonds remain intact; molecules overcome attractions and spread apart.</option>
+                    <option value="stop">The molecules stop moving once they leave the liquid.</option>
+                  </select>
+                  <button type="button" class="som-btn" id="som-check-1">Check</button>
+                  <span class="som-feedback" id="som-fb-1" role="status"></span>
+                </div>
+                <div class="som-hint" id="som-hint-1" hidden>Hint: Boiling is a physical phase change, not a chemical decomposition—water vapor is still made of intact H₂O molecules.</div>
+              </div>
+
+              <div class="som-problem">
+                <p><span class="som-badge">Easy</span>2. Why can a gas be compressed easily inside a piston while a solid or liquid resists compression?</p>
+                <div class="som-problem-row">
+                  <select class="som-ans-input" id="som-ans-2" aria-label="Answer to question 2">
+                    <option value="">Choose…</option>
+                    <option value="shrink">Individual gas atoms shrink to a smaller radius when squeezed.</option>
+                    <option value="empty-space">Gas particles have vast empty space between them, whereas solid and liquid particles are already closely packed.</option>
+                    <option value="no-mass">Gases have zero mass and zero inertia.</option>
+                  </select>
+                  <button type="button" class="som-btn" id="som-check-2">Check</button>
+                  <span class="som-feedback" id="som-fb-2" role="status"></span>
+                </div>
+                <div class="som-hint" id="som-hint-2" hidden>Hint: Check the particle chamber in Sim 2—in solids and liquids, particles are nearly touching, leaving almost no empty space to squeeze out.</div>
+              </div>
+
+              <div class="som-problem">
+                <p><span class="som-badge">Medium</span>3. While water in an open pot at 1 atm is actively boiling, you turn up the burner flame. What happens to the water's temperature while liquid and steam coexist?</p>
+                <div class="som-problem-row">
+                  <select class="som-ans-input" id="som-ans-3" aria-label="Answer to question 3">
+                    <option value="">Choose…</option>
+                    <option value="jumps">The liquid jumps rapidly to 150 °C.</option>
+                    <option value="stays-100">It stays at 100 °C because added heat goes into breaking intermolecular attractions (ΔH<sub>vap</sub>), not raising kinetic energy.</option>
+                    <option value="drops">The temperature drops below 0 °C.</option>
+                  </select>
+                  <button type="button" class="som-btn" id="som-check-3">Check</button>
+                  <span class="som-feedback" id="som-fb-3" role="status"></span>
+                </div>
+                <div class="som-hint" id="som-hint-3" hidden>Hint: Look at the boiling plateau in Sim 3—turning up the burner boils the water faster, but temperature stays pinned at 100 °C until all liquid vaporizes.</div>
+              </div>
+
+              <div class="som-problem">
+                <p><span class="som-badge">Medium</span>4. Carbon dioxide (CO₂) has its triple point at 5.11 atm and −56.6 °C. What happens when solid CO₂ ("dry ice") warms up on a table at 1 atm?</p>
+                <div class="som-problem-row">
+                  <select class="som-ans-input" id="som-ans-4" aria-label="Answer to question 4">
+                    <option value="">Choose…</option>
+                    <option value="melts">It melts into a puddle of liquid CO₂ before boiling.</option>
+                    <option value="sublimes">It sublimates directly from solid to gas without ever becoming liquid.</option>
+                    <option value="plasma">It ionizes immediately into plasma.</option>
+                  </select>
+                  <button type="button" class="som-btn" id="som-check-4">Check</button>
+                  <span class="som-feedback" id="som-fb-4" role="status"></span>
+                </div>
+                <div class="som-hint" id="som-hint-4" hidden>Hint: Test CO₂ in Sim 4 at P = 1.00 atm—the 1 atm line lies completely below the 5.11 atm triple point.</div>
+              </div>
+
+              <div class="som-problem">
+                <p><span class="som-badge">Challenge</span>5. Using ΔH<sub>fus</sub> = 334 J/g for water, how many joules (J) are required to completely melt <strong>10 g</strong> of ice that is already at 0 °C?</p>
+                <div class="som-problem-row">
+                  <input type="number" class="som-ans-input" id="som-ans-5" aria-label="Answer to question 5 in joules" placeholder="J" style="width:120px;" />
+                  <button type="button" class="som-btn" id="som-check-5">Check</button>
+                  <span class="som-feedback" id="som-fb-5" role="status"></span>
+                </div>
+                <div class="som-hint" id="som-hint-5" hidden>Hint: Q = m · ΔH<sub>fus</sub> = 10 g × 334 J/g.</div>
+              </div>
+            </div>
+          </section>
+
+          <footer class="site-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html">Lessons</a></p>
+          </footer>
+        </main>
+      </div><!-- .ll-sim -->
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button type="button" class="ll-tab" aria-selected="true" data-pane="som-pane-controls">Controls</button>
+            <button type="button" class="ll-tab" aria-selected="false" data-pane="som-pane-guide">Key Ideas</button>
+          </div>
+          <button type="button" class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="som-pane-controls">
+            <div class="som-ctrl-group" style="margin-bottom:0.8rem;">
+              <label for="side-substance">Chamber Substance</label>
+              <select id="side-substance">
+                <option value="water">Water (H₂O)</option>
+                <option value="argon">Argon (Ar)</option>
+                <option value="nitrogen">Nitrogen (N₂)</option>
+                <option value="iron">Iron (Fe)</option>
+              </select>
+            </div>
+            <div class="som-ctrl-group" style="margin-bottom:0.8rem;">
+              <label for="side-temp"><span>Chamber Temperature</span><span id="sideTempVal">20 °C</span></label>
+              <input id="side-temp" type="range" min="-240" max="3200" value="20" step="5" />
+            </div>
+            <span class="ll-label">Quick Phase Presets</span>
+            <div style="display:grid;gap:0.4rem;margin-top:0.4rem;">
+              <button type="button" class="ll-preset md-preset-btn" data-preset="solid">Solid Lattice</button>
+              <button type="button" class="ll-preset md-preset-btn" data-preset="liquid">Liquid Pool</button>
+              <button type="button" class="ll-preset md-preset-btn" data-preset="gas">Gas Expansion</button>
+              <button type="button" class="ll-preset md-preset-btn" data-preset="plasma">Ionized Plasma</button>
+            </div>
+          </div>
+          <div class="ll-pane" id="som-pane-guide">
+            <div class="ll-info"><strong>Kinetic Molecular Theory</strong>Temperature measures average particle kinetic energy (½mv²). Faster particles collide harder and overcome attractions.</div>
+            <div class="ll-info"><strong>Maxwell–Boltzmann Tail</strong>At any temperature, some molecules move far faster than average—allowing evaporation below the boiling point.</div>
+            <div class="ll-info"><strong>Latent Heat Plateaus</strong>During melting (ΔH<sub>fus</sub>) and boiling (ΔH<sub>vap</sub>), energy breaks attractions instead of raising temperature.</div>
+            <div class="ll-info"><strong>Triple &amp; Critical Points</strong>The triple point unites solid, liquid, and gas; above the critical point lies supercritical fluid.</div>
+          </div>
+        </div>
+      </aside>
+
+      <button type="button" class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
+    </div><!-- .ll-stage -->
+  </div><!-- .ll-viewport -->
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script src="../../assets/js/lessons/states-of-matter.js"></script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+  <script src="../../assets/js/chemistry-nav.js"></script>
+  <script src="../../assets/js/sim-reset.js" data-groups='[["substanceSelect","temp","pistonCompression"],["heatSlider"],["ptSubstance","ptTemp","ptPress"]]'></script>
+</body>
+</html>

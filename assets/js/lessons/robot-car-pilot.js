@@ -36,9 +36,55 @@
     line: loopLine
   });
   var canvas = $('rc-sim'), ctx = canvas.getContext('2d');
+  var scrimmage = {
+    active: false, started: false, finished: false,
+    startTime: 0, elapsed: 0, bumps: 0, wasBumped: false, bestSec: null,
+    gates: [
+      { id: 1, label: 'Gap', x: 75, y: 100, r: 22, done: false },
+      { id: 2, label: 'Top', x: 205, y: 45, r: 22, done: false },
+      { id: 3, label: 'Bot', x: 205, y: 155, r: 22, done: false },
+      { id: 4, label: 'Dock', x: 40, y: 100, r: 18, done: false, stopReq: true }
+    ]
+  };
+  function resetScrimmage() {
+    scrimmage.started = false;
+    scrimmage.finished = false;
+    scrimmage.startTime = 0;
+    scrimmage.elapsed = 0;
+    scrimmage.bumps = 0;
+    scrimmage.wasBumped = false;
+    scrimmage.gates.forEach(function (g) { g.done = false; });
+  }
+  function updateScrimmage() {
+    if (!scrimmage.active || scrimmage.finished) return;
+    var movingNow = Math.abs(sim.left) > 0 || Math.abs(sim.right) > 0 || sim.mode !== 'standby';
+    if (!scrimmage.started && (movingNow || Math.hypot(sim.x - 40, sim.y - 100) > 6)) {
+      scrimmage.started = true;
+      scrimmage.startTime = performance.now();
+    }
+    if (!scrimmage.started) return;
+    scrimmage.elapsed = (performance.now() - scrimmage.startTime) / 1000;
+    if (sim.bumped && !scrimmage.wasBumped) scrimmage.bumps++;
+    scrimmage.wasBumped = !!sim.bumped;
+    for (var gIdx = 0; gIdx < 3; gIdx++) {
+      var g = scrimmage.gates[gIdx];
+      if (!g.done && Math.hypot(sim.x - g.x, sim.y - g.y) <= g.r) g.done = true;
+    }
+    var g4 = scrimmage.gates[3];
+    if (!g4.done && scrimmage.gates[0].done && scrimmage.gates[1].done && scrimmage.gates[2].done) {
+      if (Math.hypot(sim.x - g4.x, sim.y - g4.y) <= g4.r && Math.abs(sim.left) < 1 && Math.abs(sim.right) < 1 && sim.mode === 'standby') {
+        g4.done = true;
+        scrimmage.finished = true;
+        var finalSec = scrimmage.elapsed + scrimmage.bumps * 5;
+        if (scrimmage.bestSec == null || finalSec < scrimmage.bestSec) scrimmage.bestSec = finalSec;
+        announce('Scrimmage complete in ' + finalSec.toFixed(1) + ' seconds with ' + scrimmage.bumps + ' bump penalties.');
+      }
+    }
+  }
 
   // Draws the room into the cockpit canvas, or into another one (the Code studio preview).
   function drawSim(target) {
+    updateScrimmage();
     var cv = target || canvas, ctx = cv.getContext('2d');
     var W = cv.width, H = cv.height, s = W / sim.room.w;
     ctx.save();
@@ -49,6 +95,27 @@
     // Tape line
     ctx.strokeStyle = '#1b1f22'; ctx.lineWidth = 2.5 * s; ctx.lineJoin = 'round';
     ctx.beginPath(); loopLine.forEach(function (p, k) { ctx[k ? 'lineTo' : 'moveTo'](p.x * s, p.y * s); }); ctx.stroke();
+    // Scrimmage gates
+    if (scrimmage.active) {
+      scrimmage.gates.forEach(function (g) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(g.x * s, g.y * s, g.r * s, 0, Math.PI * 2);
+        ctx.fillStyle = g.done ? 'rgba(57, 116, 90, 0.25)' : 'rgba(217, 146, 28, 0.16)';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.setLineDash(g.done ? [] : [5, 4]);
+        ctx.strokeStyle = g.done ? '#2d6a49' : '#c65e2e';
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = g.done ? '#1d4d34' : '#8d3a15';
+        ctx.font = '700 ' + Math.round(9 * s) + 'px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(g.done ? '✓' + g.id : String(g.id), g.x * s, g.y * s - (g.id === 4 ? 12 * s : 0));
+        ctx.restore();
+      });
+    }
     // Walls
     ctx.fillStyle = '#7a5a3a';
     sim.walls.forEach(function (w) { ctx.fillRect(w.x * s, w.y * s, w.w * s, w.h * s); });
@@ -73,6 +140,22 @@
     ctx.restore();
     ctx.fillStyle = '#12202a'; ctx.font = '600 12px "IBM Plex Mono", monospace';
     ctx.fillText('mode: ' + sim.mode + (sim.bumped ? ' · BUMP!' : ''), 10, H - 10);
+    if (scrimmage.active) {
+      var cleared = scrimmage.gates.filter(function (g) { return g.done; }).length;
+      var totalSec = scrimmage.elapsed + scrimmage.bumps * 5;
+      var hudText = (scrimmage.finished ? 'DONE ' : 'TIME ') + totalSec.toFixed(1) + 's' +
+        (scrimmage.bumps ? ' (+' + (scrimmage.bumps * 5) + 's)' : '') +
+        ' · GATES ' + cleared + '/4' +
+        (scrimmage.bestSec != null ? ' · BEST ' + scrimmage.bestSec.toFixed(1) + 's' : '');
+      ctx.font = '700 11px "IBM Plex Mono", monospace';
+      var tw = ctx.measureText(hudText).width + 16;
+      ctx.fillStyle = scrimmage.finished ? 'rgba(29, 77, 52, 0.92)' : 'rgba(18, 32, 42, 0.88)';
+      ctx.fillRect(W - tw - 8, 8, tw, 24);
+      ctx.fillStyle = scrimmage.finished ? '#b7f5d4' : '#ffe396';
+      ctx.textAlign = 'right';
+      ctx.fillText(hudText, W - 16, 24);
+      ctx.textAlign = 'left';
+    }
     var pose = $('rc-pose');
     if (pose && !target && state.kind === 'sim') pose.textContent = 'x ' + sim.x.toFixed(0) + ' cm · y ' + sim.y.toFixed(0) + ' cm · heading ' + ((sim.heading * 180 / Math.PI % 360 + 360) % 360).toFixed(0) + '° · from start ' + Math.hypot(sim.x - 40, sim.y - 100).toFixed(0) + ' cm';
   }
@@ -196,6 +279,7 @@
     cam.hidden = !showCam;
     canvas.hidden = !showSim;
     $('rc-sim-reset').hidden = !showSim;
+    if ($('rc-scrimmage-btn')) $('rc-scrimmage-btn').hidden = !showSim;
     $('rc-sim-note').hidden = !showSim;
     $('rc-view-title').textContent = showSim ? 'Simulator room' : showCam ? 'Live camera' : 'Car view';
     viewMessage.hidden = showSim || showCam;
@@ -269,7 +353,14 @@
     pollGamepad();
     if (!state.car || state.mission) return;
     var w = wanted();
-    if (w) sendDrive(E.mixJoystick(w.x, w.y, speed()));
+    if (w) {
+      var sx = w.x, sy = w.y;
+      if ($('rc-expo') && $('rc-expo').checked) {
+        sx = 0.35 * sx + 0.65 * sx * sx * sx;
+        sy = 0.35 * sy + 0.65 * sy * sy * sy;
+      }
+      sendDrive(E.mixJoystick(sx, sy, speed()));
+    }
     else if (state.moving) sendDrive(E.cmd.stop());
   }, 60);
 
@@ -535,7 +626,24 @@
   });
 
   // ---- Misc ----------------------------------------------------------------
-  $('rc-sim-reset').addEventListener('click', function () { stopNow(); sim.reset(); drawSim(); announce('Simulator reset to x 40, y 100, facing right.'); });
+  var scrimBtn = $('rc-scrimmage-btn');
+  if (scrimBtn) {
+    scrimBtn.addEventListener('click', function () {
+      scrimmage.active = !scrimmage.active;
+      scrimBtn.setAttribute('aria-pressed', String(scrimmage.active));
+      if (scrimmage.active) {
+        stopNow();
+        sim.reset();
+        resetScrimmage();
+        drawSim();
+        announce('Scrimmage course active. Pass gates 1, 2, 3, then stop cleanly inside gate 4.');
+      } else {
+        resetScrimmage();
+        drawSim();
+      }
+    });
+  }
+  $('rc-sim-reset').addEventListener('click', function () { stopNow(); sim.reset(); resetScrimmage(); drawSim(); announce('Simulator reset to x 40, y 100, facing right.'); });
   $('rc-log-clear').addEventListener('click', function () { logLines = []; logEl.textContent = ''; });
 
   function announce(msg) {
@@ -553,7 +661,7 @@
     kind: function () { return state.kind; },
     speed: speed,
     drawInto: function (cv) { drawSim(cv); },
-    resetSim: function () { stopNow(); sim.reset(); drawSim(); },
+    resetSim: function () { stopNow(); sim.reset(); resetScrimmage(); drawSim(); },
     // A program takes the wheel: the joystick loop stays quiet and line sensors aren't polled.
     begin: function (onStop) { stopNow(); state.mission = true; programStop = onStop; },
     end: function () { programStop = null; state.mission = false; state.moving = false; },

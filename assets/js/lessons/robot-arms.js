@@ -22,6 +22,7 @@
       t1: document.getElementById('arm-t1'), t2: document.getElementById('arm-t2'), t3: document.getElementById('arm-t3'),
       modes: document.querySelectorAll('[data-arm-mode]'), grip: document.getElementById('arm-grip'),
       elbow: document.getElementById('arm-elbow'), reach: document.getElementById('arm-reach'),
+      spring: document.getElementById('arm-spring'), challenge: document.getElementById('arm-challenge'),
       reset: document.getElementById('arm-reset'), readout: document.getElementById('arm-readout'),
       math: document.getElementById('arm-math'), score: document.getElementById('arm-score')
     };
@@ -29,6 +30,23 @@
     var q = { t1: 70, t2: -60, t3: -100 }, goalQ = null;
     var mode = 'joints', target = { x: 520, y: FLOOR - 10 }, gripClosed = false, held = null, reachable = true;
     var blocks, pads, scored = 0;
+    var challenge = { active: false, done: false, t: 0, jointTravel: 0, lastQ: { t1: 70, t2: -60, t3: -100 } };
+
+    function gravityTorque(p) {
+      var m1 = 0.65, m2 = 0.48, mw = 0.25, mb = held ? 0.35 : 0, g = 9.81;
+      var pxToM = 1 / (PX_PER_CM * 100);
+      var x1 = (p.e.x - BASE.x) * 0.5 * pxToM;
+      var x2 = ((p.e.x + p.w.x) * 0.5 - BASE.x) * pxToM;
+      var x3 = ((p.w.x + p.t.x) * 0.5 - BASE.x) * pxToM;
+      var tau1Raw = Math.abs(m1 * g * x1 + m2 * g * x2 + (mw + mb) * g * x3);
+      var springOn = ui.spring && ui.spring.checked;
+      var tau1 = springOn ? tau1Raw * 0.32 : tau1Raw;
+      var x2e = ((p.e.x + p.w.x) * 0.5 - p.e.x) * pxToM;
+      var x3e = ((p.w.x + p.t.x) * 0.5 - p.e.x) * pxToM;
+      var tau2 = Math.abs(m2 * g * x2e + (mw + mb) * g * x3e);
+      var stall = 3.2;
+      return { tau1: tau1, tau1Raw: tau1Raw, tau2: tau2, pct: Math.round((tau1 / stall) * 100), springOn: springOn };
+    }
 
     function resetWorld() {
       blocks = [
@@ -128,9 +146,19 @@
     }
     function checkScore() {
       var n = blocks.filter(function (b) { var p = padUnder(b); return p && p.name === b.name; }).length;
+      if (n === 3 && challenge.active) {
+        challenge.active = false;
+        challenge.done = true;
+        if (ui.challenge) ui.challenge.textContent = '⏱ Restart 3-block timer';
+        var msg = 'Cycle complete in ' + challenge.t.toFixed(1) + ' s · ' + Math.round(challenge.jointTravel) + '° joint travel.';
+        if (ui.score) ui.score.textContent = '3 / 3 blocks home · ' + challenge.t.toFixed(1) + ' s (' + Math.round(challenge.jointTravel) + '° travel)';
+        RA.announce(msg, true);
+        scored = n;
+        return;
+      }
       if (n > scored) RA.announce(n === 3 ? 'All three blocks are on their matching pads. Great work, engineer!' : n + ' of 3 blocks on matching pads.', true);
       scored = n;
-      if (ui.score) ui.score.textContent = n + ' / 3 blocks home';
+      if (ui.score && !challenge.active) ui.score.textContent = n + ' / 3 blocks home';
     }
 
     function step(dt) {
@@ -146,6 +174,12 @@
         q.t2 += wrapDeg(goalQ.t2 - q.t2) * k;
         q.t3 += wrapDeg(goalQ.t3 - q.t3) * k;
         syncSliders();
+      }
+      if (challenge.active) {
+        challenge.t += dt;
+        challenge.jointTravel += Math.abs(wrapDeg(q.t1 - challenge.lastQ.t1)) + Math.abs(wrapDeg(q.t2 - challenge.lastQ.t2)) + Math.abs(wrapDeg(q.t3 - challenge.lastQ.t3));
+        challenge.lastQ = { t1: q.t1, t2: q.t2, t3: q.t3 };
+        if (ui.score) ui.score.textContent = scored + ' / 3 home · ' + challenge.t.toFixed(1) + ' s · ' + Math.round(challenge.jointTravel) + '°';
       }
       var p = fk(q);
       if (held) { held.x = p.t.x; held.y = p.t.y - BLOCK / 2; }
@@ -258,10 +292,33 @@
       var below = p.e.y > FLOOR || p.w.y > FLOOR || p.t.y > FLOOR + 4;
       if (below) { ctx.fillStyle = '#ff9a8d'; ctx.font = '700 13px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('Crash! The arm is hitting the table.', 14, 14); }
 
+      // Shoulder gravity torque HUD
+      var tq = gravityTorque(p);
+      var hudW = 216, hudH = tq.springOn ? 56 : 42, hx = W - hudW - 12, hy = 12;
+      ctx.fillStyle = 'rgba(15,29,35,.88)'; RA.roundRect(ctx, hx, hy, hudW, hudH, 6); ctx.fill();
+      ctx.strokeStyle = tq.pct > 95 ? '#ff7a6b' : tq.pct >= 70 ? '#f2bf3f' : '#5cd69a';
+      ctx.lineWidth = 1.5; RA.roundRect(ctx, hx, hy, hudW, hudH, 6); ctx.stroke();
+      ctx.fillStyle = '#e8f6fb'; ctx.font = '700 10px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillText('SHOULDER LOAD: ' + tq.pct + '% (' + tq.tau1.toFixed(2) + ' N·m)', hx + 10, hy + 8);
+      ctx.fillStyle = '#0b1418'; ctx.fillRect(hx + 10, hy + 25, hudW - 20, 8);
+      ctx.fillStyle = tq.pct > 95 ? '#ff7a6b' : tq.pct >= 70 ? '#f2bf3f' : '#b8d84b';
+      ctx.fillRect(hx + 10, hy + 25, Math.min(hudW - 20, ((hudW - 20) * tq.pct) / 100), 8);
+      if (tq.springOn) {
+        ctx.fillStyle = '#90e2b7';
+        ctx.fillText('SPRING COUNTERBALANCE (-68%)', hx + 10, hy + 39);
+      }
+
+      if (challenge.active || challenge.done) {
+        ctx.fillStyle = 'rgba(15,29,35,.88)'; RA.roundRect(ctx, 12, below ? 36 : 12, 232, 26, 6); ctx.fill();
+        ctx.fillStyle = challenge.done ? '#b8d84b' : '#f2bf3f';
+        ctx.font = '700 11px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText((challenge.done ? 'CYCLE ' : 'TIMER ') + challenge.t.toFixed(1) + ' s · ' + Math.round(challenge.jointTravel) + '° travel', 22, (below ? 36 : 12) + 7);
+      }
+
       var xcm = (p.t.x - BASE.x) / PX_PER_CM, ycm = (BASE.y - p.t.y) / PX_PER_CM;
       ui.readout.textContent = simple
         ? 'Hand is ' + Math.abs(xcm).toFixed(0) + ' cm ' + (xcm >= 0 ? 'right' : 'left') + ' of the shoulder and ' + Math.abs(ycm).toFixed(0) + ' cm ' + (ycm >= 0 ? 'up' : 'down') + '.' + (held ? ' Holding the ' + held.name + ' block.' : '')
-        : 'Gripper tip at x = ' + xcm.toFixed(1) + ' cm, y = ' + ycm.toFixed(1) + ' cm from the shoulder' + (mode === 'reach' ? (reachable ? ' · IK solution found' : ' · target outside the workspace') : '') + (held ? ' · holding ' + held.name : '');
+        : 'Gripper tip at x = ' + xcm.toFixed(1) + ' cm, y = ' + ycm.toFixed(1) + ' cm · τ1 = ' + tq.tau1.toFixed(2) + ' N·m (' + tq.pct + '% stall)' + (mode === 'reach' ? (reachable ? ' · IK ready' : ' · out of reach') : '') + (held ? ' · holding ' + held.name : '');
       if (ui.math) {
         ui.math.textContent = 'x = ' + (L1 / PX_PER_CM).toFixed(1) + '·cos(' + Math.round(q.t1) + '°) + ' + (L2 / PX_PER_CM).toFixed(1) + '·cos(' + Math.round(q.t1 + q.t2) + '°) + ' + (L3 / PX_PER_CM).toFixed(1) + '·cos(' + Math.round(q.t1 + q.t2 + q.t3) + '°) = ' + xcm.toFixed(1) + ' cm';
       }
@@ -323,7 +380,21 @@
     });
     ui.modes.forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.armMode); }); });
     if (ui.grip) ui.grip.addEventListener('click', toggleGrip);
-    if (ui.reset) ui.reset.addEventListener('click', function () { resetWorld(); checkScore(); RA.announce('Blocks reset.', true); });
+    if (ui.reset) ui.reset.addEventListener('click', function () {
+      challenge.active = false; challenge.done = false;
+      if (ui.challenge) ui.challenge.textContent = '⏱ Start 3-block timer';
+      resetWorld(); checkScore(); RA.announce('Blocks reset.', true);
+    });
+    if (ui.challenge) ui.challenge.addEventListener('click', function () {
+      resetWorld();
+      challenge = { active: true, done: false, t: 0, jointTravel: 0, lastQ: { t1: q.t1, t2: q.t2, t3: q.t3 } };
+      ui.challenge.textContent = '⏱ Restart 3-block timer';
+      checkScore();
+      RA.announce('3-block cycle timer started. Place all three blocks on their matching pads.', true);
+    });
+    if (ui.spring) ui.spring.addEventListener('change', function () {
+      RA.announce(ui.spring.checked ? 'Shoulder counterbalance spring enabled.' : 'Shoulder counterbalance spring removed.', true);
+    });
     if (ui.elbow) ui.elbow.addEventListener('change', function () { RA.announce('Elbow ' + ui.elbow.value + '. Same hand position, different arm shape.', true); });
     document.querySelectorAll('[data-arm-pose]').forEach(function (b) {
       b.addEventListener('click', function () {

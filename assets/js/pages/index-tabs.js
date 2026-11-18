@@ -63,8 +63,14 @@
         var hash = (window.location.hash || "").replace("#", "").toLowerCase();
         if (hash) {
           var targetTab = document.getElementById("hometab-" + hash);
+          var target = document.getElementById(hash);
+          var panel = target && target.closest(".home-tab-panel");
+          if (!targetTab && panel) {
+            targetTab = tabs.find(function (tab) { return tab.getAttribute("aria-controls") === panel.id; });
+          }
           if (targetTab && !targetTab.classList.contains("is-active")) {
             activateTab(targetTab, false);
+            if (target) target.scrollIntoView();
           }
         }
       }
@@ -92,4 +98,17 @@
           document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
         }
       });
+    }
+
+
+    const dashboardDate = document.getElementById('home-today-date');
+    if (dashboardDate) {
+      const today = new Date();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      dashboardDate.dateTime = `${today.getFullYear()}-${month}-${day}`;
+      dashboardDate.textContent = today.toLocaleDateString(undefined, {
+        weekday: 'long', month: 'long', day: 'numeric'
+      });
+      dashboardDate.hidden = false;
     }

@@ -20,7 +20,9 @@
       modes: document.querySelectorAll('[data-mp-mode]'),
       run: document.getElementById('mp-run'), readout: document.getElementById('mp-readout'),
       rep: document.getElementById('mp-rep'), moving: document.getElementById('mp-moving'),
-      showField: document.getElementById('mp-field'), global: document.getElementById('mp-global'), explain: document.getElementById('mp-explain')
+      showField: document.getElementById('mp-field'), global: document.getElementById('mp-global'),
+      smooth: document.getElementById('mp-smooth'), smoothWrap: document.getElementById('mp-smooth-wrap'),
+      explain: document.getElementById('mp-explain')
     };
     var mode = 'rrt';
     var start = { x: 50, y: 200 }, goal = { x: 590, y: 200 };
@@ -127,6 +129,25 @@
     function treePath() {
       var out = [goal], k = state.goalNode;
       while (k >= 0) { out.push(state.nodes[k]); k = state.nodes[k].parent; }
+      return out;
+    }
+    function pathLength(pts) {
+      var len = 0;
+      for (var i = 1; i < pts.length; i++) len += dist(pts[i - 1], pts[i]);
+      return len;
+    }
+    function smoothTreePath(raw) {
+      var pts = raw.slice().reverse();
+      if (pts.length <= 2) return pts;
+      var out = [pts[0]], i = 0;
+      while (i < pts.length - 1) {
+        var best = i + 1;
+        for (var j = pts.length - 1; j > i + 1; j--) {
+          if (segmentFree(pts[i], pts[j])) { best = j; break; }
+        }
+        out.push(pts[best]);
+        i = best;
+      }
       return out;
     }
 
@@ -304,14 +325,32 @@
         ctx.lineWidth = 1;
         if (state.goalNode >= 0) {
           var path = treePath();
+          var useSmooth = ui.smooth && ui.smooth.checked;
           ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-          [['rgba(242,191,63,.25)', 10], ['#f2bf3f', 4]].forEach(function (st) {
-            ctx.strokeStyle = st[0]; ctx.lineWidth = st[1]; ctx.beginPath();
+          if (useSmooth) {
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = 'rgba(242,191,63,.55)'; ctx.lineWidth = 2; ctx.beginPath();
             path.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
             ctx.stroke();
-          });
+            ctx.setLineDash([]);
+            var smoothed = smoothTreePath(path);
+            [['rgba(184,216,75,.28)', 10], ['#b8d84b', 4]].forEach(function (st) {
+              ctx.strokeStyle = st[0]; ctx.lineWidth = st[1]; ctx.beginPath();
+              smoothed.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
+              ctx.stroke();
+            });
+            var rawLen = pathLength(path), smoothLen = pathLength(smoothed);
+            var savedPct = rawLen > 0 ? Math.max(0, Math.round((1 - smoothLen / rawLen) * 100)) : 0;
+            status = 'Path found · raw ' + Math.round(rawLen) + ' px → smoothed ' + Math.round(smoothLen) + ' px (saved ' + savedPct + '%) · ' + state.nodes.length + ' nodes';
+          } else {
+            [['rgba(242,191,63,.25)', 10], ['#f2bf3f', 4]].forEach(function (st) {
+              ctx.strokeStyle = st[0]; ctx.lineWidth = st[1]; ctx.beginPath();
+              path.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
+              ctx.stroke();
+            });
+            status = 'Path found · length ' + Math.round(state.goalCost) + ' px · tree has ' + state.nodes.length + ' nodes' + (mode === 'rrtstar' ? (state.nodes.length < MAX_NODES ? ' · still improving…' : ' · done') : '');
+          }
           ctx.lineWidth = 1;
-          status = 'Path found · length ' + Math.round(state.goalCost) + ' px · tree has ' + state.nodes.length + ' nodes' + (mode === 'rrtstar' ? (state.nodes.length < MAX_NODES ? ' · still improving…' : ' · done') : '');
         } else status = 'Growing… ' + state.nodes.length + ' nodes, no path yet';
       } else {
         var rb = state.robot;
@@ -397,6 +436,7 @@
         ui.explain.textContent = EXPLAIN[mode];
         document.getElementById('mp-field-opts').hidden = mode !== 'field';
         document.getElementById('mp-dwa-opts').hidden = mode !== 'dwa';
+        if (ui.smoothWrap) ui.smoothWrap.hidden = mode !== 'rrt' && mode !== 'rrtstar';
         restart();
       });
     });
@@ -410,49 +450,149 @@
     RA.loop(function (dt) { tick(dt); draw(); }, canvas);
   }
 
-  /* ── Differential-drive kinematics ─────────────────────────────── */
+  /* ── Differential-drive kinematics + Pure Pursuit ──────────────── */
   function kinematicsLab() {
     var kc = document.getElementById('kin-canvas');
     if (!kc) return;
     var ctx = kc.getContext('2d'), KW = kc.width, KH = kc.height;
     var left = document.getElementById('kin-left'), right = document.getElementById('kin-right');
     var base = document.getElementById('kin-base'), out = document.getElementById('kin-readout');
-    var rb, trail, kinRunning = !RA.reducedMotion;
+    var lookaheadEl = document.getElementById('kin-lookahead'), profileEl = document.getElementById('kin-profile');
+    var modeBtns = document.querySelectorAll('[data-kin-mode]');
+    var manualOpts = document.getElementById('kin-manual-opts'), pursuitOpts = document.getElementById('kin-pursuit-opts');
+    var rb, trail, kinRunning = !RA.reducedMotion, kinMode = 'manual';
     var kinRun = document.getElementById('kin-run'), showIcc = document.getElementById('kin-icc');
+
+    // Dense competition path polyline
+    var WAYPOINTS = [{ x: 65, y: 245 }, { x: 215, y: 245 }, { x: 265, y: 78 }, { x: 425, y: 68 }, { x: 455, y: 222 }, { x: 575, y: 150 }];
+    var TRACK_PTS = [];
+    for (var wi = 0; wi < WAYPOINTS.length - 1; wi++) {
+      var wa = WAYPOINTS[wi], wb = WAYPOINTS[wi + 1], seg = dist(wa, wb), nSeg = Math.max(1, Math.ceil(seg / 8));
+      for (var si = 0; si < nSeg; si++) {
+        var f = si / nSeg;
+        TRACK_PTS.push({ x: wa.x + (wb.x - wa.x) * f, y: wa.y + (wb.y - wa.y) * f });
+      }
+    }
+    TRACK_PTS.push(WAYPOINTS[WAYPOINTS.length - 1]);
+    var lapTime = 0, cteSum = 0, cteN = 0, pursuitDone = false, currentCte = 0, lookPt = null;
+
     function syncRun() { if (kinRun) { kinRun.textContent = kinRunning ? 'Pause' : 'Drive'; kinRun.setAttribute('aria-pressed', String(!kinRunning)); } }
     if (kinRun) kinRun.addEventListener('click', function () { kinRunning = !kinRunning; syncRun(); });
     syncRun();
-    function reset() { rb = { x: KW / 2, y: KH / 2, a: -Math.PI / 2 }; trail = []; }
+
+    function reset() {
+      if (kinMode === 'pursuit') {
+        rb = { x: WAYPOINTS[0].x, y: WAYPOINTS[0].y, a: 0, v: 0 };
+        lapTime = 0; cteSum = 0; cteN = 0; pursuitDone = false; currentCte = 0; lookPt = TRACK_PTS[0];
+      } else {
+        rb = { x: KW / 2, y: KH / 2, a: -Math.PI / 2, v: 0 };
+      }
+      trail = [];
+    }
+    function setKinMode(m) {
+      kinMode = m;
+      modeBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.kinMode === m)); });
+      if (manualOpts) manualOpts.hidden = m !== 'manual';
+      if (pursuitOpts) pursuitOpts.hidden = m !== 'pursuit';
+      kinRunning = true; syncRun();
+      reset();
+      describeKin();
+    }
+    modeBtns.forEach(function (b) { b.addEventListener('click', function () { setKinMode(b.dataset.kinMode); }); });
+
     function sync() {
       document.getElementById('kin-left-out').textContent = left.value;
       document.getElementById('kin-right-out').textContent = right.value;
       document.getElementById('kin-base-out').textContent = base.value;
+      if (lookaheadEl) document.getElementById('kin-ld-out').textContent = lookaheadEl.value;
     }
     [left, right, base].forEach(function (el) { el.addEventListener('input', sync); el.addEventListener('change', describeKin); });
+    if (lookaheadEl) {
+      lookaheadEl.addEventListener('input', sync);
+      lookaheadEl.addEventListener('change', function () { if (kinMode === 'pursuit') { reset(); kinRunning = true; syncRun(); } });
+    }
+    if (profileEl) {
+      profileEl.addEventListener('change', function () { if (kinMode === 'pursuit') { reset(); kinRunning = true; syncRun(); } });
+    }
     // Plain-language summary of what the wheel settings do, for screen readers and young readers.
     function describeKin() {
-      var vl = +left.value, vr = +right.value;
-      var msg = vl === vr ? (vl === 0 ? 'Both wheels stopped: the robot stays still.' : 'Same speed on both wheels: the robot drives ' + (vl > 0 ? 'straight forward.' : 'straight backward.'))
-        : vl === -vr ? 'Wheels spin opposite ways at the same speed: the robot spins in place.'
-        : (vl === 0 || vr === 0) ? 'One wheel stopped: the robot pivots in a circle around that wheel.'
-        : 'The ' + (vr > vl ? 'right' : 'left') + ' wheel is faster, so the robot curves to the ' + (vr > vl ? 'left' : 'right') + '.';
+      var msg;
+      if (kinMode === 'pursuit') {
+        msg = 'Pure Pursuit mode: steering toward a ' + (lookaheadEl ? lookaheadEl.value : 55) + ' px lookahead point along the competition track.';
+      } else {
+        var vl = +left.value, vr = +right.value;
+        msg = vl === vr ? (vl === 0 ? 'Both wheels stopped: the robot stays still.' : 'Same speed on both wheels: the robot drives ' + (vl > 0 ? 'straight forward.' : 'straight backward.'))
+          : vl === -vr ? 'Wheels spin opposite ways at the same speed: the robot spins in place.'
+          : (vl === 0 || vr === 0) ? 'One wheel stopped: the robot pivots in a circle around that wheel.'
+          : 'The ' + (vr > vl ? 'right' : 'left') + ' wheel is faster, so the robot curves to the ' + (vr > vl ? 'left' : 'right') + '.';
+      }
       RA.announce(msg, true);
       var plain = document.getElementById('kin-plain');
       if (plain) plain.textContent = msg;
     }
     describeKin();
-    document.getElementById('kin-reset').addEventListener('click', reset);
+    document.getElementById('kin-reset').addEventListener('click', function () { reset(); kinRunning = true; syncRun(); });
     document.querySelectorAll('[data-kin]').forEach(function (b) {
-      b.addEventListener('click', function () { var v = b.dataset.kin.split(','); left.value = v[0]; right.value = v[1]; sync(); kinRunning = true; syncRun(); describeKin(); });
+      b.addEventListener('click', function () {
+        if (kinMode !== 'manual') setKinMode('manual');
+        var v = b.dataset.kin.split(','); left.value = v[0]; right.value = v[1]; sync(); kinRunning = true; syncRun(); describeKin();
+      });
     });
     reset(); sync();
     RA.loop(function (dt) {
-      var vl = +left.value, vr = +right.value, L = +base.value;
+      var L = +base.value;
+      var vl = +left.value, vr = +right.value;
       var v = (vr + vl) / 2, w = (vr - vl) / L;
+
+      if (kinMode === 'pursuit') {
+        var Ld = lookaheadEl ? +lookaheadEl.value : 55;
+        // Closest point on path & remaining arc distance
+        var bestIdx = 0, bestD = Infinity;
+        for (var ti = 0; ti < TRACK_PTS.length; ti++) {
+          var td = dist(rb, TRACK_PTS[ti]);
+          if (td < bestD) { bestD = td; bestIdx = ti; }
+        }
+        currentCte = bestD;
+        var remDist = 0;
+        for (var ri = bestIdx + 1; ri < TRACK_PTS.length; ri++) remDist += dist(TRACK_PTS[ri - 1], TRACK_PTS[ri]);
+        lookPt = TRACK_PTS[TRACK_PTS.length - 1];
+        for (var li = bestIdx; li < TRACK_PTS.length; li++) {
+          if (dist(rb, TRACK_PTS[li]) >= Ld) { lookPt = TRACK_PTS[li]; break; }
+        }
+        var goalPt = WAYPOINTS[WAYPOINTS.length - 1];
+        if (!pursuitDone && dist(rb, goalPt) < 12 && bestIdx >= TRACK_PTS.length - 6) {
+          pursuitDone = true; rb.v = 0;
+          RA.announce('Pure Pursuit lap finished in ' + lapTime.toFixed(1) + ' s with ' + (cteSum / Math.max(1, cteN)).toFixed(1) + ' px average error.', true);
+        }
+        if (pursuitDone) {
+          v = 0; w = 0; vl = 0; vr = 0;
+        } else {
+          var VMAX_PP = 95, AMAX_PP = 110;
+          if (profileEl && profileEl.checked) {
+            var vGoal = Math.min(VMAX_PP, Math.sqrt(2 * AMAX_PP * Math.max(0, remDist)));
+            if (rb.v < vGoal) rb.v = Math.min(vGoal, rb.v + AMAX_PP * dt);
+            else rb.v = Math.max(vGoal, rb.v - AMAX_PP * dt);
+            if (remDist > 8 && rb.v < 22) rb.v = Math.min(22, rb.v + AMAX_PP * dt);
+          } else {
+            rb.v = VMAX_PP;
+          }
+          var dx = lookPt.x - rb.x, dy = lookPt.y - rb.y;
+          var yLeft = dx * Math.sin(rb.a) - dy * Math.cos(rb.a);
+          var dLp = Math.max(12, Math.hypot(dx, dy));
+          var kappa = (2 * yLeft) / (dLp * dLp);
+          v = rb.v;
+          w = v * kappa;
+          vl = v - w * L / 2; vr = v + w * L / 2;
+          if (kinRunning) { lapTime += dt; cteSum += currentCte; cteN++; }
+        }
+      }
+
       if (!kinRunning) dt = 0;
       // Screen y points down, so a positive (counter-clockwise) ω lowers the angle.
       rb.a -= w * dt; rb.x += Math.cos(rb.a) * v * dt; rb.y += Math.sin(rb.a) * v * dt;
-      if (rb.x < 0) rb.x += KW; if (rb.x > KW) rb.x -= KW; if (rb.y < 0) rb.y += KH; if (rb.y > KH) rb.y -= KH;
+      if (kinMode === 'manual') {
+        if (rb.x < 0) rb.x += KW; if (rb.x > KW) rb.x -= KW; if (rb.y < 0) rb.y += KH; if (rb.y > KH) rb.y -= KH;
+      }
       var last = trail[trail.length - 1];
       if (!last || Math.hypot(last.x - rb.x, last.y - rb.y) > 2) { if (last && Math.hypot(last.x - rb.x, last.y - rb.y) > 50) trail.push(null); trail.push({ x: rb.x, y: rb.y }); }
       if (trail.length > 900) trail.shift();
@@ -461,6 +601,31 @@
       ctx.strokeStyle = 'rgba(112,200,229,.07)'; ctx.lineWidth = 1;
       for (var gx = 0; gx < KW; gx += 32) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, KH); ctx.stroke(); }
       for (var gy = 0; gy < KH; gy += 32) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(KW, gy); ctx.stroke(); }
+
+      if (kinMode === 'pursuit') {
+        var LdVis = lookaheadEl ? +lookaheadEl.value : 55;
+        ctx.strokeStyle = 'rgba(112,200,229,.22)'; ctx.lineWidth = 18; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); WAYPOINTS.forEach(function (pt, idx) { if (idx) ctx.lineTo(pt.x, pt.y); else ctx.moveTo(pt.x, pt.y); }); ctx.stroke();
+        ctx.setLineDash([6, 6]); ctx.strokeStyle = 'rgba(232,246,251,.65)'; ctx.lineWidth = 2;
+        ctx.beginPath(); WAYPOINTS.forEach(function (pt, idx) { if (idx) ctx.lineTo(pt.x, pt.y); else ctx.moveTo(pt.x, pt.y); }); ctx.stroke();
+        ctx.setLineDash([]);
+        RA.drawPad(ctx, WAYPOINTS[0].x, WAYPOINTS[0].y, 12, '#3fa6cc', 'S');
+        RA.drawFlag(ctx, WAYPOINTS[WAYPOINTS.length - 1].x, WAYPOINTS[WAYPOINTS.length - 1].y, 16, '#b8d84b');
+        if (lookPt && !pursuitDone) {
+          ctx.strokeStyle = 'rgba(184,216,75,.35)'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(rb.x, rb.y, LdVis, 0, Math.PI * 2); ctx.stroke();
+          ctx.strokeStyle = '#f2bf3f'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(rb.x, rb.y); ctx.lineTo(lookPt.x, lookPt.y); ctx.stroke();
+          ctx.fillStyle = '#b8d84b'; ctx.beginPath(); ctx.arc(lookPt.x, lookPt.y, 5, 0, Math.PI * 2); ctx.fill();
+        }
+        // Speed profile mini bar
+        ctx.fillStyle = 'rgba(15,29,35,.85)'; ctx.fillRect(14, 12, 178, 28);
+        ctx.strokeStyle = 'rgba(112,200,229,.35)'; ctx.strokeRect(14, 12, 178, 28);
+        ctx.fillStyle = '#b8d84b'; ctx.fillRect(20, 29, Math.min(166, (v / 95) * 166), 6);
+        ctx.fillStyle = '#e8f6fb'; ctx.font = '600 10px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText('speed ' + Math.round(v) + ' px/s' + (profileEl && profileEl.checked ? ' (ramp)' : ' (step)'), 20, 15);
+      }
+
       // Instantaneous centre of curvature: the point the robot is circling right now.
       var R0 = Math.abs(w) < 1e-3 ? Infinity : v / w;
       if ((!showIcc || showIcc.checked) && isFinite(R0) && Math.abs(R0) < 2000) {
@@ -493,8 +658,14 @@
         }
       });
       ctx.restore();
-      var radius = Math.abs(w) < 1e-3 ? '∞ (straight line)' : (Math.abs(v / w)).toFixed(0) + ' px';
-      out.textContent = 'v = (vR + vL) / 2 = ' + v.toFixed(0) + ' px/s · ω = (vR − vL) / L = ' + w.toFixed(2) + ' rad/s · turn radius = ' + radius;
+      if (kinMode === 'pursuit') {
+        var meanCte = cteN ? (cteSum / cteN).toFixed(1) : '0.0';
+        out.textContent = (pursuitDone ? 'FINISHED in ' + lapTime.toFixed(1) + ' s' : 't = ' + lapTime.toFixed(1) + ' s') +
+          ' · Ld = ' + (lookaheadEl ? lookaheadEl.value : 55) + ' px · cross-track error = ' + currentCte.toFixed(1) + ' px (avg ' + meanCte + ' px)';
+      } else {
+        var radius = Math.abs(w) < 1e-3 ? '∞ (straight line)' : (Math.abs(v / w)).toFixed(0) + ' px';
+        out.textContent = 'v = (vR + vL) / 2 = ' + v.toFixed(0) + ' px/s · ω = (vR − vL) / L = ' + w.toFixed(2) + ' rad/s · turn radius = ' + radius;
+      }
     }, kc);
   }
 })();

@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 496 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 497 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -263,7 +263,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 123 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 124 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -322,9 +322,10 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **ENG-39** — Emily Roebling
 - **ENG-40** — Gustave Eiffel
 - **ENG-41** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-42** — Rube Goldberg Machine Lab
-- **ENG-43** — Siege Engines: Physics You Can Launch
-- **ENG-44** — Hedy Lamarr
+- **ENG-42** — James Watt and the Steam Engine
+- **ENG-43** — Rube Goldberg Machine Lab
+- **ENG-44** — Siege Engines: Physics You Can Launch
+- **ENG-45** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 

@@ -20,7 +20,7 @@
   openFile.disabled = true;
   const violinControls = document.createElement('div');
   violinControls.className = 'bv-fields bv-violin-controls';
-  violinControls.innerHTML = '<label><input type="checkbox" id="bv-violin-show"> Show violin positions</label><label>Violin hand position <select id="bv-violin-position"><option value="auto">Automatic · fewest shifts</option><option value="1">First position</option><option value="2">Second position</option><option value="3">Third position</option><option value="4">Fourth position</option><option value="5">Fifth position</option><option value="6">Sixth position</option><option value="7">Seventh position</option></select></label>';
+  violinControls.innerHTML = '<label><input type="checkbox" id="bv-violin-show"> Show violin finger numbers and positions</label><label>Violin hand position <select id="bv-violin-position"><option value="auto">Automatic · fewest shifts</option><option value="1">First position</option><option value="2">Second position</option><option value="3">Third position</option><option value="4">Fourth position</option><option value="5">Fifth position</option><option value="6">Sixth position</option><option value="7">Seventh position</option></select></label>';
   workspace.querySelector('.bv-fields').after(violinControls);
   const violinShow = $('violin-show'), violinPosition = $('violin-position');
   const pianoControls = document.createElement('div');
@@ -67,24 +67,20 @@
   const violinPrefs = {};
   function rememberViolin() { violinPrefs[work.value] = { show: violinShow.checked, position: violinPosition.value }; }
   function restoreViolin() { const p = violinPrefs[work.value] || {}; violinShow.checked = !!p.show; violinPosition.value = p.position || 'auto'; }
-  function violinGuide(score) {
-    const model = ScoreEngine.prepare(score), bars = model.staves[0].bars;
-    const events = bars.flatMap((bar, bi) => bar.events.filter(e => e.kind === 'note').map(e => ({ bar: bi, pitch: e.pitches[e.pitches.length - 1] })));
-    const midis = events.map(e => e.pitch.midi);
-    const fixed = violinPosition.value === 'auto' ? null : Number(violinPosition.value);
-    const route = fixed ? midis.map(m => FakeBookMelody.violinInPosition(m, fixed)) : FakeBookMelody.violinRoute(midis, 'auto');
+  function violinGuide(model, plan, legend) {
     const heading = document.createElement('h3'); heading.textContent = 'Violin positions · selected voice'; tab.append(heading);
-    const explanation = document.createElement('p'); explanation.textContent = 'Read the notes in score order. 0 means an open string; low and high describe finger placement. Automatic suggests shifts; × means the note is outside the selected position or supported range. Grace notes and ornaments are not included. These are suggestions to review with your teacher.'; tab.append(explanation);
+    const explanation = document.createElement('p'); explanation.textContent = legend; tab.append(explanation);
     const grid = document.createElement('div'); grid.className = 'bv-violin-grid'; tab.append(grid);
-    bars.forEach((bar, bi) => {
+    model.staves[0].bars.forEach((bar, bi) => {
       const card = document.createElement('section'); card.className = 'bv-violin-bar';
       const title = document.createElement('h4'); title.textContent = 'Bar ' + ScoreEngine.barNumber(model, bi); card.append(title);
       const line = document.createElement('p');
-      const items = events.map((event, i) => ({ event, spot: route[i] })).filter(x => x.event.bar === bi);
-      line.textContent = items.length ? items.map(({event, spot}) => {
-        const m = event.pitch.midi, pitch = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'][m % 12] + (Math.floor(m / 12) - 1);
-        return pitch + ': ' + (spot ? ['G','D','A','E'][spot.s] + ' string, ' + (spot.finger ? (spot.place ? spot.place + ' ' : '') + 'finger ' + spot.finger : 'open') + ', position ' + spot.pos + (spot.shift ? ' (shift)' : '') : '×');
-      }).join(' · ') : 'Rest';
+      const items = bar.events.filter(event => plan.has(event)).map(event => {
+        const pitch = event.pitches.find(note => !note.tiedFrom);
+        const name = 'CDEFGAB'[pitch.l] + (pitch.a < 0 ? '♭'.repeat(-pitch.a) : '♯'.repeat(pitch.a)) + pitch.o;
+        return name + ' · ' + plan.get(event).description;
+      });
+      line.textContent = items.join(' / ') || 'No new notes';
       card.append(line); grid.append(card);
     });
   }
@@ -170,6 +166,7 @@
     const src = sourceScore, m = mode.value, fullGuitar = ['guitar','guitar-solo'].includes(m) && (composer === 'francisco-tarrega' || !!src.guitarArrangement || (m === 'guitar-solo' && src.instrument === 'pluck')), isolated = !fullGuitar && !['original','piano','chords'].includes(m);
     pianoControls.hidden = m !== 'piano';
     violinControls.hidden = !['melody','violin'].includes(m);
+    if (!violinPrefs[work.value]) violinShow.checked = m === 'violin';
     violinPosition.disabled = !violinShow.checked;
     staff.disabled = !isolated && (m !== 'piano' || !resultNeedsPianoReduction(src)); voice.disabled = staff.disabled;
     octave.disabled = !isolated;
@@ -187,7 +184,7 @@
       if (m === 'alto' || m === 'tenor') message += ' Written ' + (m === 'alto' ? 'E♭ alto' : 'B♭ tenor') + ' part; audio sounds at concert pitch. Check register and breathing.';
       if (m === 'violin') {
         message += ' Violin part at concert pitch, kept between the open G string (G3) and E7.';
-        message += ' Bowings and fingerings are yours to mark.';
+        message += ' Adjust suggested fingerings and positions in Settings & files.';
       }
     }
     if (result.registerFit) {
@@ -224,8 +221,15 @@
     if (m === 'piano') pianoGuide(result);
     current = result; note.textContent = message;
     try {
-      player = ScoreEngine.render(host, result, { practiceId: src.id + (src.guitarArrangement && ['guitar', 'guitar-solo'].includes(m) ? ':guitar' : '') });
-      if (['melody','violin'].includes(m) && violinShow.checked) violinGuide(result);
+      const violinFingering = ['melody', 'violin'].includes(m) ? {
+        enabled: violinShow.checked,
+        position: Number(violinPosition.value) || undefined,
+        onPlan: violinGuide
+      } : undefined;
+      player = ScoreEngine.render(host, result, {
+        practiceId: src.id + (src.guitarArrangement && ['guitar', 'guitar-solo'].includes(m) ? ':guitar' : ''),
+        violinFingering
+      });
       if (m === 'chords') {
         if (work.value === 'beethoven-ode-to-joy') chordStudy();
         else tab.textContent = 'Prepared chord accompaniment is available for Ode to Joy. Choose that theme to study chord shapes and bass roots; other works retain their source notation.';
@@ -285,7 +289,7 @@
   staff.addEventListener('change',() => { if (sourceScore) { fillVoices(); update(); } });
   [mode,voice,octave].forEach(select => select.addEventListener('change',update));
   $('print').addEventListener('click',() => {
-    if (!current || !ScoreEngine.preparePrintScore(current, host.scoreFingeringPrint ? host.scoreFingeringPrint() : {})) return;
+    if (!current || !ScoreEngine.preparePrintScore(current, player?.printOptions())) return;
     if (tab.childNodes.length) {
       const appendix = document.createElement('section'); appendix.className = 'se-print-score-page bv-print-tab';
       appendix.append(...[...tab.childNodes].map(node => node.cloneNode(true)));

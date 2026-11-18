@@ -8,6 +8,8 @@
   grid-column: auto; container-type: inline-size;
 }
 .cos-home .today-grid > .home-widget[data-widget-size="wide"] { grid-column: 1 / -1; }
+.cos-home .today-grid > .home-widget[data-widget-size="standard"] { grid-column: auto; }
+.cos-home .today-grid > .home-widget:not([data-widget-size="compact"]) { max-height: none; }
 .widget-layout-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:.6rem; margin:0 0 1rem; color:var(--text-primary); }
 .widget-layout-toolbar p { flex-basis:100%; font-size:.85rem; margin:0; }
 .widget-layout-toolbar button, .widget-card-controls button, .widget-card-controls select, .widget-expanded-close {
@@ -20,7 +22,7 @@
 .widget-card-controls .widget-edit-control { display:none; }
 .widgets-editing .widget-card-controls .widget-edit-control { display:inline-flex; align-items:center; gap:.3rem; font: .75rem Arial,sans-serif; }
 .widget-card-controls .widget-expand {
-  margin-left:auto; width:28px; height:28px; min-height:28px;
+  margin-left:auto; width:32px; height:32px; min-height:32px;
   padding:0; font:20px/1 Arial,sans-serif; border-radius:6px;
   opacity:.65;
 }
@@ -38,9 +40,6 @@ body.theme-liquid-woodland.theme-home .cos-home .home-widget--votd.verse-reader 
 body.theme-liquid-woodland.theme-home .cos-home .home-widget--votd.verse-reader .wp-pill { color:var(--scroll-ink); }
 body.theme-liquid-woodland.theme-home .cos-home .home-widget--votd.verse-reader .votd-context { margin-bottom:.7rem; }
 .cos-home .today-grid > [data-widget-size="compact"] { max-height:min(620px, 85vh); max-height:min(620px, 85svh); overflow:auto; }
-.cos-home .today-grid > [data-widget-size="standard"],
-.cos-home .today-grid > [data-widget-size="wide"] { max-height:85vh; max-height:85svh; overflow:auto; }
-/* Large creation workspaces have their own fullscreen mode; the dashboard remains a glance. */
 /* The dialog only positions the widget; its own design supplies the visible frame.
    Leave transparent room for the close button's keyboard focus ring. */
 .widget-expanded { width:min(1100px, 94vw); max-width:94vw; max-height:92vh; max-height:92svh; box-sizing:border-box; padding:.35rem; border:0; border-radius:0; background:transparent; box-shadow:none; color:var(--text-primary); }
@@ -50,7 +49,6 @@ body.theme-liquid-woodland.theme-home .cos-home .home-widget--votd.verse-reader 
 .widget-is-expanded .widget-card-controls { display:none; }
 @media (max-width:900px) {
   .cos-home .today-grid { grid-template-columns:minmax(0,1fr); }
-  .cos-home .today-grid > .home-widget { grid-column:1 / -1; }
 }
 @media (min-width:1100px) {
   .cos-home .today-grid:has(> [data-widget-size="compact"]) { grid-template-columns:repeat(6,minmax(0,1fr)); }
@@ -96,15 +94,29 @@ body.theme-liquid-woodland.theme-home .cos-home .home-widget--votd.verse-reader 
   .cos-home .timer-btn--start { grid-column: 1 / -1; }
 }
 
-/* Discovery cards share the dashboard grid; no orphaned half-width wrapper. */
-.cos-home .today-grid--more { gap: .75rem; }
-.cos-home .today-grid--more > .home-widget { padding: 1rem; }
-.cos-home .today-grid--more .science-news-title {
-  font-size: clamp(1.3rem, 4.5cqi, 1.7rem);
-  line-height: 1.15;
+/* Reserve the top-right corner for the expand button alongside widget actions. */
+.today-grid .lotd-header,
+.today-grid .apod-header,
+.today-grid .weather-header,
+.today-grid .hcal-head { padding-inline-end: 2.35rem; }
+
+.cos-home .today-grid .lotd-photo {
+  height: clamp(7rem, 24cqi, 10rem);
+  min-height: 0;
 }
-.cos-home .today-grid--more .science-news-header { gap: .65rem; }
-.cos-home .today-grid--more .science-news-story { padding-block: .75rem; }
-.cos-home .today-grid--more .timer-col-clock,
-.cos-home .today-grid--more .timer-col-config { padding: 1rem; }
-.cos-home .today-grid--more .timer-ring-wrap { margin-block: .65rem; }
+
+/* Let the label and action wrap on narrow cards. */
+@container (max-width: 360px) {
+  .today-grid .lotd-header { flex-wrap: wrap; gap: .35rem; }
+}
+
+/* Keep the puzzle choices visible even when the dashboard card is resized. */
+.today-grid #home-puzzles:not(:fullscreen, .creation-app-expanded) .dp-tabs {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.today-grid #home-puzzles:not(:fullscreen, .creation-app-expanded) .dp-key {
+  min-width: 0;
+  padding-inline: 0;
+}

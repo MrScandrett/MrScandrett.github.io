@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
+import {plan as planViolin} from '../assets/js/score-violin-fingering.mjs';
 const require=createRequire(import.meta.url);
 require('../assets/js/guitar-tablature.js');require('../assets/js/music-notation.js');require('../assets/js/score-engine.js');require('../assets/js/composer-arrangement.js');
 const library=require('../data/score-library.json').scores;
@@ -220,4 +221,45 @@ test('solo studies prefer an active bass line over a single low entry',()=>{
   const bass=solo.staves[0].voices[1][0].events.filter(e=>e.kind==='note');
   assert.ok(bass.length,'the opening bass must not disappear in favor of a one-bar secondary voice');
   assert.equal(bass[0].pitches[0].midi%12,0);
+});
+
+test('violin fingering follows conventional first-position finger numbers and chromatic placement', () => {
+  const {m} = notes({time:'4/4', staves:[{notes:'G3/8 A3 B3 C4 D4 E4 F#4 G4 | E5/4 F5 F#5 B5'}]});
+  const plan = planViolin(m, [0], 1);
+  const spots = m.staves[0].bars.flatMap(bar => bar.events.map(event => plan.get(event)));
+  assert.deepEqual(spots.map(spot => spot.finger), [0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 1, 4]);
+  assert.deepEqual(spots.map(spot => spot.string), [0, 0, 0, 0, 1, 1, 1, 1, 3, 3, 3, 3]);
+  assert.equal(spots[9].place, 'low');
+});
+
+test('violin marks cover the fitted range, skip ties, and flag unsupported passages', () => {
+  const {m} = notes({time:'4/4', staves:[{notes:'D4/4~ D4 E7 (D4 A4) | G3/4 r/4 G3/4 A4/4+tr'}]});
+  const [first, second] = m.staves[0].bars.map(bar => bar.events);
+  const automatic = planViolin(m, [0]);
+  assert.equal(automatic.get(first[0]).finger, 0);
+  assert.equal(automatic.has(first[1]), false);
+  assert.equal(automatic.get(first[2]).string, 3);
+  assert.equal(automatic.get(first[2]).finger, 4);
+  assert.equal(automatic.get(first[2]).position, 11);
+  assert.equal(automatic.get(first[2]).shift, true);
+  assert.match(automatic.get(first[3]).review, /double stop/);
+  assert.equal(automatic.has(second[1]), false);
+  assert.equal(automatic.get(second[2]).shift, false);
+  assert.match(automatic.get(second[3]).review, /ornament/);
+  assert.match(planViolin(m, [0], 1).get(first[2]).review, /selected violin hand position/);
+});
+
+test('automatic violin suggestions cover each pioneer work in its fitted register', () => {
+  for (const id of new Set(Object.values(catalog).flatMap(entry => entry.scores))) {
+    const {m} = notes(arrange(library[id], {mode:'violin'}));
+    const plan = planViolin(m, [0]);
+    const attacks = m.staves[0].bars.flatMap(bar => bar.events).filter(event =>
+      !event.hidden && event.pitches?.some(pitch => !pitch.tiedFrom));
+    assert.equal(plan.size, attacks.length, id);
+    for (const event of attacks) {
+      const spot = plan.get(event);
+      if (spot.review) assert.match(spot.review, /grace notes or ornament/, id);
+      else assert.ok(spot.finger >= 0 && spot.finger <= 4 && spot.string >= 0 && spot.string < 4, id);
+    }
+  }
 });

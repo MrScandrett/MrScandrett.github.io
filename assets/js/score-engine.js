@@ -788,10 +788,11 @@
 
     // Vertical extents per staff per system, in steps above the bottom line.
     function extents(sys, si) {
-      var st = model.staves[si], hi = 8, lo = 0, dyn = false;
+      var st = model.staves[si], hi = 8, lo = 0, dyn = false, violin = false;
       sys.bars.forEach(function (bi) {
         st.bars[bi].events.forEach(function (ev) {
           if (ev.dyn) dyn = true;
+          if (model.violinFingerings?.has(ev)) violin = true;
           if (ev.hidden) return;
           if (ev.kind !== 'note') {
             hi = Math.max(hi, ev.restStep + 3);
@@ -816,7 +817,7 @@
       var hasDirections = (expressions.directions || []).some(function (d) { return (d.staff || 0) === si && sys.bars.indexOf(d.bar - 1) >= 0; }) ||
         (expressions.hairpins || []).some(function (span) { return covers(span, sys, si); });
       var hasText = (expressions.directions || []).some(function (d) { return d.text && (d.staff || 0) === si && sys.bars.indexOf(d.bar - 1) >= 0; });
-      return { hi: hi + 1 + (fingers && rightHand ? 14 : 0), lo: lo - 1 - (hasText ? 9 : dyn || hasDirections ? 6 : 0) - (fingers && !rightHand ? 14 : 0), directionLo: directionLo };
+      return { hi: hi + 1 + (violin ? 4 : 0) + (fingers && rightHand ? 14 : 0), violinHi: hi, lo: lo - 1 - (hasText ? 9 : dyn || hasDirections ? 6 : 0) - (fingers && !rightHand ? 14 : 0), directionLo: directionLo };
     }
 
     var out = [], hl = [], y = 0, evIndex = 0;
@@ -1013,6 +1014,7 @@
             ev.accW = col ? col.accW : 0;
             ev.bottom = b; ev.sys = sIndex; ev.sysEnd = x1; ev.sysStart = bx0;
             ev.i = evIndex++;
+            if (model.violinFingerings?.has(ev)) ev.violinY = b - ext[si].violinHi * h - 0.8 * S;
             allEvents.push(ev);
             systemEvents.push(ev);
             barEvents.push(ev);
@@ -1371,6 +1373,12 @@
       var step = above ? Math.max(8, ev.hi + (ev.up ? 7 : 1)) : Math.min(0, ev.lo - (ev.up ? 1 : 7));
       var fingerY = b - step * h + (above ? -2 : 3) * S;
       out += '<text class="se-fingering" x="' + (ev.x + headW(ev, S) / 2) + '" y="' + fingerY + '" font-size="' + S + '" text-anchor="middle">' + ev.fingering + '</text>';
+    }
+    var violin = model.violinFingerings?.get(ev);
+    if (violin) {
+      out += '<text class="se-violin-finger" x="' + (ev.x + headW(ev, S) / 2) + '" y="' +
+        ev.violinY + '" font-size="' + (1.08 * S) + '" text-anchor="middle" aria-label="' + M.escape(violin.description) +
+        '">' + (violin.review ? '†' : violin.finger) + '<title>' + M.escape(violin.description) + '</title></text>';
     }
     if (ev.graces) out += drawGraces(ev, clef, b, S, h);
     if (ev.hidden) { ev.headX = ev.x; ev.headY = b - 4 * h; return out + '</g>'; }
@@ -1791,6 +1799,7 @@
     endPrintScore();
     var model = prepare(score);
     analyse(model);
+    if (options.violinPlan) model.violinFingerings = options.violinPlan(model);
     // Engrave at a fixed width so the paper edition does not depend on the
     // learner's screen size or score zoom setting.
     // Same large-print engraving the fake book uses: bigger staff, noteheads and
@@ -2371,7 +2380,7 @@
         var group = layer();
         if (view.layout.notation) group.innerHTML = view.layout.notation[system.index];
         else view.source.querySelectorAll('[data-se-system="' + system.index + '"]').forEach(function (node) { group.appendChild(node.cloneNode(true)); });
-        group.querySelectorAll('.se-finger-number, .se-measure').forEach(function (node) { node.remove(); });
+        group.querySelectorAll('.se-finger-number, .se-violin-finger, .se-measure').forEach(function (node) { node.remove(); });
         page.appendChild(group);
         var ink = group.getBBox();
         var offset = width + padding - ink.x;
@@ -2826,7 +2835,7 @@
     var colorToggle = el('button', { type: 'button', class: 'se-toggle', 'aria-pressed': root.MusicNotation.preferences.noteColors ? 'true' : 'false' }, 'Note colors');
     var printButton = el('button', { type: 'button', class: 'se-toggle se-print-score-button' }, 'Print score');
     printButton.setAttribute('aria-label', 'Print a paginated score of ' + (score.title || 'this piece'));
-    printButton.addEventListener('click', function () { printScorePages(score, fig.scoreFingeringPrint ? fig.scoreFingeringPrint() : null); });
+    printButton.addEventListener('click', function () { printScorePages(score, player.printOptions()); });
 
     function updatePreferenceButtons() {
       var prefs = root.MusicNotation.preferences;
@@ -3262,6 +3271,49 @@
     withFingering(function (F) {
       if (!player.destroyed) offFingering = F.install(fig, score, displaySettings);
     });
+    var violinOptions = options?.violinFingering;
+    var violinStaves = score.staves.flatMap(function (staff, index) {
+      if (violinOptions) return index === 0 ? [index] : [];
+      var instrument = staff.instrument || score.instrument;
+      return instrument === 'violin' || ((instrument === 'strings' || !instrument) && /\bviolin\b/i.test(staff.label || '')) ? [index] : [];
+    });
+    var violinPrint;
+    player.printOptions = function () {
+      var piano = fig.scoreFingeringPrint?.();
+      if (!piano || !violinPrint) return violinPrint || piano;
+      return Object.assign({}, piano, violinPrint, { note: [piano.note, violinPrint.note].filter(Boolean).join(' ') });
+    };
+    if (violinStaves.length && (!violinOptions || violinOptions.enabled)) {
+      import(new URL('score-violin-fingering.mjs', scriptUrl || location.href).href).then(function (V) {
+        if (player.destroyed) return;
+        var planned;
+        function planViolin(target) {
+          return V.plan(target, violinStaves, violinOptions?.position);
+        }
+        function showViolin(show) {
+          if (show && !planned) planned = planViolin(model);
+          model.violinFingerings = show ? planned : null;
+          violinPrint = show ? { violinPlan: planViolin, note: V.legend } : null;
+          layout = null;
+          draw();
+        }
+        if (violinOptions) {
+          showViolin(true);
+          violinOptions.onPlan?.(model, planned, V.legend);
+          return;
+        }
+        var toggle = el('button', { type: 'button', class: 'se-toggle se-fingering-toggle', 'aria-pressed': 'false' }, 'Violin finger numbers');
+        var legend = el('p', { class: 'se-fingering-key', hidden: '' }, V.legend);
+        toggle.addEventListener('click', function () {
+          var show = toggle.getAttribute('aria-pressed') !== 'true';
+          toggle.setAttribute('aria-pressed', String(show));
+          toggle.classList.toggle('is-on', show);
+          legend.hidden = !show;
+          showViolin(show);
+        });
+        displaySettings.append(toggle, legend);
+      }).catch(function (error) { console.error('Could not load violin fingerings:', error); });
+    }
     fig.insertBefore(noteList, cap);
     var pieceGroup = fig.closest('details.composer-piece-group');
     function onPieceToggle() {

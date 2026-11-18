@@ -654,14 +654,19 @@
     const reqRatio = { flat: 0.8, ramp: 2.1, lift: 3.4 }[task] || 2.1;
     const netTorque = +(r * 0.85).toFixed(2);
     const climbs = netTorque >= reqRatio * 0.85;
+    const outputRpm = 120 / r;
+    const wheelCircM = Math.PI * 0.06; // 60 mm competition wheel
+    const speedMps = (outputRpm / 60) * wheelCircM;
+    const sprintSec = +(2.0 / Math.max(0.05, speedMps)).toFixed(1);
+    const pushFactor = +(netTorque * (task === 'flat' ? 1.0 : 0.9)).toFixed(2);
 
-    state.gears = { driver: a, driven: b, ratio: r, task, climbs };
+    state.gears = { driver: a, driven: b, ratio: r, task, climbs, outputRpm, speedMps, sprintSec, pushFactor };
 
     $('#rb-gear-readout').innerHTML =
-      `Ratio ${r.toFixed(2)}:1 · output speed ≈ ${(1 / r).toFixed(2)}× input · ideal torque ≈ ${r.toFixed(2)}× input (net ≈ ${netTorque}× after mesh friction).<br>` +
+      `Ratio ${r.toFixed(2)}:1 · ${Math.round(outputRpm)} RPM (${speedMps.toFixed(2)} m/s) · <strong>2 m field sprint ≈ ${sprintSec} s</strong> · net push/torque ≈ ${netTorque}×.<br>` +
       `<strong class="${climbs ? 'rb-ok' : 'rb-warn'}">${
         climbs
-          ? 'Task check: sufficient torque for selected load.'
+          ? (r < 1 ? 'Fast flat sprint: watch traction and motor heat on heavy defense.' : 'Task check: climbs load cleanly without stalling.')
           : 'Stall warning: ratio too low for this load—increase driven teeth or reduce driver teeth.'
       }</strong>`;
 
@@ -747,8 +752,10 @@
 
     ctx.fillStyle = '#d4e4e8';
     ctx.font = '600 11px "IBM Plex Mono", monospace';
-    ctx.fillText(`Input: 120 RPM`, 22, H - 16);
-    ctx.fillText(`Output: ${Math.round(120 / ratio)} RPM`, 165, H - 16);
+    ctx.fillText(`Input: 120 RPM`, 22, H - 32);
+    ctx.fillText(`Output: ${Math.round(120 / ratio)} RPM`, 165, H - 32);
+    ctx.fillStyle = '#9de2ef';
+    ctx.fillText(`2 m Sprint: ${state.gears.sprintSec ?? (2.0 / Math.max(0.05, ((120 / ratio) / 60) * Math.PI * 0.06)).toFixed(1)} s (${((120 / ratio) / 60 * Math.PI * 0.06).toFixed(2)} m/s)`, 22, H - 14);
 
     // Right side: Ramp / Load Dynamometer
     const rx = 365;
@@ -798,7 +805,10 @@
 
     ctx.fillStyle = climbs ? '#90e2b7' : '#ffd66f';
     ctx.font = '700 11px "IBM Plex Mono", monospace';
-    ctx.fillText(climbs ? 'STATUS: CLIMBS STEADILY' : 'STATUS: MOTOR STALLS ON GRADE', rx, H - 16);
+    const actSec = state.effector?.type === 'push' ? 1.1 : state.effector?.type === 'scoop' ? 1.6 : 2.2;
+    const cycleSec = +((state.gears.sprintSec || 5.3) * 2 + actSec).toFixed(1);
+    const estCycles = climbs ? Math.floor(120 / cycleSec) : 0;
+    ctx.fillText(climbs ? `CLIMBS · ~${estCycles} cycles / 2 min match` : 'STATUS: MOTOR STALLS ON GRADE', rx, H - 14);
   }
 
   /* ── MISSION 05: SERVOS ────────────────────────────────────────── */
@@ -1268,7 +1278,27 @@
 
   }
 
+  function updateReadinessBadge() {
+    const badge = $('#rb-readiness-badge');
+    if (!badge) return;
+    const readyCount = [
+      state.chassis.ok,
+      state.printing.walls >= 3 && state.printing.infill >= 20,
+      state.pen.pass,
+      state.gears.climbs,
+      state.servo.safe,
+      state.integration.done >= 6 && state.integration.fault === 'nominal',
+      state.effector.passes >= 2
+    ].filter(Boolean).length;
+    const sprint = state.gears.sprintSec || (2.0 / Math.max(0.05, ((120 / state.gears.ratio) / 60) * Math.PI * 0.06));
+    const actSec = state.effector.type === 'push' ? 1.1 : state.effector.type === 'scoop' ? 1.6 : 2.2;
+    const cycleSec = (sprint * 2 + actSec).toFixed(1);
+    badge.textContent = `${readyCount}/7 Subsystems Ready · Est. Match Cycle: ${cycleSec} s`;
+    badge.dataset.ready = readyCount === 7 ? 'all' : readyCount >= 5 ? 'mid' : 'low';
+  }
+
   function updateSpecTable() {
+    updateReadinessBadge();
     const tbody = $('#rb-spec-body');
     if (!tbody) return;
     tbody.innerHTML = specRows()
@@ -1622,6 +1652,82 @@
   }
   applyBuild(initialBuild);
   initQuiz();
+  initBenchTabs();
+
+  function initBenchTabs() {
+    const app = $('[data-creation-app]');
+    const tabs = $$('[data-bench-tab]');
+    const benches = $$('[data-bench]');
+    const showAllBtn = $('#rb-show-all-benches');
+    if (!app || !tabs.length || !benches.length) return;
+
+    let activeIndex = 0;
+    let showAll = false;
+
+    function syncBenches() {
+      tabs.forEach((tab, idx) => {
+        const selected = idx === activeIndex;
+        tab.setAttribute('aria-selected', String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      });
+      benches.forEach((bench, idx) => {
+        bench.classList.toggle('is-hidden-bench', !showAll && idx !== activeIndex);
+      });
+      if (showAllBtn) {
+        showAllBtn.setAttribute('aria-pressed', String(showAll));
+        showAllBtn.textContent = showAll ? 'Single Bench View' : 'All 8 Benches';
+      }
+      if (activeIndex === 3 || showAll) drawGearCanvas();
+    }
+
+    function activateBench(idx, shouldScroll = false) {
+      activeIndex = Math.max(0, Math.min(benches.length - 1, idx));
+      if (showAll) showAll = false;
+      syncBenches();
+      if (shouldScroll) {
+        app.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+        tabs[activeIndex]?.focus({ preventScroll: true });
+      }
+    }
+
+    tabs.forEach((tab, idx) => {
+      tab.addEventListener('click', () => activateBench(idx, false));
+      tab.addEventListener('keydown', (e) => {
+        let next = -1;
+        if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = tabs.length - 1;
+        if (next >= 0) {
+          e.preventDefault();
+          activateBench(next, false);
+          tabs[next].focus();
+        }
+      });
+    });
+
+    if (showAllBtn) {
+      showAllBtn.addEventListener('click', () => {
+        showAll = !showAll;
+        syncBenches();
+      });
+    }
+
+    $$('[data-open-bench]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activateBench(Number(btn.dataset.openBench) || 0, true);
+      });
+    });
+
+    $$('.rb-route a').forEach((link, idx) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        activateBench(idx, true);
+      });
+    });
+
+    syncBenches();
+  }
 
   // Gentle animation loop for the meshing gear train (Mission 04)
   if (!reducedMotion && window.SimKit && typeof window.SimKit.loop === 'function') {

@@ -4,33 +4,32 @@
   const panel = document.querySelector('#tabpanel-today');
   if (!panel) return;
   const grids = [...panel.querySelectorAll('.today-grid')];
-  // Promote discovery cards before collecting widgets so render() cannot leave
-  // their wrapper stranded ahead of the reordered cards. Each gets the same
-  // sizing, ordering, persistence, and expand controls as the other widgets.
-  grids.forEach(grid => grid.querySelectorAll(':scope > .daily-discovery-stack').forEach(stack => {
-    stack.replaceWith(...stack.children);
-  }));
   const cards = grids.flatMap(grid => [...grid.children].filter(el => el.classList.contains('home-widget')));
   const key = 'steam-home-widgets-v1';
   const defaults = cards.map((card, index) => ({
     id: card.id || [...card.classList].find(c => c.startsWith('home-widget--')) || `widget-${index}`,
-    area: grids.indexOf(card.parentElement), size: card.matches('#home-calendar, #home-puzzles, .home-widget--apod') ? 'wide' : 'standard'
+    area: grids.indexOf(card.parentElement), size: card.dataset.widgetSize || 'standard',
+    legacyId: [...card.classList].find(c => c.startsWith('home-widget--'))
   }));
   let saved;
   try { saved = JSON.parse(localStorage.getItem(key)); } catch {}
-  const state = defaults.map(item => {
-    const match = Array.isArray(saved) && saved.find(s => s && s.id === item.id);
+  const matches = (savedItem, item) => savedItem && (
+    savedItem.id === item.id || savedItem.id === item.legacyId
+  );
+  const state = defaults.map(({ id, area, size, legacyId }) => {
+    const item = { id, area, size };
+    const match = Array.isArray(saved) && saved.find(savedItem => matches(savedItem, { id, legacyId }));
     return match ? { ...item, area: match.area === 1 ? 1 : 0, size: ['compact','standard','wide'].includes(match.size) ? match.size : item.size } : {...item};
   });
   if (Array.isArray(saved)) state.sort((a,b) => {
-    const rank = id => { const i = saved.findIndex(s => s && s.id === id); return i < 0 ? saved.length : i; };
+    const rank = id => { const item = defaults.find(d => d.id === id); const i = saved.findIndex(s => matches(s, item)); return i < 0 ? saved.length : i; };
     return rank(a.id) - rank(b.id);
   });
   const byId = new Map(defaults.map((item,i) => [item.id, cards[i]]));
   const toolbar = document.createElement('div'); toolbar.className = 'widget-layout-toolbar';
   const toggle = document.createElement('button'); toggle.type = 'button'; toggle.textContent = 'Customize widgets'; toggle.setAttribute('aria-pressed','false');
   const reset = document.createElement('button'); reset.type = 'button'; reset.textContent = 'Reset layout'; reset.hidden = true;
-  const hint = document.createElement('p'); hint.textContent = 'Drag a handle or use the arrows. Choose a size and keep favorites in Today. Saved on this device.'; hint.hidden = true;
+  const hint = document.createElement('p'); hint.textContent = 'Drag a handle or use the arrows. Choose a size and where each widget appears. Saved on this device.'; hint.hidden = true;
   const status = document.createElement('span'); status.className = 'widget-layout-status'; status.setAttribute('role','status');
   toolbar.append(toggle,reset,hint,status); grids[0].before(toolbar);
   function persist() { try { localStorage.setItem(key,JSON.stringify(state)); status.textContent = 'Layout saved'; } catch { status.textContent = 'Layout changed; storage is unavailable on this device.'; } }
@@ -48,10 +47,9 @@
     editing = !editing; panel.classList.toggle('widgets-editing',editing);
     toggle.textContent = editing ? 'Done' : 'Customize widgets'; toggle.setAttribute('aria-pressed',String(editing));
     reset.hidden = hint.hidden = !editing;
-    if (editing) panel.querySelector('.today-more').open = true;
   });
   reset.addEventListener('click', () => {
-    state.splice(0,state.length,...defaults.map(d=>({...d})));
+    state.splice(0,state.length,...defaults.map(({ id, area, size }) => ({ id, area, size })));
     state.forEach(item => { const card=byId.get(item.id); card.querySelector('[data-size]').value=item.size; card.querySelector('[data-area]').value=String(item.area); });
     render(); persist();
   });
@@ -92,7 +90,7 @@
       select.addEventListener('change',()=>{onChange(select.value);render();persist();}); wrapper.append(select);bar.append(wrapper);
     }
     selectControl('Size','data-size',[['compact','Compact'],['standard','Standard'],['wide','Wide']],item().size,value=>item().size=value);
-    selectControl('Location','data-area',[['0','Today'],['1','Also today']],String(item().area),value=>item().area=Number(value));
+    selectControl('Location','data-area',[['0','Daily dashboard'],['1','Classroom Tools']],String(item().area),value=>item().area=Number(value));
     const expand=document.createElement('button'); expand.type='button'; expand.className='widget-expand'; expand.textContent='⛶'; expand.title='Expand widget'; expand.setAttribute('aria-label',`Expand ${name}`);
     expand.addEventListener('click',()=>{dialog.setAttribute('aria-label',name);opener=expand;expanded=card;marker=document.createComment('expanded widget');card.replaceWith(marker);card.classList.add('widget-is-expanded');dialog.append(card);dialog.showModal();window.dispatchEvent(new Event('resize'));});
     bar.append(expand);card.prepend(bar);
