@@ -41,6 +41,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          # onnxruntime-node (via kokoro-js) fetches optional CUDA binaries on Linux;
+          # that download 404s and fails npm ci. CPU inference is unaffected.
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
 
       # Showcase apps are generated output. Rebuild every app from its canonical
       # student source so Pages can never deploy stale or hand-edited copies.
