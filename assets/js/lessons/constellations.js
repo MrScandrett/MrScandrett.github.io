@@ -343,17 +343,24 @@
   var allsky = null;
 
   var figureImages = {};
-  Object.keys(CONSTS).forEach(function(key) {
-    var image = new Image();
-    image.decoding = 'async';
-    image.src = '../../assets/images/lessons/constellations/' + key + '.webp';
-    figureImages[key] = image;
-  });
+  function ensureFigureImage(key) {
+    if (!key) return null;
+    if (!figureImages[key]) {
+      var image = new Image();
+      image.decoding = 'async';
+      image.src = '../../assets/images/lessons/constellations/' + key + '.webp';
+      figureImages[key] = image;
+    }
+    return figureImages[key];
+  }
 
   // ── Canvas ─────────────────────────────────────────────────────────────
   var canvas = document.getElementById('obs-canvas');
   var ctx = canvas.getContext('2d');
   var W = 1, H = 1;
+  var topInset = 65;
+  var bottomInset = 72;
+  var siteHeader = document.querySelector('.site-header');
 
   // ── Background star field ──────────────────────────────────────────────
   var BG_TYPES = ['O','B','B','A','A','A','A','F','F','G','G','K','K','M','M'];
@@ -374,6 +381,14 @@
     }
   }
 
+  function syncInsets() {
+    topInset = siteHeader ? Math.round(siteHeader.getBoundingClientRect().height) : 46;
+    bottomInset = (typeof infobar !== 'undefined' && infobar && infobar.offsetHeight)
+      ? Math.round(infobar.offsetHeight) : 72;
+    document.documentElement.style.setProperty('--obs-top', topInset + 'px');
+    document.documentElement.style.setProperty('--obs-bottom', bottomInset + 'px');
+  }
+
   function resize() {
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth;
@@ -381,6 +396,7 @@
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    syncInsets();
   }
 
   // ── Draw helpers ───────────────────────────────────────────────────────
@@ -440,19 +456,20 @@
   function projectConstellation(c) {
     var stars = c.renderStars || c.stars;
     var compact = W <= 768;
+    var leftEdge = compact ? 42 : (panelOpen ? ((panel && panel.offsetWidth) || 224) + 26 : 60);
     var bounds = {
-      left: compact ? 42 : 260,
+      left: leftEdge,
       right: compact ? W - 42 : W - 190,
-      top: compact ? 110 : 105,
-      bottom: compact ? H - 180 : H - 120
+      top: compact ? topInset + 54 : topInset + 48,
+      bottom: compact ? H - bottomInset - 90 : H - bottomInset - 44
     };
     if (bounds.right - bounds.left < 180) {
       bounds.left = 24;
       bounds.right = W - 24;
     }
     if (bounds.bottom - bounds.top < 220) {
-      bounds.top = 80;
-      bounds.bottom = H - 105;
+      bounds.top = topInset + 16;
+      bounds.bottom = H - bottomInset - 20;
     }
 
     var meanSin = stars.reduce(function(sum, s) {
@@ -548,7 +565,7 @@
 
   function drawFigureArtwork(pts) {
     if (!showArtwork) return;
-    var image = figureImages[activeKey];
+    var image = ensureFigureImage(activeKey);
     var pattern = window.CONSTELLATION_PATTERNS &&
       window.CONSTELLATION_PATTERNS[activeKey];
     if (!image || !image.complete || !image.naturalWidth ||
@@ -686,8 +703,9 @@
             top: candidate.y - 12,
             bottom: candidate.y + 4
           };
-          var inside = box.left >= 6 && box.right <= W - 6 &&
-            box.top >= 48 && box.bottom <= H - 82;
+          var minLabelLeft = (panelOpen && W > 768 && panel) ? panel.offsetWidth + 8 : 6;
+          var inside = box.left >= minLabelLeft && box.right <= W - 6 &&
+            box.top >= topInset + 6 && box.bottom <= H - bottomInset - 10;
           var overlaps = labelBoxes.some(function(other) {
             return !(box.right < other.left || box.left > other.right ||
               box.bottom < other.top || box.top > other.bottom);
@@ -869,6 +887,7 @@
   // ── Constellation switch ───────────────────────────────────────────────
   function setConst(key) {
     activeKey = key;
+    ensureFigureImage(key);
     selectedStarIndex = -1;
     tooltipPinned = false;
     hideTooltip();
@@ -892,6 +911,7 @@
       btn.classList.toggle('active', btn.dataset.const === key);
       btn.setAttribute('aria-pressed', btn.dataset.const === key ? 'true' : 'false');
     });
+    syncInsets();
   }
 
   // ── Mouse interactions ─────────────────────────────────────────────────
@@ -952,12 +972,13 @@
     tooltip.setAttribute('aria-hidden', 'false');
 
     var tooltipWidth = Math.min(210, W - 16);
+    var minTipLeft = (panelOpen && W > 768 && panel) ? panel.offsetWidth + 8 : 8;
     var tx = anchorX + 20;
     var ty = anchorY - 12;
     if (tx + tooltipWidth > W - 8) tx = anchorX - tooltipWidth - 12;
-    if (tx < 8) tx = 8;
-    if (ty + 212 > H - 8) ty = H - 220;
-    if (ty < 52) ty = 52;
+    if (tx < minTipLeft) tx = minTipLeft;
+    if (ty + 212 > H - bottomInset - 8) ty = H - bottomInset - 220;
+    if (ty < topInset + 8) ty = topInset + 8;
     tooltip.style.left = tx + 'px';
     tooltip.style.top = ty + 'px';
 
@@ -1160,8 +1181,8 @@
     return {
       left: (panelOpen && !mobile) ? panel.offsetWidth : 0,
       right: (notesOpen && !mobile) ? notes.offsetWidth : 0,
-      top: 46,
-      bottom: infobar.offsetHeight || 72
+      top: topInset,
+      bottom: bottomInset || 72
     };
   }
 
@@ -1173,6 +1194,7 @@
       'All 88 official constellations with their IAU boundaries. Drag to pan, scroll to zoom, click a region, galaxy, planet or anomaly. ' + allsky.todaySummary();
     document.getElementById('info-count').textContent = '88 constellations · 89 regions';
     document.getElementById('info-myth').textContent = 'Right ascension runs east ← west';
+    syncInsets();
   }
 
   function setMode(on, focusKey) {
@@ -1230,27 +1252,47 @@
   // Notes panel
   var notes = document.getElementById('obs-notes');
   var notesBtn = document.getElementById('obs-notes-toggle');
+  var notesClose = document.getElementById('obs-notes-close');
   var notesOpen = false;
-  notesBtn.addEventListener('click', function() {
-    notesOpen = !notesOpen;
-    if (notesOpen && panelOpen && window.innerWidth <= 768) setPanelOpen(false);
+
+  function setNotesOpen(open) {
+    notesOpen = !!open;
+    if (notesOpen) {
+      if (panelOpen && window.innerWidth <= 768) setPanelOpen(false);
+      selectedStarIndex = -1;
+      tooltipPinned = false;
+      hideTooltip();
+      if (allsky && allsky.closeCard) allsky.closeCard();
+    }
     notes.classList.toggle('open', notesOpen);
+    document.body.classList.toggle('notes-open', notesOpen);
     notesBtn.textContent = notesOpen ? 'FIELD NOTES ◂' : 'FIELD NOTES ▸';
     notesBtn.setAttribute('aria-expanded', notesOpen ? 'true' : 'false');
+    if (notesOpen) {
+      setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 60);
+    }
+  }
+
+  notesBtn.addEventListener('click', function() {
+    setNotesOpen(!notesOpen);
   });
 
+  if (notesClose) {
+    notesClose.addEventListener('click', function() {
+      setNotesOpen(false);
+      notesBtn.focus();
+    });
+  }
+
   document.getElementById('btn-dossier').addEventListener('click', function() {
-    if (!notesOpen) notesBtn.click();
+    if (!notesOpen) setNotesOpen(true);
     notes.scrollTop = 0;
   });
 
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Escape') return;
     if (notesOpen) {
-      notesOpen = false;
-      notes.classList.remove('open');
-      notesBtn.textContent = 'FIELD NOTES ▸';
-      notesBtn.setAttribute('aria-expanded', 'false');
+      setNotesOpen(false);
       notesBtn.focus();
     }
   });
@@ -1281,6 +1323,11 @@
 
   // ── Init ───────────────────────────────────────────────────────────────
   window.addEventListener('resize', resize);
+  window.addEventListener('load', syncInsets, { once: true });
+  if (typeof ResizeObserver === 'function') {
+    if (siteHeader) new ResizeObserver(syncInsets).observe(siteHeader);
+    if (infobar) new ResizeObserver(syncInsets).observe(infobar);
+  }
   genBgStars();
   resize();
   renderSpectralTable();

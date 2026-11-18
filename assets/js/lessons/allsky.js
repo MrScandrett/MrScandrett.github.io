@@ -1029,19 +1029,28 @@
 
     function insideList(c) {
       var out = [];
-      function test(ra, dec, name, tag) {
-        if (constAt(ra, dec) === c) out.push({ name: name, tag: tag });
+      function test(ra, dec, name, tag, hit) {
+        if (constAt(ra, dec) === c) out.push({ name: name, tag: tag, hit: hit });
       }
-      X.anomalies.forEach(function (a) { test(a.ra, a.dec, a.name, X.anomalyLabels[a.kind]); });
-      data.dso.forEach(function (d) {
-        if (X.messierNames[d[0]] || d[6]) test(d[2], d[3], d.label, DSO_LABEL[d[1]] || 'Deep-sky object');
+      X.anomalies.forEach(function (a) {
+        test(a.ra, a.dec, a.name, X.anomalyLabels[a.kind], { kind: 'anomaly', obj: a, ra: a.ra, dec: a.dec });
       });
-      planets.forEach(function (p) { test(p.ra, p.dec, p.name, 'Right now'); });
+      data.dso.forEach(function (d) {
+        if (X.messierNames[d[0]] || d[6]) {
+          test(d[2], d[3], d.label, DSO_LABEL[d[1]] || 'Deep-sky object', { kind: 'dso', obj: d, ra: d[2], dec: d[3] });
+        }
+      });
+      planets.forEach(function (p) {
+        test(p.ra, p.dec, p.name, 'Right now', { kind: 'planet', obj: p, ra: p.ra, dec: p.dec });
+      });
       var seen = {};
       return out.filter(function (o) { if (seen[o.name]) return false; seen[o.name] = 1; return true; });
     }
 
     function showCard(build) {
+      hover = null;
+      pointerConst = null;
+      opts.onHover('', { x: 0, y: 0 });
       card.textContent = '';
       card.hidden = false;
       var close = el('button', 'as-close', '✕');
@@ -1067,7 +1076,14 @@
           var ul = el('ul', 'as-list');
           inside.slice(0, 10).forEach(function (o) {
             var li = el('li');
-            li.appendChild(el('strong', '', o.name));
+            var btn = el('button', 'as-inside-btn', o.name);
+            btn.type = 'button';
+            btn.addEventListener('click', function () {
+              selected = null;
+              flyTo(o.hit.ra, o.hit.dec, Math.max(view.s, 6));
+              showObject(o.hit);
+            });
+            li.appendChild(btn);
             li.appendChild(document.createTextNode(' · ' + o.tag));
             ul.appendChild(li);
           });
@@ -1207,7 +1223,7 @@
         canvas.style.cursor = 'grabbing';
         return;
       }
-      if (!insideView(p)) { hover = null; pointerConst = null; opts.onHover('', p); return; }
+      if (e.target !== canvas || !insideView(p)) { hover = null; pointerConst = null; opts.onHover('', p); return; }
       var sky = screenToSky(p.x, p.y);
       opts.onCursor(sky.ra, sky.dec);
       hover = hitAt(p);
@@ -1308,6 +1324,7 @@
     api.layers = layers;
     api.focusFeatured = focusFeatured;
     api.select = function (id) { var c = idIndex[id]; if (c) { showConstellation(c); flyToConstellation(c); } };
+    api.closeCard = function () { selected = null; card.hidden = true; };
     api.reset = function () { view.cra = 180; view.cdec = 0; view.s = fitScale(); clampView(); selected = null; card.hidden = true; };
     api.setActive = function (on, focusKey) {
       active = !!on;
