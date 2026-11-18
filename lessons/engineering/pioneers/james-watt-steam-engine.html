@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>James Watt and the Steam Engine · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Why did James Watt's separate condenser bend the curve of history? Run a Newcomen engine and a Watt engine side by side, see where three quarters of the steam went, and follow the coal curve of the Industrial Revolution." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/figure-lesson.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
+  <style>
+    :root { --fl-accent: #9a3412; --fl-accent-2: #1d4ed8; --fl-ink: #1c1009; }
+    .se-engine-stage { aspect-ratio: 760 / 430; }
+    .se-engine-stage canvas { height: 100%; }
+    .se-counters { margin: 0.2rem 0 0; font-size: 0.82rem; font-variant-numeric: tabular-nums; color: var(--text-muted, #64748b); }
+    @media (max-width: 600px) { .se-engine-stage { aspect-ratio: 760 / 520; } }
+    .se-phase { margin: 0.6rem 0 0; min-height: 2.6em; font-size: 0.9rem; font-weight: 600; }
+    .se-bars { display: grid; gap: 0.35rem; margin-top: 0.7rem; font-size: 0.82rem; }
+    .se-bar { display: grid; grid-template-columns: minmax(0, 13rem) minmax(0, 1fr) 4.5rem; gap: 0.5rem; align-items: center; }
+    .se-bar-track { height: 0.8rem; border-radius: 999px; background: color-mix(in srgb, var(--text, #1d1d1f) 10%, transparent); overflow: hidden; }
+    .se-bar-fill { height: 100%; width: 0; border-radius: inherit; transition: width 0.2s ease; }
+    .se-bar span:last-child { font-variant-numeric: tabular-nums; text-align: right; }
+    .se-compare { width: 100%; border-collapse: collapse; margin-top: 0.8rem; font-size: 0.84rem; font-variant-numeric: tabular-nums; }
+    .se-compare th, .se-compare td { border-bottom: 1px solid var(--line, #d2d2d7); padding: 0.35rem 0.5rem; text-align: left; }
+    .se-compare td:last-child, .se-compare th:last-child { text-align: right; }
+    .se-saving { font-size: 0.84rem; margin: 0.5rem 0 0; }
+    .se-data { width: 100%; max-width: 420px; border-collapse: collapse; font-size: 0.84rem; font-variant-numeric: tabular-nums; }
+    .se-data th, .se-data td { border-bottom: 1px solid var(--line, #d2d2d7); padding: 0.25rem 0.5rem; text-align: right; }
+    .se-data th:first-child, .se-data td:first-child { text-align: left; }
+    .se-steps { counter-reset: se; list-style: none; padding: 0; display: grid; gap: 0.5rem; }
+    .se-steps li { counter-increment: se; padding-left: 2.1rem; position: relative; }
+    .se-steps li::before { content: counter(se); position: absolute; left: 0; top: 0.05rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.8rem; color: #fff; background: var(--fl-accent, #9a3412); }
+    @media (max-width: 600px) { .se-bar { grid-template-columns: minmax(0, 1fr) 4rem; } .se-bar-track { grid-column: 1 / -1; grid-row: 2; } }
+    @media (prefers-reduced-motion: reduce) { .se-bar-fill { transition: none; } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="fl-page">
+
+        <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+          <a href="../../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <a href="../../../steam-lessons.html">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <span class="ll-crumb-current" aria-current="page">James Watt and the Steam Engine</span>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero fl-hero">
+          <p class="eyebrow">Engineering · Heat &amp; Energy · History of Industry</p>
+          <h1>James Watt and the Steam Engine</h1>
+          <div class="fl-hero-meta">
+            <span>The Separate Condenser</span><span class="dot"></span>
+            <span>Latent Heat</span><span class="dot"></span>
+            <span>Horsepower</span><span class="dot"></span>
+            <span>The Industrial Revolution</span>
+          </div>
+          <p class="fl-lede">James Watt (1736&ndash;1819) did not invent the steam engine. Steam engines had been pumping water out of mines for fifty years before he was asked to fix a broken model of one. What Watt worked out was where its fuel was going: about three quarters of the steam was spent reheating cold iron. His fix, a separate condenser, made steam engines use about a quarter as much coal for the same work. That made steam cheap enough for factories, mills, and later railways, and it is one of the reasons graphs of coal use, city growth, and income per person start to curve sharply upward around 1800.</p>
+        </section>
+
+        <nav class="ll-lesson-steps" aria-label="Lesson sections">
+          <a href="#fl-sec-problem">The Problem</a>
+          <a href="#fl-sec-lab">Engine Lab</a>
+          <a href="#fl-sec-dilemma">The Dilemma</a>
+          <a href="#fl-sec-bio">Biography</a>
+          <a href="#fl-sec-gallery">Gallery</a>
+          <a href="#fl-sec-timeline">Timeline</a>
+          <a href="#fl-sec-contributions">Contributions</a>
+          <a href="#fl-sec-curve">The Curve</a>
+          <a href="#fl-sec-legacy">Legacy</a>
+          <a href="#fl-sec-sources">Sources</a>
+          <a href="#fl-sec-practice">Practice</a>
+        </nav>
+
+        <!-- The Problem -->
+        <section class="fl-card" id="fl-sec-problem" style="--card-accent:#9a3412;">
+          <h2>The Problem: Mines Full of Water</h2>
+          <p>By the 1700s Britain was digging deeper for coal, tin, and copper, and the deeper a mine went, the more groundwater flooded it. Horses walking in circles could only pump so much. In 1712 Thomas Newcomen, an ironmonger from Dartmouth, built the first practical answer near Dudley Castle in the English Midlands: an <strong>atmospheric engine</strong>. It is called that because the air does the pushing, not the steam.</p>
+          <ol class="se-steps">
+            <li><strong>Fill.</strong> Steam from a boiler fills a big upright cylinder under a piston. The heavy pump rods on the far end of a rocking wooden beam pull the piston up.</li>
+            <li><strong>Condense.</strong> A jet of cold water sprays into the cylinder. The steam turns back into a few spoonfuls of water, leaving a near-vacuum.</li>
+            <li><strong>Push.</strong> The weight of the air above the open-topped piston (about 10 tonnes on every square metre) shoves it down. The beam rocks, and the pump rods lift water out of the mine.</li>
+            <li><strong>Repeat.</strong> About twelve times a minute, day and night.</li>
+          </ol>
+          <p>Newcomen engines worked, and hundreds were built. But they ate coal. At a coal mine that hardly mattered, because the fuel was right there. At the tin mines of Cornwall, where coal had to be shipped in, many mines could barely afford to run them.</p>
+        </section>
+
+        <!-- Engine Lab -->
+        <section class="fl-card" id="fl-sec-lab" style="--card-accent:#1d4ed8;">
+          <h2>Engine House Lab: Newcomen vs. Watt</h2>
+          <p>Here are both engines with the same 30-inch cylinder and 7-foot stroke, pumping from a mine 60 m deep. Watch the colour of the cylinder walls: blue is cold, red is 100 &deg;C. Then switch engines and compare where the steam goes.</p>
+
+          <div class="fl-lab" data-memory-ignore>
+            <h3>Where does the steam go?</h3>
+            <div class="fl-lab-stage se-engine-stage"><canvas id="se-engine" role="img" aria-label="Cutaway of a beam engine: a boiler and cylinder on the left, a rocking wooden beam on a brick wall, and pump rods going down a mine shaft on the right. The cylinder walls change colour with their temperature."></canvas></div>
+            <p class="se-phase" id="se-phase" aria-live="polite"></p>
+            <p class="se-counters" id="se-counters"></p>
+            <div class="fl-lab-controls">
+              <fieldset>
+                <legend>Engine</legend>
+                <label class="fl-lab-check"><input type="radio" name="se-engine" value="newcomen" checked /> Newcomen (1712)</label>
+                <label class="fl-lab-check"><input type="radio" name="se-engine" value="watt" /> Watt (1776)</label>
+              </fieldset>
+              <label><span><span id="se-chill-label">How cold the spray leaves the cylinder</span> <output id="se-chill-out" for="se-chill">60 °C</output></span>
+                <input type="range" id="se-chill" min="25" max="95" step="1" value="60" /></label>
+              <label class="fl-lab-check"><input type="checkbox" id="se-slow" checked /> Slow motion</label>
+              <div class="fl-lab-buttons">
+                <button type="button" id="se-play" aria-pressed="false">Pause</button>
+                <button type="button" id="se-reset">Reset counters</button>
+              </div>
+            </div>
+            <div class="se-bars" aria-hidden="true">
+              <div class="se-bar"><span>Steam that fills the cylinder</span><div class="se-bar-track"><div class="se-bar-fill" id="se-bar-fill" style="background:#16a34a"></div></div><span id="se-bar-fill-n"></span></div>
+              <div class="se-bar"><span>Steam wasted reheating iron</span><div class="se-bar-track"><div class="se-bar-fill" id="se-bar-waste" style="background:#dc2626"></div></div><span id="se-bar-waste-n"></span></div>
+            </div>
+            <p class="fl-lab-readout" id="se-readout" aria-live="polite"></p>
+            <table class="se-compare" aria-label="Coal needed by each engine to lift 1,000 tonnes of water 60 m">
+              <thead><tr><th scope="col">To lift 1,000 tonnes of water 60 m</th><th scope="col">Cold spot</th><th scope="col">Coal burned</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Newcomen engine</th><td id="se-cmp-n-chill"></td><td id="se-cmp-n"></td></tr>
+                <tr><th scope="row">Watt engine</th><td id="se-cmp-w-chill"></td><td id="se-cmp-w"></td></tr>
+              </tbody>
+            </table>
+            <p class="se-saving" id="se-cmp-saving"></p>
+            <ul class="fl-lab-goals" aria-label="Challenges">
+              <li id="se-goal-best">Find the spray temperature that gives Newcomen its best duty</li>
+              <li id="se-goal-watt">Get the Watt engine's duty to 18 million or more</li>
+              <li id="se-goal-third">Make Watt use less than a third of Newcomen's coal</li>
+            </ul>
+          </div>
+          <div class="fl-callout a1"><strong>Try this:</strong> On the Newcomen engine, slide the spray temperature all the way down to 25 &deg;C. The push on the piston goes up, so why does the coal bill go up too? Now switch to Watt and do the same. What changed?</div>
+          <p style="font-size:0.8rem;color:var(--text-muted,#64748b);">Model assumptions: the steam is at 1 atmosphere and 100 &deg;C; what is left after condensing is water vapour at the cold-spot temperature; 80 kJ of heat warms the cylinder's iron skin and piston by 1 &deg;C; the boiler gets 60% of the coal's heat into the water; friction and leaks take 25% of the work, and Watt's air pump another 7%. Those last numbers are set so the results land near the duties engineers measured on real engines in the 1700s. It shows the shape of the problem, not one particular engine.</p>
+        </section>
+
+        <!-- The Dilemma -->
+        <section class="fl-card" id="fl-sec-dilemma" style="--card-accent:#9a3412;">
+          <h2>Newcomen's Dilemma and Watt's Way Out</h2>
+          <p>A Newcomen engine has one cylinder doing two jobs. It has to be <strong>hot</strong>, so that incoming steam fills it instead of condensing on the walls. It also has to be <strong>cold</strong>, so that the steam left inside condenses completely and gives a good vacuum. Any temperature you pick is wrong for one of those jobs.</p>
+
+          <div class="fl-formula-box" role="img" aria-label="Latent heat: heat equals mass times latent heat. Reheating the walls from 50 to 100 degrees takes 4,000 kilojoules, which condenses about 1.8 kilograms of steam, three times what fills the cylinder.">
+            <span class="fl-formula-sym">Q = m &middot; L</span>
+            <div class="fl-formula-vars">
+              <div><strong>L &asymp; 2,257 kJ/kg</strong>: the <em>latent heat</em> of steam, given out when 1 kg of steam turns back into water at 100 &deg;C. Joseph Black measured it at Glasgow around 1761. Watt stumbled on the same effect in his own experiments, and Black explained it to him.</div>
+              <div>Reheating the iron from 50 &deg;C to 100 &deg;C: 80 kJ/&deg;C &times; 50 &deg;C = <strong>4,000 kJ</strong></div>
+              <div>Steam that condenses doing it: 4,000 &divide; 2,257 &asymp; <strong>1.8 kg</strong>, three times the 0.58 kg it takes to fill the cylinder</div>
+            </div>
+            <p class="fl-formula-note">Steam carries a huge amount of hidden heat. That is why a little cold iron wastes so much of it, and why Watt was so careful never to let his cylinder cool.</p>
+          </div>
+
+          <p>The chart shows the trade-off. The top line is the push on the piston: the colder the cold spot, the better the vacuum and the harder the air pushes. The bottom lines show <strong>duty</strong>, the score 18th-century engineers used to compare engines: how many foot-pounds of work an engine did for each bushel (84 lb) of coal. Newcomen's duty peaks at a lukewarm temperature and falls away on both sides. Watt's keeps rising as the condenser gets colder.</p>
+          <div class="fl-lab" data-memory-ignore>
+            <div class="fl-lab-stage"><canvas id="se-dilemma" role="img" aria-label="Two charts against cold-spot temperature from 25 to 95 degrees. Top: push on the piston rises as the cold spot gets colder. Bottom: Newcomen's duty peaks at about 6 million near 73 degrees and falls on both sides; Watt's duty rises steadily to about 19 million as the condenser gets colder. Dashed lines mark measured duties of real engines."></canvas></div>
+          </div>
+          <p>Watt's answer, which came to him on a Sunday walk across Glasgow Green in May 1765, was to stop asking one vessel to be hot and cold at once. Let the steam rush out of the hot cylinder into a <strong>separate condenser</strong> kept in cold water. The cylinder can stay at 100 &deg;C forever, wrapped in a jacket of steam, with its top closed so cold air never touches it. A small <strong>air pump</strong> worked by the beam clears water and air out of the condenser each stroke.</p>
+          <div class="ll-accordion-group">
+            <details class="ll-accordion">
+              <summary>If the top is closed, what pushes Watt's piston down?</summary>
+              <div class="ll-accordion-body">Steam does, at about atmospheric pressure. In Watt's single-acting pumping engines, steam from the boiler fills the space above the piston. When the valve to the condenser opens, the space below empties into a near-vacuum, and the steam above pushes the piston down with about the same force the air pushed Newcomen's. The difference is that this steam is hot, so the cylinder never gets chilled.</div>
+            </details>
+            <details class="ll-accordion">
+              <summary>Why not just make Newcomen's walls out of something that doesn't hold heat?</summary>
+              <div class="ll-accordion-body">Watt tried that first. He experimented with a cylinder made of wood, which soaks up much less heat than iron. It helped a little, but wood warps, leaks, and doesn't last. The real problem was the idea of cooling the cylinder at all.</div>
+            </details>
+          </div>
+        </section>
+
+        <!-- Biography -->
+        <section class="fl-card" id="fl-sec-bio" style="--card-accent:#1d4ed8;">
+          <h2>Who Was James Watt?</h2>
+          <figure class="fl-portrait" data-zoomable data-lightbox-group="watt" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Watt_James_von_Breda.jpg?width=1400">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Watt_James_von_Breda.jpg?width=600" alt="Oil portrait of James Watt, an older man in a dark coat with white hair, seated at a table beside a drawing of an engine" loading="lazy" />
+            <figcaption><strong>James Watt at 56</strong><br />Painted in 1792 by Carl Frederik von Breda. Behind him is a drawing of one of his engines. Public domain, via Wikimedia Commons.</figcaption>
+          </figure>
+          <p>James Watt was born on January 19, 1736, in Greenock, a port on the River Clyde in Scotland. His father was a shipwright, merchant, and builder who kept a workshop where young James, often too unwell for school, spent hours making models. He went to London at 19 to train as a maker of mathematical instruments (quadrants, compasses, scales) and came home a year later to set up shop at the University of Glasgow as its instrument maker.</p>
+          <p>The university was full of curious people. The chemist Joseph Black, who had discovered latent heat, became his friend. In the winter of 1763&ndash;64, Professor John Anderson asked Watt to repair the university's working model of a Newcomen engine, used in natural philosophy classes. Watt got it running, but it would only manage a few strokes before running out of steam. Rather than just making the boiler bigger, he set out to measure why. He found that the model used several times its cylinder's volume of steam every stroke, and that the cause was the cylinder being chilled and reheated each time. The separate condenser followed in 1765.</p>
+          <p>Turning the idea into an engine took ten years. Watt's first partner, the industrialist John Roebuck, paid for a patent in 1769 and a test engine, then went bankrupt. Making a cylinder accurate enough to stop steam leaking past the piston was beyond the ironworks of the time. In 1774 Watt moved to Birmingham to join Matthew Boulton, owner of the Soho Manufactory, and the same year John Wilkinson patented a machine for boring cannon that could also bore a large cylinder truly round. In March 1776 the first two Boulton &amp; Watt engines started work, one draining a coal mine near Tipton and one blowing air into Wilkinson's iron furnace. Boulton told a visitor that year, "I sell here, sir, what all the world desires to have: power."</p>
+          <p>Watt spent the next 25 years improving his engine (see the contributions below), mostly while complaining of headaches and worrying about money. Boulton &amp; Watt didn't usually sell engines outright; mine owners paid a yearly premium of one third of the coal they saved compared with a Newcomen engine. Watt retired in 1800, the year his patent ran out, and spent his last years inventing in an attic workshop at his home, Heathfield, near Birmingham. He died there on August 25, 1819, at 83.</p>
+        </section>
+
+        <!-- Gallery -->
+        <section class="fl-card" id="fl-sec-gallery" style="--card-accent:#9a3412;">
+          <h2>Gallery: From Model to Locomotive</h2>
+          <p>Click any photo to enlarge it, then use the arrow keys to step through the set.</p>
+          <div class="pg-grid">
+            <figure class="pg-card" data-zoomable data-lightbox-group="watt">
+              <img src="../../../assets/images/lessons/the-ages/industrial-age-steam-engine.webp" width="589" height="900" alt="A small working model of a Newcomen beam engine with a brass cylinder, wooden beam and boiler, in a museum case" loading="lazy" />
+              <figcaption>
+                <strong>The model that started it (Glasgow)</strong>
+                <span>The University of Glasgow's model Newcomen engine, which Watt repaired in 1763&ndash;64. It kept running out of steam, and finding out why led him to the separate condenser. It is now in the Hunterian Museum.</span>
+                <span class="pg-credit" data-no-glossary><a href="https://commons.wikimedia.org/wiki/File:Newcomen_steam_engine.jpg" target="_blank" rel="noopener">Wikimedia Commons</a> · Public domain</span>
+              </figcaption>
+            </figure>
+            <figure class="pg-card" data-zoomable data-lightbox-group="watt" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Maquina_vapor_Watt_ETSIIM.jpg?width=1400">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Maquina_vapor_Watt_ETSIIM.jpg?width=700" alt="A large green and black beam engine in a museum hall, with a flywheel, a centrifugal governor with two balls, and a beam on columns" loading="lazy" />
+              <figcaption>
+                <strong>A Watt-type rotative engine (1832)</strong>
+                <span>All of Watt's later ideas in one machine: the beam with parallel motion, a flywheel turned by the connecting rod, and a spinning-ball governor that holds the speed steady. This one, built in London by D. Napier &amp; Son, drove the coin presses of the Spanish Royal Mint.</span>
+                <span class="pg-credit" data-no-glossary><a href="https://commons.wikimedia.org/wiki/File:Maquina_vapor_Watt_ETSIIM.jpg" target="_blank" rel="noopener">Nicolás Pérez, Wikimedia Commons</a> · CC BY-SA 3.0</span>
+              </figcaption>
+            </figure>
+            <figure class="pg-card" data-zoomable data-lightbox-group="watt">
+              <img src="../../../assets/images/lessons/the-ages/industrial-age-stephenson-rocket.webp" width="800" height="600" alt="Stephenson's Rocket, an early locomotive with a tall chimney, yellow barrel boiler and large front wheels, in the Science Museum, London" loading="lazy" />
+              <figcaption>
+                <strong>After the patent: Rocket (1829)</strong>
+                <span>Watt never trusted high-pressure steam. Once his patent ran out, others used it to make engines small and light enough to move themselves. George and Robert Stephenson's Rocket won the Rainhill Trials ten years after Watt died.</span>
+                <span class="pg-credit" data-no-glossary><a href="https://commons.wikimedia.org/wiki/File:Stephenson's_Rocket.jpg" target="_blank" rel="noopener">Science Museum London, Wikimedia Commons</a> · CC BY-SA 3.0</span>
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <!-- Timeline -->
+        <section class="fl-card" id="fl-sec-timeline" style="--card-accent:#1d4ed8;">
+          <h2>From Savery's Pump to the Railway Age</h2>
+          <ol class="fl-timeline" data-timeline data-timeline-title="The steam engine">
+            <li class="fl-tl-item" data-when="1698" data-label="Savery's pump"><span class="fl-tl-year">1698</span> Thomas Savery patents "the Miner's Friend", a steam pump with no piston. It is dangerous and can only lift water a short way.</li>
+            <li class="fl-tl-item" data-when="1712" data-label="Newcomen's engine" data-major><span class="fl-tl-year">1712</span> Thomas Newcomen's atmospheric engine starts pumping a coal mine near Dudley Castle.</li>
+            <li class="fl-tl-item" data-when="1736" data-label="Watt is born"><span class="fl-tl-year">1736</span> James Watt is born January 19 in Greenock, Scotland.</li>
+            <li class="fl-tl-item" data-when="1757" data-label="Glasgow workshop"><span class="fl-tl-year">1757</span> Sets up as mathematical instrument maker to the University of Glasgow.</li>
+            <li class="fl-tl-item" data-when="1763–64" data-label="Repairs the model"><span class="fl-tl-year">1763&ndash;64</span> Repairs the university's model Newcomen engine and starts measuring why it wastes steam.</li>
+            <li class="fl-tl-item" data-when="May 1765" data-label="Separate condenser" data-major><span class="fl-tl-year">May 1765</span> The idea of the separate condenser comes to him on a walk across Glasgow Green.</li>
+            <li class="fl-tl-item" data-when="1769" data-label="The patent"><span class="fl-tl-year">1769</span> Patents "a new method of lessening the consumption of steam and fuel in fire engines", backed by John Roebuck.</li>
+            <li class="fl-tl-item" data-when="1774" data-label="Boulton &amp; Watt"><span class="fl-tl-year">1774</span> After Roebuck's bankruptcy, moves to Birmingham to work with Matthew Boulton. John Wilkinson patents his cylinder-boring machine.</li>
+            <li class="fl-tl-item" data-when="1776" data-label="First engines" data-major><span class="fl-tl-year">1776</span> The first two Boulton &amp; Watt engines go to work, at a coal mine near Tipton and at Wilkinson's ironworks.</li>
+            <li class="fl-tl-item" data-when="1781" data-label="Rotary motion"><span class="fl-tl-year">1781</span> The sun-and-planet gear turns the beam's rocking into rotation, so engines can drive mills and factories.</li>
+            <li class="fl-tl-item" data-when="1782" data-label="Double-acting"><span class="fl-tl-year">1782</span> Patents the double-acting engine (steam pushes on both sides of the piston) and expansive working.</li>
+            <li class="fl-tl-item" data-when="1784" data-label="Parallel motion"><span class="fl-tl-year">1784</span> Patents parallel motion, the linkage he was proudest of.</li>
+            <li class="fl-tl-item" data-when="1788" data-label="The governor"><span class="fl-tl-year">1788</span> Fits a centrifugal governor to control engine speed automatically.</li>
+            <li class="fl-tl-item" data-when="1800" data-label="Patent expires"><span class="fl-tl-year">1800</span> The patent expires and Watt retires. Boulton &amp; Watt have built roughly 450 engines.</li>
+            <li class="fl-tl-item" data-when="1804" data-label="First locomotive"><span class="fl-tl-year">1804</span> Richard Trevithick's high-pressure locomotive hauls iron at Pen-y-darren in Wales.</li>
+            <li class="fl-tl-item" data-when="1819" data-label="Watt dies"><span class="fl-tl-year">1819</span> Watt dies August 25 at Heathfield, near Birmingham, at 83.</li>
+            <li class="fl-tl-item" data-when="1824" data-label="Carnot's theory"><span class="fl-tl-year">1824</span> Sadi Carnot asks how much work any heat engine could ever get from heat, starting the science of thermodynamics.</li>
+            <li class="fl-tl-item" data-when="1829" data-label="Rocket" data-major><span class="fl-tl-year">1829</span> Stephenson's Rocket wins the Rainhill Trials.</li>
+            <li class="fl-tl-item" data-when="1882" data-label="The watt"><span class="fl-tl-year">1882</span> The British Association names the unit of power the watt.</li>
+          </ol>
+        </section>
+
+        <!-- Key Contributions -->
+        <section class="fl-card" id="fl-sec-contributions" style="--card-accent:#9a3412;">
+          <h2>Watt's Key Contributions</h2>
+          <div class="fl-grid-2">
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#10052;&#65039;</div>
+              <strong>The Separate Condenser (1765)</strong>
+              <p>Condense the steam somewhere else, so the cylinder never cools. About a quarter of the coal for the same work.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#128293;</div>
+              <strong>The Steam Jacket and Closed Cylinder</strong>
+              <p>Wrap the cylinder in steam and close its top, so neither the air nor anything else can chill it.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#9881;&#65039;</div>
+              <strong>Rotary Motion (1781)</strong>
+              <p>The sun-and-planet gear, worked out with his assistant William Murdoch, let engines turn wheels as well as work pumps: the step that put steam in factories.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#8597;&#65039;</div>
+              <strong>Double Action and Parallel Motion (1782&ndash;84)</strong>
+              <p>Steam pushing on both sides of the piston doubled the power from one cylinder, and a clever linkage kept the piston rod moving in a straight line.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#127921;</div>
+              <strong>The Governor (1788)</strong>
+              <p>Two spinning balls swing out as the engine speeds up and close the steam valve: one of the first automatic feedback controls on a machine.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#128014;</div>
+              <strong>Horsepower</strong>
+              <p>To sell engines to people who used horses, Watt defined 1 horsepower as 33,000 foot-pounds of work a minute (about 746 watts).</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#128200;</div>
+              <strong>The Indicator Diagram (1790s)</strong>
+              <p>A pen moved by the steam pressure drew pressure against piston position as the engine ran. The area of that loop is the work done: the first pressure&ndash;volume diagram, now in every thermodynamics textbook.</p>
+            </div>
+            <div class="fl-contribution-card">
+              <div class="fl-contribution-icon">&#128196;</div>
+              <strong>The Copying Press (1780)</strong>
+              <p>Special ink and damp tissue paper made a copy of a letter, so a busy engineer could keep a record of everything he sent. Offices used the idea for more than a century.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- The Curve -->
+        <section class="fl-card" id="fl-sec-curve" style="--card-accent:#b45309;">
+          <h2>Bending the Curve</h2>
+          <p>Cheap power changes what is worth doing. A Watt engine could drain a mine too deep for horses, blow a hotter blast furnace for more iron, or turn hundreds of spinning machines in a mill that didn't need to sit on a river. Each of those made more coal worth digging, and more coal made steam power cheaper still. Here is Britain's coal output across the 1700s and 1800s:</p>
+          <div class="fl-lab" data-memory-ignore>
+            <div class="fl-lab-stage"><canvas id="se-coal" role="img" aria-label="Line chart of Great Britain's coal output from 1700 to 1913. It rises slowly from about 3 million tonnes in 1700 to 15 million in 1800, then steeply to 60 million in 1850, 225 million in 1900, and 287 million in 1913. Dashed lines mark Watt's first engines in 1776 and the Rocket locomotive in 1829."></canvas></div>
+          </div>
+          <details style="margin-bottom:0.8rem;">
+            <summary>See the numbers</summary>
+            <table class="se-data" aria-label="Great Britain coal output, million tonnes, rounded">
+              <thead><tr><th scope="col">Year</th><th scope="col">Million tonnes</th></tr></thead>
+              <tbody>
+                <tr><td>1700</td><td>3</td></tr><tr><td>1750</td><td>5</td></tr><tr><td>1775</td><td>9</td></tr>
+                <tr><td>1800</td><td>15</td></tr><tr><td>1815</td><td>22</td></tr><tr><td>1830</td><td>30</td></tr>
+                <tr><td>1850</td><td>60</td></tr><tr><td>1870</td><td>115</td></tr><tr><td>1890</td><td>185</td></tr>
+                <tr><td>1900</td><td>225</td></tr><tr><td>1913</td><td>287</td></tr>
+              </tbody>
+            </table>
+            <p style="font-size:0.8rem;">Rounded from B. R. Mitchell, <cite>British Historical Statistics</cite>, and E. A. Wrigley, <cite>Energy and the English Industrial Revolution</cite>. Figures before 1800 are historians' estimates.</p>
+          </details>
+          <p>Notice that the curve doesn't jump in 1776. The separate condenser made the curve <em>possible</em>; it took decades of other people's work to bend it. Water wheels still supplied more of Britain's factory power than steam until about the 1830s, and economic historians such as Nicholas Crafts find that steam's biggest boost to the economy came after 1830, with high-pressure engines, railways, and steamships. That is how most big breakthroughs show up on a graph: slowly, then all at once.</p>
+          <div class="ll-accordion-group">
+            <details class="ll-accordion">
+              <summary>The cost: smoke, mines, and the carbon curve</summary>
+              <div class="ll-accordion-body">The same curve has a dark side. Industrial towns were covered in coal smoke, and many mines and mills relied on children: Britain's Mines Act of 1842 was needed to stop women, and boys under 10, working underground. And every tonne of coal burned put carbon dioxide into the air. Before industry, the atmosphere held about 280 parts per million of CO&#8322;. The steady rise that began with coal-fired steam has carried it past 420 ppm today. Charles David Keeling's measurements on Mauna Loa, started in 1958, are the record of that curve.</div>
+            </details>
+            <details class="ll-accordion">
+              <summary>Did Watt's patent speed things up or hold them back?</summary>
+              <div class="ll-accordion-body">Historians still argue about this. In 1775 Boulton persuaded Parliament to extend Watt's patent to 1800, and the firm sued rivals such as Jonathan Hornblower, whose two-cylinder engine they said used Watt's condenser. Watt also distrusted high-pressure steam as too dangerous. Some economists, such as Michele Boldrin and David Levine, argue this held steam back for a generation; others, such as George Selgin and John Turner, answer that the patent paid for years of development and that high-pressure engines needed better iron and boilers that didn't exist yet. What evidence would you need to decide?</div>
+            </details>
+          </div>
+        </section>
+
+        <!-- Legacy -->
+        <section class="fl-card" id="fl-sec-legacy" style="--card-accent:#059669;">
+          <h2>Watt's Legacy Today</h2>
+          <p>Every light bulb, phone charger and power station is rated in his name. In 1882 the British Association named the unit of power the <strong>watt</strong>: one joule of energy every second. Car engines are still advertised in his other unit, horsepower.</p>
+          <p>His engine also started a science. Trying to understand why some steam engines did more work than others for the same fuel, the French engineer Sadi Carnot wrote in 1824 that the work an engine can do depends on the temperature difference between its hot and cold parts. That idea, built on by Clausius and Kelvin, became the laws of thermodynamics. Watt's lesson, to keep the hot side hot and the cold side cold, is still how every power station is designed. Explore it in <a href="../../physics/modern-and-thermal/thermodynamics.html">Thermodynamics</a> and <a href="../../physics/modern-and-thermal/entropy.html">Entropy</a>.</p>
+          <p>Most of the world's electricity is still made by steam: coal, gas, and nuclear plants all boil water and send the steam through a turbine, and then condense it in a separate condenser.</p>
+        </section>
+
+        <!-- Sources -->
+        <section class="fl-card" id="fl-sec-sources" style="--card-accent:#64748b;">
+          <h2>Sources &amp; Further Reading</h2>
+          <ul class="fl-sources">
+            <li>Richard L. Hills, <cite>Power from Steam: A History of the Stationary Steam Engine</cite> (Cambridge University Press, 1989): Newcomen and Watt engines, duty figures, and Smeaton's 1769 survey</li>
+            <li>Ben Marsden, <cite>Watt's Perfect Engine: Steam and the Age of Invention</cite> (Icon Books, 2002)</li>
+            <li>B. R. Mitchell, <cite>British Historical Statistics</cite> (Cambridge, 1988), and E. A. Wrigley, <cite>Energy and the English Industrial Revolution</cite> (Cambridge, 2010): coal output</li>
+            <li>Nicholas Crafts, "Steam as a General Purpose Technology: A Growth Accounting Perspective," <cite>The Economic Journal</cite> 114 (2004)</li>
+            <li>George Selgin and John L. Turner, "Strong Steam, Weak Patents," <cite>Journal of Law and Economics</cite> 54 (2011); Michele Boldrin and David K. Levine, <cite>Against Intellectual Monopoly</cite> (2008), chapter 1</li>
+            <li><a href="https://www.gla.ac.uk/hunterian/" target="_blank" rel="noopener">The Hunterian, University of Glasgow</a>, home of the model Newcomen engine Watt repaired</li>
+          </ul>
+          <p>Photos: Wikimedia Commons; each card links to its source page and license. Related lessons: <a href="henry-ford.html">Henry Ford</a>, <a href="../../physics/pioneers/nikola-tesla.html">Nikola Tesla</a>, <a href="../../physics/electricity-and-magnetism/faradays-law.html">Faraday's Law</a> (how steam turbines make electricity), <a href="../../physics/modern-and-thermal/hot-and-cold.html">Hot and Cold</a>, and <a href="../../humanities/the-ages.html#grand-timeline">The Ages</a>, where Watt's engine sits on the Grand Timeline.</p>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="fl-card" id="fl-sec-practice" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Think about steam, heat, and coal.</p>
+          <label class="ll-toggle" style="margin-bottom:0.8rem;">
+            <input type="checkbox" id="fl-hints-toggle">
+            <span class="ll-toggle-track" aria-hidden="true"></span>
+            <span>Show hints automatically</span>
+          </label>
+          <div class="fl-practice">
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>1. What did Watt add to the Newcomen engine that saved so much coal?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-1" style="width:260px;">
+                  <option value="">Choose&hellip;</option>
+                  <option value="boiler">A bigger boiler</option>
+                  <option value="condenser">A separate condenser</option>
+                  <option value="wheels">Wheels</option>
+                  <option value="beam">A longer beam</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(1,'condenser')">Check</button>
+                <span class="fl-feedback" id="flfb-1"></span>
+              </div>
+              <div class="fl-hint" id="flhint-1">Hint: It meant the cylinder never had to be cooled.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>2. In a Newcomen engine, what actually pushes the piston down on the power stroke?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-2" style="width:300px;">
+                  <option value="">Choose&hellip;</option>
+                  <option value="steam">High-pressure steam</option>
+                  <option value="air">The air (atmospheric pressure)</option>
+                  <option value="horses">Horses</option>
+                  <option value="water">The cold-water spray</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(2,'air')">Check</button>
+                <span class="fl-feedback" id="flfb-2"></span>
+              </div>
+              <div class="fl-hint" id="flhint-2">Hint: It's called an atmospheric engine, and its cylinder is open at the top.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>3. Steam gives out 2,257 kJ for every kilogram that condenses. How many kilograms of steam condense while warming cold iron with 4,514 kJ?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-3" step="0.1" placeholder="kg" />
+                <button class="fl-check-btn" onclick="flCheck(3, 2, 0.05)">Check</button>
+                <span class="fl-feedback" id="flfb-3"></span>
+              </div>
+              <div class="fl-hint" id="flhint-3">Hint: m = Q &divide; L.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>4. Newcomen engines averaged a duty of about 5.6 million; early Watt engines about 20 million. About how many times more work did a Watt engine get from the same coal? (one decimal place)</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-4" step="0.1" placeholder="times" />
+                <button class="fl-check-btn" onclick="flCheck(4, 3.6, 0.1)">Check</button>
+                <span class="fl-feedback" id="flfb-4"></span>
+              </div>
+              <div class="fl-hint" id="flhint-4">Hint: 20 &divide; 5.6.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>5. A mine's Newcomen engine burned 900 tonnes of coal a year. A Watt engine doing the same pumping burns 300 tonnes. Boulton &amp; Watt charged one third of the coal saved. How many tonnes' worth was the yearly premium?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-5" step="1" placeholder="tonnes" />
+                <button class="fl-check-btn" onclick="flCheck(5, 200, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-5"></span>
+              </div>
+              <div class="fl-hint" id="flhint-5">Hint: First find the saving, 900 &minus; 300.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>6. Watt defined 1 horsepower as 33,000 foot-pounds per minute. How many foot-pounds per second is that?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-6" step="1" placeholder="ft·lb/s" />
+                <button class="fl-check-btn" onclick="flCheck(6, 550, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-6"></span>
+              </div>
+              <div class="fl-hint" id="flhint-6">Hint: There are 60 seconds in a minute.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>7. Chilling a Newcomen cylinder colder makes the push on the piston bigger. Why does it also make the engine waste more coal?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-7" style="width:420px;">
+                  <option value="">Choose&hellip;</option>
+                  <option value="a">Cold water makes the fire burn less well</option>
+                  <option value="b">The colder iron condenses more of the next stroke's steam before the cylinder can fill</option>
+                  <option value="c">A bigger push breaks the pump rods</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(7,'b')">Check</button>
+                <span class="fl-feedback" id="flfb-7"></span>
+              </div>
+              <div class="fl-hint" id="flhint-7">Hint: Watch the red bar in the Engine House Lab as you slide the spray temperature down.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+  </div><!-- .ll-stage -->
+  </div><!-- .ll-viewport -->
+
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-content.js"></script>
+<script src="../../../assets/js/figure-lesson.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script>
+<script src="../../../assets/js/lessons/steam-engine-model.js"></script>
+<script src="../../../assets/js/lessons/steam-engine-lab.js"></script>
+</body>
+</html>
