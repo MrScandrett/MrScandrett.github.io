@@ -154,7 +154,7 @@ test('a B♭ trumpet part comes in at concert pitch, chord symbols too', () => {
   assert.equal(s.chords, 'C | G7');
 });
 
-test('chords: only the top note is kept, and minor keys are read from the file', () => {
+test('chords: the melody keeps the top note and the treble staff keeps the stack', () => {
   const xml = score([
     { body: harmony('A', 'minor') + note('A4', 2 * Q) + note('C5', 2 * Q, '').replace('<note>', '<note><chord/>') + note('E5', 2 * Q) },
     { body: harmony('E', 'dominant', '<degree><degree-value>9</degree-value><degree-alter>-1</degree-alter><degree-type>add</degree-type></degree>') + note('B4', 4 * Q) },
@@ -166,6 +166,10 @@ test('chords: only the top note is kept, and minor keys are read from the file',
   assert.equal(s.minor, true);
   assert.equal(s.melody, 'C5h E5h | B4w | A4w');
   assert.equal(s.chords, 'Am | E7b9 | Am');
+  assert.deepEqual(s.staves.treble.events.slice(0, 2), [
+    { s: 0, d: 2, n: 'A4 C5' },
+    { s: 2, d: 2, n: 'E5' }
+  ]);
 });
 
 test('chord-melody: lone bass notes between chords leave the melody, a climbing run keeps its low start', () => {
@@ -325,6 +329,7 @@ test('a bass-clef staff and a TAB staff come along when the score has them', () 
   assert.equal(s.melody, 'G3h B3h | A3h D4q C4q', 'melody from the guitar notation staff, not its tab staff');
   assert.equal(s.chords, 'G | D7');
   assert.equal(s.staves.bass.label, 'Piano');
+  assert.equal(s.staves.treble, undefined, 'chords on the other part do not replace the selected treble voice');
   assert.deepEqual(s.staves.bass.events, [{ s: 0, d: 2, n: 'G2 D3' }, { s: 2, d: 2, n: 'B2' }, { s: 4, d: 4, n: 'D2' }]);
   assert.equal(s.staves.tab.label, 'Guitar');
   assert.equal(s.staves.tab.lines, 6);

@@ -385,6 +385,16 @@
     // Saved staves keep times to 4 decimals (0.3333), which no longer reads as a triplet: snap to the 1/24-beat grid
     // (sixteenths, thirty-seconds and every triplet value) when the stored time is within rounding error of it.
     var snap = function (x) { var r = Math.round(x * 24) / 24; return Math.abs(r - x) < 0.0006 ? r : x; };
+    var treble = st.treble;
+    // Earlier imports already saved the original MusicXML, so they can recover the written chord stacks.
+    if (treble === undefined && raw.score && raw.score.musicxml && window.FakeBookMusicXML) {
+      try { treble = window.FakeBookMusicXML.parseScore(raw.score.musicxml).staves.treble; }
+      catch (err) { /* Keep opening the saved lead sheet if the original cannot be read. */ }
+      raw.staves = Object.assign({}, st, { treble: treble || null });
+    }
+    if (treble && treble.events.length) {
+      t.staves.treble = treble.events.map(function (e) { return { start: snap(e.s), dur: snap(e.d), ps: notesOf(e.n) }; });
+    }
     if (st.bass && st.bass.events && st.bass.events.length) {
       t.staves.bass = { label: st.bass.label || '', events: st.bass.events.map(function (e) { return { start: snap(e.s), dur: snap(e.d), ps: notesOf(e.n) }; }) };
     }
@@ -777,7 +787,7 @@
     style: null, feel: null, tempo: null, mode: 'all', click: 'all', loop: true,
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
-    sheetView: 'lead', beatCounts: 'off', chordLabels: 'letters',
+    sheetView: 'lead', showTrebleChords: false, beatCounts: 'off', chordLabels: 'letters',
     showBass: true, bassFor: 'concert', showFingers: false, showTab: null, tabPos: 'auto', tabPosKey: null, tabStyle: null, tabPick: false, tabPins: {}, tabPinScope: 'bar', tabOctave: 0, bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, showLyrics: true, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
@@ -932,6 +942,13 @@
       concertChords: moveChords(concertKey),
       writtenChords: moveChords(writtenKey)
     };
+    if (t.staves.treble) view.treble = t.staves.treble.map(function (e) {
+      var ps = e.ps.map(function (p) {
+        var q = shiftPitch(p, ws.letters, ws.semis, wFlat);
+        return pitch(q.dia + 7 * wK, q.a);
+      });
+      return { start: e.start, dur: e.dur, p: ps[ps.length - 1], ps: ps };
+    });
     view.voicings = voiceChords(view.concertChords, opts.voicing);
     applyPianoShapes();
     view.guitarGrips = window.FakeBookGuitarVoice ? window.FakeBookGuitarVoice.plan(view.concertChords.map(function (c) {
@@ -1038,8 +1055,11 @@
   }
   // Finger positions: one small fingerboard per measure under the staff, in place of tab.
   function posOn() { return !!opts.showPos && opts.posInst !== 'piano' && !tune.chordsOnly && opts.sheetView !== 'drums'; }
-  // Tab is on by default for imported songs (where it was asked for) and off for the built-in lead sheets.
-  function tabOn() { return opts.showTab === null || opts.showTab === undefined ? !!(tune && tune.raw.imported) : !!opts.showTab; }
+  // Imported charts default to tab. The written chord view only defaults to tab if the source has it.
+  function tabOn() {
+    if (opts.showTab != null) return !!opts.showTab;
+    return !!(tune && tune.raw.imported && (tune.staves.tab || tune.staves.gtr || !showTrebleChords()));
+  }
   // Lyrics: sung words aligned to each melody note under the staff.
   function hasLyrics() { return !!(tune && tune.lyrics && tune.lyrics.verses && tune.lyrics.verses.length && !tune.chordsOnly); }
   function lyricsOn() { return opts.showLyrics !== false && hasLyrics() && opts.sheetView !== 'drums' && opts.sheetView !== 'arrangement'; }
@@ -1524,9 +1544,23 @@
       'The tab leaves out ' + info.dropped + ' note' + (info.dropped === 1 ? '' : 's') + ' that don’t fit on a guitar (too low, too high, or too far apart).');
   }
 
+  function canShowTrebleChords() {
+    return !!(tune && tune.staves.treble && INSTR[opts.instr].clef === 'treble' &&
+      (opts.mode === 'score' || (opts.melody === 'original' && opts.rhythm === 'written')));
+  }
+
+  function showTrebleChords() { return opts.showTrebleChords && canShowTrebleChords(); }
+
   function renderSheet() {
     sheetEl.dispatchEvent(new Event('fakebook:before-render'));
     if (!view) return;
+    var trebleToggle = el('[data-fb-show-treble-chords]'), hasTrebleChords = canShowTrebleChords();
+    var stacked = opts.sheetView === 'lead' && showTrebleChords();
+    root.classList.toggle('has-treble-chords', stacked);
+    if (trebleToggle) {
+      trebleToggle.closest('label').hidden = !hasTrebleChords || opts.sheetView === 'drums';
+      trebleToggle.checked = !!opts.showTrebleChords && opts.sheetView === 'lead';
+    }
     var sizeControl = el('[data-fb-sheet-size]');
     if (sizeControl) sizeControl.value = String(opts.zoom || 1);
     hideBarPop();
@@ -1552,7 +1586,21 @@
     var zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, opts.zoom || 1));
     var S = Math.max(3.4, (W >= 900 ? 10 : W >= 620 ? 9 : 7) * zoom);
     var t = tune, M = t.M, ins = INSTR[opts.instr], C = MN.clefs[ins.clef];
-    var sig = keySig(view.writtenKey), bars = layoutBars(view.written, t);
+    var sig = keySig(view.writtenKey), bars = layoutBars(stacked ? view.treble : view.written, t);
+    if (stacked) {
+      var melodyIdx = 0;
+      bars.forEach(function (b) { b.pieces.forEach(function (pc) {
+        if (!pc.p) return;
+        var onset = b.start + pc.rel;
+        while (melodyIdx + 1 < view.written.length && view.written[melodyIdx + 1].start <= onset + EPS) melodyIdx++;
+        var melody = view.written[melodyIdx];
+        pc.staffIdx = pc.idx;
+        pc.ps = view.treble[pc.idx].ps;
+        pc.idx = melody && melody.p && melody.p.midi === pc.p.midi &&
+          onset >= melody.start - EPS && onset < melody.start + melody.dur - EPS ? melodyIdx : -1;
+        pc.melodyOnset = pc.idx >= 0 && near(onset, melody.start);
+      }); });
+    }
     var bpl = Math.max(1, Math.round((W >= 900 ? 4 : W >= 620 ? 3 : 2) / zoom));
     var systems = [], cur = [];
     bars.forEach(function (b) {
@@ -1567,8 +1615,10 @@
     var headWidth = function (base) { return namesOn ? (base >= 4 ? 2.1 : 1.84) * S : base === 4 ? wholeW : headW; };
     // ks = the key signature's accidental for this letter on this staff.
     var nameHead = function (p, cx, cy, base, ks) { return MN.namedHead(p, cx, cy, base, ks, S, 'fb-nhead'); };
-    var out = [], ties = [], placed = {}, y = S * 0.6, padL = 1.9 * S, padR = 1.1 * S;
+    var out = [], placed = {}, y = S * 0.6, padL = 1.9 * S, padR = 1.1 * S;
     var stepOf = function (p) { return p.dia - C.bottom; };
+    var showV2 = !!view.voice2, v2Placed = {};
+    if (showV2) layoutBars(view.voice2, t).forEach(function (vb, i) { bars[i].v2Bar = vb; bars[i].hasV2 = vb.pieces.some(function (pc) { return !pc.rest; }); });
     var showLyrics = lyricsOn(), verses = showLyrics ? t.lyrics.verses : [];
     var firstIdxForSrc = {}, firstVerseSrc = [];
     if (showLyrics) {
@@ -1585,7 +1635,9 @@
     var fingerAt = {};
     if (opts.showFingers && window.FakeBookMelody && opts.sheetView !== 'drums') {
       var fingerPcs = [];
-      bars.forEach(function (fb) { fb.pieces.forEach(function (fp) { if (fp.p && !fp.tieFrom) fingerPcs.push(fp); }); });
+      bars.forEach(function (fb) { fb.pieces.forEach(function (fp) {
+        if (fp.p && !fp.tieFrom && (!stacked || fp.melodyOnset)) fingerPcs.push(fp);
+      }); });
       var fingerPlan = window.FakeBookMelody.pianoFive(fingerPcs.map(function (fp) { return { dia: fp.p.dia, midi: fp.p.midi, name: fp.p.l }; }), 'right');
       fingerPcs.forEach(function (fp, fi) { if (fingerPlan[fi]) fingerAt[fp.idx] = fingerPlan[fi].finger; });
     }
@@ -1593,15 +1645,50 @@
     // (longer notes get more space, but not proportionally more, as engravers do).
     bars.forEach(function (b) {
       var mem = {}, total = 0;
+      var group = [];
+      b.stemGroups = [];
+      function finishGroup() {
+        if (!group.length) return;
+        var sum = group.reduce(function (s, pc) {
+          return s + (stepOf(pc.p) + stepOf(pc.ps ? pc.ps[0] : pc.p)) / 2;
+        }, 0);
+        group.forEach(function (pc) { pc.up = b.hasV2 || sum / group.length < 4; });
+        b.stemGroups.push(group);
+        group = [];
+      }
       b.pieces.forEach(function (pc) {
-        pc.acc = false;
+        var base = BASE[pc.d] || [pc.d, 0];
+        if (!pc.p || base[0] > 0.5 || (group.length && Math.floor(pc.beat + EPS) !== Math.floor(group[0].beat + EPS))) finishGroup();
+        if (pc.p) group.push(pc);
+        if (base[0] > 0.5) finishGroup();
+      });
+      finishGroup();
+      b.pieces.forEach(function (pc) {
+        pc.acc = 0;
         if (pc.p) {
-          var mk = pc.p.l + ':' + pc.p.o, cur = mem[mk] !== undefined ? mem[mk] : keyAcc(sig, pc.p.l);
-          pc.acc = !pc.tieFrom && cur !== pc.p.a;
-          mem[mk] = pc.p.a;
+          var columns = [], steps = [];
+          pc.heads = (pc.ps || [pc.p]).slice().sort(function (a, b) { return b.dia - a.dia; }).map(function (p, i) {
+            var prev = steps[i - 1], step = stepOf(p);
+            var offset = prev && prev.step - step <= 1 && !prev.offset
+              ? (pc.up ? 1 : -1) * (headWidth((BASE[pc.d] || [pc.d])[0]) - 0.12 * S) : 0;
+            var mk = p.l + ':' + p.o, cur = mem[mk] !== undefined ? mem[mk] : keyAcc(sig, p.l);
+            var accidental = -1;
+            if (!pc.tieFrom && cur !== p.a) {
+              accidental = columns.findIndex(function (lastStep) { return lastStep - step >= 6; });
+              if (accidental < 0) accidental = columns.length;
+              columns[accidental] = step;
+            }
+            if (!pc.tieFrom) mem[mk] = p.a;
+            var head = { p: p, step: step, offset: offset, accidental: accidental };
+            steps.push(head);
+            return head;
+          });
+          pc.leftOffset = Math.min.apply(null, pc.heads.map(function (head) { return head.offset; }));
+          pc.rightOffset = Math.max.apply(null, pc.heads.map(function (head) { return head.offset; }));
+          pc.acc = columns.length * 1.3 * S - pc.leftOffset;
         }
         var lyrW = 0;
-        if (showLyrics && pc.p && !pc.tieFrom) {
+        if (showLyrics && pc.p && !pc.tieFrom && (!stacked || pc.melodyOnset)) {
           var lsrc = view.written[pc.idx] ? view.written[pc.idx].src : -1;
           if (pc.idx === firstIdxForSrc[lsrc]) {
             verses.forEach(function (v, vi) {
@@ -1614,7 +1701,7 @@
             });
           }
         }
-        pc.nw = Math.max(S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + (pc.acc ? 1.3 * S : 0), lyrW);
+        pc.nw = Math.max(S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + pc.acc + (pc.rightOffset || 0), lyrW);
         pc.cum = total; total += pc.nw;
       });
       b.natural = Math.max(b.i === 0 ? 4 * S : 9 * S, padL + total + padR);
@@ -1635,9 +1722,7 @@
     if (showTab && view.tabShift) view.tabOnsets.forEach(function (o, t) { if (view.tabShift[t]) tabShiftAt[o.start.toFixed(3)] = view.tabShift[t]; });
     var tabOctRow = Object.keys(tabShiftAt).length ? 1.3 * S : 0;
     renderTabNote();
-    var showV2 = !!view.voice2, v2Placed = {};
     if (showBass) layoutBars(bassEvents, t).forEach(function (bb, i) { bars[i].bassBar = bb; });
-    if (showV2) layoutBars(view.voice2, t).forEach(function (vb, i) { bars[i].v2Bar = vb; bars[i].hasV2 = vb.pieces.some(function (pc) { return !pc.rest; }); });
     var ksw = Math.max(Math.abs(sig), showBass ? Math.abs(sigB) : 0);
     var bassPlaced = {};
     bassPlacedAll = bassPlaced; lastS = S;
@@ -1646,7 +1731,7 @@
     if (showBass || showV2) bars.forEach(function (b) {
       var slots = [], bm = {}, vm = {};
       var add = function (rel, nw, acc) {
-        for (var i = 0; i < slots.length; i++) if (near(slots[i].rel, rel)) { slots[i].nw = Math.max(slots[i].nw, nw); slots[i].acc = slots[i].acc || acc; return; }
+        for (var i = 0; i < slots.length; i++) if (near(slots[i].rel, rel)) { slots[i].nw = Math.max(slots[i].nw, nw); slots[i].acc = Math.max(slots[i].acc, acc); return; }
         slots.push({ rel: rel, nw: nw, acc: acc });
       };
       b.pieces.forEach(function (pc) { add(pc.rel, pc.nw, pc.acc); });
@@ -1658,7 +1743,7 @@
           if (!pc.tieFrom && cur !== p.a) acc = true;
           bm[mk] = p.a;
         });
-        add(pc.rel, S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + (acc ? 1.3 * S : 0), acc);
+        add(pc.rel, S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + (acc ? 1.3 * S : 0), acc ? 1.3 * S : 0);
       });
       // The second right-hand voice shares the treble staff, so its notes take room in the same columns.
       if (b.v2Bar) b.v2Bar.pieces.forEach(function (pc) {
@@ -1669,7 +1754,7 @@
           if (!pc.tieFrom && cur !== p.a) acc = true;
           vm[mk] = p.a;
         });
-        add(pc.rel, S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + (acc ? 1.3 * S : 0), acc);
+        add(pc.rel, S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + (acc ? 1.3 * S : 0), acc ? 1.3 * S : 0);
       });
       slots.sort(function (a, c) { return a.rel - c.rel; });
       var total = 0;
@@ -1691,9 +1776,10 @@
       sys.forEach(function (b) {
         b.pieces.forEach(function (pc) {
           if (!pc.p) return;
-          var st = stepOf(pc.p), up = b.hasV2 || st < 4;
-          top = Math.max(top, (up && BASE[pc.d][0] < 4 ? st + 7 : st) + (pc.trip && up ? 3 : 0));
-          bottom = Math.min(bottom, (!up && BASE[pc.d][0] < 4 ? st - 7 : st) - (pc.trip && !up ? 3 : 0));
+          var hi = pc.heads[0].step, lo = pc.heads[pc.heads.length - 1].step;
+          var up = pc.up, hasStem = BASE[pc.d][0] < 4;
+          top = Math.max(top, (up && hasStem ? hi + 7 : hi) + (pc.trip && up ? 3 : 0));
+          bottom = Math.min(bottom, (!up && hasStem ? lo - 7 : lo) - (pc.trip && !up ? 3 : 0));
         });
       });
       sys.forEach(function (b) {
@@ -1798,12 +1884,12 @@
         var used = (b.slots ? b.slotTotal : b.pieces.reduce(function (a, pc) { return a + pc.nw; }, 0)) || 1;
         var k2 = (b.w - padL - padR) / used;
         if (b.slots) {
-          b.slots.forEach(function (sl) { sl.x0 = b.x + padL + sl.cum * k2; sl.head = sl.x0 + (sl.acc ? 1.3 * S : 0); });
+          b.slots.forEach(function (sl) { sl.x0 = b.x + padL + sl.cum * k2; sl.head = sl.x0 + sl.acc; });
           b.pieces.forEach(function (pc) {
             var sl = b.slots.filter(function (x) { return near(x.rel, pc.rel); })[0];
             pc.x0 = sl.x0; pc.head = sl.head;
           });
-        } else b.pieces.forEach(function (pc) { pc.x0 = b.x + padL + pc.cum * k2; pc.head = pc.x0 + (pc.acc ? 1.3 * S : 0); });
+        } else b.pieces.forEach(function (pc) { pc.x0 = b.x + padL + pc.cum * k2; pc.head = pc.x0 + pc.acc; });
         var xAt = function (rel) {                       // x of the musical time rel, for chord symbols
           var ps = b.slots || b.pieces;
           if (!ps || !ps.length) {
@@ -1855,7 +1941,7 @@
           out.push('<text class="fb-chord' + (lab.main ? '' : ' fb-chord-fn') + (o.ci === chordSel ? ' is-sel' : '') + '" data-ci="' + o.ci + '" x="' + cx.toFixed(1) + '" y="' + chordBase.toFixed(1) + '" font-size="' + (1.75 * S) + '" tabindex="0" role="button" aria-label="Chord ' + MN.escape(chordName(o.c)) + (lab.fn ? ', ' + MN.escape(lab.fn) : '') + ', bar ' + b.i + '">' + MN.escape(shown) + (lab.main && lab.fn ? '<tspan class="fb-fn" dx="' + (0.45 * S).toFixed(1) + '" font-size="' + (1.3 * S).toFixed(1) + '">' + MN.escape(lab.fn) + '</tspan>' : '') + '</text>');
         });
         // accidental memory per bar
-        var placedBar = [];
+        var placedBar = [], infoByPiece = new Map();
         b.pieces.forEach(function (pc) {
           var base = BASE[pc.d] || [pc.d, 0], cx;
           if (pc.rest) {
@@ -1872,47 +1958,59 @@
             }
             return;
           }
-          var stp = stepOf(pc.p), ny = staffBot - stp * half, nx = pc.head + headW / 2;
+          var ny = staffBot - stepOf(pc.p) * half, nx = pc.head + headW / 2;
           var hw = headWidth(base[0]);
-          var g = ['<g class="fb-n" data-idx="' + pc.idx + '">'];
-          MN.ledgerSteps(stp).forEach(function (ls) {
-            var ly = staffBot - ls * half;
-            g.push(line(nx - hw / 2 - 0.45 * S, ly, nx + hw / 2 + 0.45 * S, ly, Math.max(1, S * 0.12)));
+          var g = ['<g class="fb-n' + (pc.heads.length > 1 ? ' fb-treble-chord' : '') + '" data-idx="' + pc.idx + '">'];
+          var ledgers = new Map(), dots = new Set(), namedHeads = [];
+          var heads = pc.heads.map(function (head) {
+            var px = nx + head.offset, py = staffBot - head.step * half;
+            MN.ledgerSteps(head.step).forEach(function (ls) {
+              var span = ledgers.get(ls) || [px, px];
+              ledgers.set(ls, [Math.min(span[0], px), Math.max(span[1], px)]);
+            });
+            return { x: px, y: py };
           });
-          if (pc.acc) g.push(MN.accidental(pc.p.a, nx - hw / 2 - 1.3 * S, ny, S));
-          var headSvg = namesOn ? nameHead(pc.p, nx, ny, base[0], keyAcc(sig, pc.p.l)) : null;   // named heads are drawn last, over the stem
-          if (!headSvg) g.push(MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2, ny, S, 'fb-head'));
-          if (base[1]) g.push('<circle cx="' + (nx + hw / 2 + 0.5 * S).toFixed(1) + '" cy="' + (ny - (mod(stp, 2) === 0 ? half : 0)).toFixed(1) + '" r="' + (0.17 * S).toFixed(2) + '" fill="currentColor"/>');
-          var info = { pc: pc, x: nx, y: ny, step: stp, hw: hw, base: base[0], sys: si, g: g, bar: b, headSvg: headSvg };
+          ledgers.forEach(function (span, ls) {
+            var ly = staffBot - ls * half;
+            g.push(line(span[0] - hw / 2 - 0.45 * S, ly, span[1] + hw / 2 + 0.45 * S, ly, Math.max(1, S * 0.12)));
+          });
+          pc.heads.forEach(function (head, i) {
+            var xy = heads[i], p = head.p;
+            if (head.accidental >= 0) g.push(MN.accidental(p.a, nx + pc.leftOffset - hw / 2 - (head.accidental + 1) * 1.3 * S, xy.y, S));
+            if (namesOn) namedHeads.push(nameHead(p, xy.x, xy.y, base[0], keyAcc(sig, p.l)));
+            else g.push(MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', xy.x - hw / 2, xy.y, S, 'fb-head'));
+            if (base[1]) {
+              var dotStep = head.step + (mod(head.step, 2) === 0 ? 1 : 0);
+              while (dots.has(dotStep)) dotStep -= 2;
+              dots.add(dotStep);
+              g.push('<circle cx="' + (nx + pc.rightOffset + hw / 2 + 0.5 * S).toFixed(1) + '" cy="' + (staffBot - dotStep * half).toFixed(1) + '" r="' + (0.17 * S).toFixed(2) + '" fill="currentColor"/>');
+            }
+          });
+          var info = { pc: pc, x: nx, y: ny, heads: heads, hw: hw, base: base[0], sys: si, g: g, namedHeads: namedHeads };
           placedBar.push(info);
-          (placed[pc.idx] = placed[pc.idx] || []).push(info);
-          if (namesUnder) g.push(txt(nx, staffBot + noteBot + 2.3 * S, noteName(pc.p), 'fb-name', ' font-size="' + (1.15 * S) + '" text-anchor="middle"'));
-          ties.push(info);
+          infoByPiece.set(pc, info);
+          var tieIdx = stacked ? pc.staffIdx : pc.idx;
+          (placed[tieIdx] = placed[tieIdx] || []).push(info);
+          if (namesUnder) g.push(txt(nx, staffBot + noteBot + 2.3 * S, pc.heads.map(function (h) { return noteName(h.p); }).reverse().join(' '), 'fb-name', ' font-size="' + (1.15 * S) + '" text-anchor="middle"'));
         });
         // stems, flags and beams
-        var groups = [], grp = [];
-        placedBar.forEach(function (n, i) {
-          var prevPiece = i ? placedBar[i - 1] : null;
-          var adjacent = prevPiece && b.pieces.indexOf(n.pc) === b.pieces.indexOf(prevPiece.pc) + 1;
-          if (n.base <= 0.5 && grp.length && adjacent && Math.floor(n.pc.beat + EPS) === Math.floor(grp[0].pc.beat + EPS)) grp.push(n);
-          else { if (grp.length) groups.push(grp); grp = n.base <= 0.5 ? [n] : []; if (n.base > 0.5) groups.push([n]); }
-        });
-        if (grp.length) groups.push(grp);
-        groups.forEach(function (gr) {
+        b.stemGroups.forEach(function (group) {
+          var gr = group.map(function (pc) { return infoByPiece.get(pc); });
           if (gr[0].base >= 4) return;
-          var avg = gr.reduce(function (s, n) { return s + n.step; }, 0) / gr.length, up = gr[0].bar.hasV2 || avg < 4;
+          var up = gr[0].pc.up;
           var sx = function (n) { return up ? n.x + n.hw / 2 - 0.06 * S : n.x - n.hw / 2 + 0.06 * S; };
+          var stemStart = function (n) { return n.heads[up ? n.heads.length - 1 : 0].y; };
+          var stemEnd = function (n) { return n.heads[up ? 0 : n.heads.length - 1].y; };
           if (gr.length === 1) {
-            var n = gr[0], tip = n.y + (up ? -3.5 : 3.5) * S;
-            if (!up && n.step < 4) tip = n.y + 3.5 * S;
-            n.g.push(line(sx(n), n.y, sx(n), tip, (0.12 * S).toFixed(2), 'fb-stem'));
+            var n = gr[0], tip = stemEnd(n) + (up ? -3.5 : 3.5) * S;
+            n.g.push(line(sx(n), stemStart(n), sx(n), tip, (0.12 * S).toFixed(2), 'fb-stem'));
             if (n.base <= 0.5) n.g.push(MN.glyph('flag' + (n.base === 0.25 ? '16' : '8') + (up ? 'Up' : 'Down'), sx(n), tip, S));
             n.up = up; n.tip = tip;
             return;
           }
-          var beamY = up ? Math.min.apply(null, gr.map(function (n) { return n.y; })) - 3.3 * S : Math.max.apply(null, gr.map(function (n) { return n.y; })) + 3.3 * S;
+          var beamY = up ? Math.min.apply(null, gr.map(stemEnd)) - 3.3 * S : Math.max.apply(null, gr.map(stemEnd)) + 3.3 * S;
           var th = 0.48 * S, dir = up ? 1 : -1;
-          gr.forEach(function (n) { n.up = up; n.tip = beamY; n.g.push(line(sx(n), n.y, sx(n), beamY, (0.12 * S).toFixed(2), 'fb-stem')); });
+          gr.forEach(function (n) { n.up = up; n.tip = beamY; n.g.push(line(sx(n), stemStart(n), sx(n), beamY, (0.12 * S).toFixed(2), 'fb-stem')); });
           var x1 = sx(gr[0]), x2 = sx(gr[gr.length - 1]);
           out.push('<rect class="fb-beam" x="' + x1.toFixed(1) + '" y="' + (up ? beamY : beamY - th).toFixed(1) + '" width="' + (x2 - x1 + 0.12 * S).toFixed(1) + '" height="' + th.toFixed(1) + '"/>');
           gr.forEach(function (n, i) {
@@ -1927,9 +2025,12 @@
           });
         });
         placedBar.forEach(function (n) {
-          if (n.headSvg) n.g.push(n.headSvg);
+          n.g.push.apply(n.g, n.namedHeads);
           // A finger number sits on the side of the head away from its stem, clear of the chord symbols above.
-          if (fingerAt[n.pc.idx] !== undefined && !n.pc.tieFrom) n.g.push(txt(n.x, n.up === false ? n.y - 1.1 * S : n.y + 2.1 * S, String(fingerAt[n.pc.idx]), 'fb-finger', ' font-size="' + (1.05 * S) + '" text-anchor="middle"'));
+          if (fingerAt[n.pc.idx] !== undefined && !n.pc.tieFrom && (!stacked || n.pc.melodyOnset)) {
+            var fingerY = n.up === false ? n.heads[0].y - 1.1 * S : n.heads[n.heads.length - 1].y + 2.1 * S;
+            n.g.push(txt(n.x, fingerY, String(fingerAt[n.pc.idx]), 'fb-finger', ' font-size="' + (1.05 * S) + '" text-anchor="middle"'));
+          }
           n.g.push('</g>'); out.push(n.g.join(''));
         });
         // triplets: a 3 over each beat's worth (bracketed when the notes aren't beamed together)
@@ -1975,7 +2076,7 @@
         verses.forEach(function (v, vi) {
           var vy = lyricTop + vi * lyricRowH, items = [];
           sysNotes.forEach(function (n) {
-            if (n.pc.tieFrom) return;
+            if (n.pc.tieFrom || (stacked && !n.pc.melodyOnset)) return;
             var ev = view.written[n.pc.idx], src = ev ? ev.src : -1;
             if (src < 0 || n.pc.idx !== firstIdxForSrc[src]) return;
             var syl = v.bySrc[src];
@@ -2167,8 +2268,11 @@
         if (!a.pc.tie) continue;
         var below = a.up !== false, dy = below ? 0.55 * S : -0.55 * S, bulge = below ? 1.1 * S : -1.1 * S;
         var arc = function (x1, x2, yy) { return '<path class="fb-tie" d="M' + x1.toFixed(1) + ' ' + (yy + dy).toFixed(1) + ' Q' + ((x1 + x2) / 2).toFixed(1) + ' ' + (yy + dy + bulge).toFixed(1) + ' ' + x2.toFixed(1) + ' ' + (yy + dy).toFixed(1) + '" fill="none" stroke="currentColor" stroke-width="' + (0.16 * S).toFixed(2) + '"/>'; };
-        if (a.sys === c.sys) out.push(arc(a.x + a.hw / 2 - 0.1 * S, c.x - c.hw / 2 + 0.1 * S, a.y));
-        else { out.push(arc(a.x + a.hw / 2, systems[a.sys].endX - 0.2 * S, a.y)); out.push(arc(systems[c.sys].startX - 1.2 * S, c.x - c.hw / 2, c.y)); }
+        a.heads.forEach(function (head, j) {
+          var next = c.heads[j];
+          if (a.sys === c.sys) out.push(arc(head.x + a.hw / 2 - 0.1 * S, next.x - c.hw / 2 + 0.1 * S, head.y));
+          else { out.push(arc(head.x + a.hw / 2, systems[a.sys].endX - 0.2 * S, head.y)); out.push(arc(systems[c.sys].startX - 1.2 * S, next.x - c.hw / 2, next.y)); }
+        });
       }
     });
 
@@ -2699,7 +2803,7 @@
       melody: song.melody,
       chords: song.chords,
       bars: song.bars,
-      staves: song.staves && (song.staves.bass || song.staves.tab || song.staves.gtr || song.staves.voice2) ? song.staves : undefined,
+      staves: song.score && song.score.musicxml ? Object.assign({ treble: null }, song.staves) : song.staves,
       lyrics: song.lyrics || undefined,
       keyChanges: song.keyChanges && song.keyChanges.length ? song.keyChanges : undefined,
       score: song.score,
@@ -5760,6 +5864,11 @@
       else if (t.matches('[data-fb-names]')) { opts.names = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-show-fingers]')) { opts.showFingers = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-show-lyrics]')) { opts.showLyrics = t.checked; syncControls(); renderSheet(); save(); }
+      else if (t.matches('[data-fb-show-treble-chords]')) {
+        opts.showTrebleChords = t.checked;
+        if (t.checked) opts.sheetView = 'lead';
+        syncControls(); refresh();
+      }
       else if (t.matches('[data-fb-beat-counts]')) { opts.beatCounts = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-chord-labels]')) { opts.chordLabels = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-name-style]')) { opts.nameStyle = t.value; renderSheet(); save(); }

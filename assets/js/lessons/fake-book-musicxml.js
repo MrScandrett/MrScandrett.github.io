@@ -7,6 +7,7 @@
    What it does with a real score:
    - Melody: the first part that has chord symbols (else the first pitched part),
      its top staff, the voice with the most notes there; in a chord, the top note.
+     The selected treble voice can also be displayed with its written chord stacks.
      Transposing parts are written back to concert pitch.
    - Repeats, 1st/2nd endings, D.C./D.S., Fine and To Coda are played out
      ("unrolled") into one straight line, like the iReal import does.
@@ -865,6 +866,9 @@
       }
       // A guitar part without tab: keep all its notes so the fake book can work the tab out.
       var mInfo = R.staves[minStaff] || {};
+      var treble = (!mInfo.clef || mInfo.clef === 'G') && events.some(function (e) { return e.count > 1; })
+        ? staffEvents(R, minStaff, order, starts, pickupU, false, { voice: voice }) : [];
+      if (treble.length) extra.treble = { events: treble };
       var guitarish = /guitar|gtr|gitarr|guitare|chitarra|guitarra|ukulele|banjo/i.test(partNames[part.attrs.id] || '') || (mInfo.clef === 'G' && mInfo.octave === -1);
       if (guitarish && !extra.tab) {
         var octUp = mInfo.octave === -1 || (R.transpose && R.transpose.octave === -1);
