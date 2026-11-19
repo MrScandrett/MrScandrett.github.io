@@ -358,6 +358,79 @@
     container.appendChild(svg);
   }
 
+  // Technique tips: the review sentences name four ways out of a hard spot. Each name is
+  // highlighted in the guide and opens its own tip with a diagram on hover, focus or tap.
+  // Diagram strings are static and trusted; they are never built from score data.
+  var TECHNIQUES = {
+    release: {
+      title: 'Releasing',
+      text: 'Lift a finger early, before the written note ends, so it is free for the next note. The sound of that note stops a little sooner; the music still flows.',
+      svg: '<svg viewBox="0 0 220 84" role="img" aria-label="A held note lifted early so the next note can start">' +
+        '<rect class="ghost" x="16" y="12" width="188" height="16" rx="3"/>' +
+        '<rect class="bar a" x="16" y="12" width="84" height="16" rx="3"/>' +
+        '<text class="on" x="22" y="24">held note</text>' +
+        '<rect class="bar b" x="106" y="38" width="98" height="16" rx="3"/>' +
+        '<text class="on" x="112" y="50">next note</text>' +
+        '<path class="cue" d="M103 4v56"/>' +
+        '<text class="lbl" x="103" y="72" text-anchor="middle">lift here ↑</text>' +
+        '<text class="lbl faint" x="204" y="9" text-anchor="end">written length</text></svg>'
+    },
+    roll: {
+      title: 'Rolling',
+      text: 'Spread a wide chord from bottom to top, one note right after another, like a harp. Each finger lands in turn, so a small hand never has to reach for all of it at once.',
+      svg: '<svg viewBox="0 0 220 84" role="img" aria-label="Chord notes played one after another from low to high">' +
+        '<rect class="bar c3" x="124" y="8" width="80" height="16" rx="3"/><text class="on" x="130" y="20">3 · top</text>' +
+        '<rect class="bar c2" x="70" y="30" width="134" height="16" rx="3"/><text class="on" x="76" y="42">2</text>' +
+        '<rect class="bar c1" x="16" y="52" width="188" height="16" rx="3"/><text class="on" x="22" y="64">1 · low</text>' +
+        '<path class="cue" d="M18 76 L202 76"/><path class="head" d="M202 76l-6-3.5v7z"/>' +
+        '<text class="lbl" x="110" y="83" text-anchor="middle" dy="-.2">time →</text></svg>'
+    },
+    redistribute: {
+      title: 'Redistributing',
+      text: 'Share the notes differently: hand one note to the other hand or another finger, so every hand stays inside its comfortable reach. Your teacher decides which note moves.',
+      svg: '<svg viewBox="0 0 220 84" role="img" aria-label="The top note of a wide chord handed to the other hand">' +
+        '<g class="keys"><rect x="12" y="46" width="28" height="34"/><rect x="40" y="46" width="28" height="34"/><rect x="68" y="46" width="28" height="34"/>' +
+        '<rect x="96" y="46" width="28" height="34"/><rect x="124" y="46" width="28" height="34"/><rect x="152" y="46" width="28" height="34"/><rect x="180" y="46" width="28" height="34"/></g>' +
+        '<circle class="dot c1" cx="26" cy="66" r="7"/><circle class="dot c1" cx="82" cy="66" r="7"/><circle class="dot c1" cx="138" cy="66" r="7"/>' +
+        '<circle class="dot c3" cx="194" cy="66" r="7"/>' +
+        '<path class="brace a" d="M18 38h128"/><text class="lbl" x="82" y="31" text-anchor="middle">this hand</text>' +
+        '<path class="brace b" d="M170 38h48"/><text class="lbl" x="194" y="31" text-anchor="middle">other hand</text>' +
+        '<path class="cue" d="M194 57v-6"/></svg>'
+    },
+    stretch: {
+      title: 'Do not stretch',
+      text: 'Never force a reach to hit a number. Straining the hand tires it and risks injury, and the notes come out tense. Change the plan instead: release, roll or redistribute.',
+      svg: '<svg viewBox="0 0 220 84" role="img" aria-label="A comfortable five-finger span is fine; a far reach is marked wrong">' +
+        '<g class="keys"><rect x="14" y="48" width="24" height="32"/><rect x="38" y="48" width="24" height="32"/><rect x="62" y="48" width="24" height="32"/><rect x="86" y="48" width="24" height="32"/>' +
+        '<rect x="110" y="48" width="24" height="32"/><rect x="134" y="48" width="24" height="32"/><rect x="158" y="48" width="24" height="32"/><rect x="182" y="48" width="24" height="32"/></g>' +
+        '<circle class="dot c1" cx="26" cy="66" r="7"/><text class="on" x="26" y="69.5" text-anchor="middle">1</text>' +
+        '<circle class="dot c1" cx="122" cy="66" r="7"/><text class="on" x="122" y="69.5" text-anchor="middle">5</text>' +
+        '<path class="brace ok" d="M26 38h96"/><text class="lbl" x="74" y="33" text-anchor="middle">comfortable ✓</text>' +
+        '<path class="brace bad" d="M26 14h180"/><circle class="dot c7" cx="206" cy="66" r="7"/><text class="on" x="206" y="69.5" text-anchor="middle">✕</text>' +
+        '<text class="lbl bad" x="116" y="11" text-anchor="middle">too far: stretching ✕</text></svg>'
+    }
+  };
+  var TECHNIQUE_RE = /\b(releas(?:e|es|ing)|roll(?:ing)?|redistribut(?:e|es|ing|ion)|(?:do not|don't) stretch)\b/gi;
+  function techniqueKey(word) {
+    var w = word.toLowerCase();
+    return /^redistribut/.test(w) ? 'redistribute' : /^releas/.test(w) ? 'release' : /^roll/.test(w) ? 'roll' : /stretch$/.test(w) ? 'stretch' : null;
+  }
+  // Split a review sentence into plain and technique segments (pure; tested).
+  function techniqueSegments(text) {
+    var out = [], last = 0, m;
+    text = String(text);
+    TECHNIQUE_RE.lastIndex = 0;
+    while ((m = TECHNIQUE_RE.exec(text))) {
+      var key = techniqueKey(m[0]);
+      if (!key) continue;
+      if (m.index > last) out.push({ text: text.slice(last, m.index) });
+      out.push({ text: m[0], technique: key });
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) out.push({ text: text.slice(last) });
+    return out;
+  }
+
   function installGuide(fig, getPlan) {
     var panel = document.createElement('div');
     panel.className = 'se-finger-guide';
@@ -367,9 +440,57 @@
     panel.setAttribute('data-contrast-guard-skip', '');
     panel.hidden = true;
     fig.appendChild(panel);
-    var anchor, timer;
+    var anchor, timer, tip = document.createElement('div'), tipTerm, tipTimer;
+    tip.className = 'se-technique-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.id = panel.id + '-tip';
+    tip.hidden = true;
+    function hideTip() {
+      clearTimeout(tipTimer);
+      if (tipTerm) tipTerm.removeAttribute('aria-describedby');
+      tipTerm = null;
+      tip.hidden = true;
+    }
+    function showTip(term) {
+      clearTimeout(tipTimer);
+      if (term === tipTerm) return;
+      var info = TECHNIQUES[term.dataset.technique];
+      if (!info) return;
+      hideTip();
+      tip.replaceChildren();
+      var head = document.createElement('strong'); head.textContent = info.title; tip.appendChild(head);
+      var art = document.createElement('div'); art.className = 'se-technique-art';
+      art.innerHTML = info.svg; // static, trusted strings from TECHNIQUES
+      tip.appendChild(art);
+      var body = document.createElement('p'); body.textContent = info.text; tip.appendChild(body);
+      tipTerm = term;
+      term.setAttribute('aria-describedby', tip.id);
+      tip.hidden = false;
+      var r = term.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+      // Prefer below the word (the panel's own text sits above it); flip above when cramped.
+      var top = r.bottom + 8 + h <= root.innerHeight - 8 ? r.bottom + 8 : Math.max(8, r.top - h - 8);
+      tip.style.left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, root.innerWidth - w - 8)) + 'px';
+      tip.style.top = top + 'px';
+    }
+    function termFrom(target) { return target.closest?.('.se-technique'); }
+    function reviewLine(text) {
+      var p = line('p', '');
+      p.className = 'se-review';
+      techniqueSegments(text).forEach(function (seg) {
+        if (!seg.technique) { p.appendChild(document.createTextNode(seg.text)); return; }
+        var span = document.createElement('span');
+        span.className = 'se-technique';
+        span.dataset.technique = seg.technique;
+        span.tabIndex = 0;
+        span.setAttribute('role', 'button');
+        span.setAttribute('aria-label', TECHNIQUES[seg.technique].title + ': show tip');
+        span.textContent = seg.text;
+        p.appendChild(span);
+      });
+    }
     function hide() {
       clearTimeout(timer);
+      hideTip();
       if (!anchor) return;
       anchor.removeAttribute('aria-describedby');
       anchor = null;
@@ -415,7 +536,8 @@
         var motion = next.midi === top.midi ? 'same pitch' : (next.midi > top.midi ? 'up ' : 'down ') + interval(top, next).label;
         line('p', (tones.length > 1 || nextTones.length > 1 ? 'Next top note: ' : 'Next note: ') + pitchName(next) + ' · ' + motion);
       }
-      if (data.plan.reviews[eventIndex]) line('p', data.plan.reviews[eventIndex]);
+      if (data.plan.reviews[eventIndex]) reviewLine(data.plan.reviews[eventIndex]);
+      panel.appendChild(tip);
       anchor = mark;
       anchor.setAttribute('aria-describedby', panel.id);
       panel.hidden = false;
@@ -432,6 +554,7 @@
         hide();
         return;
       }
+      hideTip();
       var width = panel.offsetWidth, height = panel.offsetHeight;
       var left = rect.left + (rect.width - width) / 2;
       var topPosition = rect.top - height - 7;
@@ -449,20 +572,44 @@
     }
     function delayHide() { clearTimeout(timer); timer = setTimeout(hide, 140); }
     function onFocus(event) { var mark = markFrom(event.target); if (mark) show(mark); }
-    function onBlur(event) { if (markFrom(event.target) === anchor) delayHide(); }
+    function onBlur(event) {
+      if (panel.contains(event.relatedTarget)) return; // focus moved onto a technique word
+      if (markFrom(event.target) === anchor) delayHide();
+    }
     function onClick(event) {
+      var term = termFrom(event.target);
+      if (term && panel.contains(term)) {
+        event.stopPropagation();
+        if (term === tipTerm) hideTip(); else showTip(term); // tap toggles on touch screens
+        return;
+      }
       var mark = markFrom(event.target);
       if (!mark) { if (!panel.contains(event.target)) hide(); return; }
       event.stopPropagation();
       show(mark);
     }
     function onKey(event) {
-      if (event.key === 'Escape' && anchor) { hide(); event.preventDefault(); event.stopPropagation(); }
+      if (event.key === 'Escape' && tipTerm) { hideTip(); event.preventDefault(); event.stopPropagation(); }
+      else if (event.key === 'Escape' && anchor) { hide(); event.preventDefault(); event.stopPropagation(); }
       else if (fig.contains(event.target) && markFrom(event.target) && (event.key === 'Enter' || event.key === ' ')) {
         event.preventDefault(); event.stopPropagation(); show(event.target);
       }
     }
     function onScroll(event) { if (!(event.target instanceof Node && panel.contains(event.target))) place(); }
+    panel.addEventListener('pointerover', function (event) {
+      var term = termFrom(event.target);
+      if (term && event.pointerType !== 'touch') showTip(term);
+    });
+    panel.addEventListener('pointerout', function (event) {
+      var term = termFrom(event.target);
+      if (term && term === tipTerm && term !== document.activeElement) tipTimer = setTimeout(hideTip, 100);
+    });
+    panel.addEventListener('focusin', function (event) { var term = termFrom(event.target); if (term) showTip(term); });
+    panel.addEventListener('focusout', function (event) { if (termFrom(event.target) === tipTerm) hideTip(); });
+    panel.addEventListener('keydown', function (event) {
+      var term = termFrom(event.target);
+      if (term && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); showTip(term); }
+    });
     panel.addEventListener('pointerenter', function () { clearTimeout(timer); });
     panel.addEventListener('pointerleave', delayHide);
     fig.addEventListener('pointerover', onEnter);
@@ -603,6 +750,6 @@
     };
   }
 
-  root.ScoreFingering = { plan: plan, planDetailed: planDetailed, addMarks: addMarks, install: install, isKeyboard: isKeyboard, handOf: handOf };
+  root.ScoreFingering = { techniques: TECHNIQUES, techniqueSegments: techniqueSegments, plan: plan, planDetailed: planDetailed, addMarks: addMarks, install: install, isKeyboard: isKeyboard, handOf: handOf };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.ScoreFingering;
 })(typeof window !== 'undefined' ? window : globalThis);

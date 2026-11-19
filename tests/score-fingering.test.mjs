@@ -207,3 +207,15 @@ test('one hand on two staves shares reservations while duet players remain indep
   d = F.planDetailed(layout, score);
   assert.ok(d.fingers[0]); assert.ok(d.fingers[1]); assert.equal(d.reviews[1], undefined);
 });
+
+test('review sentences highlight releasing, rolling, redistributing and do-not-stretch, each with a tip', () => {
+  const sentence = 'Reach or chord spacing: ask your teacher about releasing, rolling or redistributing notes; do not stretch.';
+  const found = F.techniqueSegments(sentence).filter(s => s.technique);
+  assert.deepEqual(found.map(s => s.technique), ['release', 'roll', 'redistribute', 'stretch']);
+  assert.equal(F.techniqueSegments(sentence).map(s => s.text).join(''), sentence);
+  for (const key of ['release', 'roll', 'redistribute', 'stretch']) {
+    const t = F.techniques[key];
+    assert.ok(t.title && t.text && /^<svg[\s\S]*<\/svg>$/.test(t.svg), key);
+  }
+  assert.deepEqual(F.techniqueSegments('Hand position change: plan a shift or release with your teacher.').filter(s => s.technique).map(s => s.technique), ['release']);
+});

@@ -640,7 +640,7 @@
   }
 
   // Column spacing for a gap of `d` quarter-note beats, in staff spaces.
-  function gapFor(d) { return 2.6 + 2.9 * Math.pow(Math.max(d, 0.125), 0.6); }
+  function gapFor(d) { return (2.6 + 2.9 * Math.pow(Math.max(d, 0.125), 0.6)) * 0.82; }
 
   // Named heads are wider than engraving glyphs. Separate simultaneous
   // voices as well as seconds within a chord, and share accidental columns.
@@ -938,7 +938,7 @@
       var ext = model.staves.map(function (_, si) { return extents(sys, si); });
       var hasAbove = sys.bars.some(function (bi) { var mt = model.barMeta[bi]; return mt.volta || mt.fine || mt.dc || sectionAt[bi]; });
       var bottoms = [];
-      var top = y + (sIndex === 0 && model.score.tempoText ? 2.4 * S : 0.6 * S) + (hasAbove ? 2.6 * S : 0);
+      var top = y + (sIndex === 0 && model.score.tempoText ? 3.4 * S : 0.6 * S) + (hasAbove ? 3.6 * S : 0);
       model.staves.forEach(function (st, si) {
         if (hid(si)) { bottoms.push(null); return; }
         var above = Math.max(8, ext[si].hi) * h;
@@ -994,7 +994,7 @@
       }
       out.push('<line x1="' + x0 + '" x2="' + x0 + '" y1="' + sysTop + '" y2="' + sysBottom + '" stroke="' + ink + '" stroke-width="' + lineW + '"/>');
       if (sIndex === 0 && model.score.tempoText) {
-        out.push('<text class="se-tempo" x="' + (x0 + 3.6 * S) + '" y="' + (aboveY - (hasAbove ? 2.4 * S : 0)) + '" font-size="' + (1.45 * S) + '">' + M.escape(model.score.tempoText) + '</text>');
+        out.push('<text class="se-tempo" x="' + (x0 + 3.6 * S) + '" y="' + (aboveY - (hasAbove ? 3.7 * S : 0)) + '" font-size="' + (2.1 * S) + '">' + M.escape(model.score.tempoText) + '</text>');
       }
       if (tabBars) {
         out.push('<g class="se-tablature" aria-label="' + (tabConfig.tuning.length === 4 ? 'Bass tablature' : 'Guitar tablature') + '">');
@@ -1045,10 +1045,10 @@
         } else volta = null;
         if (sectionAt[bi]) {
           var lab = String(sectionAt[bi].label || '');
-          var tw = Math.max(1.6, lab.length * 0.78 + 0.9) * S;
+          var tw = Math.max(2.5, lab.length * 1.3 + 1.2) * S;
           var sy = aboveY - (meta.volta ? 2.2 * S : 0) - 0.6 * S;
-          out.push('<g class="se-section"><rect x="' + (bx0 + 0.1 * S) + '" y="' + (sy - 1.35 * S) + '" width="' + tw + '" height="' + (1.75 * S) + '" rx="' + (0.25 * S) + '" fill="none" stroke="currentColor" stroke-width="' + lineW + '"/>' +
-            '<text x="' + (bx0 + 0.1 * S + tw / 2) + '" y="' + (sy - 0.05 * S) + '" font-size="' + (1.2 * S) + '" text-anchor="middle">' + M.escape(lab) + '</text></g>');
+          out.push('<g class="se-section"><rect x="' + (bx0 + 0.1 * S) + '" y="' + (sy - 2.2 * S) + '" width="' + tw + '" height="' + (2.6 * S) + '" rx="' + (0.35 * S) + '" fill="none" stroke="currentColor" stroke-width="' + (lineW * 1.6) + '"/>' +
+            '<text x="' + (bx0 + 0.1 * S + tw / 2) + '" y="' + (sy - 0.25 * S) + '" font-size="' + (1.9 * S) + '" font-weight="700" text-anchor="middle">' + M.escape(lab) + '</text></g>');
         }
         if (meta.fine || meta.dc) {
           out.push('<text class="se-volta se-jump" x="' + (bx0 + bw - 0.4 * S) + '" y="' + (aboveY + 1.4 * S) + '" font-size="' + (1.15 * S) + '" text-anchor="end">' + (meta.dc ? 'D.C. al Fine' : 'Fine') + '</text>');
@@ -2703,6 +2703,7 @@
     var svgWrap = el('div', { class: 'se-svg' });
     paper.appendChild(svgWrap);
 
+    var dock, closeIfModal, syncPalette;
     var practiceId = /\/lessons\/music\/pioneers\//.test(location.pathname) && (options?.practiceId || score.id);
     var workspace = el('div', { class: practiceId ? 'se-workspace se-reading' : 'se-workspace' });
     var toolbar = el('div', { class: 'se-toolbar' });
@@ -2723,7 +2724,7 @@
       settings.classList.add('se-settings-dialog');
       settings.setAttribute('aria-label', 'Score settings');
       var settingsHeader = el('header', {});
-      var dismissSettings = el('button', { type: 'button', autofocus: '' }, 'Done');
+      var dismissSettings = el('button', { type: 'button' }, 'Done');
       settingsHeader.append(el('h3', {}, 'Score settings'), dismissSettings);
       settings.prepend(settingsHeader);
       displaySettings = el('fieldset', { class: 'se-display-settings' });
@@ -2736,8 +2737,37 @@
         partSettings.appendChild(el('legend', {}, 'Parts to hear'));
         settingsBar.appendChild(partSettings);
       }
-      settingsSummary.addEventListener('click', function () { settings.showModal(); });
-      dismissSettings.addEventListener('click', function () { settings.close(); });
+      // On a wide workspace Settings is a docked palette beside the score: open by default,
+      // non-modal, so speed, spacing and notation stay in reach while reading. Narrow
+      // screens keep the modal dialog. The choice is remembered per browser.
+      var PALETTE_KEY = 'classroomos-score-palette', PALETTE_MIN = 880;
+      var paletteOn = false;
+      var paletteWanted = function () { try { return root.localStorage.getItem(PALETTE_KEY) !== 'off'; } catch (e) { return true; } };
+      var paletteWide = function () { return workspace.clientWidth >= PALETTE_MIN; };
+      dock = function (on, remember) {
+        if (on === paletteOn) return;
+        paletteOn = on;
+        if (settings.open) settings.close();
+        settings.classList.toggle('se-docked', on);
+        workspace.classList.toggle('se-palette-open', on);
+        settingsSummary.setAttribute('aria-expanded', String(on));
+        dismissSettings.textContent = on ? 'Hide' : 'Done';
+        dismissSettings.autofocus = false;
+        if (on) settings.show();
+        if (remember) { try { root.localStorage.setItem(PALETTE_KEY, on ? 'on' : 'off'); } catch (e) { /* optional */ } }
+      };
+      closeIfModal = function () { if (!paletteOn) settings.close(); };
+      settingsSummary.addEventListener('click', function () {
+        if (paletteOn) dock(false, true);
+        else if (paletteWide()) dock(true, true);
+        else { dismissSettings.autofocus = true; settings.showModal(); }
+      });
+      dismissSettings.addEventListener('click', function () { if (paletteOn) dock(false, true); else settings.close(); });
+      syncPalette = function () {
+        var wide = paletteWide();
+        if (paletteOn && !wide) dock(false, false);
+        else if (!paletteOn && wide && paletteWanted() && !settings.open) dock(true, false);
+      };
       settings.addEventListener('keydown', function (event) { event.stopPropagation(); });
     } else {
       settings.appendChild(settingsSummary);
@@ -2848,7 +2878,7 @@
       'aria-label': 'Resize the score pane. Up and down arrows change its height; double-click or Home resets it.', title: 'Drag to resize · double-click to reset' });
     workspace.append(toolbar, paper, grip);
     toolbar.append(bar, timeline, practiceId ? settingsSummary : settings);
-    if (practiceId) fig.appendChild(settings);
+    if (practiceId) { workspace.appendChild(settings); if (root.ResizeObserver) new root.ResizeObserver(function () { syncPalette(); }).observe(workspace); syncPalette(); }
     fig.insertBefore(status, cap);
     fig.insertBefore(help, cap);
     if (score.source) {
@@ -3599,7 +3629,7 @@
     displaySettings.append(pitchToggle, colorToggle, noteListToggle, printButton);
     if (practiceId) {
       var readingSize = el('button', { type: 'button' }, 'Reading size');
-      readingSize.addEventListener('click', function () { settings.close(); navigation.fit('reading'); });
+      readingSize.addEventListener('click', function () { closeIfModal(); navigation.fit('reading'); });
       displaySettings.insertBefore(readingSize, more);
       // Page view settings get their own group at the top of the dialog.
       var viewSettings = el('fieldset', { class: 'se-view-settings' });
@@ -3627,13 +3657,13 @@
       };
       syncViewControls();
       noteListToggle.addEventListener('click', function () {
-        settings.close();
+        closeIfModal();
         if (!noteList.hidden) {
           noteList.scrollIntoView({ block: 'nearest' });
           noteList.querySelector('button')?.focus({ preventScroll: true });
         }
       });
-      printButton.addEventListener('click', function () { settings.close(); }, { capture: true });
+      printButton.addEventListener('click', function () { closeIfModal(); }, { capture: true });
     }
     // Layout: notation size, note spacing, line spacing, and which staves to draw. Shared by every
     // score on the page and by Print score, so a handout can be arranged to fit the paper.
