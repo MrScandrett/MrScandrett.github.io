@@ -693,6 +693,34 @@
     return (ev.graces || []).reduce(function (w, g) { return w + 1.15 + (g.pitches.some(function (p) { return p.showAcc !== null; }) ? 0.85 : 0); }, 0);
   }
 
+  // Reader layout preferences, shared by every score on the page (and by print): notation size, note
+  // spacing, line spacing, and which staves are drawn. Hidden staves are still heard; only the
+  // engraving leaves them out, so a student can print just the melody or just the bass.
+  var LAYOUT_KEY = 'classroomos:score-layout';
+  var layoutPrefs = { scale: 1, hgap: 1, vgap: 1, spread: false, hidden: {} };
+  function clampPref(v, lo, hi) { v = Number(v); return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : 1; }
+  try {
+    var savedLayout = JSON.parse(root.localStorage.getItem(LAYOUT_KEY));
+    if (savedLayout && typeof savedLayout === 'object') {
+      layoutPrefs.scale = clampPref(savedLayout.scale, 0.6, 1.8);
+      layoutPrefs.hgap = clampPref(savedLayout.hgap, 0.6, 1.8);
+      layoutPrefs.vgap = clampPref(savedLayout.vgap, 0.4, 1.8);
+      layoutPrefs.spread = savedLayout.spread === true;
+      if (savedLayout.hidden && typeof savedLayout.hidden === 'object') layoutPrefs.hidden = savedLayout.hidden;
+    }
+  } catch (err) { /* private mode, or Node */ }
+  function saveLayoutPrefs() {
+    try { root.localStorage.setItem(LAYOUT_KEY, JSON.stringify(layoutPrefs)); } catch (err) { /* private mode */ }
+    if (root.dispatchEvent && root.CustomEvent) root.dispatchEvent(new root.CustomEvent('score-layout:change'));
+  }
+  // {staffIndex: true} for the staves this score should not draw. One staff always stays.
+  function hiddenStaves(model) {
+    var list = layoutPrefs.hidden[model.id], out = {}, left = model.staves.length;
+    if (!Array.isArray(list) || model.staves.length < 2) return out;
+    list.forEach(function (i) { if (model.staves[i] && !out[i] && left > 1) { out[i] = true; left--; } });
+    return out;
+  }
+
   function layoutBars(model, S, readableSize) {
     return model.barStart.map(function (b0, bi) {
       var times = {}, meta = model.barMeta[bi];
@@ -731,7 +759,7 @@
         x += c.namedLeft || 0;
         c.x = x;
         var next = i + 1 < cols.length ? cols[i + 1].t : len;
-        var w = gapFor(next - c.t) + (c.seconds ? 1.1 : 0) + (c.namedExtra || 0);
+        var w = gapFor(next - c.t) * layoutPrefs.hgap + (c.seconds ? 1.1 : 0) + (c.namedExtra || 0);
         widths.push(w);
         x += w;
       });
@@ -744,14 +772,19 @@
 
   function engrave(model, width, readableSize, windowed, readingLayout, pagePlan) {
     var M = root.MusicNotation;
-    var S = (width < 520 ? 7.5 : width < 820 ? 8.5 : 9.5) * (readableSize ? 1.45 : 1);
+    var S = (width < 520 ? 7.5 : width < 820 ? 8.5 : 9.5) * (readableSize ? 1.45 : 1) * layoutPrefs.scale;
+    var vg = layoutPrefs.vgap;
     var h = S / 2;
     decideStems(model);
     var bars = layoutBars(model, S, readableSize);
     var tabConfig = model.score.tablature;
     var tabBars = tabConfig && root.GuitarTablature ? (model.guitarTabBars || (model.guitarTabBars = root.GuitarTablature.finger(model, tabConfig.tuning, tabConfig.pitchShift || 0, tabConfig))) : null;
     function keyW(k) { return Math.abs(k) * (readableSize ? 1.3 : k > 0 ? 1.05 : 0.95) * S; }
-    var grand = model.staves.length === 2 && model.score.grand !== false;
+    var hidden = hiddenStaves(model);
+    function hid(si) { return !!hidden[si]; }
+    var shownIdx = model.staves.map(function (_, i) { return i; }).filter(function (i) { return !hidden[i]; });
+    var firstShown = shownIdx[0], lastShown = shownIdx[shownIdx.length - 1];
+    var grand = model.staves.length === 2 && shownIdx.length === 2 && model.score.grand !== false;
     var expressions = model.score.expressions || {};
     var suggestedFingers = false;
     try { suggestedFingers = !!root.document && root.localStorage.getItem('classroomos-score-fingering') === 'on'; } catch (e) { /* optional */ }
@@ -761,9 +794,9 @@
       return notes && notes[point.note < 0 ? notes.length + point.note : point.note || 0];
     }
     function covers(span, sys, si) {
-      return (span.staff || 0) === si && span.from.bar <= sys.bars[sys.bars.length - 1] + 1 && span.to.bar >= sys.first + 1;
+      return !hid(si) && (span.staff || 0) === si && span.from.bar <= sys.bars[sys.bars.length - 1] + 1 && span.to.bar >= sys.first + 1;
     }
-    var braceW = grand || model.staves.length > 1 ? 1.4 * S : 0;
+    var braceW = grand || shownIdx.length > 1 ? 1.4 * S : 0;
     var tsDigits = String(model.ts.num).length > String(model.ts.den).length ? String(model.ts.num) : String(model.ts.den);
     var timeW = (tsDigits.length * 1.8 + 1.2) * S;
     var left = 0.5 * S + braceW;
@@ -829,7 +862,7 @@
       var hasDirections = (expressions.directions || []).some(function (d) { return (d.staff || 0) === si && sys.bars.indexOf(d.bar - 1) >= 0; }) ||
         (expressions.hairpins || []).some(function (span) { return covers(span, sys, si); });
       var hasText = (expressions.directions || []).some(function (d) { return d.text && (d.staff || 0) === si && sys.bars.indexOf(d.bar - 1) >= 0; });
-      return { hi: hi + 1 + (violin ? 4 : 0) + (fingers && rightHand ? 14 : 0), violinHi: hi, lo: lo - 1 - (hasText ? 9 : dyn || hasDirections ? 6 : 0) - (fingers && !rightHand ? 14 : 0), directionLo: directionLo };
+      return { hi: hi + 1 + (violin ? 3 : 0) + (fingers && rightHand ? 6 : 0), violinHi: hi, lo: lo - 1 - (hasText ? 9 : dyn || hasDirections ? 6 : 0) - (fingers && !rightHand ? 6 : 0), directionLo: directionLo };
     }
 
     var out = [], hl = [], y = 0, evIndex = 0;
@@ -907,6 +940,7 @@
       var bottoms = [];
       var top = y + (sIndex === 0 && model.score.tempoText ? 2.4 * S : 0.6 * S) + (hasAbove ? 2.6 * S : 0);
       model.staves.forEach(function (st, si) {
+        if (hid(si)) { bottoms.push(null); return; }
         var above = Math.max(8, ext[si].hi) * h;
         var below = Math.max(0, -ext[si].lo) * h;
         var gapAbove = si === 0 ? above : Math.max(above, 2.5 * S);
@@ -917,35 +951,38 @@
           // empty space that no actual pair of notes needs.
           var separation = Math.max.apply(null, sys.bars.map(function (bi) {
             var one = { bars: [bi], first: bi }, upper = extents(one, si - 1), lower = extents(one, si);
-            return (Math.max(0, -upper.lo) + Math.max(8, lower.hi)) * h + 1.2 * S;
+            return (Math.max(0, -upper.lo) + Math.max(8, lower.hi)) * h + 1.2 * S * vg;
           }));
           bottom = bottoms[si - 1] + separation;
         }
         bottoms.push(bottom);
         // Piano staves sit close; ensemble staves need clear air between parts.
-        top = bottom + below + (si < model.staves.length - 1 ? (grand ? 1.2 : 3.4) * S : 0);
+        top = bottom + below + (si < model.staves.length - 1 ? (grand ? 1.2 : 2.6) * S * vg : 0);
       });
-      var sysTop = bottoms[0] - 8 * h, sysBottom = bottoms[bottoms.length - 1];
-      var staffInkBottom = sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h;
+      bottoms = bottoms.map(function (b) { return b == null ? bottoms[firstShown] : b; });
+      var shownBottoms = shownIdx.map(function (i) { return bottoms[i]; });
+      var sysTop = bottoms[firstShown] - 8 * h, sysBottom = bottoms[lastShown];
+      var staffInkBottom = sysBottom + Math.max(0, -ext[lastShown].lo) * h;
       var tabTop = staffInkBottom + 4.2 * S, tabGap = 1.65 * S;
       if (tabBars) sysBottom = tabTop + (tabConfig.tuning.length - 1) * tabGap;
-      var aboveY = sysTop - Math.max(0, ext[0].hi - 9) * h - 1.4 * S;
+      var aboveY = sysTop - Math.max(0, ext[firstShown].hi - 9) * h - 1.4 * S;
       var x0 = left, x1 = left + sys.header + sys.bars.reduce(function (s, bi) { return s + bars[bi].width * stretch; }, 0);
       if (!last || stretch > 1) x1 = Math.min(x1, width - 1.5 * S);
       var sysKey = model.barMeta[sys.first].key;
-      var barRanges = grand ? [[sysTop, sysBottom]] : bottoms.map(function (bb) { return [bb - 8 * h, bb]; });
+      var barRanges = grand ? [[sysTop, sysBottom]] : shownBottoms.map(function (bb) { return [bb - 8 * h, bb]; });
 
       if (windowed) out.push(separator);
       out.push('<g data-se-system="' + sIndex + '">');
       // Staff lines, clefs, key and time signatures.
       model.staves.forEach(function (st, si) {
+        if (hid(si)) return;
         var b = bottoms[si], clef = st.clefAt[sys.first];
         for (var l = 0; l < 5; l++) out.push('<line x1="' + x0 + '" x2="' + x1 + '" y1="' + (b - l * S) + '" y2="' + (b - l * S) + '" stroke="' + ink + '" stroke-width="' + lineW + '" class="se-line"/>');
         out.push(M.clef(clef, x0 + 0.7 * S, b, h));
         out.push(keySig(sysKey, x0 + 3.6 * S, b, clef));
         if (sys.first === 0) out.push(timeSigAt(model.ts, x0 + 3.6 * S + keyW(sysKey) + 0.5 * S, b));
       });
-      if (model.staves.length > 1) {
+      if (shownIdx.length > 1) {
         var bx = x0 - 0.2 * S;
         if (grand) {
           var hgt = sysBottom - sysTop;
@@ -969,7 +1006,7 @@
         out.push('<text x="' + (x0 + S) + '" y="' + (tabTop + 3 * tabGap) + '" font-size="' + (1.3 * S) + '">TAB</text></g>');
       }
       var firstBarNo = barNumber(model, sys.bars[0]);
-      if (firstBarNo > 1) out.push('<text class="se-barno" x="' + (x0 + 0.2 * S) + '" y="' + (sysTop - 1.0 * S - Math.max(0, ext[0].hi - 9) * h) + '" font-size="' + (1.1 * S) + '">' + firstBarNo + '</text>');
+      if (firstBarNo > 1) out.push('<text class="se-barno" x="' + (x0 + 0.2 * S) + '" y="' + (sysTop - 1.0 * S - Math.max(0, ext[firstShown].hi - 9) * h) + '" font-size="' + (1.1 * S) + '">' + firstBarNo + '</text>');
 
       var bx0 = x0 + sys.header;
       var sysCols = [], systemEvents = [];
@@ -982,16 +1019,16 @@
         var lx = bx0 + 0.3 * S;
         if (meta.repStart) {
           out.push(repeatSign(lx - 0.3 * S + (k === 0 ? 0.4 * S : 0), 1, barRanges));
-          out.push(repeatDots(lx + 1.15 * S + (k === 0 ? 0.4 * S : 0), bottoms));
+          out.push(repeatDots(lx + 1.15 * S + (k === 0 ? 0.4 * S : 0), shownBottoms));
           lx += 1.6 * S;
         }
         if (meta.keyChange) {
-          if (k > 0) model.staves.forEach(function (st, si) { out.push(keyChange(meta.prevKey, meta.key, lx, bottoms[si], st.clefAt[bi])); });
+          if (k > 0) model.staves.forEach(function (st, si) { if (!hid(si)) out.push(keyChange(meta.prevKey, meta.key, lx, bottoms[si], st.clefAt[bi])); });
           lx += keyChangeUnits(meta.prevKey, meta.key, readableSize) * S;
         }
-        if (meta.timeChange) { model.staves.forEach(function (st, si) { out.push(timeSigAt(meta.ts, lx + 0.3 * S, bottoms[si])); }); lx += 2.8 * S; }
+        if (meta.timeChange) { model.staves.forEach(function (st, si) { if (!hid(si)) out.push(timeSigAt(meta.ts, lx + 0.3 * S, bottoms[si])); }); lx += 2.8 * S; }
         if (bi > 0 && k > 0) model.staves.forEach(function (st, si) {
-          if (st.bars[bi].clefStart && st.bars[bi].clefStart !== st.clefAt[bi - 1]) out.push(smallClef(st.bars[bi].clefStart, lx + 0.2 * S, bottoms[si]));
+          if (!hid(si) && st.bars[bi].clefStart && st.bars[bi].clefStart !== st.clefAt[bi - 1]) out.push(smallClef(st.bars[bi].clefStart, lx + 0.2 * S, bottoms[si]));
         });
         // Endings (voltas) and section labels above the top staff.
         if (meta.volta) {
@@ -1026,7 +1063,7 @@
             ev.x = ev.whole ? bx0 + bw / 2 - 0.7 * S : col.px + (ev.namedOffset || 0) * S;
             ev.namedAccAnchor = col ? col.px - (col.namedLeft || 0) * S : ev.x;
             ev.accW = col ? col.accW : 0;
-            ev.bottom = b; ev.sys = sIndex; ev.sysEnd = x1; ev.sysStart = bx0;
+            ev.bottom = b; ev.hiddenStaff = hid(si); ev.sys = sIndex; ev.sysEnd = x1; ev.sysStart = bx0;
             ev.i = evIndex++;
             if (model.violinFingerings?.has(ev)) ev.violinY = b - ext[si].violinHi * h - 0.8 * S;
             allEvents.push(ev);
@@ -1034,7 +1071,7 @@
             barEvents.push(ev);
           });
           // Beams first, so stems know where to stop.
-          barModel.beams.forEach(function (g) { placeBeam(g, st.clef, b, S, h); });
+          if (!hid(si)) barModel.beams.forEach(function (g) { placeBeam(g, st.clef, b, S, h); });
         });
         var crossBeams = [];
         (expressions.crossBeams || []).forEach(function (spec) {
@@ -1056,6 +1093,7 @@
           crossBeams.push(g);
         });
         model.staves.forEach(function (st, si) {
+          if (hid(si)) return;
           var b = bottoms[si], barModel = st.bars[bi];
           barModel.events.forEach(function (ev) { out.push(drawEvent(ev, ev.clef || st.clef, b, S, h, model, readableSize)); });
           barModel.beams.forEach(function (g) { out.push(drawBeam(g, S)); });
@@ -1086,7 +1124,7 @@
         var final = bi === model.count - 1;
         // An excerpt that stops mid-piece ("ending": "open") ends on a plain barline.
         if (meta.repEnd) {
-          out.push(repeatDots(xe - 1.85 * S, bottoms));
+          out.push(repeatDots(xe - 1.85 * S, shownBottoms));
           out.push(repeatSign(xe, -1, barRanges));
         } else if (final && model.score.ending !== 'open') {
           out.push('<line x1="' + (xe - 0.75 * S) + '" x2="' + (xe - 0.75 * S) + '" y1="' + sysTop + '" y2="' + sysBottom + '" stroke="' + ink + '" stroke-width="' + lineW * 1.4 + '"/>');
@@ -1095,7 +1133,7 @@
           barRanges.forEach(function (r) {
             out.push('<line x1="' + xe + '" x2="' + xe + '" y1="' + r[0] + '" y2="' + r[1] + '" stroke="' + ink + '" stroke-width="' + lineW * 1.4 + '"/>');
           });
-          if (!grand && model.staves.length > 1) out.push('<line x1="' + xe + '" x2="' + xe + '" y1="' + sysTop + '" y2="' + sysBottom + '" stroke="' + ink + '" stroke-width="' + lineW * 1.4 + '"/>');
+          if (!grand && shownIdx.length > 1) out.push('<line x1="' + xe + '" x2="' + xe + '" y1="' + sysTop + '" y2="' + sysBottom + '" stroke="' + ink + '" stroke-width="' + lineW * 1.4 + '"/>');
         }
         sysCols.push({ t: model.barStart[bi] + model.staves[0].bars[bi].length, x: xe - 0.6 * S, sys: sIndex, barEnd: true });
         bx0 = xe;
@@ -1130,7 +1168,7 @@
       });
       function directionY(si) { return bottoms[si] - Math.min(0, ext[si].directionLo) * h + 2 * S; }
       (expressions.directions || []).forEach(function (d) {
-        if (sys.bars.indexOf(d.bar - 1) < 0) return;
+        if (sys.bars.indexOf(d.bar - 1) < 0 || hid(d.staff || 0)) return;
         var xx = timeX(d), yy = directionY(d.staff || 0);
         out.push('<g class="se-direction">' + (d.dynamic ? dynamicGlyphs(d.dynamic, xx, yy, S) :
           '<text x="' + xx + '" y="' + (yy + 1.6 * S) + '" font-size="' + (1.2 * S) + '" font-style="italic">' + M.escape(d.text) + '</text>') + '</g>');
@@ -1146,14 +1184,14 @@
         out.push('<path class="se-hairpin" d="M' + xa + ' ' + (yy - ha) + ' L' + xz + ' ' + (yy - hz) + ' M' + xa + ' ' + (yy + ha) + ' L' + xz + ' ' + (yy + hz) + '" fill="none" stroke="currentColor" stroke-width="' + (0.12 * S) + '"/>');
       });
       out.push('</g>');
-      var inkBottom = tabBars ? sysBottom + 2 * S : sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h + S;
+      var inkBottom = tabBars ? sysBottom + 2 * S : sysBottom + Math.max(0, -ext[lastShown].lo) * h + S;
       hl.push({ index: sIndex, first: sys.first, top: y, bottom: inkBottom, right: x1, cols: sysCols });
-      y = inkBottom + 1.2 * S;
+      y = inkBottom + 1.2 * S * vg;
     });
 
     // Ties need every event placed first (they can cross bars and systems).
     allEvents.forEach(function (ev) {
-      if (!ev.tie || !ev.tieTo) return;
+      if (!ev.tie || !ev.tieTo || ev.hiddenStaff) return;
       var tie = '<g data-se-from="' + ev.sys + '" data-se-to="' + ev.tieTo.sys + '">' + drawTie(ev, S, h, model) + '</g>';
       if (windowed) crossSystemTies.push({ from: ev.sys, to: ev.tieTo.sys, svg: tie });
       else out.push(tie);
@@ -1191,7 +1229,7 @@
       marginTop: 0.55 * inch, marginBottom: 0.6 * inch, title: options.title ? 1.23 * inch : 0, inch: inch
     };
     page.x = -(page.width - layout.width) / 2;   // centres the staves on the sheet
-    var systems = layout.systems, between = 1.2 * S, sheets = [], startY = [];
+    var systems = layout.systems, between = 1.2 * S * layoutPrefs.vgap, sheets = [], startY = [];
     var sheet = null, cursor = 0;
     function open() {
       var top = sheet ? sheet.top + sheet.height + page.gap : page.gap / 2;
@@ -1213,7 +1251,7 @@
       if (k === sheets.length - 1 || s.systems.length < 2) return;
       var last = s.systems[s.systems.length - 1];
       var spare = s.top + s.height - page.marginBottom - (startY[last] + systems[last].bottom - systems[last].top);
-      var each = Math.max(0, Math.min(spare / (s.systems.length - 1), 4 * S));
+      var each = Math.max(0, Math.min(spare / (s.systems.length - 1), layoutPrefs.spread ? 6 * S : 0));
       s.systems.forEach(function (i, n) { startY[i] += n * each; });
     });
     var end = sheets[sheets.length - 1];
@@ -3597,6 +3635,62 @@
       });
       printButton.addEventListener('click', function () { settings.close(); }, { capture: true });
     }
+    // Layout: notation size, note spacing, line spacing, and which staves to draw. Shared by every
+    // score on the page and by Print score, so a handout can be arranged to fit the paper.
+    var layoutSettings = el('fieldset', { class: 'se-view-settings se-layout-settings' });
+    layoutSettings.appendChild(el('legend', {}, 'Layout and staves'));
+    var layoutControls = [];
+    function layoutSlider(label, key, min, max) {
+      var wrap = el('label', { class: 'se-view-choice se-layout-slider' });
+      var out = el('output', {}, '');
+      var input = el('input', { type: 'range', min: String(min), max: String(max), step: '5', 'aria-label': label });
+      function show() { input.value = String(Math.round(layoutPrefs[key] * 100)); out.textContent = input.value + '%'; }
+      input.addEventListener('input', function () { layoutPrefs[key] = input.value / 100; out.textContent = input.value + '%'; });
+      input.addEventListener('change', saveLayoutPrefs);
+      wrap.append(el('span', {}, label), input, out);
+      layoutSettings.appendChild(wrap);
+      layoutControls.push(show); show();
+    }
+    layoutSlider('Notation size', 'scale', 60, 180);
+    layoutSlider('Note spacing (stretch / squeeze)', 'hgap', 60, 180);
+    layoutSlider('Space between staves and lines', 'vgap', 40, 180);
+    var spreadWrap = el('label', { class: 'se-view-choice' });
+    var spreadBox = el('input', { type: 'checkbox' });
+    spreadBox.addEventListener('change', function () { layoutPrefs.spread = spreadBox.checked; saveLayoutPrefs(); });
+    spreadWrap.append(el('span', {}, 'Spread lines down each page'), spreadBox);
+    layoutSettings.appendChild(spreadWrap);
+    layoutControls.push(function () { spreadBox.checked = layoutPrefs.spread; });
+    if (model.staves.length > 1) {
+      var staffBox = el('div', { class: 'se-layout-staves', role: 'group', 'aria-label': 'Staves to show' });
+      staffBox.appendChild(el('span', { class: 'se-layout-staves-title' }, 'Show these staves (hidden ones still play)'));
+      var staffChecks = model.staves.map(function (st, si) {
+        var box = el('input', { type: 'checkbox' });
+        var clefName = ({ treble: 'treble', bass: 'bass', alto: 'alto', tenor: 'tenor' })[st.clef] || st.clef;
+        var lab = el('label', { class: 'se-layout-staff' });
+        lab.append(box, el('span', {}, (st.label || 'Staff ' + (si + 1)) + ' · ' + clefName + ' clef'));
+        box.addEventListener('change', function () {
+          var hiddenNow = model.staves.map(function (_, i) { return i; }).filter(function (i) { return i === si ? !box.checked : !staffChecks[i].checked; });
+          if (hiddenNow.length >= model.staves.length) { box.checked = true; return; }
+          if (hiddenNow.length) layoutPrefs.hidden[model.id] = hiddenNow; else delete layoutPrefs.hidden[model.id];
+          saveLayoutPrefs();
+        });
+        staffBox.appendChild(lab);
+        return box;
+      });
+      layoutSettings.appendChild(staffBox);
+      layoutControls.push(function () { var hs = hiddenStaves(model); staffChecks.forEach(function (box, i) { box.checked = !hs[i]; }); });
+    }
+    var layoutReset = el('button', { type: 'button', class: 'se-toggle' }, 'Reset layout');
+    layoutReset.addEventListener('click', function () {
+      layoutPrefs.scale = layoutPrefs.hgap = layoutPrefs.vgap = 1; layoutPrefs.spread = false; delete layoutPrefs.hidden[model.id];
+      saveLayoutPrefs();
+    });
+    layoutSettings.appendChild(layoutReset);
+    layoutControls.forEach(function (f) { f(); });
+    function layoutChanged() { layoutControls.forEach(function (f) { f(); }); layout = null; lastDrawWidth = null; requestAnimationFrame(draw); }
+    root.addEventListener('score-layout:change', layoutChanged);
+    if (practiceId) settingsBar.insertBefore(layoutSettings, settingsBar.children[1] || null);
+    else settingsBar.appendChild(layoutSettings);
     var offFingering;
     withFingering(function (F) {
       if (!player.destroyed) offFingering = F.install(fig, score, displaySettings);
@@ -3679,6 +3773,7 @@
       navigation.destroy();
       fig.removeEventListener('keydown', onSpace);
       root.removeEventListener('score-fingering:change', fingeringSpacingChanged);
+      root.removeEventListener('score-layout:change', layoutChanged);
       if (windowed) paper.removeEventListener('scroll', onPaperScroll);
       cancelAnimationFrame(scrollFrame);
       cancelAnimationFrame(drawFrame); players = players.filter(function (p) { return p !== player; });
