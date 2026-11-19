@@ -9476,23 +9476,13 @@ body.theme-home .cos-home .home-launchpad.hero {
 
 .cos-home .home-launch-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: .65rem 1rem;
-  padding: clamp(.75rem, 2vw, 1.2rem);
   border-radius: 20px;
 }
 
 .cos-home .home-launch-brand { min-width: 0; }
 
-body.theme-home .cos-home .home-launch-brand .eyebrow {
-  margin: 0 0 .15rem;
-  text-align: left;
-}
-
 body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title {
   margin: 0;
-  font-size: clamp(1.8rem, 3.4vw, 2.75rem);
   line-height: 1.04;
 }
 
@@ -9623,7 +9613,6 @@ body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title {
 .home-support-grid > .home-widget { min-width: 0; }
 
 @media (max-width: 780px) {
-  .cos-home .home-launch-bar { grid-template-columns: minmax(0, 1fr); }
   .home-support-grid { grid-template-columns: minmax(0, 1fr); }
   body.theme-home main.homepage-main :is(.home-launchpad.hero, .home-tabs, .today-panel, .home-support-grid) { width: 100%; }
   .today-shortcuts ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -9641,124 +9630,179 @@ body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title {
 }
 
 @media (max-width: 360px) {
-  .cos-home .home-launch-bar { grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; }
-  body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title { font-size: 1.35rem; }
-  .home-launch-actions { display: block; }
+  .home-launch-actions { display: flex; }
   .cos-home .home-launch-actions .home-start-class { min-height: 44px; grid-template-columns: 1fr; }
-  .cos-home .home-launch-actions :is(.command-anchor, .home-start-class-stage, .home-launch-desc) { display: none; }
+  .cos-home .home-launch-actions :is(.home-start-class-stage, .home-launch-desc) { display: none; }
   .today-shortcuts ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .today-shortcuts a { justify-content: center; padding-inline: .25rem; font-size: .75rem; text-align: center; }
   .today-shortcuts a > span { display: none; }
 }
 
 
-/* Ambient hero art: index-atmosphere.js floats STEAM objects out of a starfield
-   void behind the launch bar, with film grain and flicker (still under reduced motion). */
+/* Observatory backdrop with static lighting and two small moving illustrations. */
 .cos-home .home-launch-bar {
-  --steam-s: #2f7fe0;
-  --steam-t: #0f9c8c;
-  --steam-e: #d06d0e;
-  --steam-a: #cc3f8c;
-  --steam-m: #7352e0;
-  --atmo-star: color-mix(in srgb, var(--accent) 50%, var(--text));
-  --atmo-shade: color-mix(in srgb, var(--steam-s) 40%, #0b1230);
-  --atmo-ink: color-mix(in srgb, var(--text) 82%, var(--accent));
-  --atmo-void: var(--surface-elevated, #fff);
+  --atmo-s: #7cbfff;
+  --atmo-t: #7de9d9;
+  --atmo-e: #ffc788;
+  --atmo-a: #fba1cc;
+  --atmo-m: #b6a4fc;
+  --atmo-star: color-mix(in srgb, #bedbff 86%, var(--accent, #73acff));
+  --atmo-shade: #1c2b59;
+  --atmo-ink: #edf6ff;
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  align-items: start;
-}
-.cos-home .home-launch-bar:has(> .home-atmosphere)::after { display: none; }
-
-/* Balanced hero: name and the two actions centred over the void, the
-   "welcome back" row centred beneath, cards reading top-down in line. */
-.cos-home .home-launch-bar:has(> .home-atmosphere) {
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
+  align-items: start;
   gap: 1rem;
-  padding: clamp(1.75rem, 4.5vw, 3.25rem) clamp(1rem, 3vw, 1.75rem) clamp(1rem, 2.5vw, 1.5rem);
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(.75rem, 3vw, 1.75rem) clamp(1.1rem, 3vw, 2rem);
   text-align: center;
+  background: #101c35;
+  border-color: #4a6089;
+  box-shadow: 0 12px 26px -18px #101c35, inset 0 1px 0 #8daadd55;
 }
-.cos-home .home-launch-bar:has(> .home-atmosphere) .home-launch-brand {
+html[data-lighting="night"] .cos-home .home-launch-bar {
+  background: #0b1328;
+  border-color: #3a527e;
+  box-shadow: 0 12px 26px -18px #020611, inset 0 1px 0 #8daadd55;
+}
+.cos-home .home-launch-bar::before,
+.cos-home .home-launch-bar::after { display: none; }
+
+.cos-home .home-launch-bar .home-launch-brand {
   width: 100%;
-  text-shadow: 0 2px 18px color-mix(in srgb, var(--atmo-void) 70%, transparent);
+  text-shadow: 0 2px 16px #050d24;
 }
-body.theme-home .cos-home .home-launch-bar:has(> .home-atmosphere) .home-launch-brand .eyebrow { text-align: center; }
-body.theme-home .cos-home .home-launchpad .home-launch-bar:has(> .home-atmosphere) .home-launch-brand .home-hero-title {
-  font-size: clamp(2.2rem, 6vw, 4.25rem);
+body.theme-home .cos-home .home-launch-bar .home-launch-brand .eyebrow {
+  color: #bfcee8;
+  text-align: center;
+  margin: 0 0 .35rem;
+}
+body.theme-home .cos-home .home-launchpad .home-launch-bar .home-launch-brand .home-hero-title {
+  color: #f4f8ff;
+  font-size: clamp(1.9rem, 9cqi, 4.25rem);
+  letter-spacing: -.025em;
   text-align: center;
 }
-.cos-home .home-launch-bar:has(> .home-atmosphere) .home-launch-actions {
+.cos-home .home-launch-bar .home-launch-actions {
   justify-content: center;
-  margin-top: clamp(.25rem, 1.5vw, 1rem);
-  margin-bottom: clamp(1.5rem, 6vw, 4.5rem);
+  margin-top: .25rem;
 }
-.cos-home .home-launch-bar:has(> .home-atmosphere) > [data-memory-continue] {
+.cos-home .home-launch-bar > [data-memory-continue] {
   justify-self: stretch;
   margin-top: 0;
   text-align: left;
 }
-.cos-home .home-launch-bar .memory-continue__eyebrow { justify-content: center; }
-.cos-home .home-launch-bar .memory-continue__card { justify-content: flex-start; }
-html[data-lighting="night"] .cos-home .home-launch-bar {
-  --steam-s: #8ec0ff;
-  --steam-t: #5fe0cf;
-  --steam-e: #ffb36b;
-  --steam-a: #ff8fc8;
-  --steam-m: #b9a3ff;
-  --atmo-star: color-mix(in srgb, var(--accent) 35%, #fff);
-  --atmo-shade: #141a3f;
-  --atmo-ink: #eef1f8;
-  --atmo-void: #03040a;
+.cos-home .home-launch-bar .memory-continue__eyebrow {
+  justify-content: center;
+  color: #bfcee8;
+}
+.cos-home .home-launch-bar .memory-continue__card {
+  justify-content: flex-start;
+  background: var(--surface-elevated, #fff);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.cos-home .home-launch-bar .memory-continue__pulse { animation: none; }
+
+/* Keep the existing launch feedback for interaction only. */
+.cos-home .home-launch-actions .home-start-class:not(:hover, :focus-visible) .card-shimmer,
+.cos-home .home-launch-actions .home-start-class:not(:hover, :focus-visible) .home-start-class-thruster {
+  animation: none;
 }
 
 .cos-home .home-launch-bar > .home-atmosphere {
   position: absolute;
   z-index: 0;
-  inset: 0 0 auto 0;
+  inset: 0 0 auto;
   height: 100%;
   overflow: hidden;
   pointer-events: none;
-  mask-image: linear-gradient(180deg, #000 78%, transparent);
+  background:
+    radial-gradient(ellipse at 50% 37%, #0c162bcc 5%, transparent 61%),
+    radial-gradient(ellipse at 14% 40%, #285b9a90, transparent 45%),
+    radial-gradient(ellipse at 86% 50%, #5b468d88, transparent 43%),
+    linear-gradient(174deg, #192d4e, transparent 76%);
 }
-.home-atmosphere::before {
+.home-atmosphere::after {
   content: "";
   position: absolute;
-  inset: -30% -10%;
-  background:
-    radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--steam-m) 24%, transparent), transparent 46%),
-    radial-gradient(ellipse at 22% 55%, color-mix(in srgb, var(--steam-s) 16%, transparent), transparent 42%),
-    radial-gradient(ellipse at 78% 55%, color-mix(in srgb, var(--steam-a) 16%, transparent), transparent 42%);
-  transition: opacity 300ms ease;
+  inset: 0;
+  border-top: 1px solid #9db9ff55;
+  background: linear-gradient(0deg, #090f254f, transparent 26%);
 }
-html[data-lighting="night"] .home-atmosphere::before {
-  background:
-    radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--steam-m) 18%, #05060d), transparent 60%),
-    radial-gradient(ellipse 70% 90% at 50% 42%, #03040a 30%, transparent 78%);
+.home-atmosphere-art,
+.home-atmosphere-subject {
+  position: absolute;
+  display: block;
 }
 .home-atmosphere-art {
-  position: absolute;
   inset: 0;
-  display: block;
   width: 100%;
   height: 100%;
-  opacity: 0.88;
-  transform-origin: 70% 55%;
+}
+.home-atmosphere-subject {
+  top: 52%;
+  width: clamp(7rem, 21%, 15rem);
+  aspect-ratio: 1;
+  height: auto;
+  translate: -50% -50%;
+}
+.home-atmosphere-planet { left: 16%; }
+.home-atmosphere-study {
+  left: 84%;
+  top: 57%;
+  width: clamp(6rem, 18%, 13rem);
+  opacity: .9;
 }
 .home-atmosphere-probe { position: absolute; visibility: hidden; }
-.home-atmosphere.is-drifting::before { animation: home-atmo-glow 24s ease-in-out infinite alternate; }
-@keyframes home-atmo-glow {
-  from { transform: translate3d(3%, -4%, 0) scale(0.95); }
-  to { transform: translate3d(-4%, 4%, 0) scale(1.1); }
+@media (min-width: 781px) and (prefers-reduced-motion: no-preference) {
+  .home-atmosphere.is-drifting .home-atmosphere-planet {
+    animation: home-atmo-float 11s ease-in-out infinite alternate;
+  }
+  .home-atmosphere.is-drifting .home-atmosphere-study {
+    animation: home-atmo-float 15s 2s ease-in-out infinite alternate-reverse;
+  }
+}
+@keyframes home-atmo-float {
+  from { transform: translate3d(-3px, 4px, 0) rotate(-2deg); }
+  to { transform: translate3d(5px, -6px, 0) rotate(2deg); }
+}
+
+.cos-home .today-shortcuts a {
+  background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 6%, var(--surface-elevated)), var(--surface-elevated) 75%);
+  box-shadow: 0 2px 4px -3px #08172950;
+}
+.cos-home .today-shortcuts a:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-elevated));
+}
+.cos-home .home-tab.is-active {
+  box-shadow: inset 0 -2px 0 var(--accent), 0 3px 9px -5px #08172980;
+}
+.home-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.cos-home .home-launch-actions :is(.home-start-class, .command-anchor):focus-visible {
+  outline: 2px solid #c9dcff;
+  outline-offset: 3px;
 }
 
 @media (max-width: 780px) {
-  .home-atmosphere-art { opacity: .7; }
+  .home-atmosphere-planet { left: 9%; opacity: .52; }
+  .home-atmosphere-study { left: 91%; opacity: .44; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .home-atmosphere.is-drifting::before { animation: none; }
+@media (max-width: 480px) {
+  .home-atmosphere-planet { left: 4%; opacity: .32; }
+  .home-atmosphere-study { left: 96%; opacity: .3; }
 }
 @media (forced-colors: active), print {
   .home-atmosphere { display: none; }
+  body.theme-home .cos-home .home-launchpad .home-launch-bar { background: Canvas; }
+  body.theme-home .cos-home .home-launchpad .home-launch-bar .home-launch-brand :is(.eyebrow, .home-hero-title),
+  .cos-home .home-launch-bar .memory-continue__eyebrow {
+    color: CanvasText;
+    text-shadow: none;
+  }
 }

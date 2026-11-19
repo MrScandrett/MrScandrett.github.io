@@ -1,155 +1,108 @@
-/* Homepage hero: an ambient "void" behind the launch bar, in the spirit of old
-   practical-effects TV openings. STEAM objects (a ringed planet, an atom, a gear,
-   a nautilus, a floating equation…) tumble slowly out of a starfield toward the
-   viewer, past a turning spiral, under film grain, flicker and a vignette.
-
-   Cheap by design: one small canvas (≤1000 px wide, ≤1.5× DPR), ~30 fps, and the
-   loop stops whenever the hero is off screen, the tab is hidden, the class is in
-   presentation mode, or the visitor prefers reduced motion (then one still frame
-   is drawn, different each day). */
+/* Draw the observatory backdrop and STEAM illustrations only when needed.
+   The two foreground canvases drift via CSS transforms without repainting. */
 (function () {
   "use strict";
 
-  const bar = document.querySelector(".home-launch-bar");
-  if (!bar || !window.IntersectionObserver || !window.ResizeObserver) return;
+  const stage = document.querySelector(".home-atmosphere");
+  if (!stage) return;
 
-  const H = 200;           // drawing height; the width follows the panel's shape
-  let W = 520;
-  let VX = 260;            // vanishing point: centred, a little above the middle
-  const VY = 82;
-  const TAU = Math.PI * 2;
-  const FRAME_MS = 1000 / 30;
-  const LAUNCH_EVERY = 3.2; // seconds between objects
-  const LIFETIME = 12.5;    // seconds an object takes to drift past
-
-  const stage = document.createElement("div");
-  stage.className = "home-atmosphere";
-  stage.setAttribute("aria-hidden", "true");
-  const canvas = document.createElement("canvas");
-  canvas.className = "home-atmosphere-art";
-  canvas.width = canvas.height = 0;
-  const probe = document.createElement("span");
-  probe.className = "home-atmosphere-probe";
-  stage.append(canvas, probe);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  bar.prepend(stage);
-
+  const backdrop = stage.querySelector(".home-atmosphere-art");
+  const planetCanvas = stage.querySelector(".home-atmosphere-planet");
+  const studyCanvas = stage.querySelector(".home-atmosphere-study");
+  const probe = stage.querySelector(".home-atmosphere-probe");
   const root = document.documentElement;
+  const TAU = Math.PI * 2;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let preferStill = readStill();
-  let onScreen = false;
-  let raf = 0;
-  let last = 0;
-  let clock = 0;          // seconds of animation actually shown (paused time is skipped)
-  let palette = null;     // resolved colours; refreshed on theme change
-  let grain = null;
-  const today = Math.floor(Date.now() / 86400000);
+  let onScreen = !window.IntersectionObserver;
+  let pending = 0;
+  let backdropDirty = true;
+  let subjectsDirty = true;
+  let palette;
 
   function readStill() {
     try { return localStorage.getItem("classroomos-reduced-motion") === "on"; }
     catch (_) { return false; }
   }
 
-  function still() {
-    return preferStill || reducedMotion.matches || root.hasAttribute("data-classroom-presentation");
-  }
-
-  // Custom properties may hold color-mix(); let the browser resolve them to rgb().
-  function color(name) {
-    probe.style.color = `var(${name})`;
-    return getComputedStyle(probe).color;
-  }
-
   function readPalette() {
-    palette = {
-      s: color("--steam-s"), t: color("--steam-t"), e: color("--steam-e"),
-      a: color("--steam-a"), m: color("--steam-m"),
-      ink: color("--atmo-ink"), star: color("--atmo-star"),
-      shade: color("--atmo-shade"), void: color("--atmo-void")
-    };
-  }
-
-  // A tile of film grain, made once and slid around every frame.
-  function makeGrain() {
-    const tile = document.createElement("canvas");
-    tile.width = tile.height = 128;
-    const g = tile.getContext("2d");
-    const img = g.createImageData(128, 128);
-    for (let i = 0; i < img.data.length; i += 4) {
-      const v = Math.random() < 0.5 ? 0 : 255;
-      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
-      img.data[i + 3] = Math.random() * 90;
+    const colors = {};
+    for (const name of ["s", "t", "e", "a", "m", "ink", "star", "shade"]) {
+      probe.style.color = `var(--atmo-${name})`;
+      colors[name] = getComputedStyle(probe).color;
     }
-    g.putImageData(img, 0, 0);
-    return ctx.createPattern(tile, "repeat");
+    return colors;
   }
 
-  function dot(x, y, r) {
+  function dot(ctx, x, y, radius) {
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, TAU);
+    ctx.arc(x, y, radius, 0, TAU);
     ctx.fill();
   }
 
-  function glow(x, y, r, hue, alpha) {
-    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, hue);
-    g.addColorStop(1, "transparent");
+  function glow(ctx, x, y, radius, hue, alpha) {
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, hue);
+    gradient.addColorStop(1, "transparent");
     ctx.save();
     ctx.globalAlpha *= alpha;
-    ctx.fillStyle = g;
-    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
     ctx.restore();
   }
 
-  /* ---------- The void: streaming stars and a slowly turning spiral. ---------- */
+  function drawBackdrop() {
+    const width = backdrop.clientWidth;
+    const height = backdrop.clientHeight;
+    if (!width || !height) return;
+    const scale = Math.min(window.devicePixelRatio || 1, 1.5, 1050 / width, 360 / height);
+    backdrop.width = Math.max(1, Math.round(width * scale));
+    backdrop.height = Math.max(1, Math.round(height * scale));
+    const ctx = backdrop.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(backdrop.width / width, backdrop.height / height);
 
-  function stars(t) {
-    const p = palette;
-    for (let i = 0; i < 190; i += 1) {
-      const a = i * 2.39996;                          // golden angle spreads them evenly
-      const speed = 0.018 + (i % 7) * 0.006;
-      const f = (t * speed + (i * 0.618) % 1) % 1;
-      const r = 8 + f * f * W * 0.62;
-      const x = VX + Math.cos(a) * r;
-      const y = VY + Math.sin(a) * r * 0.62;
-      if (x < -5 || x > W + 5 || y < -5 || y > H + 5) continue;
-      const twinkle = 0.6 + 0.4 * Math.sin(t * (1 + (i % 5) * 0.4) + i);
-      ctx.globalAlpha = Math.min(1, f * 3) * twinkle * (i % 11 === 0 ? 0.95 : 0.5);
-      ctx.fillStyle = i % 11 === 0 ? p.ink : p.star;
-      dot(x, y, (i % 11 === 0 ? 1.1 : 0.45) + f * 1.1);
+    // Stable points at different brightness levels leave a quiet space for the title.
+    ctx.fillStyle = palette.star;
+    for (let i = 1; i <= (width < 580 ? 85 : 190); i += 1) {
+      const x = ((i * 0.61803398875) % 1) * width;
+      const y = ((i * 0.41421356237) % 1) * height;
+      const near = i % 13 === 0;
+      const side = Math.abs(x / width - 0.5) > 0.23;
+      ctx.globalAlpha = (near ? 0.64 : 0.14 + (i % 7) * 0.052) * (side ? 1 : 0.42);
+      dot(ctx, x, y, near ? 1.45 : 0.44 + (i % 4) * 0.15);
     }
-    ctx.globalAlpha = 1;
-  }
 
-  function vortex(t) {
-    const p = palette;
-    const b = 0.21;
-    ctx.save();
-    ctx.translate(VX, VY);
-    ctx.scale(1, 0.62);
-    ctx.rotate(-t * 0.12);
-    ctx.strokeStyle = p.ink;
-    ctx.lineWidth = 1.1;
-    for (let arm = 0; arm < 6; arm += 1) {
+    // Fine orbit lines and registration marks behind the foreground subjects.
+    for (const [x, y, angle] of [[0.17, 0.51, -0.32], [0.84, 0.56, 0.28]]) {
+      const radius = Math.min(width * 0.15, height * 0.51);
+      ctx.save();
+      ctx.translate(x * width, y * height);
+      ctx.rotate(angle);
+      ctx.strokeStyle = palette.star;
+      ctx.lineWidth = 1;
       ctx.globalAlpha = 0.15;
       ctx.beginPath();
-      for (let a = 0; a < 4.6 * Math.PI; a += 0.08) {
-        const r = 3 * Math.exp(b * a);
-        const x = r * Math.cos(a + (arm * TAU) / 6);
-        const y = r * Math.sin(a + (arm * TAU) / 6);
-        if (a) ctx.lineTo(x, y); else ctx.moveTo(x, y);
-      }
+      ctx.ellipse(0, 0, radius * 1.26, radius * 0.54, 0, 0, TAU);
       ctx.stroke();
+      ctx.globalAlpha = 0.29;
+      ctx.setLineDash([2, 6]);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius, radius * 0.4, 0, 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 0.65;
+      ctx.beginPath();
+      ctx.moveTo(radius * 0.83 - 5, -radius * 0.21);
+      ctx.lineTo(radius * 0.83 + 5, -radius * 0.21);
+      ctx.moveTo(radius * 0.83, -radius * 0.21 - 5);
+      ctx.lineTo(radius * 0.83, -radius * 0.21 + 5);
+      ctx.stroke();
+      ctx.restore();
     }
-    ctx.restore();
-    ctx.globalAlpha = 1;
-    glow(VX, VY, 70, p.m, 0.35);
   }
 
-  /* ---------- The floating objects. Each draws around (0, 0) within ~50 units. ---------- */
-
-  function planet(t, p) {
+  function planet(ctx, t, p) {
     const rings = (front) => {
       ctx.save();
       ctx.globalAlpha *= front ? 0.9 : 0.45;
@@ -166,15 +119,16 @@
     rings(false);
     const ball = ctx.createRadialGradient(-9, -10, 2, 0, 0, 30);
     ball.addColorStop(0, p.ink);
-    ball.addColorStop(0.45, p.s);
-    ball.addColorStop(1, p.shade);
+    ball.addColorStop(0.36, p.s);
+    ball.addColorStop(0.82, p.shade);
+    ball.addColorStop(1, p.m);
     ctx.fillStyle = ball;
-    dot(0, 0, 27);
+    dot(ctx, 0, 0, 27);
     ctx.save();
     ctx.beginPath();
     ctx.arc(0, 0, 27, 0, TAU);
     ctx.clip();
-    ctx.globalAlpha *= 0.25;
+    ctx.globalAlpha *= 0.35;
     for (let i = 0; i < 6; i += 1) {
       const y = -22 + i * 9;
       const shift = ((t * 6 + i * 17) % 40) - 20;
@@ -188,7 +142,7 @@
     rings(true);
   }
 
-  function atom(t, p) {
+  function atom(ctx, t, p) {
     ctx.lineWidth = 1.6;
     for (let i = 0; i < 3; i += 1) {
       const rot = (i * Math.PI) / 3;
@@ -198,14 +152,14 @@
       const e = t * (1.8 + i * 0.35) + i * 2;
       const ex = Math.cos(e) * 46, ey = Math.sin(e) * 15;
       ctx.fillStyle = p.t;
-      dot(ex * Math.cos(rot) - ey * Math.sin(rot), ex * Math.sin(rot) + ey * Math.cos(rot), 3.2);
+      dot(ctx, ex * Math.cos(rot) - ey * Math.sin(rot), ex * Math.sin(rot) + ey * Math.cos(rot), 3.2);
     }
     ctx.fillStyle = p.ink;
-    dot(0, 0, 6);
-    glow(0, 0, 18, p.t, 0.7);
+    dot(ctx, 0, 0, 6);
+    glow(ctx, 0, 0, 18, p.t, 0.7);
   }
 
-  function gear(t) {
+  function gear(ctx, t, p) {
     const spin = t * 0.7;
     const teeth = 12, outer = 46, inner = 38;
     ctx.lineWidth = 2;
@@ -216,9 +170,16 @@
       if (i) ctx.lineTo(r * Math.cos(a), r * Math.sin(a)); else ctx.moveTo(r * Math.cos(a), r * Math.sin(a));
     }
     ctx.closePath();
+    const metal = ctx.createLinearGradient(-36, -40, 36, 40);
+    metal.addColorStop(0, p.e);
+    metal.addColorStop(0.48, p.shade);
+    metal.addColorStop(1, p.e);
+    ctx.fillStyle = metal;
+    ctx.moveTo(10, 0);
+    ctx.arc(0, 0, 10, 0, TAU);
+    ctx.fill("evenodd");
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(0, 0, 10, 0, TAU);
     ctx.moveTo(29, 0);
     ctx.arc(0, 0, 29, 0, TAU);
     for (let i = 0; i < 5; i += 1) {
@@ -229,7 +190,7 @@
     ctx.stroke();
   }
 
-  function nautilus(t, p) {
+  function nautilus(ctx, t, p) {
     const b = Math.log((1 + Math.sqrt(5)) / 2) / (Math.PI / 2);
     const end = 3.6 * Math.PI;
     const at = (a) => {
@@ -259,11 +220,11 @@
     ctx.fillText("φ", 26, -28);
   }
 
-  function equation(t, p) {
+  function equation(ctx, t, p) {
     ctx.font = "italic 700 34px Georgia, 'Times New Roman', serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    glow(0, 0, 60, p.s, 0.35);
+    glow(ctx, 0, 0, 60, p.s, 0.35);
     ctx.lineWidth = 3;
     ctx.globalAlpha *= 0.35;
     ctx.strokeStyle = p.shade;
@@ -275,7 +236,7 @@
     ctx.textBaseline = "alphabetic";
   }
 
-  function pythagoras(t, p) {
+  function pythagoras(ctx, t, p) {
     // A 3-4-5 right triangle with the square on each side.
     const k = 8;
     const A = [-12, 14], B = [-12 + 4 * k, 14], C = [-12, 14 - 3 * k];
@@ -303,7 +264,7 @@
     ctx.fillText("a² + b² = c²", -30, 52);
   }
 
-  function palettePlate(t, p) {
+  function palettePlate(ctx, t, p) {
     ctx.lineWidth = 1.8;
     ctx.beginPath();
     ctx.moveTo(-46, 4);
@@ -319,7 +280,7 @@
     const blobs = [[-30, -6, p.a], [-14, -22, p.e], [8, -26, p.s], [28, -16, p.t], [-26, 18, p.m]];
     for (const [x, y, hue] of blobs) {
       ctx.fillStyle = hue;
-      dot(x, y, 6 + Math.sin(t * 1.3 + x) * 0.8);
+      dot(ctx, x, y, 6 + Math.sin(t * 1.3 + x) * 0.8);
     }
     // The brush lying across it.
     ctx.lineWidth = 3;
@@ -328,10 +289,10 @@
     ctx.lineTo(50, 4);
     ctx.stroke();
     ctx.fillStyle = p.a;
-    dot(52, 3, 3.5);
+    dot(ctx, 52, 3, 3.5);
   }
 
-  function chip(t, p) {
+  function chip(ctx, t, p) {
     ctx.lineWidth = 2;
     ctx.strokeRect(-26, -26, 52, 52);
     ctx.lineWidth = 1.2;
@@ -345,7 +306,7 @@
     }
     ctx.stroke();
     const beat = 0.5 + 0.5 * Math.sin(t * 3);
-    glow(0, 0, 30, p.t, 0.4 + beat * 0.4);
+    glow(ctx, 0, 0, 30, p.t, 0.4 + beat * 0.4);
     ctx.fillStyle = p.ink;
     ctx.font = "700 14px ui-monospace, monospace";
     ctx.textAlign = "center";
@@ -355,7 +316,7 @@
     ctx.textBaseline = "alphabetic";
   }
 
-  function notes(t, p) {
+  function notes(ctx, t, p) {
     ctx.lineWidth = 1;
     ctx.globalAlpha *= 0.55;
     ctx.beginPath();
@@ -382,159 +343,73 @@
     [nautilus, "m"], [chip, "t"], [pythagoras, "m"], [notes, "a"]
   ];
 
-  // Where each launch heads: alternately left and right, mirrored, so the
-  // drift stays balanced around the centred title.
-  const HEADINGS = [-0.3, Math.PI + 0.3, 0.55, Math.PI - 0.55, -0.85, Math.PI + 0.85, 0.15, Math.PI - 0.15];
-
-  function flights(t) {
-    const p = palette;
-    const list = [];
-    const newest = Math.floor(t / LAUNCH_EVERY);
-    for (let n = newest; n > newest - Math.ceil(LIFETIME / LAUNCH_EVERY) - 1; n -= 1) {
-      const age = t - n * LAUNCH_EVERY;
-      if (age < 0 || age > LIFETIME) continue;
-      list.push({ n, z: age / LIFETIME });
-    }
-    list.sort((a, b) => a.z - b.z); // far ones first
-    for (const { n, z } of list) {
-      const k = ((n + today) % OBJECTS.length + OBJECTS.length) % OBJECTS.length;
-      const [draw, hueKey] = OBJECTS[k];
-      const heading = HEADINGS[((n % HEADINGS.length) + HEADINGS.length) % HEADINGS.length];
-      // Ease toward the camera: slow far away, quicker as it nears.
-      const travel = z * z;
-      const dist = travel * W * 0.52;
-      const x = VX + Math.cos(heading) * dist;
-      const y = VY + Math.sin(heading) * dist * 0.55 + Math.sin(z * 5 + n) * 6;
-      const scale = 0.16 + travel * 1.7;
-      const alpha = Math.min(1, z / 0.18) * Math.min(1, (1 - z) / 0.22);
-      const tumble = Math.cos(t * 0.55 + n * 1.7);              // turning about its vertical axis
-      const roll = Math.sin(t * 0.33 + n) * 0.45 + n * 0.8;
-      const local = t + n * 3;
-
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.translate(x, y);
-      ctx.rotate(roll);
-      ctx.scale(scale * (0.25 + 0.75 * Math.abs(tumble)), scale);
-      glow(0, 0, 70, p[hueKey], 0.28);
-      ctx.strokeStyle = p.ink;
-      ctx.fillStyle = p.ink;
-      ctx.lineJoin = "round";
-      ctx.lineCap = "round";
-      draw(local, p);
-      ctx.restore();
-    }
+  function drawSubject(canvas, draw, hue, time, tilt) {
+    // A 240px backing store keeps both illustrations sharp with a fixed pixel budget.
+    canvas.width = canvas.height = 240;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.translate(120, 120);
+    ctx.scale(1.57, 1.57);
+    ctx.rotate(tilt);
+    glow(ctx, 0, 0, 73, palette[hue], 0.37);
+    ctx.strokeStyle = palette.ink;
+    ctx.fillStyle = palette.ink;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    draw(ctx, time, palette);
   }
 
-  /* ---------- Film: vignette, flicker, grain, the odd scratch. ---------- */
-
-  function film(t, cw, ch) {
-    const p = palette;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const v = ctx.createRadialGradient(cw * 0.5, ch * 0.42, Math.min(cw, ch) * 0.25, cw * 0.5, ch * 0.42, Math.max(cw, ch) * 0.62);
-    v.addColorStop(0, "transparent");
-    v.addColorStop(1, p.void);
-    ctx.globalAlpha = 0.55;
-    ctx.fillStyle = v;
-    ctx.fillRect(0, 0, cw, ch);
-    // Gentle flicker: a faint veil that breathes a little each frame.
-    ctx.globalAlpha = 0.03 + Math.abs(Math.sin(t * 13.7) * Math.sin(t * 4.1)) * 0.05;
-    ctx.fillStyle = p.void;
-    ctx.fillRect(0, 0, cw, ch);
-    if (!grain) grain = makeGrain();
-    if (grain) {
-      if (grain.setTransform && window.DOMMatrix) {
-        grain.setTransform(new DOMMatrix().translate((t * 977) % 128, (t * 613) % 128));
-      }
-      ctx.globalAlpha = 0.16;
-      ctx.fillStyle = grain;
-      ctx.fillRect(0, 0, cw, ch);
+  function paint() {
+    pending = 0;
+    if (!onScreen || document.hidden || !stage.clientWidth) return;
+    if (!palette) palette = readPalette();
+    if (backdropDirty) {
+      drawBackdrop();
+      backdropDirty = false;
     }
-    // A scratch on the film now and then.
-    const s = Math.sin(Math.floor(t * 6) * 91.7) * 43758.5;
-    if (s - Math.floor(s) > 0.93) {
-      ctx.globalAlpha = 0.22;
-      ctx.fillStyle = p.ink;
-      ctx.fillRect((s * 7 % 1) * cw, 0, 1, ch);
+    if (subjectsDirty) {
+      const day = Math.floor(Date.now() / 86400000);
+      const [study, hue] = OBJECTS[1 + day % (OBJECTS.length - 1)];
+      drawSubject(planetCanvas, planet, "s", 1.8, -0.12);
+      drawSubject(studyCanvas, study, hue, 2.4, 0.12);
+      subjectsDirty = false;
     }
-    ctx.globalAlpha = 1;
-  }
-
-  function frame(t) {
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    if (!width || !height) return;
-    const scale = Math.min(window.devicePixelRatio || 1, 1.5, 1000 / width, 380 / height);
-    const cw = Math.max(1, Math.round(width * scale));
-    const ch = Math.max(1, Math.round(height * scale));
-    if (canvas.width !== cw || canvas.height !== ch) {
-      canvas.width = cw;
-      canvas.height = ch;
-    }
-    if (!palette) readPalette();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, cw, ch);
-    // Fit by height and stretch the drawing to the panel's width, so the void is
-    // centred whatever the shape; the camera sways like it is hung on a wire.
-    const art = ch / H;
-    W = cw / art;
-    VX = W / 2;
-    ctx.setTransform(art, 0, 0, art, Math.sin(t * 0.21) * 4 * art, Math.sin(t * 0.17) * 3 * art);
-    vortex(t);
-    stars(t);
-    flights(t);
-    film(t, cw, ch);
-  }
-
-  function running() {
-    return onScreen && !document.hidden && !still();
-  }
-
-  function tick(now) {
-    raf = 0;
-    if (!running()) return;
-    raf = requestAnimationFrame(tick);
-    if (last && now - last < FRAME_MS) return;
-    // Skip time spent paused so the flight resumes where it left off.
-    clock += last ? Math.min(0.1, (now - last) / 1000) : 0;
-    last = now;
-    frame(clock);
   }
 
   function update() {
-    stage.classList.toggle("is-drifting", running());
-    if (running()) {
-      if (!raf) { last = 0; raf = requestAnimationFrame(tick); }
-      return;
-    }
-    if (raf) cancelAnimationFrame(raf);
-    raf = 0;
-    // A still frame with a few objects in mid-flight.
-    if (onScreen && !document.hidden) requestAnimationFrame(() => frame(still() ? LIFETIME + 3.1 : clock));
+    const visible = onScreen && !document.hidden;
+    const still = preferStill || reducedMotion.matches || root.hasAttribute("data-classroom-presentation");
+    stage.classList.toggle("is-drifting", visible && !still);
+    if (visible && !pending && (backdropDirty || subjectsDirty)) pending = requestAnimationFrame(paint);
   }
 
-  // Start a little way in, so objects are already floating on first paint.
-  clock = LIFETIME;
+  if (window.IntersectionObserver) {
+    new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting;
+      update();
+    }).observe(stage);
+  }
 
-  new IntersectionObserver((entries) => {
-    onScreen = entries[entries.length - 1].isIntersecting;
+  // Size the composition above the returning visitor's card when it is present.
+  const bar = stage.parentElement;
+  const memory = bar.querySelector("[data-memory-continue]");
+  function resize() {
+    const height = memory && !memory.hidden && memory.offsetParent === bar
+      ? `${memory.offsetTop}px` : "";
+    if (height !== stage.style.height) stage.style.height = height;
+    backdropDirty = true;
     update();
-  }, { rootMargin: "200px 0px" }).observe(stage);
-  // The void fills the band above the "welcome back" card (or the whole bar).
-  const brand = bar.querySelector(".home-launch-brand");
-  function fitStage() {
-    const memory = bar.querySelector("[data-memory-continue]:not([hidden])");
-    if (brand && memory && memory.offsetParent === bar) {
-      stage.style.height = `${Math.round(memory.offsetTop + 12)}px`;
-    } else {
-      stage.style.removeProperty("height");
-    }
-    if (!raf) update();
   }
-  new ResizeObserver(fitStage).observe(bar);
-  new ResizeObserver(() => { if (!raf) update(); }).observe(stage);
-  new MutationObserver(() => { palette = null; update(); })
-    .observe(root, { attributes: true, attributeFilter: ["data-theme", "data-lighting", "data-skin", "data-classroom-presentation"] });
+
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(bar);
+  else window.addEventListener("resize", resize);
+
+  new MutationObserver(() => {
+    palette = null;
+    backdropDirty = subjectsDirty = true;
+    update();
+  }).observe(root, { attributes: true, attributeFilter: ["data-theme", "data-lighting", "data-skin"] });
+  new MutationObserver(update).observe(root, { attributes: true, attributeFilter: ["data-classroom-presentation"] });
   document.addEventListener("visibilitychange", update);
   reducedMotion.addEventListener("change", update);
   window.addEventListener("classroomos:reducedmotionchange", (event) => {
@@ -546,4 +421,5 @@
     preferStill = readStill();
     update();
   });
+  resize();
 })();
