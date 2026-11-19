@@ -1750,6 +1750,37 @@ document.addEventListener('DOMContentLoaded', function () {
     return o.join('');
   }
 
+  /* Clean horizontal neck for the printed scale: high e on top like tab, fret numbers above,
+     inlay dots below, roots as black squares, other scale tones as outlined circles. */
+  function scaleBoxSVG(toneMap, span) {
+    var FW = 54, SG = 32, L = 50, T = 46, W = FW * span, H = SG * 5;
+    var X = function (f) { return f === 0 ? L - 4 : L + (f - 0.5) * FW; };   /* dot centre; open strings sit just left of the nut */
+    var o = ['<svg class="gc-scalebox" viewBox="0 0 ' + (L + W + 14) + ' ' + (T + H + 44) + '" role="img" aria-label="Scale on the fretboard">'];
+    var markers = { 3: 1, 5: 1, 7: 1, 9: 1, 12: 2 };
+    for (var f = 1; f <= span; f++) {
+      o.push('<text x="' + (L + (f - 0.5) * FW) + '" y="' + (T - 24) + '" text-anchor="middle" class="gc-sb-fret">' + f + '</text>');
+      var m = markers[f];
+      for (var k = 0; k < (m || 0); k++) o.push('<circle cx="' + (L + (f - 0.5) * FW + (m === 2 ? (k ? 9 : -9) : 0)) + '" cy="' + (T + H + 24) + '" r="4.5" fill="#999"/>');
+    }
+    for (var fl = 0; fl <= span; fl++) o.push('<line x1="' + (L + fl * FW) + '" x2="' + (L + fl * FW) + '" y1="' + T + '" y2="' + (T + H) + '" stroke="' + (fl === 0 ? '#111' : '#888') + '" stroke-width="' + (fl === 0 ? 5 : 1.3) + '"/>');
+    GT.STRINGS_TOPDOWN.forEach(function (str, row) {
+      var y = T + row * SG;
+      o.push('<line x1="' + L + '" x2="' + (L + W) + '" y1="' + y + '" y2="' + y + '" stroke="#222" stroke-width="' + (1 + row * 0.35).toFixed(2) + '"/>');
+      o.push('<text x="' + (L - 36) + '" y="' + (y + 5) + '" text-anchor="middle" class="gc-sb-str">' + str.label + '</text>');
+      for (var fr = 0; fr <= span; fr++) {
+        var tone = toneMap[GT.mod12(str.openPC + fr)];
+        if (!tone) continue;
+        var cxx = X(fr), lab = String(tone.label).replace(/^b/, '\u266d').replace(/^#/, '\u266f');
+        o.push(tone.isRoot
+          ? '<rect x="' + (cxx - 12) + '" y="' + (y - 12) + '" width="24" height="24" rx="5" fill="#111"/>'
+          : '<circle cx="' + cxx + '" cy="' + y + '" r="12" fill="#fff" stroke="#111" stroke-width="2"/>');
+        o.push('<text x="' + cxx + '" y="' + (y + 5) + '" text-anchor="middle" class="' + (tone.isRoot ? 'gc-sb-root' : 'gc-sb-note') + '">' + lab + '</text>');
+      }
+    });
+    o.push('</svg>');
+    return o.join('');
+  }
+
   /* Render every listed chord/scale into the print-only sheet, reusing the
      same board renderers as the live page so diagrams stay in sync with
      whatever chord-shape/scale logic the rest of the lesson uses. */
@@ -1799,9 +1830,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (st) {
           var toneMap = buildToneMap(item.rootPC, st);
           cell.classList.add('gc-sheet-scale');
-          renderScaleBoard(boardHost, { startFret: 0, span: SCALE_SPAN, toneMap: toneMap, playable: false });
+          boardHost.innerHTML = scaleBoxSVG(toneMap, SCALE_SPAN);
           var notesLine = document.createElement('p');
-          notesLine.textContent = 'Notes: ' + st.intervals.map(function (iv) { return GT.PITCHES[GT.mod12(item.rootPC + iv)]; }).join(' – ');
+          notesLine.className = 'gc-sheet-line';
+          notesLine.innerHTML = '<b>Notes</b>: ' + st.intervals.map(function (iv) { return GT.PITCHES[GT.mod12(item.rootPC + iv)]; }).join(' – ') + ' &nbsp;·&nbsp; <b>Degrees</b>: ' + st.degrees.join(' ') + ' &nbsp;·&nbsp; \u25a0 = root';
           cell.appendChild(notesLine);
         }
       }
