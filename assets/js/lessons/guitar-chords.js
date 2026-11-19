@@ -1700,6 +1700,56 @@ document.addEventListener('DOMContentLoaded', function () {
     renderPracticeListUI();
   });
 
+  /* Standard vertical chord box for the printed sheet: strings run low E (left) to high e
+     (right), frets run down. x / o above the nut, finger numbers inside the dots, the root
+     drawn as a square, barres as one bar, string names and chord degrees underneath. */
+  function chordBoxSVG(frets, fingers, degrees) {
+    var NAMES = ['E', 'A', 'D', 'G', 'B', 'e'];
+    var fretted = frets.filter(function (n) { return typeof n === 'number' && n > 0; });
+    var minF = fretted.length ? Math.min.apply(null, fretted) : 1;
+    var maxF = fretted.length ? Math.max.apply(null, fretted) : 1;
+    var base = maxF <= 5 ? 1 : minF;
+    var rows = Math.max(5, maxF - base + 1);
+    var SG = 28, FG = 34, L = 44, T = 42, W = SG * 5, H = FG * rows;
+    var X = function (i) { return L + i * SG; };
+    var Y = function (fret) { return T + (fret - base + 0.5) * FG; };
+    var o = ['<svg class="gc-chordbox" viewBox="0 0 ' + (L + W + 26) + ' ' + (T + H + 52) + '" role="img" aria-label="Chord diagram">'];
+    for (var r = 0; r <= rows; r++) o.push('<line x1="' + L + '" x2="' + (L + W) + '" y1="' + (T + r * FG) + '" y2="' + (T + r * FG) + '" stroke="#555" stroke-width="1.4"/>');
+    if (base === 1) o.push('<rect x="' + (L - 1) + '" y="' + (T - 4) + '" width="' + (W + 2) + '" height="6" fill="#111"/>');
+    else o.push('<text x="' + (L - 12) + '" y="' + (T + FG / 2 + 6) + '" text-anchor="end" class="gc-cb-fret">' + base + 'fr</text>');
+    for (var i = 0; i < 6; i++) {
+      o.push('<line x1="' + X(i) + '" x2="' + X(i) + '" y1="' + T + '" y2="' + (T + H) + '" stroke="#111" stroke-width="' + (1 + (5 - i) * 0.18).toFixed(2) + '"/>');
+      var v = frets[i], deg = degrees && degrees[i];
+      if (v === 0) o.push('<circle cx="' + X(i) + '" cy="' + (T - 18) + '" r="6.5" fill="' + (deg && deg.isRoot ? '#111' : '#fff') + '" stroke="#111" stroke-width="2"/>');
+      else if (typeof v !== 'number') o.push('<path d="M' + (X(i) - 6) + ' ' + (T - 24) + 'l12 12M' + (X(i) + 6) + ' ' + (T - 24) + 'l-12 12" stroke="#111" stroke-width="2.4" stroke-linecap="round"/>');
+      o.push('<text x="' + X(i) + '" y="' + (T + H + 22) + '" text-anchor="middle" class="gc-cb-str">' + NAMES[i] + '</text>');
+      if (typeof v === 'number' && deg) o.push('<text x="' + X(i) + '" y="' + (T + H + 42) + '" text-anchor="middle" class="gc-cb-deg">' + String(deg.label).replace(/^b/, '\u266d').replace(/^#/, '\u266f') + '</text>');
+    }
+    /* A finger holding the same fret on two or more strings is a barre: draw one bar. */
+    var barred = {};
+    [1, 2, 3, 4].forEach(function (f) {
+      var at = [];
+      frets.forEach(function (fr, i) { if (fingers && fingers[i] === f && typeof fr === 'number' && fr > 0) at.push({ i: i, fr: fr }); });
+      if (at.length < 2) return;
+      var fr = Math.min.apply(null, at.map(function (a) { return a.fr; }));
+      var strs = at.filter(function (a) { return a.fr === fr; }).map(function (a) { return a.i; });
+      if (strs.length < 2) return;
+      var lo = Math.min.apply(null, strs), hi = Math.max.apply(null, strs);
+      o.push('<rect x="' + (X(lo) - 12) + '" y="' + (Y(fr) - 12) + '" width="' + ((hi - lo) * SG + 24) + '" height="24" rx="12" fill="#111"/>');
+      o.push('<text x="' + X(lo) + '" y="' + (Y(fr) + 6) + '" text-anchor="middle" class="gc-cb-num">' + f + '</text>');
+      strs.forEach(function (i) { barred[i] = true; });
+    });
+    frets.forEach(function (fr, i) {
+      if (typeof fr !== 'number' || fr < 1 || barred[i]) return;
+      var deg = degrees && degrees[i], root = deg && deg.isRoot;
+      var cx = X(i), cy = Y(fr), f = fingers && typeof fingers[i] === 'number' ? fingers[i] : '';
+      o.push(root ? '<rect x="' + (cx - 12) + '" y="' + (cy - 12) + '" width="24" height="24" rx="5" fill="#111"/>' : '<circle cx="' + cx + '" cy="' + cy + '" r="12.5" fill="#111"/>');
+      o.push('<text x="' + cx + '" y="' + (cy + 6) + '" text-anchor="middle" class="gc-cb-num">' + f + '</text>');
+    });
+    o.push('</svg>');
+    return o.join('');
+  }
+
   /* Render every listed chord/scale into the print-only sheet, reusing the
      same board renderers as the live page so diagrams stay in sync with
      whatever chord-shape/scale logic the rest of the lesson uses. */
@@ -1708,7 +1758,8 @@ document.addEventListener('DOMContentLoaded', function () {
     practiceSheet.innerHTML = '';
     var head = document.createElement('div');
     head.className = 'gc-sheet-head';
-    head.innerHTML = '<h1>Guitar practice sheet</h1><p>' + practiceList.length + ' item' + (practiceList.length === 1 ? '' : 's') + ' — from the Guitar Chord Encyclopedia</p>';
+    head.innerHTML = '<h1>Guitar practice sheet</h1><p>' + practiceList.length + ' item' + (practiceList.length === 1 ? '' : 's') + ' — from the Guitar Chord Encyclopedia</p>' +
+      (practiceList.some(function (i) { return i.kind === 'chord'; }) ? '<p class="gc-sheet-key">Read each box like a guitar neck held upright: thickest string (low E) on the left. <b>×</b> don\u2019t play · <b>○</b> open string · numbers are fingers (1 index, 2 middle, 3 ring, 4 pinky) · <b>■</b> square = root note.</p>' : '');
     practiceSheet.appendChild(head);
 
     var grid = document.createElement('div');
@@ -1732,19 +1783,22 @@ document.addEventListener('DOMContentLoaded', function () {
         if (ct) {
           var shape = GT.getChordShape(item.rootPC, ct, item.inversionIndex, item.formKey);
           var degrees = GT.computeDegrees(item.rootPC, ct, shape.frets);
-          var numericFrets = shape.frets.filter(function (f) { return typeof f === 'number' && f > 0; });
-          var maxFret = numericFrets.length ? Math.max.apply(null, numericFrets) : 0;
-          var minFret = numericFrets.length ? Math.min.apply(null, numericFrets) : 0;
-          var startFret = maxFret > GT.BUILD_FRETS - 1 ? Math.max(0, minFret - 1) : 0;
-          renderBoard(boardHost, { startFret: startFret, span: GT.BUILD_FRETS, frets: shape.frets, fingers: shape.fingers, degrees: degrees, interactive: false, playable: false });
+          boardHost.innerHTML = chordBoxSVG(shape.frets, shape.fingers, degrees);
+          var fretLine = document.createElement('p');
+          fretLine.className = 'gc-sheet-line';
+          fretLine.innerHTML = '<b>Frets</b> (E A D G B e): ' + shape.frets.map(function (f) { return typeof f === 'number' ? f : 'x'; }).join(' ');
+          cell.appendChild(fretLine);
           var fingerLine = document.createElement('p');
-          fingerLine.textContent = 'Fingering: ' + fingerSummary(shape.fingers);
+          fingerLine.className = 'gc-sheet-line';
+          fingerLine.innerHTML = '<b>Fingers</b>: ' + shape.fingers.map(function (f) { return typeof f === 'number' ? f : (f === 'o' ? '\u25cb' : '\u00d7'); }).join(' ');
           cell.appendChild(fingerLine);
+          cell.classList.add('gc-sheet-chord');
         }
       } else {
         var st = GT.SCALE_TYPES.filter(function (s) { return s.key === item.scaleKey; })[0];
         if (st) {
           var toneMap = buildToneMap(item.rootPC, st);
+          cell.classList.add('gc-sheet-scale');
           renderScaleBoard(boardHost, { startFret: 0, span: SCALE_SPAN, toneMap: toneMap, playable: false });
           var notesLine = document.createElement('p');
           notesLine.textContent = 'Notes: ' + st.intervals.map(function (iv) { return GT.PITCHES[GT.mod12(item.rootPC + iv)]; }).join(' – ');
