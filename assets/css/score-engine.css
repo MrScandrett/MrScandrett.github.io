@@ -18,6 +18,7 @@
 .se-titles span { font-size: 0.8rem; color: var(--se-muted); }
 .se-paper { overflow-x: auto; }
 .se-svg { width: 100%; }
+.se-score, .se-print-score-pages { --se-edition-serif: "Times New Roman", "Liberation Serif", serif; }
 .se-score { display: block; height: auto; color: var(--se-ink); }
 .se-score .se-ev { cursor: pointer; }
 .se-notation-window { pointer-events: none; }
@@ -43,7 +44,7 @@
 .se-figure[data-score-zoom] .se-controls button,
 .se-figure[data-score-zoom] .se-controls select { min-height: 44px; }
 .se-score .se-cursor { fill: var(--se-accent); fill-opacity: 0.16; transition: opacity 0.15s; }
-.se-score .se-tempo { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 700; fill: currentColor; }
+.se-score .se-tempo { font-family: var(--se-edition-serif); font-style: italic; font-weight: 700; fill: currentColor; }
 .se-score .se-barno { font-family: Georgia, "Times New Roman", serif; fill: var(--se-muted); }
 
 .se-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 0.8rem; margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--se-line); font-size: 0.82rem; color: var(--se-ink); }
@@ -116,13 +117,14 @@
 
   body.se-print-score-active > :not(.se-print-score-pages) { display: none !important; }
   body.se-print-score-active > .se-print-score-pages { display: block !important; }
-  .se-print-score-pages { --se-paper: #fff; --se-ink: #111; --se-muted: #555; color: #111; font-family: Georgia, "Times New Roman", serif; }
+  .se-print-score-pages { --se-paper: #fff; --se-ink: #111; --se-muted: #555; color: #111; font-family: var(--se-edition-serif); }
   .se-print-defs { position: absolute; width: 0 !important; height: 0 !important; overflow: hidden; }
   .se-print-score-page { page: se-score-page; break-after: page; page-break-after: always; }
   .se-print-score-page:last-child { break-after: auto; page-break-after: auto; }
   .se-print-score-header { display: flex; align-items: baseline; justify-content: space-between; gap: 0.2in; margin: 0 0 0.08in; padding-bottom: 0.05in; border-bottom: 0.75pt solid #777; }
+  .se-print-score-header > * { font-family: var(--se-edition-serif) !important; }
   .se-print-score-header strong { font-size: 13pt; }
-  .se-print-score-header span { font: 8.5pt system-ui, sans-serif; }
+  .se-print-score-header span { flex: none; font-size: 8.5pt; }
   .se-print-score-page .se-score { width: 100% !important; max-width: none !important; max-height: 9.2in !important; overflow: hidden; }
   .se-print-score-note { margin: 0.05in 0 0; font: 8.5pt/1.25 system-ui, sans-serif; }
   .se-print-score-pages .se-accidental-back { fill: #fff; }
@@ -665,9 +667,28 @@ html.se-expanded-lock, html.se-expanded-lock body { overflow: hidden; }
 .se-paged .se-score { display: block; margin-inline: auto; }
 .se-page-snap { position: absolute; left: 0; width: 1px; height: 1px; scroll-snap-align: start; pointer-events: none; }
 .se-score .se-sheet { fill: var(--se-paper); stroke: rgb(0 0 0 / .14); stroke-width: 1px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 2px 5px rgb(0 0 0 / .22)); }
-.se-score :is(.se-page-title, .se-page-subtitle, .se-page-composer, .se-page-number) { fill: var(--se-ink); font-family: Georgia, "Times New Roman", serif; pointer-events: none; }
-.se-score .se-page-title { font-weight: 700; }
-.se-score :is(.se-page-subtitle, .se-page-number) { fill: var(--se-muted, #5b5348); }
+.se-page-heading {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100%;
+  padding-bottom: .025em;
+  color: var(--se-ink);
+  text-align: center;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+/* Score lettering overrides the site's forced interface font on HTML text. */
+.se-page-heading, .se-page-heading > * { font-family: var(--se-edition-serif) !important; }
+.se-page-title, .se-print-score-header strong {
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.se-page-title { font-size: .215em; line-height: 1.08; text-wrap: balance; }
+.se-page-subtitle { margin-top: .32em; font-size: .128em; line-height: 1.15; font-style: italic; text-wrap: balance; }
+.se-page-composer { margin-top: auto; font-size: .138em; line-height: 1.15; font-variant-caps: small-caps; letter-spacing: .06em; text-align: right; }
+.se-score .se-page-number { fill: var(--se-muted); font-family: var(--se-edition-serif); pointer-events: none; }
 .se-pager { display: inline-flex; align-items: center; gap: .2rem; order: 26; }
 .se-pager[hidden] { display: none; }
 .se-pager button { min-width: 36px; min-height: 36px; padding: 0 .4rem; border: 1px solid #a1afbf; border-radius: 6px; background: #fff; color: #1e3045; font: 700 1rem/1 system-ui, sans-serif; cursor: pointer; }

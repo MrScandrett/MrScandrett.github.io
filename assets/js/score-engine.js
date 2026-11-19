@@ -1188,7 +1188,7 @@
     var inch = layout.width / 7.5, S = layout.S;
     var page = {
       width: 8.5 * inch, height: 11 * inch, gap: 0.35 * inch,
-      marginTop: 0.55 * inch, marginBottom: 0.6 * inch, title: options.title ? 1.05 * inch : 0, inch: inch
+      marginTop: 0.55 * inch, marginBottom: 0.6 * inch, title: options.title ? 1.23 * inch : 0, inch: inch
     };
     page.x = -(page.width - layout.width) / 2;   // centres the staves on the sheet
     var systems = layout.systems, between = 1.2 * S, sheets = [], startY = [];
@@ -2915,9 +2915,13 @@
         if (pages.sheets.length > 1) out.push('<text class="se-page-number" x="' + (layout.width / 2) + '" y="' + (sheet.top + sheet.height - 0.3 * inch) + '" font-size="' + 0.15 * inch + '" text-anchor="middle">' + (k + 1) + '</text>');
       });
       var top = pages.sheets[0].top + p.marginTop;
-      out.push('<text class="se-page-title" x="' + (layout.width / 2) + '" y="' + (top + 0.32 * inch) + '" font-size="' + 0.3 * inch + '" text-anchor="middle">' + esc(score.title || 'Score') + '</text>');
-      if (score.subtitle) out.push('<text class="se-page-subtitle" x="' + (layout.width / 2) + '" y="' + (top + 0.62 * inch) + '" font-size="' + 0.15 * inch + '" text-anchor="middle">' + esc(score.subtitle) + '</text>');
-      if (score.composer) out.push('<text class="se-page-composer" x="' + layout.width + '" y="' + (top + 0.9 * inch) + '" font-size="' + 0.15 * inch + '" text-anchor="end">' + esc(score.composer) + '</text>');
+      // The header uses the same sheet units as the staves, with room for long titles to wrap.
+      out.push('<foreignObject x="0" y="' + top + '" width="' + layout.width +
+        '" height="' + (p.title - 0.1 * inch) + '"><div xmlns="http://www.w3.org/1999/xhtml" class="se-page-heading" style="font-size:' + inch + 'px">');
+      out.push('<div class="se-page-title">' + esc(score.title || 'Score') + '</div>');
+      if (score.subtitle) out.push('<div class="se-page-subtitle">' + esc(score.subtitle) + '</div>');
+      if (score.composer) out.push('<div class="se-page-composer">' + esc(score.composer) + '</div>');
+      out.push('</div></foreignObject>');
       out.push('</g>');
       return out.join('');
     }
