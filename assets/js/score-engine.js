@@ -9,6 +9,7 @@
  * Score text, one string per staff (bars split by "|"):
  *   C#5/8.   pitch / duration (1 2 4 8 16 32 64 128) + dots      r/4  rest      R  whole-bar rest
  *   (C4 E4 G4)/2   chord        ~ tie to the next note      ^ fermata     s/4  S  hidden (spacer) rests
+ *   (B3 D#4 G#4~)/8  tie only the marked notes of a chord (the others are struck again)
  *   !p !mf !f      dynamic for the next note (also sets playback loudness)
  *   For overlapping voices, use staves[].voices = [{ notes, stem: "up"|"down", restStep? }].
  *   Each voice must fill the same bars; ties and beams stay within that voice.
@@ -24,6 +25,8 @@
  *   @B             start a new beam group at the next note
  *   @tieWait       ties may wait through intervening notes for a matching chord
  *   @tieUp @tieDown ties above or below the notes, independently of stems
+ * Staff field soundingTranspose: semitones between written and sounding pitch, for staves notated
+ *   at written pitch (double bass -12: it sounds an octave below its part). Playback only.
  *   @L:3/2         this bar is incomplete: 3/2 quarter beats long (repeat endings, mid-piece pickups)
  *   @N:12          printed bar number of this bar (numbering continues from it)
  *   @Fine  @DC     Fine at the end of this bar; D.C. al Fine at the end of this bar (back to the top,
@@ -63,6 +66,9 @@
   }
 
   var ORNAMENTS = { tr: 1, mord: 1, turn: 1, '.': 1, '>': 1, '-': 1 };
+  // Does pitch p of event ev tie on? A chord-level ~ ties every note; (C4~ E4) ties only C4.
+  function tiesFrom(ev, p) { return !!ev.tie && (!ev.partialTie || !!p.tie); }
+  function tiedPitch(ev, midi) { return ev.pitches.some(function (p) { return p.midi === midi && tiesFrom(ev, p); }); }
   var TUPLET_SPACE = { 2: 3, 3: 2, 4: 3, 5: 4, 6: 4, 7: 4, 9: 8 };
 
   function parseStaff(text, where) {
@@ -143,9 +149,14 @@
         }
         if (ev.kind === 'note') {
           var list = m[2].charAt(0) === '(' ? m[2].slice(1, -1).trim().split(/\s+/) : [m[2]];
-          ev.pitches = list.map(function (s) { return parsePitchToken(s, w); })
+          ev.pitches = list.map(function (s) {
+            var own = /~$/.test(s), p = parsePitchToken(own ? s.slice(0, -1) : s, w);
+            if (own) { p.tie = true; ev.partialTie = true; }
+            return p;
+          })
             .sort(function (a, b) { return a.diatonic - b.diatonic || a.midi - b.midi; });
         }
+        if (ev.partialTie) { if (ev.tie) fail(w, 'tie the whole chord (…)/4~ or single notes (C4~ E4)/4, not both'); ev.tie = true; }
         if (ev.tie && ev.kind !== 'note') fail(w, 'only notes can be tied');
         if (grace) { graces.push(ev); return; }
         if (graces.length) { ev.graces = graces; graces = []; }
@@ -236,7 +247,7 @@
         });
         voices.forEach(function (voice) { if (voice[bi].meta.clefEnd) pendingEnd = voice[bi].meta.clefEnd; });
       });
-      return { clef: st.clef || 'treble', clefAt: clefAt, label: st.label || '', instrument: st.instrument || null, bars: bars, voices: voices };
+      return { clef: st.clef || 'treble', clefAt: clefAt, label: st.label || '', instrument: st.instrument || null, sounding: Number(st.soundingTranspose) || 0, bars: bars, voices: voices };
     });
     // Optional practice annotations, in written note-event order per staff.
     staves.forEach(function (st, si) {
@@ -346,7 +357,7 @@
           });
           if (ev.kind !== 'note') { previous[ev.voice] = ev; return; }
           ev.pitches.forEach(function (p) {
-            var cont = prev && prev.tie && prev.kind === 'note' && prev.pitches.some(function (q) { return q.midi === p.midi; });
+            var cont = prev && prev.tie && prev.kind === 'note' && tiedPitch(prev, p.midi);
             p.tiedFrom = !!cont;
             p.tiedFromBar = cont ? prev.bar : null;
             var k = p.l + ':' + p.o;
@@ -364,12 +375,12 @@
       flat.forEach(function (ev, i) {
         if (!ev.tie || ev.kind !== 'note') return;
         var next = flat.slice(i + 1).find(function (candidate) { return candidate.voice === ev.voice; });
-        var holds = function (c) { return c && c.kind === 'note' && ev.pitches.some(function (p) { return c.pitches.some(function (q) { return q.midi === p.midi; }); }); };
+        var holds = function (c) { return c && c.kind === 'note' && ev.pitches.some(function (p) { return tiesFrom(ev, p) && c.pitches.some(function (q) { return q.midi === p.midi; }); }); };
         if (ev.tieWait) {
           next = flat.slice(i + 1).find(function (c) { return c.voice === ev.voice && holds(c); });
           if (!next) fail(model.id, 'a waiting tie needs a later matching note');
           next.pitches.forEach(function (q) {
-            if (ev.pitches.some(function (p) { return p.midi === q.midi; })) {
+            if (tiedPitch(ev, q.midi)) {
               q.tiedFrom = true; q.tiedFromBar = ev.bar;
               if (next.bar !== ev.bar) q.showAcc = null;
             }
@@ -382,7 +393,7 @@
           if (other) {
             next = other;
             other.pitches.forEach(function (q) {
-              if (ev.pitches.some(function (p) { return p.midi === q.midi; })) { q.tiedFrom = true; q.tiedFromBar = ev.bar; if (other.bar !== ev.bar) q.showAcc = null; }
+              if (tiedPitch(ev, q.midi)) { q.tiedFrom = true; q.tiedFromBar = ev.bar; if (other.bar !== ev.bar) q.showAcc = null; }
             });
           }
         }
@@ -449,7 +460,7 @@
           (ev.graces || []).forEach(function (g, gi, all) {
             var lead = Math.min(0.12, 0.5 / all.length);
             g.pitches.forEach(function (p) {
-              out.push({ staff: si, voice: ev.voice, start: Math.max(0, ev.abs + off - lead * (all.length - gi)), dur: lead, midi: p.midi, vel: vel * 0.85, grace: true, written: ev.abs });
+              out.push({ staff: si, voice: ev.voice, start: Math.max(0, ev.abs + off - lead * (all.length - gi)), dur: lead, midi: p.midi + st.sounding, vel: vel * 0.85, grace: true, written: ev.abs });
             });
           });
           if (ev.kind !== 'note') return;
@@ -457,7 +468,7 @@
             // A tie carried in from the bar written before only counts if that bar was just played.
             if (p.tiedFrom && (p.tiedFromBar === ev.bar || pos === 0 || order[pos - 1] === p.tiedFromBar)) return;
             var dur = ev.dur, cur = ev, tiePos = pos;
-            while (cur.tie && cur.tieTo && cur.tieTo.pitches.some(function (q) { return q.midi === p.midi; })) {
+            while (cur.tie && cur.tieTo && tiedPitch(cur, p.midi) && cur.tieTo.pitches.some(function (q) { return q.midi === p.midi; })) {
               var target = cur.tieTo;
               if (target.bar !== cur.bar) {
                 if (order[tiePos + 1] !== target.bar) break;
@@ -470,7 +481,7 @@
             // chain ends staccato, detach only its final segment.
             if (cur.orn && cur.orn.indexOf('.') >= 0) dur -= cur.dur * 0.5;
             var voiced = pitchIndex === ev.pitches.length - 1 ? vel : vel * 0.92;
-            out.push({ staff: si, voice: ev.voice, start: ev.abs + off, dur: dur, midi: p.midi, vel: Math.min(1, voiced), fermata: ev.fermata || cur.fermata, written: ev.abs });
+            out.push({ staff: si, voice: ev.voice, start: ev.abs + off, dur: dur, midi: p.midi + st.sounding, vel: Math.min(1, voiced), fermata: ev.fermata || cur.fermata, written: ev.abs });
           });
         });
       });
@@ -1528,6 +1539,7 @@
   function drawTie(ev, S, h) {
     var next = ev.tieTo, out = '';
     ev.pitches.forEach(function (p, k) {
+      if (!tiesFrom(ev, p)) return;
       var k2 = next.pitches.findIndex(function (q) { return q.midi === p.midi; });
       if (k2 < 0) return;
       var y1 = ev.bottom - ev.steps[k] * h;
@@ -1556,8 +1568,12 @@
       // 'playback' = bigger hardware buffers: a score is not latency-critical, and iPad Safari glitches at the default.
       if (kit) audio.ctx = kit.context({ latencyHint: 'playback' });
       else { var AC = root.AudioContext || root.webkitAudioContext; audio.ctx = new AC(); }
+      // Gentle bus compression: a 20 ms attack shapes loudness without riding inside the
+      // waveform of low notes (a 3 ms attack distorts sustained tutti chords into sourness).
       var comp = audio.ctx.createDynamicsCompressor();
-      comp.threshold.value = -14; comp.ratio.value = 3;
+      [['threshold', -18], ['knee', 12], ['ratio', 4], ['attack', 0.02], ['release', 0.25]].forEach(function (s) {
+        if (comp[s[0]]) comp[s[0]].value = s[1];
+      });
       audio.out = audio.ctx.createGain();
       audio.out.gain.value = 0.9;
       audio.out.connect(comp);
@@ -1588,9 +1604,22 @@
     });
   }
 
+  // Mix headroom for ensembles: correlated doublings add almost linearly, so a 13-staff tutti
+  // summed at full level hits the bus about 17 dB above a quiet passage. Scale every staff by the
+  // score's peak polyphony (8 simultaneous notes play at full level) before compression.
+  function mixHeadroom(notes) {
+    var edges = [];
+    notes.forEach(function (n) { if (!n.grace) { edges.push([n.start, 1]); edges.push([n.start + n.dur, -1]); } });
+    edges.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    var now = 0, peak = 0;
+    edges.forEach(function (e) { now += e[1]; peak = Math.max(peak, now); });
+    return peak > 8 ? Math.sqrt(8 / peak) : 1;
+  }
+
   function Player(fig, model) {
     this.fig = fig; this.model = model;
     this.notes = playList(model);
+    this.headroom = mixHeadroom(this.notes);
     this.ends = noteEnds(this.notes);
     this.maxVoices = 128;
     var sc = model.score;
@@ -1623,7 +1652,7 @@
     if (!this.staffOutputs) {
       this.staffOutputs = this.mutes.map(function (muted) {
         var gain = c.createGain();
-        gain.gain.value = muted ? 0 : 1;
+        gain.gain.value = muted ? 0 : self.headroom;
         gain.connect(audio.out);
         return gain;
       });
@@ -1693,7 +1722,7 @@
     this.mutes[staff] = muted;
     if (!this.staffOutputs) return;
     var now = audio.ctx.currentTime, gain = this.staffOutputs[staff].gain;
-    gain.setTargetAtTime(muted ? 0 : 1, now, 0.008);
+    gain.setTargetAtTime(muted ? 0 : this.headroom, now, 0.008);
   };
   Player.prototype.beatAt = function (time) {
     var previous = this.previousTempo;

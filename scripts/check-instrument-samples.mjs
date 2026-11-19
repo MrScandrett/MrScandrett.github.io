@@ -30,7 +30,20 @@ try {
    let peak=0,energy=0,tail=0;
    for(let i=0;i<data.length;i++){peak=Math.max(peak,Math.abs(data[i]));energy+=data[i]*data[i];if(i>data.length*.98)tail=Math.max(tail,Math.abs(data[i]));}
    const detected=FakeBookPitch.detect(data.slice(6000,14192),44100,{minHz:30,maxHz:4000,gate:.00001});
-   result.push({instrument,pitch,detected:detected&&detected.midi,loaded:report.loaded,expected:bank.roots.length,failed:report.failed,peak,rms:Math.sqrt(energy/data.length),tail,stats:MusicSampler.stats(context)});
+   // Every recorded root, played at its own label, must sound that pitch: a mislabelled
+   // upstream file (clarinet "Fs6" that is really F6) detunes every note mapped to it.
+   // Read sustained instruments after the attack (a bowed or blown attack scoops into pitch).
+   const manifestSustain=name=>!!banks[name].sustain;
+   const roots=[];
+   if(instrument!=='timpani') for(const root of bank.roots) {
+    const ctx=new OfflineAudioContext(1,44100,44100);
+    await MusicSynth.prepare(ctx,[{instrument,pitches:[root.midi]}]);
+    const v=MusicSynth.startVoice(ctx,ctx.destination,instrument,root.midi,.7,0,null,{scoreExpression:true});
+    const buf=await ctx.startRendering(), d=buf.getChannelData(0);
+    const found=FakeBookPitch.detect(d.slice(manifestSustain(instrument)?22050:4000,(manifestSustain(instrument)?22050:4000)+8192),44100,{minHz:25,maxHz:4500,gate:.00001});
+    roots.push({midi:root.midi,detected:found&&found.midi});
+   }
+   result.push({instrument,pitch,roots,detected:detected&&detected.midi,loaded:report.loaded,expected:bank.roots.length,failed:report.failed,peak,rms:Math.sqrt(energy/data.length),tail,stats:MusicSampler.stats(context)});
   }
   // Canceling a future sampled attack must produce silence (voice stealing/Stop).
   const context=new OfflineAudioContext(1,44100,44100);await MusicSynth.prepare(context,[{instrument:'piano',pitches:[60]}]);
@@ -49,6 +62,14 @@ try {
   const pitchError = r.instrument === 'timpani' ? Math.min(pitchDifference, Math.abs(pitchDifference-12)) : pitchDifference;
   assert.ok(r.detected !== null && pitchError < (r.instrument === 'timpani' ? .75 : .35),
     r.instrument+': recorded pitch agrees with root mapping');
+  for(const root of r.roots) {
+   // Octave slips are a detector limit on very low or very high notes, and plucked strings can
+   // lock onto their 3rd or 4th harmonic (+19, +24); a wrong label is off by a non-harmonic step.
+   if(root.detected===null||root.detected===undefined) continue;
+   const slips=manifest.banks[r.instrument].sustain?[0,12]:[0,12,19,24];
+   const off=root.detected-root.midi, err=Math.min(...slips.map(k=>Math.abs(Math.abs(off)-k)));
+   assert.ok(err<.35,`${r.instrument} root ${root.midi}: sounds ${root.detected.toFixed(2)} (wrong label or tuning)`);
+  }
   assert.ok(r.stats.bytes<=96*1024*1024,r.instrument+': bounded cache');
   // Sustained samples must stop after release; plucked recordings may retain their natural tail.
   if(manifest.banks[r.instrument].sustain)assert.ok(r.tail<.002,r.instrument+': release reaches silence');

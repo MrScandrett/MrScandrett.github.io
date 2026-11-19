@@ -47,3 +47,13 @@ The generic Strings option outside ensemble routing uses solo violin.
 Electric piano, pad, and synth remain synthesized. Parts outside the available
 sample ranges use synthesis. The section banks have one recorded dynamic layer,
 with velocity shaping applied during playback. Users can select lightweight synthesis for any score.
+
+## Tuning
+
+Every root was measured against its label with `python3 scripts/measure-sample-tuning.py` (ffmpeg + numpy;
+2026-11-19). Upstream `clarinet/Fs6.mp3` sounds F6 (−98 cents), so it is stored as `clarinet/89.mp3`; as F♯6 it
+put every clarinet note from D♯6 to A6 a semitone flat in orchestral tuttis. Roots 8 or more cents off their
+label (harp, xylophone, one trumpet, pluck and two violin roots) carry a `cents` field that `music-sampler.js`
+cancels with `detune`. Piano is left alone: its upper-octave stretch tuning is deliberate. Both corrections live in
+`RELABEL` and `CENTS` in `scripts/build-instrument-samples.py`, so a rebuild keeps them, and
+`npm run check:instrument-samples` now renders every root and fails on a wrong label.

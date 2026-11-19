@@ -56,6 +56,7 @@ Some engravings need a small edit the converter cannot make; each one is scripte
 - **Moonlight III**: the secondary voices (`topsecondary`, `bottomsecondary`) only draw hold-ties from hidden noteheads, so a wrapper `.ly` empties them before `\book`. LilyPond logs the bar-188 cadenza (grace notes) three bars late, so it is moved back and spelled out in sixteenths as its own incomplete bar, also numbered 188 (`@L:39/4 @N:188`). After the cadenza LilyPond's MIDI right hand runs 0.714 beats late; shift it before comparing.
 - **Moonlight II**: Beethoven's "Allegretto D.C." is not in the source; add `@Fine` at the end of bar 36 and `@DC` on the last bar.
 - **Seventh Symphony II**: Mutopia 595's `Symphony7_2.ly` gives the transposing staves the wrong `\transposition` (written C sounding *above* instead of the instrument's real pitch), and LilyPond's MIDI has the same mistake, so the MIDI check cannot catch it. Before converting, set clarinets in A to `\transposition a` (not `a'`), horns in E to `\transposition e` (not `e'`) and trumpets in D to `\transposition d'` (not `a'`). If you skip this, the clarinets play an octave too high (E7 in the bar-75 tutti, above the clarinet samples, so the synth fallback plays it), the horns play an octave too high, and the trumpets play a fifth too high (E/B against the timpani's A/E).
+- **Double basses (Fifth Symphony I, Seventh Symphony II)**: the Mutopia sources write the basses at written pitch (in unison with the cellos) without `\transposition c,`, and LilyPond's MIDI follows them. The staves carry `"soundingTranspose": -12`, so playback sounds an octave below the cellos as an orchestra does while the notation stays as written. `verify-midi.mjs` therefore reports those bass notes an octave lower than the LilyPond MIDI; that difference is expected. `tests/score-ensemble-tuning.test.mjs` checks it.
 - **Fifth Symphony I**: the fermata chord and oboe cadenza in bar 268 are written under `\cadenzaOn`, which the converter cuts into one-beat bars; rebuild them as bar 268 plus an 8-beat bar 268, and delete the empty `s2` the source adds after `\cadenzaOff` (the movement then ends at bar 502). The cello's seven tied pp bars sit in their own voice, so the tie into the ff eighth in bar 492 is not engraved and MIDI re-strikes it; drop that tie.
 
 ## Current complete scores
@@ -107,6 +108,11 @@ and Wiegenlied for voice and piano), see the
 
 For three more Rachmaninoff Op. 23 preludes (Nos. 1, 4 and 6), see the
 [licensed source archive, import compatibility steps, practice numbering and published-MIDI comparisons](sources/rachmaninoff-additions/README.md).
+
+For thirteen lyrical favourites (Pachelbel's Canon, The Swan, the Méditation, Morning Mood, Fauré's and
+Ravel's Pavanes, Nimrod, Salut d'Amour, the Cavalleria Intermezzo, Rêverie, Träumerei, Liebestraum No. 3 and
+Vocalise) and the multi-part MusicXML bridge, see the
+[sources, licences, reproduction script and MIDI comparisons](sources/composer-favorites/README.md).
 
 For four additional Schumann Album for the Young pieces (Op. 68 Nos. 2, 8, 10 and 16),
 see the [licensed editions, repeat-boundary numbering, reproduction and exact published-MIDI comparisons](sources/schumann-additions/README.md).

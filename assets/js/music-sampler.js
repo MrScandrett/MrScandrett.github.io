@@ -102,6 +102,8 @@
     source.buffer=sample.buffer;
     source.loop=sample.loop; if (sample.loop) { source.loopStart=sample.loopStart; source.loopEnd=sample.loopEnd; }
     const rate=Math.pow(2,(pitch-entry.midi)/12); source.playbackRate.setValueAtTime(rate,t);
+    // Recordings measured off their label (manifest "cents") are pulled back to equal temperament.
+    if (entry.cents) source.detune.setValueAtTime(-entry.cents,t);
     filter.type='lowpass'; filter.Q.value=.5;
     const touch=Math.max(0,Math.min(1,velocity));
     // A soft attack has less upper harmonic energy. Reuse the existing filter.

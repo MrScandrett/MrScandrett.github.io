@@ -46,9 +46,12 @@
       const reference=guide[i]||'', map=reference.match(marks)||[];
       bar=bar.replace(marks,'').replace(/^\s*:/,'').replace(/:\s*$/,'').trim();
       return (reference.trim().startsWith(':')?': ':'')+map.join(' ')+' '+bar+(reference.trim().endsWith(':')?' :':'');
-    }).join('|').replace(/\(([^)]+)\)/g,(_,chord)=> {
-      const ps=chord.trim().split(/\s+/).sort((a,b)=>root.MusicNotation.parsePitch(a.replace('n','')).midi-root.MusicNotation.parsePitch(b.replace('n','')).midi);
-      return lowest?ps[0]:ps[ps.length-1];
+    }).join('|').replace(/\(([^)]+)\)(\/\d+\.{0,3})?/g,(_,chord,dur='')=> {
+      // A note tied on its own inside a chord, (B3 D#4 G#4~)/8, keeps its tie once extracted.
+      const bare=s=>s.replace('n','').replace(/~$/,'');
+      const ps=chord.trim().split(/\s+/).sort((a,b)=>root.MusicNotation.parsePitch(bare(a)).midi-root.MusicNotation.parsePitch(bare(b)).midi);
+      const pick=lowest?ps[0]:ps[ps.length-1];
+      return pick.replace(/~$/,'')+dur+(/~$/.test(pick)?'~':'');
     }).replace(/@C:(treble|bass|alto)/g,'');
     // Chord extraction can leave a tie aimed at a different selected note.
     // Remove it before octave fitting could turn that leap into a false tie.
@@ -93,12 +96,16 @@
     const selected=src.staves[staff], definition=(selected.voices||[selected])[voice];
     // Use line() for the shared road map, then restore playable source chords.
     const part=line(src,staff,voice,lowest);
-    const withChords=definition.notes.replace(/\(([^)]+)\)/g,(_,chord)=>{
-      const ps=chord.trim().split(/\s+/).sort((a,b)=>root.MusicNotation.parsePitch(a.replace('n','')).midi-root.MusicNotation.parsePitch(b.replace('n','')).midi);
-      const edge=root.MusicNotation.parsePitch((lowest?ps[0]:ps.at(-1)).replace('n','')).midi;
-      const nearby=ps.filter(p=>Math.abs(root.MusicNotation.parsePitch(p.replace('n','')).midi-edge)<=12);
+    const withChords=definition.notes.replace(/\(([^)]+)\)(\/\d+\.{0,3})?/g,(_,chord,dur='')=>{
+      const bare=s=>s.replace('n','').replace(/~$/,''), midiOf=s=>root.MusicNotation.parsePitch(bare(s)).midi;
+      const ps=chord.trim().split(/\s+/).sort((a,b)=>midiOf(a)-midiOf(b));
+      const edge=midiOf(lowest?ps[0]:ps.at(-1));
+      const nearby=ps.filter(p=>Math.abs(midiOf(p)-edge)<=12);
       const keep=lowest?nearby.slice(0,5):nearby.slice(-5);
-      return keep.length===1?keep[0]:'('+keep.join(' ')+')';
+      // Per-note ties stay inside a chord; a single kept note takes its tie after the duration.
+      if (keep.length===1) return keep[0].replace(/~$/,'')+dur+(/~$/.test(keep[0])?'~':'');
+      // Dropping every tied note leaves no per-note tie; that chord is struck plainly.
+      return '('+keep.join(' ')+')'+dur;
     });
     // Reuse the exact metadata synchronization without extracting chords.
     const guide=part.notes.split('|');

@@ -550,8 +550,12 @@ def bar_tokens(evs, start, length, hide, clefs):
             if e.get('dyn') in DYN:
                 toks.append('!' + DYN[e['dyn']])
             ps = e['pitches']
-            head = ps[0][0] if len(ps) == 1 else '(' + ' '.join(p[0] for p in ps) + ')'
-            tie = any(p[1] for p in ps)
+            tied = [p[1] for p in ps]
+            partial = len(ps) > 1 and any(tied) and not all(tied)
+            # Only some notes of the chord tie on (a held top note over re-struck chords):
+            # mark those notes, (B3 D#4 G#4~)/8, so the others are struck again.
+            head = ps[0][0] if len(ps) == 1 else '(' + ' '.join(p[0] + ('~' if partial and p[1] else '') for p in ps) + ')'
+            tie = any(tied) and not partial
             tok = head + dur_tok(e['log'], e['dots']) + ('~' if tie else '') + ('^' if 'fermata' in e['arts'] else '')
             orn = []
             for a in e['arts']:

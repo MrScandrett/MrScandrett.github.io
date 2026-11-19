@@ -91,6 +91,22 @@ def build(job):
     return name,{'midi':pitch,'file':name+'/'+str(pitch)+'.mp3','bytes':dest.stat().st_size,'sha256':hashlib.sha256(dest.read_bytes()).hexdigest(),'source':url,'license':license}
 with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
     for name,entry in pool.map(build,jobs): manifest['banks'][name]['roots'].append(entry)
+# Measured tuning (scripts/measure-sample-tuning.py, 2026-11-19). Upstream labels that are wrong
+# are relabelled; recordings 8+ cents off their label carry 'cents', which music-sampler.js cancels
+# with detune. Piano is left alone: its upper-octave stretch tuning is deliberate.
+RELABEL={('clarinet',90):89}  # tonejs-instruments clarinet/Fs6.mp3 sounds F6 (-98 cents)
+CENTS={('pluck',82):-11,('violin',84):-8,('violin',91):10,('trumpet',53):-11,
+ ('harp',28):-23,('harp',31):-24,('harp',35):-16,('harp',41):-8,('harp',55):-8,('harp',59):-13,('harp',72):-10,
+ ('harp',83):-8,('harp',95):-8,('xylophone',67):12,('xylophone',72):12,('xylophone',79):14,('xylophone',84):16,
+ ('xylophone',91):15,('xylophone',96):18,('xylophone',108):15}
+for name,bank in manifest['banks'].items():
+    for root in bank['roots']:
+        old_pitch=root['midi']
+        if (name,old_pitch) in RELABEL:
+            root['midi']=RELABEL[(name,old_pitch)]
+            src=OUT/root['file']; root['file']=f"{name}/{root['midi']}.mp3"
+            if src.exists(): src.replace(OUT/root['file'])
+        if (name,old_pitch) in CENTS: root['cents']=CENTS[(name,old_pitch)]
 for bank in manifest['banks'].values(): bank['roots'].sort(key=lambda x:x['midi'])
 (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print(f"Built {len(jobs)} samples, {sum(p.stat().st_size for p in OUT.rglob('*.mp3'))/1024/1024:.2f} MiB")

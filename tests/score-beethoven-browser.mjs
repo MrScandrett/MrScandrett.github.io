@@ -14,9 +14,16 @@ try {
     const figure = page.locator('#bv-score');
     await figure.locator('.se-score').waitFor();
     const work = page.locator('#bv-work');
+    // The work list loads asynchronously and selects the opening score; choose only after that.
+    await page.waitForFunction(() => {
+      const select = document.querySelector('#bv-work');
+      return !select.disabled && select.querySelector('option[value="beethoven-symphony-5-1"]');
+    });
     await work.selectOption('beethoven-symphony-5-1');
     const measures = figure.locator('.se-measure');
     const ink = figure.locator('.se-notation-window');
+    // Switching works re-renders asynchronously; wait for the new score before counting.
+    await page.waitForFunction(() => document.querySelectorAll('#bv-score .se-measure').length === 503, null, { timeout: 30000 });
     assert.equal(await measures.count(), 503);
     assert.ok(await ink.locator('.se-ev').count());
     assert.ok(await ink.locator('*').count() < 15000, 'only nearby notation is mounted');
@@ -32,16 +39,20 @@ try {
         event.kind === 'note' && notation.querySelector('.se-ev[data-i="' + event.i + '"]'));
     });
     assert.equal(await go.inputValue(), '401');
-    await figure.locator('.se-settings > summary').click();
+    // Composer pages show score settings in a dialog (⚙ Settings … Done).
+    await figure.locator('.se-settings-button').click();
     await figure.getByRole('combobox', { name: 'Playback sound quality' }).selectOption('synth');
+    await figure.locator('.se-settings-dialog').getByRole('button', { name: 'Done' }).click();
     await figure.locator('.se-play').click();
     await figure.locator('.se-notation-window .se-ev.is-on').first().waitFor({ state: 'attached' });
     await figure.locator('.se-stop').click();
 
     await work.selectOption('beethoven-moonlight-3');
+    await page.waitForFunction(() => document.querySelectorAll('#bv-score .se-measure').length === 202, null, { timeout: 30000 });
     assert.equal(await measures.count(), 202);
-    await figure.locator('.se-settings > summary').click();
+    await figure.locator('.se-settings-button').click();
     await figure.locator('.se-fingering-toggle').click();
+    await figure.locator('.se-settings-dialog').getByRole('button', { name: 'Done' }).click();
     await ink.locator('.se-finger-number').first().waitFor({ state: 'attached' });
     await go.fill('180');
     await go.press('Enter');
@@ -52,6 +63,7 @@ try {
         fig.querySelector('.se-notation-window .se-ev[data-i="' + event.i + '"] .se-finger-number'));
     });
     await page.evaluate(() => { window.print = () => {}; });
+    await figure.locator('.se-settings-button').click();
     await figure.locator('.se-print-score-button').click();
     assert.equal(await page.locator('.se-print-score-pages .se-measure').count(), 202);
     assert.deepEqual(errors, []);
