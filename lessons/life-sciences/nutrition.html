@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="An interactive life-science lesson about nutrients, food groups, digestion, food labels, food processing, ultra-processed foods, and the changing history of human nutrition.">
+  <meta name="description" content="Log meals, compare food labels, and explore human nutrition from early foraging to mass-produced foods and genetically engineered crops.">
   <title>Nutrition: A Body Systems Investigation · ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
   <link rel="stylesheet" href="../../assets/css/classroom-home.css">
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css">
+  <link rel="stylesheet" href="../../assets/css/creation-app.css">
+  <link rel="stylesheet" href="../../assets/css/lessons/nutrition-workspace.css">
   <style>
     :root{--nut-green:#176b4d;--nut-leaf:#2d8b62;--nut-gold:#d99a32;--nut-coral:#be5c45;--nut-ink:#1e332d;--nut-cream:#fbf7ed;--nut-blue:#246b84}
     .nut-page{min-height:100vh;background:linear-gradient(180deg,#f6f3e8 0,#fffdf8 38%,#eef7f1 100%);color:var(--nut-ink)}
@@ -15,7 +17,7 @@
     .nut-hero{position:relative;overflow:hidden;border-radius:26px;padding:clamp(1.4rem,4vw,3.2rem);background:linear-gradient(125deg,#123d33,#176b4d 58%,#3f9064);color:#fff;box-shadow:0 20px 50px #174d3a22}
     .nut-hero:after{content:"";position:absolute;width:360px;height:360px;right:-100px;top:-160px;border:35px solid #f4d58a38;border-radius:50%;box-shadow:0 0 0 28px #fff3c41c,0 0 0 60px #fff3c411}
     .nut-kicker{position:relative;z-index:1;margin:0 0 .65rem;color:#f8dd96;font-size:.75rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-    .nut-hero h1{position:relative;z-index:1;max-width:720px;margin:0;font:700 clamp(2.2rem,6vw,4.5rem)/.98 Fraunces,Georgia,serif;letter-spacing:-.045em}
+    .nut-hero h2{position:relative;z-index:1;max-width:720px;margin:0;font:700 clamp(2.2rem,6vw,4.5rem)/.98 Fraunces,Georgia,serif;letter-spacing:-.045em}
     .nut-lede{position:relative;z-index:1;max-width:690px;margin:1rem 0 0;font-size:clamp(1rem,2vw,1.2rem);line-height:1.6;color:#ecf8ef}
     .nut-goals,.nut-card{border:1px solid #286d5130;border-radius:20px;background:#fffffff2;box-shadow:0 12px 34px #214d3b0d;padding:clamp(1rem,2.5vw,1.55rem)}
     .nut-goals{display:grid;grid-template-columns:1.25fr 1fr;gap:1rem;align-items:center}.nut-goals h2,.nut-card h2{margin:0 0 .55rem;font:700 1.35rem/1.15 Fraunces,Georgia,serif;color:#173f32}.nut-goals p,.nut-card p{line-height:1.62}.nut-goals ul{margin:.3rem 0 0;padding-left:1.2rem;line-height:1.65}.nut-note{border-left:4px solid var(--nut-gold);padding:.75rem .9rem;background:#fff7dc;border-radius:0 12px 12px 0;font-size:.88rem;line-height:1.5}
@@ -23,15 +25,45 @@
     .nut-section-title{margin:1.6rem .1rem .35rem;font:700 clamp(1.7rem,4vw,2.5rem)/1.05 Fraunces,Georgia,serif;color:#173f32}.nut-section-intro{max-width:760px;margin:.35rem 0 .9rem;line-height:1.6}
     .nut-jobs{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}.nut-job{padding:1rem;border-radius:16px;background:#edf7ef;border-top:5px solid var(--nut-leaf)}.nut-job:nth-child(2){border-color:var(--nut-gold);background:#fff7e4}.nut-job:nth-child(3){border-color:var(--nut-blue);background:#eef7fa}.nut-job:nth-child(4){border-color:var(--nut-coral);background:#fff1ed}.nut-job h3{margin:0 0 .35rem;font-size:1rem}.nut-job p{margin:0;font-size:.87rem;line-height:1.5}
     .plate-lab{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.75fr);gap:1rem;align-items:start}.food-bank{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}.food{display:flex;align-items:center;gap:.55rem;text-align:left;padding:.7rem;border:1px solid #296c5138;border-radius:12px;background:#fbfffb;color:var(--nut-ink);cursor:pointer;font:600 .88rem Inter,sans-serif}.food:hover,.food:focus-visible{border-color:var(--nut-leaf);background:#edf8ef;outline:3px solid #2d8b6240;outline-offset:2px}.food[aria-pressed=true]{background:#dff2e3;box-shadow:inset 0 0 0 2px var(--nut-leaf)}.food small{display:block;color:#5a7067;font-weight:500;margin-top:.12rem}.plate{min-height:265px;display:grid;place-items:center;border-radius:18px;background:radial-gradient(circle,#fff 0 36%,#f8f3dd 37% 66%,#e7d6a4 67% 70%,#f4efe0 71%);border:1px solid #c9b77e;box-shadow:inset 0 0 0 10px #ffffff90}.plate-inner{width:80%;display:grid;grid-template-columns:repeat(2,1fr);gap:.45rem}.plate-slot{min-height:72px;display:grid;place-items:center;text-align:center;border-radius:12px;background:#ffffff9c;border:1px dashed #9c9d77;padding:.4rem;font-size:.74rem;color:#66705e}.plate-slot.filled{background:#fff;box-shadow:0 4px 12px #5a492022;border-style:solid;color:var(--nut-ink);font-weight:700}.plate-status{margin:.65rem 0 0;font-size:.86rem;line-height:1.45}.reset{margin-top:.7rem;padding:.55rem .75rem;border:1px solid #286d5166;border-radius:9px;background:#fff;color:var(--nut-green);font-weight:700;cursor:pointer}.reset:hover,.reset:focus-visible{background:#edf7ef;outline:3px solid #2d8b6240;outline-offset:2px}
-    .detective{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.label-card{border:1px solid #d2dfdf;border-radius:16px;padding:1rem;background:#f5fbfb}.label-card h3{margin:0 0 .65rem;color:#1d5367}.label-row{display:grid;grid-template-columns:1fr auto;gap:.7rem;align-items:center;margin:.55rem 0}.meter{height:10px;border-radius:99px;background:#dce8e7;overflow:hidden}.meter span{display:block;height:100%;border-radius:inherit;background:var(--nut-blue)}.meter.fiber span{background:var(--nut-leaf)}.meter.sodium span{background:var(--nut-coral)}.detective button{padding:.62rem .8rem;border:1px solid #246b8466;border-radius:9px;background:#fff;color:#1d5367;font-weight:700;cursor:pointer}.detective button:hover,.detective button:focus-visible{background:#eaf6f8;outline:3px solid #246b8440;outline-offset:2px}.detective-output{grid-column:1/-1;padding:.85rem;background:#eef7ee;border-left:4px solid var(--nut-leaf);border-radius:0 10px 10px 0;line-height:1.5;min-height:2.5em}
+    .label-card {
+      border: 1px solid #d2dfdf;
+      border-radius: 16px;
+      padding: clamp(.75rem, 2.5vw, 1.25rem);
+      background: #f5fbfb;
+      color: var(--nut-ink);
+    }
+    .label-card h3 { margin-top: 0; color: #1d5367; }
+    .label-compare label { display: block; font-weight: 700; }
+    .label-compare select {
+      max-width: 100%;
+      min-height: 44px;
+      margin: .35rem 0 .85rem;
+      padding: .4rem .6rem;
+      border: 1px solid #246b84;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--nut-ink);
+      font: inherit;
+    }
+    .label-table { width: 100%; border-collapse: collapse; }
+    .label-table caption { padding-bottom: .4rem; text-align: left; font-weight: 700; }
+    .label-table th, .label-table td {
+      padding: .55rem .35rem;
+      border-bottom: 1px solid #c3d9dd;
+      text-align: left;
+    }
+    .label-table td { font-variant-numeric: tabular-nums; }
+    .label-explanation { margin: 1rem 0; line-height: 1.55; }
+    .label-explanation summary { cursor: pointer; font-weight: 700; }
+    .nut-goals a { color: #155f79; }
+
     .content-map{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}.content-card{padding:1rem;border-radius:16px;border:1px solid #286d5130;background:#fff}.content-card h3{margin:0 0 .35rem;color:#173f32;font-size:1rem}.content-card p{margin:0;font-size:.86rem;line-height:1.55}.content-card em{color:#7c5b21;font-style:normal;font-weight:800}
     .spectrum{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start}.spectrum-rail{display:grid;gap:.55rem}.spectrum-step{display:grid;grid-template-columns:auto 1fr;gap:.7rem;text-align:left;padding:.75rem;border:1px solid #286d5166;border-radius:12px;background:#fff;color:var(--nut-ink);cursor:pointer}.spectrum-step:hover,.spectrum-step:focus-visible,.spectrum-step[aria-pressed=true]{background:#edf7ef;outline:3px solid #2d8b6240;outline-offset:2px}.spectrum-step b{display:grid;place-items:center;width:1.8rem;height:1.8rem;border-radius:50%;background:#dcebdc;color:var(--nut-green);font-size:.8rem}.spectrum-step strong{display:block;font-size:.9rem}.spectrum-step small{display:block;margin-top:.15rem;color:#5a7067;line-height:1.35}.spectrum-output{min-height:250px;padding:1.1rem;border-radius:18px;background:linear-gradient(145deg,#f3f8eb,#fff7e1);border:1px solid #d3c58b}.spectrum-output h3{margin:0 0 .5rem;color:#173f32;font:700 1.35rem Fraunces,Georgia,serif}.spectrum-output p{line-height:1.6}.spectrum-output ul{padding-left:1.2rem;line-height:1.55}.spectrum-note{font-size:.78rem;color:#607268}
-    .timeline{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:.65rem;padding-top:.8rem}.timeline:before{content:"";position:absolute;left:5%;right:5%;top:1.8rem;height:4px;border-radius:9px;background:#c6dcc7}.timeline-step{position:relative;padding:1.4rem .8rem .9rem;border:1px solid #286d5130;border-radius:15px;background:#fff;cursor:pointer;text-align:left}.timeline-step:before{content:"";position:absolute;top:.55rem;left:1rem;width:13px;height:13px;border:3px solid #fff;border-radius:50%;background:var(--nut-leaf);box-shadow:0 0 0 2px #286d5166}.timeline-step:hover,.timeline-step:focus-visible,.timeline-step[aria-pressed=true]{background:#edf7ef;outline:3px solid #2d8b6240;outline-offset:2px}.timeline-step strong{display:block;color:#173f32;font-size:.9rem}.timeline-step small{display:block;margin-top:.25rem;color:#64756c;line-height:1.4}.timeline-output{margin-top:.8rem;padding:1rem 1.1rem;border-left:4px solid var(--nut-gold);background:#fff8df;border-radius:0 12px 12px 0;line-height:1.6;min-height:5.5rem}.timeline-output strong{color:#75551b}
     .vitamin-shell{border:1px solid #286d5130;border-radius:20px;background:#fffffff2;box-shadow:0 12px 34px #214d3b0d;padding:clamp(1rem,2.5vw,1.55rem)}.vitamin-controls{display:flex;flex-wrap:wrap;gap:.5rem;margin:.8rem 0}.vitamin-filter{padding:.55rem .75rem;border:1px solid #286d5166;border-radius:999px;background:#fff;color:var(--nut-green);font-weight:800;cursor:pointer}.vitamin-filter:hover,.vitamin-filter:focus-visible,.vitamin-filter[aria-pressed=true]{background:var(--nut-green);color:#fff;outline:3px solid #2d8b6240;outline-offset:2px}.vitamin-table-wrap{overflow:visible}.vitamin-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem;line-height:1.45}.vitamin-table th{padding:.75rem .6rem;text-align:left;background:#e8f3e9;color:#173f32;font-size:.75rem;letter-spacing:.03em;text-transform:uppercase}.vitamin-table th:first-child{border-radius:10px 0 0 0}.vitamin-table th:last-child{border-radius:0 10px 0 0}.vitamin-table td{padding:.75rem .6rem;vertical-align:top;border-bottom:1px solid #dce8dc;color:#42574d}.vitamin-table tbody tr:nth-child(even){background:#fbfdf9}.vitamin-table tbody tr:hover{background:#f0f8f0}.vitamin-table .vitamin-name{min-width:7rem;color:#173f32;font-weight:800}.vitamin-table .vitamin-name small{display:block;margin-top:.12rem;color:#6b7d73;font-weight:600}.vitamin-table a{color:#155f79;font-weight:700;white-space:nowrap}.vitamin-footnote{margin:.85rem 0 0;font-size:.78rem;line-height:1.55;color:#607268}
     .quiz{display:grid;gap:.7rem}.quiz-question{font-weight:800}.quiz-options{display:flex;flex-wrap:wrap;gap:.5rem}.quiz-options button{padding:.65rem .8rem;border:1px solid #286d5166;border-radius:10px;background:#fff;color:var(--nut-ink);font-weight:700;cursor:pointer}.quiz-options button:hover,.quiz-options button:focus-visible{background:#edf7ef;outline:3px solid #2d8b6240;outline-offset:2px}.quiz-output{min-height:1.5em;font-weight:700;color:var(--nut-green)}.sources{font-size:.8rem;color:#52665e;line-height:1.55}.sources a{color:#155f79}.nut-footer{font-size:.82rem;line-height:1.55;color:#52665e;order:20}
     @media(max-width:900px){.vitamin-table,.vitamin-table tbody,.vitamin-table tr,.vitamin-table td{display:block}.vitamin-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.vitamin-table tr{padding:.65rem 0;border-bottom:2px solid #cfe1d0}.vitamin-table td{display:grid;grid-template-columns:7rem minmax(0,1fr);gap:.7rem;padding:.32rem .2rem;border:0}.vitamin-table td:before{content:attr(data-label);font-size:.68rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#176b4d}.vitamin-table .vitamin-name{display:block;padding:.6rem .2rem .25rem;font-size:1rem}.vitamin-table .vitamin-name:before{display:none}}
-    @media(max-width:800px){.nut-goals,.nut-figures,.plate-lab,.detective,.spectrum{grid-template-columns:1fr}.nut-jobs,.content-map{grid-template-columns:repeat(2,1fr)}.timeline{grid-template-columns:repeat(2,1fr)}.timeline:before{display:none}}
-    @media(max-width:520px){.nut-shell{width:min(100% - 1rem,1160px)}.nut-jobs,.content-map,.food-bank,.timeline{grid-template-columns:1fr}.nut-hero{border-radius:18px}.plate{min-height:235px}}
+    @media(max-width:800px){.nut-goals,.nut-figures,.plate-lab,.spectrum{grid-template-columns:1fr}.nut-jobs,.content-map{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:520px){.nut-shell{width:min(100% - 1rem,1160px)}.nut-jobs,.content-map,.food-bank{grid-template-columns:1fr}.nut-hero{border-radius:18px}.plate{min-height:235px}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   </style>
   <link rel="stylesheet" href="../../assets/css/lessons/life-sciences-route.css" />
@@ -54,19 +86,184 @@
     </div>
   </header>
 
-  <main class="ll-sim"><div class="nut-shell">
-    <header class="nut-hero"><p class="nut-kicker">Life science · body systems · grades 5–9</p><h1>Nutrition is a systems problem.</h1><p class="nut-lede">Follow matter from a meal into the body, compare foods across a processing spectrum, and trace how human nutrition changed with fire, farming, preservation, industry, and global convenience.</p></header>
-    <section class="nut-goals" aria-labelledby="goals-title"><div><h2 id="goals-title">Today’s investigation</h2><p>Nutrition is not a morality score and no single food decides whether a person is “healthy.” It is the study of how organisms obtain and use matter and energy—and how context changes a food choice.</p><ul><li>Connect nutrient structure to body function.</li><li>Build a flexible plate model, then inspect its limits.</li><li>Read a label by asking “what does this number mean?”</li></ul></div><aside class="nut-note"><strong>Classroom safety:</strong> This is general science education, not a meal plan or medical advice. Allergies, conditions, culture, budget, access, and personal needs matter. Never ask classmates to disclose food, weight, diagnoses, or eating habits.</aside></section>
+  <main class="ll-sim">
+    <section id="food-lab" class="food-lab" data-creation-app data-creation-fit
+      data-night-keep data-skin-keep data-memory-ignore data-no-glossary data-no-print aria-labelledby="food-lab-title">
+      <div id="food-lab-workspace" data-creation-primary>
+        <header class="flab-heading">
+          <h1 id="food-lab-title">Food Lab</h1>
+          <p>Log meals and explore what’s in food.</p>
+        </header>
+        <div class="flab-nav">
+          <div role="tablist" aria-label="Food Lab workspaces">
+            <button type="button" role="tab" id="flab-log-tab" aria-controls="flab-log" aria-selected="true">Food log</button>
+            <button type="button" role="tab" id="flab-labels-tab" aria-controls="flab-labels" aria-selected="false" tabindex="-1">Food labels</button>
+            <button type="button" role="tab" id="flab-nutrients-tab" aria-controls="flab-nutrients" aria-selected="false" tabindex="-1">Nutrients</button>
+            <button type="button" role="tab" id="flab-history-tab" aria-controls="flab-history" aria-selected="false" tabindex="-1">Food history</button>
+          </div>
+        </div>
+
+        <div role="tabpanel" id="flab-log" aria-labelledby="flab-log-tab">
+          <div class="flab-metrics" aria-label="Daily totals" id="flab-metrics"></div>
+          <div class="flab-grid">
+            <section class="flab-card" aria-labelledby="flab-entry-title">
+              <h3 id="flab-entry-title">Add a food</h3>
+              <form id="flab-entry" class="flab-form">
+                <label>Food <select id="flab-food" required></select></label>
+                <div class="flab-fields">
+                  <label>Portion (g) <input id="flab-grams" type="number" min="0.1" max="10000" step="any" inputmode="decimal" required></label>
+                  <label>Meal <select id="flab-meal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select></label>
+                </div>
+                <div class="flab-actions">
+                  <button class="flab-primary" type="submit" id="flab-save">Add to log</button>
+                  <button type="button" id="flab-custom-open">Enter a label</button>
+                  <button type="button" id="flab-cancel" hidden>Cancel edit</button>
+                </div>
+              </form>
+            </section>
+            <section class="flab-card" aria-labelledby="flab-day-title">
+              <div class="flab-card-top">
+                <h3 id="flab-day-title">Day’s log</h3>
+                <label class="flab-inline-label">Date <input id="flab-date" type="date" required></label>
+              </div>
+              <div class="flab-scroll flab-log-list" id="flab-entries" role="region" aria-label="Logged foods" tabindex="0"></div>
+              <div class="flab-log-footer">
+                <button type="button" id="flab-sample">Add sample meal</button>
+                <small id="flab-storage-note">Saved in this browser.</small>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div role="tabpanel" id="flab-labels" aria-labelledby="flab-labels-tab" hidden>
+          <div class="flab-grid flab-label-grid">
+            <section class="flab-card" aria-labelledby="flab-find-title">
+              <h3 id="flab-find-title">Find a food</h3>
+              <label class="flab-field">Search by name or sample code
+                <input type="search" id="flab-search" placeholder="Try oats or 101" autocomplete="off">
+              </label>
+              <div class="flab-scroll flab-search-results" id="flab-results" role="region" aria-label="Food search results" tabindex="0"></div>
+            </section>
+            <section class="flab-card flab-label-card" aria-labelledby="flab-product-title">
+              <div class="flab-card-top">
+                <div><h3 id="flab-product-title"></h3><p id="flab-product-type" class="flab-muted"></p></div>
+                <button type="button" class="flab-primary" id="flab-log-product">Log this food</button>
+              </div>
+              <p id="flab-product-note"></p>
+              <p id="flab-ingredients"></p>
+              <div class="flab-fields">
+                <label>Compare with <select id="flab-peer"><option value="">Choose a second food</option></select></label>
+                <label>Measure <select id="flab-basis"><option value="serving">Per serving</option><option value="100">Per 100 g</option></select></label>
+              </div>
+              <div class="flab-scroll flab-facts" id="flab-facts" role="region" aria-label="Nutrition Facts comparison" tabindex="0"></div>
+              <p class="flab-source"><span id="flab-food-source"></span> · <a href="https://www.fda.gov/food/nutrition-facts-label/how-understand-and-use-nutrition-facts-label">Nutrition Facts guide</a> · <a href="https://www.fda.gov/food/food-additives-and-gras-ingredients-information-consumers/types-food-ingredients">Why ingredients are added</a></p>
+            </section>
+          </div>
+        </div>
+
+        <div role="tabpanel" id="flab-nutrients" aria-labelledby="flab-nutrients-tab" hidden>
+          <div class="flab-card">
+            <h3 id="flab-nutrient-title">Daily nutrient totals</h3>
+            <p id="flab-nutrient-date" class="flab-muted"></p>
+            <p class="flab-muted">A partial total means some entries don’t report that nutrient.</p>
+            <div class="flab-scroll flab-nutrient-list" id="flab-nutrient-list" role="region" aria-label="Nutrient totals and functions" tabindex="0"></div>
+            <p class="flab-source"><a href="#vitamin-title">Explore the vitamin chart</a> · <a href="https://ods.od.nih.gov/factsheets/list-all/">NIH vitamin and mineral fact sheets</a></p>
+          </div>
+        </div>
+        <div role="tabpanel" id="flab-history" aria-labelledby="flab-history-tab" hidden>
+          <div class="flab-grid flab-history-grid">
+            <section class="flab-card" aria-labelledby="flab-timeline-title">
+              <h3 id="flab-timeline-title">How human diets changed</h3>
+              <div class="flab-scroll flab-timeline" id="flab-timeline" role="region" aria-label="Timeline periods" tabindex="0"></div>
+            </section>
+            <section class="flab-card flab-history-copy" aria-labelledby="flab-history-title">
+              <h3 id="flab-history-title"></h3>
+              <p class="flab-muted" id="flab-history-date"></p>
+              <dl>
+                <dt>What changed</dt><dd id="flab-history-change"></dd>
+                <dt>What it meant for food</dt><dd id="flab-history-impact"></dd>
+                <dt>Discuss</dt><dd id="flab-history-question"></dd>
+              </dl>
+              <button type="button" id="flab-history-example" hidden>Inspect a food example</button>
+              <p class="flab-source"><a id="flab-history-source"></a></p>
+            </section>
+          </div>
+        </div>
+        <div class="flab-footer">
+          <p class="flab-status" id="flab-status" role="status"></p>
+          <a href="#nutrition-lesson">Lesson notes</a>
+        </div>
+      </div>
+
+      <dialog id="flab-custom" aria-labelledby="flab-custom-title">
+        <form id="flab-custom-form" class="flab-form">
+          <h2 id="flab-custom-title">Enter a food label</h2>
+          <p>Copy amounts for one serving. Leave unlisted values blank.</p>
+          <div class="flab-fields">
+            <label>Food name <input name="foodName" maxlength="70" required></label>
+            <label>Serving weight (g) <input name="serving" type="number" min="0.1" max="10000" step="any" inputmode="decimal" required></label>
+          </div>
+          <div class="flab-custom-facts" id="flab-custom-facts"></div>
+          <label>Ingredients (optional) <input name="ingredients" maxlength="400"></label>
+          <div class="flab-actions">
+            <button type="submit" class="flab-primary">Save food</button>
+            <button type="button" id="flab-custom-close">Cancel</button>
+          </div>
+        </form>
+      </dialog>
+    </section>
+
+    <div class="nut-shell" id="nutrition-lesson">
+    <header class="nut-hero" data-life-route-intro><p class="nut-kicker">Life science · body systems · grades 5–9</p><h2>Nutrition is a systems problem.</h2><p class="nut-lede">Follow matter from a meal into the body, compare foods across a processing spectrum, and trace how human nutrition changed with fire, farming, preservation, industry, and global convenience.</p></header>
+    <section class="nut-goals" aria-labelledby="goals-title"><div><h2 id="goals-title">Today’s investigation</h2><p>Nutrition is not a morality score and no single food decides whether a person is “healthy.” It is the study of how organisms obtain and use matter and energy—and how context changes a food choice.</p><ul><li>Connect nutrient structure to body function.</li><li>Build a flexible plate model, then inspect its limits.</li><li><a href="#label-title">Compare food labels using equal amounts.</a></li></ul></div><aside class="nut-note"><strong>Classroom safety:</strong> This is general science education, not a meal plan or medical advice. Allergies, conditions, culture, budget, access, and personal needs matter. Never ask classmates to disclose food, weight, diagnoses, or eating habits.</aside></section>
     <section aria-labelledby="plates-title"><h2 class="nut-section-title" id="plates-title">Textbook plates: observe before you explain</h2><p class="nut-section-intro">Images are evidence, not instructions. Look closely: what can you actually observe, and what would require more information?</p><div class="nut-figures"><figure class="nut-figure" data-zoomable data-lightbox-group="nutrition-textbook"><img src="../../assets/images/lessons/nutrition/nutrition-class-1919.jpg" data-full="../../assets/images/lessons/nutrition/nutrition-class-1919.jpg" width="1600" height="1279" loading="lazy" alt="Students in a 1919 public-school nutrition class gathered around a table with food and a teacher at the front"><figcaption><strong>Plate 1 · Nutrition as a school subject, 1919</strong>Students are learning about food in a classroom setting, surrounded by a teacher, a board, and arranged materials. The photograph documents a historical teaching practice; it does not tell us whether the lesson’s claims were scientifically complete or culturally inclusive.<span class="credit">Photo: “Two similar views of nutrition class at public school in Ithaca in 1919,” Wikimedia Commons, public domain. <a href="https://commons.wikimedia.org/wiki/Category:People_of_Ithaca,_New_York" target="_blank" rel="noopener">Source and license</a>.</span></figcaption></figure><figure class="nut-figure" data-zoomable data-lightbox-group="nutrition-textbook"><img src="../../assets/images/lessons/nutrition/still-life-fruit.jpg" data-full="../../assets/images/lessons/nutrition/still-life-fruit.jpg" width="1280" height="960" loading="lazy" alt="A still life arrangement of whole fruits on a table"><figcaption><strong>Plate 2 · A food is more than a nutrient list</strong>Whole fruits make visible color, texture, variety, season, preparation, and cultural context—features a nutrient table alone cannot capture. Use the image to generate questions, not a universal rule about what anyone must eat.<span class="credit">Photo: Jon Sullivan, “Still life fruit,” Wikimedia Commons, public domain. <a href="https://commons.wikimedia.org/wiki/File:Still_life_fruit.jpg" target="_blank" rel="noopener">Source and license</a>.</span></figcaption></figure></div></section>
     <figure class="nut-figure diagram" data-zoomable data-lightbox-group="nutrition-textbook"><img src="../../assets/images/lessons/nutrition/digestive-system.svg" data-full="../../assets/images/lessons/nutrition/digestive-system.svg" width="620" height="876" loading="lazy" alt="Labeled diagram of the human digestive system from mouth through intestines"><figcaption><strong>Plate 3 · From food to body systems</strong>The digestive tract is a connected pathway: food is broken down, nutrients are absorbed, and material that remains continues through the system. This diagram is a map of organs, not a complete model of metabolism or a promise about how one person will respond to a meal.<span class="credit">Diagram: Mariana Ruiz (LadyofHats) and Jmarchn, “Digestive system diagram en,” Wikimedia Commons, public domain. <a href="https://commons.wikimedia.org/wiki/File:Digestive_system_diagram_en.svg" target="_blank" rel="noopener">Source and license</a>.</span></figcaption></figure>
     <section aria-labelledby="jobs-title"><h2 class="nut-section-title" id="jobs-title">Four nutrient jobs</h2><p class="nut-section-intro">Start with function, not “good food” versus “bad food.” Macronutrients are needed in larger amounts; micronutrients are needed in smaller amounts, but both can be biologically important.</p><div class="nut-jobs"><article class="nut-job"><h3>Carbohydrates</h3><p>Sugars, starches, and fiber. Cells can use glucose from carbohydrate; fiber changes how material moves through the digestive system and feeds some gut microbes.</p></article><article class="nut-job"><h3>Proteins</h3><p>Chains of amino acids used to build and repair structures, and to make enzymes, antibodies, and other working molecules.</p></article><article class="nut-job"><h3>Fats</h3><p>Dense energy storage, cell membranes, signaling molecules, and help absorbing vitamins A, D, E, and K.</p></article><article class="nut-job"><h3>Vitamins &amp; minerals</h3><p>Micronutrients that help chemical reactions, bones, blood, nerves, immunity, and many other processes. “Small amount” does not mean “unimportant.”</p></article></div></section>
     <section aria-labelledby="plate-title"><h2 class="nut-section-title" id="plate-title">Model lab: build a plate</h2><p class="nut-section-intro">Choose one or more examples from each MyPlate-style group. The model is a way to notice variety—not a required portion chart, a ranking of cultures, or a prescription.</p><div class="plate-lab"><div class="nut-card"><h2>Food cards</h2><div class="food-bank" role="group" aria-label="Food group choices"><button class="food" data-group="fruit" data-food="Mango"><span>Mango<small>fruit</small></span></button><button class="food" data-group="vegetable" data-food="Lentil stew"><span>Lentil stew<small>vegetable + protein</small></span></button><button class="food" data-group="grain" data-food="Oats"><span>Oats<small>grain</small></span></button><button class="food" data-group="protein" data-food="Tofu"><span>Tofu<small>protein</small></span></button><button class="food" data-group="dairy" data-food="Yogurt"><span>Yogurt<small>dairy / calcium-rich</small></span></button><button class="food" data-group="vegetable" data-food="Greens"><span>Greens<small>vegetable</small></span></button><button class="food" data-group="protein" data-food="Egg"><span>Egg<small>protein</small></span></button><button class="food" data-group="grain" data-food="Corn tortilla"><span>Corn tortilla<small>grain</small></span></button></div><button class="reset" id="reset-plate" type="button">Clear the model</button></div><div class="nut-card"><h2>Your model</h2><div class="plate" role="img" aria-label="A plate divided into five food-group spaces"><div class="plate-inner"><div class="plate-slot" data-slot="fruit">fruit</div><div class="plate-slot" data-slot="vegetable">vegetable</div><div class="plate-slot" data-slot="grain">grain</div><div class="plate-slot" data-slot="protein">protein</div><div class="plate-slot" data-slot="dairy">dairy / calcium</div></div></div><p class="plate-status" id="plate-status" aria-live="polite">Choose a card to begin. What does this model help you notice?</p></div></div></section>
-    <section aria-labelledby="label-title"><h2 class="nut-section-title" id="label-title">Label detective: numbers need a question</h2><p class="nut-section-intro">A Nutrition Facts label is a measurement system. Before comparing two foods, check the serving size and ask which variable matters for your investigation.</p><div class="detective"><div class="label-card"><h3>Example label · per serving</h3><div class="label-row"><span>Carbohydrate · 34 g</span><strong>68%</strong></div><div class="meter"><span style="width:68%"></span></div><div class="label-row"><span>Fiber · 8 g</span><strong>32%</strong></div><div class="meter fiber"><span style="width:32%"></span></div><div class="label-row"><span>Sodium · 180 mg</span><strong>8%</strong></div><div class="meter sodium"><span style="width:8%"></span></div><p class="sources">Percent Daily Value is a general label reference, not a personal target. Serving sizes and needs vary.</p></div><div class="label-card"><h3>Make a claim</h3><p>Which conclusion is best supported by this label?</p><div class="quiz-options" role="group" aria-label="Label conclusion choices"><button type="button" data-answer="no">“This food is healthy for everyone.”</button><button type="button" data-answer="yes">“The label lists fiber and sodium per serving.”</button><button type="button" data-answer="no">“The percent values are a grade for the food.”</button></div></div><p class="detective-output" id="detective-output" aria-live="polite"></p></div></section>
+    <section aria-labelledby="label-title">
+      <h2 class="nut-section-title" id="label-title">Label detective: compare equal amounts</h2>
+      <p class="nut-section-intro">U.S. Nutrition Facts labels usually list amounts per serving. These two fictional cereals have different labeled serving sizes. Which one lists more fiber per serving? Predict which will have more fiber when you compare equal amounts, then change the comparison to check.</p>
+      <div class="label-card">
+        <h3>Two cereal labels</h3>
+        <div class="label-compare">
+          <label for="label-basis">Compare by</label>
+          <select id="label-basis">
+            <option value="serving">Labeled serving</option>
+            <option value="equal">Equal amounts (60 g each)</option>
+          </select>
+        </div>
+        <table class="label-table">
+          <caption id="label-caption" aria-live="polite">Amounts per labeled serving</caption>
+          <thead>
+            <tr><th scope="col">Measure</th><th scope="col">Cereal A</th><th scope="col">Cereal B</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Amount of cereal</th><td id="label-mass-a">30 g</td><td>60 g</td></tr>
+            <tr><th scope="row">Dietary fiber</th><td id="label-fiber-a">3 g</td><td>5 g</td></tr>
+            <tr><th scope="row">Sodium</th><td id="label-sodium-a">60 mg</td><td>150 mg</td></tr>
+          </tbody>
+        </table>
+        <details class="label-explanation">
+          <summary>Check your explanation</summary>
+          <p>Cereal B lists more fiber per labeled serving (5 g compared with 3 g). A 60 g sample of cereal A contains two labeled servings, so it has 2 × 3 g = 6 g of fiber. A 60 g sample of cereal B is one labeled serving, so it has 5 g. At equal masses, cereal A has more fiber. Holding the sample mass constant lets you compare one variable at a time.</p>
+          <p>Try the same calculation for sodium. Which sample has less sodium when both samples weigh 60 g? Include the amounts and units in your claim.</p>
+        </details>
+        <p class="sources">Serving size gives the amount the label describes. Percent Daily Value shows how much one serving contributes to the daily reference amount for a specific nutrient. <a href="https://www.fda.gov/food/nutrition-facts-label/how-understand-and-use-nutrition-facts-label">FDA guide to Nutrition Facts labels</a>.</p>
+      </div>
+    </section>
     <section class="nut-card" aria-labelledby="reflection-title"><h2 id="reflection-title">Exit ticket: explain the system</h2><div class="quiz"><p class="quiz-question">A classmate says, “Protein gives me energy, so it is only an energy nutrient.” Which response is most accurate?</p><div class="quiz-options" role="group" aria-label="Exit ticket choices"><button type="button" data-exit="no">Agree: every nutrient has one job.</button><button type="button" data-exit="yes">Revise: protein can provide energy, but its amino acids also build and run body structures.</button><button type="button" data-exit="no">Disagree: protein never provides energy.</button></div><p class="quiz-output" id="exit-output" aria-live="polite"></p></div></section>
     <p class="nut-footer"><strong>Sources &amp; limits:</strong> Food-group language follows <a href="https://www.myplate.gov/eat-healthy/what-is-myplate" target="_blank" rel="noopener">USDA MyPlate</a>. Current U.S. federal guidance is published through the <a href="https://www.dietaryguidelines.gov/" target="_blank" rel="noopener">Dietary Guidelines for Americans</a>; nutrient background can be checked against the <a href="https://ods.od.nih.gov/factsheets/list-all/" target="_blank" rel="noopener">NIH Office of Dietary Supplements fact sheets</a>. This page uses simplified models: digestion, metabolism, health, and food access are more complex than the cards or bars suggest.</p>
     <section aria-labelledby="content-title"><h2 class="nut-section-title" id="content-title">What are we actually putting into our bodies?</h2><p class="nut-section-intro">A meal is not just “calories.” It is a mixture of water, carbohydrates, proteins, fats, vitamins, minerals, fiber, pigments, flavor molecules, microbes, and sometimes additives or contaminants. The body responds to the whole pattern and to the person’s context.</p><div class="content-map"><article class="content-card"><h3>Water &amp; electrolytes</h3><p>Water is a major part of cells and blood. Minerals such as sodium and potassium help with fluid balance and nerve and muscle function. <em>More is not always better.</em></p></article><article class="content-card"><h3>Energy-yielding nutrients</h3><p>Carbohydrate, fat, and protein can be broken down and used in metabolism. Their jobs overlap with building, signaling, storage, and repair.</p></article><article class="content-card"><h3>Micronutrients</h3><p>Vitamins and minerals are present in smaller amounts but participate in many chemical reactions. Fortified foods can be useful sources; supplements are not automatically safer.</p></article><article class="content-card"><h3>Fiber &amp; food structure</h3><p>Fiber is carbohydrate that is not fully digested by human enzymes. The physical structure of a food can affect chewing, digestion, absorption, and fullness.</p></article><article class="content-card"><h3>Plant compounds</h3><p>Plants contain pigments and other bioactive compounds. These are not a magic “superfood” score; effects depend on dose, food matrix, metabolism, and the overall diet.</p></article><article class="content-card"><h3>Additives &amp; contaminants</h3><p>Preservatives, emulsifiers, colors, flavors, and packaging can change shelf life and texture. Safety depends on the substance and exposure—not simply whether a word sounds chemical.</p></article></div></section>
     <section aria-labelledby="processing-title"><h2 class="nut-section-title" id="processing-title">Processing is a spectrum, not a morality ladder</h2><p class="nut-section-intro">Processing can make food safer, last longer, easier to transport, or more affordable. The NOVA framework is one way researchers describe the purpose and intensity of processing; it does not itself grade every food’s healthfulness.</p><div class="spectrum"><div class="spectrum-rail" role="group" aria-label="Choose a processing level"><button class="spectrum-step" type="button" data-spectrum="1" aria-pressed="true"><b>1</b><span><strong>Unprocessed or minimally processed</strong><small>Whole or nearly whole foods; washing, freezing, drying, grinding, or pasteurizing may occur.</small></span></button><button class="spectrum-step" type="button" data-spectrum="2" aria-pressed="false"><b>2</b><span><strong>Processed culinary ingredients</strong><small>Oils, flours, sugar, salt, and other ingredients made from foods for cooking.</small></span></button><button class="spectrum-step" type="button" data-spectrum="3" aria-pressed="false"><b>3</b><span><strong>Processed foods</strong><small>Foods made by combining a basic food with ingredients such as salt, sugar, or oil.</small></span></button><button class="spectrum-step" type="button" data-spectrum="4" aria-pressed="false"><b>4</b><span><strong>Ultra-processed formulations</strong><small>Industrial formulations designed for convenience, shelf life, texture, or intense flavor.</small></span></button></div><div class="spectrum-output" id="spectrum-output" aria-live="polite"><h3>Level 1 · Start with the food itself</h3><p><strong>Examples:</strong> an apple, frozen berries, dry oats, plain beans, or pasteurized milk.</p><ul><li>Processing may preserve nutrients or make food safer.</li><li>“Natural” does not automatically mean safe, complete, or best for every person.</li><li>Ask what changed, what was added, and what the food is replacing.</li></ul></div></div><p class="spectrum-note">Research on ultra-processed foods often finds associations between higher intake and several health outcomes, but observational studies cannot make every food or person identical. Food access, culture, income, disability, time, and medical needs belong in the conversation.</p></section>
-    <section aria-labelledby="history-title"><h2 class="nut-section-title" id="history-title">Human nutrition is also a history of technology</h2><p class="nut-section-intro">There was never one single “human diet.” What people ate changed with climate, place, technology, trade, disease, work, culture, wealth, and power. Select a turning point to see what changed—and what stayed uncertain.</p><div class="timeline" role="group" aria-label="Human nutrition history timeline"><button class="timeline-step" type="button" data-era="foraging" aria-pressed="true"><strong>Foraging &amp; fire</strong><small>Deep past</small></button><button class="timeline-step" type="button" data-era="agriculture" aria-pressed="false"><strong>Farming &amp; storage</strong><small>~10,000 years ago</small></button><button class="timeline-step" type="button" data-era="culinary" aria-pressed="false"><strong>Fermentation &amp; trade</strong><small>Ancient to early modern</small></button><button class="timeline-step" type="button" data-era="industrial" aria-pressed="false"><strong>Industrial food</strong><small>1800s–1900s</small></button><button class="timeline-step" type="button" data-era="global" aria-pressed="false"><strong>Global convenience</strong><small>Late 20th c.–today</small></button></div><div class="timeline-output" id="timeline-output" aria-live="polite"><strong>Foraging &amp; fire:</strong> Human groups used locally available plants, animals, insects, fungi, and aquatic foods in very different combinations. Cutting, pounding, drying, fermenting, and cooking changed texture and digestibility. Archaeological evidence is incomplete, so no modern diet can be labeled “the original human diet.”</div></section>
+    <section class="nut-card" aria-labelledby="history-title">
+      <h2 id="history-title">Discuss how food systems changed</h2>
+      <p>Compare the wheat harvest and the 1911 canning factory in the image gallery below. Use the <a href="#food-lab" data-food-history-link>Food Lab timeline</a> to connect the images to farming, storage, and industrial production.</p>
+      <ol>
+        <li>Choose two periods. Describe one thing people could do with food in each period and explain what made it possible.</li>
+        <li>Compare an ingredient list to a Nutrition Facts panel. Which one would you use to find an artificial flavor, and which one would you use to measure a change in iron?</li>
+        <li>Imagine two varieties of the same crop, one bred for disease resistance. What evidence would help you test whether they differ in a nutrient?</li>
+      </ol>
+    </section>
     <section class="vitamin-shell" aria-labelledby="vitamin-title"><h2 class="nut-section-title" id="vitamin-title">The complete vitamin chart</h2><p class="nut-section-intro">Vitamins are organic compounds the body needs in small amounts for specific chemical jobs. “Water-soluble” and “fat-soluble” describe how the body handles them; they are not rankings of importance. Select a family to focus the chart.</p><div class="vitamin-controls" role="group" aria-label="Filter the vitamin chart"><button class="vitamin-filter" type="button" data-vitamin-filter="all" aria-pressed="true">All 13</button><button class="vitamin-filter" type="button" data-vitamin-filter="fat" aria-pressed="false">Fat-soluble · A D E K</button><button class="vitamin-filter" type="button" data-vitamin-filter="water" aria-pressed="false">Water-soluble · B &amp; C</button></div><div class="vitamin-table-wrap"><table class="vitamin-table"><caption class="sr-only">The thirteen recognized human vitamins, their chemical jobs, common food sources, deficiency clues, and safety notes</caption><thead><tr><th scope="col">Vitamin</th><th scope="col">Family &amp; chemical job</th><th scope="col">Food examples</th><th scope="col">When intake is too low</th><th scope="col">Safety lens</th></tr></thead><tbody>
       <tr data-vitamin-family="fat"><td class="vitamin-name" data-label="Vitamin">A<small>retinoids / carotenoids</small></td><td data-label="Family & chemical job">Fat-soluble. Vision, immune defenses, skin and lining cells, growth and development.</td><td data-label="Food examples">Liver, eggs, dairy; orange and dark-green plants provide carotenoids that the body can convert.</td><td data-label="When intake is too low">Impaired dark adaptation and, in severe deficiency, eye damage and increased infection risk.</td><td data-label="Safety lens">High supplemental preformed vitamin A can harm the liver and developing fetus. Beta-carotene is not the same molecule as retinol. <a href="https://ods.od.nih.gov/factsheets/VitaminA-HealthProfessional/" target="_blank" rel="noopener">NIH fact sheet</a></td></tr>
       <tr data-vitamin-family="water"><td class="vitamin-name" data-label="Vitamin">B1 · thiamin<small>thiamine</small></td><td data-label="Family & chemical job">Water-soluble. Helps enzymes release energy from carbohydrate and supports nerve and cell function.</td><td data-label="Food examples">Whole and enriched grains, pork, fish, legumes, nuts and seeds.</td><td data-label="When intake is too low">Beriberi; severe deficiency can damage the nervous and cardiovascular systems.</td><td data-label="Safety lens">The body stores little, so regular intake matters. Alcohol use disorder and malabsorption can increase risk. <a href="https://ods.od.nih.gov/factsheets/Thiamin-HealthProfessional/" target="_blank" rel="noopener">NIH fact sheet</a></td></tr>
@@ -97,12 +294,22 @@
   }
   document.querySelectorAll('.food').forEach(button=>button.addEventListener('click',()=>{const group=button.dataset.group;chosen[group]=chosen[group]===button.dataset.food?'':button.dataset.food;document.querySelectorAll(`[data-group="${group}"]`).forEach(item=>item.setAttribute('aria-pressed',item===button&&chosen[group]?'true':'false'));render();}));
   document.getElementById('reset-plate').addEventListener('click',()=>{Object.keys(chosen).forEach(key=>delete chosen[key]);document.querySelectorAll('.food').forEach(item=>item.setAttribute('aria-pressed','false'));render();});
-  const detective=document.getElementById('detective-output');document.querySelectorAll('[data-answer]').forEach(button=>button.addEventListener('click',()=>{detective.textContent=button.dataset.answer==='yes'?'Supported: the label gives a serving context and reports both nutrients. It supports a narrow statement about this example—not a universal health verdict.':'Not supported: a label cannot grade a whole food, predict a person’s response, or define one “healthy” choice for everyone.';}));
+  const labelBasis = document.getElementById('label-basis');
+  function updateLabelComparison() {
+    const equalAmounts = labelBasis.value === 'equal';
+    const servingsA = equalAmounts ? 2 : 1;
+    document.getElementById('label-mass-a').textContent = `${30 * servingsA} g`;
+    document.getElementById('label-fiber-a').textContent = `${3 * servingsA} g`;
+    document.getElementById('label-sodium-a').textContent = `${60 * servingsA} mg`;
+    document.getElementById('label-caption').textContent = equalAmounts
+      ? 'Amounts in 60 g of each cereal'
+      : 'Amounts per labeled serving';
+  }
+  labelBasis.addEventListener('change', updateLabelComparison);
+  updateLabelComparison();
   const vitaminRows=[...document.querySelectorAll('[data-vitamin-family]')];document.querySelectorAll('[data-vitamin-filter]').forEach(button=>button.addEventListener('click',()=>{const filter=button.dataset.vitaminFilter;document.querySelectorAll('[data-vitamin-filter]').forEach(item=>item.setAttribute('aria-pressed',item===button?'true':'false'));vitaminRows.forEach(row=>{row.hidden=filter!=='all'&&row.dataset.vitaminFamily!==filter;});}));
   const spectrumData={1:{title:'Level 1 · Start with the food itself',body:'<strong>Examples:</strong> an apple, frozen berries, dry oats, plain beans, or pasteurized milk.<ul><li>Processing may preserve nutrients or make food safer.</li><li>“Natural” does not automatically mean safe, complete, or best for every person.</li><li>Ask what changed, what was added, and what the food is replacing.</li></ul>'},2:{title:'Level 2 · Ingredients for cooking',body:'<strong>Examples:</strong> olive oil, flour, sugar, salt, or cornmeal made from a basic food.<ul><li>These ingredients help people cook, preserve, season, and combine foods.</li><li>They are not usually eaten as the whole meal, so context and amount matter.</li><li>A food can move between categories depending on how it is made and used.</li></ul>'},3:{title:'Level 3 · Processed foods',body:'<strong>Examples:</strong> canned beans, cheese, smoked fish, bread, or vegetables preserved with salt, sugar, or oil.<ul><li>Processing can improve safety, storage, portability, and convenience.</li><li>Check the whole pattern: sodium, added sugar, fiber, protein, and the meal around it.</li><li>“Processed” is not the same as “junk.”</li></ul>'},4:{title:'Level 4 · Ultra-processed formulations',body:'<strong>Examples:</strong> many packaged snack foods, soft drinks, instant noodles, and ready-to-eat formulations with industrial ingredients and flavor or texture systems.<ul><li>The category describes formulation and purpose, not a person’s character.</li><li>Research often finds associations between higher intake and poorer health outcomes, but much evidence is observational and food access is unequal.</li><li>Ask what the product displaces, how easy it is to overconsume, and what alternatives are realistically available.</li></ul>'}};
   const spectrumOutput=document.getElementById('spectrum-output');document.querySelectorAll('[data-spectrum]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-spectrum]').forEach(item=>item.setAttribute('aria-pressed',item===button?'true':'false'));const item=spectrumData[button.dataset.spectrum];spectrumOutput.innerHTML=`<h3>${item.title}</h3><div>${item.body}</div>`;}));
-  const eraData={foraging:'<strong>Foraging &amp; fire:</strong> Human groups used locally available plants, animals, insects, fungi, and aquatic foods in very different combinations. Cutting, pounding, drying, fermenting, and cooking changed texture and digestibility. Archaeological evidence is incomplete, so no modern diet can be labeled “the original human diet.”',agriculture:'<strong>Farming &amp; storage:</strong> Domesticated grains, legumes, roots, animals, and dairy made some foods more predictable and storable. In some places, agriculture increased population and food supply; in others, reliance on a narrower staple created new nutritional vulnerabilities. The effects varied by region and social class.',culinary:'<strong>Fermentation &amp; trade:</strong> People developed culturally specific ways to turn milk into cheese, grains into breads or porridges, vegetables into pickles, and fruits into preserved foods. Spices, salt, drying, and trade moved ingredients across ecosystems. Food traditions are technologies and knowledge systems, not merely “old-fashioned diets.”',industrial:'<strong>Industrial food:</strong> Milling, canning, refrigeration, pasteurization, railways, and chemical analysis changed what could be stored and transported. These technologies reduced some food-safety risks and enabled fortification, while industrial sugar, refined flour, and mass marketing also changed exposure and eating patterns.',global:'<strong>Global convenience:</strong> Modern food systems can offer year-round availability, lower preparation time, and fortified products, but also make highly engineered, heavily marketed foods easy to consume in large amounts. The science asks about dietary patterns and systems—not whether one food makes a person virtuous or unhealthy.'};
-  const timelineOutput=document.getElementById('timeline-output');document.querySelectorAll('[data-era]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-era]').forEach(item=>item.setAttribute('aria-pressed',item===button?'true':'false'));timelineOutput.innerHTML=eraData[button.dataset.era];}));
   const exit=document.getElementById('exit-output');document.querySelectorAll('[data-exit]').forEach(button=>button.addEventListener('click',()=>{exit.textContent=button.dataset.exit==='yes'?'Strong explanation: nutrients can have overlapping jobs. Keep the claim specific, then ask what evidence would test it.':'Try again: avoid one-job definitions. In biology, a nutrient can contribute to energy metabolism and also have structural or regulatory roles.';}));
   render();
 })();
@@ -110,5 +317,7 @@
 <script src="../../assets/js/photo-lightbox.js"></script><script src="../../assets/js/lesson-layout.js"></script><script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>
+<script src="../../assets/js/creation-app.js"></script>
+<script type="module" src="../../assets/js/lessons/nutrition-workspace.mjs"></script>
 <script src="../../assets/js/lessons/life-sciences-route.js"></script>
 </body></html>

@@ -12,13 +12,13 @@
   <meta property="og:url" content="https://mrscandrett.github.io/" />
   <link rel="preload" href="assets/fonts/chicago.woff" as="font" type="font/woff" crossorigin />
   <link rel="stylesheet" href="assets/css/classroom-home.css?v=20261027-fit4" />
-  <link rel="stylesheet" href="assets/css/pages/index.css?v=20261119-os-wordmark" />
+  <link rel="stylesheet" href="assets/css/pages/index.css?v=20261119-timer" />
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/liquid-woodland.css?v=20261027-fit4" />
   <link rel="stylesheet" href="assets/css/pages/votd.css" />
   <link rel="stylesheet" href="assets/css/home-calendar.css" />
   <link rel="stylesheet" href="assets/css/widget-pager.css" />
-  <link rel="stylesheet" href="assets/css/home-widget-layout.css?v=20261117-today" />
+  <link rel="stylesheet" href="assets/css/home-widget-layout.css?v=20261119-timer" />
   <link rel="stylesheet" href="assets/css/daily-puzzles.css" />
   <link rel="stylesheet" href="assets/css/live-sky.css" />
   <link rel="stylesheet" href="assets/css/weatherwave.css" />
@@ -500,66 +500,68 @@
             </div>
           </div>
 
-          <div class="home-widget home-widget--timer" id="classroom-timer" tabindex="-1" aria-label="Classroom Timer" data-state="ready">
+          <section class="home-widget home-widget--timer" id="classroom-timer" tabindex="-1" aria-labelledby="timer-title" data-state="ready">
+            <header class="timer-header">
+              <h3 id="timer-title">Classroom Timer</h3>
+              <div class="timer-local-clock" title="Local time">
+                <div class="mini-clock" aria-hidden="true">
+                  <div class="mini-clock-tick mini-clock-tick--12"></div>
+                  <div class="mini-clock-tick mini-clock-tick--3"></div>
+                  <div class="mini-clock-tick mini-clock-tick--6"></div>
+                  <div class="mini-clock-tick mini-clock-tick--9"></div>
+                  <div class="mini-clock-hand mini-clock-hand--hour" id="mini-clock-hour"></div>
+                  <div class="mini-clock-hand mini-clock-hand--min" id="mini-clock-min"></div>
+                  <div class="mini-clock-hand mini-clock-hand--sec" id="mini-clock-sec"></div>
+                  <div class="mini-clock-pin"></div>
+                </div>
+                <span class="sr-only">Local time</span>
+                <time id="timer-local-time"></time>
+              </div>
+            </header>
             <div class="timer-layout">
               <div class="timer-col-clock">
-                <div class="timer-clock-head">
-                  <div>
-                    <p class="home-widget-eyebrow">Classroom Timer</p>
-                    <p class="timer-clock-caption"><span aria-hidden="true"></span> Ready when you are</p>
-                  </div>
-                  <div class="mini-clock" aria-hidden="true" title="Current time">
-                    <div class="mini-clock-tick mini-clock-tick--12"></div>
-                    <div class="mini-clock-tick mini-clock-tick--3"></div>
-                    <div class="mini-clock-tick mini-clock-tick--6"></div>
-                    <div class="mini-clock-tick mini-clock-tick--9"></div>
-                    <div class="mini-clock-hand mini-clock-hand--hour" id="mini-clock-hour"></div>
-                    <div class="mini-clock-hand mini-clock-hand--min" id="mini-clock-min"></div>
-                    <div class="mini-clock-hand mini-clock-hand--sec" id="mini-clock-sec"></div>
-                    <div class="mini-clock-pin"></div>
-                  </div>
-                  <span class="sr-only">Current time updates live next to the classroom countdown timer.</span>
-                </div>
                 <div class="timer-ring-wrap">
                   <svg class="timer-svg" viewBox="0 0 160 160" aria-hidden="true">
+                    <circle class="timer-ticks" cx="80" cy="80" r="76" pathLength="60"/>
                     <circle class="timer-track" cx="80" cy="80" r="68"/>
-                    <circle class="timer-arc" id="timer-arc" cx="80" cy="80" r="68"/>
+                    <circle class="timer-arc" id="timer-arc" cx="80" cy="80" r="68" pathLength="100"/>
                   </svg>
                   <div class="timer-face">
-                    <div class="timer-digits" id="timer-digits" aria-live="off" aria-atomic="true">5:00</div>
-                    <div class="timer-activity-label" id="timer-activity">Set a timer</div>
+                    <p class="timer-status" id="timer-status" role="status">Ready</p>
+                    <div class="timer-digits" id="timer-digits" role="timer">5:00</div>
+                    <p class="timer-activity-label" id="timer-activity">Countdown</p>
                   </div>
                 </div>
                 <div class="timer-controls">
-                  <button class="timer-btn timer-btn--start" id="timer-start" type="button"><span aria-hidden="true">▶</span> Start</button>
+                  <button class="timer-btn timer-btn--start" id="timer-start" type="button"><span aria-hidden="true">▶</span><span id="timer-start-label">Start</span></button>
                   <button class="timer-btn" id="timer-pause" type="button" disabled><span aria-hidden="true">Ⅱ</span> Pause</button>
                   <button class="timer-btn" id="timer-reset" type="button"><span aria-hidden="true">↺</span> Reset</button>
                 </div>
               </div>
               <div class="timer-col-config">
                 <div>
-                  <p class="timer-config-label">Quick Presets</p>
+                  <p class="timer-config-label">Presets</p>
                   <div class="timer-preset-grid">
                     <button class="timer-preset-btn" data-s="300" data-lbl="Work Time" type="button" aria-pressed="false"><span class="timer-preset-icon" aria-hidden="true">✦</span><span class="timer-preset-copy">Work Time<small>5 min</small></span></button>
                     <button class="timer-preset-btn" data-s="300" data-lbl="Partner Work" type="button" aria-pressed="false"><span class="timer-preset-icon" aria-hidden="true">↔</span><span class="timer-preset-copy">Partner Work<small>5 min</small></span></button>
                     <button class="timer-preset-btn" data-s="180" data-lbl="Cleanup" type="button" aria-pressed="false"><span class="timer-preset-icon" aria-hidden="true">✓</span><span class="timer-preset-copy">Cleanup<small>3 min</small></span></button>
                     <button class="timer-preset-btn" data-s="120" data-lbl="Transition" type="button" aria-pressed="false"><span class="timer-preset-icon" aria-hidden="true">→</span><span class="timer-preset-copy">Transition<small>2 min</small></span></button>
                     <button class="timer-preset-btn" data-s="600" data-lbl="Presentation" type="button" aria-pressed="false"><span class="timer-preset-icon" aria-hidden="true">△</span><span class="timer-preset-copy">Presentation<small>10 min</small></span></button>
-                    <button class="timer-preset-btn" data-s="300" data-lbl="Break" type="button" aria-pressed="false"><span class="timer-preset-icon" aria-hidden="true">☕</span><span class="timer-preset-copy">Break<small>5 min</small></span></button>
+                    <button class="timer-preset-btn" data-s="300" data-lbl="Break" type="button" aria-pressed="false"><span class="timer-preset-icon" aria-hidden="true">◷</span><span class="timer-preset-copy">Break<small>5 min</small></span></button>
                   </div>
                 </div>
-                <div class="timer-custom-panel">
-                  <p class="timer-config-label">Custom Time</p>
+                <form class="timer-custom-panel" id="timer-custom" novalidate>
+                  <p class="timer-config-label">Custom time</p>
                   <div class="timer-custom-row">
                     <label class="timer-input-wrap"><input class="timer-num-input" id="tcm" type="number" min="0" max="99" value="5" aria-label="Minutes"><span>min</span></label>
-                    <span class="timer-colon">:</span>
+                    <span class="timer-colon" aria-hidden="true">:</span>
                     <label class="timer-input-wrap"><input class="timer-num-input" id="tcs" type="number" min="0" max="59" value="0" aria-label="Seconds"><span>sec</span></label>
-                    <button class="timer-set-btn" id="timer-set" type="button">Set timer <span aria-hidden="true">→</span></button>
+                    <button class="timer-set-btn" id="timer-set" type="submit" disabled>Set timer <span aria-hidden="true">→</span></button>
                   </div>
-                </div>
+                </form>
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </section>
     </section>
@@ -1074,29 +1076,53 @@
             </li>
             <li class="updates-entry" data-update-type="lesson">
               <span class="updates-badge updates-badge--lesson">New lesson</span>
-              <a class="updates-item-link" href="lessons/web-design/web-local-server.html"><span>Run Your Site on a Real Server</span></a>
+              <a class="updates-item-link" href="lessons/music/pioneers/saint-saens.html"><span>Camille Saint-Saëns</span></a>
               <time datetime="2026-11-19" title="2026-11-19">2026-11-19</time>
-              <p class="updates-description">Computer Science · Turn your computer into a web server, read a localhost address, watch requests get answered, and load your own data with fetch().</p>
+              <p class="updates-description">Music · Play Saint-Saëns’s complete “The Swan” for cello and piano and meet the prodigy behind The Carnival of the Animals.</p>
             </li>
-            <li class="updates-entry" data-update-type="updated">
+            <li class="updates-entry" data-update-type="lesson">
+              <span class="updates-badge updates-badge--lesson">New lesson</span>
+              <a class="updates-item-link" href="lessons/music/pioneers/grieg.html"><span>Edvard Grieg</span></a>
+              <time datetime="2026-11-19" title="2026-11-19">2026-11-19</time>
+              <p class="updates-description">Music · Play “Morning Mood” from Grieg’s Peer Gynt and learn how music paints a sunrise and a nation.</p>
+            </li>
+            <li class="updates-entry" data-update-type="lesson">
+              <span class="updates-badge updates-badge--lesson">New lesson</span>
+              <a class="updates-item-link" href="lessons/music/pioneers/elgar.html"><span>Edward Elgar</span></a>
+              <time datetime="2026-11-19" title="2026-11-19">2026-11-19</time>
+              <p class="updates-description">Music · Play Elgar’s “Nimrod” from the Enigma Variations and Salut d’Amour, and see how variations paint portraits.</p>
+            </li>
+            <li class="updates-entry" data-update-type="lesson">
+              <span class="updates-badge updates-badge--lesson">New lesson</span>
+              <a class="updates-item-link" href="lessons/music/pioneers/faure.html"><span>Gabriel Fauré</span></a>
+              <time datetime="2026-11-19" title="2026-11-19">2026-11-19</time>
+              <p class="updates-description">Music · Play Fauré’s Pavane, Op. 50 and hear how old church modes color Romantic harmony.</p>
+            </li>
+            <li class="updates-entry" data-update-type="lesson">
+              <span class="updates-badge updates-badge--lesson">New lesson</span>
+              <a class="updates-item-link" href="lessons/music/pioneers/pachelbel.html"><span>Johann Pachelbel</span></a>
+              <time datetime="2026-11-19" title="2026-11-19">2026-11-19</time>
+              <p class="updates-description">Music · Play Pachelbel’s complete Canon in D for three violins and cello, hear its repeating ground bass, and meet the organist who taught the Bach family.</p>
+            </li>
+            <li class="updates-entry" data-update-type="lesson" hidden>
+              <span class="updates-badge updates-badge--lesson">New lesson</span>
+              <a class="updates-item-link" href="lessons/music/pioneers/massenet.html"><span>Jules Massenet</span></a>
+              <time datetime="2026-11-19" title="2026-11-19">2026-11-19</time>
+              <p class="updates-description">Music · Play the complete “Méditation” from Massenet’s opera Thaïs and learn how orchestral interludes tell a story.</p>
+            </li>
+            <li class="updates-entry" data-update-type="updated" hidden>
               <span class="updates-badge updates-badge--updated">Updated</span>
               <a class="updates-item-link" href="lessons/engineering/pioneers/james-watt-steam-engine.html"><span>New: James Watt and the Steam Engine</span></a>
               <time datetime="2026-11-17" title="2026-11-17">2026-11-17</time>
               <p class="updates-description">Run a Newcomen engine and a Watt engine side by side and watch the cylinder walls heat and cool. Find out why three quarters of Newcomen&#39;s steam was wasted, chart the trade-off Watt escaped with his separate condenser, and see the coal curve of the Industrial Revolution bend upward.</p>
             </li>
-            <li class="updates-entry" data-update-type="lesson">
-              <span class="updates-badge updates-badge--lesson">New lesson</span>
-              <a class="updates-item-link" href="lessons/engineering/pioneers/james-watt-steam-engine.html"><span>James Watt and the Steam Engine</span></a>
-              <time datetime="2026-11-17" title="2026-11-17">2026-11-17</time>
-              <p class="updates-description">Engineering · Run a Newcomen engine and a Watt engine side by side, find where three quarters of the steam went, and see how the separate condenser helped bend the coal curve of the Industrial Revolution.</p>
-            </li>
-            <li class="updates-entry" data-update-type="updated">
+            <li class="updates-entry" data-update-type="updated" hidden>
               <span class="updates-badge updates-badge--updated">Updated</span>
               <a class="updates-item-link" href="lessons/technical-elements/stagecraft/stage-lighting-design-lab.html"><span>Lighting Lab cues now go straight to your cue sheet</span></a>
               <time datetime="2026-11-15" title="2026-11-15">2026-11-15</time>
               <p class="updates-description">Saved looks are now numbered LX cues with their own fade times, and they stay saved when you come back. Press Send cues to my Cue Sheet and they appear in the Theatre Cue Sheets worksheet, ready for you to add the standby and GO trigger from your script.</p>
             </li>
-            <li class="updates-entry" data-update-type="updated">
+            <li class="updates-entry" data-update-type="updated" hidden>
               <span class="updates-badge updates-badge--updated">Updated</span>
               <a class="updates-item-link" href="lessons/physics/waves-and-sound/binaural-beats.html"><span>New: Binaural Beats has its own lesson</span></a>
               <time datetime="2026-11-15" title="2026-11-15">2026-11-15</time>
@@ -1108,35 +1134,11 @@
               <time datetime="2026-11-15" title="2026-11-15">2026-11-15</time>
               <p class="updates-description">Patch the Pirates of Penzance lighting rig. Give every light a start address, see which channels it uses on a 512-cell universe map, and fix four mistakes from a rushed load-in. Then set DIP switches in binary, build a data line that will not flicker, and print a patch sheet for focus call.</p>
             </li>
-            <li class="updates-entry" data-update-type="lesson" hidden>
-              <span class="updates-badge updates-badge--lesson">New lesson</span>
-              <a class="updates-item-link" href="lessons/physics/waves-and-sound/binaural-beats.html"><span>Binaural Beats: Two Ears, Two Tones</span></a>
-              <time datetime="2026-11-15" title="2026-11-15">2026-11-15</time>
-              <p class="updates-description">Physics · Send a different tone to each ear, compare binaural beats with acoustic beats and a control, and weigh the evidence behind brainwave claims</p>
-            </li>
-            <li class="updates-entry" data-update-type="lesson" hidden>
-              <span class="updates-badge updates-badge--lesson">New lesson</span>
-              <a class="updates-item-link" href="lessons/technical-elements/stagecraft/dmx-patch-lab.html"><span>DMX Lighting &amp; Addressing</span></a>
-              <time datetime="2026-11-15" title="2026-11-15">2026-11-15</time>
-              <p class="updates-description">Technical Elements · Patch a school musical&#39;s lighting rig: set DMX start addresses, read fixture footprints, find address collisions, set DIP switches in binary, and build a terminated data line.</p>
-            </li>
-            <li class="updates-entry" data-update-type="lesson" hidden>
-              <span class="updates-badge updates-badge--lesson">New lesson</span>
-              <a class="updates-item-link" href="lessons/american-history/thanksgiving.html"><span>Thanksgiving</span></a>
-              <time datetime="2026-11-15" title="2026-11-15">2026-11-15</time>
-              <p class="updates-description">Complex Systems &amp; Humanities · Compare the early gatherings at St. Augustine and Plymouth, examine how Thanksgiving became a federal holiday, and read about the National Day of Mourning.</p>
-            </li>
             <li class="updates-entry" data-update-type="updated" hidden>
               <span class="updates-badge updates-badge--updated">Updated</span>
               <a class="updates-item-link" href="lessons/physics/electricity-and-magnetism/what-is-electricity.html"><span>Electricity, now in 3D: a water loop, a lab bench and a flight along the grid</span></a>
               <time datetime="2026-11-14" title="2026-11-14">2026-11-14</time>
               <p class="updates-description">The water analogy is a working cutaway loop with gauges, a shut-off switch and a matching circuit twin. The materials bench has a real lamp, an ammeter and an atomic close-up for six samples, including saltwater that fizzes and rubber pushed to breakdown. Fly the power grid from generator to outlet and test why lines run at 345 kV. The hands-on activities now include supply lists, steps and a lemon-battery calculator.</p>
-            </li>
-            <li class="updates-entry" data-update-type="lesson" hidden>
-              <span class="updates-badge updates-badge--lesson">New lesson</span>
-              <a class="updates-item-link" href="lessons/mathematics/geometry-and-trigonometry/smart-blackboard.html"><span>AI Smart Blackboard: Construction &amp; Deconstruction Studio</span></a>
-              <time datetime="2026-11-12" title="2026-11-12">2026-11-12</time>
-              <p class="updates-description">Mathematics · Inspired by AI smart blackboards: draw rough sketches to generate clean interactive geometry, toggle between 2D Euclidean figures and rotatable 3D solids, unfold 3D shapes into 2D nets, slice cross-sections, and hear live step-by-step AI voice explanations.</p>
             </li>
             <li class="updates-entry" data-update-type="game" hidden>
               <span class="updates-badge updates-badge--game">New game</span>
@@ -1234,12 +1236,12 @@
   <!-- =====================================================
        CLASSROOM TIMER
        ===================================================== -->
-  <script data-home-src="assets/js/pages/index-timer.js" data-home-widget="#classroom-timer" defer></script>
+  <script data-home-src="assets/js/pages/index-timer.js?v=20261119-timer" data-home-widget="#classroom-timer" defer></script>
 
   <!-- =====================================================
        MINI ANALOG CLOCK (next to Classroom Timer)
        ===================================================== -->
-  <script data-home-src="assets/js/pages/index-clock.js" data-home-widget="#classroom-timer" defer></script>
+  <script data-home-src="assets/js/pages/index-clock.js?v=20261119-timer" data-home-widget="#classroom-timer" defer></script>
 
   <!-- =====================================================
        PHYSICS & DRAWING SANDBOX

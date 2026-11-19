@@ -1,17 +1,17 @@
 /* A compact route for long life-science lessons without an existing section guide. */
 (() => {
-  const title = document.querySelector('h1');
+  const title = document.querySelector('[data-life-route-intro]') || document.querySelector('h1');
   if (!title) return;
 
   const content = title.closest('main') || document.querySelector('main') ||
     title.closest('.ll-sim') || title.closest('.cl-page') || document.body;
   const headings = [...content.querySelectorAll('h2')].filter((heading) =>
-    heading.getClientRects().length && !heading.closest('nav, dialog, [aria-hidden="true"]')
+    heading.getClientRects().length && !heading.closest('nav, dialog, [data-creation-app], [data-life-route-intro], [aria-hidden="true"]')
   );
   if (headings.length < 3) return;
 
   // Existing chapter links and hero shortcuts already provide this route.
-  const localLinks = [...document.querySelectorAll('nav:not(.site-nav) a[href^="#"], main a[href^="#"]')];
+  const localLinks = [...document.querySelectorAll('nav:not(.site-nav) a[href^="#"], main a[href^="#"]')].filter(link => !link.closest('[data-creation-app]'));
   if (localLinks.length >= 3) return;
 
   const usedIds = new Set([...document.querySelectorAll('[id]')].map((node) => node.id));

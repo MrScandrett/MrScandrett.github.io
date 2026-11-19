@@ -106,3 +106,28 @@ test('named seconds and chromatic voices reserve space without changing pitches 
     assert.ok(model.staves[0].bars[0].events.every(e => !e.namedOffset), 'standard notation resets teaching offsets');
   } finally { M.setPreferences({pitchNames:false, noteColors:false}); }
 });
+
+test('page view puts whole systems on letter sheets and the engraving follows the plan', () => {
+  const score = require('../data/score-library.json').scores['tchaikovsky-swan-theme'];
+  const engrave = () => { const model = E.prepare(score); E.analyse(model); return model; };
+  const plain = E.engrave(engrave(), 1400, false);
+  const plan = E.paginate(plain, { title: true });
+  const { page, sheets } = plan;
+  assert.ok(Math.abs(page.height / page.width - 11 / 8.5) < 1e-9, 'sheets are US Letter portrait');
+  assert.ok(Math.abs(page.width - plain.width * 8.5 / 7.5) < 1e-6, 'the staves fill the 7.5in between margins');
+  assert.ok(sheets.length >= 2, 'the swan theme runs onto a second page');
+  assert.deepEqual(sheets.flatMap(s => s.systems), plain.systems.map((_, i) => i), 'every system on exactly one sheet, in order');
+  const paged = E.engrave(engrave(), 1400, false, false, false, plan);
+  assert.equal(paged.height, plan.height);
+  sheets.forEach((sheet, k) => {
+    if (k) assert.ok(sheet.top >= sheets[k - 1].top + sheets[k - 1].height, 'sheets never overlap');
+    sheet.systems.forEach(i => {
+      const system = paged.systems[i];
+      assert.equal(system.top, plan.startY[i]);
+      assert.ok(system.top >= sheet.top + page.marginTop - 1e-6, 'system starts below the top margin');
+      assert.ok(system.bottom <= sheet.top + sheet.height - page.marginBottom + 1e-6, 'system ends above the bottom margin');
+      assert.ok(Math.abs((system.bottom - system.top) - (plain.systems[i].bottom - plain.systems[i].top)) < 1e-6, 'moving a system never reshapes it');
+    });
+  });
+  assert.ok(plan.startY[0] >= sheets[0].top + page.marginTop + page.title - 1e-6, 'page one leaves room for the title');
+});

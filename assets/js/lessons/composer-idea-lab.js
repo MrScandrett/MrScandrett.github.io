@@ -52,6 +52,42 @@
       }
       if (slug === 'scriabin') {
         (b ? [48, 54, 58, 64, 69, 74] : [48, 64, 67]).forEach(function (midi) { note(midi, 0, 2.8, 'sine', 0.09); });
+      } else if (slug === 'pachelbel') {
+        // A: the tune once. B: the same tune over a repeating eight-note ground bass.
+        notes = [62, 66, 69, 66, 67, 66, 64, 62];
+        notes.forEach(function (midi, i) { note(midi + 12, i * step, duration, 'sine', 0.15); });
+        if (b) [38, 33, 35, 30, 31, 26, 31, 33].forEach(function (midi, i) { note(midi + 12, i * step, step * 0.95, 'triangle', 0.09); });
+      } else if (slug === 'saint-saens') {
+        // A: a slow melody alone. B: the same melody over rippling sixteenth-note arpeggios.
+        step = 0.7; notes = [67, 71, 74, 72, 71, 69];
+        notes.forEach(function (midi, i) { note(midi, i * step, step * 0.95, 'sine', 0.16); });
+        if (b) for (var k = 0; k < notes.length * 4; k++) note([43, 50, 55, 59][k % 4], k * step / 4, step / 4, 'triangle', 0.06);
+      } else if (slug === 'faure') {
+        // A: the major-key leading tone rises to the tonic. B: the lowered seventh of the old mode.
+        notes = b ? [62, 64, 65, 67, 65, 64, 60, 62] : [62, 64, 65, 67, 65, 64, 61, 62];
+        notes.forEach(function (midi, i) { note(midi + 12, i * step, duration, 'sine', 0.15); });
+      } else if (slug === 'massenet' || slug === 'elgar') {
+        // Massenet B: an octave higher and slower, like a singer's climax. Elgar B: slow, with a bass.
+        if (b) step = 0.6;
+        notes.forEach(function (midi, i) {
+          note(midi + (b && slug === 'massenet' ? 24 : 12), i * step, step * 0.9, 'sine', 0.15);
+          if (b && slug === 'elgar') note([48, 43, 45, 41][Math.floor(i / 2) % 4], i * step, step * 0.95, 'triangle', 0.07);
+        });
+      } else if (slug === 'grieg') {
+        // B adds a held open-fifth drone, as on a folk fiddle.
+        notes = [67, 64, 62, 60, 62, 64, 67, 64];
+        notes.forEach(function (midi, i) { note(midi + 12, i * step, duration, 'sine', 0.15); });
+        if (b) { note(48, 0, notes.length * step, 'triangle', 0.06); note(55, 0, notes.length * step, 'triangle', 0.05); }
+      } else if (slug === 'mascagni') {
+        // B doubles the melody in octaves, as massed strings do.
+        notes.forEach(function (midi, i) {
+          note(midi + 12, i * step, duration, 'sine', b ? 0.12 : 0.15);
+          if (b) note(midi, i * step, duration, 'triangle', 0.08);
+        });
+      } else if (slug === 'barber') {
+        // A: a stepwise line, note by note. B: each note held into the next, so they clash and resolve.
+        step = 0.6; notes = [65, 67, 69, 70, 69, 67, 65, 64];
+        notes.forEach(function (midi, i) { note(midi, i * step, b ? step * 1.9 : step * 0.85, 'sine', 0.12); });
       } else {
         if (slug === 'brahms' && b) notes = [60, 64, 67, 65, 64, 65, 62, 60];
         notes.forEach(function (midi, i) {

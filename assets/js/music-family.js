@@ -26,6 +26,7 @@
   // composer-route.js builds each lesson's era strip and "What came next" card from this.
   var ERAS = [
     { id: 'baroque', label: 'Baroque', composers: [
+      { file: 'lessons/music/pioneers/pachelbel.html', label: 'Pachelbel', name: 'Johann Pachelbel', dates: '1653–1706' },
       { file: 'lessons/music/pioneers/vivaldi.html', label: 'Vivaldi', name: 'Antonio Vivaldi', dates: '1678–1741' },
       { file: 'lessons/music/pioneers/bach.html', label: 'Bach', name: 'Johann Sebastian Bach', dates: '1685–1750' }
     ] },
@@ -39,15 +40,22 @@
       { file: 'lessons/music/pioneers/schumann.html', label: 'Schumann', name: 'Robert Schumann', dates: '1810–1856' },
       { file: 'lessons/music/pioneers/liszt.html', label: 'Liszt', name: 'Franz Liszt', dates: '1811–1886' },
       { file: 'lessons/music/pioneers/brahms.html', label: 'Brahms', name: 'Johannes Brahms', dates: '1833–1897' },
+      { file: 'lessons/music/pioneers/saint-saens.html', label: 'Saint-Saëns', name: 'Camille Saint-Saëns', dates: '1835–1921' },
       { file: 'lessons/music/pioneers/tchaikovsky.html', label: 'Tchaikovsky', name: 'Pyotr Ilyich Tchaikovsky', dates: '1840–1893' },
+      { file: 'lessons/music/pioneers/massenet.html', label: 'Massenet', name: 'Jules Massenet', dates: '1842–1912' },
+      { file: 'lessons/music/pioneers/grieg.html', label: 'Grieg', name: 'Edvard Grieg', dates: '1843–1907' },
+      { file: 'lessons/music/pioneers/faure.html', label: 'Fauré', name: 'Gabriel Fauré', dates: '1845–1924' },
       { file: 'lessons/music/pioneers/francisco-tarrega.html', label: 'Tárrega', name: 'Francisco Tárrega', dates: '1852–1909' },
+      { file: 'lessons/music/pioneers/elgar.html', label: 'Elgar', name: 'Edward Elgar', dates: '1857–1934' },
+      { file: 'lessons/music/pioneers/mascagni.html', label: 'Mascagni', name: 'Pietro Mascagni', dates: '1863–1945' },
       { file: 'lessons/music/pioneers/rachmaninoff.html', label: 'Rachmaninoff', name: 'Sergei Rachmaninoff', dates: '1873–1943' }
     ] },
     { id: 'modern', label: 'Modern', composers: [
       { file: 'lessons/music/pioneers/debussy.html', label: 'Debussy', name: 'Claude Debussy', dates: '1862–1918' },
       { file: 'lessons/music/pioneers/satie.html', label: 'Satie', name: 'Erik Satie', dates: '1866–1925' },
       { file: 'lessons/music/pioneers/scriabin.html', label: 'Scriabin', name: 'Alexander Scriabin', dates: '1872–1915' },
-      { file: 'lessons/music/pioneers/ravel.html', label: 'Ravel', name: 'Maurice Ravel', dates: '1875–1937' }
+      { file: 'lessons/music/pioneers/ravel.html', label: 'Ravel', name: 'Maurice Ravel', dates: '1875–1937' },
+      { file: 'lessons/music/pioneers/barber.html', label: 'Barber', name: 'Samuel Barber', dates: '1910–1981' }
     ] },
     { id: 'jazz', label: 'American roots & jazz', short: 'Roots & jazz', tiny: 'Jazz', composers: [
       { file: 'lessons/music/pioneers/joplin.html', label: 'Joplin', name: 'Scott Joplin', dates: 'c. 1868–1917' },

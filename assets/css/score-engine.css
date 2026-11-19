@@ -655,3 +655,34 @@ html.se-expanded-lock, html.se-expanded-lock body { overflow: hidden; }
 .se-part-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
 .se-part-row .se-check { flex: 1 1 auto; }
 .se-part-solo.is-on, .se-part-solo[aria-pressed="true"] { background: #fff1e8; border-color: #c2410c; color: #7c2d12; }
+
+/* Page view (pioneer readers): white letter-size sheets on a grey desk, one sheet filling the pane at a
+   time (snap), or page width with free scrolling. paginate() in score-engine.js places the systems. */
+.se-workspace.se-paged { height: max(min(1100px, calc(100dvh - 96px)), 420px); min-height: 0; }
+.se-workspace.se-paged > .se-paper { background: color-mix(in srgb, var(--se-paper) 72%, #6b7684); scrollbar-gutter: auto; }
+.se-workspace.se-paged > .se-paper.se-snap { scroll-snap-type: y mandatory; }
+.se-paged .se-svg { position: relative; }
+.se-paged .se-score { display: block; margin-inline: auto; }
+.se-page-snap { position: absolute; left: 0; width: 1px; height: 1px; scroll-snap-align: start; pointer-events: none; }
+.se-score .se-sheet { fill: var(--se-paper); stroke: rgb(0 0 0 / .14); stroke-width: 1px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 2px 5px rgb(0 0 0 / .22)); }
+.se-score :is(.se-page-title, .se-page-subtitle, .se-page-composer, .se-page-number) { fill: var(--se-ink); font-family: Georgia, "Times New Roman", serif; pointer-events: none; }
+.se-score .se-page-title { font-weight: 700; }
+.se-score :is(.se-page-subtitle, .se-page-number) { fill: var(--se-muted, #5b5348); }
+.se-pager { display: inline-flex; align-items: center; gap: .2rem; order: 26; }
+.se-pager[hidden] { display: none; }
+.se-pager button { min-width: 36px; min-height: 36px; padding: 0 .4rem; border: 1px solid #a1afbf; border-radius: 6px; background: #fff; color: #1e3045; font: 700 1rem/1 system-ui, sans-serif; cursor: pointer; }
+.se-pager button:disabled { opacity: .45; cursor: default; }
+.se-pager button:focus-visible { outline: 3px solid #245c97; outline-offset: 2px; }
+.se-pager output { min-width: 5.4rem; text-align: center; font: 600 .78rem system-ui, sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.se-settings-dialog .se-view-settings .se-view-choice { display: flex; flex: 1 1 100%; align-items: center; justify-content: space-between; gap: .6rem; min-height: 44px; }
+.se-settings-dialog .se-view-settings .se-view-choice[hidden] { display: none; }
+.se-settings-dialog .se-view-settings select { max-width: 62%; }
+@container se-ws (max-width: 420px) {
+  .se-pager output { min-width: 3.6rem; font-size: .72rem; }
+  .se-pager button { min-width: 44px; min-height: 44px; }
+}
+@media print {
+  .se-workspace.se-paged > .se-paper { background: none; }
+  .se-score .se-sheet { stroke: none; filter: none; }
+  .se-pager { display: none !important; }
+}

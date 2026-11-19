@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 498 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 506 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -598,7 +598,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 134 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 142 lessons
 
 ## Visual Art & Design (DES)
 
@@ -653,13 +653,21 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **MUS-25** — Erik Satie
 - **MUS-26** — Maurice Ravel
 - **MUS-27** — Alexander Scriabin
-- **MUS-28** — Scott Joplin
-- **MUS-29** — Jelly Roll Morton
-- **MUS-30** — George Gershwin
-- **MUS-31** — Duke Ellington
-- **MUS-32** — Louis Armstrong
-- **MUS-33** — Django Reinhardt
-- **MUS-34** — Charlie Parker
+- **MUS-28** — Johann Pachelbel
+- **MUS-29** — Camille Saint-Saëns
+- **MUS-30** — Jules Massenet
+- **MUS-31** — Edvard Grieg
+- **MUS-32** — Gabriel Fauré
+- **MUS-33** — Edward Elgar
+- **MUS-34** — Pietro Mascagni
+- **MUS-35** — Samuel Barber
+- **MUS-36** — Scott Joplin
+- **MUS-37** — Jelly Roll Morton
+- **MUS-38** — George Gershwin
+- **MUS-39** — Duke Ellington
+- **MUS-40** — Louis Armstrong
+- **MUS-41** — Django Reinhardt
+- **MUS-42** — Charlie Parker
 
 ## Language, Media & Critical Thinking (LAN)
 

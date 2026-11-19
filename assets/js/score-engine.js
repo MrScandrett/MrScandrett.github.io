@@ -731,7 +731,7 @@
     });
   }
 
-  function engrave(model, width, readableSize, windowed, readingLayout) {
+  function engrave(model, width, readableSize, windowed, readingLayout, pagePlan) {
     var M = root.MusicNotation;
     var S = (width < 520 ? 7.5 : width < 820 ? 8.5 : 9.5) * (readableSize ? 1.45 : 1);
     var h = S / 2;
@@ -884,6 +884,8 @@
     }
 
     systems.forEach(function (sys, sIndex) {
+      // Page view: paginate() moved this system to its place on a page.
+      if (pagePlan && pagePlan.startY[sIndex] != null) y = pagePlan.startY[sIndex];
       var stretch = sys.avail / sys.used;
       var last = sIndex === systems.length - 1;
       // A ragged last line, unless it is a cut that filled a full line (score.justifyLast).
@@ -1153,15 +1155,59 @@
       });
       var chunks = shareGlyphs(out.join(''), model.id).split(separator);
       return {
-        svg: chunks[0] + measureRects.join(''), height: Math.ceil(y + S), width: width, systems: hl, events: allEvents, S: S,
+        svg: chunks[0] + measureRects.join(''), height: pagePlan ? pagePlan.height : Math.ceil(y + S), width: width, systems: hl, events: allEvents, S: S,
         notation: hl.map(function (_, i) { return chunks[i + 1] + decorations[i].join(''); }),
         ties: crossSystemTies
       };
     }
     tupletDraws.forEach(function (tp) { out.push('<g data-se-system="' + tp.events[0].sys + '">' + drawTuplet(tp, S, h) + '</g>'); });
 
-    var height = Math.ceil(y + S);
+    var height = pagePlan ? pagePlan.height : Math.ceil(y + S);
     return { svg: shareGlyphs(out.join(''), model.id), height: height, width: width, systems: hl, events: allEvents, S: S };
+  }
+
+  // Page view: lay engraved systems out on portrait US Letter sheets, the way a printed edition
+  // (or MuseScore's page view) does. The layout's width is the 7.5in between the side margins.
+  // Systems never straddle a sheet; full sheets spread their systems down the page (capped, so a
+  // sheet with two systems doesn't look exploded). Pure: returns where each system starts, and the
+  // sheets, in layout units. Page k's sheet starts at gap/2 + k * (height + gap), so the stack of
+  // sheets begins at y = 0 with half a gap above the first.
+  function paginate(layout, options) {
+    options = options || {};
+    var inch = layout.width / 7.5, S = layout.S;
+    var page = {
+      width: 8.5 * inch, height: 11 * inch, gap: 0.35 * inch,
+      marginTop: 0.55 * inch, marginBottom: 0.6 * inch, title: options.title ? 1.05 * inch : 0, inch: inch
+    };
+    page.x = -(page.width - layout.width) / 2;   // centres the staves on the sheet
+    var systems = layout.systems, between = 1.2 * S, sheets = [], startY = [];
+    var sheet = null, cursor = 0;
+    function open() {
+      var top = sheet ? sheet.top + sheet.height + page.gap : page.gap / 2;
+      sheet = { top: top, height: page.height, systems: [] };
+      sheets.push(sheet);
+      cursor = top + page.marginTop + (sheets.length === 1 ? page.title : 0);
+    }
+    open();
+    systems.forEach(function (system, i) {
+      var tall = system.bottom - system.top;
+      if (sheet.systems.length && cursor + tall > sheet.top + page.height - page.marginBottom) open();
+      startY[i] = cursor;
+      sheet.systems.push(i);
+      cursor += tall + between;
+      // A system taller than a sheet (a big orchestral page) gets a taller sheet rather than clipping.
+      sheet.height = Math.max(sheet.height, cursor - between - sheet.top + page.marginBottom);
+    });
+    sheets.forEach(function (s, k) {
+      if (k === sheets.length - 1 || s.systems.length < 2) return;
+      var last = s.systems[s.systems.length - 1];
+      var spare = s.top + s.height - page.marginBottom - (startY[last] + systems[last].bottom - systems[last].top);
+      var each = Math.max(0, Math.min(spare / (s.systems.length - 1), 4 * S));
+      s.systems.forEach(function (i, n) { startY[i] += n * each; });
+    });
+    var end = sheets[sheets.length - 1];
+    sheets.forEach(function (s) { s.first = s.systems[0]; s.last = s.systems[s.systems.length - 1]; });
+    return { startY: startY, sheets: sheets, page: page, height: Math.ceil(end.top + end.height + page.gap / 2) };
   }
 
   // Each glyph outline is defined once and reused (<use>): a whole symphony movement would otherwise
@@ -1949,6 +1995,30 @@
   var practiceMemory = new Map();
   var practiceThemeKey = 'classroomos:score-paper';
   var practiceThemes = { light: 'Light', dark: 'Dark', sepia: 'Sepia', contrast: 'High contrast' };
+
+  // Pioneer score view settings: page view or line view, how a page fits the pane, staff size.
+  var VIEW_KEY = 'classroomos:score-view';
+  var PAGE_SIZES = {
+    small: { width: 1800, readable: false, label: 'Small' },
+    medium: { width: 1400, readable: false, label: 'Medium' },
+    large: { width: 1085, readable: true, label: 'Large print' }
+  };
+  function readView() {
+    var saved = null;
+    try { saved = JSON.parse(root.localStorage.getItem(VIEW_KEY)); } catch (err) { /* private mode */ }
+    saved = saved && typeof saved === 'object' ? saved : {};
+    return {
+      layout: saved.layout === 'lines' ? 'lines' : 'page',
+      // A phone shows a whole letter page too small to read, so narrow panes start in line view
+      // unless the reader chose a layout themselves.
+      chosen: saved.layout === 'lines' || saved.layout === 'page',
+      fit: saved.fit === 'width' ? 'width' : 'page',
+      size: PAGE_SIZES[saved.size] ? saved.size : 'medium'
+    };
+  }
+  function writeView(value) {
+    try { root.localStorage.setItem(VIEW_KEY, JSON.stringify(value.chosen ? value : { fit: value.fit, size: value.size })); } catch (err) { /* private mode */ }
+  }
 
   function readPractice(key) {
     if (practiceMemory.has(key)) return practiceMemory.get(key);
@@ -2746,6 +2816,95 @@
     function paperWidth() {
       return Math.max(120, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
     }
+    // Page view (pioneer readers): the piece engraved at a fixed letter-page width and laid out on
+    // sheets, one sheet filling the pane at a time, like a printed part or MuseScore's page view.
+    // Line view is the older layout that reflows lines to the pane. Remembered per browser.
+    var view = readView(), pageZoom = null, pageSnapEls = [], pageIndex = 0;
+    function paged() { return !!practiceId && view.layout === 'page' && (view.chosen || (paper.clientWidth || 1e4) >= 600); }
+    function pageScale() {
+      var pages = layout.pages, pw = Math.max(120, paper.clientWidth - 24), ph = Math.max(160, paper.clientHeight);
+      var widthScale = pw / pages.page.width;
+      if (pageZoom) return widthScale * pageZoom;
+      if (view.fit === 'width') return widthScale;
+      return Math.min(widthScale, ph / (pages.page.height + pages.page.gap));
+    }
+    function snapping() { return paged() && !pageZoom && view.fit !== 'width'; }
+    function applyPageScale() {
+      screenScale = pageScale();
+      var pages = layout.pages, svg = svgWrap.querySelector('svg');
+      if (svg) { svg.setAttribute('width', pages.page.width * screenScale); svg.setAttribute('height', pages.height * screenScale); }
+      paper.classList.toggle('se-snap', snapping());
+      pageSnapEls.forEach(function (node) { node.remove(); });
+      pageSnapEls = pages.sheets.map(function (sheet) {
+        var node = el('div', { class: 'se-page-snap', 'aria-hidden': 'true' });
+        node.style.top = Math.max(0, (sheet.top - pages.page.gap / 2) * screenScale) + 'px';
+        svgWrap.appendChild(node);
+        return node;
+      });
+      updatePager();
+    }
+    function sheetOfSystem(index) {
+      var sheets = layout.pages.sheets;
+      for (var k = sheets.length - 1; k >= 0; k--) if (sheets[k].first <= index) return k;
+      return 0;
+    }
+    function currentSheet() {
+      if (!layout || !layout.pages) return 0;
+      var at = (paper.scrollTop + paper.clientHeight * 0.35) / screenScale, sheets = layout.pages.sheets, k = 0;
+      sheets.forEach(function (sheet, i) { if (sheet.top - layout.pages.page.gap / 2 <= at) k = i; });
+      return k;
+    }
+    // A page turn is instant, like turning a printed sheet. turnedByReader pauses Follow.
+    function showSheet(k, turnedByReader) {
+      var sheets = layout.pages.sheets;
+      k = Math.max(0, Math.min(sheets.length - 1, k));
+      if (turnedByReader) navigation.pauseFollow();
+      paper.scrollTo({ top: Math.max(0, (sheets[k].top - layout.pages.page.gap / 2) * screenScale), behavior: 'instant' });
+    }
+    var pager = el('div', { class: 'se-pager', role: 'group', 'aria-label': 'Pages', hidden: '' });
+    var pagePrev = el('button', { type: 'button', 'aria-label': 'Previous page', title: 'Previous page' }, '‹');
+    var pageOut = el('output', { 'aria-live': 'polite' }, '');
+    var pageNext = el('button', { type: 'button', 'aria-label': 'Next page', title: 'Next page' }, '›');
+    pager.append(pagePrev, pageOut, pageNext);
+    pagePrev.addEventListener('click', function () { showSheet(currentSheet() - 1, true); });
+    pageNext.addEventListener('click', function () { showSheet(currentSheet() + 1, true); });
+    function updatePager() {
+      var on = paged() && !roll?.open && layout && layout.pages;
+      pager.hidden = !on;
+      if (!on) return;
+      var count = layout.pages.sheets.length;
+      pageIndex = currentSheet();
+      pageOut.textContent = 'Page ' + (pageIndex + 1) + ' / ' + count;
+      pagePrev.disabled = pageIndex <= 0;
+      pageNext.disabled = pageIndex >= count - 1;
+    }
+    paper.addEventListener('scroll', function () { if (paged() && layout && layout.pages && currentSheet() !== pageIndex) updatePager(); }, { passive: true });
+    function pageMarkup() {
+      var pages = layout.pages, p = pages.page, inch = p.inch, esc = root.MusicNotation.escape, out = ['<g class="se-pages" aria-hidden="true">'];
+      pages.sheets.forEach(function (sheet, k) {
+        out.push('<rect class="se-sheet" x="' + p.x + '" y="' + sheet.top + '" width="' + p.width + '" height="' + sheet.height + '"/>');
+        if (pages.sheets.length > 1) out.push('<text class="se-page-number" x="' + (layout.width / 2) + '" y="' + (sheet.top + sheet.height - 0.3 * inch) + '" font-size="' + 0.15 * inch + '" text-anchor="middle">' + (k + 1) + '</text>');
+      });
+      var top = pages.sheets[0].top + p.marginTop;
+      out.push('<text class="se-page-title" x="' + (layout.width / 2) + '" y="' + (top + 0.32 * inch) + '" font-size="' + 0.3 * inch + '" text-anchor="middle">' + esc(score.title || 'Score') + '</text>');
+      if (score.subtitle) out.push('<text class="se-page-subtitle" x="' + (layout.width / 2) + '" y="' + (top + 0.62 * inch) + '" font-size="' + 0.15 * inch + '" text-anchor="middle">' + esc(score.subtitle) + '</text>');
+      if (score.composer) out.push('<text class="se-page-composer" x="' + layout.width + '" y="' + (top + 0.9 * inch) + '" font-size="' + 0.15 * inch + '" text-anchor="end">' + esc(score.composer) + '</text>');
+      out.push('</g>');
+      return out.join('');
+    }
+    var syncViewControls = function () {};
+    function setView(patch) {
+      var sheet = layout && layout.pages ? currentSheet() : -1;
+      Object.keys(patch).forEach(function (k) { view[k] = patch[k]; });
+      if (patch.layout) view.chosen = true;
+      writeView(view);
+      pageZoom = null; layout = null; lastDrawWidth = null;
+      if (view.layout === 'lines') { staffScale = 1; fitMode = 'reading'; }
+      syncViewControls();
+      draw();
+      if (paged() && sheet >= 0 && !patch.size) showSheet(sheet);
+      navigation.refresh();
+    }
     // Zoom sets the staff size; the lines reflow so they still fill the paper. Zooming out
     // engraves more bars per line instead of shrinking a fixed page into one corner.
     function engraveWidth(z) { return Math.max(practiceId && fitMode !== 'fit' ? 240 : 280, Math.round(paperWidth() / z)); }
@@ -2764,6 +2923,8 @@
         workspace.style.scrollMarginTop = (header ? Math.max(0, Math.min(100, header.getBoundingClientRect().bottom)) : 8) + 'px';
         workspace.scrollIntoView({ block: 'start', behavior: 'instant' });
       }
+      if (paged() && preset !== 'reading') { pageZoom = null; if (layout && layout.pages) applyPageScale(); else draw(); return; }
+      if (paged()) { view.layout = 'lines'; view.chosen = true; writeView(view); syncViewControls(); }
       staffScale = 1; fitMode = preset === 'reading' ? 'reading' : 'fit'; layout = null; draw();
     }
     function applyScale() { draw(); }
@@ -2835,14 +2996,21 @@
         updateTimeline(player.pos);
       },
       fitLabel: practiceId ? 'Fit' : 'Fit view', fitTitle: 'Fit a readable line to the score pane ( F )',
-      zoom: { fit: fitWidth, steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2], get: function () { return screenScale; },
-        set: function (z) { staffScale = z; fitMode = false; layout = null; applyScale(); } },
+      zoom: { fit: fitWidth, steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2],
+        // In page view, zoom scales the sheet (100% = page width) and never reflows it.
+        get: function () { return paged() && layout && layout.pages ? screenScale / (Math.max(120, paper.clientWidth - 24) / layout.pages.page.width) : screenScale; },
+        set: function (z) {
+          if (paged() && layout && layout.pages) { pageZoom = z; applyPageScale(); return; }
+          staffScale = z; fitMode = false; layout = null; applyScale();
+        } },
       fitRoom: function () { return ((!workspace.classList.contains('se-short') && paper.clientHeight) || root.innerHeight * 0.65) - 8; }
     });
     toolbar.insertBefore(navigation.el, practiceId ? settingsSummary : settings);
+    if (practiceId) toolbar.insertBefore(pager, settingsSummary);
     var roll = practiceId ? installPianoRoll(workspace, bar, model, player, function (show) {
       paper.inert = show;
       var beat = writtenBeat(model, currentPerformanceBeat(player));
+      updatePager();
       if (show) {
         fig.dispatchEvent(new Event('score:hide-notation'));
         roll.paint(currentPerformanceBeat(player));
@@ -2979,8 +3147,18 @@
     function draw() {
       if (player.destroyed) return;
       if (roll?.open) { roll.paint(currentPerformanceBeat(player)); return; }
-      var w = drawWidth(), room = paper.clientHeight;
-      if (layout && lastDrawWidth !== null && Math.abs(lastDrawWidth - w) < 2) {
+      var pageMode = paged(), size = PAGE_SIZES[view.size];
+      var w = pageMode ? size.width : drawWidth(), room = paper.clientHeight;
+      if (pageMode && layout && layout.pages && lastDrawWidth === w && layout.pageSize === view.size) {
+        // The sheet is engraved at a fixed width: a resized pane only rescales it.
+        lastDrawHeight = room;
+        var sheetBefore = currentSheet();
+        applyPageScale();
+        if (snapping()) showSheet(sheetBefore);
+        if (showVisibleNotation()) fig.dispatchEvent(new CustomEvent('score:notation-window'));
+        navigation.refresh(); return;
+      }
+      if (layout && !layout.pages && !pageMode && lastDrawWidth !== null && Math.abs(lastDrawWidth - w) < 2) {
         if (room === lastDrawHeight) return;
         lastDrawHeight = room;
         if (fitMode) {
@@ -2991,25 +3169,42 @@
         if (showVisibleNotation()) fig.dispatchEvent(new CustomEvent('score:notation-window'));
         navigation.refresh(); return;
       }
-      var readingLayout = practiceId && fitMode !== 'fit';
-      var previousSystem = readingLayout && layout && paper.scrollTop > 0
-        ? layout.systems.findLast(function (system) { return system.top <= paper.scrollTop / screenScale; }) : null;
+      var readingLayout = practiceId && fitMode !== 'fit' && !pageMode;
+      var previousSystem = (readingLayout || pageMode) && layout && paper.scrollTop > 0
+        ? layout.systems.findLast(function (system) { return system.top <= (paper.scrollTop + (layout.pages ? paper.clientHeight * 0.35 : 0)) / screenScale; }) : null;
       lastDrawWidth = w; lastDrawHeight = room;
       if (player.playing) player.schedule(REDRAW_LOOKAHEAD);
-      layout = engrave(model, w, practiceId || fig.hasAttribute('data-score-readable'), windowed, readingLayout);
-      screenScale = displayedScale();
+      if (pageMode) {
+        // Engrave once to measure each system, then again with every system moved onto its sheet.
+        var plan = paginate(engrave(model, w, size.readable, windowed, false), { title: true });
+        layout = engrave(model, w, size.readable, windowed, false, plan);
+        layout.pages = plan;
+        layout.pageSize = view.size;
+        screenScale = pageScale();
+      } else {
+        layout = engrave(model, w, practiceId || fig.hasAttribute('data-score-readable'), windowed, readingLayout);
+        screenScale = displayedScale();
+      }
+      workspace.classList.toggle('se-paged', pageMode);
+      syncViewControls();
+      var box = pageMode ? { x: layout.pages.page.x, w: layout.pages.page.width } : { x: 0, w: layout.width };
       var label = (score.title || 'Score') + '. ' + model.count + ' bars in ' + model.ts.num + '/' + model.ts.den + (score.keyName ? ', ' + score.keyName : '') + '.';
       // The score is always paper with its own ink, so contrast-guard's text pass stays out: it reads the
       // cursor rect's accent fill without its fill-opacity and would repaint labels under it white.
-      svgWrap.innerHTML = '<svg class="se-score" data-contrast-guard-skip role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * screenScale) + '" height="' + (layout.height * screenScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
-        (practice ? '<g class="se-practice-marks" aria-hidden="true"/>' : '') + '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + (windowed ? '<g class="se-notation-window"/>' : '') + '</svg>';
+      svgWrap.innerHTML = '<svg class="se-score" data-contrast-guard-skip role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="' + box.x + ' 0 ' + box.w + ' ' + layout.height + '" width="' + (box.w * screenScale) + '" height="' + (layout.height * screenScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
+        (pageMode ? pageMarkup() : '') + (practice ? '<g class="se-practice-marks" aria-hidden="true"/>' : '') + '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + (windowed ? '<g class="se-notation-window"/>' : '') + '</svg>';
+      pageSnapEls = [];
+      if (pageMode) applyPageScale();
+      else { paper.classList.remove('se-snap'); updatePager(); }
       if (previousSystem) {
         var nextSystem = layout.systems.findLast(function (system) { return system.first <= previousSystem.first; });
-        paper.scrollTo({ top: nextSystem.top * screenScale, left: 0, behavior: 'instant' });
+        if (pageMode && snapping()) showSheet(sheetOfSystem(nextSystem.index));
+        else paper.scrollTo({ top: nextSystem.top * screenScale, left: 0, behavior: 'instant' });
       }
       // A one-line study doesn't need a 740px reading pane: let the pane shrink to the music.
       // Decided by the piece, never by the drawn size: the fit zoom depends on the pane's height.
-      workspace.classList.toggle('se-short', model.count <= 4);
+      // A page is a page, though: page view keeps its full-height pane.
+      workspace.classList.toggle('se-short', model.count <= 4 && !pageMode);
       cursorEl = svgWrap.querySelector('.se-cursor');
       lit = new Set();
       if (windowed) {
@@ -3078,6 +3273,12 @@
           return;
         }
         if (!layout) return;
+        // Page view: Follow turns to the sheet the music has reached before the measure is marked.
+        if (beat >= 0 && layout.pages && snapping() && navigation.following) {
+          var playingSystem = layout.systems.findLast(function (system) { return system.first <= measure; });
+          var playingSheet = playingSystem ? sheetOfSystem(playingSystem.index) : 0;
+          if (playingSheet !== currentSheet()) showSheet(playingSheet);
+        }
         navigation.setCurrent(beat < 0 ? -1 : measure);
         if (beat >= 0) showGuide(measure);
         var candidates = beat < 0 ? [] : (eventsByBar[measure] || []);
@@ -3329,6 +3530,31 @@
       var readingSize = el('button', { type: 'button' }, 'Reading size');
       readingSize.addEventListener('click', function () { settings.close(); navigation.fit('reading'); });
       displaySettings.insertBefore(readingSize, more);
+      // Page view settings get their own group at the top of the dialog.
+      var viewSettings = el('fieldset', { class: 'se-view-settings' });
+      viewSettings.appendChild(el('legend', {}, 'View'));
+      function choice(label, name, options) {
+        var wrap = el('label', { class: 'se-view-choice' });
+        var select = el('select', { 'data-view': name });
+        options.forEach(function (o) { select.appendChild(el('option', { value: o[0] }, o[1])); });
+        select.addEventListener('change', function () { var patch = {}; patch[name] = select.value; setView(patch); });
+        wrap.append(el('span', {}, label), select);
+        viewSettings.appendChild(wrap);
+        return wrap;
+      }
+      var layoutChoice = choice('Layout', 'layout', [['page', 'Page view'], ['lines', 'Line view']]);
+      var fitChoice = choice('Show', 'fit', [['page', 'Whole page'], ['width', 'Page width']]);
+      var sizeChoice = choice('Staff size', 'size', Object.keys(PAGE_SIZES).map(function (k) { return [k, PAGE_SIZES[k].label]; }));
+      settingsBar.insertBefore(viewSettings, settingsBar.firstChild);
+      syncViewControls = function () {
+        var showing = paged() ? 'page' : 'lines';
+        layoutChoice.querySelector('select').value = showing;
+        fitChoice.querySelector('select').value = view.fit;
+        sizeChoice.querySelector('select').value = view.size;
+        fitChoice.hidden = sizeChoice.hidden = showing !== 'page';
+        readingSize.hidden = showing === 'page';
+      };
+      syncViewControls();
       noteListToggle.addEventListener('click', function () {
         settings.close();
         if (!noteList.hidden) {
@@ -3753,7 +3979,7 @@
   }
 
   root.ScoreEngine = { loadLibrary: loadLibrary, loadScore: loadScore, loadScoreTitles: loadScoreTitles,
-    openScore: openScore, prepareLessonOpenings: prepareLessonOpenings, showScoreLoading: showScoreLoading, afterScorePaint: afterScorePaint, previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
+    openScore: openScore, prepareLessonOpenings: prepareLessonOpenings, showScoreLoading: showScoreLoading, afterScorePaint: afterScorePaint, previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, paginate: paginate, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat, Player: Player };
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', function () { if (document.hidden) players.forEach(function (p) { if (p.playing) p.pause(); else if (p.loading) p.halt(); }); });
