@@ -59,8 +59,12 @@ const modulePresentations = {
     level: "K–12 Progression · Production Technology",
   },
   "computer-science": {
-    subtitle: "Programming, algorithms, web development, and AI.",
+    subtitle: "Programming, algorithms, simulation, and AI.",
     level: "K–12 Progression · Computer Science & AI",
+  },
+  "web-design": {
+    subtitle: "HTML, CSS, JavaScript, servers, and publishing your own site.",
+    level: "Grades 6–12 · Build Your Own Web",
   },
   "game-development": {
     subtitle: "Game mechanics, programming, engines, testing, and release.",

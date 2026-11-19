@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 497 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 498 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -470,7 +470,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 78 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 79 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -483,68 +483,80 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **CSC-05** — Ada Lovelace — The First Programmer
 - **CSC-06** — ASCII: Text That Became Games
 - **CSC-07** — Before Computers: Myths, Logic, and AI Imagination
-- **CSC-08** — Build Your Student Page
-- **CSC-09** — GitHub — From Idea to Shared Prototype
-- **CSC-10** — Code with AI: Small Tasks, Current Files & Real Tests — _also indexed in Game Design & Development_
-- **CSC-11** — Ethical Hacking & Cyber Safety
-- **CSC-12** — Blocks World Parser
-- **CSC-13** — N-gram Text Predictor
-- **CSC-14** — Python Foundations — _also indexed in Game Design & Development_
-- **CSC-15** — AI Hacking: When Agents Cross the Line
+- **CSC-08** — Code with AI: Small Tasks, Current Files & Real Tests — _also indexed in Game Design & Development_
+- **CSC-09** — Ethical Hacking & Cyber Safety
+- **CSC-10** — Blocks World Parser
+- **CSC-11** — N-gram Text Predictor
+- **CSC-12** — Python Foundations — _also indexed in Game Design & Development_
+- **CSC-13** — AI Hacking: When Agents Cross the Line
 
 ### Algorithms, Structures & Search
 
-- **CSC-16** — Sorting Algorithms
-- **CSC-17** — State Machines
-- **CSC-18** — A* Pathfinding Agent
-- **CSC-19** — Minimum Spanning Tree
-- **CSC-20** — Cryptography & The Enigma
+- **CSC-14** — Sorting Algorithms
+- **CSC-15** — State Machines
+- **CSC-16** — A* Pathfinding Agent
+- **CSC-17** — Minimum Spanning Tree
+- **CSC-18** — Cryptography & The Enigma
 
 ### Simulation & Generative Systems
 
-- **CSC-21** — Life Lab: The Game of Life
-- **CSC-22** — Perlin Noise
-- **CSC-23** — The Demoscene
-- **CSC-24** — CGI Water: From Physics to Pixels
-- **CSC-25** — Liquid Engine Benchmark
+- **CSC-19** — Life Lab: The Game of Life
+- **CSC-20** — Perlin Noise
+- **CSC-21** — The Demoscene
+- **CSC-22** — CGI Water: From Physics to Pixels
+- **CSC-23** — Liquid Engine Benchmark
 
 ### Artificial Intelligence & Machine Reasoning
 
-- **CSC-26** — Alan Turing and The Turing Test
-- **CSC-27** — AI Origins: ELIZA Chatbot
-- **CSC-28** — Rule Engine Expert System
-- **CSC-29** — 20Q Mind Reader & Information Theory
-- **CSC-30** — Perceptron Lab
-- **CSC-31** — Chess: Origins and How to Play
-- **CSC-32** — 1v1 Game AI: Minimax
-- **CSC-33** — Chess: Play & Practice · ChessOS
-- **CSC-34** — Deep Blue to AlphaGo: The Go Challenge
+- **CSC-24** — Alan Turing and The Turing Test
+- **CSC-25** — AI Origins: ELIZA Chatbot
+- **CSC-26** — Rule Engine Expert System
+- **CSC-27** — 20Q Mind Reader & Information Theory
+- **CSC-28** — Perceptron Lab
+- **CSC-29** — Chess: Origins and How to Play
+- **CSC-30** — 1v1 Game AI: Minimax
+- **CSC-31** — Chess: Play & Practice · ChessOS
+- **CSC-32** — Deep Blue to AlphaGo: The Go Challenge
 
 ### People Who Changed Computing
 
-- **CSC-35** — Grace Hopper
-- **CSC-36** — Margaret Hamilton: Software for the Moon
-- **CSC-37** — Steve Jobs
+- **CSC-33** — Grace Hopper
+- **CSC-34** — Margaret Hamilton: Software for the Moon
+- **CSC-35** — Steve Jobs
 
-### Build Your Own Web Pathway
+## Web Design & Development (WEB)
 
-- **CSC-38** — How the Web Works
-- **CSC-39** — Build Your Own Web — Web Design Pathway
-- **CSC-40** — Set Up Your First Site
-- **CSC-41** — Give the Page Meaning with HTML
-- **CSC-42** — Design with CSS
-- **CSC-43** — Make It Respond with JavaScript
-- **CSC-44** — Test, Debug, and Include Everyone
-- **CSC-45** — Website Project Studios
-- **CSC-46** — Web Studio — Draw, Blocks and Code
-- **CSC-47** — The Flash Era: What Happened to Browser Games
-- **CSC-48** — Build a Home for Interactive Work
-- **CSC-49** — Publish and Maintain Your Website
-- **CSC-50** — Tim Berners-Lee and the First Website
-- **CSC-51** — Marc Andreessen and the Dawn of the Visual Web
-- **CSC-52** — Håkon Wium Lie and Cascading Style Sheets
-- **CSC-53** — Brendan Eich and the Creation of JavaScript
-- **CSC-54** — Extend into WebXR
+### Build the Site: HTML, CSS & JavaScript
+
+- **WEB-01** — Build Your Own Web — Web Design Pathway
+- **WEB-02** — How the Web Works
+- **WEB-03** — Set Up Your First Site
+- **WEB-04** — Give the Page Meaning with HTML
+- **WEB-05** — Design with CSS
+- **WEB-06** — Make It Respond with JavaScript
+- **WEB-07** — Test, Debug, and Include Everyone
+
+### Make It Yours, Serve & Publish
+
+- **WEB-08** — Website Project Studios
+- **WEB-09** — The Flash Era: What Happened to Browser Games
+- **WEB-10** — Build a Home for Interactive Work
+- **WEB-11** — Run Your Site on a Real Server
+- **WEB-12** — Publish and Maintain Your Website
+- **WEB-13** — Extend into WebXR
+
+### Studios, Tools & Sharing
+
+- **WEB-14** — Web Studio — Draw, Blocks and Code
+- **WEB-15** — Build Your Student Page
+- **WEB-16** — GitHub — From Idea to Shared Prototype
+
+### Pioneers of the Web
+
+- **WEB-17** — Tim Berners-Lee and the First Website
+- **WEB-18** — Marc Andreessen and the Dawn of the Visual Web
+- **WEB-19** — Håkon Wium Lie and Cascading Style Sheets
+- **WEB-20** — Brendan Eich and the Creation of JavaScript
 
 ## Game Design & Development (GAM)
 

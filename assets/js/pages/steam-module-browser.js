@@ -34,6 +34,7 @@
     "module-technical-elements": "Explore sound, light, and stage technology.",
     "module-design3d": "Make and explore shapes in three dimensions.",
     "module-cs": "Give computers instructions and solve puzzles.",
+    "module-web": "Make your own web pages with words, colours, and buttons.",
     "module-gamedev": "Make games with stories, art, and code.",
     "module-music": "Explore rhythm, melody, instruments, and sound.",
     "module-language": "Tell stories and think about what messages mean.",

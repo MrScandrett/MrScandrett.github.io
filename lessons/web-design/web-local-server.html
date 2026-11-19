@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Run Your Site on a Real Server · ClassroomOS</title>
+<meta name="description" content="Turn your laptop into a web server: what localhost and ports mean, three ways to start a server, how a server answers a request, and loading your own data with fetch().">
+<link rel="icon" href="../../assets/images/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/main.css">
+<link rel="stylesheet" href="../../assets/css/classroom-home.css">
+<link rel="stylesheet" href="../../assets/css/lessons/web-design-pathway.css">
+<script src="../../assets/js/theme-registry.js" defer></script>
+<script src="../../assets/js/lessons/web-design-pathway.js" defer></script>
+<script type="module" src="../../assets/js/lessons/web-local-server.mjs"></script>
+<link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
+</head>
+<body class="web-course">
+<a class="skip-link" href="#main">Skip to lesson</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../library.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+<header class="web-topbar">
+<a href="web-design-pathway.html"><strong>Build Your Own Web</strong></a>
+<nav aria-label="Site"><a href="../../steam-lessons.html">STEAM lessons</a><a href="../../paths.html">All pathways</a><a href="../../class-downloads.html">Downloads</a></nav>
+</header>
+<main id="main" class="web-main">
+
+<section class="web-hero web-split">
+<div>
+<p class="web-meta">Lesson 09 · Servers · 50–65 minutes</p>
+<h1>Run your site on a real server</h1>
+<p class="web-lead">Double-clicking <code>index.html</code> opens a file. It does not visit a website. In this lesson you turn your own computer into a web server, learn to read the address it gives you, watch it answer requests, and use that server to load your site's content from a data file with <code>fetch()</code>.</p>
+<p>Everything here stays on your computer. Nobody else can see your site until you <a href="web-publish.html">publish it in the next lesson</a>. That makes this the safe place to test.</p>
+<p class="web-callout" id="wls-here" aria-live="polite">This page came from a server.</p>
+</div>
+<div class="web-panel">
+<h2>Before you start</h2>
+<ul>
+<li>A project folder with <code>index.html</code>, <code>style.css</code> and <code>script.js</code> at the top, from <a href="web-first-site.html">your first site</a> or <a href="web-project-studio.html">a starter pack</a>.</li>
+<li>A terminal: the one built into <a href="web-vscode-guide.html">VS Code</a> (<kbd>Ctrl</kbd>+<kbd>`</kbd>) is fine.</li>
+<li>One of these: the Live Server extension, Node.js, or Python. Ask your teacher which one your computer is allowed to use.</li>
+</ul>
+<p class="web-muted">No install allowed at all (a locked school laptop or a Chromebook)? Read along and do both labs on this page. They run on the class site's own server. <a href="web-studio.html">Web Studio</a> previews your files without a server.</p>
+</div>
+</section>
+
+<section class="web-section">
+<h2>Double-clicking is not a server</h2>
+<p>When you double-click a file, the browser's address bar starts with <code>file://</code>. There is no server: the browser reads the file straight off your disk. Simple pages look fine that way, so it is easy to think nothing is missing. Then you add one modern feature and it fails with a red error you did not cause.</p>
+<p>A <strong>web server</strong> is a program that waits for a browser to ask for a file, finds it, and sends it back with a short label saying what it is. When that program runs on your own computer, the address starts with <code>http://localhost</code>. That is how every real website is delivered, so it is the honest way to test.</p>
+<div class="web-table">
+<table>
+<caption>The same folder, opened two ways</caption>
+<thead><tr><th scope="col">What your site does</th><th scope="col">Double-clicked (<code>file://</code>)</th><th scope="col">Served (<code>http://localhost</code>)</th></tr></thead>
+<tbody>
+<tr><th scope="row">Show HTML, CSS and images with relative paths</th><td>Works</td><td>Works</td></tr>
+<tr><th scope="row">Load a data file with <code>fetch('projects.json')</code></th><td>Blocked in most browsers</td><td>Works</td></tr>
+<tr><th scope="row">Use JavaScript modules (<code>&lt;script type="module"&gt;</code>, <code>import</code>)</th><td>Blocked in most browsers</td><td>Works</td></tr>
+<tr><th scope="row">A path that starts with <code>/</code>, like <code>/style.css</code></th><td>Means the top of your whole drive</td><td>Means the top of your site folder</td></tr>
+<tr><th scope="row">Service workers (sites that work offline)</th><td>Not available</td><td>Works: <code>localhost</code> counts as a secure address</td></tr>
+<tr><th scope="row">Auto-reload when you save</th><td>No</td><td>Yes, with Live Server</td></tr>
+</tbody>
+</table>
+</div>
+<p>The <code>fetch()</code> failure is the one you will meet first. In Chrome the console says something like this:</p>
+<pre><code>Access to fetch at 'file:///…/my-site/projects.json' from origin 'null'
+has been blocked by CORS policy: Cross origin requests are only
+supported for protocol schemes: http, data, https …</code></pre>
+<p><strong>Read it calmly.</strong> Origin <code>'null'</code> means "this page came from no server". The fix is not in your code. Start a server and open the page through it.</p>
+</section>
+
+<section class="web-section">
+<h2>Read a localhost address</h2>
+<p>Every server prints an address when it starts. It has the same four parts as any web address, and each part is worth knowing:</p>
+<p class="web-callout"><code>http://localhost:8080/pages/about.html</code></p>
+<div class="web-table">
+<table>
+<caption>The four parts of a local address</caption>
+<thead><tr><th scope="col">Part</th><th scope="col">Here</th><th scope="col">What it means</th></tr></thead>
+<tbody>
+<tr><th scope="row">Scheme</th><td><code>http</code></td><td>How to talk to the server. Locally, plain <code>http</code> is fine because the request never leaves your computer.</td></tr>
+<tr><th scope="row">Host</th><td><code>localhost</code></td><td>Which computer. <code>localhost</code> is a name that always means <em>this</em> computer. <code>127.0.0.1</code> is the same thing written as a number.</td></tr>
+<tr><th scope="row">Port</th><td><code>8080</code></td><td>Which program on that computer. One computer runs many programs that talk to the network, so each one listens on its own numbered port. Only one program can hold a port at a time. Live Server usually picks 5500, <code>npx serve</code> 3000, Python whatever you tell it.</td></tr>
+<tr><th scope="row">Path</th><td><code>/pages/about.html</code></td><td>Which file, counted from the folder the server was started in. <strong>That folder becomes <code>/</code>.</strong></td></tr>
+</tbody>
+</table>
+</div>
+<p>The last row is the one that causes trouble. If you start the server in the folder <em>above</em> your site, every address needs an extra folder name in it, and your <code>/style.css</code> links break. Always start the server inside the folder that holds <code>index.html</code>.</p>
+<figure data-zoomable class="web-figure">
+<img src="../../assets/images/lessons/web-how-the-web-works/first-web-server.jpg" alt="A black NeXT cube computer in a museum case, with a handwritten label on its side" loading="lazy" width="1280" height="960">
+<figcaption><strong>Every computer can be a server.</strong> Tim Berners-Lee ran the first website on this ordinary desktop computer at CERN in 1990. Its label says "This machine is a server. DO NOT POWER IT DOWN!!" Your laptop does the same job while your server is running, and when you stop it, your site goes dark too.
+<span class="web-figure-credit" data-no-glossary>Coolcaesar, via <a href="https://commons.wikimedia.org/wiki/File:First_Web_Server.jpg">Wikimedia Commons</a> · CC BY-SA 3.0</span></figcaption>
+</figure>
+</section>
+
+<section class="web-section">
+<h2>Start a server: pick one way</h2>
+<p>All three do the same job. Use whichever your computer already has. First, in the terminal, move into your site folder and check that <code>index.html</code> is there:</p>
+<pre><code>cd my-site
+ls</code></pre>
+<p class="web-muted">On Windows Command Prompt, use <code>dir</code> instead of <code>ls</code>. If you don't see <code>index.html</code> in the list, you're in the wrong folder. Fix that before going on.</p>
+<div class="web-table">
+<table>
+<caption>Three ways to start a local server</caption>
+<thead><tr><th scope="col">Tool</th><th scope="col">Start it</th><th scope="col">Open</th><th scope="col">Stop it</th></tr></thead>
+<tbody>
+<tr><th scope="row">VS Code Live Server</th><td>Open the <em>folder</em> in VS Code, then click <strong>Go Live</strong> in the status bar (or right-click <code>index.html</code> → Open with Live Server).</td><td>It opens the browser for you, usually at <code>http://127.0.0.1:5500/</code>. It reloads every time you save.</td><td>Click the port number in the status bar.</td></tr>
+<tr><th scope="row">Node.js</th><td><code>npx serve .</code><br><span class="web-muted">The first time, it asks to download the <code>serve</code> package. Type <code>y</code>.</span></td><td>The <code>Local:</code> address it prints, usually <code>http://localhost:3000</code></td><td><kbd>Ctrl</kbd>+<kbd>C</kbd> in the terminal</td></tr>
+<tr><th scope="row">Python</th><td><code>python3 -m http.server 8000</code><br><span class="web-muted">Windows: <code>py -m http.server 8000</code></span></td><td><code>http://localhost:8000</code></td><td><kbd>Ctrl</kbd>+<kbd>C</kbd> in the terminal</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Check:</strong> the address bar starts with <code>http://</code>, your page has its styles, and your button still works.</p>
+<p><strong>Repair:</strong> <em>command not found</em> means that tool isn't installed, so try another row. <em>Address already in use</em> means another program holds that port, maybe a server you forgot to stop. Stop the old one, or pick another number, like <code>python3 -m http.server 8001</code>.</p>
+<p class="web-callout">A terminal that is running a server is busy. It won't take new commands until you stop the server. Open a second terminal tab for Git and other commands.</p>
+</section>
+
+<section class="web-section">
+<h2>Watch the server answer</h2>
+<p>A server that you start in a terminal prints one line for every request it answers. Load your page once, then look. Python's log looks like this:</p>
+<pre><code>127.0.0.1 - - [19/Nov/2026 10:42:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [19/Nov/2026 10:42:01] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [19/Nov/2026 10:42:01] "GET /script.js HTTP/1.1" 200 -
+127.0.0.1 - - [19/Nov/2026 10:42:01] "GET /images/Logo.png HTTP/1.1" 404 -</code></pre>
+<p>One page is several requests: the HTML first, then every file it links to. Each line says who asked (<code>127.0.0.1</code> or <code>::1</code>, both mean you), what they asked for (<code>GET /style.css</code>) and the <strong>status code</strong> the server answered with. The browser's Network panel (<kbd>F12</kbd> → Network) shows the same list from the browser's side.</p>
+<div class="web-table">
+<table>
+<caption>Status codes you will see from a static server</caption>
+<thead><tr><th scope="col">Code</th><th scope="col">Meaning</th><th scope="col">What to do</th></tr></thead>
+<tbody>
+<tr><th scope="row">200 OK</th><td>Found it; here it is.</td><td>Nothing.</td></tr>
+<tr><th scope="row">304 Not Modified</th><td>The browser already had this file and it hasn't changed, so the server sends nothing new.</td><td>Nothing. If your change doesn't show up, do a hard reload (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>).</td></tr>
+<tr><th scope="row">301 Moved Permanently</th><td>You asked for a folder without the final <code>/</code>. Go to the address with the slash.</td><td>Nothing; the browser follows it.</td></tr>
+<tr><th scope="row">404 Not Found</th><td>No file has that exact name at that exact path.</td><td>Compare the path in the log with your real filename, letter by letter.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="web-section">
+<h2>Lab: Be the server</h2>
+<p>On the left is a site folder, one file per line. Type an address and this lab answers it with the rules a simple server follows. Change the files, the address, or the case setting, and predict the answer before you look.</p>
+<div class="web-lab" id="wls-server-lab">
+<h3>Request → file → answer</h3>
+<div class="web-lab-grid">
+<div>
+<p><label for="wls-url">Address in the browser</label></p>
+<input id="wls-url" type="text" spellcheck="false" autocomplete="off" value="http://localhost:8080/pages/about.html" class="wls-wide">
+<p class="web-actions wls-tries">
+<button type="button" data-wls-try="http://localhost:8080/">/</button>
+<button type="button" data-wls-try="http://localhost:8080/images/Logo.png">Logo.png</button>
+<button type="button" data-wls-try="http://localhost:8080/pages">/pages</button>
+<button type="button" data-wls-try="http://localhost:8080/my-site/index.html">/my-site/…</button>
+<button type="button" data-wls-try="http://localhost:8080/projects.json?sort=new#top">query and #</button>
+<button type="button" data-wls-try="file:///Users/ada/my-site/index.html">file://</button>
+</p>
+<p><label><input type="checkbox" id="wls-case" checked> Case-sensitive, like GitHub Pages (untick to act like most laptops)</label></p>
+<p class="web-feedback wls-status" id="wls-status" aria-live="polite"></p>
+<p class="wls-hint" id="wls-hint" aria-live="polite"></p>
+<div class="web-table"><table class="web-path-table"><caption>The address, split into parts</caption><tbody id="wls-parts"></tbody></table></div>
+<ol class="wls-steps" id="wls-steps"></ol>
+</div>
+<div>
+<p><label for="wls-files">Files in the folder the server was started in</label></p>
+<textarea id="wls-files" spellcheck="false" rows="9">index.html
+style.css
+script.js
+projects.json
+images/logo.png
+pages/about.html
+pages/index.html</textarea>
+</div>
+</div>
+<div class="web-actions"><button type="button" id="wls-reset">Reset the example</button></div>
+</div>
+<p><strong>Check:</strong> you can explain why <code>/</code> sends <code>index.html</code>, why <code>Logo.png</code> is a 404 only when the case box is ticked, and what happens to the <code>?sort=new</code> and <code>#top</code> parts.</p>
+<p><strong>Try this:</strong> put every file under <code>my-site/</code> (as if you started the server one folder too high) and request <code>/</code> again. That file list is what most "my site is just a list of files" problems look like.</p>
+</section>
+
+<section class="web-section">
+<h2>Load your content with <code>fetch()</code></h2>
+<p>So far your project cards have been typed into <code>index.html</code>. Many real sites keep the content in a separate <strong>data file</strong> instead, and JavaScript builds the cards from it. Add a project by adding three lines to the data file, and every page that uses it updates. That only works through a server, which is why it's here.</p>
+<div class="web-split">
+<div>
+<h3><code>projects.json</code></h3>
+<pre><code>[
+  {
+    "title": "Orbit study",
+    "kind": "Simulation",
+    "description": "A moon circles a planet."
+  },
+  {
+    "title": "Star catcher",
+    "kind": "Game",
+    "description": "Catch falling stars."
+  }
+]</code></pre>
+<p class="web-muted">JSON is strict: double quotes only, and no comma after the last item. One stray comma and the whole file fails to read.</p>
+</div>
+<div>
+<h3><code>script.js</code></h3>
+<pre><code>async function showProjects() {
+  const list = document.querySelector('#projects');
+  try {
+    const response = await fetch('projects.json');
+    if (!response.ok) {
+      throw new Error(`${response.status} for projects.json`);
+    }
+    const projects = await response.json();
+    for (const project of projects) {
+      const card = document.createElement('article');
+      const title = document.createElement('h3');
+      title.textContent = project.title;
+      const text = document.createElement('p');
+      text.textContent = project.description;
+      card.append(title, text);
+      list.append(card);
+    }
+  } catch (error) {
+    list.textContent = 'Projects could not load: ' + error.message;
+  }
+}
+showProjects();</code></pre>
+</div>
+</div>
+<p>In your HTML, give it somewhere to go: <code>&lt;section id="projects"&gt;&lt;/section&gt;</code>.</p>
+<ul>
+<li><code>fetch()</code> asks the server for a file, the same way the browser asked for <code>style.css</code>. The answer takes time, so <code>await</code> waits for it without freezing the page. <code>await</code> only works inside an <code>async</code> function.</li>
+<li><strong>A 404 is still an answer.</strong> <code>fetch()</code> doesn't fail when the file is missing. It returns a response with <code>ok</code> set to false. Always check <code>response.ok</code>.</li>
+<li><code>response.json()</code> turns the text into real JavaScript arrays and objects.</li>
+<li><code>textContent</code>, not <code>innerHTML</code>, puts the words on the page. If the data ever contains <code>&lt;</code> or a script, it shows as text instead of running.</li>
+<li>The <code>catch</code> puts the problem on the page. A visitor should see "Projects could not load", not a mysteriously empty section.</li>
+</ul>
+
+<div class="web-lab" id="wls-fetch-lab">
+<h3>Lab: a real <code>fetch()</code> from this site's server</h3>
+<p>This lab really asks the class site's server for a file, then shows exactly what came back. The path is relative to this lesson page, just as yours will be relative to your <code>index.html</code>.</p>
+<p><label for="wls-fetch-url">Path to fetch</label></p>
+<input id="wls-fetch-url" type="text" spellcheck="false" autocomplete="off" class="wls-wide" value="../../assets/data/web-local-server/projects.json">
+<div class="web-actions">
+<button type="button" id="wls-fetch-go">Fetch it</button>
+<button type="button" data-wls-fetch="../../assets/data/web-local-server/projects.json">The data file</button>
+<button type="button" data-wls-fetch="../../assets/data/web-local-server/Projects.json">Wrong capital P</button>
+<button type="button" data-wls-fetch="projects.json">Wrong folder</button>
+<button type="button" data-wls-fetch="web-local-server.html">An HTML page</button>
+<button type="button" data-wls-fetch="https://example.com/data.json">Another site</button>
+</div>
+<p class="web-feedback" id="wls-fetch-status" aria-live="polite">Press Fetch it.</p>
+<div class="wls-fetch-cards" id="wls-fetch-cards"></div>
+<div class="web-split">
+<div><p class="web-muted">The code that ran</p><pre><code id="wls-fetch-code"></code></pre></div>
+<div><p class="web-muted">What the server sent back</p><pre class="wls-body"><code id="wls-fetch-body"></code></pre></div>
+</div>
+</div>
+<p><strong>Check:</strong> the data file gives <em>200 OK</em> and three cards. Each other button fails for a different reason, and you can name the reason.</p>
+<p class="web-muted">Running this lesson from a laptop instead of the class site? <em>Wrong capital P</em> may load there, because most laptops ignore capital letters. On the class site, a Linux server, it's a 404. That's the trap from the case box in the first lab.</p>
+<p><strong>Your turn:</strong> make a <code>projects.json</code> in your own site folder with your real projects, add the script above, and open the site through your server. Then open it by double-clicking instead and read the console error. Now you know what it looks like.</p>
+</section>
+
+<section class="web-section">
+<h2>Data from other sites</h2>
+<p>You can <code>fetch()</code> from another website too (weather, space photos, museum collections), but two rules apply.</p>
+<ul>
+<li><strong>The other site decides.</strong> A browser only lets your page read another site's answer if that site's server says so in its reply. That permission is called <strong>CORS</strong>. If an API doesn't allow it, nothing in your code can change that. Pick an API whose documentation says it works from the browser.</li>
+<li><strong>No keys in your JavaScript.</strong> Many APIs hand out a secret key. Anything in <code>script.js</code> can be read by every visitor, so a key there is a key you've given away. For a class site, choose APIs that need no key at all.</li>
+</ul>
+</section>
+
+<section class="web-section">
+<h2>Test on a phone</h2>
+<p><code>npx serve</code> prints a second address, labelled <code>Network:</code>, such as <code>http://192.168.1.24:3000</code>. That is your computer's address on the Wi-Fi. A phone on the <em>same</em> network can open it and show your real site on a real small screen.</p>
+<ul>
+<li>Many school networks block one device from reaching another, so it may simply not load. That's the network doing its job. Use the browser's device toolbar (<kbd>F12</kbd>, then the phone icon) instead.</li>
+<li><strong>While the server runs, anyone on that network who finds the address can read every file in the folder you served.</strong> Python and <code>serve</code> listen to the whole network by default. Serve only your site folder (never your home folder or Documents) and stop the server when you finish.</li>
+</ul>
+</section>
+
+<section class="web-section">
+<h2>What this kind of server can't do</h2>
+<p>Every server in this lesson, and GitHub Pages, is a <strong>static</strong> server. It hands out files exactly as they are on disk. It runs none of your code itself: your JavaScript runs in the visitor's browser.</p>
+<div class="web-split">
+<div class="web-panel">
+<h3>A static server can</h3>
+<ul>
+<li>Serve pages, styles, scripts, images, sound and video</li>
+<li>Serve data files your JavaScript reads with <code>fetch()</code></li>
+<li>Run games, simulations and tools in the visitor's browser</li>
+<li>Remember things for <em>one</em> visitor in their own browser (<code>localStorage</code>)</li>
+</ul>
+</div>
+<div class="web-panel">
+<h3>It needs a back end to</h3>
+<ul>
+<li>Save a message from a contact form</li>
+<li>Keep a high-score table that every player shares</li>
+<li>Let people log in</li>
+<li>Keep a secret key secret</li>
+</ul>
+</div>
+</div>
+<p>A <strong>back end</strong> is a program you write that runs <em>on</em> the server, usually with a database, in a language like JavaScript (Node.js) or Python. It's the next step after this course, and it brings real responsibility for other people's data. For now, be honest on your page about what a form does, as <a href="web-html.html">the HTML lesson</a> asks.</p>
+</section>
+
+<section class="web-section">
+<h2>Repair guide</h2>
+<div class="web-table">
+<table>
+<caption>Local server problems and their fixes</caption>
+<thead><tr><th scope="col">You see</th><th scope="col">Usually because</th><th scope="col">Fix</th></tr></thead>
+<tbody>
+<tr><th scope="row">A plain list of files instead of your page</th><td>No <code>index.html</code> at the top of the served folder, or the server started one folder too high.</td><td>Stop it, <code>cd</code> into the folder that holds <code>index.html</code>, start again.</td></tr>
+<tr><th scope="row">Page loads but has no styles</th><td>The CSS link's path or capital letters don't match the file.</td><td>Read the 404 line in the server log and match the name exactly.</td></tr>
+<tr><th scope="row">"blocked by CORS policy" and origin 'null'</th><td>The page was opened by double-clicking (<code>file://</code>).</td><td>Open the <code>http://localhost</code> address instead.</td></tr>
+<tr><th scope="row"><code>Unexpected token</code> from <code>response.json()</code></th><td>The JSON has a trailing comma or single quotes, or the path returned an HTML page.</td><td>Open the JSON file's address directly in the browser and read what comes back.</td></tr>
+<tr><th scope="row">"Address already in use"</th><td>Another server holds that port.</td><td>Stop the old server, or use another port number.</td></tr>
+<tr><th scope="row">Changes don't appear</th><td>The browser kept an old copy (cache), or the file isn't saved.</td><td>Save, then hard reload with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>.</td></tr>
+<tr><th scope="row">The address just spins, then fails</th><td>The server was stopped, or the terminal was closed.</td><td>Look at the terminal. Start the server again.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="web-section">
+<h2>Checkpoints</h2>
+<ul class="web-checklist">
+<li><label><input type="checkbox" data-web-check="0"> I started a server inside my site folder and opened my site at an <code>http://localhost</code> address.</label></li>
+<li><label><input type="checkbox" data-web-check="1"> I can name the scheme, host, port and path in that address, and say which folder became <code>/</code>.</label></li>
+<li><label><input type="checkbox" data-web-check="2"> I read the server's log and found the status code for each file my page asked for.</label></li>
+<li><label><input type="checkbox" data-web-check="3"> My site loads at least one thing from a <code>.json</code> file with <code>fetch()</code>, checks <code>response.ok</code>, and shows a message if it fails.</label></li>
+<li><label><input type="checkbox" data-web-check="4"> I stopped the server with <kbd>Ctrl</kbd>+<kbd>C</kbd> (or Live Server's button) when I finished.</label></li>
+</ul>
+<div class="web-progress"><progress data-web-meter max="1" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
+</section>
+
+<nav class="web-next" aria-label="Lesson sequence"><a href="web-creative-lab.html">← Previous: Build a home for interactive work</a><a href="web-publish.html">Next: Publish and maintain your website →</a></nav>
+
+</main>
+<footer>ClassroomOS web workshop · Read, change, test, explain. <a href="web-design-pathway.html">Course map</a></footer>
+<script src="../../assets/js/lesson-print-button.js"></script>
+<script src="../../assets/js/photo-lightbox.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
+</body></html>
