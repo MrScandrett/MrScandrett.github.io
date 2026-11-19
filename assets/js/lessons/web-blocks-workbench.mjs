@@ -117,7 +117,7 @@ export async function mount(section, options = {}) {
   const groups = { HTML: 'HTML structure', CSS: 'CSS styles', Property: 'CSS properties', JS: 'Events and behavior', Action: 'Event actions' };
   const toolboxNames = { HTML: 'HTML', CSS: 'CSS', Property: 'Properties', JS: 'Events', Action: 'Actions' };
   const toolbox = { kind: 'categoryToolbox', contents: Object.entries(groups).map(([group]) => ({ kind: 'category', name: toolboxNames[group], colour: Object.values(definitions).find(d => d.group === group).color, contents: Object.entries(definitions).filter(([, d]) => d.group === group).map(([type]) => ({ kind: 'block', type })) })) };
-  const ws = B.inject($('canvas'), { toolbox, horizontalLayout: true, renderer: 'zelos', sounds: false, trashcan: true, maxBlocks: 600, zoom: { controls: true, wheel: false, startScale: 0.7, minScale: 0.25, maxScale: 1.5 }, move: { scrollbars: true, drag: true, wheel: false }, media: new URL('../../vendor/blockly-media/', import.meta.url).href });
+  const ws = B.inject($('canvas'), { toolbox, horizontalLayout: true, renderer: 'zelos', sounds: false, trashcan: true, maxBlocks: 600, zoom: { controls: true, wheel: false, startScale: 0.9 }, move: { scrollbars: true, drag: true, wheel: false }, media: new URL('../../vendor/blockly-media/', import.meta.url).href });
   // Blockly 13.2.1 repeats each category ID on its visual inner div. Keep the
   // ID on the ARIA treeitem (the keyboard target), not its decorative child.
   $('canvas').querySelectorAll('.blocklyToolboxCategory[id]').forEach(row => {
@@ -276,7 +276,7 @@ export async function mount(section, options = {}) {
   section.querySelectorAll('[data-wb-jump]').forEach(button => button.addEventListener('click', () => {
     const b = ws.getTopBlocks(true).find(item => definitions[item.type].group === button.dataset.wbJump);
     if (!b) { status('Add a block from this language to start a new stack.'); return; }
-    ws.setScale(0.7);
+    ws.setScale(Math.max(ws.scale, ws.options.zoomOptions.startScale));
     const xy = b.getRelativeToSurfaceXY(); ws.scroll(16 - xy.x * ws.scale, 16 - xy.y * ws.scale);
     selectedId = b.id; refreshOutline(); inspect();
   }));
