@@ -89,9 +89,10 @@
       var s = el('span', 'gs-step', null, steps);
       el('span', 'gs-box', null, s);
       el('span', null, String(bpm), s);
+      if (p.ladder.length > 1 && (i === 0 || i === p.ladder.length - 1)) el('small', 'gs-rung', i ? 'goal' : 'start', s);
     });
     var logWrap = el('div', 'gs-logwrap', null, foot);
-    el('b', null, 'Practice log', logWrap);
+    el('b', null, 'Practice log · tick each day you play', logWrap);
     var t = el('table', 'gs-log', null, logWrap);
     var tr = el('tr', null, null, el('thead', null, null, t));
     DAYS.forEach(function (d) { el('th', null, d, tr); });
@@ -216,7 +217,12 @@
     var page = el('section', 'gs-page gs-per-' + per);
     page.setAttribute('data-night-keep', '');
     page.appendChild(pageHead(sheet, pg + 1, pageCount));
-    if (pg === 0) el('p', 'gs-howto', 'Count out loud while you play. Start at the first tempo and check its box when you can play the groove four times in a row without stopping. Then move up.', page);
+    if (pg === 0) {
+      var how = el('ol', 'gs-howto', null, page);
+      [['Count', ' out loud while you play.'], ['Play it 4 times in a row', ' without stopping.'], ['Check the box', ', then move up a tempo.']].forEach(function (s) {
+        var li = el('li', null, null, how); el('b', null, s[0], li); li.appendChild(document.createTextNode(s[1]));
+      });
+    }
     pats.slice(pg * per, pg * per + per).forEach(function (pat, k) {
       var i = pg * per + k, card = el('article', 'gs-card' + (per === 2 ? ' gs-roomy' : ''), null, page);
       card.setAttribute('data-id', pat.id);
@@ -230,7 +236,7 @@
     var h = el('header', 'gs-page-head');
     var t = el('div', 'gs-page-title', null, h);
     el('h2', null, 'Drum groove homework', t);
-    el('p', null, pageCount > 1 ? 'Page ' + pageNo + ' of ' + pageCount : 'STEAM Lab · Microschool', t);
+    if (pageCount > 1) el('p', null, 'Page ' + pageNo + ' of ' + pageCount, t);
     var dl = el('dl', 'gs-who', null, h);
     [['Name', sheet.student], ['Date', niceDate(sheet.assigned)], ['Due', niceDate(sheet.due)]].forEach(function (pair) {
       var d = el('div', pair[1] ? 'is-filled' : '', null, dl);
