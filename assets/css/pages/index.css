@@ -9639,7 +9639,7 @@ body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title {
 }
 
 
-/* Observatory backdrop with static lighting and two small moving illustrations. */
+/* Galaxy backdrop with static lighting and composited STEAM illustrations. */
 .cos-home .home-launch-bar {
   --atmo-s: #7cbfff;
   --atmo-t: #7de9d9;
@@ -9651,12 +9651,12 @@ body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title {
   --atmo-ink: #edf6ff;
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  overflow: visible;
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   align-items: start;
   gap: 1rem;
-  padding: clamp(1.5rem, 4vw, 3rem) clamp(.75rem, 3vw, 1.75rem) clamp(1.1rem, 3vw, 2rem);
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(.75rem, 3vw, 1.75rem) clamp(1.1rem, 4vw, 3rem);
   text-align: center;
   background: #101c35;
   border-color: #4a6089;
@@ -9672,8 +9672,61 @@ html[data-lighting="night"] .cos-home .home-launch-bar {
 
 .cos-home .home-launch-bar .home-launch-brand {
   width: 100%;
-  text-shadow: 0 2px 16px #050d24;
+  text-shadow: 0 2px 8px #050d24, 0 0 26px #050d24;
 }
+body.theme-home .site-header .brand .brand-os {
+  /* Override the shared header surface's fixed brand ink. */
+  color: color-mix(in srgb, var(--accent, #0066cc) 76%, var(--nav-ink-strong)) !important;
+}
+.cos-home .home-launchpad:has(.home-os-definition:not([hidden])) {
+  position: relative;
+  z-index: 3;
+  overflow: visible;
+}
+.cos-home .home-launch-bar .home-launch-brand:has(.home-os-definition:not([hidden])) { z-index: 2; }
+.home-os {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #9dceff;
+  color: color-mix(in srgb, var(--theme-accent, #0071e3) 62%, white);
+  font: inherit;
+  letter-spacing: inherit;
+  text-shadow: inherit;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 70%, transparent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: .13em;
+  cursor: help;
+}
+.home-os:hover { text-decoration-style: solid; }
+.home-os:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.home-os-definition {
+  --font-sans: system-ui, sans-serif;
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + .5rem);
+  left: 50%;
+  width: min(27rem, 100%);
+  box-sizing: border-box;
+  transform: translateX(-50%);
+  padding: .8rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--theme-accent, #0071e3) 36%, var(--line));
+  border-radius: 12px;
+  background: var(--surface-elevated, #fff);
+  box-shadow: 0 8px 28px #02081766;
+  color: var(--text-strong, var(--text));
+  font-size: 1rem;
+  line-height: 1.45;
+  text-align: left;
+  text-shadow: none;
+}
+.home-os-definition strong { display: block; margin-bottom: .35rem; }
 body.theme-home .cos-home .home-launch-bar .home-launch-brand .eyebrow {
   color: #bfcee8;
   text-align: center;
@@ -9718,12 +9771,13 @@ body.theme-home .cos-home .home-launchpad .home-launch-bar .home-launch-brand .h
   inset: 0 0 auto;
   height: 100%;
   overflow: hidden;
+  border-radius: inherit;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 50% 37%, #0c162bcc 5%, transparent 61%),
-    radial-gradient(ellipse at 14% 40%, #285b9a90, transparent 45%),
-    radial-gradient(ellipse at 86% 50%, #5b468d88, transparent 43%),
-    linear-gradient(174deg, #192d4e, transparent 76%);
+    radial-gradient(ellipse at 50% 52%, #73569b60, transparent 52%),
+    radial-gradient(ellipse at 22% 66%, #22538c65, transparent 46%),
+    radial-gradient(ellipse at 77% 27%, #382a7555, transparent 48%),
+    linear-gradient(174deg, #142442, transparent 76%);
 }
 .home-atmosphere::after {
   content: "";
@@ -9743,31 +9797,47 @@ body.theme-home .cos-home .home-launchpad .home-launch-bar .home-launch-brand .h
   height: 100%;
 }
 .home-atmosphere-subject {
+  left: 50%;
   top: 52%;
-  width: clamp(7rem, 21%, 15rem);
+  width: clamp(5.75rem, 17cqi, 10.5rem);
   aspect-ratio: 1;
   height: auto;
   translate: -50% -50%;
+  opacity: 0;
+  --flight-x: calc(var(--heading-x) * 46cqi);
+  --flight-y: calc(var(--heading-y) * clamp(2rem, 8cqi, 6rem));
+  --flight-roll: calc(var(--heading-x) * 22deg);
+  transform: translate3d(calc(var(--flight-x) * .65), calc(var(--flight-y) * .65), 0)
+    rotate(var(--flight-roll)) scale(.83);
 }
-.home-atmosphere-planet { left: 16%; }
-.home-atmosphere-study {
-  left: 84%;
-  top: 57%;
-  width: clamp(6rem, 18%, 13rem);
-  opacity: .9;
-}
+.home-atmosphere-subject:nth-of-type(2),
+.home-atmosphere-subject:nth-of-type(3) { opacity: .82; }
 .home-atmosphere-probe { position: absolute; visibility: hidden; }
-@media (min-width: 781px) and (prefers-reduced-motion: no-preference) {
-  .home-atmosphere.is-drifting .home-atmosphere-planet {
-    animation: home-atmo-float 11s ease-in-out infinite alternate;
-  }
-  .home-atmosphere.is-drifting .home-atmosphere-study {
-    animation: home-atmo-float 15s 2s ease-in-out infinite alternate-reverse;
+@media (prefers-reduced-motion: no-preference) {
+  .home-atmosphere.is-drifting .home-atmosphere-subject {
+    animation: home-atmo-flight 36s var(--flight-delay) linear infinite;
   }
 }
-@keyframes home-atmo-float {
-  from { transform: translate3d(-3px, 4px, 0) rotate(-2deg); }
-  to { transform: translate3d(5px, -6px, 0) rotate(2deg); }
+@keyframes home-atmo-flight {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(calc(var(--flight-roll) * -.6)) scale(.08);
+  }
+  8% {
+    opacity: .52;
+    transform: translate3d(calc(var(--flight-x) * .16), calc(var(--flight-y) * .16), 0)
+      rotate(0deg) scale(.27);
+  }
+  24% {
+    opacity: .94;
+    transform: translate3d(calc(var(--flight-x) * .7), calc(var(--flight-y) * .7), 0)
+      rotate(var(--flight-roll)) scale(.9);
+  }
+  36%, 100% {
+    opacity: 0;
+    transform: translate3d(var(--flight-x), var(--flight-y), 0)
+      rotate(calc(var(--flight-roll) * 1.5)) scale(1.28);
+  }
 }
 
 .cos-home .today-shortcuts a {
@@ -9777,7 +9847,7 @@ body.theme-home .cos-home .home-launchpad .home-launch-bar .home-launch-brand .h
 .cos-home .today-shortcuts a:hover {
   background: color-mix(in srgb, var(--accent) 10%, var(--surface-elevated));
 }
-.cos-home .home-tab.is-active {
+.cos-home .home-tabs .home-tab.is-active {
   box-shadow: inset 0 -2px 0 var(--accent), 0 3px 9px -5px #08172980;
 }
 .home-tab:focus-visible {
@@ -9790,12 +9860,7 @@ body.theme-home .cos-home .home-launchpad .home-launch-bar .home-launch-brand .h
 }
 
 @media (max-width: 780px) {
-  .home-atmosphere-planet { left: 9%; opacity: .52; }
-  .home-atmosphere-study { left: 91%; opacity: .44; }
-}
-@media (max-width: 480px) {
-  .home-atmosphere-planet { left: 4%; opacity: .32; }
-  .home-atmosphere-study { left: 96%; opacity: .3; }
+  .home-atmosphere-subject { width: clamp(4.5rem, 20cqi, 7rem); }
 }
 @media (forced-colors: active), print {
   .home-atmosphere { display: none; }
@@ -9805,4 +9870,5 @@ body.theme-home .cos-home .home-launchpad .home-launch-bar .home-launch-brand .h
     color: CanvasText;
     text-shadow: none;
   }
+  .home-os { color: LinkText; }
 }

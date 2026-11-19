@@ -1,5 +1,5 @@
-/* Draw the observatory backdrop and STEAM illustrations only when needed.
-   The two foreground canvases drift via CSS transforms without repainting. */
+/* Paint the galaxy and STEAM illustrations on demand. CSS transforms give
+   each illustration its flight from the core without a drawing loop. */
 (function () {
   "use strict";
 
@@ -7,8 +7,6 @@
   if (!stage) return;
 
   const backdrop = stage.querySelector(".home-atmosphere-art");
-  const planetCanvas = stage.querySelector(".home-atmosphere-planet");
-  const studyCanvas = stage.querySelector(".home-atmosphere-study");
   const probe = stage.querySelector(".home-atmosphere-probe");
   const root = document.documentElement;
   const TAU = Math.PI * 2;
@@ -73,33 +71,60 @@
       dot(ctx, x, y, near ? 1.45 : 0.44 + (i % 4) * 0.15);
     }
 
-    // Fine orbit lines and registration marks behind the foreground subjects.
-    for (const [x, y, angle] of [[0.17, 0.51, -0.32], [0.84, 0.56, 0.28]]) {
-      const radius = Math.min(width * 0.15, height * 0.51);
-      ctx.save();
-      ctx.translate(x * width, y * height);
-      ctx.rotate(angle);
-      ctx.strokeStyle = palette.star;
-      ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.15;
+    drawGalaxy(ctx, width, height);
+  }
+
+  function drawGalaxy(ctx, width, height) {
+    const radius = Math.min(width * 0.46, height * 0.94, 252);
+    ctx.save();
+    ctx.translate(width * 0.5, height * 0.52);
+    ctx.rotate(-0.22);
+    ctx.scale(1, 0.48);
+    ctx.globalAlpha = 1;
+    glow(ctx, 0, 0, radius * 0.88, palette.m, 0.29);
+    glow(ctx, 0, 0, radius * 0.34, palette.s, 0.49);
+    glow(ctx, 0, 0, radius * 0.17, palette.ink, 0.65);
+
+    const colors = [palette.s, palette.m, palette.star];
+    for (let arm = 0; arm < colors.length; arm += 1) {
+      const offset = arm * TAU / colors.length;
+      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+      gradient.addColorStop(0, palette.ink);
+      gradient.addColorStop(0.35, colors[arm]);
+      gradient.addColorStop(1, "transparent");
+      ctx.strokeStyle = gradient;
+      ctx.lineCap = "round";
       ctx.beginPath();
-      ctx.ellipse(0, 0, radius * 1.26, radius * 0.54, 0, 0, TAU);
+      for (let i = 0; i <= 80; i += 1) {
+        const progress = i / 80;
+        const reach = radius * (0.055 + 0.945 * progress ** 1.55);
+        const angle = offset + progress * TAU * 0.85;
+        const x = Math.cos(angle) * reach;
+        const y = Math.sin(angle) * reach;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.globalAlpha = 0.12;
+      ctx.lineWidth = radius * 0.14;
       ctx.stroke();
-      ctx.globalAlpha = 0.29;
-      ctx.setLineDash([2, 6]);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, radius, radius * 0.4, 0, 0, TAU);
+      ctx.globalAlpha = 0.21;
+      ctx.lineWidth = radius * 0.045;
       ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.globalAlpha = 0.65;
-      ctx.beginPath();
-      ctx.moveTo(radius * 0.83 - 5, -radius * 0.21);
-      ctx.lineTo(radius * 0.83 + 5, -radius * 0.21);
-      ctx.moveTo(radius * 0.83, -radius * 0.21 - 5);
-      ctx.lineTo(radius * 0.83, -radius * 0.21 + 5);
+      ctx.globalAlpha = 0.52;
+      ctx.lineWidth = 1.25;
       ctx.stroke();
-      ctx.restore();
+
+      for (let i = 1; i < 150; i += 1) {
+        const progress = (i * 0.61803398875) % 1;
+        const scatter = ((i * 0.41421356237) % 1) - 0.5;
+        const reach = radius * (0.055 + 0.945 * progress ** 1.55 + scatter * progress * 0.22);
+        const angle = offset + progress * TAU * 0.85 + scatter * 0.85;
+        ctx.fillStyle = i % 5 === 0 ? palette.ink : colors[arm];
+        ctx.globalAlpha = (1 - progress * 0.84) * (0.32 + (i % 7) * 0.095);
+        dot(ctx, Math.cos(angle) * reach, Math.sin(angle) * reach, i % 9 === 0 ? 1.9 : 0.85);
+      }
     }
+    ctx.restore();
   }
 
   function planet(ctx, t, p) {
@@ -342,15 +367,30 @@
     [planet, "s"], [gear, "e"], [equation, "s"], [palettePlate, "a"], [atom, "t"],
     [nautilus, "m"], [chip, "t"], [pythagoras, "m"], [notes, "a"]
   ];
+  const HEADINGS = [
+    [-0.97, 0.69], [0.97, -0.55], [-0.81, -0.8], [0.86, 0.92], [-0.92, 0.22],
+    [0.93, -0.18], [-0.75, 0.91], [0.79, 0.58], [-0.96, -0.62]
+  ];
+  const day = Math.floor(Date.now() / 86400000);
+  const subjects = OBJECTS.map((_, i) => {
+    const canvas = document.createElement("canvas");
+    const [x, y] = HEADINGS[i];
+    canvas.className = "home-atmosphere-subject";
+    canvas.width = canvas.height = 160;
+    canvas.style.setProperty("--heading-x", x);
+    canvas.style.setProperty("--heading-y", y);
+    canvas.style.setProperty("--flight-delay", `-${(i * 4 + 7) % 36}s`);
+    return canvas;
+  });
+  stage.append(...subjects);
 
-  function drawSubject(canvas, draw, hue, time, tilt) {
-    // A 240px backing store keeps both illustrations sharp with a fixed pixel budget.
-    canvas.width = canvas.height = 240;
+  function drawSubject(canvas, draw, hue, time) {
+    const size = canvas.width;
+    canvas.width = size;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.translate(120, 120);
-    ctx.scale(1.57, 1.57);
-    ctx.rotate(tilt);
+    ctx.translate(size / 2, size / 2);
+    ctx.scale(size / 153, size / 153);
     glow(ctx, 0, 0, 73, palette[hue], 0.37);
     ctx.strokeStyle = palette.ink;
     ctx.fillStyle = palette.ink;
@@ -368,10 +408,10 @@
       backdropDirty = false;
     }
     if (subjectsDirty) {
-      const day = Math.floor(Date.now() / 86400000);
-      const [study, hue] = OBJECTS[1 + day % (OBJECTS.length - 1)];
-      drawSubject(planetCanvas, planet, "s", 1.8, -0.12);
-      drawSubject(studyCanvas, study, hue, 2.4, 0.12);
+      subjects.forEach((canvas, i) => {
+        const [draw, hue] = OBJECTS[(i + day) % OBJECTS.length];
+        drawSubject(canvas, draw, hue, 1.8 + i * 0.4);
+      });
       subjectsDirty = false;
     }
   }

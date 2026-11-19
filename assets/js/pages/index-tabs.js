@@ -89,6 +89,40 @@
 
     // Start Class is a native link: navigate immediately, including modified clicks.
 
+    const osButton = document.querySelector('.home-os');
+    const osDefinition = document.getElementById('home-os-definition');
+    if (osButton && osDefinition) {
+      let dismissTimer;
+      function showDefinition() {
+        clearTimeout(dismissTimer);
+        osDefinition.hidden = false;
+      }
+      function hideDefinition() {
+        clearTimeout(dismissTimer);
+        osDefinition.hidden = true;
+      }
+      function onPointerLeave(event) {
+        if (event.pointerType === 'touch' || osButton.matches(':focus-visible')) return;
+        dismissTimer = setTimeout(hideDefinition, 180);
+      }
+      for (const target of [osButton, osDefinition]) {
+        target.addEventListener('pointerenter', (event) => {
+          if (event.pointerType !== 'touch') showDefinition();
+        });
+        target.addEventListener('pointerleave', onPointerLeave);
+      }
+      osButton.addEventListener('focus', showDefinition);
+      osButton.addEventListener('click', showDefinition);
+      osButton.addEventListener('blur', hideDefinition);
+      document.addEventListener('pointerdown', (event) => {
+        if (!osButton.contains(event.target) && !osDefinition.contains(event.target)) hideDefinition();
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || osDefinition.hidden) return;
+        hideDefinition();
+      });
+    }
+
     const commandTrigger = document.getElementById('home-command-trigger');
     if (commandTrigger) {
       commandTrigger.addEventListener('click', function () {
