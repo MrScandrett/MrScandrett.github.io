@@ -129,7 +129,10 @@
         'A whale fall can deliver years of food at once and support scavengers, enrichment opportunists, and later sulfide-based communities.',
         'Polymetallic nodules grow extremely slowly as metals accumulate around a small nucleus on the sediment surface.',
         'Hydrothermal vents and cold seeps support chemosynthesis, but they are localized exceptions rather than the energy source for the entire abyss.',
-        'Abyssal animals may be widely spaced, yet the habitat contains high species diversity—especially among small sediment-dwelling invertebrates.'
+        'Abyssal animals may be widely spaced, yet the habitat contains high species diversity—especially among small sediment-dwelling invertebrates.',
+        'In 2026 scientists reported glowing giant sea spiders living in the abyssal zone. With no sunlight, nearly all light down here is made by living things.',
+        'Plants cannot grow in the abyss because photosynthesis needs sunlight. Only animals and microbes live here, fed by drifting organic particles, whale falls, and chemicals from deep in the Earth such as at hydrothermal vents.',
+        'Scientists disagree about where the abyssal zone starts: NOAA says 4,000 m, other experts say 2,000 m. Everyone agrees it ends at 6,000 m, where the hadal zone begins.'
       ]
     },
     trench: {
@@ -148,6 +151,7 @@
       ],
       facts:[
         'The hadal zone is discontinuous: it exists inside separate trenches created mainly where one tectonic plate bends beneath another.',
+        'The Mariana Trench in the Western Pacific is about 2,550 km (1,500 mi) long and 70 km (43 mi) wide on average, where two tectonic plates collide. It drops almost 11,000 m (36,000 ft), so a descent there passes through all five ocean layers.',
         'Steep trench slopes can funnel organic matter downward, so some hadal basins contain more food than the open abyss immediately above them.',
         'Mariana snailfish occupy the upper hadal zone, but biochemical limits on proteins appear to prevent fishes from living much below about 8.2–8.4 km.',
         'Amphipods, sea cucumbers, worms, single-celled foraminiferans, and microbes continue deeper than the known limit for fishes.',
