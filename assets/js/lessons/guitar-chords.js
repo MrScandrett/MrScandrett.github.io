@@ -1809,6 +1809,8 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('visibilitychange',function() { if (document.hidden) studioStop(); });
   window.addEventListener('pagehide',studioStop);
   document.addEventListener('keydown',function(e) { if (e.key==='Escape' && !e.target.closest('dialog, [role=dialog]')) studioStop(); });
+  // The workspace's Stop sound and activity switches go through AudioKit; end queued chords too.
+  if (window.AudioKit) window.AudioKit.onStop(studioStop);
   // Stop the previous demonstration before starting a new one anywhere on the page.
   document.addEventListener('click',function(e) {
     var button=e.target.closest('button');

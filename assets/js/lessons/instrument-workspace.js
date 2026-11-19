@@ -65,7 +65,9 @@
     button.textContent = label;
     button.setAttribute('aria-controls', panel.id);
     button.addEventListener('click', () => show(panel));
-    button.hidden = true;
+    // On wide screens the activities are also buttons (CSS hides them on narrow screens, where
+    // the Activity menu is enough).
+    button.className = 'iw-activity';
     nav.append(button);
     picker.add(new Option(label, String(pages.length)));
     pages.push({ panel, button });
@@ -128,23 +130,20 @@
   page('Guitar help', guitarGuides);
   const guitarHeader = app.querySelector('.guitar-workspace-header');
   if (guitarHeader) guitarHeader.hidden = true;
-  // Less frequent tasks have their own view, leaving playback beside the instrument.
-  const options = app.querySelector('#builder .gc-builder-wrap, #builder .pc-builder-wrap');
-  if (options) {
-    const controls = [...options.children].filter(node => node.matches('.gc-quick-grips, #gcChallengeReadout') || node.querySelector('#gcChallengeBuilder, #pcChallengeBuilder'));
-    if (isPiano) {
-      const clear = app.querySelector('#pcClearBuilder');
-      if (clear && controls[0]) options.prepend(clear);
-    }
-    page('Chord challenges', controls);
-  }
-  const saxExtras = app.querySelector('.sx-studio-extras');
-  page('Fingering options', [saxExtras]);
-  page('Saxophone diagram', [app.querySelector('#sxFingerDiagram')]);
-  page('Find a note', [app.querySelector('.sx-note-finder')]);
+  // Tools stay beside the controls they work with: the chord builder keeps its Clear button,
+  // quick grips and challenges; the saxophone studio keeps its diagram and note finder
+  // (saxophone.js reaches into #sxFingeringStudio for them); the beat builder keeps its sounds.
   const drum = app.querySelector('.dr-player[data-set="builder"]');
   if (drum) {
-    page('Drum sound settings', [drum.querySelector('.drum-studio')]);
+    const studio = drum.querySelector('.drum-studio');
+    if (studio && !studio.closest('details.iw-drum-sounds')) {
+      const fold = document.createElement('details');
+      fold.className = 'iw-drum-sounds';
+      const summary = document.createElement('summary');
+      summary.textContent = 'Drum sound settings';
+      studio.before(fold);
+      fold.append(summary, studio);
+    }
     // Keep composing, listening and reading in the same activity.
     const builderPanel = pages.find(item => item.panel.contains(drum)).panel;
     const sheetPanel = pages.find(item => item.panel.contains(homework)).panel;
@@ -168,6 +167,9 @@
     if (hint) hint.textContent = 'New to piano? Follow the glowing keys. Already play? Choose Chord builder or Progressions from the Activity menu above.';
   }
   if (pages[0]) show(pages[0].panel);
+  // A homework QR link (drums.html#g1=…) opens straight into Build a beat with that groove.
+  const linked = app.querySelector('.dr-player[data-from-link]');
+  if (linked) { const item = pages.find(entry => entry.panel.contains(linked)); if (item) show(item.panel); }
   function reveal(hash) {
     let target;
     try { target = document.getElementById(decodeURIComponent(hash.replace(/^#/, ''))); } catch { return; }
@@ -184,11 +186,12 @@
   }, true);
   document.getElementById('musicSection')?.addEventListener('change', event => reveal(event.target.value), true);
   window.addEventListener('hashchange', () => reveal(location.hash));
-  document.addEventListener('guitar-reveal', event => {
+  // Any lesson script can ask for the activity that holds an element: instrument-reveal with its id.
+  ['guitar-reveal', 'instrument-reveal'].forEach(type => document.addEventListener(type, event => {
     const target = document.getElementById(event.detail);
     const item = pages.find(item => item.panel.contains(target));
     if (item?.panel.hidden) show(item.panel);
-  });
+  }));
   reveal(location.hash);
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !event.target.closest('dialog, [role="dialog"]')) window.AudioKit?.stopAll();

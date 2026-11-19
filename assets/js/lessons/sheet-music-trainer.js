@@ -818,6 +818,9 @@
     for (var l = 0; l < 7; l++) for (var a = -1; a <= 1; a++) {
       if (L.scaleRoots && L.scaleRoots.indexOf(LET[l]) < 0) continue;
       if (L.scaleRoots && a !== 0) continue;
+      // F♭, E♯ and B♯ roots spell keys and chords nobody meets before college theory
+      // (F♭ major, E♯ minor, B♯ diminished); leave them to the College level.
+      if (!lv().dbl && ((l === 3 && a === -1) || (l === 2 && a === 1) || (l === 6 && a === 1))) continue;
       out.push({ l: l, a: a });
     }
     return out;
@@ -1640,7 +1643,9 @@
     el.hearAnswer.addEventListener('click', function () {
       audioReady = true;
       var solution = state.ex.solve();
-      var notes = Array.isArray(solution) ? solution : (state.ex.playItems || state.ex.items || []).map(function (item) { return item.n || item; });
+      // Construction drills give the root and solve() returns only the notes to add; play the whole answer.
+      var notes = state.ex.expectNotes && state.ex.expectNotes.length ? state.ex.expectNotes
+        : Array.isArray(solution) ? solution : (state.ex.playItems || state.ex.items || []).map(function (item) { return item.n || item; });
       playNotes(notes, state.ex.layout === 'stack' ? 'stack' : 'seq');
     });
     el.hintBtn.addEventListener('click', function () {
@@ -1667,7 +1672,8 @@
     document.addEventListener('keydown', function (e) {
       if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
       var ex = state.ex; if (!ex) return;
-      if (state.answered && (e.key === 'Enter') && document.activeElement === document.body) { newQuestion(); return; }
+      // Enter is the Next button: inside a guided set it moves the set on rather than leaving it.
+      if (state.answered && (e.key === 'Enter') && document.activeElement === document.body) { advanceGuided(); return; }
       if (state.answered || ex.input !== 'note' || e.ctrlKey || e.metaKey || e.altKey) return;
       var k = e.key.toLowerCase(), i = 'cdefgab'.indexOf(k);
       if (i >= 0 && (state.level > 0 || i <= 4)) { audioReady = true; submit({ l: i, a: state.acc }); }

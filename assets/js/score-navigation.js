@@ -247,7 +247,12 @@
       var m = measures()[i]; if (!m) return;
       var v = viewport(), sr = surface.getBoundingClientRect(), r = m.getBoundingClientRect();
       if (sr.bottom < v.top + 100) return;           // the reader scrolled past the score entirely: hold still
-      if (r.bottom > v.bottom - 20 || r.top < v.top + 4 || (!isPage(scroller) && (r.right > v.right || r.left < v.left))) scrollToMeasure(i);
+      var sideways = !isPage(scroller) && (r.right > v.right || r.left < v.left);
+      // A system taller than the pane can never fit, so centring it scrolled on every bar.
+      // Pin its top instead, and only move when the top has drifted out of place.
+      if (r.height > v.bottom - v.top - 24) {
+        if (r.top < v.top - 4 || r.top > v.top + 48 || sideways) scrollToMeasure(i, { top: true });
+      } else if (r.bottom > v.bottom - 20 || r.top < v.top + 4 || sideways) scrollToMeasure(i);
     }
     function pauseFollow() {
       if (current >= 0 && following && !paused) { paused = true; paint(); }
@@ -342,6 +347,7 @@
 
     var api = {
       el: nav,
+      scope: scope,
       setScroller: function (next) {
         if (scroller === next) return;
         setScroller(next);
@@ -397,6 +403,13 @@
     var a = active;
     if (!a || a.el.hidden || ev.ctrlKey || ev.metaKey || ev.altKey || inField(ev.target)) return;
     if (SCROLL_KEYS.indexOf(ev.key) >= 0) { a.pauseFollow(); return; }
+    // F is also Full screen (creation-app.js). Leave it to buttons with their own shortcut, the
+    // creation workspace itself, and anything outside this score.
+    if (ev.key === 'f' || ev.key === 'F') {
+      var t = ev.target;
+      if (t && t.closest && (t.closest('button, [aria-keyshortcuts]') || (t.matches && t.matches('[data-creation-app]')))) return;
+      if (t && t !== document.body && t !== document.documentElement && a.scope && !a.scope.contains(t)) return;
+    }
     if (a.keys(ev)) ev.preventDefault();
   });
 })(window);

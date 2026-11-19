@@ -8,7 +8,7 @@
   const status = document.getElementById('guitarStatus');
   const notes = document.getElementById('guitarNotes');
   const django = root.dataset.guitarComposer === 'django-reinhardt';
-  let voices = [], timer, generation = 0;
+  let voices = [], timer, generation = 0, stopping = false;
   function events() {
     const changed = version.value === '1';
     const result = [];
@@ -35,13 +35,21 @@
       return li;
     }));
   }
-  function stop(message = 'Stopped.') {
+  function stopLocal(message = 'Stopped.') {
     generation++;
     clearTimeout(timer);
     voices.forEach(v => { try { v.kill(AudioKit.now()); } catch {} });
     voices = [];
     status.textContent = message;
   }
+  function stop(message = 'Stopped.') {
+    stopLocal(message);
+    if (!stopping && window.AudioKit?.stopAll) {
+      stopping = true;
+      try { AudioKit.stopAll(); } finally { stopping = false; }
+    }
+  }
+  window.AudioKit?.onStop?.(() => { if (!stopping) stopLocal(); });
   document.getElementById('guitarPlay').addEventListener('click', async () => {
     stop('Preparing audio…');
     const run = generation;

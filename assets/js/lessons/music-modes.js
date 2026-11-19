@@ -13,7 +13,7 @@
 
   /* ---------------------------------------------------------------- audio */
   var Sound = (function () {
-    var volume = 0.7, drone = null, generation = 0;
+    var volume = 0.7, drone = null, generation = 0, droneToken = 0;
     var live = new Set(), timers = new Set(), prepared = {};
     function get() {
       if (!window.AudioKit || !window.MusicSynth) return null;
@@ -72,14 +72,19 @@
       });
       track(v);
     }
-    async function droneStart(freq) {
+    // opts.fifth === false leaves out the drone's 5th: Locrian's 5th is diminished, so a perfect
+    // 5th under it rubs a half step against the mode's own ♭5.
+    async function droneStart(freq, opts) {
       droneStop();
       var c = get(); if (!c || !freq) return;
-      var token = generation;
+      var token = generation, mine = droneToken;
       await warm(c, 'organ');
-      if (token !== generation) return;
+      // A Stop (or another drone) while the organ samples load must win.
+      if (token !== generation || mine !== droneToken) return;
       droneStop();
-      var voices = [[freq / 2, 0.36], [freq, 0.32], [freq * 0.75, 0.22]].map(function (d) {
+      var parts = [[freq / 2, 0.36], [freq, 0.32]];
+      if (!opts || opts.fifth !== false) parts.push([freq * 0.75, 0.22]);
+      var voices = parts.map(function (d) {
         return window.AudioKit.note({
           instrument: 'organ',
           hz: d[0],
@@ -91,6 +96,7 @@
       drone = { voices: voices };
     }
     function droneStop() {
+      droneToken++;
       if (!drone) return;
       var c = window.AudioKit && window.AudioKit.peek ? window.AudioKit.peek() : null;
       var t = c ? c.currentTime : 0, d = drone;
@@ -115,6 +121,11 @@
     function setVolume(v) { volume = v; if (window.AudioKit) window.AudioKit.setVolume(v); }
     return { tone: tone, hold: hold, droneStart: droneStart, droneStop: droneStop, later: later, stopAll: stopAll, setVolume: setVolume, available: function () { return !!(window.AudioContext || window.webkitAudioContext); } };
   })();
+
+  // Loops and drones end with the tab, the page, and any shared Stop (AudioKit.stopAll).
+  if (document.addEventListener) document.addEventListener('visibilitychange', function () { if (document.hidden) Sound.stopAll(); });
+  if (window.addEventListener) window.addEventListener('pagehide', function () { Sound.stopAll(); });
+  if (window.AudioKit && window.AudioKit.onStop) window.AudioKit.onStop(function () { Sound.stopAll(); });
 
   /* Play a list of {freq, midi?, x?} at a fixed step; onNote(i, note) fires in sync. */
   function playSeq(notes, opt) {
@@ -351,6 +362,7 @@
   };
   var LADDER = ['Lydian', 'Ionian', 'Mixolydian', 'Dorian', 'Aeolian', 'Phrygian', 'Locrian'];
   function modeMidis(mode, tonic) { return MODES[mode].steps.concat([12]).map(function (s) { return tonic + s; }); }
+  function hasFifth(steps) { return steps.indexOf(7) >= 0; }
 
   var CHURCH = [
     { n: 1, name: 'Dorian', kind: 'authentic', final: 62, lo: 62, hi: 74, tenor: 69, family: 'protus' },
@@ -617,7 +629,7 @@
     $('#modernTonic').addEventListener('change', render);
     function withDrone(fn) {
       Sound.stopAll();
-      if ($('#modernDrone').checked) Sound.droneStart(etFreq(tonic() - 12));
+      if ($('#modernDrone').checked) Sound.droneStart(etFreq(tonic() - 12), { fifth: hasFifth(MODES[mode].steps) });
       return fn();
     }
     function scaleNotes(m) { var ms = modeMidis(m, tonic()); return ms.concat(ms.slice(0, -1).reverse()); }
@@ -639,7 +651,8 @@
     $('#modernTour').addEventListener('click', function () {
       Sound.stopAll();
       var t = tonic(), at = 0;
-      if ($('#modernDrone').checked) Sound.droneStart(etFreq(t - 12));
+      // The tour visits Locrian too, so its drone is tonic and octave only.
+      if ($('#modernDrone').checked) Sound.droneStart(etFreq(t - 12), { fifth: false });
       LADDER.forEach(function (m) {
         Sound.later(function () { mode = m; render(); status('modernStatus', 'Now playing: <b>' + m + '</b>'); }, at * 1000);
         modeMidis(m, t).forEach(function (k, i) {
@@ -740,9 +753,11 @@
       Sound.stopAll();
       var chords = plan(), t = tonic(), M = MODES[mode];
       var flats = /♭/.test(spell(t, [0])[0]);
-      var rootAbs = t + M.steps[4], third = rootAbs + 4;
+      // V is the major chord a perfect 5th above the tonic. Locrian's 5th step is ♭5, so building
+      // on M.steps[4] gave a "V" a tritone away.
+      var rootAbs = t + 7, third = rootAbs + 4;
       var inMode = M.steps.some(function (x) { return pc(t + x) === pc(third); });
-      var shift = M.steps[4] >= 6 ? 12 : 0;
+      var shift = 12;
       var vChord = { bass: rootAbs - shift - 12, tones: [rootAbs - shift, third - shift, rootAbs + 7 - shift], spoil: true };
       playChords(chords.concat([vChord, chords[0]]), { liIndex: function (n) { return n < chords.length ? n : 0; } });
       var vName = keyName(rootAbs, flats), note = keyName(third, flats), home = keyName(t, flats);
@@ -819,7 +834,7 @@
       if (!round) return;
       Sound.stopAll();
       if (game === 'mode') {
-        Sound.droneStart(etFreq(round.tonic - 12));
+        Sound.droneStart(etFreq(round.tonic - 12), { fifth: hasFifth(MODES[round.answer].steps) });
         var ms = modeMidis(round.answer, round.tonic);
         playSeq(ms.concat(ms.slice(0, -1).reverse()).map(function (m) { return { freq: etFreq(m) }; }), { step: 0.34, onDone: Sound.droneStop });
       } else if (game === 'genus') {
@@ -946,18 +961,32 @@
   function initCompose() {
     var host = $('#composeLab'); if (!host) return;
     var STEPS = 16, grid = new Array(STEPS).fill(null), playing = false, col = -1, timer = null;
-    var STORE = 'mm-compose-v1';
-    try { var saved = JSON.parse(localStorage.getItem(STORE) || 'null'); if (saved && saved.length === STEPS) grid = saved; } catch (e) { /* storage unavailable */ }
-    function save() { try { localStorage.setItem(STORE, JSON.stringify(grid)); } catch (e) { /* storage unavailable */ } }
+    // The grid and its settings (scale, tonic, genus, tempo, drone) come back together after a reload.
+    // Older saves were the grid array alone.
+    var STORE = 'mm-compose-v1', settings = null;
+    try {
+      var saved = JSON.parse(localStorage.getItem(STORE) || 'null');
+      if (Array.isArray(saved) && saved.length === STEPS) grid = saved;
+      else if (saved && Array.isArray(saved.grid) && saved.grid.length === STEPS) { grid = saved.grid; settings = saved; }
+    } catch (e) { /* storage unavailable */ }
+    function setIf(sel, value) { var el = $(sel); if (!el || value == null) return; if (el.type === 'checkbox') el.checked = !!value; else if (el.tagName !== 'SELECT' || [].some.call(el.options, function (o) { return o.value === String(value); })) el.value = String(value); }
+    if (settings) { setIf('#compScale', settings.scale); setIf('#compTonic', settings.tonic); setIf('#compGenus', settings.genus); setIf('#compTempo', settings.tempo); setIf('#compDrone', settings.drone); if ($('#compTempoOut')) $('#compTempoOut').textContent = $('#compTempo').value; }
+    function save() {
+      try { localStorage.setItem(STORE, JSON.stringify({ grid: grid, scale: $('#compScale').value, tonic: $('#compTonic').value, genus: $('#compGenus').value, tempo: $('#compTempo').value, drone: $('#compDrone').checked })); } catch (e) { /* storage unavailable */ }
+    }
+    function saveSettings() { save(); }
+    function startDrone() { var sc = scale(); Sound.droneStart(sc.drone, { fifth: sc.droneFifth }); }
+    ['#compScale', '#compTonic', '#compGenus', '#compTempo'].forEach(function (sel) { var el = $(sel); if (el) el.addEventListener('change', saveSettings); });
     /* Current scale: 8 notes ascending with freq + label + nearest key. */
     function scale(override) {
       var v = override || $('#compScale').value;
       if (v.indexOf('m:') === 0) {
         var mode = v.slice(2), t = +$('#compTonic').value, st = MODES[mode].steps.concat([12]), names = spell(t, st);
-        return { title: keyName(t) + ' ' + mode, notes: st.map(function (s, i) { return { freq: etFreq(t + s), label: names[i] }; }), drone: etFreq(t - 12) };
+        return { title: keyName(t) + ' ' + mode, notes: st.map(function (s, i) { return { freq: etFreq(t + s), label: names[i] }; }), drone: etFreq(t - 12), droneFifth: hasFifth(MODES[mode].steps) };
       }
       var s = +v.slice(2), genus = $('#compGenus').value, ns = species(s, genus, 'ratio');
-      return { title: 'Greek ' + SPECIES[s].name + ' (' + { dia: 'diatonic', chr: 'chromatic', enh: 'enharmonic' }[genus] + ')', notes: ns.map(function (n) { return { freq: n.freq, label: keyName(n.key) + (Math.abs(n.dev) >= 10 ? '<small>' + fmtCents(n.dev) + '</small>' : '') }; }), drone: ns[0].freq / 2 };
+      return { title: 'Greek ' + SPECIES[s].name + ' (' + { dia: 'diatonic', chr: 'chromatic', enh: 'enharmonic' }[genus] + ')', notes: ns.map(function (n) { return { freq: n.freq, label: keyName(n.key) + (Math.abs(n.dev) >= 10 ? '<small>' + fmtCents(n.dev) + '</small>' : '') }; }), drone: ns[0].freq / 2,
+        droneFifth: ns.some(function (n) { return Math.abs(1200 * Math.log2(n.freq / ns[0].freq) - 702) < 15; }) };
     }
     var gEl = $('#compGrid');
     function render() {
@@ -991,14 +1020,16 @@
       col = (col + 1) % STEPS;
       highlightCol(col);
       var d = grid[col], sc = scale();
-      if (d != null) Sound.tone(sc.notes[d].freq, { dur: 0.6 });
-      timer = setTimeout(tick, 60000 / +$('#compTempo').value / 2);
+      var stepSec = 60 / +$('#compTempo').value / 2;
+      // Each note lasts about one step, so fast tempos don't blur into a pedal.
+      if (d != null) Sound.tone(sc.notes[d].freq, { dur: Math.max(0.15, Math.min(0.9, stepSec * 1.1)) });
+      timer = setTimeout(tick, stepSec * 1000);
     }
     $('#compPlay').addEventListener('click', function () {
       if (playing) { stop(); return; }
       Sound.stopAll();
       playing = true; col = -1;
-      if ($('#compDrone').checked) Sound.droneStart(scale().drone);
+      if ($('#compDrone').checked) startDrone();
       this.textContent = '■ Stop loop';
       tick();
     });
@@ -1030,12 +1061,12 @@
       var greek = this.value.indexOf('g:') === 0;
       $('#compGenusWrap').hidden = !greek;
       $('#compTonicWrap').hidden = greek;
-      if (playing && $('#compDrone').checked) Sound.droneStart(scale().drone);
+      if (playing && $('#compDrone').checked) startDrone();
       render();
     });
-    ['#compTonic', '#compGenus'].forEach(function (s) { $(s).addEventListener('change', function () { if (playing && $('#compDrone').checked) Sound.droneStart(scale().drone); render(); }); });
+    ['#compTonic', '#compGenus'].forEach(function (s) { $(s).addEventListener('change', function () { if (playing && $('#compDrone').checked) startDrone(); render(); }); });
     $('#compTempo').addEventListener('input', function () { $('#compTempoOut').textContent = this.value; });
-    $('#compDrone').addEventListener('change', function () { if (!playing) return; if (this.checked) Sound.droneStart(scale().drone); else Sound.droneStop(); });
+    $('#compDrone').addEventListener('change', function () { saveSettings(); if (!playing) return; if (this.checked) startDrone(); else Sound.droneStop(); });
     render();
   }
 

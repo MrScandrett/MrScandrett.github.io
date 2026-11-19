@@ -719,14 +719,19 @@ document.addEventListener('DOMContentLoaded', function () {
   buildInversionPicker();
   renderEncyclopedia();
 
+  // The builder may sit in a hidden activity panel: ask the workspace to show it, then scroll.
+  function showBuilder() {
+    document.dispatchEvent(new CustomEvent('instrument-reveal', { detail: 'builder' }));
+    var target = document.getElementById('builder');
+    if (target) requestAnimationFrame(function () { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  }
   var sendToBuilder = document.getElementById('pcSendToBuilder');
   if (sendToBuilder) sendToBuilder.addEventListener('click', function () {
     var abs = PT.voiceChord(encCurrentRoot, encCurrentType, encCurrentInversion);
     builderActive = {};
     abs.forEach(function (idx) { builderActive[idx] = true; });
     renderBuilder();
-    var target = document.getElementById('builder');
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showBuilder();
   });
 
   function currentEncIndices() {
@@ -1034,6 +1039,15 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.studio-playing').forEach(function (el) { el.classList.remove('studio-playing'); });
     if (typeof stopProgression === 'function') stopProgression();
   }
+  // The workspace's Stop sound, Escape, tab switches and hidden tabs call AudioKit.stopAll(); end the
+  // timers that would otherwise start the next chord or exercise step from a hidden panel.
+  if (window.AudioKit) window.AudioKit.onStop(function () {
+    studioTimers.forEach(clearTimeout); studioTimers = [];
+    document.querySelectorAll('.studio-playing').forEach(function (el) { el.classList.remove('studio-playing'); });
+    if (typeof stopProgression === 'function') stopProgression();
+    if (typeof stopPiece === 'function') stopPiece();
+    window.dispatchEvent(new Event('piano-studio-stop'));
+  });
   var pcStopBtn = document.getElementById('pcStop');
   var pcVolumeIn = document.getElementById('pcVolume');
   var pcSizeSel = document.getElementById('pcSize');
@@ -1185,8 +1199,7 @@ document.addEventListener('DOMContentLoaded', function () {
     builderActive = {};
     currentVoiceIndices().forEach(function (idx) { builderActive[idx] = true; });
     renderBuilder();
-    var target = document.getElementById('builder');
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showBuilder();
   });
 
   buildVoicePickers();
@@ -1264,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function loadProgressionPreset() {
     studioStop(); pcProgression = [];
     var root = Number(document.getElementById('pcKey').value), pattern = document.getElementById('pcPreset').value;
-    var entries = pattern === 'easy' ? [[4, '', 'Em'], [9, 'm', 'Am']]
+    var entries = pattern === 'easy' ? [[4, 'm', 'Em'], [9, 'm', 'Am']]
       : pattern === 'pop' ? [[0, '', 'I'], [7, '', 'V'], [9, 'm', 'vi'], [5, '', 'IV']]
       : pattern === 'cadence' ? [[2, 'm', 'ii'], [7, '', 'V'], [0, '', 'I']]
       : [[0, '7', 'I7'], [0, '7', 'I7'], [0, '7', 'I7'], [0, '7', 'I7'], [5, '7', 'IV7'], [5, '7', 'IV7'], [0, '7', 'I7'], [0, '7', 'I7'], [7, '7', 'V7'], [5, '7', 'IV7'], [0, '7', 'I7'], [7, '7', 'V7']];

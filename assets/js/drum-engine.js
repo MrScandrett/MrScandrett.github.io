@@ -66,47 +66,62 @@
   function createSynth(ctx, out) {
     var nb = noiseBuffer(ctx);
     var banks = metalBank(ctx);
-    var openHatGain = null;
+    var openHatChoke = null;
+    var activeSources = new Set();
+    var bus = ctx.createGain();
+    bus.gain.value = 1;
+    bus.connect(out);
 
-    function amp(t, peak, decay, attack) {
+    function registerSource(node, onDone) {
+      activeSources.add(node);
+      node.onended = function () {
+        activeSources.delete(node);
+        if (onDone) onDone();
+      };
+    }
+
+    function amp(t, peak, decay, attack, dest) {
       var g = ctx.createGain();
       var a = attack || 0.002;
       g.gain.setValueAtTime(0.0001, t);
       g.gain.linearRampToValueAtTime(Math.max(peak, 0.0002), t + a);
       g.gain.exponentialRampToValueAtTime(0.0001, t + a + decay);
-      g.connect(out);
+      g.connect(dest || bus);
       return g;
     }
 
-    function osc(type, f0, f1, t, sweep, peak, decay) {
+    function osc(type, f0, f1, t, sweep, peak, decay, dest) {
       var o = ctx.createOscillator();
       o.type = type;
       o.frequency.setValueAtTime(f0, t);
       if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + sweep);
-      var g = amp(t, peak, decay);
+      var g = amp(t, peak, decay, undefined, dest);
       o.connect(g);
+      registerSource(o, function () { o.disconnect(); g.disconnect(); });
       o.start(t); o.stop(t + decay + 0.05);
       return g;
     }
 
-    function noise(t, filterType, freq, q, peak, decay, offset) {
+    function noise(t, filterType, freq, q, peak, decay, offset, dest) {
       var n = ctx.createBufferSource();
       n.buffer = nb;
       var f = ctx.createBiquadFilter();
       f.type = filterType; f.frequency.value = freq; f.Q.value = q || 0.7;
-      var g = amp(t, peak, decay, 0.001);
+      var g = amp(t, peak, decay, 0.001, dest);
       n.connect(f); f.connect(g);
+      registerSource(n, function () { n.disconnect(); f.disconnect(); g.disconnect(); });
       n.start(t, offset === undefined ? Math.random() : offset); n.stop(t + decay + 0.05);
       return g;
     }
 
-    function metal(t, peak, decay, hp, bp, mult) {
+    function metal(t, peak, decay, hp, bp, mult, dest) {
       var banked = banks[metalKey(hp, bp, mult)];
       if (banked && decay + 0.06 <= banked.duration) {            // rendered once: filters already baked in
-        var bg = amp(t, peak, decay, 0.001);
+        var bg = amp(t, peak, decay, 0.001, dest);
         var src = ctx.createBufferSource();
         src.buffer = banked;
         src.connect(bg);
+        registerSource(src, function () { src.disconnect(); bg.disconnect(); });
         src.start(t); src.stop(t + decay + 0.06);
         return bg;
       }
@@ -114,14 +129,21 @@
       var hpf = ctx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = hp;
       var bpf = ctx.createBiquadFilter(); bpf.type = 'bandpass'; bpf.frequency.value = bp; bpf.Q.value = 0.6;
       mix.connect(bpf); bpf.connect(hpf);
-      var g = amp(t, peak, decay, 0.001);
+      var g = amp(t, peak, decay, 0.001, dest);
       hpf.connect(g);
+      var left = METAL.length;
       for (var i = 0; i < METAL.length; i++) {
         var o = ctx.createOscillator();
         o.type = 'square';
         o.frequency.value = METAL[i] * (mult || 1);
         var og = ctx.createGain(); og.gain.value = 0.16;
         o.connect(og); og.connect(mix);
+        (function (oscNode, oscGain) {
+          registerSource(oscNode, function () {
+            oscNode.disconnect(); oscGain.disconnect();
+            if (--left === 0) { mix.disconnect(); bpf.disconnect(); hpf.disconnect(); g.disconnect(); }
+          });
+        })(o, og);
         o.start(t); o.stop(t + decay + 0.06);
       }
       return g;
@@ -146,18 +168,22 @@
         noise(t, 'bandpass', 3200, 1.2, 0.2 * v, 0.03);
       },
       hat: function (t, v) {
-        if (openHatGain) {                                     // pedal down chokes the open hat
-          openHatGain.gain.cancelScheduledValues(t);
-          openHatGain.gain.setTargetAtTime(0.0001, t, 0.008);
-          openHatGain = null;
+        if (openHatChoke) {                                    // pedal down chokes the open hat (both metal + noise)
+          openHatChoke.gain.cancelScheduledValues(t);
+          openHatChoke.gain.setValueAtTime(1, t);
+          openHatChoke.gain.setTargetAtTime(0.0001, t, 0.008);
+          openHatChoke = null;
         }
         metal(t, 0.42 * v, 0.055, 7000, 10000);
         noise(t, 'highpass', 8000, 0.7, 0.16 * v, 0.04);
       },
       ohat: function (t, v) {
-        var g = metal(t, 0.4 * v, 0.42, 6500, 9500);
-        noise(t, 'highpass', 7500, 0.7, 0.14 * v, 0.3);
-        openHatGain = g;
+        var choke = ctx.createGain();
+        choke.gain.value = 1;
+        choke.connect(bus);
+        metal(t, 0.4 * v, 0.42, 6500, 9500, undefined, choke);
+        noise(t, 'highpass', 7500, 0.7, 0.14 * v, 0.3, undefined, choke);
+        openHatChoke = choke;
       },
       ride: function (t, v) {
         metal(t, 0.2 * v, 1.0, 5200, 7500, 1.35);
@@ -179,9 +205,12 @@
         var f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 1.2;
         var g = amp(t, 0.3 * v, 0.22, 0.001);
         f.connect(g);
+        var left = 2;
         [587, 845].forEach(function (hz) {
           var o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = hz;
-          o.connect(f); o.start(t); o.stop(t + 0.3);
+          o.connect(f);
+          registerSource(o, function () { o.disconnect(); if (--left === 0) { f.disconnect(); g.disconnect(); } });
+          o.start(t); o.stop(t + 0.3);
         });
       }
     };
@@ -199,12 +228,28 @@
     function hit(name, when, vel, opts) {
       var key = ALIASES[name] || name;
       var voice = voices[key] || voices.perc;
-      if (ctx.state === 'suspended' && ctx.resume && !ctx.startRendering) ctx.resume();
+      if (ctx.state !== 'running' && ctx.state !== 'closed' && ctx.resume && !ctx.startRendering) ctx.resume();
       var t = when === undefined ? ctx.currentTime : when;
       voice(t, vel === undefined ? 0.8 : Math.max(0.05, Math.min(1, vel)), opts);
     }
 
-    return { hit: hit, names: Object.keys(voices), defaultTomPitch: TOM_DEFAULT };
+    function stopAll(at) {
+      var t = Math.max(ctx.currentTime, at === undefined ? ctx.currentTime : at);
+      var oldBus = bus;
+      bus = ctx.createGain();
+      bus.gain.value = 1;
+      bus.connect(out);
+      openHatChoke = null;
+      oldBus.gain.cancelScheduledValues(t);
+      oldBus.gain.setValueAtTime(1, t);
+      oldBus.gain.setTargetAtTime(0.0001, t, 0.005);
+      activeSources.forEach(function (node) { try { node.stop(t + 0.04); } catch (_e) {} });
+      if (typeof setTimeout === 'function') {
+        setTimeout(function () { try { oldBus.disconnect(); } catch (_e) {} }, Math.max(0, (t - ctx.currentTime + 0.06) * 1000));
+      }
+    }
+
+    return { hit: hit, stopAll: stopAll, names: Object.keys(voices), defaultTomPitch: TOM_DEFAULT };
   }
 
   // Locally generated PCM one-shots: no downloads or recording licenses required.
@@ -223,11 +268,16 @@
     percussion: { name: 'Hand percussion', map: { kick: 'tomLo', snare: 'conga', hat: 'shaker', ohat: 'tamb', tomHi: 'wood', tomLo: 'conga', crash: 'tamb', clap: 'clap', perc: 'perc' } }
   };
   var cache = new WeakMap();
+  var MAX_SAMPLE_CACHE = 48;
   function sample(ctx, id, decay) {
     decay = Math.max(.1, Math.min(2, decay || 1));
-    var cacheKey = id + ":" + decay;
-    var bank = cache.get(ctx); if (!bank) { bank = {}; cache.set(ctx, bank); }
-    if (bank[cacheKey]) return bank[cacheKey];
+    var cacheKey = id + ":" + decay.toFixed(2);
+    var bank = cache.get(ctx); if (!bank) { bank = new Map(); cache.set(ctx, bank); }
+    var hitBuf = bank.get(cacheKey);
+    if (hitBuf) {
+      bank.delete(cacheKey); bank.set(cacheKey, hitBuf);
+      return hitBuf;
+    }
     var spec = SAMPLES[id], duration = spec[2] * 5 * decay;
     var b = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate), d = b.getChannelData(0);
     var seed = 12345, phase = 0, last = 0;
@@ -245,33 +295,73 @@
       if (id === 'clap') envelope *= t < .045 ? .25 + .75 * Math.pow(Math.sin(t * 280), 2) : 1;
       d[i] = .65 * envelope * (tone * (1 - spec[3]) + noise * spec[3]);
     }
-    bank[cacheKey] = b; return b;
+    if (bank.size >= MAX_SAMPLE_CACHE) bank.delete(bank.keys().next().value);
+    bank.set(cacheKey, b); return b;
   }
   function create(ctx, out) {
     var synth = createSynth(ctx, out), open = null;
+    var sampleBus = ctx.createGain(); sampleBus.gain.value = 1; sampleBus.connect(out);
+    var activeSampleSources = new Set();
     function hit(name, when, vel, opts) {
       if (!opts || !opts.sample) return synth.hit(name, when, vel, opts);
       if (opts.level === 0 || vel === 0) return;
       var id = SAMPLES[opts.sample] ? opts.sample : 'kick';
       var t = Math.max(ctx.currentTime, when === undefined ? ctx.currentTime : when);
-      if (ctx.state === 'suspended' && !ctx.startRendering) ctx.resume();
-      if ((ALIASES[name] || name) === 'hat' && open) { open.gain.cancelScheduledValues(t); open.gain.setTargetAtTime(.0001, t, .006); }
+      if (ctx.state !== 'running' && ctx.state !== 'closed' && ctx.resume && !ctx.startRendering) ctx.resume();
+      if ((ALIASES[name] || name) === 'hat' && open) {
+        open.gain.cancelScheduledValues(t);
+        open.gain.setValueAtTime(1, t);
+        open.gain.setTargetAtTime(.0001, t, .006);
+        open = null;
+      }
       var src = ctx.createBufferSource(); src.buffer = sample(ctx, id, opts.decay);
       src.playbackRate.value = Math.pow(2, (opts.tune || 0) / 12);
       var filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = opts.tone || 18000;
-      var drive = ctx.createWaveShaper(), curve = new Float32Array(512), amount = 1 + (opts.drive || 0) * 12;
-      for (var i = 0; i < curve.length; i++) { var x = i * 2 / 511 - 1; curve[i] = opts.drive ? Math.tanh(x * amount) / Math.tanh(amount) : x; }
-      drive.curve = curve; drive.oversample = '2x';
+      var driveAmt = opts.drive || 0;
+      var drive = null;
+      if (driveAmt > 0) {
+        drive = ctx.createWaveShaper();
+        var curve = new Float32Array(512), amount = 1 + driveAmt * 12;
+        for (var i = 0; i < curve.length; i++) { var x = i * 2 / 511 - 1; curve[i] = Math.tanh(x * amount) / Math.tanh(amount); }
+        drive.curve = curve; drive.oversample = '2x';
+      }
       var gain = ctx.createGain(), length = src.buffer.duration / src.playbackRate.value;
       var peak = Math.max(.0001, (vel === undefined ? .8 : vel) * (opts.level === undefined ? 1 : opts.level));
       gain.gain.setValueAtTime(peak, t); gain.gain.exponentialRampToValueAtTime(.0001, t + Math.max(.02, length));
       var pan = ctx.createStereoPanner(); pan.pan.value = opts.pan || 0;
-      src.connect(filter); filter.connect(drive); drive.connect(gain); gain.connect(pan); pan.connect(out);
-      if ((ALIASES[name] || name) === 'ohat') open = gain;
-      src.onended = function () { src.disconnect(); filter.disconnect(); drive.disconnect(); gain.disconnect(); pan.disconnect(); if (open === gain) open = null; };
+      var choke = (ALIASES[name] || name) === 'ohat' ? ctx.createGain() : null;
+      if (choke) { choke.gain.value = 1; open = choke; }
+      src.connect(filter);
+      if (drive) { filter.connect(drive); drive.connect(gain); }
+      else { filter.connect(gain); }
+      gain.connect(pan);
+      if (choke) { pan.connect(choke); choke.connect(sampleBus); }
+      else { pan.connect(sampleBus); }
+      activeSampleSources.add(src);
+      src.onended = function () {
+        activeSampleSources.delete(src);
+        src.disconnect(); filter.disconnect();
+        if (drive) drive.disconnect();
+        gain.disconnect(); pan.disconnect();
+        if (choke) { choke.disconnect(); if (open === choke) open = null; }
+      };
       src.start(t); src.stop(t + Math.max(.02, length) + .01);
     }
-    return { hit: hit, names: synth.names, defaultTomPitch: TOM_DEFAULT };
+    function stopAll(at) {
+      var t = Math.max(ctx.currentTime, at === undefined ? ctx.currentTime : at);
+      synth.stopAll(t);
+      var oldBus = sampleBus;
+      sampleBus = ctx.createGain(); sampleBus.gain.value = 1; sampleBus.connect(out);
+      open = null;
+      oldBus.gain.cancelScheduledValues(t);
+      oldBus.gain.setValueAtTime(1, t);
+      oldBus.gain.setTargetAtTime(0.0001, t, 0.005);
+      activeSampleSources.forEach(function (src) { try { src.stop(t + 0.04); } catch (_e) {} });
+      if (typeof setTimeout === 'function') {
+        setTimeout(function () { try { oldBus.disconnect(); } catch (_e) {} }, Math.max(0, (t - ctx.currentTime + 0.06) * 1000));
+      }
+    }
+    return { hit: hit, stopAll: stopAll, names: synth.names, defaultTomPitch: TOM_DEFAULT };
   }
   root.DrumEngine = { create: create, samples: SAMPLES, kits: KITS, aliases: ALIASES };
 })(typeof window !== 'undefined' ? window : this);

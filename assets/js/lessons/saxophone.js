@@ -20,13 +20,20 @@
   async function ready() {
     const Audio = window.AudioContext || window.webkitAudioContext;
     if (!Audio) throw new Error('Audio is unavailable in this browser. You can still read and compose.');
+    const kit = window.AudioKit;
     if (!ctx) {
+      // Share the page's AudioKit context (one context per page on iPad; the workspace's
+      // Stop sound and volume reach it). Fall back to a private one where AudioKit is missing.
+      const shared = kit && kit.context && kit.context();
+      if (shared) ctx = shared;
       // 'playback' = bigger hardware buffers; older iPads crackle at Safari's low-latency default.
-      try { ctx = new Audio({ latencyHint: 'playback' }); } catch (_) { ctx = new Audio(); }
+      else { try { ctx = new Audio({ latencyHint: 'playback' }); } catch (_) { ctx = new Audio(); } }
       out = ctx.createDynamicsCompressor();
       out.threshold.value = -10; out.knee.value = 6; out.ratio.value = 12; out.attack.value = .003; out.release.value = .15;
-      out.connect(ctx.destination);
+      out.connect(shared && kit.output ? kit.output() : ctx.destination);
+      if (kit && kit.onStop) kit.onStop(stop);
     }
+    if (kit && kit.notifyPlay) kit.notifyPlay({ source: 'saxophone' });
     await ctx.resume();
   }
   function tone(pitch, at, duration, click=false) {
@@ -45,22 +52,24 @@
   async function play(notes, host, countIn=true) {
     if(studioView==='scale')switchView('note');
     stop(); const ticket=generation;
-    try {await ready();} catch(e) {$('sxTransport').textContent=e.message;return;}
+    // The composer has its own status line beside its staff; the other players share sxTransport.
+    const say=text=>{(host&&host===$('sxComposeStaff')&&$('sxComposeStatus')||$('sxTransport')).textContent=text;};
+    try {await ready();} catch(e) {say(e.message);return;}
     if(ticket!==generation)return;
     const beat=60/Number($('sxTempo').value), start=ctx.currentTime+.08;
     let cursor=countIn?4:0;
-    if(countIn) for(let i=0;i<4;i++) {tone('C4',start+i*beat,.07,true);later(()=>{$('sxTransport').textContent=`Count-in: ${i+1} of 4`;},(start-ctx.currentTime+i*beat)*1000);}
+    if(countIn) for(let i=0;i<4;i++) {tone('C4',start+i*beat,.07,true);later(()=>{say(`Count-in: ${i+1} of 4`);},(start-ctx.currentTime+i*beat)*1000);}
     notes.forEach((n,i)=>{
       const delay=(start-ctx.currentTime+cursor*beat)*1000;
       if(n.pitch)tone(n.pitch,start+cursor*beat,n.beats*beat*($('sxArticulation').value==='slurred'?.995:.8));
       later(()=>{
-        $('sxTransport').textContent=`Beat ${cursorLabel(notes,i)} · ${n.pitch||'rest'} · ${n.beats} beat${n.beats>1?'s':''}`;
+        say(`Beat ${cursorLabel(notes,i)} · ${n.pitch||'rest'} · ${n.beats} beat${n.beats>1?'s':''}`);
         if(host){host.querySelectorAll('.active').forEach(el=>el.classList.remove('active'));host.querySelector(`[data-note="${i}"]`)?.classList.add('active');}
         if(n.pitch) selectNote(n.pitch);
       },delay);
       cursor+=n.beats;
     });
-    later(()=>{if(ticket===generation){$('sxTransport').textContent='Phrase complete. Try counting it yourself.';host?.querySelectorAll('.active').forEach(n=>n.classList.remove('active'));}},(start-ctx.currentTime+cursor*beat)*1000);
+    later(()=>{if(ticket===generation){say('Phrase complete. Try counting it yourself.');host?.querySelectorAll('.active').forEach(n=>n.classList.remove('active'));}},(start-ctx.currentTime+cursor*beat)*1000);
   }
   const cursorLabel=(notes,i)=>notes.slice(0,i).reduce((s,n)=>s+n.beats,1);
   function staff(host, notes, names=true) {
@@ -224,7 +233,7 @@
     stop();studioView=view;
     $('sxViewNote').setAttribute('aria-pressed',String(view==='note'));
     $('sxViewScale').setAttribute('aria-pressed',String(view==='scale'));
-    $('sxSingleControls').hidden=view!=='note';$('sxNoteStaff').hidden=view!=='note';$('sxFingeringStudio').querySelector('.sx-note-finder').hidden=view!=='note';
+    $('sxSingleControls').hidden=view!=='note';$('sxNoteStaff').hidden=view!=='note';{const finder=document.querySelector('.sx-note-finder');if(finder)finder.hidden=view!=='note';}
     $('sxScaleChoices').hidden=view!=='scale';$('sxScalePractice').hidden=view!=='scale';
     if(view==='scale'){$('sxFingerMode').value='explore';scale.index=0;renderPath(true);}
     else showFingering();

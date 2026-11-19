@@ -9,6 +9,7 @@ export function createMeasureCoach(ctx) {
   function invalidate() {
     const c=ctx.get(), b=current(); if(!b?.source) return;
     b.source.reviewed=false;
+    ctx.saveCrop?.(b.source.id, null);
     if (c.book) c.book.examples=(c.book.examples||[]).filter(e=>e.id!==b.source.id);
   }
   function saveBox(rect) {
@@ -121,7 +122,9 @@ export function createMeasureCoach(ctx) {
     M.tune(probe,'Review validation');
   }
   $('review').onclick=()=>{try{const c=ctx.get(),b=current();if(!b?.source||!base)throw new Error('Box this measure on its visible source page first.');validBar();
-    const example={id:b.source.id,fingerprint:c.fingerprint,draftId:c.draft.id,title:c.draft.title,bar:c.bar+1,page:b.source.page,box:{...b.source.box},staff:b.source.staff&&{...b.source.staff},clef:b.source.clef||'treble',key:c.draft.key,mode:c.draft.mode,meter:c.draft.meter,notes:b.notes,chords:b.chords,signature:signature(),image:base.toDataURL('image/png'),reviewedAt:new Date().toISOString()};
+    const imgUrl=base.toDataURL('image/png');
+    ctx.saveCrop?.(b.source.id, imgUrl);
+    const example={id:b.source.id,fingerprint:c.fingerprint,draftId:c.draft.id,title:c.draft.title,bar:c.bar+1,page:b.source.page,box:{...b.source.box},staff:b.source.staff&&{...b.source.staff},clef:b.source.clef||'treble',key:c.draft.key,mode:c.draft.mode,meter:c.draft.meter,notes:b.notes,chords:b.chords,signature:signature(),hasImage:true,reviewedAt:new Date().toISOString()};
     c.book.examples=(c.book.examples||[]).filter(e=>e.id!==example.id).concat(example);b.source.reviewed=true;ctx.persist();refresh();say('Reviewed example saved. Similar measures can now suggest these notes and chord labels.');
   }catch(e){say(e.message);}};
   $('match').onclick=()=>{try{const c=ctx.get(),b=current();if(!b)throw new Error('Choose a song bar first.');const result=C.match(signature(),(c.book?.examples||[]).filter(e=>e.id!==b.source?.id),{...c.draft,clef:b.source?.clef||'treble'});
@@ -137,7 +140,9 @@ export function createMeasureCoach(ctx) {
   $('packet').onclick=async()=>{try{if(!base)throw new Error('Box and show a measure first.');const c=ctx.get(),b=current(),Z=await zipLib(),zip=new Z();zip.file('measure.png',base.toDataURL('image/png').split(',')[1],{base64:true});
     zip.file('request.json',JSON.stringify({schema:'fakebook-measure-request/v1',fingerprint:c.fingerprint,draftId:c.draft.id,title:c.draft.title,bar:c.bar+1,page:b.source.page,box:b.source.box,staff:b.source.staff,clef:b.source.clef||'treble',key:c.draft.key,mode:c.draft.mode,meter:c.draft.meter,pickup:c.draft.pickup,current:{notes:b.notes,chords:b.chords},noteSyntax:'C4q, F#4e, Bb4h, rq; durations w h q e s; dot ., triplet 3, tie ~. Sounding accidentals must be explicit. Chords e.g. Dm7:2 G7:2. Do not silently guess unclear notes.',responseTemplate:{schema:'fakebook-measure-proposals/v1',fingerprint:c.fingerprint,draftId:c.draft.id,measures:[{bar:c.bar+1,notes:'',chords:''}]}},null,2));await download(zip,'fake-book-measure-'+(c.bar+1)+'.zip');say('Exported the crop and source metadata. An assistant/OMR tool can return proposed measures JSON.');
   }catch(e){say(e.message);}};
-  $('dataset').onclick=async()=>{try{const examples=ctx.get().book?.examples||[];if(!examples.length)throw new Error('Mark at least one measure checked before exporting training examples.');const Z=await zipLib(),zip=new Z();const rows=examples.map((e,i)=>{const {image,signature,...metadata}=e;const file='measures/'+(i+1)+'.png';zip.file(file,image.split(',')[1],{base64:true});return {...metadata,image:file,status:'human-reviewed'};});zip.file('annotations.json',JSON.stringify({schema:'fakebook-reviewed-measures/v1',coordinateUnits:'fractions of original PDF page',examples:rows},null,2));await download(zip,'fake-book-reviewed-training.zip');say('Exported '+examples.length+' reviewed crop/label pairs for training.');}catch(e){say(e.message);}};
+  $('dataset').onclick=async()=>{try{const examples=ctx.get().book?.examples||[];if(!examples.length)throw new Error('Mark at least one measure checked before exporting training examples.');const Z=await zipLib(),zip=new Z();const rows=[];
+    for(let i=0;i<examples.length;i++){const e=examples[i];const {image,signature,...metadata}=e;const imgUrl=image||(ctx.loadCrop?await ctx.loadCrop(e.id):null);const file='measures/'+(i+1)+'.png';if(imgUrl&&imgUrl.includes(','))zip.file(file,imgUrl.split(',')[1],{base64:true});rows.push({...metadata,image:imgUrl?file:null,status:'human-reviewed'});}
+    zip.file('annotations.json',JSON.stringify({schema:'fakebook-reviewed-measures/v1',coordinateUnits:'fractions of original PDF page',examples:rows},null,2));await download(zip,'fake-book-reviewed-training.zip');say('Exported '+examples.length+' reviewed crop/label pairs for training.');}catch(e){say(e.message);}};
   $('import').onchange=async()=>{const file=$('import').files[0];if(!file)return;try{if(file.size>2*1024*1024)throw new Error('Proposal JSON must be smaller than 2 MB.');const data=JSON.parse(await file.text()),c=ctx.get();if(data.schema!=='fakebook-measure-proposals/v1'||data.fingerprint!==c.fingerprint||data.draftId!==c.draft.id||!Array.isArray(data.measures)||!data.measures.length)throw new Error('The proposal must identify this PDF and the selected draft. Use the response template in the measure packet.');
     const seen=new Set();data.measures.forEach(m=>{if(!Number.isInteger(m.bar)||m.bar<1||m.bar>c.draft.bars.length||seen.has(m.bar)||typeof m.notes!=='string'||m.notes.length>2000||typeof m.chords!=='string'||m.chords.length>1000)throw new Error('Invalid or duplicate proposed bar.');M.beats(m.notes);seen.add(m.bar);});
     data.measures.forEach(m=>{c.draft.bars[m.bar-1].proposal={notes:m.notes,chords:m.chords,origin:'Imported recognition proposal'};});ctx.persist();refresh();say(data.measures.length+' proposed measures imported. Current notation is unchanged until you choose Use suggestion.');

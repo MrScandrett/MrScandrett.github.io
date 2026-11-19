@@ -152,6 +152,7 @@
    */
   function createListener(ctx, onFrame) {
     var stream = null, src = null, an = null, timer = 0, buf = null;
+    var stopped = false;
     function tickFn() {
       if (!an) return;
       an.getFloatTimeDomainData(buf);
@@ -162,11 +163,16 @@
     return {
       start: function () {
         if (stream) return Promise.resolve();
+        stopped = false;
         var md = root.navigator && root.navigator.mediaDevices;
         if (!md || !md.getUserMedia) return Promise.reject(new Error('This browser cannot open a microphone here.'));
         // Echo cancellation lets the band play on speakers without being "heard" as the student; noise
         // suppression and auto-gain are off because they smear pitch.
         return md.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false, channelCount: 1 } }).then(function (s) {
+          if (stopped) {
+            try { s.getTracks().forEach(function (tr) { tr.stop(); }); } catch (_e) {}
+            return;
+          }
           stream = s;
           src = ctx.createMediaStreamSource(s);
           an = ctx.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0;
@@ -176,6 +182,7 @@
         });
       },
       stop: function () {
+        stopped = true;
         clearInterval(timer); timer = 0;
         if (stream) stream.getTracks().forEach(function (tr) { tr.stop(); });
         try { if (src) src.disconnect(); } catch (e) { /* already gone */ }

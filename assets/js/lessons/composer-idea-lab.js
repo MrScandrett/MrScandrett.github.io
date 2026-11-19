@@ -5,15 +5,25 @@
   if (!main) return;
   var play = document.getElementById('study-play');
   var status = document.getElementById('study-status');
-  var timer;
-  function stop() {
+  var timer, stopping = false;
+  function stopLocal() {
     clearTimeout(timer);
-    window.AudioKit.stopAll();
     play.disabled = false;
     status.textContent = 'Stopped. Choose either version to compare again.';
   }
+  function stop() {
+    stopLocal();
+    if (!stopping && window.AudioKit && window.AudioKit.stopAll) {
+      stopping = true;
+      try { window.AudioKit.stopAll(); } finally { stopping = false; }
+    }
+  }
+  if (window.AudioKit && window.AudioKit.onStop) {
+    window.AudioKit.onStop(function () { if (!stopping) stopLocal(); });
+  }
   document.getElementById('study-stop').addEventListener('click', stop);
   document.getElementById('study-version').addEventListener('change', stop);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); });
   window.addEventListener('pagehide', stop);
   play.addEventListener('click', async function () {
     stop();

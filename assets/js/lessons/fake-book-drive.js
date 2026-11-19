@@ -4,6 +4,12 @@
   var feedback = document.querySelector('[data-fb-import-feedback]');
   if (!button || !feedback) return;
   var config = window.FakeBookDriveConfig || {};
+  if (!config.clientId || !config.apiKey || !config.appId) {
+    button.hidden = true;
+    var help = document.getElementById('fb-drive-help');
+    if (help) help.hidden = true;
+    return;
+  }
   var client = null, loading = null, picker = null;
   var label = 'Open from Google Drive';
   function status(message, error) {

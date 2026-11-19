@@ -2,10 +2,17 @@
 (function () {
   'use strict';
   var base = new URL('../../vendor/alphatab/', document.currentScript.src);
-  var panel, api, generation = 0, source = null;
-  function find(sel) { return panel.querySelector(sel); }
-  function status(message) { find('[data-gp-status]').textContent = message; }
-  function pause() { if (api) api.pause(); }
+  var panel, api, generation = 0, source = null, stopping = false;
+  function find(sel) { return panel ? panel.querySelector(sel) : null; }
+  function status(message) { var el = find('[data-gp-status]'); if (el) el.textContent = message; }
+  function pause() {
+    if (!api) return;
+    stopping = true;
+    try { api.pause(); } finally { stopping = false; }
+  }
+  if (window.AudioKit && window.AudioKit.onStop) {
+    window.AudioKit.onStop(function () { if (!stopping) pause(); });
+  }
   function close() {
     generation++;
     source = null;
@@ -80,8 +87,24 @@
           row.append(details); mixer.append(row);
         });
       });
-      find('[data-gp-play]').onclick = function () { if (window.FakeBook) window.FakeBook.stop(); current.playPause(); };
+      find('[data-gp-play]').onclick = function () {
+        if (window.AudioKit && window.AudioKit.notifyPlay) window.AudioKit.notifyPlay({ source: 'gp-player' });
+        if (window.FakeBook) window.FakeBook.stop();
+        current.playPause();
+      };
       find('[data-gp-stop]').onclick = function () { current.stop(); };
+      if (!panel.dataset.gpKeyBound) {
+        panel.dataset.gpKeyBound = '1';
+        panel.addEventListener('keydown', function (ev) {
+          if (ev.key !== ' ' || ev.target.closest('input, select, textarea, button')) return;
+          if (!api || panel.hidden) return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (window.AudioKit && window.AudioKit.notifyPlay) window.AudioKit.notifyPlay({ source: 'gp-player' });
+          if (window.FakeBook) window.FakeBook.stop();
+          api.playPause();
+        });
+      }
       var speed = find('[data-gp-speed]'), loop = find('[data-gp-loop]'), click = find('[data-gp-click]'), notation = find('[data-gp-notation]');
       speed.value = '1'; loop.checked = click.checked = false; notation.value = 'ScoreTab';
       speed.onchange = function () { current.playbackSpeed = Number(speed.value); };
@@ -90,7 +113,15 @@
       notation.onchange = function () { current.settings.display.staveProfile = at.StaveProfile[notation.value]; current.updateSettings(); current.render(); };
       find('[data-gp-clear]').onclick = function () { current.playbackRange = null; };
       if (!current.load(bytes, [-1])) throw new Error('Unsupported Guitar Pro score.');
-    } catch (error) { if (token === generation) status('Original score could not load: ' + error.message + '. The lead-sheet importer may still read this file.'); }
+    } catch (error) {
+      if (token === generation) {
+        if (api) { try { api.destroy(); } catch (_e) {} api = null; }
+        source = null;
+        var scoreEl = find('[data-gp-score]');
+        if (scoreEl) scoreEl.replaceChildren();
+        status('Original score could not load: ' + error.message + '. The lead-sheet importer may still read this file.');
+      }
+    }
   }
   window.FakeBookGPPlayer = { state: function () { return api ? { ready: api.isReadyForPlayback, playing: api.playerState === 1, tick: api.tickPosition, speed: api.playbackSpeed, loop: api.isLooping, metronome: api.metronomeVolume } : null; }, open: open, close: close, pause: pause, encode: encode, decode: decode,
     select: function (raw) {

@@ -14,7 +14,9 @@
   function play(hz, seconds, delay) {
     var K = window.AudioKit;
     if (!K || !window.MusicSynth) return;
-    try { K.note({ instrument: 'violin', hz: hz, velocity: 0.7, duration: seconds, delay: delay || 0 }); } catch (e) { /* sound is a bonus */ }
+    // No vibrato: the tuning game asks students to listen for the beating between two strings, and
+    // the synth's default 8-cent wobble sounds like beating even when they are in tune.
+    try { K.note({ instrument: 'violin', hz: hz, velocity: 0.7, duration: seconds, delay: delay || 0, settings: { vibrato: 0 } }); } catch (e) { /* sound is a bonus */ }
   }
 
   /* ---------------- Anatomy ---------------- */

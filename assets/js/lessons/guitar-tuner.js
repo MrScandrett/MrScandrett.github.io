@@ -144,6 +144,8 @@
     if (source) source.disconnect();
     if (context) context.close().catch(function () {});
     stream = source = analyser = context = null;
+    // Back to normal playback routing (iOS keeps the quieter call-style route while recording).
+    window.AudioKit?.setSessionType?.('playback');
     toggle.textContent = 'Start microphone'; toggle.setAttribute('aria-pressed', 'false');
     clearReading(); message(text || 'Microphone stopped.');
   }
@@ -157,6 +159,8 @@
     toggle.textContent = 'Cancel microphone'; toggle.setAttribute('aria-pressed', 'true');
     message('Waiting for microphone permission…');
     try {
+      // iOS: switch to play-and-record before opening the mic so the page's audio isn't ducked or cut.
+      window.AudioKit?.setSessionType?.('play-and-record');
       context = new (window.AudioContext || window.webkitAudioContext)();
       await context.resume();
       if (request !== generation) return;

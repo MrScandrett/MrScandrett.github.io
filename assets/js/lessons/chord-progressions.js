@@ -127,9 +127,10 @@
     var guitar = svg('svg', { viewBox: '0 0 240 240', role: 'img', class: 'cp-guitar-diagram' }, guitarCard);
     svg('title', {}, guitar, pretty(name) + ' guitar, low E to high e: ' + frets.map(function (f) { return typeof f !== 'number' ? 'muted' : f ? 'fret ' + f : 'open'; }).join(', '));
     var positive = frets.filter(function (f) { return typeof f === 'number' && f > 0; });
-    var first = positive.length ? Math.max(1, Math.min.apply(null, positive)) : 1;
+    // Grips inside the first four frets are drawn from the nut; only higher grips get a position label.
+    var first = !positive.length || Math.max.apply(null, positive) <= 4 ? 1 : Math.min.apply(null, positive);
     for (var f = 0; f <= 4; f++) svg('line', { x1: 45, x2: 195, y1: 50 + f * 36, y2: 50 + f * 36, stroke: '#182c43', 'stroke-width': f === 0 && first === 1 ? 5 : 1 }, guitar);
-    svg('text', { x: 8, y: 76, fill: '#182c43', 'font-size': 13 }, guitar, first + 'fr');
+    if (first > 1) svg('text', { x: 8, y: 76, fill: '#182c43', 'font-size': 13 }, guitar, first + 'fr');
     frets.forEach(function (f, i) {
       var x = 45 + i * 30;
       svg('line', { x1: x, x2: x, y1: 50, y2: 194, stroke: '#182c43', 'data-string': i, 'data-fret': typeof f === 'number' ? f : 'x' }, guitar);
@@ -151,6 +152,18 @@
   function loopNotes(index) {
     var names = scale(), parsed = engine.parseTune({ id: 'chord-playground', key: $('loop-key').value, mode: 'major', meter: [4, 4], melody: 'rw', chords: names[index] });
     return engine.voiceChords(parsed.chords, 'smooth')[0];
+  }
+  // The playground loop and its key come back after a reload (they used to reset to I-V-vi-IV).
+  var LOOP_KEY = 'classroomos:chord-playground:v1';
+  function saveLoop() { try { localStorage.setItem(LOOP_KEY, JSON.stringify({ loop: loop, key: $('loop-key').value })); } catch (_) { /* optional storage */ } }
+  function restoreLoop() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(LOOP_KEY) || 'null');
+      if (!saved) return;
+      if (Array.isArray(saved.loop) && saved.loop.length <= 16 && saved.loop.every(function (d) { return d === (d | 0) && d >= 0 && d < 7; })) loop = saved.loop;
+      var keySel = $('loop-key');
+      if (saved.key && [].some.call(keySel.options, function (o) { return o.value === saved.key; })) keySel.value = saved.key;
+    } catch (_) { /* optional storage */ }
   }
   function stopLoop() {
     soundToken++;
@@ -187,6 +200,7 @@
     });
     if (!loop.length) $('loop').textContent = 'Your stage is empty. Tap a chord above to start.';
     $('loop-play').disabled = !engine || !loop.length;
+    saveLoop();
     if (engine) showLoopDiagram(diagramDegree);
   }
   $('loop-play').addEventListener('click', function () {
@@ -211,6 +225,14 @@
   document.addEventListener('keydown', function (event) { if (event.key === 'Escape') stopLoop(); });
   document.addEventListener('visibilitychange', function () { if (document.hidden) stopLoop(); });
   window.addEventListener('pagehide', stopLoop);
+  if (window.AudioKit && window.AudioKit.onStop) window.AudioKit.onStop(stopLoop);
+  restoreLoop();
+  // Play along with the loop in the Fake Book (one bar per card).
+  if (window.MusicSongBridge) window.MusicSongBridge.addButton($('loop-clear').parentNode, function () {
+    if (!loop.length) return null;
+    var names = scale();
+    return { title: 'My loop in ' + $('loop-key').value, key: $('loop-key').value, tempo: Number($('loop-tempo').value), chords: loop.map(function (d) { return names[d]; }), from: 'Chord Progressions' };
+  });
   renderLoop();
   // Hand-authored functional analyses add context to the shared engine's pitch labels.
   // Each event lasts one 4/4 bar. Pitches, chord spellings and voicings come from FakeBook.

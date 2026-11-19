@@ -139,7 +139,8 @@
     var button = element('button','composer-cover'); button.type = 'button';
     button.setAttribute('aria-label','Read and play '+workTitle);
     button.setAttribute('aria-controls',panel.id); button.setAttribute('aria-expanded','false');
-    var composer = element('span','composer-cover-author',document.querySelector('h1').textContent);
+    var composerName = (document.title && document.title.split('·')[0].trim()) || document.querySelector('h1').textContent;
+    var composer = element('span','composer-cover-author',composerName);
     var coverTitle = element('span','composer-cover-title',workTitle.replace(/ · /g,'\u00a0· ').replace(/No\. /g,'No.\u00a0'));
     if (workTitle.length > 26) coverTitle.classList.add('is-very-long'); else if (workTitle.length > 16) coverTitle.classList.add('is-long');
     button.append(composer,coverTitle);

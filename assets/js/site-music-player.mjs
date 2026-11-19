@@ -191,9 +191,27 @@ function show({ title, composer, art, hue, detail, credit, source, lesson, album
   $('music-duration').textContent = '0:00';
   if ('mediaSession' in navigator && 'MediaMetadata' in window) navigator.mediaSession.metadata = new MediaMetadata({ title, artist: composer, album });
 }
-function select(id, start = true, time = 0) {
+const historyStack = [];
+function filteredTracks() {
+  const searchEl = $('music-search');
+  const compEl = $('music-composer');
+  const terms = searchable(searchEl ? searchEl.value : '').trim().split(/\s+/).filter(Boolean);
+  const composer = compEl ? compEl.value : '';
+  if (!terms.length && !composer) return tracks;
+  return tracks.filter(track => {
+    if (composer && track.composer !== composer) return false;
+    const text = searchable(`${track.title} ${track.composer} ${track.detail} ${track.credit}`);
+    return terms.every(term => text.includes(term));
+  });
+}
+function select(id, start = true, time = 0, opts = {}) {
   const next = tracks.findIndex(track => track.id === id);
   if (next < 0) return;
+  const prevTrack = !noise ? current() : null;
+  if (shuffle && !opts.fromHistory && prevTrack && prevTrack.id !== id) {
+    historyStack.push(prevTrack.id);
+    if (historyStack.length > 50) historyStack.shift();
+  }
   ++playRequest;
   audio.pause();
   if (noise) { stopNoise(); audio.srcObject = null; }
@@ -229,9 +247,34 @@ function step(direction, start = !audio.paused) {
     return;
   }
   if (!tracks.length) return;
-  let next = (index + direction + tracks.length) % tracks.length;
-  if (shuffle && tracks.length > 1) next = (index + 1 + Math.floor(Math.random() * (tracks.length - 1))) % tracks.length;
-  select(tracks[next].id, start);
+  const visible = filteredTracks();
+  const list = visible.length ? visible : tracks;
+  const cur = current();
+  if (shuffle) {
+    if (direction < 0) {
+      while (historyStack.length) {
+        const prevId = historyStack.pop();
+        if (prevId !== cur?.id && tracks.some(t => t.id === prevId)) {
+          select(prevId, start, 0, { fromHistory: true });
+          return;
+        }
+      }
+    } else if (list.length > 1) {
+      const pool = list.filter(t => t.id !== cur?.id);
+      const nextTrack = pool[Math.floor(Math.random() * pool.length)];
+      if (cur && nextTrack) {
+        historyStack.push(cur.id);
+        if (historyStack.length > 50) historyStack.shift();
+        select(nextTrack.id, start, 0, { fromHistory: true });
+        return;
+      }
+    }
+  }
+  const pos = cur ? list.findIndex(t => t.id === cur.id) : -1;
+  const next = pos < 0
+    ? (direction > 0 ? 0 : list.length - 1)
+    : (pos + direction + list.length) % list.length;
+  select(list[next].id, start);
 }
 function toggle() { if (audio.paused) play(); else pause(); }
 function setVolume(value) {
@@ -265,7 +308,23 @@ frame.addEventListener('load', () => {
     frame.contentWindow.addEventListener('hashchange', syncNavigation);
     frame.contentWindow.addEventListener('popstate', syncNavigation);
     frame.contentWindow.addEventListener('classroomos:vrmodechange', syncVRControls);
+    frame.contentWindow.addEventListener('audiokit:play', pause);
+    const origPush = frame.contentWindow.history.pushState;
+    if (origPush && !origPush.__smWrapped) {
+      frame.contentWindow.history.pushState = function () {
+        const out = origPush.apply(this, arguments);
+        syncNavigation();
+        return out;
+      };
+      frame.contentWindow.history.pushState.__smWrapped = true;
+    }
     doc.addEventListener('play', event => { if (event.target.matches('audio, video')) pause(); }, true);
+    doc.addEventListener('keydown', event => {
+      if (!event.defaultPrevented && event.key === 'Escape' && !$('music-library').hidden) {
+        event.preventDefault();
+        expand(false, true);
+      }
+    });
     doc.addEventListener('click', event => {
       const link = event.target.closest('a[href]');
       if (!link || link.hasAttribute('download') || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -380,9 +439,15 @@ audio.addEventListener('progress', () => {
 audio.addEventListener('playing', () => { if (!noise && wantsPlayback) status(''); });
 audio.addEventListener('waiting', () => { if (!noise && wantsPlayback) status('Buffering recording…'); });
 audio.addEventListener('ended', () => {
-  if (index === tracks.length - 1 && repeat !== 'all' && !shuffle) { status('End of the library. Choose a recording or turn on Loop all.'); update(); }
+  const visible = filteredTracks();
+  const list = visible.length ? visible : tracks;
+  const cur = current();
+  const pos = cur ? list.findIndex(t => t.id === cur.id) : -1;
+  const atEnd = list.length > 0 && (pos === list.length - 1 || (pos < 0 && index === tracks.length - 1));
+  if (atEnd && repeat !== 'all' && !shuffle) { status('End of the library. Choose a recording or turn on Loop all.'); update(); }
   else step(1, true);
 });
+window.addEventListener('audiokit:play', pause);
 audio.addEventListener('error', () => {
   if (!audio.error) return;
   if (!noise && wantsPlayback && sourceIndex + 1 < sources.length) {
@@ -398,13 +463,7 @@ audio.addEventListener('error', () => {
 });
 addEventListener('pagehide', save);
 function renderTracks() {
-  const terms = searchable($('music-search').value).trim().split(/\s+/);
-  const composer = $('music-composer').value;
-  const visible = tracks.filter(track => {
-    if (composer && track.composer !== composer) return false;
-    const text = searchable(`${track.title} ${track.composer} ${track.detail} ${track.credit}`);
-    return terms.every(term => text.includes(term));
-  });
+  const visible = filteredTracks();
   $('music-count').textContent = `${visible.length} of ${tracks.length} recordings${!visible.length ? '. Try another search.' : ''}`;
   const groups = new Map();
   for (const track of visible) groups.set(track.composer, [...groups.get(track.composer) || [], track]);

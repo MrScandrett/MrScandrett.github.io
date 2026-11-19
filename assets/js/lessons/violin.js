@@ -314,7 +314,12 @@
       return nearest;
     }
 
+    // Each string follows its own finger. With one shared "dragging" slot, a second finger on another
+    // string took it over and the first string's note never stopped (and its listeners leaked).
+    var pointer = null;
     function onDown(e) {
+      if (pointer !== null) return;
+      pointer = e.pointerId != null ? e.pointerId : 'mouse';
       e.preventDefault();
       track.focus();
       var clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -331,7 +336,7 @@
     }
 
     function onMove(e) {
-      if (!self.dragging || self.dragging.track !== track) return;
+      if (pointer === null || (e.pointerId != null && e.pointerId !== pointer)) return;
       var clientY = e.touches ? e.touches[0].clientY : e.clientY;
       var raw = semitoneFromClientY(clientY);
       positionGhost(raw);
@@ -339,14 +344,15 @@
     }
 
     function onUp(e) {
-      if (!self.dragging || self.dragging.track !== track) return;
+      if (pointer === null || (e.pointerId != null && e.pointerId !== pointer)) return;
+      pointer = null;
       var clientY = (e.changedTouches ? e.changedTouches[0].clientY : e.clientY);
       var raw = typeof clientY === 'number' ? semitoneFromClientY(clientY) : 0;
       var nearest = Math.round(raw);
       Audio.stop(str.label);
       dot.hidden = true;
       lbl.hidden = true;
-      self.dragging = null;
+      if (self.dragging && self.dragging.track === track) self.dragging = null;
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
@@ -637,10 +643,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // Fit the actual engraved symbols, including the clef's upper curl and tail.
     // Note-only estimates crop the clef when a low note moves the viewport down.
     var liveSvg = score.querySelector('svg');
-    var bounds = liveSvg.getBBox();
-    var top = Math.floor(bounds.y - 12);
-    var end = Math.ceil(bounds.y + bounds.height + 12);
-    liveSvg.setAttribute('viewBox', '0 ' + top + ' 260 ' + (end - top));
+    // A hidden panel (display: none) measures as an empty box at 0,0; keep the last good view.
+    var bounds = liveSvg.getClientRects().length ? liveSvg.getBBox() : null;
+    if (bounds && bounds.height > 0) {
+      var top = Math.floor(bounds.y - 12);
+      var end = Math.ceil(bounds.y + bounds.height + 12);
+      liveSvg.setAttribute('viewBox', '0 ' + top + ' 260 ' + (end - top));
+    }
     var cents = selected ? Math.round((raw - Math.round(raw)) * 100) : 0;
     var heading = selected ? noteText + ' · ' + label + ' string' : 'Place a note to begin';
     if (scoreNote.textContent !== heading) scoreNote.textContent = heading;
@@ -770,6 +779,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function playLabel() { return highlightOn ? '▶ Play one octave' : '▶ Play'; }
 
+  if (window.AudioKit) window.AudioKit.onStop(function () { stopPlayback(); });
   function stopPlayback() {
     if (playTimer) { clearInterval(playTimer); playTimer = null; }
     board.clearStep();

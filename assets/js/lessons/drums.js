@@ -6,15 +6,25 @@
   'use strict';
 
   /* ------------------------------------------------------------------ audio */
-  var ctx = null, kit = null, volume = 0.7;
+  var ctx = null, kit = null, volume = 0.7, master = null;
   var builderStudio = null;
 
   function ensureAudio() {
-    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return true; }
+    var AK = window.AudioKit;
+    if (ctx) {
+      if (ctx.state === 'suspended') ctx.resume();
+      if (AK && AK.notifyPlay) AK.notifyPlay({ source: 'drums' });
+      return true;
+    }
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC || !window.DrumEngine) return false;
-    try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); } // bigger buffers: older iPads crackle at the default
-    var master = ctx.createGain(); master.gain.value = 0.7;
+    // Share the page's AudioKit context so the workspace's Stop sound, volume and activity
+    // switches reach the drums; only make a private context where AudioKit is missing.
+    var shared = AK && AK.context && AK.context();
+    if (shared) ctx = shared;
+    else { try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); } } // bigger buffers: older iPads crackle at the default
+    if (ctx.state === 'suspended') ctx.resume();
+    master = ctx.createGain(); master.gain.value = 0.7;
     var comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -14; comp.knee.value = 24; comp.ratio.value = 6;
     comp.attack.value = 0.002; comp.release.value = 0.2;
@@ -31,8 +41,10 @@
     var bus = ctx.createGain();
     bus.connect(dry); bus.connect(verb); verb.connect(wet);
     dry.connect(master); wet.connect(master);
-    master.connect(comp); comp.connect(ctx.destination);
+    master.connect(comp); comp.connect(shared && AK.output ? AK.output() : ctx.destination);
     kit = window.DrumEngine.create(ctx, bus);
+    if (AK && AK.onStop) AK.onStop(stopAll);
+    if (AK && AK.notifyPlay) AK.notifyPlay({ source: 'drums' });
     return true;
   }
 
@@ -54,8 +66,10 @@
     g.gain.setValueAtTime(0.0001, t);
     g.gain.linearRampToValueAtTime(lv.peak * volume, t + 0.002);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
-    o.connect(g); g.connect(ctx.destination);
+    // Through the master bus and compressor, never straight to the speakers.
+    o.connect(g); g.connect(master || ctx.destination);
     o.start(t); o.stop(t + 0.06);
+    o.onended = function () { o.disconnect(); g.disconnect(); };
   }
 
   /* Stop every playing groove and, on Escape/visibility-loss, silence the page. */
@@ -895,7 +909,14 @@
     playBtn.addEventListener('click', function () { if (playing) stop(); else start(); });
     tempoIn.addEventListener('input', function () {
       tempo = +tempoIn.value; tempoOut.textContent = tempo + ' BPM';
-      if (playing) { var mainBeatDur = 60 / tempo; pulseDur = meter.type === 'compound' ? mainBeatDur / 3 : mainBeatDur; }
+      if (playing) {
+        var mainBeatDur = 60 / tempo, nextDur = meter.type === 'compound' ? mainBeatDur / 3 : mainBeatDur;
+        // Keep the next unscheduled pulse where it was: re-anchor so anchorTime + nextPulse * pulseDur
+        // is unchanged. Changing pulseDur alone fired a burst of past-due clicks (faster) or went
+        // silent for a minute and a half (slower).
+        anchorTime += nextPulse * (pulseDur - nextDur);
+        pulseDur = nextDur;
+      }
     });
     tempoOut.textContent = tempo + ' BPM';
     buildPicker();

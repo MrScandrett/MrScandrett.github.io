@@ -51,16 +51,21 @@
   var ringGain = null;
   var ringOsc = null;
   var bypass = false;
+  var selfInitiating = false;
+  var triedFallback = false;
 
   function ensureGraph() {
     if (ctx) return true;
+    var kit = window.AudioKit;
     var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) {
+    if (!kit && !AC) {
       status.textContent = 'This browser can’t run the filter. The recording will play unchanged.';
       return false;
     }
     try {
-      ctx = new AC();
+      ctx = kit && kit.context ? kit.context() : new AC();
+      if (!ctx) throw new Error('AudioContext unavailable');
+      var dest = (kit && kit.output && kit.output()) || ctx.destination;
       var source = ctx.createMediaElementSource(audio);
       filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
@@ -69,14 +74,14 @@
       filter2.type = 'lowpass';
       filter2.Q.value = 0.7;
       gain = ctx.createGain();
-      source.connect(filter).connect(filter2).connect(gain).connect(ctx.destination);
+      source.connect(filter).connect(filter2).connect(gain).connect(dest);
 
       ringOsc = ctx.createOscillator();
       ringOsc.type = 'sine';
       ringOsc.frequency.value = 3900;
       ringGain = ctx.createGain();
       ringGain.gain.value = 0;
-      ringOsc.connect(ringGain).connect(ctx.destination);
+      ringOsc.connect(ringGain).connect(dest);
       ringOsc.start();
       return true;
     } catch (err) {
@@ -110,24 +115,68 @@
     filter.frequency.setTargetAtTime(f, now, 0.05);
     filter2.frequency.setTargetAtTime(f, now, 0.05);
     gain.gain.setTargetAtTime(g, now, 0.05);
-    var ring = ringToggle.checked && !bypass && !audio.paused ? 0.012 * Math.min(1, loss(year) * 2) : 0;
+    var ring = ringToggle.checked && !bypass && !audio.paused && !document.hidden ? 0.012 * Math.min(1, loss(year) * 2) : 0;
     ringGain.gain.setTargetAtTime(ring, now, 0.1);
   }
 
+  function silenceAll() {
+    if (!audio.paused) audio.pause();
+    if (ctx && ringGain) ringGain.gain.setTargetAtTime(0, ctx.currentTime, 0.02);
+  }
+
+  if (window.AudioKit && window.AudioKit.onStop) {
+    window.AudioKit.onStop(function () {
+      if (!selfInitiating) silenceAll();
+    });
+  }
+
   audio.addEventListener('play', function () {
-    if (ensureGraph() && ctx.state === 'suspended') ctx.resume();
+    document.querySelectorAll('audio, video').forEach(function (other) {
+      if (other !== audio && !other.paused) {
+        try { other.pause(); } catch (_e) {}
+      }
+    });
+    if (window.AudioKit && window.AudioKit.stopAll) {
+      selfInitiating = true;
+      try { window.AudioKit.stopAll(); } finally { selfInitiating = false; }
+    }
+    if (ensureGraph() && ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume();
+    status.textContent = '';
     apply();
   });
   audio.addEventListener('pause', apply);
   audio.addEventListener('ended', apply);
+  audio.addEventListener('error', function () {
+    var fb = trackSelect.value && trackSelect.value.indexOf('/commons/transcoded/') !== -1
+      ? trackSelect.value.replace('/commons/transcoded/', '/commons/').replace(/\/(?:[^/]+)\.(?:mp3|ogg|flac)(?:\?.*)?$/i, '')
+      : '';
+    if (!triedFallback && fb && fb !== audio.src) {
+      triedFallback = true;
+      audio.src = fb;
+      audio.load();
+      audio.play().catch(function () {});
+      return;
+    }
+    silenceAll();
+    status.textContent = 'This recording could not load right now. Try another track or use the score studio below.';
+  });
   yearInput.addEventListener('input', apply);
   ringToggle.addEventListener('change', apply);
 
   trackSelect.addEventListener('change', function () {
     var wasPlaying = !audio.paused;
+    triedFallback = false;
+    status.textContent = '';
     audio.src = trackSelect.value;
-    if (wasPlaying) audio.play();
+    audio.load();
+    if (wasPlaying) {
+      audio.play().catch(function () {
+        status.textContent = 'Press Play to hear the selected recording.';
+      });
+    }
   });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) silenceAll(); });
+  window.addEventListener('pagehide', silenceAll);
 
   // Hold to hear the year 1796 again, release to drop back to the chosen year.
   function startCompare(e) { e.preventDefault(); bypass = true; compareBtn.setAttribute('aria-pressed', 'true'); apply(); }

@@ -4,7 +4,7 @@
   if (!root) return;
   const version = document.getElementById('jazzVersion'), tempo = document.getElementById('jazzTempo');
   const status = document.getElementById('jazzStatus'), list = document.getElementById('jazzNotes');
-  let voices = [], timer, generation = 0;
+  let voices = [], timer, generation = 0, stopping = false;
   // Shared MusicSynth voices (via AudioKit) so these phrases sound like every other music lesson.
   const INSTRUMENT = { 'louis-armstrong': 'trumpet', 'duke-ellington': 'piano', 'charlie-parker': 'sax' };
   const instrumentFor = (voice) => voice === 'Low answer' ? 'bass' : (INSTRUMENT[root.dataset.jazz] || 'piano');
@@ -24,7 +24,15 @@
     list.replaceChildren(...events().map(e=>{const li=document.createElement('li');li.textContent=`${e.voice}: ${names[e.pitch%12]}${Math.floor(e.pitch/12)-1} · beat ${(e.beat+1).toFixed(2)}`;return li;}));
     document.getElementById('jazzBpm').value=tempo.value;
   }
-  function stop(message='Stopped.') { generation++; clearTimeout(timer); const now=window.AudioKit ? AudioKit.now() : 0;voices.forEach(v=>{try{v.kill(now);}catch{}});voices=[];status.textContent=message; }
+  function stopLocal(message='Stopped.') { generation++; clearTimeout(timer); const now=window.AudioKit ? AudioKit.now() : 0;voices.forEach(v=>{try{v.kill(now);}catch{}});voices=[];status.textContent=message; }
+  function stop(message='Stopped.') {
+    stopLocal(message);
+    if (!stopping && window.AudioKit?.stopAll) {
+      stopping = true;
+      try { AudioKit.stopAll(); } finally { stopping = false; }
+    }
+  }
+  window.AudioKit?.onStop?.(() => { if (!stopping) stopLocal(); });
   document.getElementById('jazzPlay').addEventListener('click',async()=>{
     stop('Preparing audio…'); const run=generation;
     try {

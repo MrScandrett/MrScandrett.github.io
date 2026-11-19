@@ -17,7 +17,7 @@ export async function collectRecordings() {
     if (!file.endsWith('.html')) continue;
     const lesson = `lessons/music/pioneers/${file}`;
     const $ = load(await readFile(new URL(lesson, root), 'utf8'));
-    const composer = $('h1').first().text().trim();
+    const composer = $('title').text().split('·')[0].trim() || $('h1').first().text().trim();
     $('option[data-src]').each((index, el) => {
       const option = $(el);
       const src = option.attr('data-src');

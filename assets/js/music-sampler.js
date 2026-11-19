@@ -114,30 +114,55 @@
     const release=Number.isFinite(+settings.release) ? Math.max(.02,+settings.release) : bank.release || (/piano|pluck|harp/.test(name) ? .3 : .12);
     envelope.gain.setValueAtTime(0,t); envelope.gain.linearRampToValueAtTime(peak,t+attack);
     source.connect(filter); filter.connect(envelope); envelope.connect(out);
-    let cleaned=false;
+    let cleaned=false, releasedAt=null, releasedStart=0;
+    const levelAt = (at) => {
+      if (at <= t) return 0;
+      if (releasedAt != null && at >= releasedAt) {
+        return releasedStart * Math.exp(-(at - releasedAt) / (release / 4));
+      }
+      return peak * Math.max(0, Math.min(1, (at - t) / attack));
+    };
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      voice.done = true;
+      source.disconnect();
+      filter.disconnect();
+      envelope.disconnect();
+      onEnded?.(voice);
+    };
     const voice={ t,pitch,sources:[source],env:envelope,peak,sampled:true,instrument:name,done:false,
       release(at) {
         if (cleaned) return;
         at=Math.max(at,c.currentTime,t+.002);
         // A scheduled release is replaceable: pause/stop must silence long notes now.
-        const initial=peak*Math.max(0,Math.min(1,(at-t)/attack));
+        const initial=levelAt(at);
+        const prevReleasedAt=releasedAt;
+        releasedStart=initial;
+        releasedAt=at;
         envelope.gain.cancelScheduledValues(at);
-        if (at<t+attack) envelope.gain.linearRampToValueAtTime(initial,at);
+        if (at<t+attack && prevReleasedAt == null) envelope.gain.linearRampToValueAtTime(initial,at);
         else envelope.gain.setValueAtTime(initial,at);
         envelope.gain.setTargetAtTime(0,at,release/4);
         try {source.stop(at+release*2+.02);} catch {}
       },
       kill(at) {
         if (cleaned) return;
-        at=Math.max(c.currentTime,at); envelope.gain.cancelScheduledValues(at);
+        at=Math.max(c.currentTime,at ?? c.currentTime); envelope.gain.cancelScheduledValues(at);
         // cancelScheduledValues also removes a future attack when stealing pre-roll notes.
         if (at<t) envelope.gain.setValueAtTime(0,at);
-        else envelope.gain.setTargetAtTime(0,at,.004);
-        try {source.stop(at+.03);} catch {}
+        else {
+          const initial=levelAt(at);
+          envelope.gain.setValueAtTime(initial,at);
+          envelope.gain.setTargetAtTime(0,at,.004);
+        }
+        try {source.stop(at+.03);} catch {
+          if (typeof setTimeout === 'function') setTimeout(cleanup, Math.max(0, (at - c.currentTime + 0.04) * 1000));
+        }
       },
       glide(toPitch,at,tau=.015) { voice.pitch=toPitch;source.playbackRate.setTargetAtTime(Math.pow(2,(toPitch-entry.midi)/12),Math.max(c.currentTime,at),tau); }
     };
-    source.onended=()=> {if(cleaned)return;cleaned=true;voice.done=true;source.disconnect();filter.disconnect();envelope.disconnect();onEnded?.(voice);};
+    source.onended=cleanup;
     source.start(t);return voice;
   }
   root.MusicSampler={prepare,startVoice,nearest,stats(c){const s=state(c);return {buffers:s.buffers.size,bytes:s.bytes,pending:s.pending.size};}};

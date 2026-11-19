@@ -73,12 +73,13 @@ function pianoSources(context, output, frequency, time, touch = 1) {
 // cached per context and pitch so strums and fast sequences don't recompute them.
 const pluckCache = new WeakMap();
 function pluckBuffer(context, frequency, duration) {
-  const key = frequency.toFixed(2) + ':' + duration;
+  const bucketed = Math.round(Math.max(0.5, duration) * 2) / 2;
+  const key = frequency.toFixed(2) + ':' + bucketed.toFixed(1);
   let bank = pluckCache.get(context);
   if (!bank) { bank = new Map(); pluckCache.set(context, bank); }
   const hit = bank.get(key);
   if (hit) return hit;
-  const length = Math.max(2, Math.floor(context.sampleRate * duration));
+  const length = Math.max(2, Math.floor(context.sampleRate * bucketed));
   const buffer = context.createBuffer(1, length, context.sampleRate), data = buffer.getChannelData(0);
   const period = Math.max(2, Math.round(context.sampleRate / frequency)), ring = new Float32Array(period);
   for (let i = 0; i < period; i++) ring[i] = Math.random() * 2 - 1;
@@ -104,11 +105,14 @@ function noise(c) {
   }
   return b;
 }
+let collector = null;
+function tracked(node) { if (collector && node) collector.push(node); return node; }
+
 // Delayed pitch vibrato in cents on the given oscillators. The LFO is tagged `fixed`
 // so voice.glide() retunes the notes without retuning the vibrato rate.
 function vibrato(c, t, oscs, cents, delay, rate) {
   if (!cents) return [];
-  const lfo = c.createOscillator(), depth = c.createGain();
+  const lfo = tracked(c.createOscillator()), depth = tracked(c.createGain());
   lfo.fixed = true;
   lfo.frequency.value = rate || 5.2;
   depth.gain.setValueAtTime(0, t);
@@ -119,15 +123,15 @@ function vibrato(c, t, oscs, cents, delay, rate) {
   return [lfo];
 }
 function osc(c, type, freq, t, out, level) {
-  const o = c.createOscillator();
+  const o = tracked(c.createOscillator());
   o.type = type; o.frequency.value = freq;
   if (level === undefined) o.connect(out);
-  else { const g = c.createGain(); g.gain.value = level; o.connect(g); g.connect(out); }
+  else { const g = tracked(c.createGain()); g.gain.value = level; o.connect(g); g.connect(out); }
   o.start(t);
   return o;
 }
 function lowpass(c, out, freq, q) {
-  const f = c.createBiquadFilter();
+  const f = tracked(c.createBiquadFilter());
   f.type = 'lowpass'; f.frequency.value = freq; f.Q.value = q || 0.7;
   f.connect(out);
   return f;
@@ -147,12 +151,12 @@ const SYNTHS = {
     a: 0.003, d: 1.8, s: 0.22, r: 0.3, gain: 0.45,
     voice(c, f, v, t, out) {
       const car = osc(c, 'sine', f, t, out);
-      const mod = c.createOscillator(), mg = c.createGain();
+      const mod = tracked(c.createOscillator()), mg = tracked(c.createGain());
       mod.frequency.value = f;
       mg.gain.setValueAtTime(f * (0.6 + 2.2 * v), t);
       mg.gain.setTargetAtTime(f * 0.2, t, 0.35);
       mod.connect(mg); mg.connect(car.frequency); mod.start(t);
-      const tine = c.createGain();
+      const tine = tracked(c.createGain());
       tine.gain.setValueAtTime(0.12 * v, t); tine.gain.setTargetAtTime(0, t, 0.06);
       tine.connect(out);
       const bell = osc(c, 'sine', f * 4, t, tine);
@@ -191,7 +195,7 @@ const SYNTHS = {
     a: 0.28, d: 0.6, s: 0.85, r: 0.55, gain: 0.2,
     voice(c, f, v, t, out) {
       const filt = lowpass(c, out, 2400 + v * 1600, 0.7);
-      const vib = c.createOscillator(), depth = c.createGain();
+      const vib = tracked(c.createOscillator()), depth = tracked(c.createGain());
       vib.fixed = true;
       vib.frequency.value = 5.2;
       depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(7, t + 0.45);
@@ -229,8 +233,8 @@ const SYNTHS = {
     voice(c, f, v, t, out, settings) {
       const filt = lowpass(c, out, Math.min(8000, 2600 + f * 2 + v * 1800), 0.8);
       const a = osc(c, 'sawtooth', f, t, filt), b = osc(c, 'sawtooth', f, t, filt, 0.3);
-      b.detune.value = 4;
       const cents = Number.isFinite(Number(settings?.vibrato)) ? Number(settings.vibrato) : 8;
+      if (cents > 0) b.detune.value = 4;
       return [a, b].concat(vibrato(c, t, [a, b], cents, 0.3, 5.6));
     },
   },
@@ -326,30 +330,58 @@ function startVoice(c, out, instrument, pitch, vel, t, onEnded, settings = {}) {
   env.gain.linearRampToValueAtTime(peak, t + def.a);
   env.gain.setTargetAtTime(peak * def.s, t + def.a, def.d / 3);
   const f0 = midiHz(pitch);
-  const sources = def.voice(c, f0, vel, t, env, settings);
+  const bag = [];
+  collector = bag;
+  let sources;
+  try { sources = def.voice(c, f0, vel, t, env, settings); }
+  finally { collector = null; }
   // Pitched oscillators keep their ratio to the fundamental so glide() can retune them.
   const tuned = sources.filter((s) => s.frequency && !s.fixed).map((s) => [s, s.frequency.value / f0]);
-  let cleaned=false;
-  function cleanup() { if(cleaned)return;cleaned=true;voice.done=true;env.disconnect();sources.cleanup?.();if(onEnded)onEnded(voice); }
+  let cleaned=false, releaseAt=Infinity;
+  function cleanup() {
+    if (cleaned) return;
+    cleaned = true;
+    voice.done = true;
+    env.disconnect();
+    bag.forEach((n) => { try { n.disconnect(); } catch (_e) {} });
+    sources.cleanup?.();
+    if (onEnded) onEnded(voice);
+  }
   const voice = {
     t, def, peak, env, sources, pitch, done: false,
     release(at) {
-      if (voice.done) return;
+      if (cleaned) return;
+      at = Math.max(c.currentTime, at, t + 0.002);
+      if (at >= releaseAt) return;
+      const prevReleaseAt = releaseAt;
+      releaseAt = at;
       voice.done = true;
-      at = Math.max(at, t + 0.01);
       env.gain.cancelScheduledValues(at);
-      env.gain.setValueAtTime(envLevel(voice, at), at);
+      if (at < t + def.a && prevReleaseAt === Infinity) env.gain.linearRampToValueAtTime(envLevel(voice, at), at);
+      else env.gain.setValueAtTime(envLevel(voice, at), at);
       env.gain.setTargetAtTime(0, at, def.r / 3);
       const end = at + def.r * 1.8 + 0.05;
-      sources.forEach((s) => { try { s.stop(end); } catch (_e) { /* already stopped */ } });
+      let stoppedNow = true;
+      sources.forEach((s) => { try { s.stop(end); } catch (_e) { stoppedNow = false; } });
       sources[0].onended = cleanup;
+      if (!stoppedNow && typeof setTimeout === 'function') {
+        setTimeout(cleanup, Math.max(0, (end - c.currentTime) * 1000));
+      }
     },
     kill(at) {
+      if (cleaned) return;
       voice.done = true;
+      at = Math.max(c.currentTime, at == null ? c.currentTime : at);
+      releaseAt = Math.min(releaseAt, at);
       env.gain.cancelScheduledValues(at);
-      env.gain.setTargetAtTime(0, at, 0.01);
-      sources[0].onended=cleanup;
-      sources.forEach((s) => { try { s.stop(at + 0.06); } catch (_e) { /* already stopped */ } });
+      env.gain.setValueAtTime(at < t ? 0 : envLevel(voice, at), at);
+      env.gain.setTargetAtTime(0, at, 0.008);
+      sources[0].onended = cleanup;
+      let stoppedNow = true;
+      sources.forEach((s) => { try { s.stop(at + 0.06); } catch (_e) { stoppedNow = false; } });
+      if (!stoppedNow && typeof setTimeout === 'function') {
+        setTimeout(cleanup, Math.max(0, (at - c.currentTime + 0.08) * 1000));
+      }
     },
     // Slides a sounding note to a new (fractional) MIDI pitch; tau is the glide time constant.
     glide(toPitch, at, tau = 0.015) {

@@ -545,8 +545,24 @@ function initDrumKit3d() {
   /* --------------------------------------------------------------- loop */
 
   var clock = new THREE.Clock();
+  // Draw only while the kit can be seen: off-screen, in a hidden activity panel or a background
+  // tab the loop stops, and the clock skips the paused time on resume.
+  var visible = true, rafId = 0;
+  function frameNeeded() { return visible && !document.hidden && canvas.offsetParent !== null; }
+  function wake() { if (!rafId && frameNeeded()) { clock.getDelta(); rafId = requestAnimationFrame(animate); } }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      visible = entries.some(function (entry) { return entry.isIntersecting; });
+      wake();
+    }, { rootMargin: '200px 0px' }).observe(canvas);
+  }
+  document.addEventListener('visibilitychange', wake);
+  window.addEventListener('resize', wake);
+  canvas.addEventListener('pointerdown', wake);
   function animate() {
-    requestAnimationFrame(animate);
+    rafId = 0;
+    if (!frameNeeded()) return;
+    rafId = requestAnimationFrame(animate);
     scene3.syncSize();
     var dt = Math.min(clock.getDelta(), 0.05);
     controls.update();

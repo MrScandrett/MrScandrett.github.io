@@ -59,11 +59,20 @@ if (host) {
     parent.addEventListener('site-music-change', forward);
     forward();
   });
-  // Lesson recordings take the foreground when the visitor explicitly starts one.
+  // Lesson recordings and Web Audio labs take the foreground when the visitor explicitly starts one.
   document.addEventListener('play', event => { if (event.target.matches('audio, video')) host.pause(); }, true);
+  window.addEventListener('audiokit:play', () => host.pause());
   const sync = () => host.syncNavigation();
   addEventListener('hashchange', sync);
   addEventListener('popstate', sync);
+  const origPushState = history.pushState;
+  if (origPushState) {
+    history.pushState = function () {
+      const out = origPushState.apply(this, arguments);
+      sync();
+      return out;
+    };
+  }
   sync();
   document.addEventListener('click', event => {
     const anchor = event.target.closest('a[href]');

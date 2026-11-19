@@ -764,6 +764,7 @@
       var scoreBars = [], scoreParts = [], scoreNotes = [], scoreTime = -(pickup || 0);
       if (scoreMode) {
         melodyBars = []; tokEvents = []; var scoreChords = [];
+        var carryScore = carryIn || null;
         order.forEach(function (mi, k) {
           var m = R.measures[mi], len = (k + 1 < starts.length ? starts[k + 1] : t0) - starts[k];
           var startU = snap(starts[k]), lenU = snap(len);
@@ -779,7 +780,14 @@
           var tail = es[es.length - 1], nextEv = events.filter(function (e) { return e.s >= startU + lenU; })[0];
           if (tail && !tail.rest && tail.tie && tail.e >= lenU && nextEv && !nextEv.rest && nextEv.s === startU + lenU && nextEv.midi === tail.midi && !/~$/.test(barStr)) barStr += '~';
           melodyBars.push(barStr);
-          if (!(k === 0 && pickupU)) scoreChords.push(buildChords(harms.filter(function (h) { return h.u >= startU && h.u < startU + lenU; }).map(function (h) { return { u: h.u - startU, tok: h.tok }; }), 0, lenU, 1, carryIn)[0]);
+          var barHarms = harms.filter(function (h) { return h.u >= startU && h.u < startU + lenU; }).map(function (h) { return { u: h.u - startU, tok: h.tok }; });
+          if (k === 0 && pickupU) {
+            barHarms.filter(function (h) { return h.tok !== 'NC'; }).forEach(function (h) { carryScore = h.tok; });
+          } else {
+            var barChord = buildChords(barHarms, 0, lenU, 1, carryScore)[0];
+            scoreChords.push(barChord);
+            if (barChord) carryScore = barChord.split(' ').pop().split(':')[0];
+          }
           scoreBars.push({ number: m.number, start: scoreTime, len: len, meter: m.meter, bar: k + 1 - (pickupU ? 1 : 0), section: m.section || undefined });
           scoreTime += len;
         });

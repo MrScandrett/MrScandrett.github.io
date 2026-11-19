@@ -112,6 +112,7 @@
     queue.forEach(function (e) {
       switch (e.kind) {
         case 'mel': track('mel', 'Melody', 0, LEAD_PROGRAM[o.lead] != null ? LEAD_PROGRAM[o.lead] : 65).notes.push({ b: e.b, dur: e.dur, midi: e.m, vel: 96 }); break;
+        case 'harmony': track('harmony', 'Harmony', 3, LEAD_PROGRAM[o.lead] != null ? LEAD_PROGRAM[o.lead] : 65).notes.push({ b: e.b, dur: e.dur, midi: e.m, vel: 72 }); break;
         case 'pno': (e.ms || []).forEach(function (m) { track('pno', 'Chords', 1, 0).notes.push({ b: e.b, dur: e.dur, midi: m, vel: (e.vel || 0.65) * 110 }); }); break;
         case 'bass': track('bass', 'Bass', 2, 33).notes.push({ b: e.b, dur: e.dur, midi: e.m, vel: (e.vel || 0.75) * 120 }); break;
         case 'drum': if (DRUM_NOTES[e.name]) track('drums', 'Drums', 9, 0).notes.push({ b: e.b, dur: 0.12, midi: DRUM_NOTES[e.name], vel: clamp((e.vel || 0.6) * 127, 1, 127) }); break;

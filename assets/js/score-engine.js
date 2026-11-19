@@ -470,7 +470,7 @@
             // chain ends staccato, detach only its final segment.
             if (cur.orn && cur.orn.indexOf('.') >= 0) dur -= cur.dur * 0.5;
             var voiced = pitchIndex === ev.pitches.length - 1 ? vel : vel * 0.92;
-            out.push({ staff: si, voice: ev.voice, start: ev.abs + off, dur: dur, midi: p.midi, vel: Math.min(1, voiced), fermata: ev.fermata, written: ev.abs });
+            out.push({ staff: si, voice: ev.voice, start: ev.abs + off, dur: dur, midi: p.midi, vel: Math.min(1, voiced), fermata: ev.fermata || cur.fermata, written: ev.abs });
           });
         });
       });
@@ -483,6 +483,7 @@
       if (seen[k]) {
         seen[k].dur = Math.max(seen[k].dur, n.dur);
         seen[k].vel = Math.max(seen[k].vel, n.vel);
+        seen[k].fermata = seen[k].fermata || n.fermata;
         return false;
       }
       seen[k] = n; return true;
@@ -1563,6 +1564,7 @@
     if (this.playing || this.destroyed) return;
     var self = this;
     players.forEach(function (p) { if (p !== self && (p.playing || p.loading)) p.halt(); });
+    if (root.AudioKit && root.AudioKit.notifyPlay) root.AudioKit.notifyPlay({ source: 'score-engine' });
     var c = context();
     var span = this.span();
     if (this.pos >= span.to - EPS || this.pos < span.from - EPS) this.pos = span.from;
@@ -1595,6 +1597,7 @@
     this.soundToken++;
     if (this.soundSelection) Object.assign(this, this.soundSelection);
     players.forEach(function (p) { if (p !== self && (p.playing || p.loading)) p.halt(); });
+    if (root.AudioKit && root.AudioKit.notifyPlay) root.AudioKit.notifyPlay({ source: 'score-engine' });
     // Resume synchronously with the gesture, then load only the roots used by this score.
     this.loading = true; this.ui.update();
     var report = await this.prepareSound(c, this.instrument, this.instOverride, this.samples);
@@ -1656,17 +1659,35 @@
     var c = audio.ctx, now = c.currentTime, horizon = now + (lookahead || AUDIO_LOOKAHEAD), self = this, span = this.span();
     // Change tempo at the first unqueued instant. Already sounding attacks
     // keep their envelopes, and sustaining notes take their new release time.
-    if (this.rate !== this.activeRate && now >= this.t0) {
-      var boundary = Math.max(now, this.scheduledUntil);
-      if (boundary < horizon && boundary < this.timeOf(span.to)) {
-        var beat = this.beatAt(boundary);
-        this.previousTempo = { time: this.t0, beat: this.b0, qpm: this.baseQpm * this.activeRate };
-        this.t0 = boundary; this.b0 = beat; this.activeRate = this.rate;
+    if (this.rate !== this.activeRate) {
+      if (now < this.t0 && (!this.previousTempo || this.t0 >= this.scheduledUntil - EPS)) {
+        this.activeRate = this.rate;
+      } else if (now >= this.t0) {
+        var boundary = Math.max(now, this.scheduledUntil);
+        if (boundary < this.timeOf(span.to)) {
+          var beat = this.beatAt(boundary);
+          this.previousTempo = { time: this.t0, beat: this.b0, qpm: this.baseQpm * this.activeRate };
+          this.t0 = boundary; this.b0 = beat; this.activeRate = this.rate;
+        } else {
+          var beatNow = this.beatAt(now);
+          this.previousTempo = { time: this.t0, beat: this.b0, qpm: this.baseQpm * this.activeRate };
+          this.t0 = now; this.b0 = beatNow; this.activeRate = this.rate;
+        }
       }
     }
     while (this.next < this.notes.length && this.timeOf(this.notes[this.next].start) < horizon && this.notes[this.next].start < span.to - EPS) {
       var n = this.notes[this.next++];
       var end = n.start + n.dur * (n.fermata ? 1.8 : 1);
+      if (n.fermata) {
+        for (var j = this.next; j < this.notes.length; j++) {
+          var nx = this.notes[j];
+          if (nx.start >= end - EPS) break;
+          if (!nx.grace && nx.staff === n.staff && nx.start >= n.start + n.dur - EPS) {
+            end = Math.max(n.start + n.dur, nx.start - 0.02);
+            break;
+          }
+        }
+      }
       var attack = this.timeOf(Math.max(this.pos, n.start));
       // If a redraw outlasts even the extended buffer, resume the rhythm
       // without bunching the missed attacks together.
@@ -1682,6 +1703,7 @@
         oldest.kill(c.currentTime); this.voices.delete(oldest);
       }
       var v = root.MusicSynth.startVoice(c, this.staffOutputs[n.staff], inst, n.midi + (Number(this.model.score.playbackTranspose) || 0), n.vel, t, function (voice) { self.voices.delete(voice); }, { samples: this.samples, scoreExpression: true, sampleInstrument: this.instOverride ? this.instrument : this.sampleInstrument(n.staff) });
+      v.startBeat = n.start;
       v.endBeat = end;
       this.voices.add(v);
     }
@@ -1700,6 +1722,7 @@
         this.playing = false;
         clearInterval(this.timer);
         cancelAnimationFrame(this.raf);
+        this.stopVoices(true);
         this.play(c.currentTime);
       } else this.stop();
     }
@@ -2620,16 +2643,45 @@
     bar.append(playBtn, stopBtn);
     if (practiceId) soundSettings.prepend(tempoLbl, instLbl);
     else { bar.appendChild(tempoLbl); soundSettings.appendChild(instLbl); }
-    if (practiceId) soundSettings.append(loopLbl, clearLoop);
-    else bar.append(loopLbl, clearLoop);
-    var muteBoxes = [];
+    bar.append(loopLbl, clearLoop);
+    var muteBoxes = [], soloBtns = [];
     if (model.staves.length > 1) {
+      var partActions = el('div', { class: 'se-part-actions' });
+      var allPartsBtn = el('button', { type: 'button', class: 'se-toggle se-parts-all' }, 'All parts');
+      allPartsBtn.addEventListener('click', function () {
+        muteBoxes.forEach(function (box, idx) {
+          box.checked = true;
+          player.setMuted(idx, false);
+        });
+        soloBtns.forEach(function (btn) { btn.setAttribute('aria-pressed', 'false'); btn.classList.remove('is-on'); });
+        if (roll?.open) roll.paint(currentPerformanceBeat(player));
+      });
+      partActions.appendChild(allPartsBtn);
+      partSettings.appendChild(partActions);
       model.staves.forEach(function (st, si) {
+        var row = el('div', { class: 'se-part-row' });
         var l = el('label', { class: 'se-check' });
         var cb = el('input', { type: 'checkbox', checked: '' });
         cb.checked = true;
-        l.appendChild(cb); l.appendChild(document.createTextNode(' ' + (st.label || 'Staff ' + (si + 1))));
-        partSettings.appendChild(l); muteBoxes.push(cb);
+        var staffLabel = st.label || 'Staff ' + (si + 1);
+        l.appendChild(cb); l.appendChild(document.createTextNode(' ' + staffLabel));
+        var soloBtn = el('button', { type: 'button', class: 'se-toggle se-part-solo', 'aria-pressed': 'false', 'aria-label': 'Solo ' + staffLabel }, 'Solo');
+        soloBtn.addEventListener('click', function () {
+          var alreadySolo = muteBoxes.every(function (box, idx) { return idx === si ? box.checked : !box.checked; });
+          muteBoxes.forEach(function (box, idx) {
+            var on = alreadySolo ? true : idx === si;
+            box.checked = on;
+            player.setMuted(idx, !on);
+          });
+          soloBtns.forEach(function (btn, idx) {
+            var active = !alreadySolo && idx === si;
+            btn.setAttribute('aria-pressed', String(active));
+            btn.classList.toggle('is-on', active);
+          });
+          if (roll?.open) roll.paint(currentPerformanceBeat(player));
+        });
+        row.append(l, soloBtn);
+        partSettings.appendChild(row); muteBoxes.push(cb); soloBtns.push(soloBtn);
       });
     }
     var full = el('button', { type: 'button', class: 'se-full', 'aria-label': 'Show the score full screen', 'aria-pressed': 'false', title: 'Full screen' });
@@ -2742,6 +2794,13 @@
       var to = perfBeat(model, model.barStart[b], from) + model.staves[0].bars[b].length;
       player.range = { from: from, to: Math.max(to, from + model.staves[0].bars[a].length) };
       player.loop = true; loop.checked = true;
+      // While playing, notes already queued past the new loop end would ring over the seam.
+      if (player.playing) {
+        var at = player.beatAt(audio.ctx.currentTime);
+        player.halt();
+        player.pos = at >= player.range.from - EPS && at < player.range.to - EPS ? at : player.range.from;
+        player.play();
+      }
       var rangeLabel = 'Loop bars ' + barNumber(model, a) + '–' + barNumber(model, b);
       if (practiceId) { loopLbl.title = rangeLabel; loop.setAttribute('aria-label', rangeLabel); }
       else loopText.textContent = ' ' + rangeLabel;
@@ -2754,7 +2813,7 @@
       loopLbl.removeAttribute('title'); loop.removeAttribute('aria-label');
       navigation.refresh();
     }
-    var navigation = root.ScoreNavigation({ surface: paper, selector: '.se-measure', scroller: paper, keyScope: fig, ignore: '.se-ev',
+    var navigation = root.ScoreNavigation({ surface: paper, selector: '.se-measure', scroller: paper, keyScope: fig, ignore: '.se-ev, .se-tab-note',
       ariaLabel: (score.title || 'Score') + ': measures and zoom',
       number: function (i) { return barNumber(model, i); },
       section: function (i) { return sectionStart[i] ? sectionStart[i].label : null; },
@@ -3009,7 +3068,13 @@
           if (playbackBar >= 0) practice.remember(playbackBar);
         }
         if (roll?.open) {
-          if (beat >= 0) updateTimeline(currentPerformanceBeat(player));
+          if (beat >= 0) {
+            var rollMeasure = Math.max(0, measure);
+            showGuide(rollMeasure);
+            var rollText = 'Bar ' + barNumber(model, rollMeasure) + ' / ' + barNumber(model, model.count - 1);
+            if (position.textContent !== rollText) position.textContent = rollText;
+            updateTimeline(currentPerformanceBeat(player));
+          }
           return;
         }
         if (!layout) return;
@@ -3099,6 +3164,7 @@
     clearLoop.addEventListener('click', function () { clearLoopRange(); status.textContent = 'Loop range cleared.'; });
     muteBoxes.forEach(function (cb, i) { cb.addEventListener('change', function () {
       player.setMuted(i, !cb.checked);
+      soloBtns.forEach(function (btn) { btn.setAttribute('aria-pressed', 'false'); btn.classList.remove('is-on'); });
       if (roll?.open) roll.paint(currentPerformanceBeat(player));
     }); });
     // Full screen uses the Fullscreen API where it exists. iPhone Safari has none for elements (and embedded
@@ -3220,6 +3286,11 @@
       if (!g || !layout) return;
       var ev = layout.events[+g.getAttribute('data-i')];
       if (!ev || ev.kind !== 'note') return;
+      if (e.shiftKey) {
+        setLoopBars(selectedBar, measureAt(ev.abs));
+        status.textContent = 'Looping bars ' + barNumber(model, loopBars.from) + '–' + barNumber(model, loopBars.to) + '. Press Play.';
+        return;
+      }
       selectEvent(ev);
     });
 
@@ -3375,10 +3446,19 @@
   // and served by serve-local.js), so a page with one sonata doesn't download the
   // whole 500 KB library. Any other server falls back to the full library.
   var pieces = Object.create(null);
+  // A server without data/scores/ (the dev server's static mirrors, GitHub's raw view) answers 404 for
+  // every split file; after the first one, go straight to the library instead of asking again.
+  var splitUnavailable = false;
   function fetchScoreAsset(filename) {
+    if (splitUnavailable) {
+      var skipped = new Error('Split score files are not published here.');
+      skipped.status = 404;
+      return Promise.reject(skipped);
+    }
     var url = new URL('../../data/scores/' + filename + '.json', scriptUrl || location.href);
     return fetch(url).then(function (response) {
       if (!response.ok) {
+        if (response.status === 404) splitUnavailable = true;
         var error = new Error('Score request failed (' + response.status + ').');
         error.status = response.status;
         throw error;
@@ -3421,7 +3501,8 @@
   }
 
   function injectCss() {
-    if (document.querySelector('link[data-score-css]')) return;
+    // Pages that already link the stylesheet (with or without a ?v= cache key) must not get a second copy.
+    if (document.querySelector('link[data-score-css], link[rel="stylesheet"][href*="score-engine.css"]')) return;
     var link = el('link', { rel: 'stylesheet', href: new URL('../css/score-engine.css', scriptUrl || location.href).href, 'data-score-css': '' });
     document.head.appendChild(link);
   }
@@ -3675,7 +3756,7 @@
     openScore: openScore, prepareLessonOpenings: prepareLessonOpenings, showScoreLoading: showScoreLoading, afterScorePaint: afterScorePaint, previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat, Player: Player };
   if (typeof document !== 'undefined') {
-    document.addEventListener('visibilitychange', function () { if (document.hidden) players.forEach(function (p) { if (p.playing || p.loading) p.halt(); }); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) players.forEach(function (p) { if (p.playing) p.pause(); else if (p.loading) p.halt(); }); });
     root.addEventListener('pagehide', function () { players.forEach(function (p) { p.halt(); }); });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
     else boot();

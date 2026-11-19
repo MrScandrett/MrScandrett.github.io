@@ -177,10 +177,15 @@
     });
     setTab(null);
     placeDock();
-    window.addEventListener('resize', placeDock);
-    window.addEventListener('orientationchange', function () { setTimeout(placeDock, 250); });
-    if (window.visualViewport) window.visualViewport.addEventListener('resize', placeDock);
-    window.addEventListener('scroll', placeDock, true);
+    var dockRaf = 0;
+    function schedulePlaceDock() {
+      if (dockRaf) return;
+      dockRaf = requestAnimationFrame(function () { dockRaf = 0; placeDock(); });
+    }
+    window.addEventListener('resize', schedulePlaceDock);
+    window.addEventListener('orientationchange', function () { setTimeout(schedulePlaceDock, 250); });
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', schedulePlaceDock);
+    window.addEventListener('scroll', schedulePlaceDock, { capture: true, passive: true });
     // The music-family nav is injected after load and the guide drawer resizes
     // the music area on phones; follow both.
     if (window.ResizeObserver) {

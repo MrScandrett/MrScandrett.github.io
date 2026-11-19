@@ -25,14 +25,20 @@ const Sound = (() => {
   function get() {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
+    const kit = window.AudioKit;
     if (!ctx) {
-      try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); }
+      // Use the page's AudioKit context where there is one, so its Stop and volume reach this lab.
+      const shared = kit && kit.context && kit.context();
+      if (shared) ctx = shared;
+      else { try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); } }
       out = ctx.createGain();
       out.gain.value = volume;
       const comp = ctx.createDynamicsCompressor();
-      out.connect(comp); comp.connect(ctx.destination);
+      out.connect(comp); comp.connect(shared && kit.output ? kit.output() : ctx.destination);
+      if (kit && kit.onStop) kit.onStop(() => stopAll());
     }
     if (ctx.state === 'suspended') ctx.resume();
+    if (kit && kit.notifyPlay) kit.notifyPlay({ source: 'drop-voicings' });
     return ctx;
   }
   const PARTIALS = {
@@ -59,7 +65,7 @@ const Sound = (() => {
       o.type = 'sine'; o.frequency.value = freq * mult; g.gain.value = amp;
       o.connect(g); g.connect(env);
       o.start(t); o.stop(t + dur + 0.05);
-      live.add(o); o.onended = () => live.delete(o);
+      live.add(o); o.onended = () => { live.delete(o); o.disconnect(); g.disconnect(); };
     }
   }
   /* mode: 'block' all at once · 'roll' quick strum upward · 'slow' one note at a time */
@@ -75,6 +81,9 @@ const Sound = (() => {
     live.clear(); timers.forEach(clearTimeout); timers.clear();
     document.dispatchEvent(new CustomEvent('dv:stop'));
   }
+  // Nothing keeps sounding in a background tab or after leaving the page.
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stopAll(); });
+  window.addEventListener('pagehide', stopAll);
   return { tone, chord, later, stopAll, setVolume(v) { volume = v; if (out) out.gain.value = v; }, available: () => !!(window.AudioContext || window.webkitAudioContext) };
 })();
 
@@ -161,13 +170,24 @@ function chordOnStaff(notes, cx, { ghosts = [], numbers = false, targets = [], d
   const sorted = [...notes].sort((a, b) => a.midi - b.midi);
   const shifted = [];
   sorted.forEach((n, i) => { shifted[i] = i > 0 && dOf(n) - dOf(sorted[i - 1]) === 1 && !shifted[i - 1]; });
+  // Accidentals sit left of the whole chord (not of a note pushed right by a second) and stagger
+  // into columns, top note first, when two would be closer than a sixth: Db maj7 in 3rd inversion
+  // stacked them on top of each other and on the noteheads.
+  const accX = new Map(), columns = [];
+  [...sorted].reverse().filter((n) => n.acc).forEach((n) => {
+    const d = dOf(n);
+    let col = 0;
+    while ((columns[col] || []).some((other) => Math.abs(other - d) < 6)) col++;
+    (columns[col] = columns[col] || []).push(d);
+    accX.set(n, cx - 24 - col * 12);
+  });
   for (const g of ghosts) {
     s += `<ellipse class="dv-head dv-ghost deg-${g.degree}" cx="${cx}" cy="${yOf(dOf({ ...g, octave: g.octave + 1 }))}" rx="7.6" ry="5.6" transform="rotate(-20 ${cx} ${yOf(dOf({ ...g, octave: g.octave + 1 }))})"/>`;
   }
   sorted.forEach((n, i) => {
     const d = dOf(n), x = cx + (shifted[i] ? 14 : 0), y = yOf(d);
     s += ledgerFor(d, x);
-    if (n.acc && MN()) s += `<g class="dv-acc">${MN().accidental(n.acc, x - 24, y, SP)}</g>`;
+    if (n.acc && MN()) s += `<g class="dv-acc">${MN().accidental(n.acc, accX.get(n), y, SP)}</g>`;
     const cls = `dv-head deg-${n.degree}${targets.includes(n.degree) ? ' is-target' : ''}${dim && n.degree % 2 === 0 ? ' is-dim' : ''}`;
     s += `<g class="${cls}"><ellipse cx="${x}" cy="${y}" rx="7.6" ry="5.6" transform="rotate(-20 ${x} ${y})"/><text x="${x}" y="${y + 3.4}" text-anchor="middle">${n.name[0]}</text></g>`;
     if (numbers) s += `<text class="dv-num" x="${x + 17}" y="${y + 4}">${notes.length - sorted.indexOf(n)}</text>`;
@@ -290,7 +310,9 @@ function renderGuitar() {
     return;
   }
   $('#gPlay').disabled = false;
-  const start = Math.max(1, shape.lo || 1);
+  // The diagram shows five frets: a grip that fits from the nut is drawn there (with the nut).
+  const fretted = shape.tab.filter(f => f > 0);
+  const start = !fretted.length || Math.max(...fretted) <= 5 ? 1 : Math.max(1, shape.lo || Math.min(...fretted));
   const SX = 28, FH = 34, LEFT = 52, TOP = 38;
   let svg = `<svg viewBox="0 0 ${LEFT + SX * 5 + 24} ${TOP + FH * 5 + 14}" class="dv-fret" role="img" aria-label="${v.symbol} ${VOICING_TYPES[gState.type].label} on strings ${set.join(' ')}: ${shape.text}">`;
   for (let f = 0; f <= 5; f++) svg += `<line class="dv-fretline${f === 0 && start === 1 ? ' is-nut' : ''}" x1="${LEFT}" x2="${LEFT + SX * 5}" y1="${TOP + f * FH}" y2="${TOP + f * FH}"/>`;
@@ -345,10 +367,16 @@ function renderVoiceLeading() {
 
 function playProgression(list, label) {
   Sound.stopAll();
-  const cols = $$('#vlChart .dv-col');
+  // The chart engraves the smooth voicings. Light its columns only when those are what is
+  // playing; for the root-position version, name the notes actually sounding instead.
+  const engraved = list === vl.smooth;
+  const cols = engraved ? $$('#vlChart .dv-col') : [];
   list.forEach((v, i) => {
     Sound.chord(v.notes.map((n) => n.midi), { at: i * 1.5, mode: 'roll', dur: 1.9 });
-    Sound.later(() => { cols.forEach((c, k) => c.classList.toggle('is-live', k === i)); }, 30 + i * 1500);
+    Sound.later(() => {
+      cols.forEach((c, k) => c.classList.toggle('is-live', k === i));
+      if (!engraved && vl.chords) $('#vlStatus').textContent = `${label} Now: ${chordLabelAt(vl.chords[i])} (${v.notes.map((n) => n.name + n.octave).join(' ')}).`;
+    }, 30 + i * 1500);
   });
   Sound.later(() => cols.forEach((c) => c.classList.remove('is-live')), list.length * 1500 + 300);
   $('#vlStatus').textContent = label;

@@ -26,7 +26,11 @@
   ];
   let activeMode=0;
   let diagramDegree=0;
+  // The student's own journey survives a reload (up to MAX_STEPS chords, degrees 0-6).
+  const JOURNEY_KEY='classroomos:circle-journey:v1',MAX_STEPS=16;
   let customJourney=[0,5,3,4];
+  try{const saved=JSON.parse(localStorage.getItem(JOURNEY_KEY)||'null');if(Array.isArray(saved)&&saved.length<=MAX_STEPS&&saved.every(d=>Number.isInteger(d)&&d>=0&&d<7))customJourney=saved;}catch{/* storage unavailable */}
+  function saveJourney(){try{localStorage.setItem(JOURNEY_KEY,JSON.stringify(customJourney));}catch{/* storage unavailable */}}
   const pattern=()=>document.getElementById('progression').value==='custom'?customJourney:patterns[document.getElementById('progression').value];
   const pitch=note=>({C:0,D:2,E:4,F:5,G:7,A:9,B:11}[note[0]]+(note.includes('♯')?1:note.includes('♭')?-1:0)+12)%12;
   let selected=0, useFlatSix=false, context, voices=[], timers=[], generation=0;
@@ -138,12 +142,13 @@
     }
     whiteMidi.forEach((m,i)=>key(m,i*width,width,156,false));
     whiteMidi.forEach((m,i)=>{if([0,2,5,7,9].includes(m%12)&&m<start+24)key(m+1,(i+1)*width-width*.31,width*.62,96,true);});
-    const frets=guitarShape(degree),positive=frets.filter(f=>f>0),first=Math.min(...positive)>1?Math.min(...positive):1;
+    // A grip that fits in the first four frets is drawn from the nut (Em, A, D, G…); only higher grips get a position label.
+    const frets=guitarShape(degree),positive=frets.filter(f=>f>0),first=!positive.length||Math.max(...positive)<=4?1:Math.min(...positive);
     const guitar=document.getElementById('chord-guitar');guitar.replaceChildren();
     const fretText=frets.map(f=>f<0?'×':f).join(' · ');
     const guitarTitle=svg('title',{},guitar);guitarTitle.textContent=`${c.name} guitar, low E to high e: ${frets.map(f=>f<0?'muted':f===0?'open':'fret '+f).join(', ')}.`;
     for(let f=0;f<=4;f++)svg('line',{x1:45,x2:195,y1:50+f*36,y2:50+f*36,stroke:'#182c43','stroke-width':f===0&&first===1?5:1},guitar);
-    const fretLabel=svg('text',{x:10,y:75,fill:'#182c43','font-size':13},guitar);fretLabel.textContent=first+'fr';
+    if(first>1){const fretLabel=svg('text',{x:10,y:75,fill:'#182c43','font-size':13},guitar);fretLabel.textContent=first+'fr';}
     frets.forEach((f,i)=>{
       const x=45+i*30;
       svg('line',{x1:x,x2:x,y1:50,y2:194,stroke:'#182c43'},guitar);
@@ -286,11 +291,11 @@
       const c=chord(i),button=document.createElement('button');button.type='button';
       button.innerHTML=`<strong>${c.name}</strong><span>${degree}</span>`;
       button.setAttribute('aria-label',`Add ${c.name}, ${degree}, to your journey`);
-      button.disabled=customJourney.length>=8;
+      button.disabled=customJourney.length>=MAX_STEPS;
       button.addEventListener('click',()=>{
-        stop(false);showChord(i);customJourney.push(i);document.getElementById('progression').value='custom';renderChords();renderComposer();
-        document.getElementById('composer-status').textContent=`Added ${c.name}. ${customJourney.length} of 8 steps.`;
-        (customJourney.length===8?document.getElementById('undo-chord'):document.querySelectorAll('#chord-bank button')[i]).focus();
+        stop(false);showChord(i);customJourney.push(i);saveJourney();document.getElementById('progression').value='custom';renderChords();renderComposer();
+        document.getElementById('composer-status').textContent=`Added ${c.name}. ${customJourney.length} of ${MAX_STEPS} steps.`;
+        (customJourney.length===MAX_STEPS?document.getElementById('undo-chord'):document.querySelectorAll('#chord-bank button')[i]).focus();
         sound([[0,c.midi,.6]],`Added ${c.name}`);
       });bank.append(button);
     });
@@ -309,8 +314,8 @@
   }
   document.getElementById('play-custom').addEventListener('click',()=>{document.getElementById('progression').value='custom';renderChords();play('chords');});
   ['undo-chord','clear-chords'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
-    stop(false);if(id==='undo-chord')customJourney.pop();else customJourney=[];
-    renderChords();renderComposer();if(!customJourney.length)document.querySelector('#chord-bank button').focus();document.getElementById('composer-status').textContent=customJourney.length?`${customJourney.length} of 8 steps. Ready to play.`:'Journey cleared. Choose a chord above.';
+    stop(false);if(id==='undo-chord')customJourney.pop();else customJourney=[];saveJourney();
+    renderChords();renderComposer();if(!customJourney.length)document.querySelector('#chord-bank button').focus();document.getElementById('composer-status').textContent=customJourney.length?`${customJourney.length} of ${MAX_STEPS} steps. Ready to play.`:'Journey cleared. Choose a chord above.';
   }));
   document.getElementById('fifths-tempo').addEventListener('input',e=>{document.getElementById('tempo-value').value=e.target.value+' BPM';stop(false);status.textContent='Tempo changed. Press Play to hear the new speed.';});
   document.getElementById('fifths-volume').addEventListener('input',e=>AudioKit.setVolume(Number(e.target.value)/100));
@@ -330,5 +335,9 @@
   document.getElementById('discover-minor').addEventListener('click',()=>play('minor'));
   document.addEventListener('keydown',e=>{if(e.key==='Escape')stop();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+  window.addEventListener('pagehide',()=>stop(false));
+  // Play along with the journey in the Fake Book (one bar per step).
+  if(window.MusicSongBridge)window.MusicSongBridge.addButton(document.getElementById('clear-chords').parentNode,()=>customJourney.length?{title:`My chord journey in ${current()[0]}`,key:current()[0],tempo:Number(document.getElementById('fifths-tempo').value)||90,chords:customJourney.map(d=>chord(d).name),from:'Circle of Fifths'}:null);
+  if(window.AudioKit&&window.AudioKit.onStop)window.AudioKit.onStop(()=>stop(false));
   select(0);
 })();

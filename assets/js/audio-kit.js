@@ -38,15 +38,44 @@
   var ctx = null, master = null, limiter = null, volume = 1;
   var voices = new Set(), stopHandlers = new Set(), interruptHandlers = new Set();
   var drumKits = typeof WeakMap === 'function' ? new WeakMap() : null;
-  var unlocked = false;
+  var drumKitList = [];
+  var unlocked = false, lastNotifyAt = 0;
 
   function available() { return !!AC; }
+
+  function setSessionType(type) {
+    var session = root.navigator && root.navigator.audioSession;
+    if (!session || !type) return;
+    try { session.type = type; } catch (_e) { /* read-only in some builds */ }
+  }
 
   function preferPlaybackSession() {
     var session = root.navigator && root.navigator.audioSession;
     if (!session) return;
     // A page that opened the mic (Track Studio) manages its own session type.
     try { if (session.type === 'auto') session.type = 'playback'; } catch (_e) { /* read-only in some builds */ }
+  }
+
+  function notifyPlay(opts) {
+    opts = opts || {};
+    var doc = root.document;
+    if (doc && doc.querySelectorAll) {
+      var media = doc.querySelectorAll('audio, video');
+      for (var i = 0; i < media.length; i++) {
+        var el = media[i];
+        if (!el.paused && !el.hasAttribute('data-keep-playing')) {
+          try { el.pause(); } catch (_e) {}
+        }
+      }
+    }
+    var nowMs = Date.now ? Date.now() : +new Date();
+    if (!opts.force && nowMs - lastNotifyAt < 80) return;
+    lastNotifyAt = nowMs;
+    try {
+      if (typeof root.CustomEvent === 'function' && root.dispatchEvent) {
+        root.dispatchEvent(new root.CustomEvent('audiokit:play', { detail: opts }));
+      }
+    } catch (_e) {}
   }
 
   // iPadOS 13+ identifies itself as a Mac, hence the touch-point check.
@@ -73,6 +102,7 @@
     master.connect(limiter);
     limiter.connect(ctx.destination);
     preferPlaybackSession();
+    primeOnce();
     var wasRunning = false;
     ctx.addEventListener('statechange', function () {
       if (ctx.state === 'running') { wasRunning = true; return; }
@@ -168,10 +198,14 @@
       voices.delete(v);
       if (opts.onEnded) opts.onEnded(v);
     }, opts.settings || {});
+    notifyPlay({ source: opts.instrument || 'note' });
     voices.add(voice);
-    // Past the cap, steal the oldest voice: a dozen stacked oscillators per chord can starve older iPads.
+    // Past the cap, steal the oldest already-started voice first so scheduled phrases keep their beat-1 note.
     if (voices.size > MAX_VOICES) {
-      var oldest = voices.values().next().value;
+      var cut = c.currentTime + 0.05;
+      var oldest = null;
+      voices.forEach(function (v) { if (!oldest && v.t <= cut) oldest = v; });
+      if (!oldest) oldest = voices.values().next().value;
       voices.delete(oldest);
       try { oldest.kill(c.currentTime); } catch (_e) { /* already gone */ }
     }
@@ -201,6 +235,7 @@
     opts = opts || {};
     var c = context();
     if (!c) return;
+    notifyPlay({ source: 'click' });
     var t = startTime(c, opts);
     var peak = (opts.accent ? 0.3 : 0.2) * (opts.level == null ? 1 : opts.level);
     var o = c.createOscillator(), g = c.createGain();
@@ -220,7 +255,17 @@
     if (!c || !root.DrumEngine) return null;
     var dest = destination || master;
     var kit = drumKits && drumKits.get(dest);
-    if (!kit) { kit = root.DrumEngine.create(c, dest); if (drumKits) drumKits.set(dest, kit); }
+    if (!kit) {
+      var raw = root.DrumEngine.create(c, dest);
+      kit = Object.assign({}, raw, {
+        hit: function (name, when, vel, opts) {
+          notifyPlay({ source: 'drums' });
+          return raw.hit(name, when, vel, opts);
+        }
+      });
+      if (drumKits) drumKits.set(dest, kit);
+      drumKitList.push(kit);
+    }
     return kit;
   }
 
@@ -234,6 +279,7 @@
     var t = now();
     voices.forEach(function (v) { try { v.kill(t); } catch (_e) { /* already gone */ } });
     voices.clear();
+    drumKitList.forEach(function (kit) { try { if (kit && kit.stopAll) kit.stopAll(t); } catch (_e) {} });
     stopHandlers.forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } });
   }
 
@@ -245,6 +291,8 @@
     output: output,
     resume: resume,
     now: now,
+    setSessionType: setSessionType,
+    notifyPlay: notifyPlay,
     setVolume: setVolume,
     getVolume: function () { return volume; },
     note: note,

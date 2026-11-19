@@ -4,6 +4,8 @@
   const pitches=['C','D','E','F','G','A','B'], natural=[0,2,4,5,7,9,11];
   const marks=/@(?:K:-?\d+|T:\d+\/\d+|L:\d+(?:\/\d+)?|N:\d+|Fine|DC|[1-9](?:\.[1-9])*)(?=\s|$)/g;
   function shiftKey(key,fifths) { let k=+key+fifths;while(k>7)k-=12;while(k< -7)k+=12;return k; }
+  // Whole cycles of twelve fifths shiftKey added (+1) or removed (−1) to keep the key signature writable.
+  function wrapOffset(key,fifths) { return (shiftKey(key,fifths)-(+key+fifths))/12; }
   function transpose(text,chromatic,diatonic,fifths) {
     return text.replace(/([A-G])([#bn]*)(-?\d+)/g,(_,letter,accidental,register)=> {
       const index=pitches.indexOf(letter), absolute=(+register+1)*12+natural[index]+[...accidental].reduce((s,a)=>s+(a==='#'?1:a==='b'?-1:0),0)+chromatic;
@@ -154,6 +156,20 @@
     }
     return result;
   }
+  // One extracted line keeps only its own slurs, dynamics and hairpins, renumbered to staff 0 / voice 0;
+  // marks for other staves (and cross-staff beams) would otherwise land on the wrong notes.
+  function isolateExpressions(result,staff,voice) {
+    const ex=result.expressions;if(!ex)return;
+    const onStaff=item=>(item.staff||0)===staff;
+    const ends=span=>[span.from,span.to].filter(Boolean);
+    const out={};
+    if(ex.slurs)out.slurs=ex.slurs.filter(sl=>onStaff(sl)&&ends(sl).every(e=>(e.voice||0)===voice))
+      .map(sl=>({...sl,staff:0,from:sl.from&&{...sl.from,voice:0},to:sl.to&&{...sl.to,voice:0}}));
+    if(ex.directions)out.directions=ex.directions.filter(onStaff).map(d=>({...d,staff:0}));
+    if(ex.hairpins)out.hairpins=ex.hairpins.filter(onStaff).map(h=>({...h,staff:0}));
+    Object.keys(out).forEach(k=>{if(!out[k].length)delete out[k];});
+    if(Object.keys(out).length)result.expressions=out;else delete result.expressions;
+  }
   function arrange(src,settings) {
     const m=settings.mode||'original', selected=+settings.staff||0, voice=+settings.voice||0;
     const result=JSON.parse(JSON.stringify(src));result.id=(settings.id||'composer')+'-arrangement';
@@ -184,9 +200,13 @@
       result.instrument='piano';result.staves.forEach(st=>{st.instrument='piano';});return result;
     }
     const bass=m==='bass';result.staves=[line(src,selected,voice,bass)];result.grand=false;
+    isolateExpressions(result,selected,voice);
     let chromatic=+settings.octave||0, diatonic=chromatic/12*7, fifths=0;
     if(m==='alto'){chromatic+=9;diatonic+=5;fifths=3;result.playbackTranspose=-9;}
     if(m==='tenor'){chromatic+=14;diatonic+=8;fifths=2;result.playbackTranspose=-14;}
+    // A written key past seven sharps or flats wraps to its enharmonic (B major + 3 → A♭, not G♯).
+    // Respell the notes the same way (one letter up, same pitch) or they come out as F##, C##, G##.
+    diatonic-=wrapOffset(src.key||0,fifths);
     result.staves[0].notes=transpose(result.staves[0].notes,chromatic,diatonic,fifths);
     if(['violin','guitar','bass'].includes(m)){
       const fit=m==='violin'?fitViolin(result.staves[0].notes):fitRange(result.staves[0].notes,bass?28:40,bass?62:83);result.staves[0].notes=fit.notes;
@@ -197,5 +217,5 @@
     result.key=shiftKey(src.key||0,fifths);delete result.keyName;
     result.instrument=/alto|tenor/.test(m)?'sax':m==='guitar'?'pluck':m==='violin'?'violin':bass?'bass':'flute';return result;
   }
-  root.ComposerArrangement={arrange,line,transpose,shiftKey,fitRange,fitViolin,VIOLIN_LOW,VIOLIN_HIGH};
+  root.ComposerArrangement={arrange,line,transpose,shiftKey,wrapOffset,isolateExpressions,fitRange,fitViolin,VIOLIN_LOW,VIOLIN_HIGH};
 })(typeof window!=='undefined'?window:globalThis);

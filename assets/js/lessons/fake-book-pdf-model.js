@@ -17,7 +17,10 @@
     }).filter(function (x) { return x && x.title && x.printed > 0 && (!x.end || x.end >= x.printed); });
   }
   function chordText(text) {
-    return text.replace(/[Δ△^](?:7)?/g, 'maj7').replace(/([A-G][#b]?)-/g, '$1m').replace(/ø(?:7)?/g, 'm7b5').replace(/°/g, 'dim');
+    return text.replace(/♭/g, 'b').replace(/♯/g, '#')
+      .replace(/([A-G][#b]?)[Δ△^]7?/g, '$1maj7').replace(/([A-G][#b]?)-/g, '$1m')
+      .replace(/([A-G][#b]?)ø7?/g, '$1m7b5').replace(/([A-G][#b]?)[°o]/g, '$1dim')
+      .replace(/([A-G][#b]?)\+/g, '$1aug');
   }
   function beats(text) {
     if (!text.trim()) throw new Error('Enter notes or rests in each bar.');
@@ -40,7 +43,7 @@
       if (i === 0 && pickup && bar.chords.trim()) throw new Error('Leave pickup chords empty; this lead-sheet engine starts harmony at the first full bar.');
       var fixed = 0, free = 0;
       chordText(bar.chords).trim().split(/\s+/).filter(Boolean).forEach(function (c) {
-        var m = c.match(/^[A-G](?:#|b)?(?:m7b5|maj7|dim7|sus4|dim|aug|m7|m6|m|7|6|9)?(?:\/[A-G](?:#|b)?)?(?::(\d+(?:\.\d+)?))?$/);
+        var m = c.match(/^[A-G](?:#|b)?(?:(?:mmaj|maj|dim|aug|m)?(?:13|11|9|7|6(?:\/9)?|5)?(?:sus[24]?|alt|(?:add|no)?[b#]?(?:13|11|9|[2-7]))*)?(?:\/[A-G](?:#|b)?)?(?::(\d+(?:\.\d+)?))?$/);
         if (!m) throw new Error('Bar ' + (i + 1) + ': unsupported chord “' + c + '”.');
         if (m[1]) fixed += Number(m[1]); else free++;
       });
@@ -61,7 +64,7 @@
       melody: draft.bars.map(function (b) { return b.notes.trim(); }).join(' | '),
       chords: draft.bars.slice(pickup ? 1 : 0).map(function (b) { return chordText(b.chords).trim(); }).join(' | '),
       sectionsByBar: draft.bars.reduce(function (labels, b, i) { if (b.section && !(pickup && i === 0)) labels[i + 1 - (pickup ? 1 : 0)] = b.section; return labels; }, {}),
-      band: full === 3 ? 'waltz' : 'rock', feel: 'straight', style: 'Manual transcription', level: 'Imported', imported: true,
+      band: meter[0] === 6 && meter[1] === 8 ? 'jig' : (full === 3 ? 'waltz' : 'rock'), feel: 'straight', style: 'Manual transcription', level: 'Imported', imported: true,
       source: source, about: 'Manually transcribed from a local PDF. Check pitches, rhythms and form against the scan. Repeats must be written out as individual bars.' + (draft.sourceNote ? ' Source notes: ' + draft.sourceNote : '') };
   }
   global.FakeBookPDFModel = { pageFor: pageFor, contents: contents, chordText: chordText, beats: beats, tune: tune };

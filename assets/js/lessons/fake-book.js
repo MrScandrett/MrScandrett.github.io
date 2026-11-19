@@ -203,6 +203,7 @@
   // 7b9 must never sound as an unaltered 7, nor may a ninth be silently discarded.
   function mapQuality(rawQ) {
     var q = (rawQ || '').trim().replace(/♭/g, 'b').replace(/♯/g, '#')
+      .replace(/6\/9/g, '6add9')
       .replace(/[(),\s]/g, '').replace(/^[Δ^]$/, 'maj7').replace(/^[Δ^]/, 'maj').replace(/^M(?=\d|$)/, 'maj')
       .replace(/^-/, 'm').replace(/^min/, 'm').replace(/^m(?:M|\^)/, 'mmaj')
       .replace(/^[°o]/, 'dim').replace(/^[øh](?:7)?/, 'm7b5').replace(/^\+/, 'aug');
@@ -277,7 +278,7 @@
   // A 3 after the duration letter makes it a triplet: three e3 notes fill one beat, three q3 fill two.
   var NOTE_RE = /^([A-G])(##|bb|#|b)?(\d)([whqes])(3)?(\.)?(~)?$/;
   var REST_RE = /^r\d?([whqes])(3)?(\.)?$/;
-  var CHORD_RE = /^([A-G])(##|bb|#|b)?([^\/: \t\r\n]*)(?:\/([A-G])(##|bb|#|b)?)?(?::([\d.]+))?$/;
+  var CHORD_RE = /^([A-G])(##|bb|#|b)?((?:m?6\/9|[^\/: \t\r\n]*))(?:\/([A-G])(##|bb|#|b)?)?(?::([\d.]+))?$/;
 
   function parseChordBar(text, song, bar) {
     var sb = song.scoreBars && song.scoreBars.find(function (b) { return b.bar === bar; });
@@ -996,17 +997,19 @@
     var tabPos = tabPosition(concertKey);
     if (t.staves.tab) {
       view.tab = moveTab(t.staves.tab, cs.semis); view.tabLines = t.staves.tab.lines;
+      var capo = t.staves.tab.capo || 0;
+      var rawTuning = t.staves.tab.tuning || window.FakeBookTab.STANDARD;
+      var soundingTuning = capo ? rawTuning.map(function (m) { return m + capo; }) : rawTuning;
       if (tabOn() && window.FakeBookTab && t.staves.tab.lines === 6) {
-        var tuning = t.staves.tab.tuning || window.FakeBookTab.STANDARD;
         var played = view.tab.filter(function (e) { return e.f.length; });
         var tabOnsets = played.map(function (e) {
-          return { start: e.start, ms: e.f.map(function (sf) { return tuning[sf[0] - 1] + sf[1]; }) };
+          return { start: e.start, ms: e.f.map(function (sf) { return soundingTuning[sf[0] - 1] + sf[1]; }) };
         });
-        view.tabOnsets = view.tabBaseOnsets = tabOnsets; view.tabTuning = tuning;
+        view.tabOnsets = view.tabBaseOnsets = tabOnsets; view.tabTuning = soundingTuning;
         // As written, the imported tab stays put except where a pick or an octave needs it to move.
         var asWritten = tabPos === 'auto';
         if (!asWritten || tabPins().length || tabOctave()) {
-          var rerouted = routeTab(tabOnsets, tuning, tabPos, asWritten ? played.map(function (e) { return e.f; }) : null);
+          var rerouted = routeTab(tabOnsets, soundingTuning, tabPos, asWritten ? played.map(function (e) { return e.f; }) : null);
           view.tab = rerouted.res.events;
           if (!asWritten) view.tabInfo = { generated: true, refingered: true, source: 'guitar', dropped: rerouted.res.dropped, total: rerouted.res.total };
         }
@@ -1014,7 +1017,7 @@
       // The imported tab is the authority on how each chord is fingered: diagrams follow it.
       if (window.FakeBookGuitarVoice) view.tabGrips = window.FakeBookGuitarVoice.fromTab(view.concertChords.map(function (c) {
         return { start: c.start, dur: c.dur, rootPC: mod(NAT[c.root.l] + c.root.a, 12), type: chordTypeOf(c), bassPC: c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : null };
-      }), view.tab, t.staves.tab.tuning);
+      }), view.tab, soundingTuning);
     }
     else if (tabOn() && window.FakeBookTab) generateTab(t, cs, cFlat, tabPos);
     if (view.tabOnsets) view.tabPositions = window.FakeBookTab.keyPositions(view.tabOnsets, keyPc(concertKey), { tuning: view.tabTuning });
@@ -1169,7 +1172,7 @@
 
   // Tab in another key: each note keeps its string if the new fret fits, else moves to the nearest string that has it.
   function moveTab(T, semis) {
-    var n = T.lines;
+    var n = T.lines, capo = T.capo || 0, maxFret = Math.max(12, 22 - capo);
     return T.events.map(function (e) {
       if (!semis) return { start: e.start, dur: e.dur, f: e.f };
       var used = {}, f = [];
@@ -1178,7 +1181,7 @@
         for (var s = 1; s <= n; s++) {
           if (used[s]) continue;
           var fr = midi - T.tuning[s - 1];
-          if (fr < 0 || fr > 22) continue;
+          if (fr < 0 || fr > maxFret) continue;
           var cost = Math.abs(fr - sf[1]) + 2 * Math.abs(s - sf[0]);
           if (!best || cost < best.c) best = { s: s, fr: fr, c: cost };
         }
@@ -1441,6 +1444,7 @@
 
     systems.forEach(function (sys, si) {
       var firstSys = si === 0;
+      if (firstSys) out.push('<g class="fb-system fb-drum-system" data-creation-primary>');
       var staffTop = yTop + si * rowH + 24;
       var staffBot = staffTop + staffH;
       var availW = W - headerW - 16;
@@ -1488,6 +1492,7 @@
           out.push('<line class="fb-drum-barline" x1="' + ex + '" y1="' + staffTop + '" x2="' + ex + '" y2="' + staffBot + '" stroke="#1b1410" stroke-width="1.3"/>');
         }
       });
+      if (firstSys) out.push('</g>');
     });
 
     var H = yTop + systems.length * rowH + 20;
@@ -2297,37 +2302,49 @@
       pages = svg ? printPages(svg) : null;
     };
     try {
-      engrave(tries[tries.length - 1]);
-      if (!svg) return false;
-      var fewest = pages.length;
-      for (var k = 0; k < tries.length - 1; k++) {
-        engrave(tries[k]);
-        if (pages && pages.length <= fewest) break;
-        if (k === tries.length - 2) engrave(tries[tries.length - 1]);
+      if (opts.sheetView === 'arrangement' && tune.raw.score && tune.raw.score.musicxml) {
+        var arrSvgs = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-arrangement-pages svg'));
+        if (!arrSvgs.length) return false;
+        arrSvgs.forEach(function (arrSvg) {
+          var ac = arrSvg.cloneNode(true);
+          ac.removeAttribute('width'); ac.removeAttribute('height');
+          ac.setAttribute('focusable', 'false');
+          ac.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+          clones.push(ac.outerHTML);
+        });
+      } else {
+        engrave(tries[tries.length - 1]);
+        if (!svg) return false;
+        var fewest = pages.length;
+        for (var k = 0; k < tries.length - 1; k++) {
+          engrave(tries[k]);
+          if (pages && pages.length <= fewest) break;
+          if (k === tries.length - 2) engrave(tries[tries.length - 1]);
+        }
+        W = svg.viewBox.baseVal.width;
+        pages.forEach(function (r) {
+          var c = svg.cloneNode(true);
+          c.removeAttribute('width'); c.removeAttribute('height');
+          c.setAttribute('viewBox', '0 ' + r[0].toFixed(1) + ' ' + W + ' ' + (r[1] - r[0]).toFixed(1));
+          c.setAttribute('focusable', 'false');
+          c.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+          // The page box is usually taller than the slice (it fills whatever the title leaves), and an SVG draws
+          // past its viewBox there, so clip to this page's systems or the next page's first one peeks in below.
+          var NS = 'http://www.w3.org/2000/svg', cid = 'fb-print-clip-' + clones.length;
+          var cp = document.createElementNS(NS, 'clipPath'), cr = document.createElementNS(NS, 'rect'), cg = document.createElementNS(NS, 'g');
+          cp.setAttribute('id', cid);
+          cr.setAttribute('x', 0); cr.setAttribute('y', r[0].toFixed(1)); cr.setAttribute('width', W); cr.setAttribute('height', (r[1] - r[0]).toFixed(1));
+          cp.appendChild(cr);
+          cg.setAttribute('clip-path', 'url(#' + cid + ')');
+          while (c.firstChild) cg.appendChild(c.firstChild);
+          c.appendChild(cp); c.appendChild(cg);
+          // Click targets and playback highlights are screen-only.
+          Array.prototype.forEach.call(c.querySelectorAll('.fb-bar, .fb-tn-hit, .fb-tab-hand, .fb-tab-pin'), function (node) { node.remove(); });
+          Array.prototype.forEach.call(c.querySelectorAll('.is-sel, .is-now'), function (node) { node.classList.remove('is-sel', 'is-now'); });
+          nativizeMeasureRows(c);
+          clones.push(c.outerHTML);
+        });
       }
-      W = svg.viewBox.baseVal.width;
-      pages.forEach(function (r) {
-        var c = svg.cloneNode(true);
-        c.removeAttribute('width'); c.removeAttribute('height');
-        c.setAttribute('viewBox', '0 ' + r[0].toFixed(1) + ' ' + W + ' ' + (r[1] - r[0]).toFixed(1));
-        c.setAttribute('focusable', 'false');
-        c.setAttribute('preserveAspectRatio', 'xMinYMin meet');
-        // The page box is usually taller than the slice (it fills whatever the title leaves), and an SVG draws
-        // past its viewBox there, so clip to this page's systems or the next page's first one peeks in below.
-        var NS = 'http://www.w3.org/2000/svg', cid = 'fb-print-clip-' + clones.length;
-        var cp = document.createElementNS(NS, 'clipPath'), cr = document.createElementNS(NS, 'rect'), cg = document.createElementNS(NS, 'g');
-        cp.setAttribute('id', cid);
-        cr.setAttribute('x', 0); cr.setAttribute('y', r[0].toFixed(1)); cr.setAttribute('width', W); cr.setAttribute('height', (r[1] - r[0]).toFixed(1));
-        cp.appendChild(cr);
-        cg.setAttribute('clip-path', 'url(#' + cid + ')');
-        while (c.firstChild) cg.appendChild(c.firstChild);
-        c.appendChild(cp); c.appendChild(cg);
-        // Click targets and playback highlights are screen-only.
-        Array.prototype.forEach.call(c.querySelectorAll('.fb-bar, .fb-tn-hit, .fb-tab-hand, .fb-tab-pin'), function (node) { node.remove(); });
-        Array.prototype.forEach.call(c.querySelectorAll('.is-sel, .is-now'), function (node) { node.classList.remove('is-sel', 'is-now'); });
-        nativizeMeasureRows(c);
-        clones.push(c.outerHTML);
-      });
     } finally {
       opts.zoom = prevZoom;
       opts.tabPick = prevPick;
@@ -2435,7 +2452,7 @@
   }
   function applyVolumes() {
     if (!ctx) return;
-    var scale = { melody: 0.5, piano: 0.32, bass: 0.6, drums: 0.9, click: 0.7 };
+    var scale = { melody: 0.5, piano: 0.32, bass: 0.6, drums: 0.9, click: opts.click === 'none' ? 0 : 0.7 };
     Object.keys(bus).forEach(function (k) { bus[k].gain.setTargetAtTime(scale[k] * Math.pow(opts.vol[k] / 100, 1.5), ctx.currentTime, 0.03); });
   }
   function hz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
@@ -2446,18 +2463,50 @@
     g.gain.setTargetAtTime(0.0001, end, rel);
   }
   // Live synth voices. Stacked chord, bass and lead notes on a 2017 iPad Pro overload the mix (and the audio thread),
-  // so past the cap a new note is skipped rather than clipping everything already sounding.
-  var liveVoices = 0, MAX_LIVE = iPadPlayback ? 18 : 40;
-  function claimVoice(osc) {
-    if (liveVoices >= MAX_LIVE) return false;
-    liveVoices++;
-    osc.onended = function () { liveVoices = Math.max(0, liveVoices - 1); };
-    return true;
+  // so past the cap, steal the oldest lower-priority accompaniment voice instead of dropping melody notes.
+  var activeVoices = [], MAX_LIVE = iPadPlayback ? 18 : 40;
+  function trackVoice(g, sources, priority) {
+    if (activeVoices.length >= MAX_LIVE) {
+      var victimIdx = -1;
+      for (var vi = 0; vi < activeVoices.length; vi++) {
+        if (victimIdx === -1 || activeVoices[vi].priority < activeVoices[victimIdx].priority) {
+          victimIdx = vi;
+          if (activeVoices[vi].priority === 0) break;
+        }
+      }
+      var victim = activeVoices.splice(victimIdx >= 0 ? victimIdx : 0, 1)[0];
+      if (victim) victim.stop(ctx.currentTime);
+    }
+    var cleaned = false;
+    var entry = {
+      priority: priority == null ? 1 : priority,
+      stop: function (at) {
+        if (cleaned) return;
+        cleaned = true;
+        var idx = activeVoices.indexOf(entry);
+        if (idx >= 0) activeVoices.splice(idx, 1);
+        var nowT = Math.max(ctx.currentTime, at == null ? ctx.currentTime : at);
+        try {
+          g.gain.cancelScheduledValues(nowT);
+          g.gain.setTargetAtTime(0.0001, nowT, 0.008);
+        } catch (_e) {}
+        sources.forEach(function (s) { try { s.stop(nowT + 0.04); } catch (_e) {} });
+      }
+    };
+    activeVoices.push(entry);
+    if (sources[0]) {
+      sources[0].onended = function () {
+        cleaned = true;
+        var idx = activeVoices.indexOf(entry);
+        if (idx >= 0) activeVoices.splice(idx, 1);
+        try { g.disconnect(); } catch (_e) {}
+      };
+    }
+    return entry;
   }
   function voiceLead(out, t, dur, m, vel) {
-    if (liveVoices >= MAX_LIVE) return;
     var end = t + Math.max(0.06, dur * 0.94), g = ctx.createGain();
-    if (opts.lead === 'piano') return voicePiano(out, t, dur, m, vel * 1.4);
+    if (opts.lead === 'piano') return voicePiano(out, t, dur, m, vel * 1.4, 2);
     var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), f = ctx.createBiquadFilter();
     var lfo = ctx.createOscillator(), lg = ctx.createGain();
     lfo.frequency.value = 5.2; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(hz(m) * 0.006, t + 0.35);
@@ -2472,11 +2521,11 @@
     var mix = ctx.createGain(); mix.gain.value = opts.lead === 'flute' ? 0.7 : 0.35;
     o1.connect(mix); o2.connect(mix); mix.connect(f); f.connect(g); g.connect(out);
     env(g, t, vel, 0.025, end, 0.05);
-    claimVoice(o1);
+    var entry = trackVoice(g, [o1, o2, lfo], 2);
     [o1, o2, lfo].forEach(function (o) { o.start(t); o.stop(end + 0.4); });
+    return entry;
   }
-  function voicePiano(out, t, dur, m, vel) {
-    if (liveVoices >= MAX_LIVE) return;
+  function voicePiano(out, t, dur, m, vel, priority) {
     var end = t + Math.max(0.1, dur), g = ctx.createGain();
     // One oscillator and no per-note filter cuts the live node count by roughly two thirds on
     // iPad. Chords remain pitched and articulated, but leave enough DSP time for drums and bass.
@@ -2487,8 +2536,9 @@
       g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vel, t + 0.008);
       g.gain.setTargetAtTime(vel * 0.22, t + 0.008, 0.38);
       g.gain.setTargetAtTime(0.0001, end, 0.07);
-      claimVoice(simple); simple.start(t); simple.stop(end + 0.45);
-      return;
+      var sEntry = trackVoice(g, [simple], priority == null ? 1 : priority);
+      simple.start(t); simple.stop(end + 0.45);
+      return sEntry;
     }
     var f = ctx.createBiquadFilter(), o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g2 = ctx.createGain();
     o1.type = 'triangle'; o2.type = 'sine'; o1.frequency.value = hz(m); o2.frequency.value = hz(m) * 2; g2.gain.value = 0.25;
@@ -2497,10 +2547,11 @@
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vel, t + 0.006);
     g.gain.setTargetAtTime(vel * 0.25, t + 0.006, 0.45);
     g.gain.setTargetAtTime(0.0001, end, 0.09);
-    claimVoice(o1); o1.start(t); o2.start(t); o1.stop(end + 0.6); o2.stop(end + 0.6);
+    var pEntry = trackVoice(g, [o1, o2], priority == null ? 1 : priority);
+    o1.start(t); o2.start(t); o1.stop(end + 0.6); o2.stop(end + 0.6);
+    return pEntry;
   }
   function voiceBass(out, t, dur, m, vel) {
-    if (liveVoices >= MAX_LIVE) return;
     var end = t + Math.max(0.08, dur * 0.92), g = ctx.createGain(), f = ctx.createBiquadFilter();
     var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g2 = ctx.createGain();
     o1.type = 'sine'; o2.type = 'triangle'; o1.frequency.value = hz(m); o2.frequency.value = hz(m); g2.gain.value = 0.5;
@@ -2509,7 +2560,9 @@
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vel, t + 0.008);
     g.gain.setTargetAtTime(vel * 0.45, t + 0.008, 0.2);
     g.gain.setTargetAtTime(0.0001, end, 0.04);
-    claimVoice(o1); o1.start(t); o2.start(t); o1.stop(end + 0.3); o2.stop(end + 0.3);
+    var bEntry = trackVoice(g, [o1, o2], 1);
+    o1.start(t); o2.start(t); o1.stop(end + 0.3); o2.stop(end + 0.3);
+    return bEntry;
   }
   function voiceClick(out, t, level) {
     var o = ctx.createOscillator(), g = ctx.createGain();
@@ -2517,6 +2570,7 @@
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(level === 2 ? 0.3 : 0.2, t + 0.002);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
     o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.07);
+    o.onended = function () { o.disconnect(); g.disconnect(); };
   }
 
   /* ================================================================ band */
@@ -2558,10 +2612,25 @@
     return 120;
   }
 
+  function restBarFor(mLen) {
+    var tokens = [[4, 'rw'], [3, 'rh.'], [2, 'rh'], [1.5, 'rq.'], [1, 'rq'], [0.75, 're.'], [0.5, 're'], [0.25, 'rs']];
+    var out = [], rem = mLen;
+    while (rem > EPS) {
+      var pick = null;
+      for (var ti = 0; ti < tokens.length; ti++) {
+        if (tokens[ti][0] <= rem + EPS) { pick = tokens[ti]; break; }
+      }
+      if (!pick) break;
+      out.push(pick[1]);
+      rem -= pick[0];
+    }
+    return out.join(' ') || 'rw';
+  }
+
   function songToTune(song) {
     var id = 'import-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
     var M = song.meter[0] * 4 / song.meter[1];
-    var restToken = M === 4 ? 'rw' : M === 3 ? 'rh.' : M === 2 ? 'rh' : 'rw';
+    var restToken = restBarFor(M);
     var melody = new Array(song.bars.length).fill(restToken).join(' | ');
     var sectionsByBar = {};
     var chordBars = [];
@@ -2763,20 +2832,32 @@
     return opts.mode === 'trade' && Math.floor((bar - from) / 4) % 2 === 1;
   }
 
-  var startPending = false;
+  var startPending = false, playToken = 0, speedUpTimers = [], progTimers = [], progVoices = [];
+  var pausedState = null, currentPlayBar = 0, fbStopping = false;
+  if (window.AudioKit && window.AudioKit.onStop) {
+    window.AudioKit.onStop(function () { if (!fbStopping) stop(); });
+  }
+  function stopProg() {
+    while (progTimers.length) clearTimeout(progTimers.pop());
+    var t = ctx ? ctx.currentTime : 0;
+    while (progVoices.length) { try { progVoices.pop().stop(t); } catch (_e) {} }
+  }
   function play(immediate) {
     if (window.FakeBookGPPlayer) window.FakeBookGPPlayer.pause();
+    stopProg();
     if (!ensureAudio()) return;
+    if (window.AudioKit && window.AudioKit.notifyPlay) window.AudioKit.notifyPlay({ source: 'fake-book' });
     // iOS resumes a suspended context asynchronously; anchoring to its frozen clock would make the first notes late (and dropped).
     if (ctx.state !== 'running') {
       if (startPending) return;
       startPending = true;
-      var go = function () { startPending = false; if (ctx.state === 'running') play(immediate); };
+      var tok = ++playToken;
+      var go = function () { startPending = false; if (tok === playToken && ctx.state === 'running') play(immediate); };
       var rp; try { rp = ctx.resume(); } catch (e) { rp = null; }
       if (rp && rp.then) rp.then(go, function () { startPending = false; }); else startPending = false;
       return;
     }
-    stop();
+    stop({ internal: true });
     hideBarPop();
     var M = tune.M, r = loopRange();
     // Playing from a clicked bar: the first pass starts there, later passes wrap back to the loop start.
@@ -2791,16 +2872,19 @@
       queue: [], qi: 0, ui: [], range: r, first: first, chorusLen: passLen(r), firstLen: passLen(first), k: 0,
       bodyStart: noClick ? (withPickup ? tune.pickup : 0) : (withPickup ? 2 : 1) * M, withPickup: withPickup, timer: 0, raf: 0
     };
+    currentPlayBar = sb;
     P.scoreLanes = {};
     if (opts.mode === 'score') tune.raw.score.parts.forEach(function (part) {
       var gain = ctx.createGain(); gain.connect(lanes.piano); P.scoreLanes[part.id] = gain;
     });
     updateScoreGains();
     startScoring();
-    // count-in bar, then (for tunes with a pickup) a bar of clicks that ends with the pickup notes
-    for (var b = noClick ? P.bodyStart : 0; b < P.bodyStart; b++) {
-      P.queue.push({ b: b, kind: 'click', level: b % M === 0 ? 2 : 1 });
-      P.queue.push({ b: b, kind: 'ui', ui: 'beat', n: b % M, count: true, label: b < M ? 'Count in: ' + (b % M + 1) : 'Pickup: the tune starts before bar 1' });
+    // count-in bar (stepped in dotted quarters for 6/8), then (for tunes with a pickup) a bar of clicks ending with pickup notes
+    var countStep = tune.meter[0] === 6 && tune.meter[1] === 8 ? 1.5 : 1;
+    for (var b = noClick ? P.bodyStart : 0; b < P.bodyStart; b += countStep) {
+      var nBeat = Math.round((b % M) / countStep);
+      P.queue.push({ b: b, kind: 'click', level: near(b % M, 0) ? 2 : 1 });
+      P.queue.push({ b: b, kind: 'ui', ui: 'beat', n: nBeat, count: true, label: b < M ? 'Count in: ' + (nBeat + 1) : 'Pickup: the tune starts before bar 1' });
     }
     appendChorus(0);
     P.timer = setInterval(tick, 25);
@@ -2813,7 +2897,7 @@
   // Where pass k begins on the beat clock, its range and its length (pass 0 may start mid-tune).
   function passInfo(k) {
     var rg = k === 0 ? P.first : P.range;
-    return { rg: rg, len: k === 0 ? P.firstLen : P.chorusLen, off: k === 0 ? P.bodyStart : P.bodyStart + P.firstLen + (k - 1) * P.chorusLen, pickup: rg.from === 1 && tune.pickup > 0 };
+    return { rg: rg, len: k === 0 ? P.firstLen : P.chorusLen, off: k === 0 ? P.bodyStart : P.bodyStart + P.firstLen + (k - 1) * P.chorusLen, pickup: k === 0 ? P.withPickup : (rg.from === 1 && tune.pickup > 0) };
   }
   var scorePractice = {};
   function scoreRange(r) {
@@ -2952,12 +3036,15 @@
     P.anchorBeat = atBeat; P.anchorTime = at; P.spb = 60 / opts.tempo;
     var delay = Math.max(0, (at - ctx.currentTime) * 1000);
     var shown = opts.tempo;
-    setTimeout(function () {
+    var t1 = setTimeout(function () {
+      if (!P) return;
       el('[data-fb-tempo]').value = shown; el('[data-fb-tempo-num]').value = shown;
       el('[data-fb-tempo-num]').classList.add('is-bumped');
-      setTimeout(function () { el('[data-fb-tempo-num]').classList.remove('is-bumped'); }, 900);
+      var t2 = setTimeout(function () { el('[data-fb-tempo-num]').classList.remove('is-bumped'); }, 900);
+      speedUpTimers.push(t2);
       el('[data-fb-live]').textContent = 'Speed trainer: ' + shown + ' BPM.';
     }, delay);
+    speedUpTimers.push(t1);
     save();
   }
   function fire(e) {
@@ -3007,32 +3094,54 @@
       else P.raf = requestAnimationFrame(uiLoop);
     }
   }
-  function stop() {
-    if (!P) return;
-    finishScoring();
-    clearInterval(P.timer); cancelAnimationFrame(P.raf); clearTimeout(P.uiTimer);
-    var t = ctx.currentTime;
-    Object.keys(P.lanes).forEach(function (k) {
-      var g = P.lanes[k];
-      g.gain.setTargetAtTime(0, t, 0.03);
-      setTimeout(function () { try { g.disconnect(); } catch (e) { /* gone */ } }, 400);
-    });
-    if (profilePlayback) console.info('Fake Book playback', {
-      score: tune.raw.title, view: opts.sheetView, follow: opts.follow, lateEvents: P.lateEvents
-    });
-    P = null;
-    setPlaying(false);
-    clearNow();
-    scoreNav.setCurrent(-1);
-    beatDots(-1);
-    banner('');
+  function stop(stopOpts) {
+    stopOpts = stopOpts || {};
+    if (!stopOpts.internal) {
+      startPending = false;
+      playToken++;
+    }
+    if (!stopOpts.keepPaused) pausedState = null;
+    stopProg();
+    while (speedUpTimers.length) clearTimeout(speedUpTimers.pop());
+    if (!P) {
+      if (!stopOpts.keepPaused) setPlaying(false);
+      return;
+    }
+    fbStopping = true;
+    try {
+      finishScoring();
+      clearInterval(P.timer); cancelAnimationFrame(P.raf); clearTimeout(P.uiTimer);
+      var t = ctx.currentTime;
+      activeVoices.slice().forEach(function (v) { v.stop(t); });
+      if (P.kit && P.kit.stopAll) P.kit.stopAll(t);
+      Object.keys(P.lanes).forEach(function (k) {
+        var g = P.lanes[k];
+        g.gain.setTargetAtTime(0, t, 0.03);
+        setTimeout(function () { try { g.disconnect(); } catch (e) { /* gone */ } }, 400);
+      });
+      if (profilePlayback) console.info('Fake Book playback', {
+        score: tune.raw.title, view: opts.sheetView, follow: opts.follow, lateEvents: P.lateEvents
+      });
+      P = null;
+      setPlaying(false);
+      if (!stopOpts.keepPaused) {
+        clearNow();
+        scoreNav.setCurrent(-1);
+        beatDots(-1);
+        banner('');
+      } else {
+        banner('Paused at measure ' + (pausedState ? pausedState.bar : 1) + '. Press Resume to continue.');
+      }
+    } finally {
+      fbStopping = false;
+    }
   }
 
   /* ================================================================ listen to me play */
   // The student's notes are the ones the band leaves silent (Band only / Trade fours). The mic hears them,
   // fake-book-pitch.js grades each against the melody, and the note head on the sheet turns green / amber / red.
   var FP = window.FakeBookPitch, FX = window.FakeBookExport;
-  var listener = null, scorer = null, listening = false, lastListenOk = null, liveStamp = 0;
+  var listener = null, scorer = null, listening = false, lastListenOk = null, liveStamp = 0, listenToken = 0;
   var LISTEN_READY = 'Mic on. Press Play and play the melody; the band is silent where you play. Any octave counts. Sound stays on this device.';
   var LISTEN_WAIT = 'Mic on. Set Play to “Band only” or “Trade fours” to be graded.';
 
@@ -3048,9 +3157,13 @@
     var ok = listenAllowed();
     if (ok !== lastListenOk) { lastListenOk = ok; if (listening && !P) listenStatus(ok ? LISTEN_READY : LISTEN_WAIT); }
   }
-  function setSessionType(type) { try { var s = navigator.audioSession; if (s && s.type !== type) s.type = type; } catch (e) { /* not supported */ } }
+  function setSessionType(type) {
+    if (window.AudioKit && window.AudioKit.setSessionType) window.AudioKit.setSessionType(type);
+    else { try { var s = navigator.audioSession; if (s && s.type !== type) s.type = type; } catch (e) { /* not supported */ } }
+  }
   function setListening(on) {
     var box = el('[data-fb-listen]');
+    var tok = ++listenToken;
     if (!on) {
       listening = false; scorer = null;
       if (listener) listener.stop();
@@ -3061,12 +3174,15 @@
     if (!FP || !ensureAudio()) { box.checked = false; listenStatus('This browser cannot listen from here.', true); return; }
     listenStatus('Asking for the microphone…');
     setSessionType('play-and-record');   // iOS: capture needs the record-capable audio session
-    listener = FP.createListener(ctx, onMicFrame);
-    listener.start().then(function () {
+    var nextListener = FP.createListener(ctx, onMicFrame);
+    listener = nextListener;
+    nextListener.start().then(function () {
+      if (tok !== listenToken) { nextListener.stop(); return; }
       listening = true; lastListenOk = listenAllowed();
       listenStatus(lastListenOk ? LISTEN_READY : LISTEN_WAIT);
       try { if (ctx.state !== 'running') ctx.resume(); } catch (e) { /* user gesture will resume */ }
     }, function (err) {
+      if (tok !== listenToken) return;
       listening = false; listener = null; box.checked = false; setSessionType('playback');
       listenStatus(err && err.name === 'NotAllowedError'
         ? 'The microphone is blocked. Allow it from the address bar, then tick the box again.'
@@ -3152,11 +3268,17 @@
 
   /* ================================================================ UI */
   var el = function (sel) { return root.querySelector(sel); };
-  var playBtn = el('[data-fb-play]'), floatingStop = el('[data-fb-floating-stop]'), dotsEl = el('[data-fb-dots]'), bannerEl = el('[data-fb-banner]');
+  var playBtn = el('[data-fb-play]'), pauseBtn = el('[data-fb-pause]'), floatingStop = el('[data-fb-floating-stop]'), dotsEl = el('[data-fb-dots]'), bannerEl = el('[data-fb-banner]');
   var musicScroller = root.closest('.ll-sim') || document.scrollingElement;
   function setPlaying(on) {
     playBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     playBtn.querySelector('span').textContent = on ? 'Stop' : 'Play';
+    if (pauseBtn) {
+      var showPause = on || !!pausedState;
+      pauseBtn.hidden = !showPause;
+      pauseBtn.setAttribute('aria-pressed', !on && !!pausedState ? 'true' : 'false');
+      pauseBtn.textContent = !on && !!pausedState ? 'Resume' : 'Pause';
+    }
     root.classList.toggle('is-playing', on);
     floatingStop.hidden = !on;
   }
@@ -3188,6 +3310,7 @@
   function applyUi(e) {
     if (e.ui === 'beat') { beatDots(e.n, e.count); if (e.label) banner(e.label); }
     else if (e.ui === 'bar') {
+      currentPlayBar = e.bar;
       paintBarNow(barEls[e.bar] || null);
       banner(e.yours ? (opts.mode === 'band' ? 'You play the melody' : 'Your four bars: answer or improvise') : '');
       if (e.meter) { dotsEl.innerHTML = new Array(e.meter[0] + 1).join('<i></i>'); banner('Bar ' + e.bar + ' · ' + e.meter.join('/')); }
@@ -3661,8 +3784,14 @@
     sel.value = opts.style;
   }
   function styleFitsTune(k) {
-    return STYLES[k] && STYLES[k].meters.indexOf(tune.M) >= 0 &&
-      (tune.meter.join('/') === '6/8' ? k === 'jig' : k !== 'jig');
+    if (!STYLES[k]) return false;
+    if (tune.meter[0] === 6 && tune.meter[1] === 8) return k === 'jig';
+    if (k === 'jig') return false;
+    if (STYLES[k].meters.indexOf(tune.M) >= 0) return true;
+    var hasNative = Object.keys(STYLES).some(function (id) {
+      return id !== 'jig' && STYLES[id].meters.indexOf(tune.M) >= 0;
+    });
+    return !hasNative && STYLES[k].meters.indexOf(4) >= 0;
   }
   // The "I play" picker shows "My own setup" once the key/chord settings no longer match the instrument.
   function playerFits(id) {
@@ -3748,6 +3877,7 @@
     var clickBtn = root.querySelector('[data-fb-click-pattern="' + opts.click + '"]'), clickCur = el('[data-fb-click-current]');
     if (clickCur) clickCur.textContent = CLICK_NAMES[opts.click] || (clickBtn ? clickBtn.textContent : 'Every beat');
     syncListen();
+    syncChordUndoButton();
     var ct = el('[data-fb-click-toggle]'); if (ct) { ct.setAttribute('aria-pressed', String(opts.click !== 'none')); ct.classList.toggle('is-off', opts.click === 'none'); }
     var hasChords = tune.chords.length || Object.keys(opts.chordEdits && opts.chordEdits[tune.id] || {}).length;
     el('[data-fb-mode] option[value="score"]').disabled = !tune.raw.score;
@@ -4015,7 +4145,7 @@
       kb.querySelectorAll('[data-midi]').forEach(function (k) {
         k.addEventListener('click', function () {
           var mid = Number(k.getAttribute('data-midi'));
-          if (window.PianoAudio) window.PianoAudio.tone(PT ? PT.noteFreq(mid - 48) : 440 * Math.pow(2, (mid - 69) / 12));
+          if (window.PianoAudio) window.PianoAudio.tone(PT ? PT.noteFreq(mid - 60) : 440 * Math.pow(2, (mid - 69) / 12));
         });
       });
     });
@@ -4870,7 +5000,7 @@
   }
   function showBarPop(b, barEl) {
     var pop = el('[data-fb-barpop]'), card = root.querySelector('.fb-sheet-card');
-    if (!pop || !card) return;
+    if (!pop || !card || !barEl) return;
     barPopBar = b;
     renderBarPop();
     pop.hidden = false;
@@ -5027,35 +5157,52 @@
       r.checked = r.value === mode;
     });
 
+    function visualizersVisible() {
+      var dock = el('#fbTools'), pane = el('#fbPane-chords');
+      if (dock && !dock.hidden && pane && !pane.hidden) return true;
+      var help = el('.fb-instrument-help');
+      return !!(help && help.open);
+    }
+    var drawVis = visualizersVisible();
+
     var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: Q[c.q] ? Q[c.q].iv : [0, 4, 7] };
 
     if (opts.engineInst === 'violin' && window.FakeBookViolin) {
       ['[data-fb-guitar-forms]', '[data-fb-voicing]', '[data-fb-guitar-triad-sets]'].forEach(function (sel) { var w = el(sel); if (w) w.hidden = true; });
-      var vTones = violinTones(c, cType, mode);
-      var vMap = window.FakeBookViolin.toneMap(vTones.intervals, vTones.labels);
-      var vSvg = window.FakeBookViolin.draw(rootPC, vMap, vTones.aria);
-      root.querySelectorAll('[data-fb-fretboard]').forEach(function (vw) {
-        vw.innerHTML = vSvg;
-        vw.querySelectorAll('[data-vm]').forEach(function (dot) {
-          dot.addEventListener('click', function () { violinTone(Number(dot.getAttribute('data-vm')), 0, 1); });
+      if (drawVis) {
+        var vTones = violinTones(c, cType, mode);
+        var vMap = window.FakeBookViolin.toneMap(vTones.intervals, vTones.labels);
+        var vSvg = window.FakeBookViolin.draw(rootPC, vMap, vTones.aria);
+        root.querySelectorAll('[data-fb-fretboard]').forEach(function (vw) {
+          vw.innerHTML = vSvg;
+          vw.querySelectorAll('[data-vm]').forEach(function (dot) {
+            dot.addEventListener('click', function () { violinTone(Number(dot.getAttribute('data-vm')), 0, 1); });
+          });
         });
-      });
-      if (mode === 'triads') { var vDesc = el('[data-fb-triad-desc]'); if (vDesc) vDesc.textContent = vTones.title; }
-      if (mode === 'scales') { populateScaleChips(rootPC, c.q); var vSum = el('[data-fb-scale-summary]'); if (vSum) vSum.textContent = vTones.title; }
+      }
+      if (mode === 'triads') { var vDesc = el('[data-fb-triad-desc]'); if (vDesc) vDesc.textContent = (violinTones(c, cType, mode)).title; }
+      if (mode === 'scales') { populateScaleChips(rootPC, c.q); var vSum = el('[data-fb-scale-summary]'); if (vSum) vSum.textContent = (violinTones(c, cType, mode)).title; }
     } else if (mode === 'voicings') {
       if (isPiano) {
         var formsWrap = el('[data-fb-guitar-forms]');
         if (formsWrap) formsWrap.hidden = true;
         var vWrap = el('[data-fb-voicing]');
         if (vWrap) vWrap.hidden = false;
-        var meta = { rootPC: rootPC };
-        notes.forEach(function (m) {
-          var iv = mod(m - rootPC, 12);
-          var lbl = PT ? PT.intervalLabel(iv, true) : (iv === 0 ? 'R' : String(iv));
-          var role = iv === 0 ? 'root' : (iv === 4 || iv === 3) ? 'third' : iv === 7 ? 'fifth' : (iv === 10 || iv === 11) ? 'seventh' : 'other';
-          meta[m] = { label: lbl, role: role, pitch: chordPitch(c, m), finger: (PT && PT.typicalFingering(rootPC, cType, 0, 'rh')[notes.indexOf(m)]) || '' };
-        });
-        drawPianoVisualizer(notes, meta);
+        if (drawVis) {
+          var sortedNotes = notes.slice().sort(function (a, b) { return a - b; });
+          var tonePCs = (Q[c.q] ? Q[c.q].iv : [0, 4, 7]).map(function (iv) { return mod(rootPC + iv, 12); });
+          var bassPC = sortedNotes.length ? mod(sortedNotes[0], 12) : rootPC;
+          var bassInv = Math.max(0, tonePCs.indexOf(bassPC));
+          var pFingers = (PT && PT.typicalFingering(rootPC, cType, bassInv, 'rh')) || [];
+          var meta = { rootPC: rootPC };
+          sortedNotes.forEach(function (m, idx) {
+            var iv = mod(m - rootPC, 12);
+            var lbl = PT ? PT.intervalLabel(iv, true) : (iv === 0 ? 'R' : String(iv));
+            var role = iv === 0 ? 'root' : (iv === 4 || iv === 3) ? 'third' : iv === 7 ? 'fifth' : (iv === 10 || iv === 11) ? 'seventh' : 'other';
+            meta[m] = { label: lbl, role: role, pitch: chordPitch(c, m), finger: pFingers[idx] || '' };
+          });
+          drawPianoVisualizer(sortedNotes, meta);
+        }
       } else {
         var formsWrap = el('[data-fb-guitar-forms]');
         var formSelEl = el('[data-fb-guitar-form-sel]');
@@ -5076,9 +5223,11 @@
         if (!shape) shape = { frets: ['x', 'x', 'x', 'x', 'x', 'x'] };
         var frets = shape.frets;
         currentGuitarFrets = frets;
-        var fingers = GT ? GT.computeFingering(frets) : null;
-        var degrees = GT ? GT.computeDegrees(rootPC, cType, frets) : null;
-        drawGuitarVisualizer(frets, fingers, degrees, rootPC);
+        if (drawVis) {
+          var fingers = GT ? GT.computeFingering(frets) : null;
+          var degrees = GT ? GT.computeDegrees(rootPC, cType, frets) : null;
+          drawGuitarVisualizer(frets, fingers, degrees, rootPC);
+        }
       }
     } else if (mode === 'triads') {
       var triadQ = triadQuality(Q[c.q].iv);
@@ -5096,16 +5245,20 @@
         var triadMid = triadIvs.map(function (v) { return 60 + rootPC + v; });
         var rotated = rotate(triadMid, inv);
         currentVoicingNotes = rotated;
-        var tMeta = { rootPC: rootPC };
-        rotated.forEach(function (m) {
-          var iv = mod(m - rootPC, 12);
-          tMeta[m] = {
-            label: triadDegree(iv),
-            role: roleOf(iv),
-            finger: inv === 0 ? '1' : inv === 1 ? '2' : '3'
-          };
-        });
-        drawPianoVisualizer(rotated, tMeta);
+        if (drawVis) {
+          var tCType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (triadQ === 'minor' ? 'm' : triadQ === 'diminished' ? 'dim' : triadQ === 'augmented' ? 'aug' : ''); })) || { suffix: '', name: triadQ, intervals: triadIvs };
+          var tFingers = (PT && PT.typicalFingering(rootPC, tCType, inv, 'rh')) || (inv === 1 ? ['1', '2', '5'] : ['1', '3', '5']);
+          var tMeta = { rootPC: rootPC };
+          rotated.forEach(function (m, idx) {
+            var iv = mod(m - rootPC, 12);
+            tMeta[m] = {
+              label: triadDegree(iv),
+              role: roleOf(iv),
+              finger: tFingers[idx] || ''
+            };
+          });
+          drawPianoVisualizer(rotated, tMeta);
+        }
       } else {
         var tSet = opts.triadSet || '123';
         var tMatch = getGuitarTriad(rootPC, triadQ, tSet, inv);
@@ -5120,7 +5273,7 @@
           });
         }
         currentGuitarFrets = gFrets;
-        drawGuitarVisualizer(gFrets, gFingers, gDegs, rootPC);
+        if (drawVis) drawGuitarVisualizer(gFrets, gFingers, gDegs, rootPC);
       }
     } else if (mode === 'scales') {
       populateScaleChips(rootPC, c.q);
@@ -5302,10 +5455,15 @@
   function playProgression() {
     if (!ensureAudio()) return;
     stop();
+    if (window.AudioKit && window.AudioKit.notifyPlay) window.AudioKit.notifyPlay({ source: 'fake-book' });
     var t = ctx.currentTime + 0.05, step = 0.7;
     view.voicings.slice(0, 16).forEach(function (n, i) {
-      n.forEach(function (m) { voicePiano(bus.piano, t + i * step, step * 0.95, m, 0.28); });
-      setTimeout(function () { chordSel = i; showChord(false); }, (t - ctx.currentTime + i * step) * 1000);
+      n.forEach(function (m) {
+        var v = voicePiano(bus.piano, t + i * step, step * 0.95, m, 0.28);
+        if (v) progVoices.push(v);
+      });
+      var tm = setTimeout(function () { chordSel = i; showChord(false); }, (t - ctx.currentTime + i * step) * 1000);
+      progTimers.push(tm);
     });
   }
 
@@ -5348,7 +5506,12 @@
     zoom: { steps: ZOOM_STEPS, get: function () { return opts.zoom || 1; }, set: function (z) { opts.zoom = z; save(); renderSheet(); } },
     // A bar was chosen (clicked, map, Bar #, steps): it becomes the start bar, and playback jumps there.
     onSelect: function (i, bar, info) {
-      var b = barOf(bar) || 1, ev = info.event;
+      var b = barOf(bar) || 1, ev = info && info.event;
+      if (info && info.preview) {
+        paintBarNow(barEls[b] || null);
+        el('[data-fb-ready]').textContent = 'Preview measure ' + b;
+        return false;
+      }
       var wasPlaying = !!P;
       stop();
       hideBarPop();
@@ -5387,13 +5550,19 @@
     }).replace(/(^|[\s/])([a-g])/g, function (_, before, note) { return before + note.toUpperCase(); }).trim();
   }
 
+  var chordUndoStack = [];
+  function syncChordUndoButton() {
+    var undoBtn = el('[data-fb-edit-undo]');
+    if (!undoBtn || !tune) return;
+    undoBtn.disabled = !chordUndoStack.some(function (entry) { return entry.tuneId === tune.id; });
+  }
   function syncChordEditor(bar) {
     var input = el('[data-fb-edit-bar]');
     var current = bar || (input.dataset.tune === tune.id ? Number(input.value) : 1);
     current = Math.max(1, Math.min(tune.bars, current || 1));
     var key = keyLabel(view.writtenKey);
     var signature = tune.id + ':' + current + ':' + key;
-    if (!bar && input.dataset.display === signature) return;
+    if (!bar && input.dataset.display === signature) { syncChordUndoButton(); return; }
     input.dataset.tune = tune.id;
     input.dataset.display = signature;
     input.max = tune.bars;
@@ -5407,7 +5576,25 @@
     el('[data-fb-edit-key]').textContent = key;
     var edits = opts.chordEdits && opts.chordEdits[tune.id];
     el('[data-fb-edit-restore]').disabled = !(edits && edits[current]);
+    syncChordUndoButton();
     el('[data-fb-edit-status]').textContent = '';
+  }
+
+  function undoChordEdit() {
+    if (!tune) return;
+    var idx = -1;
+    for (var i = chordUndoStack.length - 1; i >= 0; i--) {
+      if (chordUndoStack[i].tuneId === tune.id) { idx = i; break; }
+    }
+    if (idx < 0) return;
+    var entry = chordUndoStack.splice(idx, 1)[0];
+    if (!opts.chordEdits) opts.chordEdits = {};
+    var edits = opts.chordEdits[tune.id] || (opts.chordEdits[tune.id] = {});
+    if (entry.prev) edits[entry.bar] = entry.prev;
+    else delete edits[entry.bar];
+    if (!Object.keys(edits).length) delete opts.chordEdits[tune.id];
+    syncControls(); refresh(); syncChordEditor(entry.bar); respin();
+    el('[data-fb-edit-status]').textContent = 'Undid chord edit in measure ' + entry.bar + '.';
   }
 
   function saveChordEdit(restore) {
@@ -5427,6 +5614,9 @@
     }
     if (!opts.chordEdits) opts.chordEdits = {};
     var edits = opts.chordEdits[tune.id] || (opts.chordEdits[tune.id] = {});
+    var prevEntry = edits[bar] ? { text: edits[bar].text, key: edits[bar].key } : null;
+    chordUndoStack.push({ tuneId: tune.id, bar: bar, prev: prevEntry });
+    if (chordUndoStack.length > 40) chordUndoStack.shift();
     if (restore) delete edits[bar];
     else edits[bar] = { text: text, key: chordEditText(noteName(view.writtenKey)) };
     if (!Object.keys(edits).length) delete opts.chordEdits[tune.id];
@@ -5468,12 +5658,65 @@
     if (go) play(); else stop();
   }
 
+  function updateLiveLoop() {
+    if (!P || scoreTiming()) return;
+    var curBeat = beatAt(ctx.currentTime);
+    var activeK = 0;
+    for (var kk = 0; kk <= P.k; kk++) {
+      var pi = passInfo(kk);
+      if (curBeat >= pi.off - EPS) activeK = kk;
+    }
+    var cur = passInfo(activeK);
+    var head = P.queue.slice(0, P.qi);
+    var tail = P.queue.slice(P.qi).filter(function (e) { return e.kind !== 'end'; });
+    if (!opts.loop) {
+      P.k = activeK;
+      tail = tail.filter(function (e) { return e.b < cur.off + cur.len - EPS; });
+      tail.push({ b: cur.off + cur.len, kind: 'end' });
+    }
+    tail.sort(function (a, b) { return a.b - b.b; });
+    P.queue = head.concat(tail);
+  }
+
+  function rebuildLiveClicks() {
+    applyVolumes();
+    if (!P || scoreTiming()) return;
+    var nowBeat = beatAt(ctx.currentTime);
+    var head = P.queue.slice(0, P.qi);
+    var tail = P.queue.slice(P.qi).filter(function (e) { return e.kind !== 'click' || e.b < P.bodyStart - EPS; });
+    if (opts.click !== 'none' && opts.click !== 'off') {
+      var M = tune.M;
+      var beatSize = tune.meter[0] === 6 && tune.meter[1] === 8 ? 1.5 : 1;
+      for (var kk = 0; kk <= P.k; kk++) {
+        var pi = passInfo(kk), r = pi.rg, tuneOff = (r.from - 1) * M;
+        var g = function (tt) { return pi.off + tt - tuneOff; };
+        for (var bar = r.from; bar <= r.to; bar++) {
+          var b0 = g((bar - 1) * M);
+          for (var bt = 0; bt < M; bt += beatSize) {
+            var pos = b0 + bt;
+            if (pos <= nowBeat + 0.02) continue;
+            var on = opts.click === 'all' || (opts.click === 'one' && bt === 0) ||
+              (opts.click === 'backbeat' && (M === 3 ? bt > 0 : bt % 2 === 1)) ||
+              (opts.click === 'gap' && Math.floor((bar - r.from) / 2) % 2 === 0);
+            if (on) tail.push({ b: pos, kind: 'click', level: bt === 0 && opts.click !== 'backbeat' ? 2 : 1 });
+          }
+        }
+      }
+    }
+    tail.sort(function (a, b) { return a.b - b.b; });
+    P.queue = head.concat(tail);
+  }
+
   function bind() {
     ZOOM_STEPS.forEach(function (zoom) {
       el('[data-fb-sheet-size]').add(new Option(Math.round(zoom * 100) + '%', zoom));
     });
     var shapeBox = el('[data-fb-shape-picker]');
     if (shapeBox) shapeBox.addEventListener('toggle', function () { syncShapePicker(true); });
+    var helpBox = el('.fb-instrument-help');
+    if (helpBox) helpBox.addEventListener('toggle', function () { if (helpBox.open) showChord(false); });
+    root.addEventListener('fakebook:tools', function (ev) { if (ev.detail && ev.detail.tab === 'chords') setTimeout(function () { showChord(false); }, 0); });
+    root.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('[data-fb-dock-tab="chords"]')) setTimeout(function () { showChord(false); }, 0); });
     el('[data-fb-edit-symbols]').addEventListener('input', function (ev) {
       ev.target.removeAttribute('aria-invalid');
       el('[data-fb-edit-status]').textContent = '';
@@ -5536,10 +5779,10 @@
       else if (t.matches('[data-fb-style]')) { opts.style = t.value; opts.feel = STYLES[opts.style].feel; el('[data-fb-feel]').value = opts.feel; tips(); save(); respin(); }
       else if (t.matches('[data-fb-feel]')) { reanchor(function () { opts.feel = t.value; }); save(); }
       else if (t.matches('[data-fb-mode], [data-fb-quick-mode]')) { opts.mode = t.value; syncControls(); refresh(); paintLoop(); save(); respin(); }
-      else if (t.matches('[data-fb-click]')) { opts.click = t.value; syncControls(); save(); respin(); }
+      else if (t.matches('[data-fb-click]')) { opts.click = t.value; syncControls(); save(); rebuildLiveClicks(); }
       else if (t.matches('[data-fb-lead]')) { opts.lead = t.value; save(); }
       else if (t.matches('[data-fb-listen]')) { setListening(t.checked); }
-      else if (t.matches('[data-fb-loop]')) { opts.loop = t.checked; save(); if (scoreTiming()) respin(); }
+      else if (t.matches('[data-fb-loop]')) { opts.loop = t.checked; save(); if (scoreTiming()) respin(); else updateLiveLoop(); paintLoop(); }
       else if (t.matches('[data-fb-follow], [data-fb-follow-sync]')) {
         opts.follow = t.checked;
         root.querySelectorAll('[data-fb-follow], [data-fb-follow-sync]').forEach(function (cb) { cb.checked = opts.follow; });
@@ -5578,7 +5821,22 @@
       var rem = t.closest('[data-remove-tune]');
       if (rem) {
         ev.stopPropagation();
-        removeImported(rem.getAttribute('data-remove-tune'));
+        if (rem.dataset.confirm === '1') {
+          delete rem.dataset.confirm;
+          clearTimeout(Number(rem.dataset.confirmTimer || 0));
+          removeImported(rem.getAttribute('data-remove-tune'));
+        } else {
+          rem.dataset.confirm = '1';
+          rem.dataset.origLabel = rem.textContent;
+          rem.textContent = 'Confirm?';
+          rem.classList.add('is-confirming');
+          rem.dataset.confirmTimer = String(setTimeout(function () {
+            if (!rem.isConnected) return;
+            delete rem.dataset.confirm;
+            rem.textContent = rem.dataset.origLabel || '✕';
+            rem.classList.remove('is-confirming');
+          }, 4000));
+        }
         return;
       }
       var prt = t.closest('[data-print-tune]');
@@ -5616,6 +5874,7 @@
         return;
       }
       if (t.closest('[data-fb-edit-restore]')) { saveChordEdit(true); return; }
+      if (t.closest('[data-fb-edit-undo]')) { undoChordEdit(); return; }
       if (t.closest('[data-fb-guitar-diagrams]')) {
         opts.measureShapes = !(opts.posInst === 'guitar' && opts.measureShapes && !opts.saxFingers && opts.sheetView === 'lead');
         opts.posInst = opts.engineInst = 'guitar';
@@ -5657,6 +5916,7 @@
       var instBtn = t.closest('[data-engine-inst]');
       if (instBtn) {
         opts.posInst = opts.engineInst = instBtn.getAttribute('data-engine-inst');
+        opts.saxFingers = false;
         syncControls();
         showChord(false);
         renderBarPop();
@@ -5689,14 +5949,27 @@
         opts.click = clickPattern.getAttribute('data-fb-click-pattern');
         if (opts.click !== 'none') opts.clickPrev = opts.click;
         var clickMenu = clickPattern.closest('details'); if (clickMenu) clickMenu.open = false;
-        syncControls(); save(); respin(); return;
+        syncControls(); save(); rebuildLiveClicks(); return;
       }
       if (t.closest('[data-fb-click-toggle]')) {
         if (opts.click === 'none') opts.click = opts.clickPrev && opts.clickPrev !== 'none' ? opts.clickPrev : 'all';
         else { opts.clickPrev = opts.click; opts.click = 'none'; }
-        syncControls(); save(); respin(); return;
+        syncControls(); save(); rebuildLiveClicks(); return;
       }
-      if (t.closest('[data-fb-play]')) { if (P) stop(); else play(); return; }
+      if (t.closest('[data-fb-pause]')) {
+        if (P) {
+          var rg = loopRange();
+          pausedState = { tuneId: tune.id, bar: Math.max(rg.from, Math.min(rg.to, currentPlayBar || startBar || rg.from)) };
+          stop({ keepPaused: true });
+        } else if (pausedState && pausedState.tuneId === tune.id) {
+          var resumeAt = pausedState.bar;
+          pausedState = null;
+          startBar = resumeAt;
+          play(true);
+        }
+        return;
+      }
+      if (t.closest('[data-fb-play]')) { if (P) stop(); else { pausedState = null; play(); } return; }
       if (t.closest('[data-fb-export-midi]')) { exportMidi(); return; }
       if (t.closest('[data-fb-chordplay]')) { playActiveChord(); return; }
       if (t.closest('[data-fb-arpplay]')) { playActiveArpeggio(); return; }
@@ -5706,7 +5979,34 @@
         reanchor(function () { opts.tempo = v; }); if (P) P.spb = 60 / v;
         el('[data-fb-tempo]').value = v; el('[data-fb-tempo-num]').value = v; save(); return;
       }
-      if (t.closest('[data-fb-reset]')) { if (opts.chordEdits) delete opts.chordEdits[tune.id]; if (opts.mode === 'changes' && !tune.chords.length) opts.mode = 'score'; opts.theorySevenths = opts.theoryNinths = opts.theoryApproach = opts.theoryTritone = false; opts.theoryInterval = 'off'; opts.melody = 'original'; opts.rhythm = 'written'; opts.key = tune.raw.key; opts.octave = 0; syncControls(); refresh(); syncChordEditor(Number(el('[data-fb-edit-bar]').value)); respin(); return; }
+      var resetBtn = t.closest('[data-fb-reset]');
+      if (resetBtn) {
+        if (resetBtn.dataset.confirm !== '1') {
+          resetBtn.dataset.confirm = '1';
+          resetBtn.dataset.origLabel = resetBtn.textContent;
+          resetBtn.textContent = 'Confirm restore?';
+          resetBtn.classList.add('is-confirming');
+          resetBtn.dataset.confirmTimer = String(setTimeout(function () {
+            if (!resetBtn.isConnected) return;
+            delete resetBtn.dataset.confirm;
+            resetBtn.textContent = resetBtn.dataset.origLabel || 'Restore original music';
+            resetBtn.classList.remove('is-confirming');
+          }, 4000));
+          return;
+        }
+        delete resetBtn.dataset.confirm;
+        clearTimeout(Number(resetBtn.dataset.confirmTimer || 0));
+        resetBtn.textContent = resetBtn.dataset.origLabel || 'Restore original music';
+        resetBtn.classList.remove('is-confirming');
+        if (opts.chordEdits) delete opts.chordEdits[tune.id];
+        chordUndoStack = chordUndoStack.filter(function (entry) { return entry.tuneId !== tune.id; });
+        if (opts.mode === 'changes' && !tune.chords.length) opts.mode = 'score';
+        opts.theorySevenths = opts.theoryNinths = opts.theoryApproach = opts.theoryTritone = false;
+        opts.theoryInterval = 'off'; opts.melody = 'original'; opts.rhythm = 'written';
+        opts.key = tune.raw.key; opts.octave = 0;
+        syncControls(); refresh(); syncChordEditor(Number(el('[data-fb-edit-bar]').value)); respin();
+        return;
+      }
       var step = t.closest('[data-fb-chord-step]');
       if (step) { stepChord(Number(step.getAttribute('data-fb-chord-step'))); return; }
       var chip = t.closest('[data-strip-ci]');
@@ -6052,6 +6352,228 @@
     el('[data-fb-reset-loop]').addEventListener('click', function () { startBar = 0; opts.from = 1; opts.to = tune.bars; syncControls(); paintLoop(); save(); respin(); });
   }
 
+  function initSongComposer() {
+    var panel = el('[data-fb-compose-panel]');
+    var openBtn = el('[data-fb-compose-open]');
+    if (!panel || !openBtn) return;
+    var barsWrap = el('[data-fb-compose-bars]');
+    var paletteWrap = el('[data-fb-compose-palette]');
+    var keySel = el('[data-fb-compose-key]');
+    var modeSel = el('[data-fb-compose-mode]');
+    var meterSel = el('[data-fb-compose-meter]');
+    var styleSel = el('[data-fb-compose-style]');
+    var tempoIn = el('[data-fb-compose-tempo]');
+    var titleIn = el('[data-fb-compose-title]');
+    var composerIn = el('[data-fb-compose-composer]');
+    var statusOut = el('[data-fb-compose-status]');
+    var draftBars = [
+      { chords: 'C', melody: '' },
+      { chords: 'Am', melody: '' },
+      { chords: 'F', melody: '' },
+      { chords: 'G7', melody: '' }
+    ];
+    var focusedBar = 0;
+
+    function fillKeys() {
+      var list = modeSel.value === 'minor' ? MINOR_KEYS : MAJOR_KEYS;
+      var cur = keySel.value;
+      keySel.innerHTML = list.map(function (k) {
+        return '<option value="' + k + '">' + k.replace('b', '♭').replace('#', '♯') + (modeSel.value === 'minor' ? ' minor' : ' major') + '</option>';
+      }).join('');
+      keySel.value = list.indexOf(cur) >= 0 ? cur : list[0];
+    }
+    function renderPalette() {
+      if (!paletteWrap) return;
+      var kObj = parseKey(keySel.value, modeSel.value === 'minor');
+      var sig = keySig(kObj);
+      var steps = modeSel.value === 'minor'
+        ? [[0, 'i', 'm'], [1, 'ii°', 'dim'], [2, 'III', ''], [3, 'iv', 'm'], [4, 'V7', '7'], [5, 'VI', ''], [6, 'VII', '']]
+        : [[0, 'I', ''], [1, 'ii', 'm'], [2, 'iii', 'm'], [3, 'IV', ''], [4, 'V7', '7'], [5, 'vi', 'm'], [6, 'vii°', 'dim']];
+      var html = steps.map(function (st) {
+        var ltr = mod(kObj.l + st[0], 7);
+        var acc = keyAcc(sig, ltr);
+        var rootTxt = LETTERS[ltr] + ACC[acc] + st[2];
+        var rawTok = LETTERS[ltr] + (acc > 0 ? '#' : acc < 0 ? 'b' : '') + st[2];
+        return '<button type="button" class="fb-btn fb-btn-small" data-fb-palette-chord="' + MN.escape(rawTok) + '"><small>' + MN.escape(st[1]) + '</small> ' + MN.escape(rootTxt) + '</button>';
+      }).join('');
+      paletteWrap.innerHTML = html;
+    }
+    function renderBars() {
+      barsWrap.innerHTML = draftBars.map(function (b, i) {
+        return '<div class="fb-compose-bar" data-cbar-idx="' + i + '">' +
+          '<span class="fb-compose-barnum">Bar ' + (i + 1) + '</span>' +
+          '<label class="fb-sr" for="fbComposeChord' + i + '">Bar ' + (i + 1) + ' chords</label>' +
+          '<input id="fbComposeChord' + i + '" type="text" data-cbar-chords="' + i + '" value="' + MN.escape(b.chords) + '" placeholder="C G7" />' +
+          '<label class="fb-sr" for="fbComposeMel' + i + '">Bar ' + (i + 1) + ' melody (optional)</label>' +
+          '<input id="fbComposeMel' + i + '" type="text" data-cbar-mel="' + i + '" value="' + MN.escape(b.melody) + '" placeholder="Melody optional (e.g. C4q D4q E4h)" />' +
+          '</div>';
+      }).join('');
+    }
+    fillKeys();
+    renderPalette();
+    renderBars();
+
+    function setOpen(on) {
+      panel.hidden = !on;
+      openBtn.setAttribute('aria-expanded', String(on));
+      if (on) { renderPalette(); renderBars(); titleIn.focus(); }
+    }
+    openBtn.addEventListener('click', function () { setOpen(panel.hidden); });
+    el('[data-fb-compose-close]').addEventListener('click', function () { setOpen(false); openBtn.focus(); });
+    modeSel.addEventListener('change', function () { fillKeys(); renderPalette(); });
+    keySel.addEventListener('change', renderPalette);
+    paletteWrap.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-fb-palette-chord]');
+      if (!btn) return;
+      var tok = btn.getAttribute('data-fb-palette-chord');
+      var row = draftBars[focusedBar] || draftBars[0];
+      var input = barsWrap.querySelector('[data-cbar-chords="' + focusedBar + '"]');
+      var cur = (row.chords || '').trim();
+      row.chords = cur && cur.split(/\s+/).length < 4 ? cur + ' ' + tok : tok;
+      if (input) input.value = row.chords;
+    });
+    barsWrap.addEventListener('focusin', function (ev) {
+      var row = ev.target.closest('[data-cbar-idx]');
+      if (row) focusedBar = Number(row.getAttribute('data-cbar-idx')) || 0;
+    });
+    barsWrap.addEventListener('input', function (ev) {
+      var cIdx = ev.target.getAttribute('data-cbar-chords');
+      if (cIdx !== null) draftBars[Number(cIdx)].chords = ev.target.value;
+      var mIdx = ev.target.getAttribute('data-cbar-mel');
+      if (mIdx !== null) draftBars[Number(mIdx)].melody = ev.target.value;
+      statusOut.textContent = '';
+    });
+    el('[data-fb-compose-addbar]').addEventListener('click', function () {
+      if (draftBars.length >= 32) { statusOut.textContent = 'Keep composed charts at 32 bars or fewer.'; return; }
+      var last = draftBars[draftBars.length - 1];
+      draftBars.push({ chords: (last && last.chords) || 'C', melody: '' });
+      focusedBar = draftBars.length - 1;
+      renderBars();
+    });
+    el('[data-fb-compose-delbar]').addEventListener('click', function () {
+      if (draftBars.length <= 1) { statusOut.textContent = 'Keep at least 1 bar.'; return; }
+      draftBars.pop();
+      focusedBar = Math.min(focusedBar, draftBars.length - 1);
+      renderBars();
+    });
+    el('[data-fb-compose-from-tune]').addEventListener('click', function () {
+      if (!tune) return;
+      titleIn.value = (tune.raw.title || 'My song') + ' (Remix)';
+      composerIn.value = tune.raw.composer || 'Student composer';
+      modeSel.value = tune.key.minor ? 'minor' : 'major';
+      fillKeys();
+      keySel.value = chordEditText(noteName(view.writtenKey));
+      renderPalette();
+      meterSel.value = tune.meter.join('/');
+      tempoIn.value = String(opts.tempo || tune.raw.tempo || 110);
+      styleSel.value = opts.style || tune.raw.band || 'swing';
+      draftBars = [];
+      for (var bi = 1; bi <= Math.min(16, tune.bars); bi++) {
+        var barChords = view.writtenChords.filter(function (c) { return c.bar === bi; }).map(function (c) { return chordEditText(chordName(c)); }).join(' ');
+        draftBars.push({ chords: barChords || keySel.value, melody: '' });
+      }
+      focusedBar = 0;
+      renderBars();
+      statusOut.textContent = 'Loaded chord template from ' + tune.raw.title + '.';
+    });
+    el('[data-fb-compose-save]').addEventListener('click', function () {
+      try {
+        var mParts = (meterSel.value || '4/4').split('/').map(Number);
+        var M = mParts[0] * 4 / mParts[1];
+        var tempo = Math.max(40, Math.min(240, Number(tempoIn.value) || 110));
+        var fallbackChord = keySel.value + (modeSel.value === 'minor' ? 'm' : '');
+        var prevChord = fallbackChord;
+        var chordList = draftBars.map(function (b) {
+          var txt = chordEditText(b.chords || '');
+          if (txt) { prevChord = txt.split(/\s+/).pop().split(':')[0]; return txt; }
+          return prevChord;
+        });
+        var restBar = restBarFor(M);
+        var hasCustomMelody = draftBars.some(function (b) { return (b.melody || '').trim().length > 0; });
+        var melodyStr = draftBars.map(function (b) { return (b.melody || '').trim() || restBar; }).join(' | ');
+        var band = styleSel.value || (mParts[0] === 6 && mParts[1] === 8 ? 'jig' : mParts[0] === 3 ? 'waltz' : 'swing');
+        var raw = {
+          id: 'compose-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+          title: (titleIn.value || '').trim() || 'Untitled composition',
+          composer: (composerIn.value || '').trim() || 'Student composer',
+          year: 'Original song',
+          key: keySel.value || 'C',
+          mode: modeSel.value === 'minor' ? 'minor' : 'major',
+          meter: mParts,
+          tempo: tempo,
+          band: band,
+          feel: (STYLES[band] && STYLES[band].feel) || 'straight',
+          style: (STYLES[band] && STYLES[band].label) || 'Composition',
+          level: 'Student song',
+          pickup: 0,
+          bars: draftBars.length,
+          melody: melodyStr,
+          chords: chordList.join(' | '),
+          chordsOnly: !hasCustomMelody,
+          imported: true,
+          about: draftBars.length + '-bar original composition written in Fake Book.',
+          source: 'Written in Fake Book (browser-local).'
+        };
+        window.FakeBook.saveTranscription(raw);
+        setOpen(false);
+      } catch (err) {
+        statusOut.textContent = err.message || 'Check your chord names or melody tokens.';
+      }
+    });
+  }
+
+  function consumeSongHandoff() {
+    if (!/handoff=1/.test(location.hash)) return false;
+    var rawJson = null;
+    try { rawJson = localStorage.getItem('classroomos:song-handoff:v1'); } catch (_e) {}
+    if (!rawJson) return false;
+    try { localStorage.removeItem('classroomos:song-handoff:v1'); } catch (_e) {}
+    try {
+      var spec = JSON.parse(rawJson);
+      var meter = Array.isArray(spec.meter) && spec.meter.length === 2 ? spec.meter.map(Number) : [4, 4];
+      var M = meter[0] * 4 / meter[1];
+      var chordsArr = Array.isArray(spec.chords) ? spec.chords : String(spec.chords || 'C').split('|').map(function (s) { return s.trim(); });
+      if (!chordsArr.length) chordsArr = ['C'];
+      var barsCount = Math.max(1, Number(spec.bars) || chordsArr.length);
+      var restBar = restBarFor(M);
+      var melArr = Array.isArray(spec.melody) ? spec.melody : (typeof spec.melody === 'string' && spec.melody.trim() ? spec.melody.split('|').map(function (s) { return s.trim(); }) : null);
+      var melodyStr = melArr ? melArr.join(' | ') : new Array(barsCount).fill(restBar).join(' | ');
+      var band = mapBandStyle(spec.style || 'rock', meter);
+      var raw = {
+        id: 'handoff-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        title: spec.title || 'Music Lab Idea',
+        composer: spec.composer || 'Theory & Instrument Lab',
+        year: 'From Theory Lab',
+        key: spec.key || 'C',
+        mode: spec.mode === 'minor' ? 'minor' : 'major',
+        meter: meter,
+        tempo: Math.max(40, Math.min(240, Number(spec.tempo) || 100)),
+        band: band,
+        feel: (STYLES[band] && STYLES[band].feel) || 'straight',
+        style: spec.style || (STYLES[band] && STYLES[band].label) || 'Song sketch',
+        level: 'Imported',
+        pickup: 0,
+        bars: barsCount,
+        melody: melodyStr,
+        chords: chordsArr.map(function (c) { return chordEditText(String(c || 'C')); }).join(' | '),
+        chordsOnly: !melArr,
+        imported: true,
+        about: 'Sent from ' + (spec.from || 'Music Theory Lab') + ' for play-along, arrangement and exploration.',
+        source: 'Sent from ' + (spec.from || 'Music Theory Lab') + ' (browser-local).'
+      };
+      parseTune(raw);
+      importedTunes.push(raw);
+      saveImports();
+      tunes = defaultTunes.concat(importedTunes);
+      renderLibrary();
+      selectTune(raw.id, true);
+      importFeedback('Loaded “' + raw.title + '” from ' + (spec.from || 'Music Theory Lab') + '.', false);
+      return true;
+    } catch (_err) {
+      return false;
+    }
+  }
+
   /* ================================================================ boot */
   radios(el('[data-fb-melody]'), 'fb-melody', MELODY, opts.melody);
   radios(el('[data-fb-rhythm]'), 'fb-rhythm', RHYTHM, opts.rhythm);
@@ -6071,11 +6593,15 @@
     tunes = defaultTunes.concat(importedTunes);
     renderLibrary();
     bind();
-    var startId = (location.hash.match(/tune=([\w-]+)/) || [])[1] || opts.tune;
-    if (!tunes.some(function (x) { return x.id === startId; })) startId = tunes[0].id;
-    selectTune(startId, startId !== opts.tune || !opts.key);
+    initSongComposer();
+    if (!consumeSongHandoff()) {
+      var startId = (location.hash.match(/tune=([\w-]+)/) || [])[1] || opts.tune;
+      if (!tunes.some(function (x) { return x.id === startId; })) startId = tunes[0].id;
+      selectTune(startId, startId !== opts.tune || !opts.key);
+    }
     root.classList.add('is-ready');
     window.addEventListener('hashchange', function () {
+      if (/handoff=1/.test(location.hash) && consumeSongHandoff()) return;
       var id = (location.hash.match(/tune=([\w-]+)/) || [])[1];
       if (id && id !== opts.tune && tunes.some(function (x) { return x.id === id; })) selectTune(id, true);
     });

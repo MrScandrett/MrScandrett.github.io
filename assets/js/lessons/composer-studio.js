@@ -40,19 +40,29 @@
   work.closest('label').firstChild.textContent = 'Piece';
   workspace.classList.add('bv-compact');
   const pianoShow = $('piano-show'), pianoInputs = $('piano-inputs');
-  const pianoPrefs = {};
+  // Students' fingerings and violin choices survive a reload (one key per composer page).
+  const PREFS_KEY = 'classroomos:composer-studio:' + composer;
+  const savedPrefs = (() => { try { return JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') || {}; } catch { return {}; } })();
+  const pianoPrefs = savedPrefs.piano || {};
+  const violinPrefs = savedPrefs.violin || {};
+  function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify({ piano: pianoPrefs, violin: violinPrefs })); } catch { /* storage full or blocked */ } }
   const pianoKey = () => [work.value, mode.value, staff.value, voice.value, octave.value].join(':');
+  let builtPianoKey = null;
   function pianoGuide(score) {
     const prefs = pianoPrefs[pianoKey()] || { show: false, values: [] };
     pianoShow.checked = prefs.show;
-    pianoInputs.replaceChildren();
-    const model = ScoreEngine.prepare(score);
-    model.staves.forEach((st, i) => {
-      const label = document.createElement('label');
-      label.textContent = (st.label || 'Staff ' + (i + 1)) + ' · ' + st.bars.flatMap(b => b.events).filter(e => e.kind === 'note' && !e.hidden).length + ' note events ';
-      const input = document.createElement('textarea'); input.rows = 2; input.value = prefs.values[i] || '';
-      input.dataset.staff = i; label.append(input); pianoInputs.append(label);
-    });
+    // Rebuilding the boxes on every change would drop the cursor when a student tabs to the next staff.
+    if (builtPianoKey !== pianoKey() || !pianoInputs.childElementCount) {
+      builtPianoKey = pianoKey();
+      pianoInputs.replaceChildren();
+      const model = ScoreEngine.prepare(score);
+      model.staves.forEach((st, i) => {
+        const label = document.createElement('label');
+        label.textContent = (st.label || 'Staff ' + (i + 1)) + ' · ' + st.bars.flatMap(b => b.events).filter(e => e.kind === 'note' && !e.hidden).length + ' note events ';
+        const input = document.createElement('textarea'); input.rows = 2; input.value = prefs.values[i] || '';
+        input.dataset.staff = i; label.append(input); pianoInputs.append(label);
+      });
+    }
     const values = prefs.values.map(value => value.trim().split(/\s+/).filter(Boolean));
     const invalid = values.flat().some(value => !/^(?:[1-5](?:\/[1-5]){0,4}|[-–])$/.test(value));
     $('piano-status').textContent = invalid ? 'Use fingers 1–5, / between chord fingers, and – for blanks. Invalid entries are left blank.' : '';
@@ -60,12 +70,12 @@
   }
   function rememberPiano() {
     pianoPrefs[pianoKey()] = { show: pianoShow.checked, values: [...pianoInputs.querySelectorAll('textarea')].map(input => input.value) };
+    savePrefs();
     update();
   }
   pianoShow.addEventListener('change', rememberPiano);
   pianoInputs.addEventListener('change', rememberPiano);
-  const violinPrefs = {};
-  function rememberViolin() { violinPrefs[work.value] = { show: violinShow.checked, position: violinPosition.value }; }
+  function rememberViolin() { violinPrefs[work.value] = { show: violinShow.checked, position: violinPosition.value }; savePrefs(); }
   function restoreViolin() { const p = violinPrefs[work.value] || {}; violinShow.checked = !!p.show; violinPosition.value = p.position || 'auto'; }
   function violinGuide(model, plan, legend) {
     const heading = document.createElement('h3'); heading.textContent = 'Violin positions · selected voice'; tab.append(heading);
@@ -194,7 +204,7 @@
     }
     if (src.composer === 'ClassroomOS teaching materials') message += ' Original classroom study, not a composition by the featured musician.';
     const chordOption = [...mode.options].find(o => o.value === 'chords');
-    chordOption.disabled = work.value !== 'beethoven-ode-to-joy';
+    chordOption.disabled = chordOption.hidden = work.value !== 'beethoven-ode-to-joy';
     mode.querySelector('option[value="guitar"]').textContent = src.guitarArrangement ? 'Guitar · solo arrangement with bass and harmony' : composer === 'francisco-tarrega' ? 'Guitar · complete tablature' : 'Guitar · melody tablature';
     result.subtitle = src.guitarArrangement && ['guitar','guitar-solo'].includes(m) ? result.subtitle : mode.selectedOptions[0].textContent + ' · ' + (src.subtitle || '') + (['alto','tenor'].includes(m) ? ' · written saxophone pitch' : '');
     if (fullGuitar) {

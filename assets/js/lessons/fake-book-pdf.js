@@ -13,6 +13,8 @@ const coach = desk ? createMeasureCoach({
   select: i => { bar = i; fillBar(); },
   jump: p => { page = p; draw(); },
   persist,
+  saveCrop: (id, value) => storeCrop(id, value).catch(() => null),
+  loadCrop: id => storeCrop(id, undefined).catch(() => null),
   field: name => $(name),
   fill: fillBar
 }) : null;
@@ -42,16 +44,45 @@ $('show-score').onclick = () => { if (focused) setFocus(false); document.querySe
 function status(message) { $('status').textContent = message; }
 function persist() {
   if (!bookKey) return;
+  if (Array.isArray(book?.examples)) {
+    book.examples.forEach(e => {
+      if (e && e.image && e.id) {
+        storeCrop(e.id, e.image).catch(() => {});
+        delete e.image;
+        e.hasImage = true;
+      }
+    });
+  }
   library[bookKey] = book;
   try { localStorage.setItem(STORE, JSON.stringify(library)); } catch (_) { status('Browser storage is full or disabled. Export a workspace backup to keep your work.'); }
 }
 function database() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('fakebook-pdf', 1);
-    request.onupgradeneeded = () => request.result.createObjectStore('files');
+    const request = indexedDB.open('fakebook-pdf', 2);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('files')) db.createObjectStore('files');
+      if (!db.objectStoreNames.contains('crops')) db.createObjectStore('crops');
+    };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
+async function storeCrop(id, value) {
+  if (!id) return null;
+  const db = await database();
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('crops', value === undefined ? 'readonly' : 'readwrite');
+      const store = tx.objectStore('crops');
+      const req = value === undefined ? store.get(id) : value === null ? store.delete(id) : store.put(value, id);
+      let out = null;
+      req.onsuccess = () => { out = req.result; };
+      tx.oncomplete = () => resolve(out);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } finally { db.close(); }
 }
 async function storedFile(file) {
   const db = await database();
