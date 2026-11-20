@@ -71,6 +71,7 @@ const ICONS = {
   rubik: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 7v10l-10 5-10-5V7zM2 7l10 5 10-5M12 12v10M7 4.5l10 5v10M17 4.5l-10 5v10M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
   sokoban: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.8 4.8l14.4 14.4M19.2 4.8 4.8 19.2" stroke="currentColor" stroke-width="1.6"/><path d="M4 9.5h16M4 14.5h16" stroke="currentColor" stroke-width="1" opacity=".5"/></svg>',
   geo: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="4" ry="9" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3 12h18M5 7h14M5 17h14" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>',
+  artifact: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2.5h6M9.7 2.5v2.6C7 6.4 5.6 9.2 5.6 12.5c0 3.9 2.6 7.2 6.4 9 3.8-1.8 6.4-5.1 6.4-9 0-3.3-1.4-6.1-4.1-7.4V2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M6 11.2h12M6.6 15h10.8" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M5.6 8.8C3.3 8.8 3 12 5.7 13.4M18.4 8.8c2.3 0 2.6 3.2-.1 4.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
   chess: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20.5h11.5v-1.8c0-4.3-1.2-8-3.3-10.6l.9-3.1-2.8 1.5C11.7 5.2 9.6 6 8.2 7.7L5.4 11c-.6.8-.4 1.9.4 2.4l.7.4c.7.4 1.6.3 2.1-.3l1.3-1.4c.4 1.5-.4 3.1-1.8 4.5C7.2 17.5 7 18.8 7 20.5z" fill="currentColor"/><circle cx="10.3" cy="9.3" r="1" fill="var(--dp-icon-eye, #fff)"/></svg>'
 };
 const icon = (name) => { const s = el('span', { class: 'dp-ico', 'aria-hidden': 'true' }); s.innerHTML = ICONS[name]; return s; };
@@ -145,7 +146,7 @@ function mount(root, bank, doubleBank, chessBank) {
   const app = root.querySelector('[data-dp-app]');
   const store = loadStore();
   const today = dayKey(new Date());
-  const progressKey = { crossword: 'cross', sudoku: 'sudoku', 'daily-double': 'double', chess: 'chess', sokoban: 'soko', rubik: 'rubik', geo: 'geo' };
+  const progressKey = { crossword: 'cross', sudoku: 'sudoku', 'daily-double': 'double', chess: 'chess', sokoban: 'soko', rubik: 'rubik', geo: 'geo', artifact: 'artifact' };
   const validTabs = Object.keys(progressKey);
   const state = { key: today, tab: validTabs.includes(store.tab) ? store.tab : 'crossword' };
   const cache = new Map();
@@ -200,7 +201,9 @@ function mount(root, bank, doubleBank, chessBank) {
   const tabRubik = makeTab('rubik', 'Daily Rubik’s', 'Rubik’s', 'Twist & solve');
   const tabGeo = makeTab('geo', 'Daily GeoGuess', 'Geo', 'Find the place');
   tabGeo.setAttribute('aria-label', 'Daily GeoGuess');
-  const tabButtons = { crossword: tabCross, sudoku: tabSudoku, 'daily-double': tabDouble, chess: tabChess, sokoban: tabSoko, rubik: tabRubik, geo: tabGeo };
+  const tabArtifact = makeTab('artifact', 'Artifact Guesser', 'Artifact', 'Where & when?');
+  tabArtifact.setAttribute('aria-label', 'Daily Artifact Guesser');
+  const tabButtons = { crossword: tabCross, sudoku: tabSudoku, 'daily-double': tabDouble, chess: tabChess, sokoban: tabSoko, rubik: tabRubik, geo: tabGeo, artifact: tabArtifact };
   const bar = el('div', { class: 'dp-bar' },
     el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, ...validTabs.map((id) => tabButtons[id])),
     el('div', { class: 'dp-nav', role: 'group', 'aria-label': 'Choose a day' },
@@ -245,6 +248,19 @@ function mount(root, bank, doubleBank, chessBank) {
         if (loading.isConnected) buildDailyGeo(panel, key, dayState(key), persist, refreshChrome, el);
       }).catch(() => {
         if (loading.isConnected) loading.textContent = 'Daily GeoGuess is unavailable. Reload the page to try again.';
+      });
+      if (!reducedMotion()) replay(panel, 'is-enter');
+      return;
+    }
+    if (state.tab === 'artifact') {
+      const key = state.key;
+      const loading = el('p', { class: 'dp-status', role: 'status', text: 'Unwrapping today’s artifact…' });
+      panel.replaceChildren(loading);
+      import('./daily-artifact.mjs').then(async ({ loadArtifactBank, buildDailyArtifact }) => {
+        const artifacts = await loadArtifactBank();
+        if (loading.isConnected) buildDailyArtifact(panel, key, artifacts, dayState(key), persist, refreshChrome, el);
+      }).catch(() => {
+        if (loading.isConnected) loading.textContent = 'The Artifact Guesser is unavailable. Reload the page to try again.';
       });
       if (!reducedMotion()) replay(panel, 'is-enter');
       return;
@@ -295,7 +311,7 @@ function mount(root, bank, doubleBank, chessBank) {
   let staged = false;
   document.addEventListener('creation-app-resize', () => {
     const now = root.matches(':fullscreen, .creation-app-expanded');
-    if (now && !staged) panel.querySelector('.dp-xinput, .dp-scell[tabindex="0"], .dp-dcell[tabindex="0"], .dp-chess-square, .dp-soko-board, .dp-rubik-stage, .dp-geo-step:not([hidden]) :is(.dp-geo-map:not([hidden]), .dp-geo-next)')?.focus({ preventScroll: true });
+    if (now && !staged) panel.querySelector('.dp-xinput, .dp-scell[tabindex="0"], .dp-dcell[tabindex="0"], .dp-chess-square, .dp-soko-board, .dp-rubik-stage, .dp-geo-step:not([hidden]) :is(.dp-geo-map:not([hidden]), .dp-geo-next, .dp-art-stage)')?.focus({ preventScroll: true });
     staged = now;
   });
   root.addEventListener('keydown', (ev) => {
@@ -1875,7 +1891,7 @@ function buildRubik(panel, pz, saved, persist, onChange) {
 // This script loads lazily, so it can be newer than the stylesheet the page already has (a deploy
 // inside the host's cache window, or an old service-worker entry). Keep this in step with
 // --dp-css-rev in daily-puzzles.css. Resolves once the sheet is current, or after a short wait.
-const CSS_REV = 3;
+const CSS_REV = 4;
 function ensureCurrentCss(root) {
   const have = parseInt(getComputedStyle(root).getPropertyValue('--dp-css-rev'), 10) || 0;
   if (have >= CSS_REV) return Promise.resolve();

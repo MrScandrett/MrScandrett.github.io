@@ -448,7 +448,7 @@ else is a marker with a category (holiday, birthday, history, science & sky):
 ## Daily puzzles (mini crossword + sudoku + daily double + chess + Sokoban)
 
 `#home-puzzles` on `index.html` (Today tab, under the verse of the day) is a new crossword, sudoku,
-Daily Double, chess puzzle and Sokoban every day, generated in the browser from the date: no server, no stored puzzles,
+Daily Double, chess puzzle, Sokoban, Rubik's, GeoGuess and Artifact Guesser every day, generated in the browser from the date: no server, no stored puzzles,
 and every student sees the same ones. It reuses the `.home-widget--schedule` surface like the class calendar,
 so all themes style it.
 
@@ -478,6 +478,18 @@ so all themes style it.
   On touch screens held upright the crossword's grid card (and Sudoku's board) is a size container that takes whatever height the top row,
   clue bar and keys leave, so it fits by construction (no rem budgets); sideways touch screens put the keys beside it.
   `npm run test:daily-puzzles:browser` (against `serve-local.js`, `PUZZLES_URL=`) checks phones, iPads, Split View and Slide Over.
+- **Artifact Guesser** (`artifact` tab; `assets/js/daily-artifact.mjs` UI, `daily-artifact-core.mjs` pure, bank
+  `data/daily-artifact-bank.json`): one artifact a day, in bank order from 2026-11-20. Students inspect it as a Sketchfab 3D model
+  and/or a zoomable photo, pin where it was made, and place a year on the **time ruler** (piecewise slider from 3 million BCE to today,
+  stretched so recent centuries are precise; arrow keys nudge by an era-sized step; or type "2,560 BCE"). Score is 5,000 place
+  (GeoGuessr curve, perfect inside 25 km) + 5,000 date (tolerance grows with the artifact's age, so 40 years is a miss for Apollo and
+  nothing for Lascaux); opening the clue costs 10%. Reuse what lessons already credit: 3D `sketchfab` ids must come from
+  `data/ages-lesson.json` (a test enforces it), images from `assets/images/lessons/` with the lesson's own credit in `credit2d`.
+  `year` is the single scored number (negative = BCE, no year 0); `dateLabel` is what students read. Add an entry by appending to the
+  bank (it rotates in order, so interleave 3D and 2D and spread eras and regions); `artifactProblems()` rejects a clue that names the
+  artifact, and the test checks every lesson link, image and credit. `daily-guess-map.mjs` is the shared pin-on-a-map piece
+  (Natural Earth, zoom, arrow-key pin) and the world-map loader that Daily GeoGuess also uses. Changing the daily-puzzles CSS means
+  bumping `CSS_REV` in daily-puzzles.mjs together with `--dp-css-rev` in the stylesheet. Tests: `node --test tests/daily-artifact.test.mjs`.
 - Tests: `node --test tests/daily-puzzles.test.mjs` (unique sudoku solutions, crossword runs, daily double bank hygiene,
   deterministic boards, 2 triple doubles per day).
 

@@ -1,12 +1,12 @@
 import { parseDayKey } from './daily-puzzles-core.mjs';
 import { locations } from './daily-geo-locations.mjs';
+import { svg, loadGeography, formatPoint, validPoint, clamp } from './daily-guess-map.mjs';
 
 const WIDTH = 720;
 const HEIGHT = 360;
 const DAY_MS = 86400000;
 const FIRST_DAY = Date.UTC(2026, 10, 17);
 const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] };
-const NUMBER = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
 const DISTANCE = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0, style: 'unit', unit: 'kilometer' });
 
 export function locationForDay(key) {
@@ -14,52 +14,6 @@ export function locationForDay(key) {
   const days = (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - FIRST_DAY) / DAY_MS;
   return locations[((days % locations.length) + locations.length) % locations.length];
 }
-
-function svg(tag, attrs) {
-  const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
-  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
-  return node;
-}
-
-function loadScript(path) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = new URL(path, import.meta.url);
-    script.onload = resolve;
-    script.onerror = () => {
-      script.remove();
-      reject(new Error('The world map could not load.'));
-    };
-    document.head.append(script);
-  });
-}
-
-let geography;
-function loadGeography() {
-  if (!geography) {
-    geography = (async () => {
-      if (!globalThis.d3?.geoPath) await loadScript('../vendor/d3-geo-runtime.min.js');
-      if (!globalThis.EarthEngine) await loadScript('./earth-engine.js');
-      return globalThis.EarthEngine.load();
-    })().catch((error) => {
-      geography = null;
-      throw error;
-    });
-  }
-  return geography;
-}
-
-function formatPoint([lon, lat]) {
-  const degree = (value, positive, negative) => `${NUMBER.format(Math.abs(value))}°${value === 0 ? '' : value > 0 ? positive : negative}`;
-  return `${degree(lat, 'N', 'S')}, ${degree(lon, 'E', 'W')}`;
-}
-
-function validPoint(point) {
-  return Array.isArray(point) && point.length === 2 && point.every(Number.isFinite)
-    && Math.abs(point[0]) <= 180 && Math.abs(point[1]) <= 90;
-}
-
-const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 export function buildDailyGeo(panel, key, saved, persist, onChange, el) {
   const location = locationForDay(key);

@@ -9,7 +9,7 @@
   /* Stylesheet revision. daily-puzzles.mjs reads this and re-fetches the CSS if it is older than the
      script (a cached old sheet next to new JS left the Rubik's cube unstyled). Bump it with any
      change that new markup in daily-puzzles.mjs depends on. */
-  --dp-css-rev: 3;
+  --dp-css-rev: 4;
   --dp-ink: var(--text-main, #17233a);
   --dp-muted: var(--text-muted, #5b6b85);
   --dp-accent: var(--theme-accent, var(--accent, #0071e3));
@@ -2004,4 +2004,83 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
 
 @media (max-width: 520px) {
   .dp-geo .dp-btn { min-height: 2.75rem; }
+}
+
+/* Artifact Guesser (builds on the Daily GeoGuess rules above) */
+.dp-art-views { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.7rem; }
+.dp-art-views .dp-btn[aria-pressed="true"] { background: var(--dp-accent); border-color: var(--dp-accent); color: var(--dp-on-accent); }
+
+.dp-art-viewer {
+  overflow: hidden;
+  border: 1px solid var(--dp-line);
+  border-radius: 12px;
+  background: #15181f;
+}
+.dp-art-stage {
+  --dp-art-h: clamp(16rem, 52vw, 26rem);
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: var(--dp-art-h);
+  overflow: hidden;
+  touch-action: pan-y;
+  color: #e8ecf4;
+}
+.dp-art-stage.is-zoomed { cursor: grab; touch-action: none; }
+.dp-art-stage.is-zoomed:active { cursor: grabbing; }
+.dp-art-stage:focus-visible { outline-offset: -3px; }
+.dp-art-img { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; will-change: transform; }
+.dp-art-frame { display: block; width: 100%; height: 100%; border: 0; }
+.dp-art-imgfail { position: absolute; inset: auto 1rem 1rem; margin: 0; padding: 0.6rem 0.8rem; border-radius: 8px; background: rgba(0, 0, 0, 0.7); font-size: 0.85rem; }
+.dp-art-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; margin-top: 0.55rem; }
+.dp-art-toolbar[hidden] { display: none; }
+.dp-art .dp-geo-clue.is-used summary::after { content: " · clue used"; font-weight: 400; color: var(--dp-muted); }
+
+.dp-art-year { margin-top: 0.8rem; padding: 0.8rem 0.9rem 0.9rem; border: 1px solid var(--dp-line); border-radius: 12px; background: var(--dp-tile); }
+.dp-art-yearhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.4rem 1rem; }
+.dp-art-yearhead label { font-weight: 700; font-size: 0.95rem; }
+.dp-art-yearout { font: 800 1.35rem/1.1 var(--font-heading, inherit); font-variant-numeric: tabular-nums; color: var(--dp-accent); }
+.dp-art-ruler { display: block; width: 100%; margin: 0.65rem 0 0; accent-color: var(--dp-accent); min-height: 2rem; }
+.dp-art-ruler.is-unset { opacity: 0.55; }
+.dp-art-ruler:disabled { opacity: 0.6; }
+.dp-art-ticks { position: relative; height: 1.1rem; margin: 0 0.45rem; font-size: 0.68rem; color: var(--dp-muted); }
+.dp-art-ticks span { position: absolute; top: 0; left: var(--x); transform: translateX(-50%); white-space: nowrap; }
+.dp-art-ticks span::before { content: ""; position: absolute; left: 50%; top: -0.35rem; height: 0.3rem; border-left: 1px solid var(--dp-line); }
+.dp-art-ticks .is-start { transform: translateX(-30%); }
+.dp-art-ticks .is-end { transform: translateX(-85%); }
+.dp-art-yearfield { display: flex; gap: 0.5rem; margin-top: 0.65rem; }
+.dp-art-yearinput, .dp-art-era {
+  min-height: 2.5rem; padding: 0 0.7rem; border: 1px solid var(--dp-line); border-radius: 10px;
+  background: var(--dp-paper); color: var(--dp-ink); font: inherit; font-variant-numeric: tabular-nums;
+}
+.dp-art-yearinput { flex: 1 1 8rem; min-width: 0; max-width: 14rem; }
+.dp-art-era { flex: 0 0 auto; width: 6rem; }
+.dp-art-yearinput[aria-invalid="true"] { border-color: var(--dp-bad); outline: 1px solid var(--dp-bad); }
+.dp-art-yearhelp { margin: 0.55rem 0 0; font-size: 0.78rem; color: var(--dp-muted); }
+
+.dp-art-result { margin-top: 0.8rem; padding: 0.9rem 1rem 1rem; border: 1px solid var(--dp-line); border-radius: 12px; background: color-mix(in srgb, var(--dp-accent) 8%, var(--dp-paper)); }
+.dp-art-result > * { margin: 0; }
+.dp-art-result > * + * { margin-top: 0.6rem; }
+.dp-art-reveal { font-size: 1.25rem; line-height: 1.2; }
+.dp-art-reveal:focus-visible { outline-offset: 3px; }
+.dp-art-where { color: var(--dp-muted); font-size: 0.92rem; }
+.dp-art-scorehead { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.dp-art-bar { height: 0.55rem; margin: 0.25rem 0; border-radius: 99px; background: var(--dp-tile); overflow: hidden; }
+.dp-art-bar i { display: block; width: var(--w, 0); height: 100%; border-radius: inherit; background: var(--dp-accent); }
+.dp-art-score small { color: var(--dp-muted); font-size: 0.8rem; }
+.dp-art-penalty { font-size: 0.85rem; color: var(--dp-bad); }
+.dp-art-total { font-size: 0.95rem; }
+.dp-art-total strong { font: 800 1.9rem/1 var(--font-heading, inherit); font-variant-numeric: tabular-nums; }
+.dp-art-blurb { font-size: 0.92rem; line-height: 1.5; }
+.dp-art-lesson { font-weight: 700; font-size: 0.92rem; }
+.dp-art-credit { display: block; color: var(--dp-muted); font-size: 0.75rem; line-height: 1.4; }
+.dp-art-credit a { color: inherit; }
+
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-art-stage { --dp-art-h: clamp(14rem, calc(100cqh - 11rem), 34rem); }
+
+@media (max-width: 520px) {
+  .dp-art-stage { --dp-art-h: clamp(15rem, 78vw, 22rem); }
+  .dp-art-yearinput { max-width: none; }
+  .dp-art-ticks .is-minor { display: none; }
+  .dp-art .dp-btn { min-height: 2.75rem; }
 }
