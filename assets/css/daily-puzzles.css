@@ -1955,10 +1955,18 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
   background: var(--dp-tile);
 }
 
+.dp-geo-panorama { --dp-geo-crop: 7.5rem; }
+
+/* Google's embed paints a title card ("SHIBUYA 渋谷 TOKYO", "View on Google Maps")
+   over the top-left of the panorama, which names the answer. It lives in a cross-origin
+   iframe, so the only fix is to crop it: shift the iframe up and grow it by the same
+   amount so the visible window keeps its size. The Google logo, Terms and Report links
+   sit at the bottom and stay visible. */
 .dp-geo-panorama iframe {
   display: block;
   width: 100%;
-  height: clamp(15rem, 49vw, 24rem);
+  height: calc(clamp(15rem, 49vw, 24rem) + var(--dp-geo-crop));
+  margin-top: calc(var(--dp-geo-crop) * -1);
   border: 0;
 }
 
@@ -1991,7 +1999,7 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
 }
 
 #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-geo-panorama iframe {
-  height: clamp(14rem, calc(100cqh - 9rem), 31rem);
+  height: calc(clamp(14rem, calc(100cqh - 9rem), 31rem) + var(--dp-geo-crop));
 }
 
 @media (max-width: 520px) {
