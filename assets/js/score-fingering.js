@@ -20,6 +20,8 @@
     if (/right/i.test(label)) return 'right';
     if (/accompaniment/i.test(label)) return 'left';
     if (/lead|melody/i.test(label)) return 'right';
+    // A bass line that opens in treble clef (Morton, Jelly Roll Blues) is still the left hand.
+    if (/\bbass\b/i.test(label)) return 'left';
     return staff.clef === 'bass' ? 'left' : 'right';
   }
   function isKeyboard(score) {

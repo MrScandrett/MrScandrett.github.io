@@ -219,3 +219,21 @@ test('review sentences highlight releasing, rolling, redistributing and do-not-s
   }
   assert.deepEqual(F.techniqueSegments('Hand position change: plan a shift or release with your teacher.').filter(s => s.technique).map(s => s.technique), ['release']);
 });
+
+test('a bass staff that opens in treble clef is the left hand, so both Morton hands get numbers', () => {
+  // Jelly Roll Blues writes its source bass in treble clef for bar 1, then switches to bass clef.
+  const bassStaff = { label: 'Source bass · selected lower notes', clef: 'treble' };
+  assert.equal(F.handOf(bassStaff), 'left');
+  assert.equal(F.handOf({ label: 'Melody · chord interiors omitted', clef: 'treble' }), 'right');
+  const score = library['morton-jelly'];
+  const layout = layoutFor('morton-jelly');
+  const d = F.planDetailed(layout, score);
+  const share = staff => {
+    const notes = layout.events.filter(e => e.staff === staff && e.kind === 'note' && !e.hidden && !e.grace);
+    return notes.filter(e => d.fingers[e.i]).length / notes.length;
+  };
+  assert.ok(share(1) >= 0.6, 'bass line fingered: ' + share(1));
+  // Bar 3 of the bass line: low Gb2 is the little finger of the left hand, not a right-hand 2.
+  const low = layout.events.find(e => e.staff === 1 && e.kind === 'note' && e.pitches[0].midi === 42);
+  assert.equal(d.fingers[low.i]?.[0], 5);
+});

@@ -1453,6 +1453,7 @@
     if (/right/i.test(label)) return true;
     if (/accompaniment/i.test(label)) return false;
     if (/lead|melody/i.test(label)) return true;
+    if (/\bbass\b/i.test(label)) return false;
     return staff.clef !== 'bass';
   }
 
