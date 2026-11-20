@@ -9,6 +9,15 @@ const FIRST_DAY = Date.UTC(2026, 10, 17);
 const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] };
 const DISTANCE = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0, style: 'unit', unit: 'kilometer' });
 
+// Official Street View pano ids: 22 URL-safe base64 characters. User photo spheres use
+// longer ids (CAoS…, CIHM…, AF1Qip…) and are never allowed (see daily-geo-locations.mjs).
+export const OFFICIAL_PANO = /^[A-Za-z0-9_-]{22}$/;
+
+export function streetViewEmbed({ pano, at, heading = 0, pitch = 0 }) {
+  if (!OFFICIAL_PANO.test(pano)) throw new Error(`Not an official Street View pano: ${pano}`);
+  return `https://www.google.com/maps/embed?pb=!4v0!6m8!1m7!1s${pano}!2m2!1d${at[0]}!2d${at[1]}!3f${heading}!4f${pitch}!5f0.4`;
+}
+
 export function locationForDay(key) {
   const date = parseDayKey(key);
   const days = (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - FIRST_DAY) / DAY_MS;
@@ -117,7 +126,7 @@ export function buildDailyGeo(panel, key, saved, persist, onChange, el) {
     guessStep.hidden = true;
     explore.hidden = false;
     panorama.replaceChildren(el('iframe', {
-      src: location.src, title: 'Google Street View mystery location',
+      src: streetViewEmbed(location.view), title: 'Google Street View mystery location',
       allowfullscreen: true, referrerpolicy: 'strict-origin-when-cross-origin'
     }));
     if (focus) next.focus({ preventScroll: true });
