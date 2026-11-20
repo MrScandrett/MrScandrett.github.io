@@ -1009,35 +1009,40 @@
         <div class="phys-panel" id="ppanel-powder" role="tabpanel" aria-labelledby="ptab-powder">
           <div class="powder-toolbar">
             <div class="powder-actions" role="group" aria-label="Powder controls">
+              <span class="powder-current" id="ppowder-current" aria-live="polite" title="Selected element"><span class="powder-swatch" aria-hidden="true"></span><b>Sand</b></span>
               <label class="powder-brush">Brush <input type="range" id="ppowder-size" min="0" max="12" value="3" aria-label="Brush size"></label>
-              <button class="ptool ptool-wide" id="ppowder-pause" type="button" aria-pressed="false" title="Pause or play (Space)">⏸ Pause</button>
-              <button class="ptool ptool-wide" id="ppowder-step" type="button" title="Advance one frame">Step</button>
-              <button class="ptool ptool-wide" id="ppowder-demo" type="button" title="Replace the world with a sample scene">🌋 Demo</button>
-              <button class="ptool ptool-wide" id="ppowder-clear" type="button" title="Empty the world">🗑️ Clear</button>
+              <button class="ptool" id="ppowder-pause" type="button" aria-pressed="false" title="Pause or play (Space)" aria-label="Pause"><span aria-hidden="true">⏸</span><span class="powder-btn-label"> Pause</span></button>
+              <button class="ptool" id="ppowder-step" type="button" title="Advance one frame" aria-label="Step one frame"><span aria-hidden="true">⏭</span><span class="powder-btn-label"> Step</span></button>
+              <button class="ptool" id="ppowder-demo" type="button" title="Replace the world with a sample scene" aria-label="Demo scene"><span aria-hidden="true">🌋</span><span class="powder-btn-label"> Demo</span></button>
+              <button class="ptool" id="ppowder-clear" type="button" title="Empty the world" aria-label="Clear"><span aria-hidden="true">🗑️</span><span class="powder-btn-label"> Clear</span></button>
+              <label class="powder-view" title="−30 °C blue → 150 °C red"><input type="checkbox" id="ppowder-thermal"><span aria-hidden="true">🌡️</span> Heat map</label>
             </div>
-            <div id="ppowder-science-tools" role="group" aria-label="Science tools"></div>
-            <label class="powder-view"><input type="checkbox" id="ppowder-thermal"> Temperature colors <span class="powder-thermal-key">−30 °C blue → 150 °C red</span></label>
-            <div class="powder-experiments">
-              <label for="ppowder-experiment">Experiment</label>
-              <select id="ppowder-experiment">
-                <option value="cycle">Water cycle</option>
-                <option value="distill">Salt-water distillation</option>
-                <option value="conduct">Heat conductors</option>
-                <option value="fizz">Vinegar + baking soda</option>
-                <option value="wax">Melting wax</option>
-                <option value="rust">Rust investigation</option>
-              </select>
-              <button class="ptool ptool-wide" id="ppowder-load-experiment" type="button">Load experiment (replaces world)</button>
-              <p id="ppowder-question">Choose a setup, or build your own. Use Inspect, Heat and Cool in Tools.</p>
-            </div>
-            <div class="powder-palette" id="ppowder-palette" role="group" aria-label="Elements and science tools"></div>
-            <details class="powder-science">
-              <summary>Science model &amp; sources</summary>
+            <nav class="powder-cats" id="ppowder-cats" aria-label="Element categories"></nav>
+            <div class="powder-drawer" id="ppowder-drawer" hidden>
+              <div class="powder-palette" id="ppowder-palette" role="group" aria-label="Elements and science tools"></div>
+              <section class="powder-section powder-experiments" data-cat="setups" data-cat-label="Setups" data-cat-icon="🧪" hidden>
+                <label for="ppowder-experiment">Experiment</label>
+                <select id="ppowder-experiment">
+                  <option value="cycle">Water cycle</option>
+                  <option value="distill">Salt-water distillation</option>
+                  <option value="conduct">Heat conductors</option>
+                  <option value="fizz">Vinegar + baking soda</option>
+                  <option value="wax">Melting wax</option>
+                  <option value="rust">Rust investigation</option>
+                </select>
+                <button class="ptool ptool-wide" id="ppowder-load-experiment" type="button">Load (replaces world)</button>
+                <p id="ppowder-question">Choose a setup, or build your own. Use Inspect, Heat and Cool in Science.</p>
+              </section>
+              <section class="powder-section powder-discoveries" data-cat="found" data-cat-label="Discoveries" data-cat-icon="🏆" hidden>
+                <ul id="ppowder-reactions"></ul>
+              </section>
+              <section class="powder-section powder-science" data-cat="notes" data-cat-label="Notes" data-cat-icon="📖" hidden>
               <p>At fixed normal atmospheric pressure, pure water freezes at 0 °C and boils at 100 °C. Evaporation also happens below boiling. State changes are physical changes; water remains H₂O. Water vapor is invisible: gas colors here are visual guides, not real colors.</p>
               <p>This qualitative model uses accelerated time, equal effective heat capacities, small illustrative latent-heat budgets and no pressure calculation. The upper air is cooler; condensation uses a fixed 10 °C dew point rather than calculated humidity. Brine has an illustrative 102 °C boiling point; real values depend on concentration. Brine freezing is not modeled. Gas expansion, dissolved oxygen, aqueous equilibria and wax vapor/wicks are omitted. Rusting is accelerated; particle counts do not represent molecule ratios. Air starts with 21% oxygen; only the open top replenishes it. Heater and Cooler are powered, constant-temperature plates. Wall is a perfect insulator. Sandbox acid and Clone remain fantasy tools.</p>
               <p>Vinegar + baking soda produces carbon dioxide, water and dissolved sodium acetate, represented together as Acetate solution. Oxygen supports burning; it is not a fuel. CO₂ displaces oxygen.</p>
               <p>Sources: <a href="https://www.usgs.gov/water-science-school/science/evaporation-and-water-cycle">USGS: evaporation and the water cycle</a> · <a href="https://www.usgs.gov/glossary/glossary-water-cycle-terms">USGS: invisible water vapor</a> · <a href="https://www.acs.org/middleschoolchemistry/lessonplans/chapter6/lesson2.html">ACS: vinegar and baking soda</a>.</p>
-            </details>
+              </section>
+            </div>
           </div>
           <div class="phys-canvas-wrap powder-canvas-wrap" data-night-keep>
             <canvas id="ppowder-canvas" class="phys-canvas" tabindex="0" aria-describedby="ppowder-hint ppowder-probe" aria-label="Powder world — choose an element, then drag to pour it"></canvas>
@@ -1052,10 +1057,6 @@
             <span class="phys-metric" id="ppowder-count">0 particles</span>
             <span class="phys-metric" id="ppowder-found">0 discoveries</span>
           </div>
-          <details class="powder-discoveries">
-            <summary>Changes you've discovered</summary>
-            <ul id="ppowder-reactions"></ul>
-          </details>
         </div>
       </div>
     </section>

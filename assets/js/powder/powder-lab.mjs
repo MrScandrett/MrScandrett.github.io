@@ -5,10 +5,11 @@ import {
   E, ELEMENTS, REACTIONS, createWorld, clear, step, paint, blow, render, encode, decode, count, thermalBrush, inspect, initialTemperature
 } from './powder-core.mjs';
 
+// One collapsed category per entry; 'gas' joins 'energy' (a null label means "same shelf as the previous group").
 const GROUPS = [
-  ['science', 'Science tools'],
-  ['powder', 'Powders'], ['liquid', 'Liquids'], ['energy', 'Energy & gas'], ['gas', null],
-  ['solid', 'Solids'], ['machine', 'Machines'], ['tool', 'Tools']
+  ['science', 'Science', '🔬'],
+  ['powder', 'Powders', '⏳'], ['liquid', 'Liquids', '💧'], ['energy', 'Energy', '🔥'], ['gas', null],
+  ['solid', 'Solids', '🧱'], ['machine', 'Machines', '⚙️'], ['tool', 'Tools', '🛠️']
 ];
 const WIND = { key: 'wind', name: 'Wind', color: [190, 220, 255], hint: 'Drag to blow loose particles around.' };
 const SCIENCE_TOOLS = [
@@ -54,18 +55,19 @@ export function mount(panel, host) {
   const byKey = new Map(ELEMENTS.map(el => [el.key, el]));
   byKey.set('wind', WIND);
   SCIENCE_TOOLS.forEach(tool => byKey.set(tool.key, tool));
-  for (const [group, label] of GROUPS) {
+  for (const [group, label, icon] of GROUPS) {
     const items = group === 'science' ? SCIENCE_TOOLS : ELEMENTS.filter(el => el.group === group && el.id !== E.SMOKE);
     if (group === 'tool') items.push(WIND);
     if (!items.length) continue;
-    let row = label ? null : palette.lastElementChild?.querySelector('.powder-row');
+    let row = label ? null : palette.lastElementChild;
     if (!row) {
-      const set = document.createElement('div');
-      set.className = 'powder-set';
-      set.innerHTML = '<span class="powder-set-label"></span><div class="powder-row"></div>';
-      set.firstChild.textContent = label;
-      row = set.lastChild;
-      (group === 'science' ? panel.querySelector('#ppowder-science-tools') : palette).append(set);
+      row = document.createElement('section');
+      row.className = 'powder-section powder-row';
+      row.hidden = true;
+      row.dataset.cat = group;
+      row.dataset.catLabel = label;
+      row.dataset.catIcon = icon;
+      palette.append(row);
     }
     for (const el of items) {
       const b = document.createElement('button');
@@ -80,16 +82,73 @@ export function mount(panel, host) {
       row.append(b);
     }
   }
+
+  // Categories: one row of buttons, one open drawer at a time (collapsed by default).
+  const cats = panel.querySelector('#ppowder-cats');
+  const drawer = panel.querySelector('#ppowder-drawer');
+  const sections = [...drawer.querySelectorAll('[data-cat]')];
+  const compact = window.matchMedia('(max-width: 760px), (max-height: 500px)');
+  const sideways = window.matchMedia('(orientation: landscape) and (max-height: 500px)');
+  const toolbar = panel.querySelector('.powder-toolbar');
+  let openCat = '';
+  // Phone held sideways: the controls are a scrolling sidebar, so the drawer floats beside it over the world.
+  function placeDrawer() {
+    const r = toolbar.getBoundingClientRect();
+    drawer.style.setProperty('--pd-left', Math.round(r.right + 4) + 'px');
+    drawer.style.setProperty('--pd-top', Math.round(Math.max(0, r.top) + 4) + 'px');
+  }
+  for (const sec of sections) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'powder-cat';
+    b.dataset.cat = sec.dataset.cat;
+    b.setAttribute('aria-expanded', 'false');
+    b.setAttribute('aria-controls', 'ppowder-drawer');
+    b.innerHTML = '<span aria-hidden="true"></span><span class="powder-cat-name"></span>';
+    b.firstChild.textContent = sec.dataset.catIcon;
+    b.lastChild.textContent = sec.dataset.catLabel;
+    cats.append(b);
+  }
+  function toggleCat(name) {
+    openCat = openCat === name ? '' : name;
+    drawer.hidden = !openCat;
+    for (const sec of sections) sec.hidden = sec.dataset.cat !== openCat;
+    for (const b of cats.children) {
+      const on = b.dataset.cat === openCat;
+      b.setAttribute('aria-expanded', String(on));
+      b.classList.toggle('is-open', on);
+    }
+    panel.classList.toggle('powder-drawer-open', !!openCat);
+    if (openCat) { if (sideways.matches) placeDrawer(); else drawer.scrollIntoView({ block: 'nearest' }); }
+  }
+  cats.addEventListener('click', e => {
+    const b = e.target.closest('.powder-cat');
+    if (b) toggleCat(b.dataset.cat);
+  });
+  // Tapping the world (or anything outside the controls) puts a floating drawer away.
+  document.addEventListener('pointerdown', e => {
+    if (openCat && (compact.matches) && !drawer.contains(e.target) && !cats.contains(e.target)) toggleCat(openCat);
+  });
+  panel.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && openCat) { const b = cats.querySelector('.is-open'); toggleCat(openCat); b?.focus(); }
+  });
+  const currentEl = panel.querySelector('#ppowder-current');
   function select(key) {
     if (!byKey.has(key)) key = 'sand';
     element = key;
     panel.querySelectorAll('.powder-el').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.el === key)));
     const el = byKey.get(key);
     hintEl.textContent = el.name + ': ' + el.hint;
+    currentEl.style.setProperty('--el', `rgb(${el.color.join(',')})`);
+    currentEl.lastChild.textContent = el.name;
+    const home = panel.querySelector(`.powder-el[data-el="${key}"]`)?.closest('[data-cat]')?.dataset.cat;
+    for (const c of cats.children) c.classList.toggle('has-current', c.dataset.cat === home);
   }
   panel.addEventListener('click', e => {
     const b = e.target.closest('.powder-el');
-    if (b) select(b.dataset.el);
+    if (!b) return;
+    select(b.dataset.el);
+    if (compact.matches && openCat) toggleCat(openCat); // a phone needs the room back
   });
   sizeInput.addEventListener('input', () => { brush = +sizeInput.value; draw(); });
   select(element);
@@ -230,7 +289,9 @@ export function mount(panel, host) {
 
   function setPaused(next) {
     paused = next;
-    pauseBtn.textContent = paused ? '▶ Play' : '⏸ Pause';
+    pauseBtn.firstChild.textContent = paused ? '▶' : '⏸';
+    pauseBtn.lastChild.textContent = paused ? ' Play' : ' Pause';
+    pauseBtn.setAttribute('aria-label', paused ? 'Play' : 'Pause');
     pauseBtn.setAttribute('aria-pressed', String(paused));
   }
   pauseBtn.addEventListener('click', () => setPaused(!paused));
@@ -241,7 +302,7 @@ export function mount(panel, host) {
   panel.querySelector('#ppowder-clear').addEventListener('click', () => {
     if (!ensureWorld()) return;
     clear(world); world.found.fill(0); shown.fill(0); listEl.replaceChildren();
-    panel.querySelector('#ppowder-question').textContent = 'Choose a setup, or build your own. Use Inspect, Heat and Cool in Tools.';
+    panel.querySelector('#ppowder-question').textContent = 'Choose a setup, or build your own. Use Inspect, Heat and Cool in Science.';
     draw(); updateStats();
   });
   panel.querySelector('#ppowder-demo').addEventListener('click', () => {
@@ -258,6 +319,8 @@ export function mount(panel, host) {
     shown.fill(0); listEl.replaceChildren(); setPaused(false); draw(); updateStats();
     panel.querySelector('#ppowder-question').textContent = instruction;
     select('inspect');
+    hintEl.textContent = instruction; // the drawer closes, so the question moves to the info bar
+    if (openCat) toggleCat(openCat);
   });
   document.addEventListener('keydown', e => {
     if (e.code !== 'Space' || !panel.classList.contains('is-active') || panel.closest('[hidden]')) return;
