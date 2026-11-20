@@ -749,6 +749,23 @@
         elScaleSlider.value = String(pct);
         elScaleVal.textContent = pct + "%";
       }
+      updatePoseSelect(fig);
+    }
+
+    // Rigs from the library carry named poses on their figure type.
+    function updatePoseSelect(fig) {
+      var row = document.getElementById("piv-pose-row"), hint = document.getElementById("piv-pose-hint"), sel = document.getElementById("piv-pose-select");
+      if (!row || !sel) return;
+      var type = state.doc.types[fig.type], poses = type && type.poses;
+      var usable = poses && Object.keys(poses).length > 1 && Object.keys(poses).every(function (name) { return poses[name].length === type.segments.length; });
+      row.hidden = hint.hidden = !usable;
+      if (!usable) return;
+      var names = Object.keys(poses), key = fig.type + ":" + names.join("|");
+      if (sel.dataset.key !== key) {
+        sel.innerHTML = '<option value="">Choose a pose…</option>' + names.map(function (n) { return "<option>" + n.replace(/[&<>"]/g, "") + "</option>"; }).join("");
+        sel.dataset.key = key;
+      }
+      sel.value = "";
     }
 
     function renderRigTree() {
@@ -1171,6 +1188,63 @@
       showToast("Added Bouncing Sphere prop.");
     });
 
+    onClick("piv-btn-rig-library", function () {
+      stopPlayback();
+      if (!window.PivotRigLibrary) { showToast("The rig library is still loading. Try again in a moment."); return; }
+      window.PivotRigLibrary.open({
+        selected: function () {
+          var fig = selectedFigure();
+          return fig ? { doc: state.doc, fig: fig } : null;
+        },
+        add: addRigFigure
+      });
+    });
+
+    // The spot on the stage farthest from every figure already there (centre first).
+    function roomiestX(fr, W) {
+      var best = W / 2, bestGap = -1;
+      [0.5, 0.25, 0.75, 0.38, 0.62, 0.14, 0.86].forEach(function (f) {
+        var x = W * f, gap = fr.figures.reduce(function (m, g) { return Math.min(m, Math.abs(g.x - x)); }, 1e9);
+        if (gap > bestGap + 1) { best = x; bestGap = gap; }
+      });
+      return best;
+    }
+
+    var DOCK_Y = { ground: 0.86, center: 0.5, top: 0.16, free: 0.64 };
+    function addRigFigure(built, poseName) {
+      var type = JSON.parse(JSON.stringify(built.type));
+      var typeIndex = state.doc.types.findIndex(function (t) { return t.rigId && t.rigId === type.rigId && JSON.stringify(t) === JSON.stringify(type); });
+      if (typeIndex < 0) { typeIndex = state.doc.types.length; state.doc.types.push(type); }
+      var fr = currentFrame(), n = fr.figures.length;
+      var angles = (built.poses[poseName] || built.angles).slice();
+      var W = state.doc.width || STAGE_W, H = state.doc.height || STAGE_H;
+      fr.figures.push({
+        id: nextFigureId(),
+        type: typeIndex,
+        scale: 1,
+        color: null,
+        angles: new Float64Array(angles),
+        x: roomiestX(fr, W),
+        y: H * (DOCK_Y[built.dock] || DOCK_Y.free)
+      });
+      fr.order.push(fr.figures.length - 1);
+      state.selectedFigIndex = fr.figures.length - 1;
+      state.selectedSegIndex = 0;
+      syncAll();
+      showToast("Added " + built.name + " to the stage. Drag its red joints to pose it.");
+    }
+
+    var elPoseSelect = document.getElementById("piv-pose-select");
+    if (elPoseSelect) elPoseSelect.addEventListener("change", function () {
+      var fig = selectedFigure(), name = elPoseSelect.value;
+      var type = fig && state.doc.types[fig.type];
+      if (!name || !type || !type.poses || !type.poses[name]) return;
+      stopPlayback();
+      fig.angles = new Float64Array(type.poses[name].map(function (a) { return fig.mirrored ? normAngle(Math.PI - a) : a; }));
+      syncAll();
+      showToast(name + " pose applied. Add a frame to keep it.");
+    });
+
     onClick("piv-btn-duplicate-fig", function () {
       var fig = selectedFigure();
       if (!fig) return;
@@ -1306,8 +1380,8 @@
         stopPlayback();
         var fig = selectedFigure();
         if (!fig) return;
-        var parts = btn.getAttribute("data-rgb").split(",").map(Number);
-        fig.color = parts;
+        var rgbAttr = btn.getAttribute("data-rgb");
+        fig.color = rgbAttr ? rgbAttr.split(",").map(Number) : null;
         swatchWrap.querySelectorAll(".piv-swatch").forEach(function (s) {
           s.classList.toggle("is-active", s === btn);
         });
@@ -1431,8 +1505,8 @@
 
     // Export binary .piv file
     onClick("piv-btn-save-piv", function () {
-      if (state.doc.types.some(function(t){return t.segments.some(function(seg){return seg.artwork;});})) {
-        showToast("Use Save drawing project to keep your artwork and rig. .piv does not preserve cutout drawings."); return;
+      if (state.doc.types.some(function(t){return t.segments.some(function(seg){return seg.artwork || seg.attachX || seg.attachY;});})) {
+        showToast("Use Save drawing project to keep your artwork and rig. .piv keeps only the classic stick-figure bones, not cutouts or library rigs."); return;
       }
       var fileName = (elName.value.trim() || "my-stick-animation").replace(/[^a-z0-9_-]+/gi, "-") + ".piv";
       Piv.encodePiv(state.doc).then(function (bytes) {
