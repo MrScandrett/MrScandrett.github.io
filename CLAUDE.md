@@ -655,6 +655,25 @@ uses `new Manifold(...)` must pass it to `ctx.track`).
     must build, round-trip and fit the printer at its print scale). When you add a shape or template,
     the test covers it automatically.
 
+## Pivot animator rig library
+
+`＋ Rig library…` in `lessons/2d-design/pivot-stick-animator.html` adds jointed presets. A rig is plain data in
+`data/pivot-rigs.json` (categories + rigs); `lib/piv-rigs.js` (pure, no DOM) validates it and compiles it into the
+figure type `piv-engine.js` already draws, so rigs tween, mirror, undo and save like any figure.
+`assets/js/lessons/pivot-rig-library.js` is only the dialog (cards, search, "My rigs", share), and the animator's
+`addRigFigure()` puts a compiled rig on the stage. Tests: `node --test tests/pivot-rigs.test.mjs`.
+
+- A bone is `{ id, parent, a: joint, b: tip, w, color, shape: line|disc, z }`; parents come first. Angles are absolute
+  radians per bone, positive = clockwise (y is down). `poses` are degrees *added to a bone's rest angle*, by bone id.
+- Artwork bones add `els` (top-level element numbers of `svg.src`, counted after title/defs/style) and `clip`
+  `[x, y, w, h]`. The engine crops the SVG to the clip, keeps only those elements, rasterises it to a PNG data URI
+  and uses the joint as the pivot. Number elements by paint order; the test fails if an index or clip is off.
+  To rig a new site SVG: copy it under `assets/images/pivot-rigs/`, split it into parts, add a credit.
+- Library SVGs are cut by element number, so never edit those copies (the test compares them to the originals).
+- The `.piv` format has no joint offsets or artwork; the animator tells students to use Save drawing project instead.
+- Students save a stage figure as a rig (`Rigs.rigFromFigure`: stroke figures only, current pose = rest pose) into
+  `classroomos:pivot-rigs:v1`; shared `.rig.json` files may not carry artwork parts.
+
 ## Mesh import + Print Prep
 
 The plan for what's left (a mesh simplifier, SVG text,
