@@ -3,11 +3,13 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 document.addEventListener('DOMContentLoaded', () => {
     const stageController = initStageSelector();
     initCycleHero(stageController);
-    initPhaseExplorer();
-    initDistributionChart();
     initSimulation(stageController);
-    initTranspirationExplorer();
     initUsgsDiagram();
+    initStatesLab();
+    initDropJourney();
+    initDistributionChart();
+    initTranspirationExplorer();
+    initVocabularyFilter();
     initQuiz();
     initScavengerHunt();
     initContentsToggle();
@@ -17,41 +19,49 @@ document.addEventListener('DOMContentLoaded', () => {
 function initStageSelector() {
     const buttons = Array.from(document.querySelectorAll('.stage-btn'));
     const explanations = Array.from(document.querySelectorAll('.stage-explanation'));
+    const pins = Array.from(document.querySelectorAll('[data-stage-pin]'));
     const stageData = [
-        { name: 'Evaporation', state: 'Liquid to gas', temp: 'Sun-warmed — happens at any temperature', transition: 'Water warms and becomes vapor.' },
-        { name: 'Condensation', state: 'Gas to liquid', temp: 'Cooling below the dew point', transition: 'Water vapor cools into droplets.' },
-        { name: 'Precipitation', state: 'Liquid or ice falling', temp: 'Droplets merge until too heavy to stay aloft', transition: 'Water falls as rain, snow, sleet, or hail.' },
-        { name: 'Collection', state: 'Liquid water stored', temp: 'Stable surface temperatures', transition: 'Water gathers in rivers, lakes, and oceans.' },
-        { name: 'Infiltration', state: 'Liquid moving underground', temp: 'Cooling in shaded soil', transition: 'Water sinks into soil and aquifers.' },
-        { name: 'Transpiration', state: 'Liquid to gas in plants', temp: 'Leaf warming drives vapor release', transition: 'Plants return water vapor to the air.' }
+        { name: 'Evaporation', state: 'Liquid to gas', driver: '☀️ Solar energy (happens at any temperature)' },
+        { name: 'Condensation', state: 'Gas to liquid / ice', driver: '❄️ Cooling air below the dew point' },
+        { name: 'Precipitation', state: 'Liquid or ice falling', driver: '⬇️ Gravity overcoming updrafts' },
+        { name: 'Collection', state: 'Liquid or frozen surface water', driver: '⬇️ Gravity across land slopes' },
+        { name: 'Infiltration', state: 'Liquid moving underground', driver: '⬇️ Gravity through porous soil & rock' },
+        { name: 'Transpiration', state: 'Liquid to gas through plants', driver: '☀️ Sun-driven leaf evaporation & stomata' }
     ];
 
     let activeIndex = 0;
 
-    function activate(index, focus = false) {
+    function activate(index, userTriggered = false) {
         activeIndex = (index + stageData.length) % stageData.length;
         buttons.forEach((button, buttonIndex) => {
             const isActive = buttonIndex === activeIndex;
             button.classList.toggle('active', isActive);
             button.setAttribute('aria-pressed', String(isActive));
         });
-        explanations.forEach((explanation, expIndex) => {
-            explanation.style.display = expIndex === activeIndex ? 'block' : 'none';
+        pins.forEach((pin) => {
+            const isActive = Number(pin.dataset.stagePin) === activeIndex;
+            pin.classList.toggle('is-active', isActive);
+            pin.setAttribute('aria-pressed', String(isActive));
         });
-        if (focus) {
-            document.getElementById('how')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        explanations.forEach((explanation, expIndex) => {
+            explanation.hidden = expIndex !== activeIndex;
+        });
         document.dispatchEvent(new CustomEvent('watercycle:stagechange', {
-            detail: { index: activeIndex, ...stageData[activeIndex] }
+            detail: { index: activeIndex, userTriggered, ...stageData[activeIndex] }
         }));
     }
 
     buttons.forEach((button, index) => {
-        button.addEventListener('click', () => activate(index));
+        button.addEventListener('click', () => activate(index, true));
+    });
+    pins.forEach((pin) => {
+        pin.addEventListener('click', (event) => {
+            event.stopPropagation();
+            activate(Number(pin.dataset.stagePin), true);
+        });
     });
 
-    document.getElementById('stage-focus-btn')?.addEventListener('click', () => activate(activeIndex, true));
-    activate(0);
+    activate(0, false);
 
     return {
         getActiveIndex: () => activeIndex,
@@ -60,62 +70,7 @@ function initStageSelector() {
     };
 }
 
-function append3DCloud(targetSvg, cx, cy, scale = 1, humidityBonus = 0) {
-    let defs = targetSvg.querySelector('defs');
-    if (!defs) {
-        defs = svg('defs');
-        targetSvg.prepend(defs);
-    }
-    if (!targetSvg.querySelector('#wc-3d-cloud-defs')) {
-        const cloudDefs = svg('g', { id: 'wc-3d-cloud-defs' });
-        cloudDefs.innerHTML = `
-            <linearGradient id="wc-cloud-base-grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#cbd5e1" stop-opacity="0.9"/>
-                <stop offset="100%" stop-color="#475569" stop-opacity="0.95"/>
-            </linearGradient>
-            <linearGradient id="wc-cloud-body-grad" x1="0.3" y1="0" x2="0.7" y2="1">
-                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98"/>
-                <stop offset="65%" stop-color="#e2e8f0" stop-opacity="0.95"/>
-                <stop offset="100%" stop-color="#94a3b8" stop-opacity="0.92"/>
-            </linearGradient>
-            <radialGradient id="wc-cloud-crown-grad" cx="35%" cy="30%" r="65%">
-                <stop offset="0%" stop-color="#ffffff"/>
-                <stop offset="45%" stop-color="#f8fafc"/>
-                <stop offset="85%" stop-color="#e2e8f0"/>
-                <stop offset="100%" stop-color="#cbd5e1"/>
-            </radialGradient>
-            <filter id="wc-cloud-glow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.18"/>
-            </filter>
-        `;
-        defs.appendChild(cloudDefs);
-    }
-
-    const g = svg('g', { filter: 'url(#wc-cloud-glow)', 'class': 'wc-volumetric-cloud' });
-    const s = scale;
-    const hB = humidityBonus;
-
-    // Pass 1: Dark Extinction Base (LCL condensation floor)
-    g.appendChild(svg('ellipse', { cx: cx, cy: cy + 18 * s, rx: (70 + hB) * s, ry: 20 * s, fill: 'url(#wc-cloud-base-grad)' }));
-    g.appendChild(svg('ellipse', { cx: cx + 45 * s, cy: cy + 16 * s, rx: 55 * s, ry: 18 * s, fill: 'url(#wc-cloud-base-grad)' }));
-    g.appendChild(svg('ellipse', { cx: cx - 45 * s, cy: cy + 16 * s, rx: 50 * s, ry: 18 * s, fill: 'url(#wc-cloud-base-grad)' }));
-
-    // Pass 2: Main Convective Mid-Body Lobes
-    g.appendChild(svg('ellipse', { cx: cx - 35 * s, cy: cy + 2 * s, rx: 48 * s, ry: 32 * s, fill: 'url(#wc-cloud-body-grad)' }));
-    g.appendChild(svg('ellipse', { cx: cx + 38 * s, cy: cy + 4 * s, rx: 52 * s, ry: 34 * s, fill: 'url(#wc-cloud-body-grad)' }));
-    g.appendChild(svg('ellipse', { cx: cx, cy: cy - 6 * s, rx: (56 + hB * 0.5) * s, ry: 36 * s, fill: 'url(#wc-cloud-body-grad)' }));
-
-    // Pass 3: Sunlit Cauliflower Tops & Highlights
-    g.appendChild(svg('circle', { cx: cx - 18 * s, cy: cy - 22 * s, r: 36 * s, fill: 'url(#wc-cloud-crown-grad)' }));
-    g.appendChild(svg('circle', { cx: cx + 24 * s, cy: cy - 18 * s, r: 32 * s, fill: 'url(#wc-cloud-crown-grad)' }));
-    g.appendChild(svg('circle', { cx: cx - 52 * s, cy: cy - 6 * s, r: 24 * s, fill: 'url(#wc-cloud-crown-grad)' }));
-    g.appendChild(svg('circle', { cx: cx + 58 * s, cy: cy - 4 * s, r: 26 * s, fill: 'url(#wc-cloud-crown-grad)' }));
-
-    targetSvg.appendChild(g);
-}
-
 function initCycleHero(stageController) {
-    const canvas = document.getElementById('cycle-hero-canvas');
     const referenceDiagram = document.getElementById('cycle-reference-diagram');
     const playPauseBtn = document.getElementById('cycle-play-pause-btn');
     const prevBtn = document.getElementById('cycle-prev-btn');
@@ -123,333 +78,81 @@ function initCycleHero(stageController) {
     const stageReadout = document.getElementById('cycle-stage-readout');
     const stateReadout = document.getElementById('cycle-state-readout');
     const tempReadout = document.getElementById('cycle-temp-readout');
-    if (!canvas && referenceDiagram) {
-        let activeIndex = stageController.getActiveIndex();
-        let playing = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!referenceDiagram) return;
 
-        function updateReadouts(index) {
-            activeIndex = (index + 6) % 6;
-            const active = stageController.getStageData(activeIndex);
-            stageReadout.textContent = active.name;
-            stateReadout.textContent = active.state;
-            tempReadout.textContent = active.temp;
-            referenceDiagram.dataset.stage = active.name.toLowerCase();
-        }
+    let activeIndex = stageController.getActiveIndex();
+    let playing = false;
 
-        function setStage(index) {
-            stageController.activate((index + 6) % 6);
-        }
-
-        playPauseBtn?.addEventListener('click', () => {
-            playing = !playing;
-            playPauseBtn.textContent = playing ? 'Pause Loop' : 'Resume Loop';
-        });
-        prevBtn?.addEventListener('click', () => setStage(activeIndex - 1));
-        nextBtn?.addEventListener('click', () => setStage(activeIndex + 1));
-        document.addEventListener('watercycle:stagechange', (event) => updateReadouts(event.detail.index));
-
-        updateReadouts(activeIndex);
-        if (!playing && playPauseBtn) playPauseBtn.textContent = 'Resume Loop';
-        window.setInterval(() => {
-            if (playing && !document.hidden) setStage(activeIndex + 1);
-        }, 3000);
-        return;
+    function syncPlayButton() {
+        if (!playPauseBtn) return;
+        playPauseBtn.textContent = playing ? 'Pause Tour' : 'Start Auto-Tour';
+        playPauseBtn.setAttribute('aria-pressed', String(playing));
     }
-    if (!canvas) return;
 
-    const stageNodes = [
-        { x: 130, y: 300, label: 'Evaporation', color: '#1e90ff' },
-        { x: 240, y: 100, label: 'Condensation', color: '#ffffff' },
-        { x: 410, y: 120, label: 'Precipitation', color: '#d8f1ff' },
-        { x: 555, y: 300, label: 'Collection', color: '#1e90ff' },
-        { x: 420, y: 335, label: 'Infiltration', color: '#5aa9e6' },
-        { x: 280, y: 260, label: 'Transpiration', color: '#ffffff' }
-    ];
+    function stopAutoTour() {
+        if (!playing) return;
+        playing = false;
+        syncPlayButton();
+    }
 
-    let activeIndex = 0;
-    let playing = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let loopId = null;
-    let particle = null;
-
-    function render() {
-        canvas.innerHTML = '';
-        canvas.appendChild(svg('rect', { x: 0, y: 0, width: 760, height: 420, fill: '#dff4ff' }));
-        canvas.appendChild(svg('rect', { x: 0, y: 320, width: 760, height: 100, fill: '#c5b28f', opacity: 0.8 }));
-        canvas.appendChild(svg('rect', { x: 0, y: 290, width: 215, height: 130, fill: '#1e90ff', opacity: 0.72 }));
-        canvas.appendChild(svg('circle', { cx: 650, cy: 75, r: 42, fill: '#ffd54f' }));
-        canvas.appendChild(svg('polygon', { points: '500,320 590,145 700,320', fill: '#9d846f' }));
-        canvas.appendChild(svg('path', { d: 'M 590 148 Q 515 220 430 310', stroke: '#2f9df4', 'stroke-width': 8, fill: 'none', opacity: 0.75 }));
-        append3DCloud(canvas, 280, 96, 0.92);
-        canvas.appendChild(svg('ellipse', { cx: 290, cy: 255, rx: 58, ry: 78, fill: '#4caf50', opacity: 0.85 }));
-        canvas.appendChild(svg('rect', { x: 283, y: 250, width: 14, height: 90, fill: '#6b4f2b' }));
-
-        stageNodes.forEach((node, index) => {
-            const group = svg('g');
-            const ring = svg('circle', {
-                cx: node.x, cy: node.y, r: index === activeIndex ? 30 : 24,
-                fill: node.color, stroke: index === activeIndex ? '#0c5a94' : '#7aa7c7', 'stroke-width': index === activeIndex ? 5 : 2
-            });
-            const label = svg('text', { x: node.x, y: node.y + 50, 'text-anchor': 'middle', 'font-size': 14, fill: '#184768', 'font-weight': 700 }, node.label);
-            group.append(ring, label);
-            canvas.appendChild(group);
-        });
-
-        for (let i = 0; i < stageNodes.length; i += 1) {
-            const current = stageNodes[i];
-            const next = stageNodes[(i + 1) % stageNodes.length];
-            canvas.appendChild(svg('path', {
-                d: `M ${current.x} ${current.y} Q ${(current.x + next.x) / 2} ${(current.y + next.y) / 2 - 55} ${next.x} ${next.y}`,
-                stroke: '#7dc9ff', 'stroke-width': 4, fill: 'none', 'stroke-dasharray': '10 8', opacity: 0.9
-            }));
-        }
-
+    function updateReadouts(index) {
+        activeIndex = (index + 6) % 6;
         const active = stageController.getStageData(activeIndex);
-        stageReadout.textContent = active.name;
-        stateReadout.textContent = active.state;
-        tempReadout.textContent = active.temp;
-        particle = svg('circle', { cx: stageNodes[activeIndex].x, cy: stageNodes[activeIndex].y, r: 10, fill: activeIndex === 2 ? '#bfe6ff' : activeIndex === 1 || activeIndex === 5 ? '#ffffff' : '#1e90ff', stroke: '#0a4a79', 'stroke-width': 2 });
-        canvas.appendChild(particle);
-    }
-
-    function animateBetweenStages(fromIndex, toIndex) {
-        render();
-        const start = stageNodes[fromIndex];
-        const end = stageNodes[toIndex];
-        if (!particle) return;
-        particle.animate([
-            { transform: `translate(${start.x - start.x}px, ${start.y - start.y}px)` },
-            { transform: `translate(${end.x - start.x}px, ${end.y - start.y}px)` }
-        ], { duration: 900, easing: 'ease-in-out' });
-    }
-
-    function setStage(index, animate = false) {
-        const previous = activeIndex;
-        activeIndex = (index + stageNodes.length) % stageNodes.length;
-        stageController.activate(activeIndex);
-        if (animate) animateBetweenStages(previous, activeIndex);
-    }
-
-    function startLoop() {
-        clearInterval(loopId);
-        loopId = setInterval(() => {
-            if (!playing) return;
-            setStage(activeIndex + 1, true);
-        }, 2600);
+        if (stageReadout) stageReadout.textContent = active.name;
+        if (stateReadout) stateReadout.textContent = active.state;
+        if (tempReadout) tempReadout.textContent = active.driver;
+        referenceDiagram.dataset.stage = active.name.toLowerCase();
     }
 
     playPauseBtn?.addEventListener('click', () => {
         playing = !playing;
-        playPauseBtn.textContent = playing ? 'Pause Loop' : 'Resume Loop';
+        syncPlayButton();
     });
-    prevBtn?.addEventListener('click', () => setStage(activeIndex - 1, true));
-    nextBtn?.addEventListener('click', () => setStage(activeIndex + 1, true));
+    prevBtn?.addEventListener('click', () => {
+        stopAutoTour();
+        stageController.activate(activeIndex - 1, true);
+    });
+    nextBtn?.addEventListener('click', () => {
+        stopAutoTour();
+        stageController.activate(activeIndex + 1, true);
+    });
 
     document.addEventListener('watercycle:stagechange', (event) => {
-        activeIndex = event.detail.index;
-        render();
+        if (event.detail.userTriggered) stopAutoTour();
+        updateReadouts(event.detail.index);
     });
 
-    render();
-    if (!playing && playPauseBtn) playPauseBtn.textContent = 'Resume Loop';
-    startLoop();
-}
+    updateReadouts(activeIndex);
+    syncPlayButton();
 
-function initPhaseExplorer() {
-    drawPhaseChangeDiagram();
-    animateMolecules();
-}
-
-function drawPhaseChangeDiagram() {
-    const canvas = document.getElementById('phase-change-canvas');
-    if (!canvas) return;
-    canvas.innerHTML = '';
-    canvas.appendChild(svg('rect', { x: 0, y: 0, width: 640, height: 280, fill: '#f7fcff' }));
-    const states = [
-        { x: 100, label: 'Solid', color: '#bfe6ff', sub: 'Below 0°C' },
-        { x: 320, label: 'Liquid', color: '#1e90ff', sub: '0°C to 100°C' },
-        { x: 540, label: 'Gas', color: '#ffffff', sub: 'Above 100°C' }
-    ];
-    states.forEach((state) => {
-        canvas.appendChild(svg('circle', { cx: state.x, cy: 95, r: 46, fill: state.color, stroke: '#0f6bb4', 'stroke-width': 3 }));
-        canvas.appendChild(svg('text', { x: state.x, y: 101, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: '#12456f' }, state.label));
-        canvas.appendChild(svg('text', { x: state.x, y: 155, 'text-anchor': 'middle', 'font-size': 13, fill: '#4d6a82' }, state.sub));
-    });
-    const arrows = [
-        [145, 95, 275, 95, 'Melting'],
-        [365, 95, 495, 95, 'Evaporation'],
-        [495, 128, 365, 128, 'Condensation'],
-        [275, 128, 145, 128, 'Freezing']
-    ];
-    arrows.forEach(([x1, y1, x2, y2, label]) => {
-        canvas.appendChild(svg('line', { x1, y1, x2, y2, stroke: '#63b3ed', 'stroke-width': 6, 'marker-end': 'url(#phaseArrow)' }));
-        canvas.appendChild(svg('text', { x: (x1 + x2) / 2, y: y1 - 12, 'text-anchor': 'middle', 'font-size': 12, fill: '#0f6bb4', 'font-weight': 700 }, label));
-    });
-    const defs = svg('defs');
-    const marker = svg('marker', { id: 'phaseArrow', markerWidth: 10, markerHeight: 10, refX: 9, refY: 3, orient: 'auto' });
-    marker.appendChild(svg('polygon', { points: '0 0, 10 3, 0 6', fill: '#63b3ed' }));
-    defs.appendChild(marker);
-    canvas.appendChild(defs);
-
-    canvas.appendChild(svg('rect', { x: 575, y: 20, width: 22, height: 220, rx: 10, fill: '#e8f4fb', stroke: '#89b7d6' }));
-    canvas.appendChild(svg('rect', { x: 578, y: 75, width: 16, height: 140, rx: 8, fill: '#ff7b54', opacity: 0.85 }));
-    canvas.appendChild(svg('text', { x: 605, y: 35, 'font-size': 12, fill: '#1c496d' }, 'Thermometer'));
-    ['-10°C', '0°C', '50°C', '100°C'].forEach((label, index) => {
-        canvas.appendChild(svg('text', { x: 605, y: 225 - index * 48, 'font-size': 11, fill: '#577089' }, label));
-    });
-}
-
-function animateMolecules() {
-    const canvas = document.getElementById('molecule-canvas');
-    if (!canvas) return;
-    canvas.innerHTML = '';
-    canvas.appendChild(svg('rect', { x: 0, y: 0, width: 360, height: 180, fill: '#ffffff' }));
-    ['Solid', 'Liquid', 'Gas'].forEach((label, column) => {
-        canvas.appendChild(svg('text', { x: 60 + column * 120, y: 20, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: '#1d4f77' }, label));
-    });
-
-    const particles = [];
-    const zones = [
-        { x: 20, y: 30, w: 80, h: 120, jitter: 2 },
-        { x: 140, y: 30, w: 80, h: 120, jitter: 8 },
-        { x: 260, y: 30, w: 80, h: 120, jitter: 18 }
-    ];
-    zones.forEach((zone, zoneIndex) => {
-        for (let i = 0; i < 7; i += 1) {
-            const circle = svg('circle', {
-                cx: zone.x + 18 + (i % 3) * 20,
-                cy: zone.y + 18 + Math.floor(i / 3) * 24,
-                r: 7,
-                fill: zoneIndex === 0 ? '#bfe6ff' : zoneIndex === 1 ? '#1e90ff' : '#ffffff',
-                stroke: '#0f6bb4',
-                'stroke-width': 2
-            });
-            canvas.appendChild(circle);
-            particles.push({ node: circle, baseX: Number(circle.getAttribute('cx')), baseY: Number(circle.getAttribute('cy')), zone });
+    window.setInterval(() => {
+        if (playing && !document.hidden) {
+            stageController.activate(activeIndex + 1, false);
         }
-    });
-
-    function tick() {
-        particles.forEach((particle) => {
-            const offsetX = (Math.random() - 0.5) * particle.zone.jitter;
-            const offsetY = (Math.random() - 0.5) * particle.zone.jitter;
-            particle.node.setAttribute('cx', `${particle.baseX + offsetX}`);
-            particle.node.setAttribute('cy', `${particle.baseY + offsetY}`);
-        });
-        SimKit.frame(particles[0] && particles[0].node.ownerSVGElement, tick);
-    }
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) tick();
+    }, 5000);
 }
 
-function initDistributionChart() {
-    const canvas = document.getElementById('distribution-chart');
-    const tooltip = document.getElementById('distribution-tooltip');
-    if (!canvas) return;
-    let zoomFreshwater = false;
-    // Figures per NOAA Education, "The water cycle": saltwater 97.5%, freshwater 2.5%;
-    // within freshwater, glaciers/ice/snow ~68%, groundwater ~30%, surface water well under 1%.
-    const earthWater = [
-        { label: 'Saltwater', value: 97.5, color: '#1e90ff', target: '#simulation' },
-        { label: 'Freshwater', value: 2.5, color: '#74c0fc', target: '#states' }
-    ];
-    const freshwater = [
-        { label: 'Glaciers & Ice', value: 68, color: '#cdefff', target: '#states' },
-        { label: 'Groundwater', value: 30, color: '#3d8bd9', target: '#scavenger' },
-        { label: 'Lakes, Rivers & Other', value: 2, color: '#8dd3ff', target: '#where' }
-    ];
-    const SMALL_SLICE_THRESHOLD = 8;
+/* ============================================================================
+   WATER-CYCLE WEATHER LAB (Canvas 2D + LiquidEngine + CloudEngine)
+   ============================================================================ */
 
-    function render() {
-        const data = zoomFreshwater ? freshwater : earthWater;
-        canvas.innerHTML = '';
-        const cx = 190;
-        const cy = 160;
-        const radius = 110;
-        let startAngle = -Math.PI / 2;
-        data.forEach((slice) => {
-            const sweep = (slice.value / 100) * Math.PI * 2;
-            const endAngle = startAngle + sweep;
-            const path = describeArcSlice(cx, cy, radius, startAngle, endAngle);
-            const node = svg('path', {
-                d: path,
-                fill: slice.color,
-                class: 'distribution-chart-slice',
-                tabindex: 0,
-                role: 'button',
-                'aria-label': `${slice.label}: ${slice.value}${zoomFreshwater ? '% of freshwater' : "% of Earth's water"}`
-            });
-            const showSliceDetails = () => {
-                tooltip.textContent = `${slice.label}: ${slice.value}${zoomFreshwater ? '% of freshwater' : "% of Earth's water"}`;
-            };
-            const openSliceSection = () => {
-                document.querySelector(slice.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            };
-            node.addEventListener('mouseenter', showSliceDetails);
-            node.addEventListener('focus', showSliceDetails);
-            node.addEventListener('click', openSliceSection);
-            node.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    openSliceSection();
-                }
-            });
-            canvas.appendChild(node);
-
-            // Small slices get their label pushed outside the pie with a leader line so
-            // adjacent thin wedges (e.g. a 2% sliver) don't collide or become illegible.
-            const labelAngle = startAngle + sweep / 2;
-            const isSmall = slice.value < SMALL_SLICE_THRESHOLD;
-            const labelRadius = isSmall ? radius + 34 : radius - 2;
-            const labelX = cx + Math.cos(labelAngle) * labelRadius;
-            const labelY = cy + Math.sin(labelAngle) * labelRadius;
-            const anchor = !isSmall ? 'middle' : Math.cos(labelAngle) < -0.15 ? 'end' : Math.cos(labelAngle) > 0.15 ? 'start' : 'middle';
-
-            if (isSmall) {
-                canvas.appendChild(svg('line', {
-                    x1: cx + Math.cos(labelAngle) * radius,
-                    y1: cy + Math.sin(labelAngle) * radius,
-                    x2: labelX,
-                    y2: labelY,
-                    stroke: '#7a93a8',
-                    'stroke-width': 1
-                }));
-            }
-
-            canvas.appendChild(svg('text', { x: labelX, y: labelY, 'text-anchor': anchor, 'font-size': 12, fill: '#12456f', 'font-weight': 700 }, slice.label));
-            canvas.appendChild(svg('text', { x: labelX, y: labelY + 14, 'text-anchor': anchor, 'font-size': 11, fill: '#517089' }, `${slice.value}%`));
-
-            startAngle = endAngle;
-        });
-        canvas.appendChild(svg('circle', { cx, cy, r: 52, fill: '#ffffff' }));
-        canvas.appendChild(svg('text', { x: cx, y: cy - 6, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: '#144f7d' }, zoomFreshwater ? 'Freshwater' : 'Earth Water'));
-        canvas.appendChild(svg('text', { x: cx, y: cy + 18, 'text-anchor': 'middle', 'font-size': 12, fill: '#517089' }, zoomFreshwater ? 'Zoomed View' : 'Global View'));
-    }
-
-    document.getElementById('freshwater-zoom-btn')?.addEventListener('click', () => {
-        zoomFreshwater = true;
-        render();
-    });
-    document.getElementById('distribution-reset-btn')?.addEventListener('click', () => {
-        zoomFreshwater = false;
-        render();
-    });
-    document.querySelectorAll('.distribution-jump').forEach((button) => {
-        button.addEventListener('click', () => {
-            document.querySelector(button.dataset.jumpTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-    });
-    render();
-}
-
-function initSimulation(stageController) {
+function initSimulation() {
     const canvas = document.getElementById('simulation-canvas');
-    if (!canvas) return;
+    const diagramStage = document.getElementById('wc-diagram-stage');
+    const particleStage = document.getElementById('wc-particle-stage');
+    if (!canvas || !diagramStage) return;
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const state = {
         sun: 65,
         temperature: 24,
         humidity: 55,
         season: 'Summer',
-        playing: !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        playing: !prefersReduced,
+        trackDrop: true,
+        mode: 'diagram'
     };
+
     const el = {
         sun: document.getElementById('sun-strength-slider'),
         temp: document.getElementById('temperature-slider'),
@@ -459,183 +162,841 @@ function initSimulation(stageController) {
         tempValue: document.getElementById('temperature-value'),
         humidityValue: document.getElementById('humidity-value'),
         toggle: document.getElementById('animate-btn'),
+        trackBtn: document.getElementById('wc-track-drop'),
         reset: document.getElementById('reset-btn'),
         atmosphere: document.getElementById('metric-atmosphere'),
+        dewpoint: document.getElementById('metric-dewpoint'),
         oceans: document.getElementById('metric-oceans'),
-        underground: document.getElementById('metric-underground')
+        underground: document.getElementById('metric-underground'),
+        explanation: document.getElementById('weather-explanation'),
+        comparison: document.getElementById('weather-comparison'),
+        btnDiagram: document.getElementById('wc-mode-diagram'),
+        btnParticle: document.getElementById('wc-mode-particle')
     };
 
-    const particles = Array.from({ length: 18 }, (_, index) => ({ offset: index / 18, stage: index % 6 }));
-    const liquidLake = window.LiquidEngine?.createSurface({ material: 'water', width: 220, restY: 0, columns: 48, maxColumns: 64 });
-    const rainField = window.LiquidEngine?.createParticles({
-        material: 'water',
-        max: 42,
-        gravity: 1,
-        bounds: { left: 338, right: 575, top: 150, bottom: 302 }
-    });
-    let frame = 0;
+    const PRESETS = {
+        dry: { sun: 80, temperature: 30, humidity: 25, season: 'Summer' },
+        humid: { sun: 80, temperature: 30, humidity: 90, season: 'Summer' },
+        storm: { sun: 35, temperature: 14, humidity: 92, season: 'Fall' },
+        cold: { sun: 25, temperature: -5, humidity: 70, season: 'Winter' }
+    };
+    const presetButtons = Array.from(document.querySelectorAll('.wc-scenarios [data-weather]'));
 
+    let simW = 760;
+    let simH = 420;
+    let simTime = 0;
     let saved = null;
-    function tendency() {
-        return Math.round((0.25 + state.sun / 133) * (state.temperature + 15) / 55 * (1 - state.humidity / 100) * 100);
-    }
-    function updateReadouts() {
-        el.sunValue.textContent = state.sun;
-        el.tempValue.textContent = state.temperature;
-        el.humidityValue.textContent = state.humidity;
-        const index = tendency();
-        el.atmosphere.textContent = `${index < 20 ? 'Low' : index < 50 ? 'Moderate' : 'High'} · ${index}/100`;
-        el.oceans.textContent = state.humidity >= 90 ? 'Nearly saturated' : state.humidity >= 60 ? 'Humid air' : 'Drier air';
-        el.underground.textContent = state.humidity >= 90 ? 'Near saturation' : 'Cooling still needed';
-        document.getElementById('weather-explanation').textContent = 'Drier air allows more net evaporation under otherwise equal conditions. Clouds form when air reaches saturation, often by cooling. Humidity alone does not determine rainfall.';
-        if (saved) {
-            const change = index - saved.index;
-            document.getElementById('weather-comparison').textContent = `Saved: ${saved.sun}% sun, ${saved.temperature}°C, ${saved.humidity}% humidity → ${saved.index}/100. Current tendency is ${change === 0 ? 'unchanged' : `${Math.abs(change)} points ${change > 0 ? 'higher' : 'lower'}`}.`;
-        }
-    }
-    document.getElementById('weather-save').addEventListener('click', () => { saved = { ...state, index: tendency() }; updateReadouts(); });
-    document.querySelectorAll('[data-weather]').forEach(button => button.addEventListener('click', () => {
-        const presets = { dry: [80, 30, 25, 'Summer'], humid: [80, 30, 90, 'Summer'], cold: [25, -5, 70, 'Winter'] };
-        [state.sun, state.temperature, state.humidity, state.season] = presets[button.dataset.weather];
-        el.sun.value = state.sun; el.temp.value = state.temperature; el.humidity.value = state.humidity; el.season.value = state.season;
-        render();
+    let wcCloudSim = null;
+    let particleStageVisible = false;
+
+    const liquidLake = window.LiquidEngine?.createSurface({
+        material: 'water',
+        width: 260,
+        restY: 0,
+        columns: 44,
+        maxColumns: 64
+    });
+
+    const precipDrops = Array.from({ length: 75 }, () => ({
+        active: false,
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        size: 1,
+        snow: false,
+        phase: Math.random() * Math.PI * 2
     }));
 
-    function render() {
-        canvas.innerHTML = '';
-        const defs = svg('defs');
-        defs.innerHTML = '<linearGradient id="wc-lake" x2="0" y2="1"><stop stop-color="#58c7da"/><stop offset="1" stop-color="#165674"/></linearGradient><pattern id="wc-soil" width="38" height="24" patternUnits="userSpaceOnUse"><rect width="38" height="24" fill="#c4b08b"/><path d="M0 8Q10 5 20 8T38 8M7 18h5M29 20h3" fill="none" stroke="#967d57" stroke-width="1" opacity=".5"/></pattern>';
-        canvas.appendChild(defs);
-        canvas.appendChild(svg('rect', { x: 0, y: 0, width: 720, height: 420, fill: state.temperature > 28 ? '#ffe8c2' : '#dff4ff' }));
-        canvas.appendChild(svg('rect', { x: 0, y: 305, width: 720, height: 115, fill: 'url(#wc-soil)' }));
-        canvas.appendChild(svg('rect', { x: 0, y: 278, width: 220, height: 142, fill: 'url(#wc-lake)', opacity: 0.78 }));
-        if (liquidLake) {
-            const points = liquidLake.columns.map((column, index) => {
-                const x = (index / (liquidLake.columns.length - 1)) * 220;
-                return `${x.toFixed(1)},${(278 + column.y).toFixed(1)}`;
-            }).join(' ');
-            canvas.appendChild(svg('path', {
-                d: `M 0 420 L 0 278 L ${points} L 220 420 Z`,
-                fill: 'rgba(24,120,201,.28)',
-                stroke: 'rgba(210,245,255,.7)',
-                'stroke-width': 2
-            }));
-        }
-        canvas.appendChild(svg('circle', { cx: 610, cy: 70, r: 40, fill: seasonSunColor(state.season) }));
-        append3DCloud(canvas, 290, 100, 1.0, state.humidity / 5);
-        canvas.appendChild(svg('polygon', { points: '460,305 540,135 665,305', fill: '#9d846f' }));
-        canvas.appendChild(svg('path', { d: 'M 540 142 Q 455 220 355 292', stroke: '#2f9df4', 'stroke-width': 8, fill: 'none' }));
-        canvas.appendChild(svg('ellipse', { cx: 280, cy: 240, rx: 60, ry: 80, fill: '#4caf50', opacity: 0.85 }));
-        canvas.appendChild(svg('rect', { x: 273, y: 238, width: 14, height: 82, fill: '#6b4f2b' }));
-        canvas.appendChild(svg('rect', { x: 380, y: 336, width: 200, height: 32, fill: '#6aaee6', opacity: 0.65 }));
-
-        const stageIndex = stageController.getActiveIndex();
-        canvas.appendChild(svg('path', { d: 'M512 195L540 135L584 196L555 183L540 164L526 187Z', fill: '#f3f8f8' }));
-        for (let y = 290; y < 410; y += 25) canvas.appendChild(svg('path', { d: `M12 ${y}q22 -5 44 0t44 0t44 0t44 0`, fill: 'none', stroke: '#b8e7ec', opacity: .4 }));
-        [['Ocean / lake', 25, 395], ['Groundwater storage', 388, 390], ['Runoff ↓', 440, 260], ['Atmosphere', 215, 45]].forEach(([text, x, y]) => canvas.appendChild(svg('text', { x, y, fill: '#173d50', 'font-size': 15, 'font-weight': 600, 'paint-order': 'stroke', stroke: '#f5faf8', 'stroke-width': 3 }, text)));
-
-        particles.forEach((particle, index) => {
-            const position = cycleSimulationPoint((frame / 180 + particle.offset) % 1);
-            canvas.appendChild(svg('circle', {
-                cx: position.x,
-                cy: position.y,
-                r: 5,
-                fill: position.state === 'gas' ? '#ffffff' : position.state === 'ice' ? '#bfe6ff' : '#1e90ff',
-                stroke: '#0a4a79',
-                'stroke-width': 1.5
-            }));
-            if (index === 0 && stageIndex !== undefined) {
-                canvas.appendChild(svg('text', { x: position.x + 10, y: position.y - 8, 'font-size': 12, fill: '#12456f', 'font-weight': 700 }, 'Example water route'));
-            }
-        });
-
-        rainField?.particles.forEach((particle) => {
-            canvas.appendChild(svg('path', {
-                d: `M ${particle.x.toFixed(1)} ${(particle.y - 7).toFixed(1)} L ${(particle.x + particle.vx * .01).toFixed(1)} ${(particle.y + 7).toFixed(1)}`,
-                stroke: 'rgba(255,255,255,.78)',
-                'stroke-width': 2,
-                'stroke-linecap': 'round'
-            }));
-        });
-
-        updateReadouts();
-        if (typeof syncCloudSim === 'function') syncCloudSim();
+    function makeMolecule(index) {
+        const phases = ['evaporate', 'cloud', 'precipitate', 'runoff', 'infiltrate', 'transpire'];
+        const startPhase = index === 0 ? 'evaporate' : phases[index % phases.length];
+        return {
+            index,
+            phase: startPhase,
+            t: (index * 0.13) % 1,
+            lane: 0.18 + ((index * 0.37) % 0.72),
+            x: 100,
+            y: 250,
+            tag: 'Evaporating'
+        };
     }
 
-    SimKit.loop((dt) => {
-        if (!state.playing) return;
-        const safeDt = Math.min(dt, 0.05);
-        frame += Math.min(safeDt * 60, 3) * (0.5 + tendency() / 65);
-        liquidLake?.update(safeDt);
-        if (liquidLake && frame % 180 < 3) liquidLake.impulse(100, -12, 28);
-        if (rainField) {
-            if (state.humidity >= 70 && Math.random() < safeDt * (state.humidity / 18)) {
-                rainField.emitRain({ x: 360, x2: 555, y: 180, vy: 95, life: 1.2, radius: 1.1 });
-            }
-            rainField.update(safeDt);
+    const molecules = Array.from({ length: 24 }, (_, idx) => makeMolecule(idx));
+
+    function computeAtmosphere() {
+        const T = state.temperature;
+        const RH = Math.max(1, state.humidity);
+        const a = 17.625;
+        const b = 243.04;
+        const gamma = Math.log(RH / 100) + (a * T) / (b + T);
+        const dewC = state.humidity <= 0 ? -40 : Math.round(((b * gamma) / (a - gamma)) * 10) / 10;
+        const spreadC = Math.max(0, T - dewC);
+        const lclMeters = Math.max(120, Math.round(125 * spreadC));
+        const tendency = Math.round((0.25 + state.sun / 133) * (T + 15) / 55 * (1 - state.humidity / 100) * 100);
+        const precipRate = state.humidity < 65 ? 0 : (state.humidity - 65) / 35;
+        const precipKind = state.humidity < 65 ? 'none' : T <= 0 ? 'snow' : T <= 2 ? 'sleet' : 'rain';
+        return { T, RH, dewC, spreadC, lclMeters, tendency, precipRate, precipKind };
+    }
+
+    function syncPresetHighlight() {
+        presetButtons.forEach((btn) => {
+            const p = PRESETS[btn.dataset.weather];
+            const match = p &&
+                p.sun === state.sun &&
+                p.temperature === state.temperature &&
+                p.humidity === state.humidity &&
+                p.season === state.season;
+            btn.classList.toggle('is-active', Boolean(match));
+            btn.setAttribute('aria-pressed', String(Boolean(match)));
+        });
+    }
+
+    function buildExplanation(atmo) {
+        if (atmo.T <= 0 && atmo.precipRate > 0) {
+            return 'Below 0°C, moisture condensing in cold clouds falls as snow instead of rain, and the lake surface freezes. Low temperatures keep evaporation very slow.';
         }
-        render();
-    }, { el: SimKit.stage(canvas) });
+        if (atmo.T <= 0) {
+            return 'Freezing air holds very little water vapor and caps evaporation near the frozen lake surface. With strong sun and dry air, ice can still lose a trickle of vapor by sublimation.';
+        }
+        if (state.humidity >= 85) {
+            return `At ${state.humidity}% relative humidity, the air is nearly saturated and the dew point (${atmo.dewC}°C) sits close to air temperature — forming low clouds around ${atmo.lclMeters.toLocaleString()} m while slowing net evaporation.`;
+        }
+        if (state.humidity <= 35 && state.sun >= 60) {
+            return `Warm, dry air (${state.humidity}% humidity) and strong sunlight (${state.sun}%) create a steep moisture gradient, driving rapid evaporation and transpiration while keeping cloud bases high (~${atmo.lclMeters.toLocaleString()} m).`;
+        }
+        if (state.sun <= 25) {
+            return `Weak solar energy (${state.sun}%) slows heating at the ocean and leaves, reducing evaporation even when air is fairly dry. Clouds form near ${atmo.lclMeters.toLocaleString()} m if air rises and cools.`;
+        }
+        return `Under moderate conditions, solar heating lifts vapor from the ocean and forest until rising air cools to ${atmo.dewC}°C (cloud base ~${atmo.lclMeters.toLocaleString()} m). Keep sun and temperature fixed and change humidity alone to compare.`;
+    }
+
+    function updateReadouts() {
+        const atmo = computeAtmosphere();
+        if (el.sunValue) el.sunValue.textContent = state.sun;
+        if (el.tempValue) el.tempValue.textContent = state.temperature;
+        if (el.humidityValue) el.humidityValue.textContent = state.humidity;
+
+        if (el.atmosphere) {
+            el.atmosphere.textContent = `${atmo.tendency < 20 ? 'Low' : atmo.tendency < 50 ? 'Moderate' : 'High'} · ${atmo.tendency}/100`;
+        }
+        if (el.dewpoint) {
+            el.dewpoint.textContent = `Dew ${atmo.dewC}°C · Base ~${atmo.lclMeters.toLocaleString()} m`;
+        }
+        if (el.oceans) {
+            el.oceans.textContent = state.humidity >= 90 ? 'Nearly saturated' : state.humidity >= 60 ? 'Humid air' : 'Drier air';
+        }
+        if (el.underground) {
+            if (atmo.precipKind === 'snow') el.underground.textContent = 'Snowfall (frozen)';
+            else if (atmo.precipKind === 'sleet') el.underground.textContent = 'Wintry mix / sleet';
+            else if (atmo.precipRate > 0.55) el.underground.textContent = 'Heavy rain showers';
+            else if (atmo.precipRate > 0) el.underground.textContent = 'Light rain showers';
+            else if (atmo.T <= 0) el.underground.textContent = 'Freezing · light ice';
+            else if (state.humidity >= 48) el.underground.textContent = 'Fair-weather cumulus';
+            else el.underground.textContent = 'Mostly clear sky';
+        }
+        if (el.explanation) {
+            el.explanation.textContent = buildExplanation(atmo);
+        }
+        if (saved && el.comparison) {
+            const change = atmo.tendency - saved.index;
+            el.comparison.textContent = `Saved: ${saved.sun}% sun, ${saved.temperature}°C, ${saved.humidity}% humidity → ${saved.index}/100. Current tendency is ${change === 0 ? 'unchanged' : `${Math.abs(change)} points ${change > 0 ? 'higher' : 'lower'}`}.`;
+        }
+        syncPresetHighlight();
+    }
+
+    function syncCloudSim() {
+        if (!wcCloudSim) return;
+        const atmo = computeAtmosphere();
+        const tempF = Math.round(state.temperature * 1.8 + 32);
+        const dewF = Math.round(atmo.dewC * 1.8 + 32);
+        wcCloudSim.setThermodynamics({ tempF, dewPointF: dewF });
+        wcCloudSim.setTurbulence(0.35 + (state.sun / 100) * 0.95);
+    }
+
+    const canvasHelper = window.SimKit?.canvas2d(canvas, {
+        box: diagramStage,
+        onResize: (_, w, h) => {
+            simW = w;
+            simH = h;
+            liquidLake?.configure(w * 0.34, 0, 44);
+        }
+    });
+    const ctx = canvasHelper?.ctx || canvas.getContext('2d');
+
+    function terrainY(x, w, h) {
+        const u = x / w;
+        if (u <= 0.32) return 0.70 * h;
+        if (u <= 0.62) {
+            const k = (u - 0.32) / 0.30;
+            return (0.69 - Math.sin(k * Math.PI) * 0.03) * h;
+        }
+        if (u <= 0.80) {
+            const k = (u - 0.62) / 0.18;
+            return (0.68 - Math.pow(k, 1.2) * 0.37) * h;
+        }
+        const k = (u - 0.80) / 0.20;
+        return (0.31 + k * 0.26) * h;
+    }
+
+    function riverPoint(t, w, h) {
+        const x = (0.78 - t * 0.46) * w;
+        const baseY = terrainY(x, w, h);
+        return { x, y: baseY + Math.sin(t * Math.PI * 2) * 3 };
+    }
+
+    function stepParticles(dt, atmo) {
+        const w = simW;
+        const h = simH;
+        const waterY = 0.70 * h;
+        const lclNorm = Math.min(1, Math.max(0, (atmo.lclMeters - 120) / 2600));
+        const lclY = (0.42 - lclNorm * 0.23) * h;
+
+        const spawnProb = atmo.precipRate > 0 ? dt * (10 + atmo.precipRate * 38) : 0;
+        for (let i = 0; i < precipDrops.length; i++) {
+            const d = precipDrops[i];
+            if (!d.active && Math.random() < spawnProb) {
+                d.active = true;
+                d.snow = atmo.precipKind === 'snow' || (atmo.precipKind === 'sleet' && i % 2 === 0);
+                d.x = (0.37 + Math.random() * 0.42) * w;
+                d.y = lclY + 14 + Math.random() * 10;
+                d.vx = d.snow ? (Math.random() - 0.5) * 18 : -16;
+                d.vy = d.snow ? 44 + Math.random() * 28 : 220 + Math.random() * 90;
+                d.size = d.snow ? 2.4 + Math.random() * 2 : 1.4;
+                break;
+            }
+        }
+
+        for (let i = 0; i < precipDrops.length; i++) {
+            const d = precipDrops[i];
+            if (!d.active) continue;
+            d.x += (d.vx + (d.snow ? Math.sin(simTime * 2.5 + d.phase) * 18 : 0)) * dt;
+            d.y += d.vy * dt;
+            const ground = Math.min(waterY, terrainY(d.x, w, h));
+            if (d.y >= ground) {
+                d.active = false;
+            }
+        }
+
+        const speedScale = 0.12 + (atmo.tendency / 100) * 0.22 + atmo.precipRate * 0.14;
+        for (let i = 0; i < molecules.length; i++) {
+            const m = molecules[i];
+            const rate = m.phase === 'groundwater' ? speedScale * 0.48 : m.phase === 'precipitate' ? speedScale * 1.45 : speedScale;
+            m.t += dt * rate;
+            if (m.t >= 1) {
+                m.t = 0;
+                if (m.phase === 'evaporate' || m.phase === 'transpire') {
+                    m.phase = 'cloud';
+                    m.tag = 'Condensing';
+                } else if (m.phase === 'cloud') {
+                    if (state.humidity >= 50) {
+                        m.phase = 'precipitate';
+                        m.tag = atmo.T <= 0 ? 'Snowing' : 'Raining';
+                    } else {
+                        m.phase = m.index % 3 === 0 ? 'transpire' : 'evaporate';
+                        m.tag = m.phase === 'transpire' ? 'Transpiring' : 'Evaporating';
+                    }
+                } else if (m.phase === 'precipitate') {
+                    const roll = (m.index * 0.31 + simTime * 0.17) % 1;
+                    if (roll < 0.48) {
+                        m.phase = 'runoff';
+                        m.tag = 'Runoff';
+                    } else if (roll < 0.82) {
+                        m.phase = 'infiltrate';
+                        m.tag = 'Infiltrating';
+                    } else {
+                        m.phase = 'transpire';
+                        m.tag = 'Transpiring';
+                    }
+                } else if (m.phase === 'runoff') {
+                    m.phase = 'evaporate';
+                    m.tag = atmo.T <= 0 ? 'Sublimating' : 'Evaporating';
+                } else if (m.phase === 'infiltrate') {
+                    m.phase = 'groundwater';
+                    m.tag = 'Groundwater';
+                } else if (m.phase === 'groundwater') {
+                    m.phase = 'evaporate';
+                    m.tag = atmo.T <= 0 ? 'Sublimating' : 'Evaporating';
+                }
+            }
+
+            if (m.phase === 'evaporate') {
+                const startX = (0.06 + m.lane * 0.22) * w;
+                const endX = (0.37 + m.lane * 0.16) * w;
+                m.x = startX + (endX - startX) * m.t + Math.sin(m.t * Math.PI * 3 + m.index) * 8;
+                m.y = waterY - (waterY - lclY) * m.t;
+                m.tag = atmo.T <= 0 ? 'Sublimating' : 'Evaporating';
+            } else if (m.phase === 'transpire') {
+                const treeX = (0.41 + m.lane * 0.12) * w;
+                const startY = 0.56 * h;
+                m.x = treeX + Math.sin(m.t * Math.PI * 2 + m.index) * 10;
+                m.y = startY - (startY - lclY) * m.t;
+                m.tag = 'Transpiring';
+            } else if (m.phase === 'cloud') {
+                m.x = (0.37 + m.t * 0.38) * w;
+                m.y = lclY - 10 + Math.sin(m.t * Math.PI * 2 + m.index) * 8;
+                m.tag = 'Condensing';
+            } else if (m.phase === 'precipitate') {
+                const dropX = (0.44 + m.lane * 0.34) * w;
+                const landY = terrainY(dropX, w, h);
+                m.x = dropX - m.t * 14 + (atmo.T <= 0 ? Math.sin(m.t * 10 + m.index) * 8 : 0);
+                m.y = (lclY + 10) + (landY - lclY - 10) * m.t;
+                m.tag = atmo.T <= 0 ? 'Snowing' : 'Raining';
+            } else if (m.phase === 'runoff') {
+                const pt = riverPoint(m.t, w, h);
+                m.x = pt.x;
+                m.y = pt.y;
+                m.tag = 'Runoff';
+            } else if (m.phase === 'infiltrate') {
+                const infX = (0.45 + m.lane * 0.25) * w;
+                const topY = terrainY(infX, w, h) + 4;
+                const botY = 0.87 * h;
+                m.x = infX;
+                m.y = topY + (botY - topY) * m.t;
+                m.tag = 'Infiltrating';
+            } else if (m.phase === 'groundwater') {
+                const startX = (0.50 + m.lane * 0.22) * w;
+                const endX = 0.31 * w;
+                m.x = startX + (endX - startX) * m.t;
+                m.y = (0.86 + Math.sin(m.t * Math.PI) * 0.02) * h;
+                m.tag = 'Groundwater';
+            }
+        }
+    }
+
+    function drawTree(x, groundY, scale, season, temp) {
+        const trunkH = 26 * scale;
+        ctx.fillStyle = '#5c4028';
+        ctx.fillRect(x - 3 * scale, groundY - trunkH, 6 * scale, trunkH);
+
+        if (season === 'Winter') {
+            ctx.strokeStyle = '#5c4028';
+            ctx.lineWidth = 2.2 * scale;
+            ctx.beginPath();
+            ctx.moveTo(x, groundY - trunkH * 0.7);
+            ctx.lineTo(x - 14 * scale, groundY - trunkH * 1.25);
+            ctx.moveTo(x, groundY - trunkH * 0.75);
+            ctx.lineTo(x + 13 * scale, groundY - trunkH * 1.2);
+            ctx.moveTo(x, groundY - trunkH);
+            ctx.lineTo(x - 3 * scale, groundY - trunkH * 1.45);
+            ctx.stroke();
+            if (temp <= 2) {
+                ctx.fillStyle = 'rgba(241, 245, 249, 0.9)';
+                ctx.beginPath();
+                ctx.ellipse(x - 10 * scale, groundY - trunkH * 1.22, 6 * scale, 2.5 * scale, -0.3, 0, Math.PI * 2);
+                ctx.ellipse(x + 9 * scale, groundY - trunkH * 1.18, 6 * scale, 2.5 * scale, 0.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            return;
+        }
+
+        const palettes = {
+            Spring: ['#4eb56b', '#6ad084'],
+            Summer: ['#247a45', '#34995a'],
+            Fall: ['#c96420', '#e59a24']
+        };
+        const [darkCol, lightCol] = palettes[season] || palettes.Summer;
+        ctx.fillStyle = darkCol;
+        ctx.beginPath();
+        ctx.ellipse(x, groundY - trunkH - 16 * scale, 20 * scale, 24 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = lightCol;
+        ctx.beginPath();
+        ctx.ellipse(x - 5 * scale, groundY - trunkH - 22 * scale, 13 * scale, 16 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (season === 'Spring') {
+            ctx.fillStyle = '#fde2e4';
+            [[-8, -18], [7, -26], [-2, -32], [9, -12]].forEach(([dx, dy]) => {
+                ctx.beginPath();
+                ctx.arc(x + dx * scale, groundY - trunkH + dy * scale, 2.2 * scale, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+    }
+
+    function drawCloudBank(w, h, lclY, atmo) {
+        if (state.humidity < 15) return;
+        const cloudDensity = Math.min(1, (state.humidity - 15) / 85);
+        const cx = 0.56 * w;
+        const spread = (0.14 + cloudDensity * 0.15) * w;
+        const puffScale = 0.72 + cloudDensity * 0.52;
+        const darkTone = Math.round(228 - atmo.precipRate * 95);
+        const midTone = Math.round(245 - atmo.precipRate * 65);
+        const topTone = Math.round(255 - atmo.precipRate * 32);
+
+        ctx.save();
+        ctx.globalAlpha = 0.35 + cloudDensity * 0.62;
+
+        // Flat condensation base (LCL)
+        ctx.fillStyle = `rgb(${darkTone - 20}, ${darkTone - 12}, ${darkTone + 4})`;
+        ctx.beginPath();
+        ctx.ellipse(cx, lclY + 4, spread, 15 * puffScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Mid cumulus lobes
+        ctx.fillStyle = `rgb(${midTone - 8}, ${midTone}, ${midTone + 8})`;
+        const lobes = [
+            [-0.58, -6, 0.42, 24],
+            [-0.22, -16, 0.46, 32],
+            [0.20, -14, 0.48, 30],
+            [0.58, -5, 0.38, 22]
+        ];
+        lobes.forEach(([ox, oy, rxFrac, ry]) => {
+            ctx.beginPath();
+            ctx.ellipse(cx + ox * spread, lclY + oy * puffScale, spread * rxFrac, ry * puffScale, 0, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Sunlit top crowns
+        ctx.fillStyle = `rgb(${topTone}, ${topTone}, 255)`;
+        ctx.beginPath();
+        ctx.ellipse(cx - 0.15 * spread, lclY - 28 * puffScale, spread * 0.34, 24 * puffScale, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx + 0.18 * spread, lclY - 24 * puffScale, spread * 0.30, 21 * puffScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // LCL dashed guide line
+        ctx.strokeStyle = 'rgba(14, 74, 110, 0.42)';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(0.35 * w, lclY + 12);
+        ctx.lineTo(0.80 * w, lclY + 12);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+        drawLabel(`Cloud base (LCL) ~${atmo.lclMeters.toLocaleString()} m`, 14, Math.max(20, lclY + 14));
+    }
+
+    function drawLabel(text, x, y, align = 'left') {
+        ctx.save();
+        ctx.font = '700 12px system-ui, sans-serif';
+        ctx.textAlign = align;
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = 'rgba(248, 252, 255, 0.9)';
+        ctx.strokeText(text, x, y);
+        ctx.fillStyle = '#0f3548';
+        ctx.fillText(text, x, y);
+        ctx.restore();
+    }
+
+    function renderDiagram() {
+        const w = simW;
+        const h = simH;
+        const atmo = computeAtmosphere();
+        const waterY = 0.70 * h;
+        const lclNorm = Math.min(1, Math.max(0, (atmo.lclMeters - 120) / 2600));
+        const lclY = (0.42 - lclNorm * 0.23) * h;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // 1. Sky Gradient (responds to temperature, humidity, season)
+        const sky = ctx.createLinearGradient(0, 0, 0, h * 0.72);
+        if (atmo.precipRate > 0.35) {
+            sky.addColorStop(0, '#5f7d95');
+            sky.addColorStop(1, '#c3d7e4');
+        } else if (atmo.T <= 0) {
+            sky.addColorStop(0, '#85b3d1');
+            sky.addColorStop(1, '#e6f3fa');
+        } else if (atmo.T >= 29) {
+            sky.addColorStop(0, '#4ca6df');
+            sky.addColorStop(1, '#ffe9c6');
+        } else {
+            sky.addColorStop(0, '#4aa3df');
+            sky.addColorStop(1, '#dff4ff');
+        }
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, w, h);
+
+        // 2. Sun (altitude varies by season, glow varies by sun strength)
+        const sunAltMap = { Summer: 0.12, Spring: 0.15, Fall: 0.18, Winter: 0.21 };
+        const sunX = 0.90 * w;
+        const sunY = (sunAltMap[state.season] || 0.15) * h;
+        const sunColors = { Summer: '#ffd54f', Spring: '#ffe066', Fall: '#ffb74d', Winter: '#fff0a6' };
+        const sunStrength = state.sun / 100;
+
+        if (sunStrength > 0.08) {
+            const halo = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 35 + sunStrength * 55);
+            halo.addColorStop(0, `rgba(255, 224, 102, ${0.45 * sunStrength})`);
+            halo.addColorStop(1, 'rgba(255, 224, 102, 0)');
+            ctx.fillStyle = halo;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 35 + sunStrength * 55, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Subtle solar rays toward ocean
+            ctx.save();
+            ctx.strokeStyle = `rgba(255, 223, 110, ${0.18 * sunStrength * (1 - atmo.precipRate * 0.65)})`;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 8]);
+            [0.14, 0.22, 0.45].forEach((targetFrac) => {
+                ctx.beginPath();
+                ctx.moveTo(sunX - 24, sunY + 18);
+                ctx.lineTo(targetFrac * w, waterY - 12);
+                ctx.stroke();
+            });
+            ctx.restore();
+        }
+        ctx.fillStyle = sunColors[state.season] || '#ffd54f';
+        ctx.globalAlpha = 0.35 + sunStrength * 0.65;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, 22 + sunStrength * 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // 3. Distant atmospheric haze / hills behind mountain
+        ctx.fillStyle = 'rgba(130, 165, 185, 0.35)';
+        ctx.beginPath();
+        ctx.moveTo(0.42 * w, 0.70 * h);
+        ctx.lineTo(0.64 * w, 0.44 * h);
+        ctx.lineTo(0.76 * w, 0.56 * h);
+        ctx.lineTo(w, 0.40 * h);
+        ctx.lineTo(w, 0.72 * h);
+        ctx.closePath();
+        ctx.fill();
+
+        // 4. Mountain & Coastal Terrain + Subsurface Strata
+        ctx.fillStyle = atmo.T <= 0 ? '#8fa1ad' : '#8a745c';
+        ctx.beginPath();
+        ctx.moveTo(0.32 * w, h);
+        ctx.lineTo(0.32 * w, terrainY(0.32 * w, w, h));
+        for (let px = 0.33 * w; px <= w + 6; px += 8) {
+            ctx.lineTo(Math.min(w, px), terrainY(Math.min(w, px), w, h));
+        }
+        ctx.lineTo(w, h);
+        ctx.closePath();
+        ctx.fill();
+
+        // Surface grass / winter snow cover along coastal plain
+        ctx.strokeStyle = atmo.T <= 0 ? '#eef6fb' : state.season === 'Fall' ? '#8c9445' : '#4a8f49';
+        ctx.lineWidth = 7;
+        ctx.beginPath();
+        for (let px = 0.32 * w; px <= 0.68 * w; px += 6) {
+            const py = terrainY(px, w, h);
+            if (px === 0.32 * w) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Mountain snowcap (descends dynamically below 8°C)
+        const snowFrac = Math.max(0.14, Math.min(0.95, (8 - atmo.T) / 14));
+        const snowLineY = (0.29 + snowFrac * 0.37) * h;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(0.62 * w, terrainY(0.62 * w, w, h));
+        for (let px = 0.63 * w; px <= w + 6; px += 6) {
+            ctx.lineTo(Math.min(w, px), terrainY(Math.min(w, px), w, h));
+        }
+        ctx.lineTo(w, h);
+        ctx.lineTo(0.62 * w, h);
+        ctx.closePath();
+        ctx.clip();
+        ctx.fillStyle = '#f3f8fc';
+        ctx.fillRect(0.60 * w, 0.24 * h, 0.42 * w, snowLineY - 0.24 * h);
+        ctx.restore();
+
+        // Subsurface porous sediment layer
+        ctx.fillStyle = '#b99f79';
+        ctx.beginPath();
+        ctx.moveTo(0.32 * w, 0.72 * h);
+        ctx.lineTo(w, 0.72 * h);
+        ctx.lineTo(w, h);
+        ctx.lineTo(0.32 * w, h);
+        ctx.closePath();
+        ctx.fill();
+
+        // Deep Groundwater Aquifer (water table rises gently with humidity)
+        const aqLift = (state.humidity / 100) * 0.03 * h;
+        const aqTop = 0.84 * h - aqLift;
+        const aqGrad = ctx.createLinearGradient(0, aqTop, 0, 0.96 * h);
+        aqGrad.addColorStop(0, 'rgba(49, 152, 224, 0.78)');
+        aqGrad.addColorStop(1, 'rgba(18, 86, 138, 0.92)');
+        ctx.fillStyle = aqGrad;
+        ctx.beginPath();
+        ctx.moveTo(0.31 * w, waterY + 12);
+        ctx.quadraticCurveTo(0.55 * w, aqTop, 0.96 * w, aqTop - 8);
+        ctx.lineTo(0.96 * w, 0.95 * h);
+        ctx.lineTo(0.31 * w, 0.96 * h);
+        ctx.closePath();
+        ctx.fill();
+
+        // River flowing from mountain down to ocean
+        ctx.strokeStyle = atmo.T <= -4 ? '#bde3f7' : '#2f9df4';
+        ctx.lineWidth = 4.5 + atmo.precipRate * 3.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        for (let i = 0; i <= 24; i++) {
+            const pt = riverPoint(i / 24, w, h);
+            if (i === 0) ctx.moveTo(pt.x, pt.y + 1);
+            else ctx.lineTo(pt.x, pt.y + 1);
+        }
+        ctx.stroke();
+
+        // 5. Ocean / Lake with LiquidEngine surface waves + ice cover below 0°C
+        const lakeGrad = ctx.createLinearGradient(0, waterY, 0, h);
+        lakeGrad.addColorStop(0, '#3bb5d8');
+        lakeGrad.addColorStop(1, '#104968');
+        ctx.fillStyle = lakeGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        ctx.lineTo(0, waterY);
+        if (liquidLake) {
+            const waveScale = atmo.T <= 0 ? 0.15 : 1;
+            liquidLake.columns.forEach((col, idx) => {
+                const lx = (idx / (liquidLake.columns.length - 1)) * 0.34 * w;
+                const ly = waterY + col.y * waveScale;
+                ctx.lineTo(lx, ly);
+            });
+        } else {
+            ctx.lineTo(0.34 * w, waterY);
+        }
+        ctx.lineTo(0.34 * w, h);
+        ctx.closePath();
+        ctx.fill();
+
+        // Surface ripple highlight
+        ctx.strokeStyle = 'rgba(220, 247, 255, 0.72)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (liquidLake) {
+            const waveScale = atmo.T <= 0 ? 0.15 : 1;
+            liquidLake.columns.forEach((col, idx) => {
+                const lx = (idx / (liquidLake.columns.length - 1)) * 0.34 * w;
+                const ly = waterY + col.y * waveScale;
+                if (idx === 0) ctx.moveTo(lx, ly);
+                else ctx.lineTo(lx, ly);
+            });
+        }
+        ctx.stroke();
+
+        // Ice crust when freezing
+        if (atmo.T <= 0) {
+            const iceThick = Math.min(14, 4 + Math.abs(atmo.T) * 1.0);
+            ctx.fillStyle = 'rgba(224, 247, 255, 0.88)';
+            ctx.fillRect(0, waterY - 2, 0.33 * w, iceThick);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(0, waterY - 2);
+            ctx.lineTo(0.33 * w, waterY - 2);
+            ctx.stroke();
+        }
+
+        // 6. Seasonal Trees (coastal valley)
+        drawTree(0.41 * w, terrainY(0.41 * w, w, h), 0.92, state.season, atmo.T);
+        drawTree(0.47 * w, terrainY(0.47 * w, w, h), 1.12, state.season, atmo.T);
+        drawTree(0.53 * w, terrainY(0.53 * w, w, h), 0.85, state.season, atmo.T);
+
+        // 7. Clouds at LCL
+        drawCloudBank(w, h, lclY, atmo);
+
+        // 8. Precipitation under clouds
+        for (let i = 0; i < precipDrops.length; i++) {
+            const d = precipDrops[i];
+            if (!d.active) continue;
+            if (d.snow) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.strokeStyle = 'rgba(220, 245, 255, 0.85)';
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(d.x, d.y);
+                ctx.lineTo(d.x - 2, d.y + 9);
+                ctx.stroke();
+            }
+        }
+
+        // 9. Labels
+        drawLabel(atmo.T <= 0 ? 'Frozen Ocean / Lake' : 'Ocean / Lake', 18, h - 18);
+        drawLabel('Evaporation ↑', 0.14 * w, 0.57 * h);
+        drawLabel('Transpiration ↑', 0.42 * w, 0.53 * h);
+        drawLabel('Runoff ↓', 0.62 * w, 0.52 * h);
+        drawLabel('Groundwater Aquifer', 0.47 * w, 0.91 * h);
+
+        // 10. Branching water-cycle molecules
+        for (let i = molecules.length - 1; i >= 0; i--) {
+            const m = molecules[i];
+            const isVapor = m.phase === 'evaporate' || m.phase === 'transpire' || m.phase === 'cloud';
+            const isIce = m.tag === 'Snowing';
+            const isTracked = state.trackDrop && i === 0;
+
+            if (isTracked) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(246, 201, 76, 0.35)';
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            ctx.fillStyle = isTracked ? '#f6c94c' : isIce ? '#e0f2fe' : isVapor ? '#ffffff' : '#1e90ff';
+            ctx.strokeStyle = isTracked ? '#082c42' : '#0a4a79';
+            ctx.lineWidth = isTracked ? 2.2 : 1.3;
+            ctx.beginPath();
+            ctx.arc(m.x, m.y, isTracked ? 6.5 : 4.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            if (isTracked) {
+                ctx.save();
+                ctx.font = '700 11px system-ui, sans-serif';
+                const labelText = m.tag;
+                const tw = ctx.measureText(labelText).width;
+                const bx = Math.min(w - tw - 18, Math.max(8, m.x + 10));
+                const by = Math.max(20, m.y - 10);
+                ctx.fillStyle = 'rgba(8, 44, 66, 0.9)';
+                ctx.beginPath();
+                ctx.roundRect(bx - 6, by - 12, tw + 12, 18, 9);
+                ctx.fill();
+                ctx.fillStyle = '#f8e299';
+                ctx.fillText(labelText, bx, by + 1);
+                ctx.restore();
+            }
+        }
+    }
+
+    const diagramLoop = window.SimKit?.loop((dt) => {
+        if (!state.playing || state.mode !== 'diagram') return;
+        const safeDt = Math.min(dt, 0.05);
+        const atmo = computeAtmosphere();
+        simTime += safeDt;
+        liquidLake?.update(safeDt);
+        if (liquidLake && Math.random() < safeDt * (atmo.T <= 0 ? 0.1 : 0.7 + atmo.precipRate)) {
+            liquidLake.impulse(40 + Math.random() * (simW * 0.24), -8 - atmo.precipRate * 8, 24);
+        }
+        stepParticles(safeDt, atmo);
+        renderDiagram();
+    }, { el: window.SimKit?.stage(diagramStage), maxDt: 0.05 });
+
+    function syncEnginePlayback() {
+        if (state.mode === 'diagram' && state.playing) {
+            diagramLoop?.resume();
+        } else {
+            diagramLoop?.pause();
+        }
+
+        if (wcCloudSim) {
+            if (state.mode === 'particle' && state.playing && particleStageVisible) {
+                if (wcCloudSim.simKitLoop && wcCloudSim.simKitLoop.resume) {
+                    wcCloudSim.running = true;
+                    wcCloudSim.simKitLoop.resume();
+                } else {
+                    wcCloudSim.start();
+                }
+            } else {
+                wcCloudSim.stop();
+            }
+        }
+    }
+
+    if ('IntersectionObserver' in window && particleStage) {
+        const obs = new IntersectionObserver((entries) => {
+            particleStageVisible = entries.some((entry) => entry.isIntersecting);
+            syncEnginePlayback();
+        }, { rootMargin: '180px' });
+        obs.observe(particleStage);
+    } else {
+        particleStageVisible = true;
+    }
 
     [['input', el.sun, 'sun'], ['input', el.temp, 'temperature'], ['input', el.humidity, 'humidity'], ['change', el.season, 'season']].forEach(([type, node, key]) => {
         node?.addEventListener(type, (event) => {
             state[key] = type === 'change' ? event.target.value : Number(event.target.value);
-            render();
+            updateReadouts();
+            syncCloudSim();
+            if (state.mode === 'diagram') renderDiagram();
         });
     });
+
+    presetButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const p = PRESETS[button.dataset.weather];
+            if (!p) return;
+            Object.assign(state, p);
+            if (el.sun) el.sun.value = String(p.sun);
+            if (el.temp) el.temp.value = String(p.temperature);
+            if (el.humidity) el.humidity.value = String(p.humidity);
+            if (el.season) el.season.value = p.season;
+            updateReadouts();
+            syncCloudSim();
+            if (state.mode === 'diagram') renderDiagram();
+        });
+    });
+
+    document.getElementById('weather-save')?.addEventListener('click', () => {
+        saved = { ...state, index: computeAtmosphere().tendency };
+        updateReadouts();
+    });
+
     el.toggle?.addEventListener('click', () => {
         state.playing = !state.playing;
         el.toggle.textContent = state.playing ? 'Pause Cycle' : 'Resume Cycle';
         el.toggle.setAttribute('aria-pressed', String(state.playing));
+        syncEnginePlayback();
     });
+
+    el.trackBtn?.addEventListener('click', () => {
+        state.trackDrop = !state.trackDrop;
+        el.trackBtn.textContent = state.trackDrop ? 'Follow 1 drop: On' : 'Follow 1 drop: Off';
+        el.trackBtn.classList.toggle('is-active', state.trackDrop);
+        el.trackBtn.setAttribute('aria-pressed', String(state.trackDrop));
+        if (state.mode === 'diagram') renderDiagram();
+    });
+
     el.reset?.addEventListener('click', () => {
-        saved = null; frame = 0;
-        document.getElementById('weather-comparison').textContent = 'Save a result, change one variable, and compare.';
+        saved = null;
+        simTime = 0;
+        if (el.comparison) el.comparison.textContent = 'Save a result, change one variable, and compare.';
         state.sun = 65;
         state.temperature = 24;
         state.humidity = 55;
         state.season = 'Summer';
-        state.playing = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        el.sun.value = '65';
-        el.temp.value = '24';
-        el.humidity.value = '55';
-        el.season.value = 'Summer';
-        el.toggle.textContent = state.playing ? 'Pause Cycle' : 'Resume Cycle';
-        el.toggle.setAttribute('aria-pressed', String(state.playing));
-        render();
+        state.playing = !prefersReduced;
+        state.trackDrop = true;
+        if (el.sun) el.sun.value = '65';
+        if (el.temp) el.temp.value = '24';
+        if (el.humidity) el.humidity.value = '55';
+        if (el.season) el.season.value = 'Summer';
+        if (el.toggle) {
+            el.toggle.textContent = state.playing ? 'Pause Cycle' : 'Resume Cycle';
+            el.toggle.setAttribute('aria-pressed', String(state.playing));
+        }
+        if (el.trackBtn) {
+            el.trackBtn.textContent = 'Follow 1 drop: On';
+            el.trackBtn.classList.add('is-active');
+            el.trackBtn.setAttribute('aria-pressed', 'true');
+        }
+        updateReadouts();
+        syncCloudSim();
+        syncEnginePlayback();
+        renderDiagram();
     });
 
-    if (!state.playing && el.toggle) el.toggle.textContent = 'Resume Cycle';
-    el.toggle.setAttribute('aria-pressed', String(state.playing));
-
-    // Realistic Cloud & Vapor Engine integration
-    let wcCloudSim = null;
-    const btnDiagram = document.getElementById('wc-mode-diagram');
-    const btnParticle = document.getElementById('wc-mode-particle');
-    const particleStage = document.getElementById('wc-particle-stage');
-
-    function syncCloudSim() {
-        if (!wcCloudSim) return;
-        const tempF = Math.round(state.temperature * 1.8 + 32);
-        const dewF = Math.round(tempF - ((100 - Math.max(5, state.humidity)) / 5) * 1.8);
-        wcCloudSim.setThermodynamics({ tempF, dewPointF: dewF });
-        const sunFactor = state.sun / 65;
-        wcCloudSim.setTurbulence(0.8 * sunFactor);
-    }
-
-    if (btnDiagram && btnParticle && particleStage) {
-        btnDiagram.addEventListener('click', () => {
-            btnDiagram.classList.add('is-active');
-            btnParticle.classList.remove('is-active');
-            canvas.style.display = 'block';
-            particleStage.style.display = 'none';
+    if (el.btnDiagram && el.btnParticle && particleStage) {
+        el.btnDiagram.addEventListener('click', () => {
+            state.mode = 'diagram';
+            el.btnDiagram.classList.add('is-active');
+            el.btnDiagram.setAttribute('aria-pressed', 'true');
+            el.btnParticle.classList.remove('is-active');
+            el.btnParticle.setAttribute('aria-pressed', 'false');
+            diagramStage.hidden = false;
+            particleStage.hidden = true;
+            syncEnginePlayback();
+            renderDiagram();
         });
 
-        btnParticle.addEventListener('click', () => {
-            btnParticle.classList.add('is-active');
-            btnDiagram.classList.remove('is-active');
-            canvas.style.display = 'none';
-            particleStage.style.display = 'block';
+        el.btnParticle.addEventListener('click', () => {
+            state.mode = 'particle';
+            el.btnParticle.classList.add('is-active');
+            el.btnParticle.setAttribute('aria-pressed', 'true');
+            el.btnDiagram.classList.remove('is-active');
+            el.btnDiagram.setAttribute('aria-pressed', 'false');
+            diagramStage.hidden = true;
+            particleStage.hidden = false;
+            particleStageVisible = true;
 
             if (!wcCloudSim && window.CloudEngine) {
                 wcCloudSim = window.CloudEngine.attach('wc-particle-canvas', {
@@ -644,123 +1005,35 @@ function initSimulation(stageController) {
                     showAltitudeGuide: true,
                     interactive: true
                 });
+            } else if (wcCloudSim?.simKitHelper?.resize) {
+                wcCloudSim.simKitHelper.resize();
             }
             syncCloudSim();
+            syncEnginePlayback();
         });
     }
-    render();
+
+    if (!state.playing && el.toggle) el.toggle.textContent = 'Resume Cycle';
+    el.toggle?.setAttribute('aria-pressed', String(state.playing));
+    updateReadouts();
+    renderDiagram();
+    syncEnginePlayback();
 }
 
-function initTranspirationExplorer() {
-    const canvas = document.getElementById('transpiration-canvas');
-    if (!canvas) return;
-    const root = document.getElementById('transpiration-explorer');
-    const humidity = root.querySelector('#transpiration-humidity');
-    const soil = root.querySelector('#transpiration-soil');
-    const stomata = root.querySelector('#transpiration-stomata');
-    canvas.innerHTML = `<title id="transpiration-title">Inside a plant: the transpiration pathway</title>
-        <desc id="transpiration-desc">A rooted plant connects to a magnified xylem tube and a leaf cross-section. Liquid water enters roots, rises through xylem, evaporates inside the leaf, and diffuses out through a stomatal pore.</desc>
-        <defs>
-          <linearGradient id="tp-sky" x2="0" y2="1"><stop stop-color="#e0eff0"/><stop offset="1" stop-color="#f7faf4"/></linearGradient>
-          <linearGradient id="tp-leaf"><stop stop-color="#276e4d"/><stop offset=".5" stop-color="#65a86c"/><stop offset="1" stop-color="#3d8056"/></linearGradient>
-          <pattern id="tp-soil" width="44" height="28" patternUnits="userSpaceOnUse"><rect width="44" height="28" fill="#d6bf98"/><path d="M0 9q11 -4 22 0t22 0M6 22h5m20 -3h4" stroke="#aa8d62" fill="none" opacity=".5"/></pattern>
-          <marker id="tp-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#136e9b"/></marker>
-        </defs>
-        <rect width="900" height="520" rx="16" fill="url(#tp-sky)"/>
-        <g data-tp-region="0">
-          <path d="M0 347Q135 334 292 347V520H0Z" fill="url(#tp-soil)"/>
-          <path d="M155 348V139" stroke="#8d6945" stroke-width="22" stroke-linecap="round"/>
-          <g fill="url(#tp-leaf)" stroke="#276447" stroke-width="2">
-            <path d="M153 266Q53 249 47 160Q140 158 153 266Z"/><path d="M158 220Q174 111 267 119Q268 199 158 220Z"/><path d="M155 168Q98 113 135 57Q194 101 155 168Z"/>
-          </g>
-          <g stroke="#add1a0" fill="none" stroke-width="2"><path d="M151 258L66 179m32 25l-5 -27m29 48l-2 -28M162 215L249 135m-48 44l29 -3m-51 23l5 -32M155 156L138 78"/></g>
-          <path d="M155 346Q105 398 48 460M155 346Q192 401 267 469M155 354V492M106 400L83 484M201 417L219 491" stroke="#8d6945" stroke-width="7" fill="none" stroke-linecap="round"/>
-          <g stroke="#8d6945" stroke-width="1.5"><path d="M67 441l-19 -2m26 -8l-5 -14m41 41l15 11m117 -21l17 -3m-65 -31l-3 16m-30 36l-12 9m9 -29l12 6"/></g>
-          <g fill="#329dc5" opacity=".6"><circle cx="39" cy="421" r="4"/><circle cx="95" cy="480" r="4"/><circle cx="244" cy="439" r="4"/><circle cx="180" cy="475" r="4"/></g>
-          <text x="24" y="32" class="tp-title">01 · Roots absorb</text><text x="24" y="320" class="tp-small">Root hairs contact soil water</text>
-        </g>
-        <path d="M168 260L315 225M257 145L561 121" stroke="#81978d" stroke-dasharray="4 5" fill="none"/>
-        <g data-tp-region="1">
-          <rect x="311" y="51" width="206" height="437" rx="14" fill="#fff" stroke="#b4cdc4"/>
-          <text x="330" y="83" class="tp-title">02 · Xylem pulls</text>
-          <path d="M373 139V400M452 139V400" stroke="#b2956c" stroke-width="13"/>
-          <path d="M389 139V400H437V139Z" fill="#d9f1fa"/>
-          <g fill="#59b4d8" stroke="#16749b" stroke-width="1.5"><circle cx="413" cy="179" r="11"/><circle cx="413" cy="220" r="11"/><circle cx="413" cy="261" r="11"/><circle cx="413" cy="302" r="11"/><circle cx="413" cy="343" r="11"/></g>
-          <path id="transpiration-xylem" stroke-dasharray="8 10" d="M413 344V152" stroke="#136e9b" stroke-width="3" fill="none" marker-end="url(#tp-arrow)"/>
-          <text x="329" y="435" class="tp-small">Cohesion holds water</text><text x="329" y="457" class="tp-small">together under tension</text>
-        </g>
-        <g data-tp-region="2">
-          <rect x="546" y="51" width="336" height="437" rx="14" fill="#fff" stroke="#b4cdc4"/>
-          <text x="565" y="83" class="tp-title">03 · Leaf releases</text>
-          <text x="565" y="115" class="tp-small">Leaf cross-section · magnified</text>
-          <path d="M563 143H865V170H563ZM563 301H681V323H563ZM749 301H865V323H749Z" fill="#78ad70" stroke="#3c7950"/>
-          <g fill="#a6c78b" stroke="#5e965f" stroke-width="2"><ellipse cx="593" cy="204" rx="23" ry="25"/><ellipse cx="649" cy="205" rx="23" ry="25"/><ellipse cx="711" cy="204" rx="23" ry="25"/><ellipse cx="775" cy="206" rx="23" ry="25"/><ellipse cx="840" cy="203" rx="20" ry="25"/><ellipse cx="605" cy="260" rx="29" ry="20"/><ellipse cx="668" cy="258" rx="22" ry="21"/><ellipse cx="789" cy="258" rx="29" ry="20"/><ellipse cx="849" cy="260" rx="18" ry="20"/></g>
-          <path d="M675 230Q714 253 739 279" fill="none" stroke="#329dc5" stroke-width="4"/>
-          <text x="572" y="354" class="tp-small">Guard cells</text><path d="M650 348L690 315" stroke="#58766a" fill="none"/>
-          <ellipse cx="692" cy="309" rx="19" ry="13" fill="#3e8d59"/><ellipse cx="738" cy="309" rx="19" ry="13" fill="#3e8d59"/>
-          <ellipse id="transpiration-pore" cx="715" cy="309" rx="10" ry="10" fill="#173f35"/>
-          <path id="transpiration-vapor" d="M715 282V414M725 335L764 413M704 336L669 413" stroke="#136e9b" stroke-width="3" stroke-dasharray="3 9" fill="none" marker-end="url(#tp-arrow)"/>
-          <text x="567" y="452" class="tp-small">Evaporation inside → diffusion out</text>
-        </g>
-        <path id="transpiration-liquid" d="M48 460Q106 400 155 346V220Q210 173 250 138" fill="none" stroke="#136e9b" stroke-width="4" stroke-dasharray="8 10"/>
-        <text x="24" y="507" class="tp-small">LIQUID WATER</text><text x="594" y="507" class="tp-small">INVISIBLE VAPOR IN AIR</text>`;
-    const explanations = [
-        ['Roots · liquid water enters', 'Root hairs absorb water from soil. Connected roots deliver it to the plant’s water-carrying tissue.'],
-        ['Xylem · a continuous water pathway', 'Water travels through xylem in roots, stems, and leaf veins. Evaporation from leaves creates tension that pulls water upward; cohesion helps hold the water column together.'],
-        ['Leaves · liquid becomes gas', 'Water evaporates from moist cell surfaces inside the leaf. Vapor then diffuses through stomata into the surrounding air. Water vapor is invisible, unlike mist droplets.']
-    ];
-    root.querySelectorAll('[data-transpiration-step]').forEach(button => {
-        button.addEventListener('click', () => selectStep(Number(button.dataset.transpirationStep)));
-    });
-    function selectStep(index) {
-        root.querySelectorAll('[data-transpiration-step]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.transpirationStep) === index)));
-        canvas.querySelectorAll('[data-tp-region]').forEach(region => region.classList.toggle('tp-selected', Number(region.dataset.tpRegion) === index));
-        const panel = root.querySelector('#transpiration-explanation');
-        panel.replaceChildren();
-        const title = document.createElement('strong');
-        title.textContent = explanations[index][0];
-        const description = document.createElement('span');
-        description.textContent = explanations[index][1];
-        panel.append(title, description);
-    }
-    let savedFlow = null;
-    function render() {
-        const h = Number(humidity.value), water = Number(soil.value), opening = Number(stomata.value);
-        const rate = Math.round((1 - h / 100) * water * opening);
-        root.querySelector('#transpiration-humidity-value').textContent = `${h}%`;
-        root.querySelector('#transpiration-soil-value').textContent = `${water}%`;
-        root.querySelector('#transpiration-rate').textContent = `Relative flow: ${rate} / 100`;
-        root.querySelector('#transpiration-meter').value = rate;
-        if (savedFlow) root.querySelector('#transpiration-comparison').textContent = `Saved: ${savedFlow.h}% humidity, ${savedFlow.water}% soil water, ${savedFlow.label} pores → ${savedFlow.rate}/100. Now: ${rate}/100 (${rate - savedFlow.rate > 0 ? '+' : ''}${rate - savedFlow.rate} points).`;
-        root.querySelector('#transpiration-feedback').textContent = opening === 0 ? 'Stomatal flow stops in this model. The pore is closed.' : water === 0 ? 'No soil water is available to sustain the modeled flow.' : water <= 20 ? 'Water supply limits flow. Real plants often close stomata during drought.' : h >= 70 ? 'Humid air reduces the difference in water vapor concentration between leaf and air.' : 'Drier air favors vapor loss when soil water and open stomata support the flow.';
-        canvas.querySelector('#transpiration-pore').setAttribute('rx', String(10 * opening));
-        canvas.querySelector('#transpiration-vapor').style.opacity = String(rate === 0 ? 0 : 0.25 + rate / 100);
-        canvas.style.setProperty('--transpiration-duration', `${rate > 0 ? 120 / rate : 4}s`);
-        canvas.classList.toggle('transpiration-flowing', rate > 0);
-    }
-    root.querySelector('#transpiration-save').addEventListener('click', () => { savedFlow = { h: Number(humidity.value), water: Number(soil.value), label: stomata.selectedOptions[0].textContent.toLowerCase(), rate: Number(root.querySelector('#transpiration-meter').value) }; render(); });
-    [humidity, soil, stomata].forEach(control => control.addEventListener('input', render));
-    root.querySelectorAll('[data-transpiration-preset]').forEach(button => button.addEventListener('click', () => {
-        if (button.dataset.transpirationPreset === 'reset') { savedFlow = null; root.querySelector('#transpiration-comparison').textContent = 'Save a baseline, change one condition, then explain the difference.'; selectStep(0); }
-        humidity.value = button.dataset.transpirationPreset === 'humid' ? '90' : '40';
-        soil.value = button.dataset.transpirationPreset === 'drought' ? '10' : '80';
-        stomata.value = button.dataset.transpirationPreset === 'drought' ? '0.35' : '1';
-        render();
-    }));
-    root.querySelector('#transpiration-motion').addEventListener('click', event => {
-        const paused = canvas.classList.toggle('transpiration-paused');
-        event.currentTarget.setAttribute('aria-pressed', String(paused));
-        event.currentTarget.textContent = paused ? 'Resume flow animation' : 'Pause flow animation';
-    });
-    selectStep(0);
-    render();
-}
+/* ============================================================================
+   USGS OFFICIAL DIAGRAM (Pan vs Lightbox fixed + Field Key)
+   ============================================================================ */
 
 function initUsgsDiagram() {
     const viewport = document.getElementById('usgs-diagram-viewport');
     const wrapper = document.getElementById('usgs-diagram-wrapper');
     const img = document.getElementById('usgs-diagram-img');
     const loading = document.getElementById('usgs-diagram-loading');
+    const zoomLevelEl = document.getElementById('usgs-zoom-level');
+    const zoomOutBtn = document.getElementById('usgs-zoom-out-btn');
+    const zoomResetBtn = document.getElementById('usgs-zoom-reset-btn');
+    const langBtn = document.getElementById('usgs-lang-toggle-btn');
+    const lightboxBtn = document.getElementById('usgs-lightbox-btn');
     if (!viewport || !wrapper || !img) return;
 
     const DIAGRAM_SOURCES = {
@@ -781,9 +1054,14 @@ function initUsgsDiagram() {
     let dragging = false;
     let dragStartX = 0;
     let dragStartY = 0;
+    let dragDistance = 0;
+    let suppressClick = false;
 
     function applyTransform() {
         wrapper.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+        if (zoomLevelEl) zoomLevelEl.textContent = `${Math.round(state.zoom * 100)}%`;
+        if (zoomOutBtn) zoomOutBtn.disabled = state.zoom <= MIN_ZOOM;
+        if (zoomResetBtn) zoomResetBtn.disabled = state.zoom <= MIN_ZOOM;
     }
 
     function clampPan() {
@@ -829,10 +1107,13 @@ function initUsgsDiagram() {
             img.alt = target.alt;
             state.loadedFull = true;
             loading.hidden = true;
-            if (fullResolutionBtn) fullResolutionBtn.textContent = 'Full Resolution Loaded';
+            if (fullResolutionBtn) {
+                fullResolutionBtn.disabled = false;
+                fullResolutionBtn.textContent = 'Full Resolution Loaded';
+            }
         };
         probe.onerror = () => {
-            loading.textContent = 'Could not load the high-resolution diagram. Check your connection and try again.';
+            loading.hidden = true;
             if (fullResolutionBtn) {
                 fullResolutionBtn.disabled = false;
                 fullResolutionBtn.textContent = 'Try Full Resolution Again';
@@ -842,16 +1123,18 @@ function initUsgsDiagram() {
     }
 
     document.getElementById('usgs-zoom-in-btn')?.addEventListener('click', () => setZoom(state.zoom + ZOOM_STEP));
-    document.getElementById('usgs-zoom-out-btn')?.addEventListener('click', () => setZoom(state.zoom - ZOOM_STEP));
-    document.getElementById('usgs-zoom-reset-btn')?.addEventListener('click', resetView);
+    zoomOutBtn?.addEventListener('click', () => setZoom(state.zoom - ZOOM_STEP));
+    zoomResetBtn?.addEventListener('click', resetView);
+    lightboxBtn?.addEventListener('click', () => img.click());
 
     fullResolutionBtn?.addEventListener('click', () => {
         loadFullResolution(state.lang);
     });
 
-    document.getElementById('usgs-lang-toggle-btn')?.addEventListener('click', (event) => {
+    langBtn?.addEventListener('click', () => {
         state.lang = state.lang === 'en' ? 'es' : 'en';
-        event.target.textContent = state.lang === 'en' ? 'Español' : 'English';
+        langBtn.textContent = state.lang === 'en' ? 'Español' : 'English';
+        langBtn.setAttribute('aria-pressed', String(state.lang === 'es'));
         loadFullResolution(state.lang);
     });
 
@@ -874,6 +1157,8 @@ function initUsgsDiagram() {
     wrapper.addEventListener('pointerdown', (event) => {
         if (event.pointerType !== 'mouse' || event.button !== 0 || state.zoom <= MIN_ZOOM) return;
         dragging = true;
+        dragDistance = 0;
+        suppressClick = false;
         wrapper.classList.add('is-dragging');
         dragStartX = event.clientX - state.panX;
         dragStartY = event.clientY - state.panY;
@@ -882,8 +1167,12 @@ function initUsgsDiagram() {
 
     wrapper.addEventListener('pointermove', (event) => {
         if (!dragging) return;
-        state.panX = event.clientX - dragStartX;
-        state.panY = event.clientY - dragStartY;
+        const nextX = event.clientX - dragStartX;
+        const nextY = event.clientY - dragStartY;
+        dragDistance += Math.hypot(nextX - state.panX, nextY - state.panY);
+        if (dragDistance > 5) suppressClick = true;
+        state.panX = nextX;
+        state.panY = nextY;
         clampPan();
         applyTransform();
     });
@@ -895,6 +1184,14 @@ function initUsgsDiagram() {
     wrapper.addEventListener('pointerup', stopDragging);
     wrapper.addEventListener('pointercancel', stopDragging);
     wrapper.addEventListener('dragstart', (event) => event.preventDefault());
+
+    wrapper.addEventListener('click', (event) => {
+        if (suppressClick) {
+            event.preventDefault();
+            event.stopPropagation();
+            suppressClick = false;
+        }
+    }, true);
 
     let pinchStartDistance = null;
     let pinchStartZoom = state.zoom;
@@ -924,6 +1221,7 @@ function initUsgsDiagram() {
             const scaleChange = touchDistance(event.touches) / pinchStartDistance;
             setZoom(pinchStartZoom * scaleChange);
         } else if (event.touches.length === 1 && touchDragStart) {
+            suppressClick = true;
             state.panX = event.touches[0].clientX - touchDragStart.x;
             state.panY = event.touches[0].clientY - touchDragStart.y;
             clampPan();
@@ -936,49 +1234,992 @@ function initUsgsDiagram() {
         touchDragStart = null;
     });
 
+    // USGS Pools & Fluxes Field Key Tabs
+    const keyCopy = {
+        pools: '<strong>Pools store water:</strong> Oceans (96.5% of all water), ice sheets &amp; glaciers, snowpack, permafrost, groundwater aquifers, soil moisture, freshwater &amp; saline lakes, wetlands, rivers, living organisms, and atmospheric moisture.',
+        fluxes: '<strong>Fluxes move water between pools:</strong> Evaporation, evapotranspiration, atmospheric transport, precipitation, snowmelt, surface runoff, streamflow, infiltration, groundwater recharge, and natural discharge at springs and coasts.',
+        human: '<strong>Human interactions:</strong> Dams and artificial reservoirs alter river timing; irrigation, municipal supply, and industrial cooling withdraw surface and groundwater; urban pavement increases fast runoff and agricultural/industrial discharge affects water quality.'
+    };
+    const keyTabs = Array.from(document.querySelectorAll('.usgs-key-tab'));
+    const keyBody = document.getElementById('usgs-key-body');
+    function selectKey(key) {
+        keyTabs.forEach((tab) => {
+            const active = tab.dataset.usgsKey === key;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-selected', String(active));
+        });
+        if (keyBody) keyBody.innerHTML = keyCopy[key] || keyCopy.pools;
+    }
+    keyTabs.forEach((tab) => tab.addEventListener('click', () => selectKey(tab.dataset.usgsKey)));
+    selectKey('pools');
+
     applyTransform();
 }
 
+/* ============================================================================
+   STATES OF WATER & H₂O MOLECULAR MOTION LAB (#states)
+   ============================================================================ */
+
+function initStatesLab() {
+    const curveSvg = document.getElementById('phase-change-canvas');
+    const molCanvas = document.getElementById('molecule-canvas');
+    const slider = document.getElementById('phase-temp-slider');
+    const tempOut = document.getElementById('phase-temp-value');
+    const stateBadge = document.getElementById('phase-state-badge');
+    const molReadout = document.getElementById('molecule-readout');
+    const motionBtn = document.getElementById('molecule-motion-btn');
+    const presetChips = Array.from(document.querySelectorAll('[data-phase-temp]'));
+    if (!curveSvg || !molCanvas || !slider) return;
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let tempC = Number(slider.value) || 20;
+    let molRunning = !prefersReduced;
+    let molW = 360;
+    let molH = 240;
+    let themeColors = window.SimKit?.theme?.colors?.() || { text: '#1d1d1f', textMuted: '#6e6e73', accent: '#0071e3' };
+
+    // Hexagonal lattice targets (open rings) for ice below 0°C
+    const hexPts = [
+        [0.24, 0.42], [0.36, 0.34], [0.48, 0.42], [0.48, 0.57], [0.36, 0.65], [0.24, 0.57],
+        [0.60, 0.34], [0.72, 0.42], [0.72, 0.57], [0.60, 0.65],
+        [0.24, 0.74], [0.36, 0.82], [0.48, 0.74], [0.60, 0.82], [0.72, 0.74],
+        [0.14, 0.50], [0.82, 0.50], [0.48, 0.22]
+    ];
+
+    const h2o = Array.from({ length: 18 }, (_, i) => ({
+        x: (0.18 + (i % 6) * 0.13) * 360,
+        y: (0.48 + Math.floor(i / 6) * 0.16) * 240,
+        vx: (Math.random() - 0.5) * 60,
+        vy: (Math.random() - 0.5) * 60,
+        angle: Math.random() * Math.PI * 2,
+        omega: (Math.random() - 0.5) * 2.4,
+        vaporTimer: 0,
+        evaporating: i < 2
+    }));
+
+    function drawHeatingCurve() {
+        const ink = themeColors.text || '#1d1d1f';
+        const muted = themeColors.textMuted || '#6e6e73';
+        const accent = themeColors.accent || '#0071e3';
+
+        curveSvg.innerHTML = '';
+        const x0 = 62;
+        const x1 = 602;
+        const yTop = 28;
+        const yBot = 266;
+        const toY = (c) => yBot - ((c + 25) / 150) * (yBot - yTop);
+
+        // Evaporation Zone highlight (0°C to 100°C)
+        const y100 = toY(100);
+        const y0 = toY(0);
+        curveSvg.appendChild(svg('rect', {
+            x: x0, y: y100, width: x1 - x0, height: y0 - y100,
+            fill: 'rgba(88, 197, 220, 0.14)'
+        }));
+        curveSvg.appendChild(svg('text', {
+            x: x0 + 14, y: y100 + 24, 'text-anchor': 'start', 'font-size': 11.5, 'font-weight': 700, fill: accent
+        }, 'Evaporation Zone (0–100°C):'));
+        curveSvg.appendChild(svg('text', {
+            x: x0 + 14, y: y100 + 40, 'text-anchor': 'start', 'font-size': 11, 'font-weight': 600, fill: muted
+        }, 'vapor escapes liquid at any temp'));
+
+        // Grid lines at 0°C and 100°C
+        [0, 100].forEach((deg) => {
+            const yy = toY(deg);
+            curveSvg.appendChild(svg('line', {
+                x1: x0, y1: yy, x2: x1, y2: yy,
+                stroke: muted, 'stroke-opacity': 0.35, 'stroke-dasharray': '4 4'
+            }));
+            curveSvg.appendChild(svg('text', {
+                x: x0 - 8, y: yy + 4, 'text-anchor': 'end', 'font-size': 11, 'font-weight': 700, fill: ink
+            }, `${deg}°C`));
+        });
+
+        // Axes
+        curveSvg.appendChild(svg('line', { x1: x0, y1: yTop, x2: x0, y2: yBot, stroke: ink, 'stroke-width': 2 }));
+        curveSvg.appendChild(svg('line', { x1: x0, y1: yBot, x2: x1, y2: yBot, stroke: ink, 'stroke-width': 2 }));
+        curveSvg.appendChild(svg('text', { x: (x0 + x1) / 2, y: 296, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: ink }, 'Thermal Energy Added →'));
+        curveSvg.appendChild(svg('text', { x: 18, y: (yTop + yBot) / 2, transform: `rotate(-90 18 ${(yTop + yBot) / 2})`, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: ink }, 'Temp (°C)'));
+
+        // Curve coordinates
+        const pStart = [x0 + 18, toY(-25)];
+        const pMeltA = [x0 + 88, toY(0)];
+        const pMeltB = [x0 + 168, toY(0)];
+        const pBoilA = [x0 + 338, toY(100)];
+        const pBoilB = [x0 + 468, toY(100)];
+        const pEnd = [x0 + 528, toY(125)];
+
+        const d = `M ${pStart[0]} ${pStart[1]} L ${pMeltA[0]} ${pMeltA[1]} L ${pMeltB[0]} ${pMeltB[1]} L ${pBoilA[0]} ${pBoilA[1]} L ${pBoilB[0]} ${pBoilB[1]} L ${pEnd[0]} ${pEnd[1]}`;
+        curveSvg.appendChild(svg('path', { d, fill: 'none', stroke: accent, 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+
+        // Labels along curve segments
+        curveSvg.appendChild(svg('text', { x: x0 + 38, y: toY(-15), 'font-size': 11, 'font-weight': 700, fill: ink }, 'Ice'));
+        curveSvg.appendChild(svg('text', { x: (pMeltA[0] + pMeltB[0]) / 2, y: toY(0) + 17, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: muted }, 'Melt ↔ Freeze'));
+        curveSvg.appendChild(svg('text', { x: (pMeltB[0] + pBoilA[0]) / 2 + 12, y: toY(52), 'font-size': 12, 'font-weight': 700, fill: ink }, 'Liquid Water'));
+        curveSvg.appendChild(svg('text', { x: (pBoilA[0] + pBoilB[0]) / 2, y: toY(100) - 10, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: muted }, 'Boil ↔ Condense'));
+        curveSvg.appendChild(svg('text', { x: x0 + 522, y: toY(112), 'font-size': 11, 'font-weight': 700, fill: ink }, 'Vapor'));
+
+        // Sublimation ↔ Deposition arc in open lower-right area
+        curveSvg.appendChild(svg('path', {
+            d: `M ${x0 + 70} ${toY(-8)} Q ${x0 + 380} ${toY(-6)} ${x0 + 510} ${toY(106)}`,
+            fill: 'none', stroke: '#d97706', 'stroke-width': 2, 'stroke-dasharray': '5 5'
+        }));
+        curveSvg.appendChild(svg('text', {
+            x: x0 + 390, y: toY(18), 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: '#b45309'
+        }, 'Sublimation ↔ Deposition (skips liquid)'));
+
+        // Active temperature point on heating curve
+        let mx;
+        let my;
+        if (tempC < 0) {
+            const frac = (tempC + 25) / 25;
+            mx = pStart[0] + (pMeltA[0] - pStart[0]) * frac;
+            my = toY(tempC);
+        } else if (tempC === 0) {
+            mx = (pMeltA[0] + pMeltB[0]) / 2;
+            my = toY(0);
+        } else if (tempC < 100) {
+            const frac = tempC / 100;
+            mx = pMeltB[0] + (pBoilA[0] - pMeltB[0]) * frac;
+            my = toY(tempC);
+        } else if (tempC === 100) {
+            mx = (pBoilA[0] + pBoilB[0]) / 2;
+            my = toY(100);
+        } else {
+            const frac = (tempC - 100) / 25;
+            mx = pBoilB[0] + (pEnd[0] - pBoilB[0]) * frac;
+            my = toY(tempC);
+        }
+
+        curveSvg.appendChild(svg('circle', { cx: mx, cy: my, r: 11, fill: 'rgba(246, 201, 76, 0.38)' }));
+        curveSvg.appendChild(svg('circle', { cx: mx, cy: my, r: 6, fill: '#f6c94c', stroke: '#082c42', 'stroke-width': 2 }));
+    }
+
+    function drawH2OMolecule(ctx, x, y, angle, scale = 1, isVapor = false) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        const rO = 7.2 * scale;
+        const rH = 4.2 * scale;
+        const bond = 9.5 * scale;
+        const halfAngle = (104.5 / 2) * (Math.PI / 180);
+
+        const h1x = Math.cos(-halfAngle) * bond;
+        const h1y = Math.sin(-halfAngle) * bond;
+        const h2x = Math.cos(halfAngle) * bond;
+        const h2y = Math.sin(halfAngle) * bond;
+
+        ctx.strokeStyle = 'rgba(226, 244, 255, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(h1x, h1y);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(h2x, h2y);
+        ctx.stroke();
+
+        ctx.fillStyle = isVapor ? '#7dd3fc' : '#0284c7';
+        ctx.strokeStyle = '#e0f2fe';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(0, 0, rO, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.arc(h1x, h1y, rH, 0, Math.PI * 2);
+        ctx.arc(h2x, h2y, rH, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    const molHelper = window.SimKit?.canvas2d(molCanvas, {
+        box: molCanvas.parentElement,
+        onResize: (_, w, h) => {
+            molW = w;
+            molH = h;
+        }
+    });
+    const mCtx = molHelper?.ctx || molCanvas.getContext('2d');
+
+    function renderMolecules(dt) {
+        const w = molW;
+        const h = molH;
+        mCtx.clearRect(0, 0, w, h);
+
+        const bg = mCtx.createLinearGradient(0, 0, 0, h);
+        bg.addColorStop(0, '#0b1e2e');
+        bg.addColorStop(1, '#102d42');
+        mCtx.fillStyle = bg;
+        mCtx.fillRect(0, 0, w, h);
+
+        const surfaceY = 0.44 * h;
+
+        if (tempC > 0 && tempC < 100) {
+            mCtx.fillStyle = 'rgba(14, 116, 174, 0.25)';
+            mCtx.fillRect(0, surfaceY, w, h - surfaceY);
+            mCtx.strokeStyle = 'rgba(125, 211, 252, 0.45)';
+            mCtx.lineWidth = 1.5;
+            mCtx.beginPath();
+            mCtx.moveTo(0, surfaceY);
+            mCtx.lineTo(w, surfaceY);
+            mCtx.stroke();
+            mCtx.fillStyle = 'rgba(224, 242, 254, 0.72)';
+            mCtx.font = '600 11px system-ui, sans-serif';
+            mCtx.fillText('Surface evaporation (vapor)', 10, 18);
+            mCtx.fillText('Liquid water', 10, surfaceY + 18);
+        } else if (tempC <= 0) {
+            mCtx.fillStyle = 'rgba(224, 242, 254, 0.78)';
+            mCtx.font = '600 11px system-ui, sans-serif';
+            mCtx.fillText(tempC === 0 ? 'Melting crystal lattice (0°C)' : 'Open hexagonal ice crystal', 10, 18);
+        } else {
+            mCtx.fillStyle = 'rgba(224, 242, 254, 0.8)';
+            mCtx.font = '600 11px system-ui, sans-serif';
+            mCtx.fillText('Water vapor gas (high kinetic energy)', 10, 18);
+        }
+
+        const speedBoost = 0.4 + Math.max(0, (tempC + 25) / 150) * 1.8;
+        const vaporSlots = tempC <= 0 ? 0 : tempC >= 100 ? h2o.length : 1 + Math.floor((tempC / 100) * 4);
+
+        if (tempC < 0) {
+            // Draw faint hydrogen-bond lattice lines between nearby crystal nodes
+            mCtx.save();
+            mCtx.strokeStyle = 'rgba(147, 197, 253, 0.35)';
+            mCtx.setLineDash([4, 4]);
+            mCtx.lineWidth = 1.2;
+            const ringPairs = [
+                [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0],
+                [2, 6], [6, 7], [7, 8], [8, 9], [9, 3],
+                [5, 10], [10, 11], [11, 12], [12, 3], [12, 13], [13, 14], [14, 9]
+            ];
+            ringPairs.forEach(([a, b]) => {
+                mCtx.beginPath();
+                mCtx.moveTo(hexPts[a][0] * w, hexPts[a][1] * h);
+                mCtx.lineTo(hexPts[b][0] * w, hexPts[b][1] * h);
+                mCtx.stroke();
+            });
+            mCtx.restore();
+        }
+
+        h2o.forEach((p, idx) => {
+            if (tempC <= 0) {
+                const targetX = hexPts[idx][0] * w;
+                const targetY = hexPts[idx][1] * h;
+                const amp = tempC === 0 ? 4.8 : 1.2 + ((tempC + 25) / 25) * 1.8;
+                p.x = targetX + Math.sin(performance.now() * 0.015 + idx * 1.7) * amp;
+                p.y = targetY + Math.cos(performance.now() * 0.017 + idx * 2.1) * amp;
+                if (tempC === 0 && idx < 4) {
+                    p.y -= 6 + Math.sin(performance.now() * 0.005 + idx) * 6;
+                }
+                p.angle = (idx % 6) * (Math.PI / 3);
+            } else {
+                const isVapor = idx < vaporSlots;
+                const minY = isVapor ? 24 : surfaceY + 14;
+                const maxY = isVapor ? (tempC >= 100 ? h - 18 : surfaceY - 12) : h - 18;
+                if (dt > 0) {
+                    const velScale = (isVapor ? 1.55 : 0.72) * speedBoost;
+                    p.x += p.vx * velScale * dt;
+                    p.y += p.vy * velScale * dt;
+                    p.angle += p.omega * speedBoost * dt;
+                    if (p.x < 18) { p.x = 18; p.vx = Math.abs(p.vx); }
+                    if (p.x > w - 18) { p.x = w - 18; p.vx = -Math.abs(p.vx); }
+                    if (p.y < minY) { p.y = minY; p.vy = Math.abs(p.vy); }
+                    if (p.y > maxY) { p.y = maxY; p.vy = -Math.abs(p.vy); }
+                }
+            }
+            drawH2OMolecule(mCtx, p.x, p.y, p.angle, 0.92, tempC >= 100 || (tempC > 0 && idx < vaporSlots));
+        });
+    }
+
+    const molLoop = window.SimKit?.loop((dt) => {
+        if (!molRunning) return;
+        renderMolecules(Math.min(dt, 0.05));
+    }, { el: window.SimKit?.stage(molCanvas), maxDt: 0.05 });
+
+    function updatePhaseUI() {
+        const tempF = Math.round((tempC * 9) / 5 + 32);
+        if (tempOut) tempOut.textContent = `${tempC}°C (${tempF}°F)`;
+
+        let badge = 'Liquid · Water';
+        let note = 'Liquid water molecules slide past neighbors. The fastest molecules near the surface still escape as invisible vapor.';
+        if (tempC < 0) {
+            badge = 'Solid · Ice Crystal';
+            note = 'Below 0°C, H₂O locks into open hexagonal rings held by hydrogen bonds — leaving extra space so solid ice is ~9% less dense than liquid water and floats.';
+        } else if (tempC === 0) {
+            badge = 'Melting / Freezing · 0°C';
+            note = 'At 0°C, added thermal energy breaks crystal bonds without raising temperature until all ice melts.';
+        } else if (tempC < 100) {
+            badge = tempC >= 30 ? 'Warm Liquid · Fast Evaporation' : 'Liquid · Water';
+            note = `At ${tempC}°C, liquid molecules flow freely in the lower pool while ${1 + Math.floor((tempC / 100) * 4)} high-energy molecules escape into the air as vapor.`;
+        } else if (tempC === 100) {
+            badge = 'Boiling / Condensing · 100°C';
+            note = 'At 100°C (sea level), thermal energy turns liquid into vapor throughout the entire volume, not just the surface.';
+        } else {
+            badge = 'Gas · Water Vapor';
+            note = 'Above 100°C, H₂O molecules overcome intermolecular attractions completely, moving rapidly and filling the entire space.';
+        }
+
+        if (stateBadge) stateBadge.textContent = badge;
+        if (molReadout) molReadout.textContent = note;
+
+        presetChips.forEach((chip) => {
+            chip.classList.toggle('is-active', Number(chip.dataset.phaseTemp) === tempC);
+        });
+        drawHeatingCurve();
+        renderMolecules(0);
+    }
+
+    slider.addEventListener('input', (event) => {
+        tempC = Number(event.target.value);
+        updatePhaseUI();
+    });
+
+    presetChips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+            tempC = Number(chip.dataset.phaseTemp);
+            slider.value = String(tempC);
+            updatePhaseUI();
+        });
+    });
+
+    motionBtn?.addEventListener('click', () => {
+        molRunning = !molRunning;
+        motionBtn.textContent = molRunning ? 'Pause Molecules' : 'Resume Molecules';
+        motionBtn.setAttribute('aria-pressed', String(!molRunning));
+        if (molRunning) molLoop?.resume();
+        else molLoop?.pause();
+    });
+
+    if (!molRunning && motionBtn) {
+        motionBtn.textContent = 'Resume Molecules';
+        motionBtn.setAttribute('aria-pressed', 'true');
+        molLoop?.pause();
+    }
+
+    window.SimKit?.theme?.onChange((colors) => {
+        themeColors = colors;
+        drawHeatingCurve();
+    });
+
+    updatePhaseUI();
+}
+
+/* ============================================================================
+   TWO ENGINES & FOLLOW ONE DROP JOURNEY SIMULATOR (#sun)
+   ============================================================================ */
+
+function initDropJourney() {
+    const startSelect = document.getElementById('journey-start-select');
+    const stepBtn = document.getElementById('journey-step-btn');
+    const autoBtn = document.getElementById('journey-auto-btn');
+    const resetBtn = document.getElementById('journey-reset-btn');
+    const currentPill = document.getElementById('journey-current-pill');
+    const reflection = document.getElementById('journey-reflection');
+    const trail = document.getElementById('journey-trail');
+    if (!startSelect || !stepBtn || !trail) return;
+
+    const POOL_NAMES = {
+        ocean: 'Ocean',
+        atmosphere: 'Atmosphere',
+        glacier: 'Glacier & Snowpack',
+        river: 'River & Lake',
+        soil: 'Soil Moisture',
+        plant: 'Living Plant',
+        groundwater: 'Groundwater Aquifer'
+    };
+
+    const TRANSITIONS = {
+        ocean: [
+            { to: 'atmosphere', process: 'Evaporation', driver: '☀️ Solar heat', weight: 0.65 },
+            { to: 'ocean', process: 'Circulates in ocean currents', driver: '☀️ Wind & currents', weight: 0.35 }
+        ],
+        atmosphere: [
+            { to: 'ocean', process: 'Precipitation over sea', driver: '⬇️ Gravity', weight: 0.45 },
+            { to: 'river', process: 'Rain onto streams/lakes', driver: '⬇️ Gravity', weight: 0.25 },
+            { to: 'soil', process: 'Rain soaking topsoil', driver: '⬇️ Gravity', weight: 0.18 },
+            { to: 'glacier', process: 'Snowfall on high peaks', driver: '⬇️ Gravity', weight: 0.12 }
+        ],
+        glacier: [
+            { to: 'river', process: 'Spring snowmelt runoff', driver: '☀️ Melt + ⬇️ Gravity', weight: 0.72 },
+            { to: 'atmosphere', process: 'Sublimation into dry air', driver: '☀️ Solar energy', weight: 0.28 }
+        ],
+        river: [
+            { to: 'ocean', process: 'Streamflow to coast', driver: '⬇️ Gravity', weight: 0.55 },
+            { to: 'atmosphere', process: 'Surface evaporation', driver: '☀️ Solar energy', weight: 0.25 },
+            { to: 'soil', process: 'Riverbank seepage', driver: '⬇️ Gravity', weight: 0.20 }
+        ],
+        soil: [
+            { to: 'plant', process: 'Root absorption', driver: '🌱 Osmosis & xylem pull', weight: 0.36 },
+            { to: 'groundwater', process: 'Deep percolation', driver: '⬇️ Gravity', weight: 0.34 },
+            { to: 'atmosphere', process: 'Soil evaporation', driver: '☀️ Solar energy', weight: 0.30 }
+        ],
+        plant: [
+            { to: 'atmosphere', process: 'Transpiration through stomata', driver: '☀️ Solar energy', weight: 1.0 }
+        ],
+        groundwater: [
+            { to: 'river', process: 'Spring discharge to stream', driver: '⬇️ Gravity & pressure', weight: 0.45 },
+            { to: 'ocean', process: 'Submarine coastal discharge', driver: '⬇️ Gravity', weight: 0.30 },
+            { to: 'groundwater', process: 'Stored slowly in aquifer', driver: '⬇️ Deep rock pores', weight: 0.25 }
+        ]
+    };
+
+    let currentPool = startSelect.value;
+    let steps = [];
+
+    function pickTransition(pool) {
+        const list = TRANSITIONS[pool] || TRANSITIONS.ocean;
+        const total = list.reduce((sum, item) => sum + item.weight, 0);
+        let r = Math.random() * total;
+        for (const item of list) {
+            r -= item.weight;
+            if (r <= 0) return item;
+        }
+        return list[0];
+    }
+
+    function renderJourney() {
+        const label = POOL_NAMES[currentPool] || currentPool;
+        if (currentPill) currentPill.textContent = `Step ${steps.length} · In ${label}`;
+
+        trail.replaceChildren();
+        if (!steps.length) {
+            const li = document.createElement('li');
+            li.className = 'wc-journey-chip';
+            li.innerHTML = `<strong>Start:</strong> Drop begins in <strong>${label}</strong>`;
+            trail.appendChild(li);
+            if (reflection) reflection.textContent = 'Click "Next Step" to trace a probabilistic path driven by solar energy and gravity.';
+            return;
+        }
+
+        steps.forEach((step, idx) => {
+            const li = document.createElement('li');
+            li.className = 'wc-journey-chip';
+            li.innerHTML = `<strong>${idx + 1}.</strong> ${POOL_NAMES[step.from]} → <em>${step.process}</em> (${step.driver}) → <strong>${POOL_NAMES[step.to]}</strong>`;
+            trail.appendChild(li);
+        });
+
+        const visited = new Set([steps[0].from, ...steps.map((s) => s.to)]);
+        if (reflection) {
+            reflection.textContent = `After ${steps.length} step${steps.length === 1 ? '' : 's'}, this drop visited ${visited.size} unique pool${visited.size === 1 ? '' : 's'} — proving real water cycles through branching shortcuts rather than one fixed circle.`;
+        }
+    }
+
+    function advanceOne() {
+        const choice = pickTransition(currentPool);
+        steps.push({ from: currentPool, to: choice.to, process: choice.process, driver: choice.driver });
+        currentPool = choice.to;
+        renderJourney();
+    }
+
+    function resetJourney() {
+        currentPool = startSelect.value;
+        steps = [];
+        renderJourney();
+    }
+
+    stepBtn.addEventListener('click', advanceOne);
+    autoBtn?.addEventListener('click', () => {
+        resetJourney();
+        for (let i = 0; i < 8; i++) advanceOne();
+    });
+    resetBtn?.addEventListener('click', resetJourney);
+    startSelect.addEventListener('change', resetJourney);
+    renderJourney();
+}
+
+/* ============================================================================
+   THREE-LEVEL WATER DISTRIBUTION EXPLORER (#where)
+   ============================================================================ */
+
+function initDistributionChart() {
+    const canvas = document.getElementById('distribution-chart');
+    const tooltip = document.getElementById('distribution-tooltip');
+    const detail = document.getElementById('distribution-detail');
+    const levelButtons = Array.from(document.querySelectorAll('[data-dist-level]'));
+    if (!canvas) return;
+
+    const LEVELS = [
+        {
+            title: 'All Earth Water',
+            subtitle: '100% Global Water',
+            unitLabel: "of Earth's water",
+            slices: [
+                {
+                    label: 'Oceans', value: 96.5, color: '#0f74b8', earthPct: '96.5%', bucket: '9,650 mL',
+                    desc: 'Saline ocean water stores nearly all water on Earth and drives global weather through evaporation.'
+                },
+                {
+                    label: 'Other saline water', value: 0.9, color: '#7c6bc4', earthPct: '0.9%', bucket: '90 mL',
+                    desc: 'Saline groundwater and salt lakes (such as the Great Salt Lake and Dead Sea).'
+                },
+                {
+                    label: 'Freshwater', value: 2.5, color: '#58c5dc', earthPct: '2.5%', bucket: '250 mL', zoomTo: 1,
+                    desc: 'All non-salty water on Earth — most of it is frozen in glaciers or tucked deep underground.'
+                }
+            ]
+        },
+        {
+            title: 'Freshwater',
+            subtitle: '2.5% of Total',
+            unitLabel: 'of freshwater',
+            slices: [
+                {
+                    label: 'Glaciers & ice caps', value: 68.7, color: '#bfe7f7', earthPct: '1.72%', bucket: '172 mL',
+                    desc: 'Frozen in Antarctic & Greenland ice sheets plus mountain glaciers — the largest freshwater pool.'
+                },
+                {
+                    label: 'Groundwater', value: 30.1, color: '#2b7cc4', earthPct: '0.75%', bucket: '75 mL',
+                    desc: 'Fresh liquid water stored in underground soil pores and permeable rock aquifers.'
+                },
+                {
+                    label: 'Surface & other', value: 1.2, color: '#0891b2', earthPct: '0.03%', bucket: '3 mL', zoomTo: 2,
+                    desc: 'Permafrost, lakes, soil moisture, atmosphere, wetlands, rivers, and living things combined.'
+                }
+            ]
+        },
+        {
+            title: 'Surface & Other',
+            subtitle: '1.2% of Fresh',
+            unitLabel: 'of surface/other fresh',
+            slices: [
+                {
+                    label: 'Ground ice & permafrost', value: 69.0, color: '#a5c8e8', earthPct: '0.021%', bucket: '2.07 mL',
+                    desc: 'Frozen ground moisture locked beneath tundra and cold high-latitude landscapes.'
+                },
+                {
+                    label: 'Lakes', value: 20.9, color: '#1d72b8', earthPct: '0.006%', bucket: '0.63 mL',
+                    desc: 'Freshwater lakes hold the majority of visible liquid surface freshwater.'
+                },
+                {
+                    label: 'Soil moisture', value: 3.8, color: '#d49a45', earthPct: '0.0011%', bucket: '0.11 mL',
+                    desc: 'Moisture clinging around soil particles that plant roots absorb.'
+                },
+                {
+                    label: 'Atmosphere', value: 3.0, color: '#84cced', earthPct: '0.0009%', bucket: '0.09 mL',
+                    desc: 'Water vapor and cloud droplets floating in Earth’s atmosphere right now.'
+                },
+                {
+                    label: 'Swamps & marshes', value: 2.6, color: '#2f9e66', earthPct: '0.0008%', bucket: '0.08 mL',
+                    desc: 'Freshwater wetlands that store floodwater and filter pollutants.'
+                },
+                {
+                    label: 'Rivers & living things', value: 0.75, color: '#e06d53', earthPct: '0.00023%', bucket: '0.023 mL',
+                    desc: 'Rivers (0.49%) plus all living organisms (0.26%) — tiny at one snapshot, yet cycling rapidly!'
+                }
+            ]
+        }
+    ];
+
+    let levelIndex = 0;
+    let selectedSliceIndex = 0;
+
+    function renderDetail() {
+        const level = LEVELS[levelIndex];
+        const slice = level.slices[selectedSliceIndex] || level.slices[0];
+        if (tooltip) {
+            tooltip.textContent = `${slice.label}: ${slice.value}% ${level.unitLabel} (${slice.earthPct} of all Earth water).`;
+        }
+        if (!detail) return;
+        detail.replaceChildren();
+        const heading = document.createElement('h4');
+        heading.textContent = `${slice.label} — ${slice.value}% ${level.unitLabel}`;
+        const stats = document.createElement('p');
+        stats.innerHTML = `<strong>Share of all Earth water:</strong> ${slice.earthPct} &nbsp;·&nbsp; <strong>In a 10 L bucket:</strong> ${slice.bucket}`;
+        const desc = document.createElement('p');
+        desc.textContent = slice.desc;
+        detail.append(heading, stats, desc);
+
+        if (typeof slice.zoomTo === 'number') {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sim-button';
+            btn.textContent = `Zoom into ${slice.label} →`;
+            btn.addEventListener('click', () => setLevel(slice.zoomTo));
+            detail.appendChild(btn);
+        }
+    }
+
+    function setLevel(nextLevel) {
+        levelIndex = Math.max(0, Math.min(LEVELS.length - 1, nextLevel));
+        selectedSliceIndex = 0;
+        levelButtons.forEach((btn) => {
+            const active = Number(btn.dataset.distLevel) === levelIndex;
+            btn.classList.toggle('is-active', active);
+            btn.classList.toggle('reset', !active);
+            btn.setAttribute('aria-selected', String(active));
+        });
+        renderChart();
+    }
+
+    function renderChart() {
+        const level = LEVELS[levelIndex];
+        const legend = document.getElementById('distribution-legend');
+        canvas.innerHTML = '';
+        const cx = 210;
+        const cy = 160;
+        const radius = 108;
+        let startAngle = -Math.PI / 2;
+        const pendingLabels = [];
+
+        level.slices.forEach((slice, idx) => {
+            const sweep = (slice.value / 100) * Math.PI * 2;
+            const endAngle = startAngle + sweep;
+            const midAngle = startAngle + sweep / 2;
+            const isSelected = idx === selectedSliceIndex;
+            const offset = isSelected ? 6 : 0;
+            const ox = Math.cos(midAngle) * offset;
+            const oy = Math.sin(midAngle) * offset;
+
+            const node = svg('path', {
+                d: describeArcSlice(cx + ox, cy + oy, radius, startAngle, endAngle),
+                fill: slice.color,
+                stroke: isSelected ? '#082c42' : '#ffffff',
+                'stroke-width': isSelected ? 2.5 : 1.5,
+                class: 'distribution-chart-slice',
+                tabindex: 0,
+                role: 'button',
+                'aria-label': `${slice.label}: ${slice.value}% ${level.unitLabel}`
+            });
+
+            const selectSlice = () => {
+                selectedSliceIndex = idx;
+                renderChart();
+            };
+
+            node.addEventListener('mouseenter', () => {
+                if (tooltip) tooltip.textContent = `${slice.label}: ${slice.value}% ${level.unitLabel} (${slice.earthPct} of all Earth water).`;
+            });
+            node.addEventListener('focus', selectSlice);
+            node.addEventListener('click', selectSlice);
+            node.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    selectSlice();
+                }
+            });
+            canvas.appendChild(node);
+
+            if (slice.value >= 12) {
+                const labelRadius = radius - 26;
+                const labelX = cx + ox + Math.cos(midAngle) * labelRadius;
+                const labelY = cy + oy + Math.sin(midAngle) * labelRadius;
+                pendingLabels.push({
+                    x: labelX,
+                    y: labelY,
+                    label: slice.label === 'Ground ice & permafrost' ? 'Permafrost' : slice.label,
+                    value: `${slice.value}%`
+                });
+            }
+
+            startAngle = endAngle;
+        });
+
+        canvas.appendChild(svg('circle', { cx, cy, r: 52, fill: '#ffffff', stroke: '#cfe3f3', 'stroke-width': 1.5 }));
+        canvas.appendChild(svg('text', { x: cx, y: cy - 4, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: '#0c436b' }, level.title));
+        canvas.appendChild(svg('text', { x: cx, y: cy + 13, 'text-anchor': 'middle', 'font-size': 10, fill: '#4b6c84' }, level.subtitle));
+
+        pendingLabels.forEach((item) => {
+            canvas.appendChild(svg('text', {
+                x: item.x, y: item.y, 'text-anchor': 'middle', 'font-size': 11.5, fill: '#0b2b40', 'font-weight': 700,
+                'paint-order': 'stroke', stroke: '#f5fbff', 'stroke-width': 3.2
+            }, item.label));
+            canvas.appendChild(svg('text', {
+                x: item.x, y: item.y + 14, 'text-anchor': 'middle', 'font-size': 10.5, fill: '#1e4663', 'font-weight': 700,
+                'paint-order': 'stroke', stroke: '#f5fbff', 'stroke-width': 3.2
+            }, item.value));
+        });
+
+        if (legend) {
+            legend.replaceChildren();
+            level.slices.forEach((slice, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `wc-legend-item${idx === selectedSliceIndex ? ' is-active' : ''}`;
+                btn.setAttribute('role', 'listitem');
+                btn.setAttribute('aria-pressed', String(idx === selectedSliceIndex));
+                btn.innerHTML = `<span class="wc-legend-swatch" style="background:${slice.color}"></span><span>${slice.label} (${slice.value}%)</span>`;
+                btn.addEventListener('click', () => {
+                    selectedSliceIndex = idx;
+                    renderChart();
+                });
+                legend.appendChild(btn);
+            });
+        }
+        renderDetail();
+    }
+
+    levelButtons.forEach((btn) => {
+        btn.addEventListener('click', () => setLevel(Number(btn.dataset.distLevel)));
+    });
+    setLevel(0);
+}
+
+/* ============================================================================
+   TRANSPIRATION EXPLORER (#transpiration-explorer)
+   ============================================================================ */
+
+function initTranspirationExplorer() {
+    const canvas = document.getElementById('transpiration-canvas');
+    if (!canvas) return;
+    const root = document.getElementById('transpiration-explorer');
+    const humidity = root.querySelector('#transpiration-humidity');
+    const soil = root.querySelector('#transpiration-soil');
+    const stomata = root.querySelector('#transpiration-stomata');
+
+    canvas.innerHTML = `<title id="transpiration-title">Inside a plant: the transpiration pathway</title>
+        <desc id="transpiration-desc">A rooted plant connects to a magnified xylem tube and a leaf cross-section. Liquid water enters roots, rises through xylem, evaporates inside the leaf, and diffuses out through a stomatal pore.</desc>
+        <defs>
+          <linearGradient id="tp-sky" x2="0" y2="1"><stop stop-color="#e0eff0"/><stop offset="1" stop-color="#f7faf4"/></linearGradient>
+          <linearGradient id="tp-leaf"><stop stop-color="#276e4d"/><stop offset=".5" stop-color="#65a86c"/><stop offset="1" stop-color="#3d8056"/></linearGradient>
+          <pattern id="tp-soil" width="44" height="28" patternUnits="userSpaceOnUse"><rect width="44" height="28" fill="#d6bf98"/><path d="M0 9q11 -4 22 0t22 0M6 22h5m20 -3h4" stroke="#aa8d62" fill="none" opacity=".5"/></pattern>
+          <marker id="tp-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#136e9b"/></marker>
+        </defs>
+        <rect width="900" height="520" rx="16" fill="url(#tp-sky)"/>
+        <g data-tp-region="0" tabindex="0" role="button" aria-label="Step 1: Roots absorb soil water">
+          <path d="M0 347Q135 334 292 347V520H0Z" fill="url(#tp-soil)"/>
+          <path d="M155 348V139" stroke="#8d6945" stroke-width="22" stroke-linecap="round"/>
+          <g fill="url(#tp-leaf)" stroke="#276447" stroke-width="2">
+            <path d="M153 266Q53 249 47 160Q140 158 153 266Z"/><path d="M158 220Q174 111 267 119Q268 199 158 220Z"/><path d="M155 168Q98 113 135 57Q194 101 155 168Z"/>
+          </g>
+          <g stroke="#add1a0" fill="none" stroke-width="2"><path d="M151 258L66 179m32 25l-5 -27m29 48l-2 -28M162 215L249 135m-48 44l29 -3m-51 23l5 -32M155 156L138 78"/></g>
+          <path d="M155 346Q105 398 48 460M155 346Q192 401 267 469M155 354V492M106 400L83 484M201 417L219 491" stroke="#8d6945" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <g stroke="#8d6945" stroke-width="1.5"><path d="M67 441l-19 -2m26 -8l-5 -14m41 41l15 11m117 -21l17 -3m-65 -31l-3 16m-30 36l-12 9m9 -29l12 6"/></g>
+          <g id="transpiration-soil-drops" fill="#329dc5" opacity=".75"><circle cx="39" cy="421" r="5"/><circle cx="95" cy="480" r="5"/><circle cx="244" cy="439" r="5"/><circle cx="180" cy="475" r="5"/><circle cx="62" cy="390" r="4"/><circle cx="215" cy="392" r="4"/></g>
+          <text x="24" y="32" class="tp-title">01 · Roots absorb</text><text x="24" y="320" class="tp-small">Root hairs contact soil water</text>
+        </g>
+        <path d="M168 260L315 225M257 145L561 121" stroke="#81978d" stroke-dasharray="4 5" fill="none"/>
+        <g data-tp-region="1" tabindex="0" role="button" aria-label="Step 2: Xylem pulls water upward">
+          <rect x="311" y="51" width="206" height="437" rx="14" fill="#fff" stroke="#b4cdc4"/>
+          <text x="330" y="83" class="tp-title">02 · Xylem pulls</text>
+          <path d="M373 139V400M452 139V400" stroke="#b2956c" stroke-width="13"/>
+          <path d="M389 139V400H437V139Z" fill="#d9f1fa"/>
+          <g fill="#59b4d8" stroke="#16749b" stroke-width="1.5"><circle cx="413" cy="179" r="11"/><circle cx="413" cy="220" r="11"/><circle cx="413" cy="261" r="11"/><circle cx="413" cy="302" r="11"/><circle cx="413" cy="343" r="11"/></g>
+          <path id="transpiration-xylem" stroke-dasharray="8 10" d="M413 344V152" stroke="#136e9b" stroke-width="3" fill="none" marker-end="url(#tp-arrow)"/>
+          <text x="329" y="435" class="tp-small">Cohesion holds water</text><text x="329" y="457" class="tp-small">together under tension</text>
+        </g>
+        <g data-tp-region="2" tabindex="0" role="button" aria-label="Step 3: Leaf releases water vapor">
+          <rect x="546" y="51" width="336" height="437" rx="14" fill="#fff" stroke="#b4cdc4"/>
+          <text x="565" y="83" class="tp-title">03 · Leaf releases</text>
+          <text x="565" y="115" class="tp-small">Leaf cross-section · magnified</text>
+          <path d="M563 143H865V170H563ZM563 301H681V323H563ZM749 301H865V323H749Z" fill="#78ad70" stroke="#3c7950"/>
+          <g fill="#a6c78b" stroke="#5e965f" stroke-width="2"><ellipse cx="593" cy="204" rx="23" ry="25"/><ellipse cx="649" cy="205" rx="23" ry="25"/><ellipse cx="711" cy="204" rx="23" ry="25"/><ellipse cx="775" cy="206" rx="23" ry="25"/><ellipse cx="840" cy="203" rx="20" ry="25"/><ellipse cx="605" cy="260" rx="29" ry="20"/><ellipse cx="668" cy="258" rx="22" ry="21"/><ellipse cx="789" cy="258" rx="29" ry="20"/><ellipse cx="849" cy="260" rx="18" ry="20"/></g>
+          <path d="M675 230Q714 253 739 279" fill="none" stroke="#329dc5" stroke-width="4"/>
+          <text x="572" y="354" class="tp-small">Guard cells</text><path d="M650 348L690 315" stroke="#58766a" fill="none"/>
+          <ellipse id="transpiration-guard-left" cx="692" cy="309" rx="19" ry="13" fill="#3e8d59"/><ellipse id="transpiration-guard-right" cx="738" cy="309" rx="19" ry="13" fill="#3e8d59"/>
+          <ellipse id="transpiration-pore" cx="715" cy="309" rx="10" ry="10" fill="#173f35"/>
+          <path id="transpiration-vapor" d="M715 282V414M725 335L764 413M704 336L669 413" stroke="#136e9b" stroke-width="3" stroke-dasharray="3 9" fill="none" marker-end="url(#tp-arrow)"/>
+          <text x="567" y="452" class="tp-small">Evaporation inside → diffusion out</text>
+        </g>
+        <path id="transpiration-liquid" d="M48 460Q106 400 155 346V220Q210 173 250 138" fill="none" stroke="#136e9b" stroke-width="4" stroke-dasharray="8 10"/>
+        <text x="24" y="507" class="tp-small">LIQUID WATER</text><text x="594" y="507" class="tp-small">INVISIBLE VAPOR IN AIR</text>`;
+
+    const explanations = [
+        ['Roots · liquid water enters', 'Root hairs absorb water from soil. Connected roots deliver it to the plant’s water-carrying tissue.'],
+        ['Xylem · a continuous water pathway', 'Water travels through xylem in roots, stems, and leaf veins. Evaporation from leaves creates tension that pulls water upward; cohesion helps hold the water column together.'],
+        ['Leaves · liquid becomes gas', 'Water evaporates from moist cell surfaces inside the leaf. Vapor then diffuses through stomata into the surrounding air. Water vapor is invisible, unlike mist droplets.']
+    ];
+
+    function selectStep(index) {
+        root.querySelectorAll('[data-transpiration-step]').forEach((button) => {
+            button.setAttribute('aria-pressed', String(Number(button.dataset.transpirationStep) === index));
+        });
+        canvas.querySelectorAll('[data-tp-region]').forEach((region) => {
+            region.classList.toggle('tp-selected', Number(region.dataset.tpRegion) === index);
+        });
+        const panel = root.querySelector('#transpiration-explanation');
+        panel.replaceChildren();
+        const title = document.createElement('strong');
+        title.textContent = explanations[index][0];
+        const description = document.createElement('span');
+        description.textContent = explanations[index][1];
+        panel.append(title, description);
+    }
+
+    root.querySelectorAll('[data-transpiration-step]').forEach((button) => {
+        button.addEventListener('click', () => selectStep(Number(button.dataset.transpirationStep)));
+    });
+    canvas.querySelectorAll('[data-tp-region]').forEach((region) => {
+        region.addEventListener('click', () => selectStep(Number(region.dataset.tpRegion)));
+        region.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                selectStep(Number(region.dataset.tpRegion));
+            }
+        });
+    });
+
+    let savedFlow = null;
+    function render() {
+        const h = Number(humidity.value);
+        const water = Number(soil.value);
+        const opening = Number(stomata.value);
+        const rate = Math.round((1 - h / 100) * water * opening);
+        root.querySelector('#transpiration-humidity-value').textContent = `${h}%`;
+        root.querySelector('#transpiration-soil-value').textContent = `${water}%`;
+        root.querySelector('#transpiration-rate').textContent = `Relative flow: ${rate} / 100`;
+        root.querySelector('#transpiration-meter').value = rate;
+
+        if (savedFlow) {
+            root.querySelector('#transpiration-comparison').textContent = `Saved: ${savedFlow.h}% humidity, ${savedFlow.water}% soil water, ${savedFlow.label} pores → ${savedFlow.rate}/100. Now: ${rate}/100 (${rate - savedFlow.rate > 0 ? '+' : ''}${rate - savedFlow.rate} points).`;
+        }
+        root.querySelector('#transpiration-feedback').textContent =
+            opening === 0 ? 'Stomatal flow stops in this model. The pore is closed.' :
+            water === 0 ? 'No soil water is available to sustain the modeled flow.' :
+            water <= 20 ? 'Water supply limits flow. Real plants often close stomata during drought.' :
+            h >= 70 ? 'Humid air reduces the difference in water vapor concentration between leaf and air.' :
+            'Drier air favors vapor loss when soil water and open stomata support the flow.';
+
+        canvas.querySelector('#transpiration-pore')?.setAttribute('rx', String(10 * opening));
+        const guardShift = (1 - opening) * 7;
+        canvas.querySelector('#transpiration-guard-left')?.setAttribute('cx', String(692 + guardShift));
+        canvas.querySelector('#transpiration-guard-right')?.setAttribute('cx', String(738 - guardShift));
+        const soilDrops = canvas.querySelector('#transpiration-soil-drops');
+        if (soilDrops) soilDrops.style.opacity = String(0.1 + (water / 100) * 0.85);
+        canvas.querySelector('#transpiration-vapor').style.opacity = String(rate === 0 ? 0 : 0.25 + rate / 100);
+        canvas.style.setProperty('--transpiration-duration', `${rate > 0 ? 120 / rate : 4}s`);
+        canvas.classList.toggle('transpiration-flowing', rate > 0);
+    }
+
+    root.querySelector('#transpiration-save')?.addEventListener('click', () => {
+        savedFlow = {
+            h: Number(humidity.value),
+            water: Number(soil.value),
+            label: stomata.selectedOptions[0].textContent.toLowerCase(),
+            rate: Number(root.querySelector('#transpiration-meter').value)
+        };
+        render();
+    });
+
+    [humidity, soil, stomata].forEach((control) => control.addEventListener('input', render));
+    root.querySelectorAll('[data-transpiration-preset]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (button.dataset.transpirationPreset === 'reset') {
+                savedFlow = null;
+                root.querySelector('#transpiration-comparison').textContent = 'Save a baseline, change one condition, then explain the difference.';
+                selectStep(0);
+            }
+            humidity.value = button.dataset.transpirationPreset === 'humid' ? '90' : '40';
+            soil.value = button.dataset.transpirationPreset === 'drought' ? '10' : '80';
+            stomata.value = button.dataset.transpirationPreset === 'drought' ? '0.35' : '1';
+            render();
+        });
+    });
+
+    root.querySelector('#transpiration-motion')?.addEventListener('click', (event) => {
+        const paused = canvas.classList.toggle('transpiration-paused');
+        event.currentTarget.setAttribute('aria-pressed', String(paused));
+        event.currentTarget.textContent = paused ? 'Resume flow animation' : 'Pause flow animation';
+    });
+
+    selectStep(0);
+    render();
+}
+
+/* ============================================================================
+   VOCABULARY FILTER (#vocabulary)
+   ============================================================================ */
+
+function initVocabularyFilter() {
+    const filterButtons = Array.from(document.querySelectorAll('[data-vocab-filter]'));
+    const cards = Array.from(document.querySelectorAll('.vocab-card[data-vocab-cat]'));
+    if (!filterButtons.length || !cards.length) return;
+
+    filterButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const filter = button.dataset.vocabFilter;
+            filterButtons.forEach((btn) => {
+                const active = btn === button;
+                btn.classList.toggle('is-active', active);
+                btn.classList.toggle('reset', !active);
+                btn.setAttribute('aria-pressed', String(active));
+            });
+            cards.forEach((card) => {
+                card.hidden = filter !== 'all' && card.dataset.vocabCat !== filter;
+            });
+        });
+    });
+}
+
+/* ============================================================================
+   QUICK CHECK QUIZ (#quiz — manual Next + missed-question review)
+   ============================================================================ */
+
 function initQuiz() {
     const questions = [
-        ['Which process turns liquid water into vapor?', ['Condensation', 'Evaporation', 'Collection', 'Infiltration'], 1, 'Evaporation happens when liquid water gains enough energy to become vapor.'],
-        ['What powers the water cycle?', ['The Moon', 'Earth’s core', 'The Sun', 'Wind alone'], 2, 'Solar energy heats water and drives evaporation and weather patterns.'],
-        ['How much of Earth’s water is in the oceans?', ['50%', '75%', '97%', '99.9%'], 2, 'About 97% of Earth’s water is saltwater in the oceans.'],
-        ['Which stage describes water soaking into soil?', ['Collection', 'Infiltration', 'Precipitation', 'Transpiration'], 1, 'Infiltration is the movement of water into soil and underground layers.'],
-        ['What do plants release during transpiration?', ['Liquid water', 'Ice crystals', 'Water vapor', 'Salt'], 2, 'Plants release water vapor from tiny openings in their leaves.'],
-        ['At what temperature does water freeze?', ['0°C', '32°C', '50°C', '100°C'], 0, 'Water freezes at 0°C under standard conditions.'],
-        ['Where is most freshwater stored?', ['Oceans', 'Glaciers and ice', 'Atmosphere', 'Rivers'], 1, 'Most freshwater is locked up in glaciers and ice.'],
-        ['What is water beneath Earth’s surface called?', ['Runoff', 'Precipitation', 'Groundwater', 'Vapor'], 2, 'Groundwater is stored beneath the surface in soil and rock.']
+        ['Under the same sun and temperature, when does water evaporate faster?', ['Into dry air', 'Into 95% humid air', 'Only at 100°C', 'Only in winter'], 0, 'Drier air has a larger moisture difference from the water surface, allowing more net evaporation.'],
+        ['Which two engines work together to keep Earth’s water cycle moving?', ['Wind and ocean tides', 'Solar energy and gravity', 'Moonlight and magnetism', 'Earth’s core and rivers'], 1, 'Solar energy lifts water by heating and evaporation, while gravity pulls precipitation, runoff, and groundwater downhill.'],
+        ['What happens to rising water vapor before it forms a cloud?', ['It boils at 100°C', 'It cools below its dew point and condenses', 'It freezes instantly into solid hail', 'It sinks into aquifers'], 1, 'Rising air expands and cools until it reaches its dew point (saturation), forming visible droplets or ice crystals.'],
+        ['Approximately what percentage of all water on Earth is freshwater?', ['96.5%', '50%', '2.5%', '0.3%'], 2, 'About 96.5% is in the oceans (plus 0.9% other saline water), leaving only 2.5% freshwater — mostly frozen or underground.'],
+        ['Which process describes water soaking down into soil pores toward an aquifer?', ['Sublimation', 'Infiltration', 'Transpiration', 'Condensation'], 1, 'Infiltration moves surface water downward through soil and rock layers into groundwater storage.'],
+        ['How do plants release water vapor back into the atmosphere?', ['Transpiration through leaf stomata', 'Deposition on roots', 'Melting xylem tubes', 'Runoff through bark'], 0, 'Roots draw soil water up through xylem and release invisible vapor through microscopic leaf pores called stomata.'],
+        ['What happens when snow or ice turns directly into water vapor without melting first?', ['Deposition', 'Condensation', 'Sublimation', 'Percolation'], 2, 'Sublimation skips the liquid phase (solid → gas), while deposition goes the opposite way (gas → solid).'],
+        ['Why can a warmer climate cause BOTH heavier downpours and worse droughts?', ['Warm air holds more vapor before saturating and dries soils faster', 'Oceans stop evaporating when temperatures rise', 'Gravity becomes stronger during summer heat waves', 'Clouds stop condensing over continents'], 0, 'Warmer air holds ~7% more water vapor per °C, drying land between storms while feeding heavier rainfall when storms form.']
     ];
+
     const container = document.getElementById('quiz-questions');
+    const nextBtn = document.getElementById('quiz-next-btn');
     const results = document.getElementById('quiz-results');
+    const reviewList = document.getElementById('quiz-review-list');
     const scoreCounter = document.getElementById('quiz-score-counter');
     const progressLabel = document.getElementById('quiz-progress-label');
     const progressBar = document.getElementById('quiz-progress-bar');
     const scoreMessage = document.getElementById('score-message');
     const retake = document.getElementById('retake-quiz-btn');
+    if (!container || !nextBtn) return;
+
     let current = 0;
     let score = 0;
     let locked = false;
+    let missed = [];
 
     function updateMeta() {
-        scoreCounter.textContent = `${score}/${questions.length} correct`;
-        progressLabel.textContent = current < questions.length ? `Question ${current + 1} of ${questions.length}` : 'Quiz complete';
-        progressBar.style.width = `${(current / questions.length) * 100}%`;
+        if (scoreCounter) scoreCounter.textContent = `${score}/${questions.length} correct`;
+        if (progressLabel) progressLabel.textContent = current < questions.length ? `Question ${current + 1} of ${questions.length}` : 'Quiz complete';
+        if (progressBar) progressBar.style.width = `${(current / questions.length) * 100}%`;
+    }
+
+    function showResults() {
+        container.hidden = true;
+        nextBtn.hidden = true;
+        results.hidden = false;
+        if (progressBar) progressBar.style.width = '100%';
+        if (scoreMessage) {
+            scoreMessage.textContent = score >= 7
+                ? `Strong work: ${score}/${questions.length}!`
+                : `You scored ${score}/${questions.length}. Review any missed items below and try again.`;
+        }
+        if (reviewList) {
+            reviewList.replaceChildren();
+            if (!missed.length) {
+                const p = document.createElement('p');
+                p.textContent = 'Perfect score — you mastered every water-cycle concept in this check!';
+                reviewList.appendChild(p);
+            } else {
+                missed.forEach((item) => {
+                    const div = document.createElement('div');
+                    div.className = 'quiz-review-item';
+                    div.innerHTML = `<strong>${item.q}</strong><br>Answer: <em>${item.a}</em> — ${item.exp}`;
+                    reviewList.appendChild(div);
+                });
+            }
+        }
     }
 
     function renderQuestion() {
         const [question, answers, correctIndex, explanation] = questions[current];
         container.innerHTML = '';
+        nextBtn.hidden = true;
         const card = document.createElement('div');
         card.className = 'quiz-question';
-        card.innerHTML = `<h4>Question ${current + 1}</h4><p>${question}</p>`;
+        card.innerHTML = `<h3>Question ${current + 1}</h3><p>${question}</p>`;
         const options = document.createElement('div');
         options.className = 'answer-options';
         const feedback = document.createElement('p');
         feedback.className = 'distribution-tooltip';
         feedback.setAttribute('aria-live', 'polite');
         feedback.hidden = true;
+
         answers.forEach((answer, index) => {
             const button = document.createElement('button');
             button.type = 'button';
@@ -988,7 +2229,11 @@ function initQuiz() {
                 if (locked) return;
                 locked = true;
                 const correct = index === correctIndex;
-                if (correct) score += 1;
+                if (correct) {
+                    score += 1;
+                } else {
+                    missed.push({ q: question, a: answers[correctIndex], exp: explanation });
+                }
                 [...options.children].forEach((child, childIndex) => {
                     child.disabled = true;
                     if (childIndex === correctIndex) child.classList.add('correct');
@@ -997,19 +2242,9 @@ function initQuiz() {
                 feedback.hidden = false;
                 feedback.textContent = `${correct ? 'Correct.' : 'Not quite.'} ${explanation}`;
                 updateMeta();
-                setTimeout(() => {
-                    current += 1;
-                    locked = false;
-                    if (current < questions.length) {
-                        renderQuestion();
-                        updateMeta();
-                    } else {
-                        container.style.display = 'none';
-                        results.style.display = 'block';
-                        progressBar.style.width = '100%';
-                        scoreMessage.textContent = score >= 7 ? `Excellent: ${score}/${questions.length}.` : `You scored ${score}/${questions.length}. Review the animation and try again.`;
-                    }
-                }, 1600);
+                nextBtn.textContent = current + 1 < questions.length ? 'Next Question →' : 'See Results →';
+                nextBtn.hidden = false;
+                nextBtn.focus();
             });
             options.appendChild(button);
         });
@@ -1017,11 +2252,24 @@ function initQuiz() {
         container.appendChild(card);
     }
 
+    nextBtn.addEventListener('click', () => {
+        current += 1;
+        locked = false;
+        if (current < questions.length) {
+            renderQuestion();
+            updateMeta();
+        } else {
+            showResults();
+        }
+    });
+
     retake?.addEventListener('click', () => {
         current = 0;
         score = 0;
-        results.style.display = 'none';
-        container.style.display = 'block';
+        locked = false;
+        missed = [];
+        results.hidden = true;
+        container.hidden = false;
         renderQuestion();
         updateMeta();
     });
@@ -1030,35 +2278,96 @@ function initQuiz() {
     updateMeta();
 }
 
+/* ============================================================================
+   SCAVENGER HUNT (#scavenger — flexible validation, Enter key, non-spoiling hints)
+   ============================================================================ */
+
 function initScavengerHunt() {
     const validators = [
-        { test: (v) => includesAll(v, ['evaporation', 'condensation', 'precipitation', 'collection', 'infiltration', 'transpiration']), text: 'The six stages are evaporation, condensation, precipitation, collection, infiltration, and transpiration.' },
-        { test: (v) => v.includes('heat') || v.includes('energy') || v.includes('evaporation'), text: 'The Sun provides energy that heats water and drives the cycle.' },
-        { test: (v) => v.includes('97') && (v.includes('1') || v.includes('fresh')), text: 'About 97% is in oceans and about 1% is accessible freshwater.' },
-        { test: (v) => v.includes('plants') && (v.includes('water bodies') || v.includes('ocean') || v.includes('lake')), text: 'Evaporation comes from water surfaces; transpiration comes from plants.' },
-        { test: (v) => v.includes('cool') && (v.includes('droplet') || v.includes('liquid')), text: 'Condensation happens when vapor cools and forms liquid droplets.' },
-        { test: (v) => v.includes('underground') && (v.includes('fresh') || v.includes('important') || v.includes('drinking')), text: 'Groundwater is underground stored water and an important freshwater supply.' }
+        {
+            test: (v) => includesAll(v, ['evaporat', 'condens', 'precipit', 'infiltrat', 'transpir']) && (v.includes('collect') || v.includes('runoff')),
+            hint: 'Make sure you include all 6 stages: E…, C…, P…, Collection (or Runoff), I…, and T….',
+            sample: 'Evaporation, condensation, precipitation, collection, infiltration, and transpiration.'
+        },
+        {
+            test: (v) => (v.includes('sun') || v.includes('solar')) && (v.includes('gravity') || v.includes('heat') || v.includes('warm') || v.includes('energy') || v.includes('evaporat') || v.includes('drive')),
+            hint: 'Name the Sun (providing heat/energy to lift vapor) and check "Two Engines" for gravity pulling water downhill!',
+            sample: 'The Sun and gravity drive the cycle: solar energy heats water to drive evaporation and winds, while gravity pulls rain and runoff downhill.'
+        },
+        {
+            test: (v) => (v.includes('96.5') || v.includes('97') || v.includes('97.5') || v.includes('96')) && (v.includes('2.5') || v.includes('3%') || v.includes('1%')),
+            hint: 'Include both percentages: oceans (~96.5%–97%) and total freshwater (2.5%).',
+            sample: 'Oceans hold 96.5% of Earth’s water (about 97.4% including other saltwater), and only 2.5% is freshwater.'
+        },
+        {
+            test: (v) => (v.includes('plant') || v.includes('leaf') || v.includes('leaves') || v.includes('tree') || v.includes('stoma')) &&
+                         (v.includes('ocean') || v.includes('lake') || v.includes('river') || v.includes('surface') || v.includes('water bod') || v.includes('puddle') || v.includes('soil')),
+            hint: 'Mention both sources: open water surfaces (oceans/lakes) vs. plants/leaves releasing vapor.',
+            sample: 'Evaporation comes from open water bodies like oceans and lakes, while transpiration comes from plants releasing vapor through leaves.'
+        },
+        {
+            test: (v) => (v.includes('cool') || v.includes('cold') || v.includes('dew point') || v.includes('temperature drop')) &&
+                         (v.includes('droplet') || v.includes('liquid') || v.includes('cloud') || v.includes('fog') || v.includes('ice')),
+            hint: 'Explain what causes it (vapor cooling below its dew point) and what forms (liquid droplets or clouds).',
+            sample: 'Cooling air causes invisible water vapor to condense into tiny liquid droplets or ice crystals, forming clouds and fog.'
+        },
+        {
+            test: (v) => (v.includes('underground') || v.includes('beneath') || v.includes('soil') || v.includes('rock') || v.includes('aquifer')) &&
+                         (v.includes('fresh') || v.includes('drink') || v.includes('farm') || v.includes('crop') || v.includes('slow') || v.includes('centur') || v.includes('thousand') || v.includes('replenish') || v.includes('important') || v.includes('supply')),
+            hint: 'Describe where groundwater is stored (underground/soil/aquifers) AND why we must use it carefully (slow recharge / vital drinking & farm supply).',
+            sample: 'Groundwater is freshwater stored underground in soil and rock aquifers; it supplies drinking water and farms, and deep aquifers can take centuries to replenish.'
+        }
     ];
+
     const scoreCounter = document.getElementById('hunt-score-counter');
     const progressLabel = document.getElementById('hunt-progress-label');
     const progressBar = document.getElementById('hunt-progress-bar');
     const correct = new Set();
 
+    function checkItem(index) {
+        const input = document.querySelector(`.hunt-input[data-hunt="${index}"]`);
+        const feedback = document.getElementById(`hunt-feedback-${index}`);
+        const value = (input?.value || '').trim().toLowerCase();
+        if (!value) {
+            feedback.className = 'hunt-feedback incorrect';
+            feedback.textContent = 'Type an answer first, or use "Reveal Relevant Section" for clues.';
+            return;
+        }
+        const ok = validators[index].test(value);
+        if (ok) correct.add(index);
+        feedback.className = `hunt-feedback ${ok ? 'correct' : 'incorrect'}`;
+        feedback.textContent = ok
+            ? `Correct! ${validators[index].sample}`
+            : `Almost — ${validators[index].hint}`;
+        if (scoreCounter) scoreCounter.textContent = `${correct.size}/6 correct`;
+        if (progressLabel) progressLabel.textContent = correct.size === 6 ? 'All scavenger clues solved!' : `Solved ${correct.size} of 6`;
+        if (progressBar) progressBar.style.width = `${(correct.size / 6) * 100}%`;
+    }
+
     document.querySelectorAll('[data-hunt-check]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const index = Number(button.dataset.huntCheck);
-            const input = document.querySelector(`.hunt-input[data-hunt="${index}"]`);
-            const feedback = document.getElementById(`hunt-feedback-${index}`);
-            const value = (input?.value || '').toLowerCase();
-            const ok = validators[index].test(value);
-            if (ok) correct.add(index);
-            feedback.className = `hunt-feedback ${ok ? 'correct' : 'incorrect'}`;
-            feedback.textContent = `${ok ? 'Correct.' : 'Try again.'} ${validators[index].text}`;
-            scoreCounter.textContent = `${correct.size}/6 correct`;
-            progressLabel.textContent = correct.size === 6 ? 'All scavenger clues solved' : `Solved ${correct.size} of 6`;
-            progressBar.style.width = `${(correct.size / 6) * 100}%`;
+        button.addEventListener('click', () => checkItem(Number(button.dataset.huntCheck)));
+    });
+
+    document.querySelectorAll('.hunt-input').forEach((input) => {
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                checkItem(Number(input.dataset.hunt));
+            }
         });
     });
+
+    document.querySelectorAll('[data-hunt-reveal]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const index = Number(button.dataset.huntReveal);
+            const feedback = document.getElementById(`hunt-feedback-${index}`);
+            if (feedback) {
+                feedback.className = 'hunt-feedback';
+                feedback.textContent = `Sample answer: ${validators[index].sample}`;
+            }
+        });
+    });
+
     document.querySelectorAll('[data-hint-target]').forEach((button) => {
         button.addEventListener('click', () => {
             document.querySelector(button.dataset.hintTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1104,32 +2413,6 @@ function initKeyboardNavigation() {
         const next = event.key === 'ArrowRight' ? activeIndex + 1 : activeIndex - 1;
         buttons[(next + buttons.length) % buttons.length].click();
     });
-}
-
-function cycleSimulationPoint(t) {
-    const points = [
-        { x: 110, y: 300, state: 'liquid' },
-        { x: 260, y: 110, state: 'gas' },
-        { x: 340, y: 110, state: 'gas' },
-        { x: 430, y: 200, state: 'liquid' },
-        { x: 465, y: 340, state: 'liquid' },
-        { x: 280, y: 235, state: 'gas' },
-        { x: 110, y: 300, state: 'liquid' }
-    ];
-    const scaled = t * (points.length - 1);
-    const index = Math.floor(scaled);
-    const local = scaled - index;
-    const a = points[index];
-    const b = points[index + 1];
-    return {
-        x: a.x + (b.x - a.x) * local,
-        y: a.y + (b.y - a.y) * local,
-        state: b.state
-    };
-}
-
-function seasonSunColor(season) {
-    return season === 'Winter' ? '#ffe08a' : season === 'Fall' ? '#ffb35c' : season === 'Spring' ? '#ffd86a' : '#ffd54f';
 }
 
 function describeArcSlice(cx, cy, r, start, end) {
