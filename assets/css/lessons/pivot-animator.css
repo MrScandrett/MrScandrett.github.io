@@ -101,13 +101,10 @@ body:has(.piv-studio-shell) .fl-page { max-width: 1600px; width: 100%; margin: 0
 html.piv-full-lock, html.piv-full-lock body { overflow: hidden; overscroll-behavior: none; }
 /* main.fl-page is z-index:1, which would trap the overlay beneath the site header */
 html.piv-full-lock body:has(.piv-studio-shell) .fl-page { z-index: auto; }
-.piv-studio-shell.is-expanded { position: fixed; inset: 8px; z-index: 10500; display: flex; flex-direction: column; }
-.piv-tabbar { display: none; }
 @media (pointer: coarse) {
   .piv-studio-shell { touch-action: manipulation; }
   .piv-studio-shell input:not([type="range"]), .piv-select { font-size: 16px; } /* iOS zooms the page on smaller fields */
 }
-.piv-studio-shell.is-expanded .piv-workspace { flex: 1; min-height: 0; height: auto; }
 #piv-learning { max-width: 1120px; margin: 0 auto; }
 #piv-learning .fl-card a { color: #215cbe; text-decoration: underline; }
 [data-lighting="night"] #piv-learning .fl-card a, [data-theme="dark"] #piv-learning .fl-card a { color: #b8d1ff; }
@@ -120,131 +117,142 @@ body:has(.piv-studio-shell) .site-footer { font-size: .75rem; margin-top: 12px; 
 [data-lighting="night"] .piv-stage-column, [data-theme="dark"] .piv-stage-column { background: #162236; }
 [data-lighting="night"] .piv-stage-title, [data-lighting="night"] .piv-stage-help,
 [data-theme="dark"] .piv-stage-title, [data-theme="dark"] .piv-stage-help { color: #b5c5db; }
-@media (max-width: 1050px) {
-  .piv-workspace { grid-template-columns: 154px minmax(0, 1fr) 210px; }
-  .piv-stage-column { padding-inline: 9px; }
-  .piv-tool-panel, .piv-rig-panel { padding: 9px; }
-  #piv-save-status { display: none; }
+/* ===== App shell =====
+   One layout for every screen: the studio always fits the viewport like a program, never a long page.
+   Wide: tools | stage | properties, filmstrip and frame tools underneath.
+   Compact portrait: stage, filmstrip, then a one-panel dock above a tab bar.
+   Compact landscape: stage + filmstrip on the left, tabs and the dock in a right rail.
+   Full screen (.is-expanded) is the same layout at 100dvh. */
+.piv-app-host { min-width: 0; }
+.piv-studio-shell {
+  --piv-fit: calc(100dvh - var(--piv-top, 150px) - 10px);
+  box-sizing: border-box; display: grid; position: relative;
+  height: max(var(--piv-fit), 480px);
+  grid-template-columns: 196px minmax(0, 1fr) 248px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+  grid-template-areas: "app app app" "file file file" "scene stage fig" "strip strip strip" "frames frames frames" "status status status";
 }
-@media (max-width: 760px) {
-  body:has(.piv-studio-shell) .fl-page { padding: 8px; }
-  .piv-page-header { flex-wrap: wrap; gap: 9px; }
-  .piv-page-header h1 { font-size: 1.4rem; }
-  .piv-page-header h1 span { font-size: .85rem; }
-  .piv-studio-shell { display: grid; grid-template-columns: 1fr 1fr; }
-  .piv-studio-shell > * { grid-column: 1 / -1; min-width: 0; }
-  .piv-projectbar { order: 1; }
-  .piv-topbar { order: 2; }
-  .piv-workspace { display: contents; }
-  .piv-stage-column { grid-column: 1 / -1; order: 3; min-height: 300px; height: 39vh; max-height: 400px; }
-  .piv-timeline { order: 4; }
-  .piv-tool-panel { grid-column: 1; order: 7; }
-  .piv-rig-panel { grid-column: 2; order: 7; }
-  .piv-statusbar { order: 8; }
-  .piv-tool-panel, .piv-rig-panel { max-height: 285px; border-top: 1px solid var(--piv-border); }
-  .piv-projectbar > .piv-topbar-group { margin-left: 0; }
-  .piv-projectbar .piv-btn { flex: 1; }
-  .piv-projectbar > .piv-topbar-group { width: 100%; }
-  .piv-topbar-group { min-width: 0; }
-  .piv-select { width: 100%; max-width: 210px; }
-  .piv-filmstrip-bar { flex-direction: column; align-items: stretch; gap: 4px; }
-  .piv-filmstrip-bar > div:first-child { flex-direction: row !important; flex-wrap: wrap; }
-  .piv-frame-actions { width: auto; align-items: center; gap: 6px; }
-  .piv-frame-actions .piv-layer-actions { margin-top: 0; }
-  .piv-tween-controls { width: 100%; }
-  #piv-tween-hint { flex-basis: 100%; }
-  .piv-layer-actions { flex-wrap: wrap; }
-  .piv-stage-column { min-height: 330px; }
-  .piv-statusbar > span:last-child { display: none; }
-}
+.piv-workspace { display: contents; }
+.piv-projectbar { grid-area: app; flex-wrap: nowrap; }
+.piv-topbar { grid-area: file; }
+.piv-tool-panel { grid-area: scene; }
+.piv-stage-column { grid-area: stage; position: relative; padding: 6px 12px 8px; }
+.piv-rig-panel { grid-area: fig; }
+.piv-timeline { grid-area: strip; background: var(--piv-surface); border-top: 1px solid var(--piv-border); min-width: 0; }
+.piv-framebar { grid-area: frames; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; padding: 6px 12px; background: var(--piv-panel); border-top: 1px solid var(--piv-border); min-width: 0; }
+.piv-tabbar { grid-area: tabs; display: none; }
+.piv-statusbar { grid-area: status; padding: 4px 12px; min-width: 0; flex-wrap: nowrap; }
+.piv-status-toast { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.piv-studio-shell > * { min-width: 0; min-height: 0; }
+.piv-tool-panel, .piv-rig-panel { overflow-y: auto; overscroll-behavior: contain; }
+.piv-projectbar { padding: 6px 10px; gap: 6px; }
+.piv-project-label input { width: 160px; }
+.piv-topbar { padding: 5px 10px; gap: 6px 14px; justify-content: flex-start; }
+.piv-topbar .piv-drawing-help { margin-left: auto; font-size: 12px; color: var(--piv-muted); }
+.piv-drawing-help summary { cursor: pointer; font-weight: 600; }
+.piv-drawing-help[open] { flex: 1 0 100%; }
+.piv-drawing-help p { margin: 6px 0 2px; font-size: 12px; line-height: 1.5; color: var(--piv-text); }
+.piv-stage-title { position: absolute; top: 10px; right: 14px; z-index: 2; width: auto; margin: 0; }
+.piv-stage-title .piv-btn { min-height: 26px; padding: 3px 9px; background: #ffffffe6; }
+.piv-transport-bar { flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }
+.piv-transport-main { display: flex; align-items: center; gap: 5px; }
+.piv-speed { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.piv-speed label { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.piv-speed input { width: 110px; }
+.piv-stage-help { margin: 4px 0 0; }
+.piv-help-keys { display: none; }
+.piv-timeline-heading { border-top: 0; padding: 6px 12px 0; flex-wrap: nowrap; }
+.piv-timeline-heading label { margin-left: auto; white-space: nowrap; }
+#piv-scrubber { flex: 0 1 260px; width: auto; }
+.piv-filmstrip-bar { gap: 8px; padding: 5px 10px 8px; align-items: stretch; }
+.piv-add-frame { flex: 0 0 auto; align-self: stretch; height: auto; min-height: 58px; flex-direction: column; gap: 2px; padding-inline: 12px; }
+.piv-add-frame kbd { margin: 0; padding: 0; font-size: 10px; }
+.piv-clipboard-controls { gap: 5px; }
+.piv-tween-controls { gap: 6px 8px; }
+#piv-tween-hint { white-space: nowrap; }
+.piv-btn--full { background: var(--piv-surface); }
+.piv-studio-shell.is-expanded { position: fixed; inset: 0; z-index: 10500; height: 100vh; height: 100dvh; min-height: 0; border: 0; border-radius: 0; box-shadow: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 
-/* ===== Full screen on phones =====
-   Portrait: stage on top, one panel at a time in a dock above a bottom tab bar.
-   Landscape: stage left, tabs + panel in a right rail. Every control stays reachable. */
-@media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
-  .piv-studio-shell.is-expanded { inset: auto; top: 0; left: 0; right: auto; width: 100%; height: 100vh; height: 100dvh; border: 0; border-radius: 0; box-shadow: none;
-    display: flex; flex-direction: column; overflow: hidden; background: var(--piv-panel);
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-  .piv-studio-shell.is-expanded > * { min-width: 0; min-height: 0; }
-  .is-expanded .piv-btn { min-height: 44px; min-width: 44px; font-size: 14px; }
-  .is-expanded .piv-workspace { display: contents; }
-  .is-expanded #piv-btn-stage-full { display: none; }
-  /* app bar: name + New / Undo / Redo / Exit, icon-only so it never wraps */
-  .is-expanded .piv-projectbar { order: 1; flex: none; flex-wrap: nowrap; gap: 6px; padding: 5px 8px; }
-  .is-expanded .piv-project-label { flex: 1 1 auto; min-width: 0; font-size: 0; gap: 0; }
-  .is-expanded .piv-project-label input { width: 100%; min-height: 44px; font-size: 16px; }
-  .is-expanded #piv-save-status { display: none; }
-  .is-expanded .piv-projectbar > .piv-topbar-group { flex: none; flex-wrap: nowrap; width: auto; margin: 0; gap: 6px; }
-  .is-expanded .piv-projectbar .piv-btn { flex: none; padding-inline: 10px; }
-  .is-expanded .piv-projectbar .piv-btn-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .is-expanded .piv-projectbar #piv-btn-undo, .is-expanded .piv-projectbar #piv-btn-redo, .is-expanded .piv-btn--full { font-size: 20px; }
-  .is-expanded .piv-btn--full { background: var(--piv-blue); border-color: var(--piv-blue); color: #fff; }
-  [data-lighting="night"] .is-expanded .piv-btn--full, [data-theme="dark"] .is-expanded .piv-btn--full { color: #15243c; }
+/* ----- Compact: tabbed dock ----- */
+@media (max-width: 999px), (max-height: 559px) {
+  body:has(.piv-studio-shell) .fl-page { padding: 6px 8px 0; }
+  .piv-page-header { padding-bottom: 8px; }
+  .piv-page-header h1 { font-size: 1.2rem; }
+  .piv-page-header p { display: none; }
+  .piv-studio-shell {
+    height: max(var(--piv-fit), 560px);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(150px, 1fr) auto auto;
+    grid-template-areas: "app" "stage" "strip" "dock" "tabs" "status";
+  }
+  .piv-studio-shell.is-expanded { height: 100vh; height: 100dvh; }
+  .piv-tool-panel, .piv-rig-panel, .piv-topbar, .piv-framebar { grid-area: dock; display: none; border: 0; border-top: 1px solid var(--piv-border); background: var(--piv-panel); overflow-y: auto; }
+  .piv-studio-shell[data-tab="frames"] .piv-framebar { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 10px; padding: 10px 12px; }
+  .piv-studio-shell[data-tab="figure"] .piv-rig-panel,
+  .piv-studio-shell[data-tab="scene"] .piv-tool-panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); align-content: start; gap: 12px 20px; padding: 10px 12px; }
+  .piv-studio-shell[data-tab="file"] .piv-topbar { display: flex; flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 10px; padding: 10px 12px; }
+  .piv-topbar .piv-drawing-help { margin-left: 0; }
+  .piv-panel-section { padding: 0; margin: 0; border: 0; }
+  .piv-btn-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); margin: 6px 0; }
+  .piv-tool-panel .piv-btn-grid .piv-btn { justify-content: center; }
+  .piv-tree-list, .piv-scene-list { max-height: none; }
+  .piv-select { width: 100%; max-width: none; }
+  .piv-topbar .piv-topbar-group { flex-wrap: wrap; }
+  /* app bar: name + icon buttons, never wraps */
+  .piv-projectbar { flex-wrap: nowrap; padding: 5px 8px; }
+  .piv-project-label { flex: 1 1 auto; min-width: 0; font-size: 0; gap: 0; }
+  .piv-project-label input { width: 100%; font-size: 14px; }
+  #piv-save-status { display: none; }
+  .piv-projectbar > .piv-topbar-group { flex: none; flex-wrap: nowrap; margin: 0; gap: 5px; }
+  .piv-projectbar .piv-btn { min-width: 38px; padding-inline: 8px; font-size: 18px; }
+  .piv-projectbar .piv-btn-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .piv-btn--full { background: var(--piv-blue); border-color: var(--piv-blue); color: #fff; }
   /* stage */
-  .piv-studio-shell.is-expanded .piv-stage-column { order: 2; padding: 0; position: relative; height: auto; min-height: 0; max-height: none; }
-  .is-expanded .piv-stage-title { position: absolute; top: 6px; right: 8px; z-index: 2; width: auto; margin: 0; padding: 0; }
-  .is-expanded .piv-stage-title strong, .is-expanded #piv-stage-size { display: none; }
-  .is-expanded .piv-stage-column .piv-btn { min-height: 40px; }
-  .is-expanded .piv-transport-bar { gap: 6px 12px; margin: 6px 0 0; padding: 0 8px; }
-  .is-expanded .piv-transport-bar > div { gap: 6px !important; }
-  .is-expanded .piv-transport-bar > div:nth-child(2) { min-width: 0 !important; flex: 1 1 170px; }
-  .is-expanded #piv-fps-slider { flex: 1 1 80px; width: auto !important; min-width: 80px; height: 32px; }
-  .is-expanded #piv-btn-play { min-width: 96px; font-size: 15px; }
-  .is-expanded .piv-stage-help { margin: 2px 0 6px; font-size: 11px; }
-  .is-expanded .piv-stage-help > span:last-child { display: none; }
-  /* dock: exactly one panel at a time */
-  .is-expanded .piv-tool-panel, .is-expanded .piv-rig-panel, .is-expanded .piv-topbar, .is-expanded .piv-timeline { display: none; order: 5; flex: 1 1 0; max-height: none; border: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; background: var(--piv-panel); }
-  .is-expanded[data-tab="frames"] .piv-timeline, .is-expanded[data-tab="figure"] .piv-rig-panel, .is-expanded[data-tab="scene"] .piv-tool-panel { display: block; }
-  .is-expanded[data-tab="file"] .piv-topbar { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 12px; padding: 12px; }
-  .is-expanded .piv-topbar .piv-topbar-group { flex-wrap: wrap; }
-  .is-expanded .piv-select { width: 100%; max-width: none; min-height: 44px; }
-  .is-expanded .piv-timeline { background: var(--piv-surface); }
-  .is-expanded .piv-timeline-heading { border-top: 0; padding: 8px 12px 0; gap: 4px 10px; }
-  .is-expanded .piv-timeline-heading label, .is-expanded #piv-duration { white-space: nowrap; margin-left: 0; }
-  .is-expanded #piv-scrubber { flex: 1 1 90px; width: auto; min-width: 60px; height: 32px; }
-  .is-expanded .piv-filmstrip-bar { flex-direction: column; align-items: stretch; gap: 6px; }
-  .is-expanded .piv-frame-actions { width: auto; flex-direction: row; flex-wrap: wrap; gap: 6px; }
-  .is-expanded .piv-frame-actions .piv-layer-actions { margin-top: 0; }
-  .is-expanded .piv-frame-thumb { flex-basis: 92px; height: 66px; }
-  .is-expanded .piv-tween-controls { width: 100%; }
-  .is-expanded #piv-tween-hint { flex-basis: 100%; }
-  .is-expanded #piv-tween-count { width: 64px; min-height: 44px; }
-  .is-expanded .piv-layer-actions { flex-wrap: wrap; }
-  .is-expanded .piv-btn-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
-  .is-expanded .piv-tool-panel .piv-btn-grid .piv-btn { justify-content: center; }
-  .is-expanded .piv-swatch { width: 40px; height: 40px; }
-  .is-expanded .piv-tree-list { max-height: none; }
-  .is-expanded .piv-tree-button { min-height: 40px; font-size: 13px; }
-  .is-expanded #piv-joint-angle, .is-expanded .piv-property-grid input { min-height: 44px; }
-  .is-expanded #piv-joint-angle { width: 96px; }
-  .is-expanded .piv-scene-list { max-height: none; }
-  .is-expanded .piv-slider-row input, .is-expanded .piv-slider-row { min-height: 32px; }
-  .is-expanded .piv-statusbar { order: 8; flex: none; padding: 4px 10px; font-size: 11px; justify-content: flex-start; }
-  .is-expanded .piv-statusbar > span:last-child { display: none; }
-  .is-expanded .piv-tabbar { order: 9; flex: none; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--piv-surface); border-top: 1px solid var(--piv-border); }
-  .piv-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 52px; padding: 4px 2px; border: 0; border-top: 3px solid transparent; background: transparent; color: var(--piv-muted); font: 600 11px/1.2 "Segoe UI", system-ui, sans-serif; cursor: pointer; }
-  .piv-tab span { font-size: 19px; line-height: 1.1; }
+  .piv-stage-column { padding: 4px 6px 6px; }
+  .piv-canvas-wrap { flex: none; width: 100%; height: auto; aspect-ratio: var(--piv-aspect, 690 / 420); max-height: 52dvh; }
+  .piv-stage-help, .piv-timeline-heading, .piv-add-frame kbd { display: none; }
+  .piv-transport-bar { gap: 2px 10px; margin-top: 5px; flex-wrap: wrap; }
+  .piv-speed { flex: 1 1 130px; max-width: 260px; }
+  .piv-speed input { flex: 1 1 60px; width: auto; min-width: 60px; }
+  .piv-speed .piv-speed-word { display: none; }
+  .piv-filmstrip-bar { padding: 4px 8px 6px; gap: 6px; }
+  .piv-add-frame { min-height: 48px; min-width: 50px; padding-inline: 4px; font-size: 20px; line-height: 1; }
+  .piv-add-frame .piv-btn-text { font-size: 10px; line-height: 1.05; white-space: normal; text-align: center; max-width: 44px; }
+  .piv-frame-thumb { flex-basis: 66px; height: 50px; }
+  /* dock tabs */
+  .piv-tabbar { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--piv-surface); border-top: 1px solid var(--piv-border); }
+  .piv-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 46px; padding: 3px 2px; border: 0; border-top: 3px solid transparent; background: transparent; color: var(--piv-muted); font: 600 11px/1.2 "Segoe UI", system-ui, sans-serif; cursor: pointer; }
+  .piv-tab span { font-size: 18px; line-height: 1.1; }
   .piv-tab[aria-pressed="true"] { color: var(--piv-blue); border-top-color: var(--piv-blue); background: var(--piv-active); }
+  .piv-statusbar { padding: 3px 10px; font-size: 11px; }
+  .piv-statusbar > span:last-child { display: none; }
+  #piv-tween-hint { white-space: normal; }
 }
-/* portrait: the stage keeps its own shape; the dock takes everything below it */
-@media (max-width: 760px) {
-  .is-expanded .piv-stage-column { flex: none; }
-  .is-expanded .piv-canvas-wrap { flex: none; height: auto; aspect-ratio: var(--piv-aspect, 690 / 420); max-height: 46dvh; }
+/* Compact landscape: stage + filmstrip left, tabs and dock in a right rail. */
+@media (max-width: 999px) and (min-aspect-ratio: 11/10), (max-height: 559px) and (min-aspect-ratio: 11/10) {
+  .piv-studio-shell {
+    height: max(var(--piv-fit), 300px);
+    grid-template-columns: minmax(0, 1fr) clamp(250px, 36vw, 340px);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "app app" "stage tabs" "stage dock" "strip dock" "status status";
+  }
+  .piv-canvas-wrap { flex: 1 1 0; height: auto; aspect-ratio: auto; max-height: none; min-height: 0; }
+  .piv-tool-panel, .piv-rig-panel, .piv-topbar, .piv-framebar { border-left: 1px solid var(--piv-border); }
+  .piv-tabbar { border-top: 0; border-bottom: 1px solid var(--piv-border); border-left: 1px solid var(--piv-border); }
+  .piv-tab { min-height: 42px; flex-direction: row; gap: 5px; }
+  .piv-stage-column { padding-bottom: 2px; }
+  .piv-transport-bar { flex-wrap: nowrap; margin-top: 4px; }
+  .piv-frame-thumb { flex-basis: 60px; height: 44px; }
+  .piv-add-frame { min-height: 44px; }
+  .piv-studio-shell[data-tab="figure"] .piv-rig-panel,
+  .piv-studio-shell[data-tab="scene"] .piv-tool-panel { grid-template-columns: 1fr; }
 }
-/* phone landscape: stage left, tabs + panel in a right rail */
-@media (orientation: landscape) and (max-height: 520px) {
-  .piv-studio-shell.is-expanded { display: grid; grid-template-columns: minmax(0, 1fr) clamp(250px, 38vw, 360px); grid-template-rows: auto auto minmax(0, 1fr) auto; }
-  .is-expanded .piv-projectbar { grid-column: 1 / -1; grid-row: 1; }
-  .is-expanded .piv-stage-column { grid-column: 1; grid-row: 2 / span 2; flex: none; }
-  .is-expanded .piv-canvas-wrap { flex: 1 1 0; aspect-ratio: auto; max-height: none; height: auto; min-height: 0; }
-  .is-expanded .piv-stage-column { overflow: hidden; }
-  .is-expanded .piv-stage-title { top: 4px; right: 6px; }
-  .is-expanded .piv-stage-help { display: none; }
-  .is-expanded .piv-transport-bar { flex-wrap: nowrap; margin: 4px 0 6px; }
-  .is-expanded .piv-tabbar { grid-column: 2; grid-row: 2; border-top: 0; border-bottom: 1px solid var(--piv-border); border-left: 1px solid var(--piv-border); }
-  .is-expanded .piv-tool-panel, .is-expanded .piv-rig-panel, .is-expanded .piv-topbar, .is-expanded .piv-timeline { grid-column: 2; grid-row: 3; border-left: 1px solid var(--piv-border); }
-  .is-expanded .piv-statusbar { grid-column: 1 / -1; grid-row: 4; }
-  .piv-tab { min-height: 46px; }
+@media (pointer: coarse) {
+  .piv-btn { min-height: 38px; min-width: 38px; }
+  .piv-swatch { width: 32px; height: 32px; }
+  .piv-tree-button { min-height: 36px; font-size: 13px; }
+  .piv-frame-thumb { touch-action: manipulation; }
 }
 @media print {
   #piv-sec-studio, .piv-view-switch { display: none !important; }

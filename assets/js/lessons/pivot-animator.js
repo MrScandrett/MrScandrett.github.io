@@ -1609,7 +1609,7 @@
       sizing.resize();
       if (on) { try { (fullBtn2 && getComputedStyle(root).position === "fixed" ? canvas : root).focus({ preventScroll: true }); } catch (err) {} }
       else { try { (fullBtn2 || fullBtn).focus({ preventScroll: true }); } catch (err) {} }
-      showToast(on ? "Full screen. Use the tabs below for Frames, Figure, Scene and File." : "Back to the lesson page.");
+      showToast(on ? "Full screen. Tabs hold Frames, Figure, Scene and File." : "Back to the lesson page.");
     }
     function toggleFull() { setFull(!root.classList.contains("is-expanded")); }
     onClick("piv-btn-focus", toggleFull);
@@ -1624,6 +1624,18 @@
     }
     tabButtons.forEach(function (b) { b.addEventListener("click", function () { setTab(b.getAttribute("data-piv-tab")); }); });
     setTab("frames");
+    // Fit the studio to the screen: measure how far down the page it starts and let CSS use the rest.
+    function fitShell() {
+      if (root.classList.contains("is-expanded")) return;
+      var top = root.getBoundingClientRect().top + (window.pageYOffset || 0);
+      root.style.setProperty("--piv-top", Math.max(0, Math.round(top)) + "px");
+      if (sizing) sizing.resize();
+    }
+    window.addEventListener("resize", fitShell);
+    window.addEventListener("orientationchange", function () { setTimeout(fitShell, 300); });
+    if (window.ResizeObserver && root.parentElement) new ResizeObserver(function () { fitShell(); }).observe(document.body);
+    fitShell();
+    window.addEventListener("load", fitShell);
     onClick("piv-view-animate", function () { setView(false); });
     onClick("piv-view-learn", function () { setView(true); });
     document.addEventListener("click", function (e) {
