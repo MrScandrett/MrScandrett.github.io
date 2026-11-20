@@ -490,6 +490,12 @@ so all themes style it.
   artifact, and the test checks every lesson link, image and credit. `daily-guess-map.mjs` is the shared pin-on-a-map piece
   (Natural Earth, zoom, arrow-key pin) and the world-map loader that Daily GeoGuess also uses. Changing the daily-puzzles CSS means
   bumping `CSS_REV` in daily-puzzles.mjs together with `--dp-css-rev` in the stylesheet. Tests: `node --test tests/daily-artifact.test.mjs`.
+- **Daily GeoGuess** (`geo` tab; `assets/js/daily-geo.mjs`, places in `daily-geo-locations.mjs`) shows students a live Google
+  Street View, so every place must be an **official** Google pano (camera car/trekker: faces and plates blurred), never a
+  user-uploaded photo sphere (`CAoS…`/`CIHM…`/`AF1Qip…` ids from a pasted "Share → Embed" link; those put a nude performer at the
+  Brandenburg Gate and an offensive poster in Italy in front of the class). Each entry is a `view` (`pano`, `at`, `heading`,
+  `pitch`) and the page builds the embed URL; look all the way around a new pano before adding it. The file header says how to
+  find one. Tests: `node --test tests/daily-geo.test.mjs` (fails on any non-official pano id).
 - Tests: `node --test tests/daily-puzzles.test.mjs` (unique sudoku solutions, crossword runs, daily double bank hygiene,
   deterministic boards, 2 triple doubles per day).
 
