@@ -192,7 +192,7 @@
       if(src.instrument==='pluck')return arrange(src,{...settings,mode:'original'});
       return soloGuitar(src,settings);
     }
-    if (m==='original'||m==='chords') return result;
+    if (m==='original') return result;
     if(m==='piano') {
       // A solo pianist can be notated on four staves (e.g. Rachmaninoff's
       // Op. 3 No. 2). Staff count alone must never trigger a reduction.

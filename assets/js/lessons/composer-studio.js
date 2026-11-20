@@ -150,21 +150,6 @@
     if (violin >= 0) staff.value = violin;
     fillVoices();
   }
-  function chordStudy() {
-    const chords = ['D','A','D','A','D','A','D','D','A','D','A','A','D','A','D','D'];
-    const shapes = { D: 'xx0232', A: 'x02220' };
-    const heading = document.createElement('h3'); heading.textContent = 'Ode to Joy · classroom harmonization'; tab.append(heading);
-    const p = document.createElement('p'); p.textContent = 'An introductory I–V accompaniment in concert D major, one chord per written bar. These are teaching choices, not Beethoven’s complete orchestral harmony. Shapes run from low E to high e; x means mute. Play a bass note on beat 1 and a gentle chord on beats 2–4; follow the written repeat.'; tab.append(p);
-    const table = document.createElement('table');
-    const header = table.createTHead().insertRow(); ['Bar','Chord','Guitar frets','Bass note'].forEach(text => { const th = document.createElement('th'); th.scope = 'col'; th.textContent = text; header.append(th); });
-    const body = table.createTBody();
-    chords.forEach((chord, i) => {
-      const row = body.insertRow();
-      const bass = chord === 'D' ? 'D3 · A string fret 5' : 'A2 · open A string';
-      [i + 1, chord, shapes[chord], bass].forEach(value => { row.insertCell().textContent = value; });
-    });
-    tab.append(table);
-  }
   function resultNeedsPianoReduction(src) {
     return !(src.instrument === 'piano' && (src.staves.length <= 2 || src.staves.every(st => /^(Right|Left) hand/i.test(st.label || ''))));
   }
@@ -173,7 +158,7 @@
     if (player) player.destroy(); player = null;
     host.after(tab);
     host.replaceChildren(); tab.replaceChildren();
-    const src = sourceScore, m = mode.value, fullGuitar = ['guitar','guitar-solo'].includes(m) && (composer === 'francisco-tarrega' || !!src.guitarArrangement || (m === 'guitar-solo' && src.instrument === 'pluck')), isolated = !fullGuitar && !['original','piano','chords'].includes(m);
+    const src = sourceScore, m = mode.value, fullGuitar = ['guitar','guitar-solo'].includes(m) && (composer === 'francisco-tarrega' || !!src.guitarArrangement || (m === 'guitar-solo' && src.instrument === 'pluck')), isolated = !fullGuitar && !['original','piano'].includes(m);
     pianoControls.hidden = m !== 'piano';
     violinControls.hidden = !['melody','violin'].includes(m);
     if (!violinPrefs[work.value]) violinShow.checked = m === 'violin';
@@ -183,7 +168,7 @@
     let result = ComposerArrangement.arrange(src,{mode:fullGuitar && !src.guitarArrangement ? 'original' : m,staff:staff.value,voice:voice.value,octave:octave.value,id:composer}), message;
     if (fullGuitar) {
       message = src.guitarArrangement ? src.guitarArrangement.arrangementNote + ' Notation, tablature and playback follow both voices together.' : 'Complete guitar tablature with melody, inner voices and bass preserved. Standard notation and tablature share each line of the player. Frets align directly beneath their notes; playback follows both together.';
-    } else if (m === 'original' || m === 'chords') {
+    } else if (m === 'original') {
       message = 'Source scoring preserved. Recorded instruments load when you press Play; unsupported sounds use synthesis. Use the part controls to isolate voices.';
     } else if (m === 'piano') {
       message = result.arrangementNote || 'Complete solo-piano scoring preserved, including all voices and hand assignments. Source difficulty is unchanged; review fingering and stretches before performing.';
@@ -203,8 +188,6 @@
       if (fit.raised || fit.lowered) message += ' Remaining out-of-range notes moved by octaves: ' + fit.raised + ' raised, ' + fit.lowered + ' lowered. Review the altered leaps.';
     }
     if (src.composer === 'ClassroomOS teaching materials') message += ' Original classroom study, not a composition by the featured musician.';
-    const chordOption = [...mode.options].find(o => o.value === 'chords');
-    chordOption.disabled = chordOption.hidden = work.value !== 'beethoven-ode-to-joy';
     mode.querySelector('option[value="guitar"]').textContent = src.guitarArrangement ? 'Guitar · solo arrangement with bass and harmony' : composer === 'francisco-tarrega' ? 'Guitar · complete tablature' : 'Guitar · melody tablature';
     result.subtitle = src.guitarArrangement && ['guitar','guitar-solo'].includes(m) ? result.subtitle : mode.selectedOptions[0].textContent + ' · ' + (src.subtitle || '') + (['alto','tenor'].includes(m) ? ' · written saxophone pitch' : '');
     if (fullGuitar) {
@@ -240,10 +223,6 @@
         practiceId: src.id + (src.guitarArrangement && ['guitar', 'guitar-solo'].includes(m) ? ':guitar' : ''),
         violinFingering
       });
-      if (m === 'chords') {
-        if (work.value === 'beethoven-ode-to-joy') chordStudy();
-        else tab.textContent = 'Prepared chord accompaniment is available for Ode to Joy. Choose that theme to study chord shapes and bass roots; other works retain their source notation.';
-      }
       if (!player) throw new Error('The score could not be prepared.');
       if (workspace.hasAttribute('data-creation-fit')) {
         host.querySelector('.se-workspace').setAttribute('data-creation-primary', '');
@@ -265,7 +244,6 @@
       const [score] = await Promise.all([ScoreEngine.loadScore(id), ScoreEngine.afterScorePaint()]);
       if (token !== selection) return;
       sourceScore = score;
-      if (mode.value === 'chords' && id !== 'beethoven-ode-to-joy') mode.value = 'original';
       if (restore) mode.value = restore.mode;
       fillStaves(); restoreViolin();
       if (restore) {
@@ -326,7 +304,7 @@
         throw new Error('Choose an arrangement saved for this composer lesson.');
       }
       const valid = (select, value) => [...select.options].some(option => option.value === String(value));
-      if (!valid(mode, data.mode) || !valid(octave, data.octave) || (data.mode === 'chords' && data.work !== 'beethoven-ode-to-joy')) {
+      if (!valid(mode, data.mode) || !valid(octave, data.octave)) {
         throw new Error('Unknown arrangement setting.');
       }
       const request = selection;

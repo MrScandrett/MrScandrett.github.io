@@ -637,7 +637,7 @@
   }
   var guideId = 0, hideActiveGuide;
 
-  function install(fig, score, bar) {
+  function install(fig, score, bar, addSettingsHelp) {
     if (!isKeyboard(score) || bar.querySelector('.se-fingering-toggle')) return;
     var enabled = false, reach = 12;
     try {
@@ -648,9 +648,12 @@
     var button = document.createElement('button');
     button.type = 'button';
     button.className = 'se-toggle se-fingering-toggle';
-    var key = document.createElement('p');
-    key.className = 'se-fingering-key';
-    key.textContent = KEY_TEXT;
+    var key;
+    if (!addSettingsHelp) {
+      key = document.createElement('p');
+      key.className = 'se-fingering-key';
+      key.textContent = KEY_TEXT;
+    }
     var reachLabel = document.createElement('label');
     reachLabel.className = 'se-fingering-reach';
     reachLabel.appendChild(document.createTextNode('Comfortable reach '));
@@ -664,7 +667,7 @@
       button.setAttribute('aria-pressed', String(enabled));
       button.classList.toggle('is-on', enabled);
       button.textContent = enabled ? '✓ Finger numbers' : 'Finger numbers';
-      key.hidden = !enabled;
+      if (key) key.hidden = !enabled;
       reachLabel.hidden = !enabled;
     }
     var planned, plannedLayout, plannedReach, byEvent;
@@ -736,9 +739,10 @@
       return enabled ? { decorate: function (svg, layout) { addMarks(svg, layout, score, { reach: reach }); },
         note: PRINT_TEXT + ' Comfortable reach: ' + (reach === 7 ? 'fifth' : reach === 9 ? 'sixth' : 'octave') + '.' } : {};
     };
-    bar.appendChild(button);
+    bar.appendChild(addSettingsHelp ? addSettingsHelp(button, 'Piano fingering help',
+      '1 thumb · 2 index · 3 middle · 4 ring · 5 little finger. Read chords from top to bottom. Select an on-score number for the keyboard guide. † means ask your teacher. Set Comfortable reach to the interval your hand can span without stretching.') : button);
     bar.appendChild(reachLabel);
-    bar.appendChild(key);
+    if (key) bar.appendChild(key);
     paint(); mark();
     return function () {
       guide.destroy();

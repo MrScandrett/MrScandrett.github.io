@@ -116,3 +116,14 @@ Vocalise) and the multi-part MusicXML bridge, see the
 
 For four additional Schumann Album for the Young pieces (Op. 68 Nos. 2, 8, 10 and 16),
 see the [licensed editions, repeat-boundary numbering, reproduction and exact published-MIDI comparisons](sources/schumann-additions/README.md).
+
+For the Handel lesson (the complete “Hallelujah” chorus, Zadok the Priest in three sections, La Réjouissance,
+the HWV 437 Sarabande theme and three short keyboard pieces), see the
+[sources, licences, reproduction script and MIDI comparisons](sources/handel/README.md).
+`slice-bars.py` cuts a bar range out of a converted score, restating key, meter, clef and stems, for
+movements whose sections need their own tempo.
+
+For the Ninth Symphony finale in eight sections (soloists, choir and piano reduction, CC0), see the
+[source, bar numbering, section tempos and per-section MIDI comparisons](sources/beethoven-ninth/README.md).
+`section-midi-check.mjs` compares one bar range with a MIDI file after aligning it, for movements whose MIDI
+adds time at fermatas.

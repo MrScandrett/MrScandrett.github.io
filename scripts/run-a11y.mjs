@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from "node:fs/promises";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { createRequire } from "node:module";
@@ -23,7 +24,12 @@ const config = JSON.parse(await fs.readFile(configPath, "utf8"));
 const configuredUrls = config.urls.map((entry) => typeof entry === "string" ? { url: entry } : entry);
 const urls = matchPattern ? configuredUrls.filter((entry) => entry.url.includes(matchPattern)) : configuredUrls;
 const concurrency = Math.min(urls.length, Math.max(1, Number(process.env.A11Y_CONCURRENCY || config.defaults?.concurrency || 3)));
-const executablePath = findChromium(["PUPPETEER_EXECUTABLE_PATH"]) || puppeteer.executablePath();
+// puppeteer.executablePath() is async in current Puppeteer; await it so a miss reports a path, not "[object Promise]".
+const executablePath = findChromium(["PUPPETEER_EXECUTABLE_PATH"]) || await puppeteer.executablePath();
+if (!executablePath || !existsSync(executablePath)) {
+  console.error(`[a11y] No Chromium found${executablePath ? ` (tried ${executablePath})` : ""}. Install Chrome, run \`npx playwright install chromium\`, or set PUPPETEER_EXECUTABLE_PATH.`);
+  process.exit(1);
+}
 
 const launchOptions = {
   executablePath,

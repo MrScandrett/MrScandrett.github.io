@@ -34,6 +34,15 @@ window.ELEMENT_IMAGES = {
 "l": "Public domain"
 }
 ],
+"C": [
+{
+"k": "real",
+"f": "Rough_diamond.jpg",
+"c": "An uncut rough diamond crystal — pure carbon atoms locked in a 3D tetrahedral network, making it the hardest natural material.",
+"a": "U.S. Geological Survey",
+"l": "Public domain"
+}
+],
 "N": [
 {
 "k": "real",

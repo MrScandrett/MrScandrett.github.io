@@ -92,6 +92,9 @@ function parseReassembly(list) {
 
 export function parseScript(text) {
   const items = readLists(tokenize(text));
+  if (!items.length || !Array.isArray(items[0])) {
+    throw new Error("ELIZA script must begin with an opening phrase in parentheses, e.g. (HOW DO YOU DO).");
+  }
   const opening = items.shift().join(" ");
   if (items[0] === "START") items.shift();
 
@@ -109,8 +112,10 @@ export function parseScript(text) {
         keyword: memKeyword,
         transforms: forms.map((form) => {
           const eq = form.indexOf("=");
+          const left = form.slice(0, eq);
           return {
-            decomposition: form.slice(0, eq).map(toPatternTerm),
+            decomposition: left.map(toPatternTerm),
+            decompositionText: `(${left.map((t) => (Array.isArray(t) ? `(${t.join(" ")})` : t)).join(" ")})`,
             reassembly: form.slice(eq + 1)
           };
         })
@@ -245,6 +250,34 @@ function slipHash(d, n) {
   return Number(v & ((1n << BigInt(n)) - 1n));
 }
 
+export function computeSlipHashInfo(rawWord) {
+  const tokens = elizaUppercase(String(rawWord || ""))
+    .replace(/[,.]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  const word = tokens.length ? tokens[tokens.length - 1] : "";
+  const start = word.length ? Math.floor((word.length - 1) / 6) * 6 : 0;
+  const chunk = word.slice(start).padEnd(6, " ").slice(0, 6);
+  const bcdChars = [...chunk].map((ch) => {
+    const code = TO_BCD.has(ch) ? TO_BCD.get(ch) : ch.charCodeAt(0) & 0x3f;
+    return {
+      char: ch,
+      code,
+      octal: code.toString(8).padStart(2, "0"),
+      bits: code.toString(2).padStart(6, "0")
+    };
+  });
+  const bcdWord = lastChunkAsBcd(word);
+  return {
+    word,
+    chunk,
+    bcdChars,
+    word36Octal: bcdWord.toString(8).padStart(12, "0"),
+    word36Binary: bcdWord.toString(2).padStart(36, "0").match(/.{1,6}/g).join(" "),
+    hashIndex: slipHash(bcdWord, 2)
+  };
+}
+
 // ---------- input handling ----------
 
 function elizaUppercase(text) {
@@ -263,6 +296,44 @@ function splitInput(text) {
     .filter(Boolean);
 }
 
+function formatPatternTerm(term) {
+  if (typeof term === "string") return term;
+  if (term && term.any) return `(* ${term.any.join(" ")})`;
+  if (term && term.tags) return `(/${term.tags.join(" ")})`;
+  return String(term);
+}
+
+function splitTrailingClauses(tokens) {
+  const out = [];
+  let buf = [];
+  for (const tok of tokens) {
+    if (DELIMITERS.includes(tok)) {
+      if (buf.length) {
+        out.push({
+          tokens: buf.slice(),
+          text: buf.join(" "),
+          delimiter: tok,
+          kept: false,
+          reason: "discarded-after-delimiter"
+        });
+        buf = [];
+      }
+    } else {
+      buf.push(tok);
+    }
+  }
+  if (buf.length) {
+    out.push({
+      tokens: buf.slice(),
+      text: buf.join(" "),
+      delimiter: null,
+      kept: false,
+      reason: "discarded-after-delimiter"
+    });
+  }
+  return out;
+}
+
 // ---------- the ELIZA conversation engine ----------
 
 export function createEliza(scriptText) {
@@ -274,47 +345,105 @@ export function createEliza(scriptText) {
   function nextReassembly(transform) {
     const i = cursors.get(transform) || 0;
     cursors.set(transform, (i + 1) % transform.reassembly.length);
-    return transform.reassembly[i];
+    return { item: transform.reassembly[i], index: i };
   }
 
   function createMemory(keyword, words, trace) {
     const mem = script.memory;
     if (!mem || keyword !== mem.keyword || !words.length) return;
-    const transform = mem.transforms[slipHash(lastChunkAsBcd(words[words.length - 1]), 2)];
+    const lastWord = words[words.length - 1];
+    const hashInfo = computeSlipHashInfo(lastWord);
+    const transform = mem.transforms[hashInfo.hashIndex];
     const parts = match(transform.decomposition, words, script.tags);
     if (!parts) return;
     const text = reassemble(transform.reassembly, parts).join(" ");
     memories.push(text);
+    trace.memorySaved = {
+      keyword,
+      lastWord,
+      hashInfo,
+      decompositionText: transform.decompositionText,
+      reassemblyText: `(${transform.reassembly.join(" ")})`,
+      parts: parts.slice(),
+      text
+    };
     trace.steps.push(`Saved to MEMORY: "${text}"`);
   }
 
   function respond(input) {
-    const trace = { keystack: [], substitutions: [], steps: [], source: "" };
-    let words = splitInput(input);
+    const initialTokens = splitInput(input);
+    const limitBefore = limit;
     limit = (limit % 4) + 1;
+    const trace = {
+      rawInput: input,
+      normalizedTokens: initialTokens.slice(),
+      clauses: [],
+      scanTokens: [],
+      keystack: [],
+      keystackDetail: [],
+      substitutions: [],
+      steps: [],
+      source: "",
+      clause: "",
+      parts: [],
+      limitBefore,
+      limitAfter: limit,
+      memorySaved: null,
+      memoryRecalled: null,
+      attempts: [],
+      winningAttempt: null,
+      noneAttempt: null,
+      memoriesAfter: memories.slice()
+    };
+
+    let words = initialTokens.slice();
+    let origWords = initialTokens.slice();
 
     // scan for keywords, keep one clause, apply word substitutions
     const keystack = [];
     let topRank = 0;
+    let scanTokens = [];
+    let brokeOnDelimiter = false;
     for (let i = 0; i < words.length; ) {
       const word = words[i];
       if (DELIMITERS.includes(word)) {
         if (!keystack.length) {
+          trace.clauses.push({
+            tokens: origWords.slice(0, i),
+            text: origWords.slice(0, i).join(" "),
+            delimiter: word,
+            kept: false,
+            reason: "skipped-no-keyword"
+          });
+          scanTokens = [];
           words = words.slice(i + 1);
+          origWords = origWords.slice(i + 1);
           i = 0;
           continue;
         }
+        trace.clauses.push({
+          tokens: origWords.slice(0, i),
+          text: origWords.slice(0, i).join(" "),
+          delimiter: word,
+          kept: true,
+          reason: "selected"
+        });
+        trace.clauses.push(...splitTrailingClauses(origWords.slice(i + 1)));
         words = words.slice(0, i);
+        brokeOnDelimiter = true;
         break;
       }
       const rule = script.rules.get(word);
+      let stackRole = "none";
       if (rule) {
         if (rule.transforms.length || rule.link) {
           if (rule.precedence > topRank) {
             keystack.unshift(word);
             topRank = rule.precedence;
+            stackRole = "top";
           } else {
             keystack.push(word);
+            stackRole = "bottom";
           }
         }
         if (rule.substitute) {
@@ -322,14 +451,52 @@ export function createEliza(scriptText) {
           words[i] = rule.substitute;
         }
       }
+      scanTokens.push({
+        index: i,
+        original: origWords[i],
+        finalWord: words[i],
+        substituted: Boolean(rule && rule.substitute),
+        ruleFound: Boolean(rule),
+        precedence: rule ? rule.precedence : 0,
+        stackRole,
+        tags: rule ? rule.tags.slice() : []
+      });
       i += 1;
     }
+
+    if (!brokeOnDelimiter) {
+      if (keystack.length) {
+        trace.clauses.push({
+          tokens: origWords.slice(),
+          text: origWords.join(" "),
+          delimiter: null,
+          kept: true,
+          reason: "selected"
+        });
+      } else if (origWords.length) {
+        trace.clauses.push({
+          tokens: origWords.slice(),
+          text: origWords.join(" "),
+          delimiter: null,
+          kept: false,
+          reason: "skipped-no-keyword"
+        });
+      }
+    }
+
+    trace.scanTokens = scanTokens;
+    trace.keystackDetail = keystack.map((k) => ({
+      keyword: k,
+      precedence: script.rules.get(k).precedence
+    }));
     trace.keystack = keystack.map((k) => `${k}(${script.rules.get(k).precedence})`);
     trace.clause = words.join(" ");
 
     if (!keystack.length && limit === 4 && memories.length) {
       const text = memories.shift();
       trace.source = "MEMORY";
+      trace.memoryRecalled = { text, remainingCount: memories.length };
+      trace.memoriesAfter = memories.slice();
       trace.steps.push("No keywords, and the LIMIT counter is 4, so ELIZA recalls the oldest MEMORY.");
       return { text, trace };
     }
@@ -339,6 +506,7 @@ export function createEliza(scriptText) {
       const rule = script.rules.get(keyword);
       if (!rule) {
         trace.source = "NOMATCH";
+        trace.memoriesAfter = memories.slice();
         return { text: NOMATCH[limit - 1], trace };
       }
 
@@ -347,42 +515,161 @@ export function createEliza(scriptText) {
       const transform = rule.transforms.find((t) => (t.parts = match(t.decomposition, words, script.tags)));
       if (!transform) {
         if (rule.link) {
+          trace.attempts.push({
+            keyword,
+            precedence: rule.precedence,
+            matched: false,
+            decompositionText: null,
+            decompositionTerms: [],
+            parts: [],
+            reassemblyKind: "link",
+            reassemblyText: `(=${rule.link})`,
+            reassemblyIndex: null,
+            reassemblyTotal: 0,
+            reassemblyChoices: [],
+            linkTarget: rule.link,
+            preWords: null,
+            outputWords: null
+          });
           trace.steps.push(`${keyword}: no decomposition matched; follows link (=${rule.link})`);
           keystack.unshift(rule.link);
           continue;
         }
+        trace.attempts.push({
+          keyword,
+          precedence: rule.precedence,
+          matched: false,
+          decompositionText: null,
+          decompositionTerms: [],
+          parts: [],
+          reassemblyKind: "nomatch",
+          reassemblyText: NOMATCH[limit - 1],
+          reassemblyIndex: null,
+          reassemblyTotal: 0,
+          reassemblyChoices: [],
+          linkTarget: null,
+          preWords: null,
+          outputWords: [NOMATCH[limit - 1]]
+        });
         trace.source = "NOMATCH";
+        trace.memoriesAfter = memories.slice();
         trace.steps.push(`${keyword}: no decomposition matched; built-in message by LIMIT`);
         return { text: NOMATCH[limit - 1], trace };
       }
 
-      const reassembly = nextReassembly(transform);
+      const { item: reassembly, index: reassemblyIndex } = nextReassembly(transform);
+      const clonedParts = transform.parts.slice();
       trace.steps.push(`${keyword}: decomposition ${transform.decompositionText} -> reassembly ${reassembly.text}`);
-      trace.parts = transform.parts;
+      trace.parts = clonedParts;
+
+      const attempt = {
+        keyword,
+        precedence: rule.precedence,
+        matched: true,
+        decompositionText: transform.decompositionText,
+        decompositionTerms: transform.decomposition.map(formatPatternTerm),
+        parts: clonedParts,
+        reassemblyKind: reassembly.kind,
+        reassemblyText: reassembly.text,
+        reassemblyIndex,
+        reassemblyTotal: transform.reassembly.length,
+        reassemblyChoices: transform.reassembly.map((r) => r.text),
+        linkTarget: null,
+        preWords: null,
+        outputWords: null
+      };
 
       if (reassembly.kind === "words") {
+        const outWords = reassemble(reassembly.words, clonedParts);
+        attempt.outputWords = outWords.slice();
+        trace.attempts.push(attempt);
+        trace.winningAttempt = attempt;
         trace.source = keyword;
-        return { text: reassemble(reassembly.words, transform.parts).join(" "), trace };
+        trace.memoriesAfter = memories.slice();
+        return { text: outWords.join(" "), trace };
       }
       if (reassembly.kind === "link") {
+        attempt.linkTarget = reassembly.keyword;
+        trace.attempts.push(attempt);
         keystack.unshift(reassembly.keyword);
         continue;
       }
       if (reassembly.kind === "pre") {
-        words = reassemble(reassembly.words, transform.parts);
+        const nextWords = reassemble(reassembly.words, clonedParts);
+        attempt.linkTarget = reassembly.keyword;
+        attempt.preWords = nextWords.slice();
+        trace.attempts.push(attempt);
+        words = nextWords;
         keystack.unshift(reassembly.keyword);
         continue;
       }
+      trace.attempts.push(attempt);
       // NEWKEY: try the next keyword on the stack
       if (!keystack.length) break;
     }
 
     // no usable keyword: the NONE rule never fails
+    if (!script.none || !script.none.transforms.length) {
+      trace.source = "NOMATCH";
+      trace.memoriesAfter = memories.slice();
+      return { text: NOMATCH[limit - 1], trace };
+    }
     const none = script.none.transforms[0];
-    const reassembly = nextReassembly(none);
+    const { item: reassembly, index: noneIndex } = nextReassembly(none);
+    const outWords = reassemble(reassembly.words, []);
     trace.source = "NONE";
+    trace.noneAttempt = {
+      keyword: "NONE",
+      precedence: 0,
+      matched: true,
+      decompositionText: none.decompositionText,
+      decompositionTerms: none.decomposition.map(formatPatternTerm),
+      parts: [],
+      reassemblyKind: reassembly.kind,
+      reassemblyText: reassembly.text,
+      reassemblyIndex: noneIndex,
+      reassemblyTotal: none.reassembly.length,
+      reassemblyChoices: none.reassembly.map((r) => r.text),
+      linkTarget: null,
+      preWords: null,
+      outputWords: outWords.slice()
+    };
+    trace.memoriesAfter = memories.slice();
     trace.steps.push(`No keyword applied; NONE rule reply ${reassembly.text}`);
-    return { text: reassemble(reassembly.words, []).join(" "), trace };
+    return { text: outWords.join(" "), trace };
+  }
+
+  function getRuleList() {
+    const list = [];
+    for (const rule of script.rules.values()) {
+      list.push({
+        keyword: rule.keyword,
+        precedence: rule.precedence,
+        substitute: rule.substitute,
+        tags: rule.tags.slice(),
+        link: rule.link,
+        transforms: rule.transforms.map((t) => ({
+          decompositionText: t.decompositionText,
+          cursor: cursors.get(t) || 0,
+          reassembly: t.reassembly.map((r) => r.text)
+        }))
+      });
+    }
+    if (script.none) {
+      list.push({
+        keyword: "NONE",
+        precedence: -1,
+        substitute: null,
+        tags: [],
+        link: null,
+        transforms: script.none.transforms.map((t) => ({
+          decompositionText: t.decompositionText,
+          cursor: cursors.get(t) || 0,
+          reassembly: t.reassembly.map((r) => r.text)
+        }))
+      });
+    }
+    return list.sort((a, b) => (b.precedence - a.precedence) || a.keyword.localeCompare(b.keyword));
   }
 
   return {
@@ -390,6 +677,16 @@ export function createEliza(scriptText) {
     respond,
     get memories() {
       return memories.slice();
-    }
+    },
+    get limit() {
+      return limit;
+    },
+    get script() {
+      return script;
+    },
+    getCursor(transform) {
+      return cursors.get(transform) || 0;
+    },
+    getRuleList
   };
 }

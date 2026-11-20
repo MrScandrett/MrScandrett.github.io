@@ -551,6 +551,19 @@
         setPanel(panel, isHidden);
       });
     });
+
+    var mqMobile = window.matchMedia && window.matchMedia('(max-width: 680px)');
+    function syncPanelsForViewport() {
+      document.querySelectorAll('.ll-panel').forEach(function (panel) {
+        var open = panel.dataset.llCollapsed !== 'true';
+        setPanelInteractivity(panel, open);
+        panel.setAttribute('aria-hidden', (open || window.innerWidth <= 680) ? 'false' : 'true');
+      });
+    }
+    if (mqMobile) {
+      if (mqMobile.addEventListener) mqMobile.addEventListener('change', syncPanelsForViewport);
+      else if (mqMobile.addListener) mqMobile.addListener(syncPanelsForViewport);
+    }
   }
 
   /* ──────────────────────────────────────────────────────────

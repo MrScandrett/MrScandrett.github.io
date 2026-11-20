@@ -272,14 +272,19 @@
 
     function refresh() { st.dirty = true; if (!st.running) { st.running = true; requestAnimationFrame(frame); } }
 
+    var resizeRaf = 0;
     function resize() {
       var r = stage.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
       var w = Math.max(160, Math.round(r.width)), h = Math.round(w * 0.72);
-      canvas.style.height = h + 'px';
+      var hPx = h + 'px';
+      if (canvas.style.height !== hPx) canvas.style.height = hPx;
       if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
       st.w = w; st.h = h; st.dpr = dpr; refresh();
     }
-    if (window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener('resize', resize);
+    if (window.ResizeObserver) new ResizeObserver(function () {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(function () { resizeRaf = 0; resize(); });
+    }).observe(stage); else window.addEventListener('resize', resize);
     if (window.IntersectionObserver) new IntersectionObserver(function (e) { st.visible = e[0].isIntersecting; if (st.visible) refresh(); }).observe(canvas);
 
     /* pointer + keyboard rotation */

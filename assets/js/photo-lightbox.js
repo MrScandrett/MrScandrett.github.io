@@ -127,7 +127,7 @@
   });
   document.addEventListener('keydown', function (e) {
     if (root.classList.contains('plb-open')) {
-      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
       else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
       else if (e.key === 'Tab') {

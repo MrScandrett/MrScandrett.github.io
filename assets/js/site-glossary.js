@@ -238,6 +238,7 @@
         '</button>' +
       '</div>' +
       '<p class="cos-glossary-definition" id="classroomos-glossary-definition"></p>' +
+      '<p class="cos-glossary-example" id="classroomos-glossary-example" hidden><strong>Example</strong> <span></span></p>' +
       '<a class="cos-glossary-history" target="_blank" rel="noopener noreferrer">Explore the word history ↗</a>';
     document.body.appendChild(card);
 
@@ -279,10 +280,18 @@
     var entry = entryFor(trigger);
     if (!entry) return;
     cancelClose();
-    if (state.active && state.active !== trigger) state.active.setAttribute('aria-expanded', 'false');
+    if (state.active && state.active !== trigger) {
+      state.active.setAttribute('aria-expanded', 'false');
+      state.active.removeAttribute('aria-describedby');
+    }
     state.active = trigger;
     trigger.setAttribute('aria-expanded', 'true');
-    trigger.setAttribute('aria-describedby', 'classroomos-glossary-pronunciation classroomos-glossary-definition');
+    var example = state.card.querySelector('.cos-glossary-example');
+    var exampleText = trigger.dataset.glossaryExample;
+    example.querySelector('span').textContent = exampleText || '';
+    example.hidden = !exampleText;
+    trigger.setAttribute('aria-describedby', 'classroomos-glossary-pronunciation classroomos-glossary-definition' +
+      (exampleText ? ' classroomos-glossary-example' : ''));
     state.card.querySelector('.cos-glossary-word').textContent = entry.term;
     var sense = state.card.querySelector('.cos-glossary-sense');
     sense.textContent = entry.sense || '';
@@ -348,7 +357,8 @@
     });
     document.addEventListener('focusin', function (event) {
       var trigger = event.target.closest && event.target.closest('.cos-glossary-term');
-      if (trigger) open(trigger);
+      // Let pointer activation finish before showing a card that could cover the trigger.
+      if (trigger && trigger.matches(':focus-visible')) open(trigger);
     });
     document.addEventListener('click', function (event) {
       var trigger = event.target.closest && event.target.closest('.cos-glossary-term');

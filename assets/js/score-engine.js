@@ -2059,6 +2059,55 @@
 
   function samplerAssetBase() { return scriptUrl || location.href; }
 
+  function settingsHelp(dialog) {
+    var active, hideTimer;
+    function hide() {
+      clearTimeout(hideTimer);
+      if (!active) return;
+      active.panel.hidePopover();
+      active = null;
+    }
+    function hideSoon() { hideTimer = setTimeout(hide, 180); }
+    dialog.addEventListener('close', hide);
+    dialog.addEventListener('scroll', hide, { passive: true });
+    dialog.addEventListener('click', function (event) {
+      if (active && !active.group.contains(event.target)) hide();
+    });
+    dialog.addEventListener('keydown', function (event) {
+      if (active && event.key === 'Escape') {
+        event.preventDefault();
+        hide();
+      }
+    });
+    return function (control, name, description) {
+      var group = el('div', { class: 'se-option-with-help' });
+      var panel = el('div', { class: 'se-settings-help', popover: 'manual', role: 'tooltip', id: 'se-settings-help-' + (++settingsHelpId) }, description);
+      var trigger = el('button', { type: 'button', class: 'se-settings-help-trigger', 'aria-label': name, 'aria-describedby': panel.id }, '?');
+      group.append(control, trigger, panel);
+      function show() {
+        clearTimeout(hideTimer);
+        if (active?.panel === panel) return;
+        hide();
+        panel.showPopover();
+        active = { group: group, panel: panel };
+        var anchor = group.getBoundingClientRect();
+        var bounds = panel.getBoundingClientRect();
+        var viewport = document.documentElement;
+        panel.style.left = Math.max(8, Math.min(anchor.left, viewport.clientWidth - bounds.width - 8)) + 'px';
+        var below = anchor.bottom + 4;
+        var above = anchor.top - bounds.height - 4;
+        panel.style.top = (below + bounds.height <= viewport.clientHeight - 8 || above < 8 ? below : above) + 'px';
+      }
+      group.addEventListener('pointerenter', function (event) { if (event.pointerType !== 'touch') show(); });
+      group.addEventListener('pointerleave', function () { if (!group.querySelector(':focus-visible')) hideSoon(); });
+      group.addEventListener('focusin', function (event) { if (event.target.matches(':focus-visible')) show(); });
+      group.addEventListener('focusout', function (event) { if (!group.contains(event.relatedTarget)) hide(); });
+      trigger.addEventListener('click', show);
+      return group;
+    };
+  }
+  var settingsHelpId = 0;
+
   var practiceMemory = new Map();
   var practiceThemeKey = 'classroomos:score-paper';
   var practiceThemes = { light: 'Light', dark: 'Dark', sepia: 'Sepia', contrast: 'High contrast' };
@@ -2720,6 +2769,7 @@
     settingsSummary.appendChild(el('span', { class: 'se-label' }, practiceId ? 'Settings' : settingsLabel));
     var settingsBar = el('div', { class: 'se-options se-controls', role: 'group', 'aria-label': 'Sound and notation options' });
     var displaySettings = settingsBar, soundSettings = settingsBar, partSettings = settingsBar;
+    var viewColumn, notationColumn, addSettingsHelp;
     if (practiceId) {
       settings.classList.add('se-settings-dialog');
       settings.setAttribute('aria-label', 'Score settings');
@@ -2731,11 +2781,15 @@
       displaySettings.appendChild(el('legend', {}, 'Notation'));
       soundSettings = el('fieldset', { class: 'se-sound-settings' });
       soundSettings.appendChild(el('legend', {}, 'Playback'));
-      settingsBar.append(displaySettings, soundSettings);
+      viewColumn = el('div', { class: 'se-settings-column' });
+      notationColumn = el('div', { class: 'se-settings-column' });
+      viewColumn.appendChild(soundSettings);
+      notationColumn.appendChild(displaySettings);
+      settingsBar.append(viewColumn, notationColumn);
       if (model.staves.length > 1) {
         partSettings = el('fieldset', { class: 'se-part-settings' });
         partSettings.appendChild(el('legend', {}, 'Parts to hear'));
-        settingsBar.appendChild(partSettings);
+        notationColumn.appendChild(partSettings);
       }
       // On a wide workspace Settings is a docked palette beside the score: open by default,
       // non-modal, so speed, spacing and notation stay in reach while reading. Narrow
@@ -2757,6 +2811,7 @@
         if (remember) { try { root.localStorage.setItem(PALETTE_KEY, on ? 'on' : 'off'); } catch (e) { /* optional */ } }
       };
       closeIfModal = function () { if (!paletteOn) settings.close(); };
+      addSettingsHelp = settingsHelp(settings);
       settingsSummary.addEventListener('click', function () {
         if (paletteOn) dock(false, true);
         else if (paletteWide()) dock(true, true);
@@ -2800,7 +2855,7 @@
     quality.appendChild(el('option', { value: 'synth' }, practiceId ? 'Synthesis' : 'Lightweight synthesis'));
     qualityLabel.appendChild(quality); soundSettings.appendChild(qualityLabel);
     var sampleCredit = el('p', { class: 'se-sample-credit' });
-    sampleCredit.appendChild(el('a', { href: new URL('../audio/instruments/README.md', samplerAssetBase()).href, target: '_blank', rel: 'noopener' }, 'Instrument recordings · sources & licenses'));
+    sampleCredit.appendChild(el('a', { href: new URL('../audio/instruments/README.md', samplerAssetBase()).href, target: '_blank', rel: 'noopener' }, practiceId ? 'Recording credits' : 'Instrument recordings · sources & licenses'));
     soundSettings.appendChild(sampleCredit);
     var loopLbl = el('label', { class: 'se-check' });
     var loop = el('input', { type: 'checkbox' });
@@ -2808,7 +2863,7 @@
     loopLbl.appendChild(loop); loopLbl.appendChild(loopText);
     var clearLoop = el('button', { type: 'button', class: 'se-toggle se-clear-loop', hidden: '' }, 'Clear loop range');
     bar.append(playBtn, stopBtn);
-    if (practiceId) soundSettings.prepend(tempoLbl, instLbl);
+    if (practiceId) qualityLabel.before(tempoLbl, instLbl);
     else { bar.appendChild(tempoLbl); soundSettings.appendChild(instLbl); }
     bar.append(loopLbl, clearLoop);
     var muteBoxes = [], soloBtns = [];
@@ -2859,7 +2914,7 @@
     var more = el('button', { type: 'button', class: 'se-more', 'aria-expanded': 'true', 'aria-label': 'Hide extra controls', title: 'Fewer controls, more score' }, '▴');
     var position = el('output', { class: 'se-position', 'aria-live': 'off' }, 'Bar ' + barNumber(model, 0));
     bar.appendChild(position);
-    if (practiceId) displaySettings.appendChild(more); else bar.appendChild(more);
+    if (!practiceId) bar.appendChild(more);
     bar.appendChild(full);
     var timeline = el('div', { class: 'se-timeline' });
     var elapsed = el('output', { 'aria-live': 'off' }, '0:00');
@@ -3630,7 +3685,6 @@
     if (practiceId) {
       var readingSize = el('button', { type: 'button' }, 'Reading size');
       readingSize.addEventListener('click', function () { closeIfModal(); navigation.fit('reading'); });
-      displaySettings.insertBefore(readingSize, more);
       // Page view settings get their own group at the top of the dialog.
       var viewSettings = el('fieldset', { class: 'se-view-settings' });
       viewSettings.appendChild(el('legend', {}, 'View'));
@@ -3646,7 +3700,8 @@
       var layoutChoice = choice('Layout', 'layout', [['page', 'Page view'], ['lines', 'Line view']]);
       var fitChoice = choice('Show', 'fit', [['page', 'Whole page'], ['width', 'Page width']]);
       var sizeChoice = choice('Staff size', 'size', Object.keys(PAGE_SIZES).map(function (k) { return [k, PAGE_SIZES[k].label]; }));
-      settingsBar.insertBefore(viewSettings, settingsBar.firstChild);
+      viewSettings.append(more, readingSize);
+      viewColumn.prepend(viewSettings);
       syncViewControls = function () {
         var showing = paged() ? 'page' : 'lines';
         layoutChoice.querySelector('select').value = showing;
@@ -3668,7 +3723,8 @@
     // Layout: notation size, note spacing, line spacing, and which staves to draw. Shared by every
     // score on the page and by Print score, so a handout can be arranged to fit the paper.
     var layoutSettings = el('fieldset', { class: 'se-view-settings se-layout-settings' });
-    layoutSettings.appendChild(el('legend', {}, 'Layout and staves'));
+    // In practice mode the <details> summary already shows this title, so the legend is for assistive tech only.
+    layoutSettings.appendChild(el('legend', practiceId ? { class: 'se-sr-only' } : {}, 'Layout and staves'));
     var layoutControls = [];
     function layoutSlider(label, key, min, max) {
       var wrap = el('label', { class: 'se-view-choice se-layout-slider' });
@@ -3682,17 +3738,17 @@
       layoutControls.push(show); show();
     }
     layoutSlider('Notation size', 'scale', 60, 180);
-    layoutSlider('Note spacing (stretch / squeeze)', 'hgap', 60, 180);
-    layoutSlider('Space between staves and lines', 'vgap', 40, 180);
+    layoutSlider(practiceId ? 'Note spacing' : 'Note spacing (stretch / squeeze)', 'hgap', 60, 180);
+    layoutSlider(practiceId ? 'Staff and line spacing' : 'Space between staves and lines', 'vgap', 40, 180);
     var spreadWrap = el('label', { class: 'se-view-choice' });
     var spreadBox = el('input', { type: 'checkbox' });
     spreadBox.addEventListener('change', function () { layoutPrefs.spread = spreadBox.checked; saveLayoutPrefs(); });
-    spreadWrap.append(el('span', {}, 'Spread lines down each page'), spreadBox);
+    spreadWrap.append(el('span', {}, practiceId ? 'Fill page height' : 'Spread lines down each page'), spreadBox);
     layoutSettings.appendChild(spreadWrap);
     layoutControls.push(function () { spreadBox.checked = layoutPrefs.spread; });
     if (model.staves.length > 1) {
       var staffBox = el('div', { class: 'se-layout-staves', role: 'group', 'aria-label': 'Staves to show' });
-      staffBox.appendChild(el('span', { class: 'se-layout-staves-title' }, 'Show these staves (hidden ones still play)'));
+      staffBox.appendChild(el('span', { class: 'se-layout-staves-title' }, practiceId ? 'Visible staves' : 'Show these staves (hidden ones still play)'));
       var staffChecks = model.staves.map(function (st, si) {
         var box = el('input', { type: 'checkbox' });
         var clefName = ({ treble: 'treble', bass: 'bass', alto: 'alto', tenor: 'tenor' })[st.clef] || st.clef;
@@ -3719,11 +3775,15 @@
     layoutControls.forEach(function (f) { f(); });
     function layoutChanged() { layoutControls.forEach(function (f) { f(); }); layout = null; lastDrawWidth = null; requestAnimationFrame(draw); }
     root.addEventListener('score-layout:change', layoutChanged);
-    if (practiceId) settingsBar.insertBefore(layoutSettings, settingsBar.children[1] || null);
-    else settingsBar.appendChild(layoutSettings);
+    if (practiceId) {
+      var advanced = el('details', { class: 'se-advanced-settings' });
+      layoutSettings.setAttribute('aria-label', 'Layout and staves');
+      advanced.append(el('summary', {}, 'Layout and staves'), layoutSettings);
+      settingsBar.appendChild(advanced);
+    } else settingsBar.appendChild(layoutSettings);
     var offFingering;
     withFingering(function (F) {
-      if (!player.destroyed) offFingering = F.install(fig, score, displaySettings);
+      if (!player.destroyed) offFingering = F.install(fig, score, displaySettings, addSettingsHelp);
     });
     var violinOptions = options?.violinFingering;
     var violinStaves = score.staves.flatMap(function (staff, index) {
@@ -3762,10 +3822,11 @@
           var show = toggle.getAttribute('aria-pressed') !== 'true';
           toggle.setAttribute('aria-pressed', String(show));
           toggle.classList.toggle('is-on', show);
-          legend.hidden = !show;
+          if (!addSettingsHelp) legend.hidden = !show;
           showViolin(show);
         });
-        displaySettings.append(toggle, legend);
+        if (addSettingsHelp) displaySettings.appendChild(addSettingsHelp(toggle, 'Violin fingering help', V.legend));
+        else displaySettings.append(toggle, legend);
       }).catch(function (error) { console.error('Could not load violin fingerings:', error); });
     }
     fig.insertBefore(noteList, cap);

@@ -8,8 +8,8 @@ const library=require('../data/score-library.json').scores;
 const catalog=require('../data/composer-workspaces.json');
 const {arrange}=globalThis.ComposerArrangement, engine=globalThis.ScoreEngine;
 function notes(score) {const m=engine.prepare(score);engine.analyse(m);return {m,notes:engine.playList(m)};}
-test('all 31 composer workspaces have valid, attributed scores and arrangements',()=>{
-  assert.equal(Object.keys(catalog).length,31);
+test('all 32 composer workspaces have valid, attributed scores and arrangements',()=>{
+  assert.equal(Object.keys(catalog).length,32);
   for(const [composer,entry] of Object.entries(catalog)) {
     assert.ok(entry.scores.length,composer);
     for(const id of entry.scores) {

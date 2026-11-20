@@ -28,6 +28,7 @@
     { id: 'baroque', label: 'Baroque', composers: [
       { file: 'lessons/music/pioneers/pachelbel.html', label: 'Pachelbel', name: 'Johann Pachelbel', dates: '1653–1706' },
       { file: 'lessons/music/pioneers/vivaldi.html', label: 'Vivaldi', name: 'Antonio Vivaldi', dates: '1678–1741' },
+      { file: 'lessons/music/pioneers/handel.html', label: 'Handel', name: 'George Frideric Handel', dates: '1685–1759' },
       { file: 'lessons/music/pioneers/bach.html', label: 'Bach', name: 'Johann Sebastian Bach', dates: '1685–1750' }
     ] },
     { id: 'classical', label: 'Classical', composers: [

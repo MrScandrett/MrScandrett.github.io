@@ -57,6 +57,21 @@
         notes = [62, 66, 69, 66, 67, 66, 64, 62];
         notes.forEach(function (midi, i) { note(midi + 12, i * step, duration, 'sine', 0.15); });
         if (b) [38, 33, 35, 30, 31, 26, 31, 33].forEach(function (midi, i) { note(midi + 12, i * step, step * 0.95, 'triangle', 0.09); });
+      } else if (slug === 'handel') {
+        // A: four voices sing the tune together in block chords. B: the tune passes up through the voices, lowest first.
+        step = 0.4; notes = [74, 76, 78, 79, 81, 79, 78, 76];
+        if (b) {
+          // Bass, tenor, alto (a fifth lower, as a fugue's answer) and soprano enter half a tune apart.
+          [-24, -12, -5, 0].forEach(function (shift, v) {
+            notes.forEach(function (midi, i) { note(midi + shift, (v * 4 + i) * step, step * 0.9, 'sine', 0.1); });
+          });
+          notes = notes.concat([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        } else {
+          // Soprano tune with alto, tenor and bass in D-major block chords (D A D G D G D A).
+          [[69, 66, 50], [73, 57, 45], [74, 57, 50], [74, 59, 43], [78, 57, 50], [74, 59, 43], [74, 57, 50], [73, 57, 45]].forEach(function (chord, i) {
+            [notes[i]].concat(chord).forEach(function (midi) { note(midi, i * step, step * 0.9, 'sine', 0.09); });
+          });
+        }
       } else if (slug === 'saint-saens') {
         // A: a slow melody alone. B: the same melody over rippling sixteenth-note arpeggios.
         step = 0.7; notes = [67, 71, 74, 72, 71, 69];

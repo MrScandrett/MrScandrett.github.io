@@ -37,24 +37,152 @@
   <div class="ll-stage">
   <div class="ll-sim" id="main-content">
   <main class="pt-page">
-    <section class="hero pt-hero">
-      <p class="eyebrow">Chemistry · Lesson 01</p>
-      <h1>Periodic Table of Elements</h1>
-      <div class="pt-hero-meta">
-        <span>118 elements</span>
-        <span class="dot"></span>
-        <span>Temperature states</span>
-        <span class="dot"></span>
-        <span>Property lenses</span>
-        <span class="dot"></span>
-        <span>Animated shell models</span>
+    <h1 class="pt-title">Periodic Table of Elements</h1>
+
+    <div class="pt-dash" id="pt-dash">
+    <!-- Interactive table -->
+    <div class="pt-wrap">
+      <div class="pt-quickbar" id="pt-quickbar" role="region" aria-label="Quick table controls">
+        <div class="pt-quick-group pt-quick-search-wrap">
+          <input type="search" class="pt-quick-search" id="pt-quick-search" placeholder="Search…" aria-label="Quick search elements" />
+          <button type="button" class="pt-quick-btn" id="pt-quick-cmd" title="Open command palette (Ctrl+K / ⌘K)" aria-label="Open command palette">⌘K</button>
+        </div>
+        <div class="pt-quick-group">
+          <select id="pt-quick-lens" class="pt-quick-lens" aria-label="Property lens">
+            <option value="none">Category</option>
+            <option value="radius">Atomic radius</option>
+            <option value="ionization">Ionization energy</option>
+            <option value="electronegativity">Electronegativity</option>
+            <option value="density">Density</option>
+            <option value="melt">Melting point</option>
+            <option value="boil">Boiling point</option>
+            <option value="mass">Atomic mass</option>
+            <option value="rarity">Scarcity index</option>
+          </select>
+        </div>
+        <div class="pt-quick-group pt-quick-temp-group">
+          <button type="button" class="pt-quick-temp-badge" id="pt-quick-temp-btn" title="Reset temperature to 295 K (room temperature)">295 K</button>
+          <input id="pt-quick-temp" class="pt-quick-temp-slider" type="range" min="0" max="4000" step="1" value="295" aria-label="Quick temperature slider in Kelvin" />
+          <span id="pt-state-counts" class="pt-state-counts" aria-live="polite"></span>
+        </div>
+        <button type="button" class="pt-quick-btn pt-quick-controls-btn" id="pt-quick-controls" title="Open full Controls & Guide sidebar">Controls ⚙</button>
       </div>
-      <p class="pt-lede">Every substance in the universe is built from <span data-glossary="atom">atoms</span> of pure <span data-glossary="element">elements</span>. Use the temperature slider, category filters, and property lenses to read the table like a living map, then click any element to inspect its shell model, matter state, crystal behavior, and real-world uses. For the structure of atoms themselves, use the companion <a class="pt-history-link" href="feynman-atoms.html">Atoms lesson</a>.</p>
+      <div class="pt-active-filter" id="pt-active-filter" hidden></div>
+      <div class="pt-lens-banner" id="pt-lens-banner" hidden>
+        <span class="pt-lens-title" id="pt-lens-title">Property Lens</span>
+        <div class="pt-lens-scale-inline" id="pt-lens-scale-inline" aria-hidden="true"></div>
+        <button type="button" class="pt-lens-reset" id="pt-lens-reset" aria-label="Reset property lens to category view">✕ Reset to category</button>
+      </div>
+      <p class="pt-table-note">Scroll sideways to see all 18 groups.</p>
+      <div class="pt-table-scroll">
+        <div class="pt-grid" id="pt-grid" role="grid" aria-label="Periodic table of elements" tabindex="0"></div>
+      </div>
+      <div class="pt-legend" id="pt-legend" aria-label="Element category legend"></div>
+    </div>
+
+    <!-- Detail Panel -->
+    <div class="el-panel" id="el-panel" data-tab-active="stats" role="region" aria-label="Element details" aria-live="polite">
+      <div class="ep-visuals">
+        <section class="ep-card bohr-wrap" data-tab="atom">
+          <div class="ep-model-head">
+            <h3 id="ep-model-title">Electron Shell Model</h3>
+            <div class="ep-model-controls">
+              <div class="ep-model-toggle" aria-label="Atomic model display">
+                <button class="ep-model-btn" type="button" data-atom-model="bohr" aria-pressed="true">Bohr</button>
+                <button class="ep-model-btn" type="button" data-atom-model="quantum" aria-pressed="false">Quantum</button>
+              </div>
+              <button class="ep-motion-btn" id="ep-atom-motion" type="button" aria-pressed="false" title="Pause or resume animation">Pause</button>
+            </div>
+          </div>
+          <p id="ep-shell-note">Simplified shell model showing electron counts by energy level.</p>
+          <svg class="bohr-svg" id="bohr-svg" viewBox="0 0 280 280" width="210" height="210" aria-hidden="true"></svg>
+          <div class="ep-atom-summary" id="ep-atom-summary"></div>
+          <details class="ep-explain" id="ep-atom-explain" open></details>
+        </section>
+        <section class="ep-card" data-tab="crystal">
+          <h3>Crystal Structure Preview</h3>
+          <div id="crystal-host"></div>
+          <details class="ep-explain" open>
+            <summary>A model of an ideal crystal, not a photograph</summary>
+            <h4>What you are viewing</h4>
+            <ul>
+              <li>The <strong data-glossary="unit cell">unit cell</strong>: the smallest box that, repeated in all three directions, builds the whole crystal. “Crystal” mode repeats it into a small block.</li>
+              <li>Atom positions and box dimensions come from <strong data-glossary="X-ray diffraction">X-ray diffraction</strong> results (lattice constants in Å, 1 Å = 0.1 nm), usually at room temperature. Here they were entered from memory of standard tables, so check them before citing.</li>
+              <li>The structure shown is that of the <strong>solid</strong>. Liquids and gases have no repeating lattice, even when the temperature slider says so.</li>
+            </ul>
+            <h4>What is simplified</h4>
+            <ul>
+              <li>Atoms are not hard balls. “Packed” sizes each sphere to half the nearest-neighbour distance so they just touch; real <span data-glossary="electron cloud">electron clouds</span> have no sharp edge, and in covalent solids the bonds are shared electrons, not sticks.</li>
+              <li>The crystal is <strong>perfect and single-grain</strong>. Real metals and minerals are made of many tiny grains and contain missing atoms, dislocations and impurities, and these flaws control strength.</li>
+              <li>Vibration is illustrative: amplitude follows the Lindemann rule (atoms move about 10% of the neighbour distance at melting), not a real phonon simulation.</li>
+              <li>Some elements adopt other structures at different temperatures or pressures, and large low-symmetry cells are not drawn.</li>
+            </ul>
+            <h4>Why it matters</h4>
+            <p>Arrangement decides properties. Carbon as diamond-cubic is the hardest natural material; as graphite sheets it is soft and conducts. Face-centred cubic metals such as Cu, Al and Au are ductile because atomic layers slip easily; hexagonal metals such as Zn and Mg deform less easily. Structure sets density, melting behaviour, how alloys mix and how X-rays identify a mineral, so engineers, chip makers and geologists all reason with these models.</p>
+          </details>
+        </section>
+      </div>
+      <div class="ep-info">
+        <div class="ep-top" data-fixed="1">
+          <div style="flex:1;min-width:0;">
+            <div class="ep-header">
+              <span class="ep-sym" id="ep-sym"></span>
+              <span class="ep-name" id="ep-name"></span>
+            </div>
+            <div class="ep-meta">
+              <span><strong id="ep-num"></strong> protons</span>
+              <span><strong id="ep-mass"></strong> amu</span>
+            </div>
+          </div>
+          <div class="ep-nav" aria-label="Element navigation">
+            <button class="ep-nav-btn" id="ep-prev" type="button" aria-label="Previous element">← Prev</button>
+            <button class="ep-nav-btn" id="ep-next" type="button" aria-label="Next element">Next →</button>
+          </div>
+          <button class="ep-close" id="ep-close" aria-label="Close element panel">✕ Close</button>
+        </div>
+        <div class="ep-pill-row" data-fixed="1">
+          <span class="ep-badge" id="ep-badge"></span>
+          <span class="ep-state" id="ep-state"></span>
+          <span class="ep-crystal-tag" id="ep-crystal-tag"></span>
+          <button class="ep-compare-btn" id="ep-compare-btn" type="button" aria-expanded="false" title="Compare this element with another">⇄ Compare</button>
+        </div>
+        <div class="ep-compare-tray" id="ep-compare-tray" hidden>
+          <div class="ep-compare-tray-inner">
+            <label for="ep-compare-select" class="ep-compare-label">Compare with:</label>
+            <select id="ep-compare-select" class="ep-compare-select" aria-label="Select element to compare side-by-side"></select>
+            <button class="ep-compare-swap" id="ep-compare-swap" type="button" title="Swap primary and compared elements">⇄ Swap</button>
+            <button class="ep-compare-close" id="ep-compare-close" type="button" aria-label="Close element comparison">✕</button>
+          </div>
+          <span class="ep-compare-hint">Tip: click any element on the table to compare</span>
+        </div>
+        <div class="ep-compare-view" id="ep-compare-view" data-tab="stats" hidden></div>
+        <div class="ep-stat-grid" id="ep-stats" data-tab="stats"></div>
+        <div class="ep-config" id="ep-config" data-tab="stats"></div>
+        <div class="ep-usage-grid" id="ep-usage" data-tab="uses"></div>
+        <aside class="ep-story" id="ep-story" data-tab="uses" aria-live="polite" hidden></aside>
+        <aside class="ep-decay" id="ep-decay" data-tab="uses" hidden></aside>
+        <section class="ep-gallery" id="ep-gallery" data-tab="photos" aria-label="Photos and images for this element" hidden></section>
+        <section class="ep-earth-card" id="ep-earth" data-tab="earth" aria-label="Earth sources and occurrence"></section>
+        <section class="ep-earth-card" id="ep-supply" data-tab="earth" aria-label="Supply and sustainability"></section>
+        <p class="ep-desc" id="ep-desc" data-tab="stats"></p>
+      </div>
+      <section class="ep-history-card" id="ep-history" data-tab="history" aria-label="Where and when this element was first discovered"></section>
+    </div>
+
+    <!-- Pattern finder -->
+    <section class="pt-finder" id="pt-finder" aria-labelledby="pt-finder-title">
+      <h2 id="pt-finder-title">Pattern finder</h2>
+      <p class="pt-finder-lead">Pick a lens, then pick an item. The matching elements light up on the table above and the rest fade. Or switch to Practice to test your table reading skills.</p>
+      <div class="pt-finder-row pt-finder-tabs" id="pt-finder-tabs" role="tablist" aria-label="Pattern lens"></div>
+      <div class="pt-finder-row" id="pt-finder-items" aria-label="Choose an item to highlight"></div>
+      <div class="pt-finder-out" id="pt-finder-out" aria-live="polite"></div>
     </section>
+    </div><!-- /.pt-dash -->
 
     <section class="pt-primer" aria-label="How to read the periodic table">
       <div class="pt-primer-card">
         <h2>How to read the table</h2>
+        <p>Every substance in the universe is built from <span data-glossary="atom">atoms</span> of pure <span data-glossary="element">elements</span>. Use the temperature slider, category filters, and property lenses to read the table like a living map, then click any element to inspect its shell model, matter state, crystal behavior, and real-world uses. For the structure of atoms themselves, use the companion <a class="pt-history-link" href="feynman-atoms.html">Atoms lesson</a>.</p>
         <p>The <span data-glossary="periodic table">periodic table</span> is arranged by <span data-glossary="atomic number">atomic number</span>. That means every step to the right adds one <span data-glossary="proton">proton</span>, and the layout reveals repeating patterns in chemical behavior.</p>
       </div>
       <div class="pt-primer-grid">
@@ -132,7 +260,7 @@
         <div class="pt-history-founder">
           <div>
             <h2>History and evolution of the periodic table</h2>
-            <p>Dmitri Mendeleev is usually called the founder of the periodic table because in 1869 he arranged known elements by repeating properties, left gaps for missing elements, and made predictions that were later confirmed. This lesson focuses on how elements are organized; the companion <a class="pt-history-link" href="feynman-atoms.html">Atoms lesson</a> focuses on protons, neutrons, electrons, and why atomic number gives each element its identity. When an atom's proton count changes through <a class="pt-history-link" href="radioactive-decay.html">radioactive decay</a>, it becomes a different element.</p>
+            <p>Dmitri Mendeleev is usually called the founder of the periodic table because in 1869 he arranged known elements by repeating properties, left gaps for missing elements, and made predictions that were later confirmed. Explore the <a class="pt-history-link" href="pioneers/mendeleev-periodic-law.html">Mendeleev pioneer study</a> for the original prediction test, or use the companion <a class="pt-history-link" href="feynman-atoms.html">Atoms lesson</a> for protons, neutrons, electrons, and why atomic number gives each element its identity. When an atom's proton count changes through <a class="pt-history-link" href="radioactive-decay.html">radioactive decay</a>, it becomes a different element.</p>
           </div>
           <figure class="pt-founder-figure" data-zoomable>
             <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Medeleeff_by_repin.jpg?width=420" alt="Portrait of Dmitri Mendeleev by Ilya Repin" loading="lazy" />
@@ -234,121 +362,10 @@
         <div class="pt-discovery-chip"><span>1900s-2016</span><strong>Tc, Pm, Np-Og</strong><small>Reactors and accelerators created elements beyond uranium and completed period 7.</small></div>
       </div>
     </section>
-
-    <div class="pt-dash" id="pt-dash">
-    <!-- Interactive table -->
-    <section class="pt-lab-intro" aria-labelledby="pt-lab-title">
-      <div>
-        <h2 id="pt-lab-title">Explore the living table</h2>
-        <p>Select an element for its atomic model and origin story. Use the controls panel to filter families, change temperature, or compare chemical properties.</p>
-      </div>
-      <span class="pt-orientation-key" aria-label="The table is organized into 18 groups and 7 periods">groups × periods</span>
-    </section>
-    <p class="pt-table-note">Swipe sideways to explore the full table.</p>
-    <div class="pt-wrap">
-      <div class="pt-lens-banner" id="pt-lens-banner" hidden>
-        <span class="pt-lens-title" id="pt-lens-title">Property Lens</span>
-        <div class="pt-lens-scale-inline" id="pt-lens-scale-inline" aria-hidden="true"></div>
-        <button type="button" class="pt-lens-reset" id="pt-lens-reset" aria-label="Reset property lens to category view">✕ Reset to category</button>
-      </div>
-      <div class="pt-grid" id="pt-grid" role="grid" aria-label="Periodic table of elements" tabindex="0"></div>
-      <div class="pt-legend" id="pt-legend" aria-label="Element category legend"></div>
-    </div>
-
-    <!-- Detail Panel -->
-    <div class="el-panel" id="el-panel" data-tab-active="stats" role="region" aria-label="Element details" aria-live="polite">
-      <div class="ep-visuals">
-        <section class="ep-card bohr-wrap" data-tab="atom">
-          <div class="ep-model-head">
-            <h3 id="ep-model-title">Electron Shell Model</h3>
-            <div class="ep-model-toggle" aria-label="Atomic model display">
-              <button class="ep-model-btn" type="button" data-atom-model="bohr" aria-pressed="true">Bohr</button>
-              <button class="ep-model-btn" type="button" data-atom-model="quantum" aria-pressed="false">Quantum</button>
-            </div>
-          </div>
-          <p id="ep-shell-note">Simplified shell model showing electron counts by energy level.</p>
-          <svg class="bohr-svg" id="bohr-svg" viewBox="0 0 280 280" width="210" height="210" aria-hidden="true"></svg>
-          <details class="ep-explain" id="ep-atom-explain" open></details>
-        </section>
-        <section class="ep-card" data-tab="crystal">
-          <h3>Crystal Structure Preview</h3>
-          <div id="crystal-host"></div>
-          <details class="ep-explain" open>
-            <summary>A model of an ideal crystal, not a photograph</summary>
-            <h4>What you are viewing</h4>
-            <ul>
-              <li>The <strong data-glossary="unit cell">unit cell</strong>: the smallest box that, repeated in all three directions, builds the whole crystal. “Crystal” mode repeats it into a small block.</li>
-              <li>Atom positions and box dimensions come from <strong data-glossary="X-ray diffraction">X-ray diffraction</strong> results (lattice constants in Å, 1 Å = 0.1 nm), usually at room temperature. Here they were entered from memory of standard tables, so check them before citing.</li>
-              <li>The structure shown is that of the <strong>solid</strong>. Liquids and gases have no repeating lattice, even when the temperature slider says so.</li>
-            </ul>
-            <h4>What is simplified</h4>
-            <ul>
-              <li>Atoms are not hard balls. “Packed” sizes each sphere to half the nearest-neighbour distance so they just touch; real <span data-glossary="electron cloud">electron clouds</span> have no sharp edge, and in covalent solids the bonds are shared electrons, not sticks.</li>
-              <li>The crystal is <strong>perfect and single-grain</strong>. Real metals and minerals are made of many tiny grains and contain missing atoms, dislocations and impurities, and these flaws control strength.</li>
-              <li>Vibration is illustrative: amplitude follows the Lindemann rule (atoms move about 10% of the neighbour distance at melting), not a real phonon simulation.</li>
-              <li>Some elements adopt other structures at different temperatures or pressures, and large low-symmetry cells are not drawn.</li>
-            </ul>
-            <h4>Why it matters</h4>
-            <p>Arrangement decides properties. Carbon as diamond-cubic is the hardest natural material; as graphite sheets it is soft and conducts. Face-centred cubic metals such as Cu, Al and Au are ductile because atomic layers slip easily; hexagonal metals such as Zn and Mg deform less easily. Structure sets density, melting behaviour, how alloys mix and how X-rays identify a mineral, so engineers, chip makers and geologists all reason with these models.</p>
-          </details>
-                  </section>
-      </div>
-      <div class="ep-info">
-        <div class="ep-top" data-fixed="1">
-          <div style="flex:1;min-width:0;">
-            <div class="ep-header">
-              <span class="ep-sym" id="ep-sym"></span>
-              <span class="ep-name" id="ep-name"></span>
-            </div>
-            <div class="ep-meta">
-              <span><strong id="ep-num"></strong> protons</span>
-              <span><strong id="ep-mass"></strong> amu</span>
-            </div>
-          </div>
-          <div class="ep-nav" aria-label="Element navigation">
-            <button class="ep-nav-btn" id="ep-prev" type="button" aria-label="Previous element">← Prev</button>
-            <button class="ep-nav-btn" id="ep-next" type="button" aria-label="Next element">Next →</button>
-          </div>
-          <button class="ep-close" id="ep-close" aria-label="Close element panel">✕ Close</button>
-        </div>
-        <div class="ep-pill-row" data-fixed="1">
-          <span class="ep-badge" id="ep-badge"></span>
-          <span class="ep-state" id="ep-state"></span>
-          <span class="ep-crystal-tag" id="ep-crystal-tag"></span>
-          <button class="ep-compare-btn" id="ep-compare-btn" type="button" aria-expanded="false" title="Compare this element with another">⇄ Compare</button>
-        </div>
-        <div class="ep-compare-tray" id="ep-compare-tray" hidden>
-          <div class="ep-compare-tray-inner">
-            <label for="ep-compare-select" class="ep-compare-label">Compare with:</label>
-            <select id="ep-compare-select" class="ep-compare-select" aria-label="Select element to compare side-by-side"></select>
-            <button class="ep-compare-close" id="ep-compare-close" type="button" aria-label="Close element comparison">✕</button>
-          </div>
-        </div>
-        <div class="ep-stat-grid" id="ep-stats" data-tab="stats"></div>
-        <div class="ep-config" id="ep-config" data-tab="stats"></div>
-        <div class="ep-usage-grid" id="ep-usage" data-tab="uses"></div>
-        <aside class="ep-story" id="ep-story" data-tab="uses" aria-live="polite" hidden></aside>
-        <aside class="ep-decay" id="ep-decay" data-tab="uses" hidden></aside>
-        <section class="ep-gallery" id="ep-gallery" data-tab="photos" aria-label="Photos and images for this element" hidden></section>
-        <section class="ep-earth-card" id="ep-earth" data-tab="earth" aria-label="Earth sources and image requirements"></section>
-        <section class="ep-earth-card" id="ep-supply" data-tab="earth" aria-label="Supply and sustainability"></section>
-        <p class="ep-desc" id="ep-desc" data-tab="stats"></p>
-      </div>
-      <section class="ep-history-card" id="ep-history" data-tab="history" aria-label="Where and when this element was first discovered"></section>
-    </div>
-      <!-- Pattern finder -->
-    <section class="pt-finder" id="pt-finder" aria-labelledby="pt-finder-title">
-      <h2 id="pt-finder-title">Pattern finder: periods, groups, blocks, families and trends</h2>
-      <p class="pt-finder-lead">Pick a lens, then pick an item. The matching elements light up on the table above and the rest fade. Each lens explains why the pattern matters and how to spot it on any periodic table.</p>
-      <div class="pt-finder-row pt-finder-tabs" id="pt-finder-tabs" role="tablist" aria-label="Pattern lens"></div>
-      <div class="pt-finder-row" id="pt-finder-items" aria-label="Choose an item to highlight"></div>
-      <div class="pt-finder-out" id="pt-finder-out" aria-live="polite"></div>
-    </section>
-    </div><!-- /.pt-dash -->
   </main>
   </div><!-- /.ll-sim -->
 
-  <aside class="ll-panel" aria-hidden="false">
+  <aside class="ll-panel" aria-hidden="true" data-ll-collapsed="true">
     <div class="ll-panel-head">
       <div class="ll-tabs">
         <button class="ll-tab" aria-selected="true" data-pane="pt-params">Controls</button>
@@ -389,6 +406,7 @@
             <button type="button" class="pt-temp-chip" data-temp="373">373 K <small>Boil H₂O</small></button>
             <button type="button" class="pt-temp-chip" data-temp="1800">1800 K <small>Forge</small></button>
           </div>
+          <div class="pt-temp-counts" id="pt-temp-counts" aria-live="polite"></div>
         </div>
         <hr class="ll-hr" />
         <span class="ll-label">Property Lens</span>
@@ -408,7 +426,7 @@
         <hr class="ll-hr" />
         <span class="ll-label">Search</span>
         <input class="pt-search" type="search" placeholder="Search elements…" id="pt-search" aria-label="Search elements by name, symbol, or number" style="margin-left:0;width:100%;box-sizing:border-box;" />
-        <p class="pt-data-note" id="pt-data-note">Loading property data…</p>
+        <p class="pt-data-note" id="pt-data-note">Core property tables active.</p>
       </div>
 
       <div class="ll-pane" id="pt-guide">
@@ -478,6 +496,7 @@
   <script src="../../assets/js/lessons/periodic-table-history.js"></script>
   <script src="../../assets/js/lessons/periodic-table-images.js"></script>
   <script src="../../assets/js/lessons/periodic-table-supply.js"></script>
+  <script src="../../assets/js/lessons/periodic-table-data.js"></script>
   <script src="../../assets/js/crystal-viewer.js"></script>
   <script src="../../assets/js/photo-lightbox.js"></script>
   <script src="../../assets/js/lessons/chem-periodic-table.js"></script>

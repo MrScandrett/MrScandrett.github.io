@@ -1068,30 +1068,23 @@
   var el = {};
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
-  function renderLevels() {
-    el.levels.innerHTML = LEVELS.map(function (L, i) {
-      return '<button type="button" class="stb-level" data-level="' + i + '" role="radio" aria-checked="' + (i === state.level) + '" aria-label="' + esc(L.name + ': ' + L.tag) + '">' +
-        '<span class="stb-level-icon" aria-hidden="true">' + L.icon + '</span><span class="stb-level-name">' + esc(L.name) + '</span><span class="stb-level-tag">' + esc(L.tag) + '</span></button>';
-    }).join('');
-  }
   function renderDrills() {
     var L = lv();
+    var topics = { note: 'Notes', key: 'Keys', interval: 'Intervals', scale: 'Scales', chord: 'Chords' };
     function item(d) {
       var lock = L.locked && L.locked[d.id];
       var t = drillTitle(d);
-      return '<button type="button" class="stb-drill stb-drill-' + d.group + (d.id === state.drill ? ' is-on' : '') + (lock ? ' is-locked' : '') + '" data-topic="' + d.drill + '" data-drill="' + d.id + '" aria-pressed="' + (d.id === state.drill) + '"' + (lock ? ' aria-disabled="true"' : '') + '>' +
+      return '<button type="button" class="stb-drill stb-drill-' + d.group + (d.id === state.drill ? ' is-on' : '') + (lock ? ' is-locked' : '') + '" data-topic="' + d.drill + '" data-drill="' + d.id + '" aria-label="' + esc(topics[d.drill] + ': ' + t[0] + (lock ? '. ' + lock : '')) + '" title="' + esc(lock || t[1]) + '" aria-pressed="' + (d.id === state.drill) + '"' + (lock ? ' aria-disabled="true"' : '') + '>' +
         '<span class="stb-drill-icon" aria-hidden="true">' + drillIcon(d) + '</span>' +
-        '<span class="stb-drill-text"><strong>' + esc(t[0]) + '</strong><small>' + esc(lock ? '🔒 ' + lock : t[1]) + '</small></span></button>';
-    }
-    function group(gid, title) {
-      return '<h3 class="stb-drill-group stb-drill-group-' + gid + '">' + title + '</h3>' + DRILLS.filter(function (d) { return d.group === gid; }).map(item).join('');
+        '<span class="stb-drill-text">' + esc(t[0]) + '</span>' +
+        '<span class="stb-drill-topic" aria-hidden="true">' + topics[d.drill] + '</span></button>';
     }
     var active = state.drill.slice(-5) === 'build' ? 'build' : 'id';
     var topic = state.drill.split('-')[0];
     el.drills.innerHTML = '<div class="stb-drill-modes" role="group" aria-label="Practice mode">' +
       '<button type="button" data-drill="' + topic + '-id" aria-pressed="' + (active === 'id') + '">Look &amp; identify</button>' +
       '<button type="button" data-drill="' + topic + '-build" aria-pressed="' + (active === 'build') + '">Write &amp; build</button></div>' +
-      group(active, active === 'id' ? 'What do you see?' : 'Make it on the staff');
+      DRILLS.filter(function (d) { return d.group === active; }).map(item).join('');
   }
   function recommendedTopic() {
     var available = ['note', 'key', 'interval', 'scale', 'chord'].filter(function (topic) {
@@ -1105,20 +1098,13 @@
     });
     return available[0] || 'note';
   }
-  function topicName(topic) {
-    return { note: 'notes', key: 'key signatures', interval: 'intervals', scale: 'scales', chord: 'chords' }[topic] || topic;
-  }
   function renderGuided() {
-    if (!el.recommendation) return;
-    var topic = state.guided ? state.guidedTopic : recommendedTopic();
-    var idStat = statFor(state.level, topic + '-id'), buildStat = statFor(state.level, topic + '-build');
-    var idMastery = masteryFor(idStat), buildMastery = masteryFor(buildStat);
-    el.recommendation.innerHTML = 'Practice <strong>' + topicName(topic) + '</strong>: three reading questions, then two construction questions. Recent mastery: identify <strong>' + idMastery.label + '</strong>; build <strong>' + buildMastery.label + '</strong>.';
-    if (el.guidedStart) el.guidedStart.textContent = state.guided ? 'Restart this five-question set' : 'Start recommended set';
-    if (el.reviewMistakes) el.reviewMistakes.hidden = !state.mistakes.length;
-    if (el.sessionMeter) {
-      var step = state.guided ? Math.min(5, state.guidedStep + (state.answered ? 1 : 0)) : 0;
-      el.sessionMeter.innerHTML = '<span><strong>' + (state.guided ? step : 0) + '/5</strong> questions complete</span><span><strong>' + state.session.c + '/' + state.session.t + '</strong> correct this visit</span><span><strong>' + state.mistakes.length + '</strong> to review</span>';
+    el.guidedStart.textContent = state.guided ? 'Restart five-question warm-up' : 'Start five-question warm-up';
+    el.reviewMistakes.hidden = !state.mistakes.length;
+    el.sessionMeter.hidden = !state.guided;
+    if (state.guided) {
+      var step = Math.min(5, state.guidedStep + (state.answered ? 1 : 0));
+      el.sessionMeter.textContent = step + '/5 questions complete';
     }
   }
   function startGuided() {
@@ -1338,7 +1324,6 @@
 
   function setPrompt() {
     var ex = state.ex, d = DRILLS.filter(function (x) { return x.id === state.drill; })[0], t = drillTitle(d);
-    el.kicker.textContent = (d.group === 'id' ? (state.level === 0 ? 'Listen & Look' : 'Identification') : (state.level === 0 ? 'Build It' : 'Construction')) + ' · ' + lv().name;
     el.title.textContent = t[0];
     el.prompt.textContent = ex.prompt;
     el.score.innerHTML = scoreHTML();
@@ -1352,7 +1337,7 @@
     var d = DRILLS.filter(function (x) { return x.id === state.drill; })[0];
     el.card.setAttribute('data-kind', d.group);
     el.feedback.innerHTML = ''; el.feedback.className = 'stb-feedback';
-    el.next.hidden = true; el.retry.hidden = true; el.hearAnswer.hidden = true; el.hintBtn.disabled = false;
+    el.next.hidden = true; el.retry.hidden = true; el.hearAnswer.hidden = true; el.hintBtn.hidden = false;
     el.hear.textContent = '🔊 Hear it';
     el.hintText.textContent = ''; el.hintText.hidden = true;
     setPrompt(); drawStage(); renderControls(); renderAnswers(); renderGuided();
@@ -1388,7 +1373,7 @@
     el.retry.hidden = r.ok; el.hearAnswer.hidden = false;
     if (ex.input === 'staff' && state.placed.length) el.hear.textContent = '♫ Hear mine';
     (r.ok ? el.next : el.retry).focus({ preventScroll: true });
-    el.hintBtn.disabled = true;
+    el.hintBtn.hidden = true; el.hintText.hidden = true;
     if (young() && r.ok) burst();
     if (!(ex.input === 'staff' && ex.auto && false)) {
       var audioId = playbackId;
@@ -1531,9 +1516,9 @@
     document.documentElement.style.setProperty('--stb-level', String(i));
     if (L.locked && L.locked[state.drill]) state.drill = 'note-id';
     state.guided = false; state.mistakes = [];
-    renderLevels(); renderDrills(); renderToolbar(); renderProgress(); renderStudyGuide(); renderGuided();
+    el.levels.value = String(i);
+    renderDrills(); renderToolbar(); renderProgress(); renderStudyGuide();
     el.nudge.hidden = true;
-    var lvLabel = $('stbLevelLabel'); if (lvLabel) lvLabel.textContent = L.name + ' · ' + L.tag;
     newQuestion();
     try { localStorage.setItem('stb-level', String(i)); } catch (e) { /* ignore */ }
   }
@@ -1547,18 +1532,12 @@
       renderDrills(); renderGuided(); newQuestion();
       el.card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
-    if (el.chooseDrill) el.chooseDrill.addEventListener('click', function () {
-      var hidden = el.drills.classList.toggle('is-collapsed');
-      el.chooseDrill.setAttribute('aria-expanded', String(!hidden));
-      el.chooseDrill.textContent = hidden ? 'Choose any activity' : 'Hide activity list';
-    });
     if (el.planLevel) el.planLevel.addEventListener('change', function () { selectLevel(+el.planLevel.value); });
     if (el.printPlan) el.printPlan.addEventListener('click', function () { document.body.classList.add('stb-print-plan'); window.print(); });
     window.addEventListener('afterprint', function () { document.body.classList.remove('stb-print-plan'); });
-    el.levels.addEventListener('click', function (e) {
-      var b = e.target.closest('[data-level]'); if (!b) return;
+    el.levels.addEventListener('change', function () {
       audioReady = true; audio();
-      selectLevel(+b.getAttribute('data-level'));
+      selectLevel(+el.levels.value);
     });
     el.drills.addEventListener('click', function (e) {
       var b = e.target.closest('[data-drill]'); if (!b) return;
@@ -1685,14 +1664,15 @@
   function init() {
     el = {
       stbRoot: $('stb'), levels: $('stbLevels'), drills: $('stbDrills'), card: $('stbCard'), tools: $('stbTools'),
-      kicker: $('stbKicker'), title: $('stbTitle'), score: $('stbScore'), prompt: $('stbPrompt'), stage: $('stbStage'),
+      title: $('stbTitle'), score: $('stbScore'), prompt: $('stbPrompt'), stage: $('stbStage'),
       controls: $('stbControls'), answers: $('stbAnswers'), feedback: $('stbFeedback'), answerStaff: $('stbAnswerStaff'),
       next: $('stbNext'), retry: $('stbRetry'), hear: $('stbHear'), hearAnswer: $('stbHearAnswer'), hintBtn: $('stbHintBtn'), hintText: $('stbHint'),
       nudge: $('stbNudge'), nudgeGo: $('stbNudgeGo'), nudgeNo: $('stbNudgeNo'), progress: $('stbProgress'),
       planLevel: $('stbPlanLevel'), printPlan: $('stbPrintPlan'), planSheet: $('stbPlanSheet'),
-      guidedStart: $('stbGuidedStart'), reviewMistakes: $('stbReviewMistakes'), chooseDrill: $('stbChooseDrill'), recommendation: $('stbRecommendation'), sessionMeter: $('stbSessionMeter'), resetProgress: $('stbResetProgress')
+      guidedStart: $('stbGuidedStart'), reviewMistakes: $('stbReviewMistakes'), sessionMeter: $('stbSessionMeter'), resetProgress: $('stbResetProgress')
     };
     if (!el.stbRoot) return;
+    LEVELS.forEach(function (level, i) { el.levels.add(new Option(level.name, String(i))); });
     bind();
     var saved = 0;
     try { saved = parseInt(localStorage.getItem('stb-level') || '0', 10) || 0; } catch (e) { saved = 0; }

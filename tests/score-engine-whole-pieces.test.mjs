@@ -189,8 +189,8 @@ test('128th notes retain five beams, flags, rests and exact playback timing', ()
 
 test('Beethoven collection preserves complete movements, Bagatelles and free-time bars', () => {
   const ids = require('../data/composer-workspaces.json').beethoven.scores;
-  assert.equal(ids.length, 23);
-  assert.equal(new Set(ids).size, 23);
+  assert.equal(ids.length, 30);
+  assert.equal(new Set(ids).size, 30);
   assert.equal(ids.filter(id => library[id].complete).length, 22);
   for (const id of ['beethoven-pathetique-1','beethoven-pathetique-2','beethoven-pathetique-3','beethoven-bagatelle-119-10','beethoven-bagatelle-119-11']) assert.ok(ids.includes(id));
   const bagatelle = model(library['beethoven-bagatelle-119-11']);

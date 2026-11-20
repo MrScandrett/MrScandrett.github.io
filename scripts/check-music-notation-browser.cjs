@@ -33,7 +33,7 @@ const paths = [
         assert.equal(await page.locator('[data-reveal-lens="pitch"]').getAttribute('aria-pressed'),'true');
         assert.ok(await page.locator('.stb-score-panel:not([hidden]) [data-lens="pitch"]').evaluate(n=>n.classList.contains('is-revealed')));
         for(let level=0;level<6;level++) {
-          await page.locator('.stb-level').nth(level).click();
+          await page.locator('#stbLevels').selectOption(String(level));
           for(const mode of ['id','build']) {
             await page.locator('.stb-drill-modes [data-drill$="-'+mode+'"]').click();
             const ids = await page.locator('.stb-drill:not(.is-locked)').evaluateAll(bs => bs.map(b => b.dataset.drill));
@@ -46,13 +46,40 @@ const paths = [
             }
           }
         }
-        await page.locator('.stb-level').nth(0).click();
+        await page.locator('#stbLevels').selectOption('0');
         await page.locator('.stb-drill-modes [data-drill$="-id"]').click();
         await page.locator('.stb-drill[data-drill="note-id"]').click();
         await page.locator('#stbHintBtn').click();
         assert.ok(await page.locator('#stbHint').isVisible());
-        await page.locator('#stbAnswers button').first().click();
-        assert.ok(await page.locator('#stbNext').isVisible());
+        await page.setViewportSize({width:1280,height:720});
+        await page.evaluate(() => { window.scrollTo(0, 0); });
+        const noteColor = await page.locator('#stbStage .stb-note').evaluate(note =>
+          note.getAttribute('style').replace('color:', '').trim());
+        const wrongBell = await page.locator('#stbAnswers [data-letter]').evaluateAll((buttons, color) =>
+          buttons.findIndex(button => button.style.getPropertyValue('--bell').trim() !== color), noteColor);
+        assert.ok(wrongBell >= 0, 'A wrong answer must be available');
+        await page.locator('#stbAnswers [data-letter]').nth(wrongBell).click();
+        assert.ok(await page.locator('#stbFeedback.is-bad').isVisible());
+        const checkFeedbackFits = async () => {
+          for (const selector of ['#stbRetry', '#stbNext', '#stbFeedback']) {
+            const rect = await page.locator(selector).boundingBox();
+            assert.ok(rect && rect.y >= 0 && rect.y + rect.height <= 721, selector + ' must fit after an incorrect answer');
+          }
+        };
+        await checkFeedbackFits();
+        const staff = page.locator('#stbStage svg');
+        const originalStaff = await staff.boundingBox();
+        const fullscreen = page.locator('#trainer .creation-app-fullscreen');
+        await fullscreen.click();
+        await page.locator('#trainer:is(:fullscreen, .creation-app-expanded)').waitFor();
+        assert.ok((await staff.boundingBox()).width > originalStaff.width, 'Full screen must enlarge the staff');
+        await checkFeedbackFits();
+        await fullscreen.click();
+        await page.waitForFunction(() => !document.querySelector('#trainer:is(:fullscreen, .creation-app-expanded)'));
+        await page.locator('#stbRetry').click();
+        assert.equal(await page.locator('#stbFeedback').textContent(), '');
+        await page.locator('#stbAnswers [data-letter]').nth(wrongBell).click();
+        await page.setViewportSize({width:1440,height:1000});
         await page.locator('#stbNext').click();
         await page.locator('.stb-drill-modes [data-drill$="-build"]').click();
         await page.locator('#stbStage svg').focus();
