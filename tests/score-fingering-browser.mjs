@@ -47,7 +47,7 @@ try {
     await page.locator('#mozart .se-print-score-button').click();
     assert.ok(await page.locator('.se-print-score-pages').count(), 'Print failed: ' + errors.join('; '));
     assert.ok(await page.locator('.se-print-score-pages .se-finger-number').count());
-    assert.match(await page.locator('.se-print-score-pages').innerText(), /Comfortable reach: fifth/);
+    assert.match(await page.locator(".se-print-score-key").innerText(), /Fingers: 1 thumb/);
     await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
     await page.locator('#raindrop .se-settings').evaluate(d => { d.open = true; });
     await page.locator('#raindrop .se-fingering-reach select').selectOption('12');

@@ -5,123 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>State Machines · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Computer Science Lesson 14 — explore finite state machines with interactive demos: traffic lights, vending machines, and door locks. Learn automata theory fundamentals." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <meta name="description" content="Computer Science Lesson 14 — build, debug, and simulate finite state machines: traffic lights, robot vacuums, vending machines, door locks, game AI, binary DFAs, and Moore vs. Mealy automata." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/algorithms-ai-module.css" />
-  <style>
-    .cl-page { padding-bottom: 0; }
-    .ll-viewport { --ll-panel-w: 280px; }
-
-    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
-    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .cl-lede,
-    [data-theme="vaporwave"] .cl-lede,
-    [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.7); }
-
-    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#34c759); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
-    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
-    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .cl-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .cl-card,
-    [data-theme="vaporwave"] .cl-card,
-    [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
-    [data-lighting="night"] .cl-card p,
-    [data-theme="vaporwave"] .cl-card p,
-    [data-theme="bark"] .cl-card p { color: rgba(245,245,247,0.72); }
-
-    .cl-formula-box { background: linear-gradient(135deg,rgba(52,199,89,0.09),rgba(52,199,89,0.03)); border: 1px solid rgba(52,199,89,0.28); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; }
-    .cl-formula-sym { font-size: clamp(1.1rem,3vw,1.4rem); font-weight: 800; letter-spacing: -0.02em; color: #34c759; display: block; margin-bottom: 0.4rem; }
-    .cl-formula-vars { font-size: 0.82rem; color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .cl-formula-vars,
-    [data-theme="vaporwave"] .cl-formula-vars,
-    [data-theme="bark"] .cl-formula-vars { color: rgba(245,245,247,0.7); }
-
-    /* Traffic light example */
-    .cl-flow { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0.8rem 0; }
-    .cl-flow-state { background: rgba(52,199,89,0.1); border: 1.5px solid rgba(52,199,89,0.35); border-radius: 10px; padding: 0.45rem 0.85rem; font-size: 0.84rem; font-weight: 700; color: var(--text,#1d1d1f); }
-    .cl-flow-arrow { font-size: 1.1rem; color: var(--text-muted, #64748b); }
-
-    /* Bio */
-    .cl-bio { display: flex; gap: 1rem; align-items: flex-start; }
-    .cl-bio-portrait { width: 68px; height: 68px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg,#34c759,#007aff); display: flex; align-items: center; justify-content: center; font-size: 1.9rem; line-height: 1; }
-    .cl-bio-text { flex: 1; font-size: 0.87rem; color: var(--text-secondary, #3f4f65); line-height: 1.62; }
-    [data-lighting="night"] .cl-bio-text,
-    [data-theme="vaporwave"] .cl-bio-text,
-    [data-theme="bark"] .cl-bio-text { color: rgba(245,245,247,0.72); }
-    .cl-bio-text strong { color: var(--text,#1d1d1f); }
-
-    /* Canvas */
-    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; }
-    [data-lighting="night"] .cl-canvas-wrap,
-    [data-theme="vaporwave"] .cl-canvas-wrap,
-    [data-theme="bark"] .cl-canvas-wrap { background: #1c1c1e; }
-    #sm-canvas { width: 100%; height: 220px; display: block; }
-
-    /* Log */
-    .sm-log { background: rgba(0,0,0,0.03); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.6rem 0.8rem; font-size: 0.78rem; font-family: 'SF Mono',monospace,sans-serif; max-height: 80px; overflow-y: auto; color: var(--text-secondary, #3f4f65); margin-top: 0.5rem; }
-    [data-lighting="night"] .sm-log,
-    [data-theme="vaporwave"] .sm-log,
-    [data-theme="bark"] .sm-log { background: rgba(255,255,255,0.05); color: rgba(245,245,247,0.7); }
-
-    /* Readouts */
-    .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
-    .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
-    [data-lighting="night"] .cl-readout,
-    [data-theme="vaporwave"] .cl-readout,
-    [data-theme="bark"] .cl-readout { background: rgba(255,255,255,0.06); }
-    .cl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
-    .cl-readout-val   { font-size: 0.9rem; font-weight: 700; color: #34c759; }
-
-    /* Apps */
-    .cl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
-    .cl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
-    .cl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
-    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
-    .cl-app small   { font-size: 0.77rem; color: var(--text-muted, #64748b); line-height: 1.5; display: block; }
-
-    /* Practice */
-    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
-    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
-    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 90px; background: var(--white,#fff); color: var(--text,#1d1d1f); font-family: inherit; }
-    .cl-check-btn { background: #23863c; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .cl-check-btn:hover { opacity: 0.85; }
-    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
-    .cl-feedback.ok  { color: #34c759; }
-    .cl-feedback.err { color: #ff3b30; }
-    .cl-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
-    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
-    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
-    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
-    [data-lighting="night"] .diff-easy,
-    [data-theme="vaporwave"] .diff-easy,
-    [data-theme="bark"] .diff-easy { color: #34c759; }
-    [data-lighting="night"] .diff-mid,
-    [data-theme="vaporwave"] .diff-mid,
-    [data-theme="bark"] .diff-mid  { color: #ff9500; }
-    [data-lighting="night"] .diff-hard,
-    [data-theme="vaporwave"] .diff-hard,
-    [data-theme="bark"] .diff-hard { color: #ff6b6b; }
-
-    @media (max-width: 600px) {
-      .cl-apps { grid-template-columns: 1fr; }
-      .cl-bio  { flex-direction: column; align-items: center; text-align: center; }
-      .cl-flow { justify-content: center; }
-    }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/lessons/state-machines.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-<div class="ll-viewport">
   <header class="site-header">
     <div class="nav-wrap">
       <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
@@ -139,595 +32,599 @@
     </div>
   </header>
 
-  <div class="ll-stage">
-    <div class="ll-sim">
-      <main id="main-content" class="cl-page">
+  <main id="main-content" class="sm-lesson-main">
+    <section id="sm-studio" class="sm-studio creation-app" data-creation-app data-creation-fit aria-labelledby="sm-studio-title">
+      <div class="sm-studio__header">
+        <div class="sm-studio__title-wrap">
+          <h1 id="sm-studio-title">State Machines Studio</h1>
+          <span class="sm-studio__sub">Finite Automata · Moore / Mealy · Builder &amp; Code Export</span>
+        </div>
+        <a class="sm-studio__read-link" href="#lesson-reading">Read the lesson &darr;</a>
+      </div>
 
-        <!-- Hero -->
-        <section class="hero cl-hero">
-          <p class="eyebrow">Computer Science · Lesson 14</p>
-          <h1>State Machines</h1>
-          <div class="cl-hero-meta">
-            <span>Automata Theory</span><span class="dot"></span>
-            <span>Finite States</span><span class="dot"></span>
-            <span>Transitions</span><span class="dot"></span>
-            <span>Turing</span><span class="dot"></span>
-            <span>Mealy / Moore</span>
+      <div id="sm-studio-primary" class="sm-studio__primary" data-creation-primary>
+        <div class="sm-mode-tabs" role="tablist" aria-label="State Machine studio modes">
+          <button type="button" class="sm-mode-tab is-active" role="tab" aria-selected="true" aria-controls="panel-sim" id="tab-sim" data-sm-tab="sim">
+            1. Simulator &amp; Code
+          </button>
+          <button type="button" class="sm-mode-tab" role="tab" aria-selected="false" aria-controls="panel-builder" id="tab-builder" data-sm-tab="builder">
+            2. Build &amp; Debug
+          </button>
+          <button type="button" class="sm-mode-tab" role="tab" aria-selected="false" aria-controls="panel-theory" id="tab-theory" data-sm-tab="theory">
+            3. Moore vs. Mealy &amp; Limits
+          </button>
+          <button type="button" id="sm-challenge-pill" class="sm-challenge-pill">Challenges: 0 / 5</button>
+        </div>
+
+        <!-- PANEL 1: INTERACTIVE SIMULATOR & CODE EXPORT -->
+        <section id="panel-sim" class="sm-mode-panel" role="tabpanel" aria-labelledby="tab-sim" data-sm-panel="sim">
+          <div class="sm-sim-grid">
+            <div class="sm-stage-col">
+              <div class="sm-toolbar" role="group" aria-label="Simulator controls">
+                <label for="sm-preset-select">
+                  <span>Machine</span>
+                  <select id="sm-preset-select" class="sm-select" aria-label="Choose state machine preset"></select>
+                </label>
+                <button type="button" id="sm-predict-toggle" class="sm-btn" aria-pressed="false" title="Click a target state before firing an event (P)">Predict Mode</button>
+                <button type="button" id="sm-auto-toggle" class="sm-btn" aria-pressed="false" title="Toggle timer auto-advance (Space)">Auto: Off</button>
+                <button type="button" id="sm-layout-btn" class="sm-btn">Auto Layout</button>
+                <button type="button" id="sm-reset-btn" class="sm-btn" title="Reset to start state (R)">Reset</button>
+              </div>
+
+              <div class="sm-canvas-shell">
+                <canvas id="sm-canvas" tabindex="0" role="region" aria-label="Interactive state machine graph. Drag nodes to rearrange, click a reachable neighbor to fire its transition, or press keys 1 through 9 to trigger events, P for predict mode, R to reset, and Space for auto-run."></canvas>
+                <div class="sm-canvas-hud" aria-hidden="true">
+                  <span id="sm-hud-left" class="sm-hud-pill">Start: RED · 3 states</span>
+                  <span id="sm-hud-right" class="sm-hud-pill">Traffic Light</span>
+                </div>
+                <p class="sm-canvas-hint">Drag nodes · Click neighbor to step · Keys 1–9 fire events · R resets</p>
+              </div>
+
+              <div class="sm-world-strip">
+                <div id="sm-world-viz" class="sm-world-viz" aria-live="polite"></div>
+                <div class="sm-telemetry" aria-label="Machine status readouts">
+                  <div class="sm-stat"><span class="sm-stat-label">State</span><span class="sm-stat-val" id="sm-stat-state">RED</span></div>
+                  <div class="sm-stat"><span class="sm-stat-label">Output</span><span class="sm-stat-val" id="sm-stat-output">STOP</span></div>
+                  <div class="sm-stat"><span class="sm-stat-label">Event</span><span class="sm-stat-val" id="sm-stat-event">&mdash;</span></div>
+                  <div class="sm-stat"><span class="sm-stat-label" id="sm-stat-extra-label">Steps</span><span class="sm-stat-val" id="sm-stat-steps">0</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="sm-ctrl-col">
+              <div>
+                <div class="sm-section-kicker">
+                  <span>Fire Event</span>
+                  <span style="font-weight:600;">Dashed = no rule in current state</span>
+                </div>
+                <div id="sm-event-btns" class="sm-event-btns" role="group" aria-label="State machine events"></div>
+              </div>
+
+              <div>
+                <div class="sm-section-kicker">
+                  <span>Sequence / Tape Runner</span>
+                  <button type="button" id="sm-seq-preset" class="sm-mini-btn">Run sample</button>
+                </div>
+                <div class="sm-seq-row">
+                  <label class="sr-only" for="sm-seq-input">Event sequence or binary tape</label>
+                  <input id="sm-seq-input" class="sm-input" type="text" placeholder="e.g. timer, timer, timer" />
+                  <button type="button" id="sm-seq-step" class="sm-btn">Step</button>
+                  <button type="button" id="sm-seq-run" class="sm-btn sm-btn--primary">Run</button>
+                </div>
+              </div>
+
+              <div class="sm-subtabs" role="tablist" aria-label="Inspector views">
+                <button type="button" class="sm-subtab is-active" role="tab" aria-selected="true" data-sm-insp-tab="log">Log</button>
+                <button type="button" class="sm-subtab" role="tab" aria-selected="false" data-sm-insp-tab="table">Table</button>
+                <button type="button" class="sm-subtab" role="tab" aria-selected="false" data-sm-insp-tab="code">Code</button>
+              </div>
+
+              <div class="sm-inspector-body">
+                <div class="sm-subpanel" data-sm-insp-panel="log">
+                  <div style="display:flex;justify-content:flex-end;margin-bottom:0.25rem;">
+                    <button type="button" id="sm-clear-log" class="sm-mini-btn">Clear Log</button>
+                  </div>
+                  <div id="sm-log-list" class="sm-log-list" aria-live="polite" aria-label="Transition log"></div>
+                </div>
+
+                <div class="sm-subpanel" data-sm-insp-panel="table" hidden>
+                  <div id="sm-matrix-wrap" class="sm-table-wrap"></div>
+                </div>
+
+                <div class="sm-subpanel" data-sm-insp-panel="code" hidden>
+                  <div class="sm-code-bar">
+                    <div class="sm-code-langs" role="group" aria-label="Export language">
+                      <button type="button" class="sm-mini-btn is-active" data-sm-lang="js" aria-pressed="true">JavaScript</button>
+                      <button type="button" class="sm-mini-btn" data-sm-lang="python" aria-pressed="false">Python</button>
+                      <button type="button" class="sm-mini-btn" data-sm-lang="arduino" aria-pressed="false">Arduino C++</button>
+                    </div>
+                    <button type="button" id="sm-code-copy" class="sm-mini-btn">Copy</button>
+                  </div>
+                  <pre class="sm-code-pre"><code id="sm-code-out"></code></pre>
+                </div>
+              </div>
+            </div>
           </div>
-          <p class="cl-lede">A state machine gives a robot or game character a clear answer to “What am I doing now?” A sensor reading, timer, or button press can move it to its next state. Test that idea with a traffic light, then guide a robot vacuum around an obstacle and back to its dock.</p>
         </section>
 
-        <!-- Simulator -->
-        <section class="cl-card" style="--card-accent:#34c759;">
-          <h2>State Machine Simulator</h2>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Choose a demo from the panel. Predict the next state, then fire an event and compare your prediction with the transition log. In Robot Vacuum, try an obstacle before and after the battery runs low.</p>
-          <div class="cl-canvas-wrap">
-            <canvas id="sm-canvas" aria-label="State machine simulator canvas. Press number keys 1, 2, or 3 to trigger events." tabindex="0" role="region"></canvas>
+        <!-- PANEL 2: BUILD & DEBUG STUDIO -->
+        <section id="panel-builder" class="sm-mode-panel" role="tabpanel" aria-labelledby="tab-builder" data-sm-panel="builder" hidden>
+          <div class="sm-build-grid">
+            <div class="sm-build-stage">
+              <div class="sm-toolbar" role="group" aria-label="Builder actions">
+                <button type="button" id="sm-fork-btn" class="sm-btn">Fork Active Preset</button>
+                <button type="button" id="sm-blank-btn" class="sm-btn">New Blank</button>
+                <button type="button" id="sm-load-sim-btn" class="sm-btn sm-btn--green">Test in Simulator &rarr;</button>
+                <span id="sm-builder-title" class="sm-hud-pill" style="margin-left:auto;">Custom Robot Vacuum</span>
+              </div>
+
+              <div class="sm-canvas-shell">
+                <canvas id="sm-builder-canvas" role="img" aria-label="Live custom state machine graph preview. Drag nodes to arrange."></canvas>
+                <p class="sm-canvas-hint">Drag nodes to arrange · Start arrow marks initial state · Double ring marks accepting state</p>
+              </div>
+
+              <div class="sm-analyzer-grid" aria-label="Graph health metrics">
+                <div class="sm-stat"><span class="sm-stat-label">States / Rules</span><span class="sm-stat-val" id="sm-an-states">4 / 6</span></div>
+                <div class="sm-stat"><span class="sm-stat-label">Unreachable</span><span class="sm-stat-val" id="sm-an-unreach">0</span></div>
+                <div class="sm-stat"><span class="sm-stat-label">Dead-Ends</span><span class="sm-stat-val" id="sm-an-dead">0</span></div>
+                <div class="sm-stat"><span class="sm-stat-label">Table Filled</span><span class="sm-stat-val" id="sm-an-complete">30%</span></div>
+              </div>
+              <p id="sm-an-msg" class="sm-analyzer-msg" role="status"></p>
+            </div>
+
+            <div class="sm-build-editor">
+              <div class="sm-subtabs" role="tablist" aria-label="Builder editor panels">
+                <button type="button" class="sm-subtab is-active" role="tab" aria-selected="true" data-sm-build-tab="edit">Edit States &amp; Rules</button>
+                <button type="button" class="sm-subtab" role="tab" aria-selected="false" data-sm-build-tab="challenges">Studio Challenges</button>
+              </div>
+
+              <div class="sm-build-scroll" data-sm-build-panel="edit">
+                <p id="sm-builder-status" class="sm-status-inline" role="status"></p>
+
+                <form id="sm-add-state-form" class="sm-form-box">
+                  <h3>Add State</h3>
+                  <div class="sm-form-row">
+                    <label>
+                      <span>State Name</span>
+                      <input id="sm-new-state-name" class="sm-input" type="text" maxlength="18" placeholder="e.g. Pause" required />
+                    </label>
+                    <label>
+                      <span>Moore Output</span>
+                      <input id="sm-new-state-output" class="sm-input" type="text" maxlength="24" placeholder="e.g. Motors off" />
+                    </label>
+                  </div>
+                  <div class="sm-form-actions">
+                    <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.72rem;color:#b6ced8;">
+                      <span>Color</span>
+                      <input id="sm-new-state-color" type="color" value="#22c55e" aria-label="State color" style="width:32px;height:26px;padding:0;border:0;background:transparent;" />
+                    </label>
+                    <label style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;color:#b6ced8;">
+                      <input id="sm-new-state-accept" type="checkbox" />
+                      <span>Accepting ★</span>
+                    </label>
+                    <button type="submit" class="sm-btn sm-btn--primary" style="margin-left:auto;">+ Add State</button>
+                  </div>
+                  <div id="sm-state-list" class="sm-chip-list"></div>
+                </form>
+
+                <form id="sm-add-trans-form" class="sm-form-box">
+                  <h3>Add or Update Transition Rule</h3>
+                  <div class="sm-form-row">
+                    <label>
+                      <span>From State</span>
+                      <select id="sm-tr-from" class="sm-select"></select>
+                    </label>
+                    <label>
+                      <span>Event</span>
+                      <input id="sm-tr-event" class="sm-input" type="text" maxlength="20" placeholder="e.g. obstacle" required />
+                    </label>
+                    <label>
+                      <span>To State</span>
+                      <select id="sm-tr-to" class="sm-select"></select>
+                    </label>
+                    <label>
+                      <span>Action / Mealy Output</span>
+                      <input id="sm-tr-output" class="sm-input" type="text" maxlength="28" placeholder="optional" />
+                    </label>
+                  </div>
+                  <div class="sm-form-actions">
+                    <button type="submit" class="sm-btn sm-btn--primary">Save Rule</button>
+                  </div>
+                  <div id="sm-trans-list" class="sm-chip-list"></div>
+                </form>
+              </div>
+
+              <div class="sm-build-scroll" data-sm-build-panel="challenges" hidden>
+                <div id="sm-challenges-list" class="sm-challenges-list"></div>
+              </div>
+            </div>
           </div>
-          <div class="cl-readouts">
-            <div class="cl-readout"><span class="cl-readout-label">Current State</span><span class="cl-readout-val" id="sm-r-state">RED</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">Last Event</span><span class="cl-readout-val" id="sm-r-event">—</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">Steps</span><span class="cl-readout-val" id="sm-r-steps">0</span></div>
-          </div>
-          <div class="sm-log" id="sm-log" aria-live="polite" aria-label="State transition history">Transition log will appear here…</div>
         </section>
 
-        <!-- Core concept -->
-        <section class="cl-card" style="--card-accent:#34c759;">
-          <h2>What Is a State Machine?</h2>
-          <p>A <strong>finite state machine (FSM)</strong> has four key ingredients:</p>
+        <!-- PANEL 3: MOORE vs. MEALY & THE MEMORY WALL -->
+        <section id="panel-theory" class="sm-mode-panel" role="tabpanel" aria-labelledby="tab-theory" data-sm-panel="theory" hidden>
+          <div class="sm-lab-grid">
+            <div class="sm-mm-col">
+              <div class="sm-toolbar" role="group" aria-label="Moore versus Mealy detector controls">
+                <strong style="font-size:0.8rem;color:#e0f2fe;">Detect "10" in a Bit Stream:</strong>
+                <button type="button" id="sm-mm-0" class="sm-btn sm-btn--primary">Feed 0</button>
+                <button type="button" id="sm-mm-1" class="sm-btn sm-btn--primary">Feed 1</button>
+                <button type="button" id="sm-mm-demo" class="sm-btn">Run "010110"</button>
+                <button type="button" id="sm-mm-reset" class="sm-btn">Reset</button>
+              </div>
 
-          <div class="cl-formula-box" role="img" aria-label="State machine definition">
-            <span class="cl-formula-sym">FSM = (States, Inputs, Transitions, Start State)</span>
-            <div class="cl-formula-vars">
-              <strong>States</strong> — a finite set of distinct configurations the system can be in<br>
-              <strong>Inputs / Events</strong> — things that can happen (button press, timer, signal)<br>
-              <strong>Transitions</strong> — rules: given current state + input → move to next state<br>
-              <strong>Start state</strong> — where the machine begins
+              <div class="sm-mm-graphs">
+                <div class="sm-mm-graph-card">
+                  <div class="sm-mm-graph-head">
+                    <span>Moore (3 States)</span>
+                    <span id="sm-mm-moore-badge">State: S0 · Out: 0</span>
+                  </div>
+                  <div class="sm-mm-canvas-wrap">
+                    <canvas id="sm-moore-canvas" role="img" aria-label="Moore 3-state detector for sequence 10"></canvas>
+                  </div>
+                </div>
+                <div class="sm-mm-graph-card">
+                  <div class="sm-mm-graph-head">
+                    <span>Mealy (2 States)</span>
+                    <span id="sm-mm-mealy-badge">State: M0 · Last Out: —</span>
+                  </div>
+                  <div class="sm-mm-canvas-wrap">
+                    <canvas id="sm-mealy-canvas" role="img" aria-label="Mealy 2-state detector for sequence 10"></canvas>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sm-mm-table-wrap">
+                <table class="sm-mm-table" aria-label="Moore versus Mealy bit trace">
+                  <thead>
+                    <tr>
+                      <th scope="col">Tick</th>
+                      <th scope="col">Bit</th>
+                      <th scope="col">Moore Move</th>
+                      <th scope="col">Moore Out</th>
+                      <th scope="col">Mealy Move</th>
+                      <th scope="col">Mealy Out</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sm-mm-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="sm-wall-col">
+              <div class="sm-wall-card">
+                <h3>Moore vs. Mealy Trade-Off</h3>
+                <p><strong>Moore (1956):</strong> Output depends <em>only</em> on the current state, so detecting <code>10</code> needs an extra state (<code>S10</code>) to hold output <code>1</code>.</p>
+                <p><strong>Mealy (1955):</strong> Output sits on the transition arrow itself, firing <code>1</code> immediately on the <code>M1 —[0]→ M0</code> edge using only <strong>2 states</strong>.</p>
+              </div>
+
+              <div class="sm-wall-card">
+                <h3>The Finite Memory Wall</h3>
+                <p>An FSM can check <em>even vs. odd zeros</em> across a billion bits using <strong>2 states</strong> because it only remembers 1 bit of parity. What about balanced parentheses <code>((()))</code>?</p>
+                <label for="sm-depth-slider" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;font-size:0.74rem;font-weight:700;color:#e0f2fe;">
+                  <span>Max Nesting Depth <code id="sm-depth-val">3</code></span>
+                  <strong id="sm-depth-states" style="color:#7dd3fc;">5 states</strong>
+                </label>
+                <input id="sm-depth-slider" type="range" min="1" max="8" value="3" style="width:100%;margin:0.25rem 0;" />
+                <p>Sample: <code id="sm-depth-sample">((()))</code></p>
+                <div id="sm-depth-chain" class="sm-depth-chain" aria-live="polite"></div>
+                <p style="margin-top:0.45rem;">To validate <em>arbitrary</em> nesting depth in Python or HTML, a finite set of states runs out—you must add a <strong>stack</strong> (Pushdown Automaton) or an <strong>infinite tape</strong> (Turing Machine).</p>
+              </div>
             </div>
           </div>
-
-          <p>The critical rule: the system is always in <em>exactly one</em> state at a time. An event fires, a transition runs, and the system moves to the next state — never in two places at once.</p>
-
-          <h3>Traffic Light Example</h3>
-          <p>A traffic light cycles through three states, with each state transitioning to the next on a timer event:</p>
-          <div class="cl-flow" aria-label="Traffic light state flow">
-            <span class="cl-flow-state" style="background:rgba(255,59,48,0.12);border-color:rgba(255,59,48,0.4);">🔴 RED</span>
-            <span class="cl-flow-arrow">→ timer →</span>
-            <span class="cl-flow-state" style="background:rgba(52,199,89,0.12);border-color:rgba(52,199,89,0.4);">🟢 GREEN</span>
-            <span class="cl-flow-arrow">→ timer →</span>
-            <span class="cl-flow-state" style="background:rgba(255,214,10,0.15);border-color:rgba(255,149,0,0.4);">🟡 YELLOW</span>
-            <span class="cl-flow-arrow">→ timer →</span>
-            <span class="cl-flow-state" style="background:rgba(255,59,48,0.12);border-color:rgba(255,59,48,0.4);">🔴 RED</span>
-          </div>
-          <p>Only three states. Only one active at a time. The transitions are completely deterministic — given the current state and the event, the next state is always exactly predictable.</p>
         </section>
+      </div>
+    </section>
 
-        <!-- Bio card -->
-        <section class="cl-card" style="--card-accent:#34c759;">
-          <h2>Turing, Mealy, and Moore</h2>
-          <div class="cl-bio">
-            <div class="cl-bio-portrait" aria-hidden="true">🤖</div>
-            <p class="cl-bio-text">
-              <strong>Alan Turing (1912–1954)</strong> laid the theoretical foundation for all computing with his 1936 paper "On Computable Numbers," introducing the abstract <em>Turing machine</em> — essentially a state machine with infinite memory. In 1955–56, two engineers independently extended his ideas for practical circuits. <strong>George Mealy</strong> described machines whose outputs depend on both the current state and the current input. <strong>Edward Moore</strong> described machines whose outputs depend only on the current state. These three models — Turing, Mealy, and Moore — underpin every digital device built since: from traffic controllers and elevator logic to compilers, CPUs, and network protocols.
-            </p>
-          </div>
-        </section>
+    <!-- EDITORIAL LESSON READING BELOW THE STUDIO -->
+    <div id="lesson-reading" class="sm-reading">
 
-        <!-- Real-World Applications -->
-        <section class="cl-card" style="--card-accent:#007aff;">
-          <h2>Real-World Applications</h2>
-          <div class="cl-apps">
-            <div class="cl-app">
-              <div class="cl-app-icon">🚦</div>
-              <strong>Traffic Control Systems</strong>
-              <small>Every intersection controller is a state machine. States encode which direction has the green light; timers and sensor inputs drive transitions to keep traffic flowing safely.</small>
-            </div>
-            <div class="cl-app">
-              <div class="cl-app-icon">📱</div>
-              <strong>UI Navigation Flows</strong>
-              <small>Modern app routers are state machines. Each screen is a state; user actions (tap, swipe, back button) are events that fire transitions between views.</small>
-            </div>
-            <div class="cl-app">
-              <div class="cl-app-icon">🌐</div>
-              <strong>TCP/IP Protocol</strong>
-              <small>A TCP connection moves through states: CLOSED → SYN_SENT → ESTABLISHED → FIN_WAIT → TIME_WAIT → CLOSED. Every packet received is an event that may trigger a state change.</small>
-            </div>
-            <div class="cl-app">
-              <div class="cl-app-icon">🎮</div>
-              <strong>Game Character AI</strong>
-              <small>Enemy characters use FSMs to manage behaviour: Idle → Patrol → Chase → Attack → Flee. The player's proximity and health level trigger transitions between states.</small>
-            </div>
-            <div class="cl-app">
-              <div class="cl-app-icon">🤖</div>
-              <strong>Robot Behavior Architecture</strong>
-              <small>The 2002 iRobot Roomba made autonomous floor cleaning a practical home product. Our simplified classroom model uses Clean → Avoid → Clean, with Low Battery → Dock → Charge as another route. Actual models vary; a robot also needs sensors and motion control. Compare <a href="../../engineering/mechanical-and-civil-design/bug-bots.html#genghis">Roomba's robotics lineage</a> and <a href="../../engineering/arduino-and-electronics/arduino-programming-foundations.html#apf-robot-build">build your own state machine</a>.</small>
-            </div>
+      <!-- Core Concept -->
+      <section class="sm-card" style="--sm-card-accent:#0f766e;" aria-labelledby="sm-what-title">
+        <h2 id="sm-what-title">What Is a Finite State Machine?</h2>
+        <p>A <strong>finite state machine (FSM)</strong> gives a robot, circuit, or game character an exact answer to <em>&ldquo;What am I doing right now, and what can change it?&rdquo;</em> Formally, computer scientists write a deterministic FSM as a five-part tuple:</p>
+
+        <div class="sm-formula-box" role="region" aria-label="Formal finite state machine definition">
+          <span class="sm-formula-sym">M = (Q, &Sigma;, &delta;, q<sub>0</sub>, F)</span>
+          <div class="sm-formula-vars">
+            <strong>Q (States)</strong> &mdash; a finite set of distinct modes or configurations the system can occupy<br>
+            <strong>&Sigma; (Inputs / Alphabet)</strong> &mdash; events that arrive from sensors, timers, buttons, or data streams<br>
+            <strong>&delta; (Transitions)</strong> &mdash; rules mapping <code>(current state, event) &rarr; next state</code><br>
+            <strong>q<sub>0</sub> (Start state)</strong> &mdash; the single state the machine begins in at reset<br>
+            <strong>F (Accepting states)</strong> &mdash; optional double-ring goal states that signal a valid match or completion
           </div>
-          <figure data-video="leave-it-to-roll-oh-1940" style="margin-top:1.2rem;">
-            <figcaption>Leave It to Roll-Oh (1940): An imaginative domestic robot introduces how real relays, microswitches, and automated finite state logic revolutionized factory and automotive control.</figcaption>
+        </div>
+
+        <p>The critical rule: a deterministic FSM is always in <strong>exactly one state</strong> at a time. Given the current state and an arriving event, at most one rule applies&mdash;never two states simultaneously.</p>
+
+        <h3>Traffic Light Example</h3>
+        <p>A traffic light cycles through three states on a timer event, with an emergency override back to <code>RED</code>:</p>
+        <div class="sm-flow" aria-label="Traffic light state flow">
+          <span class="sm-flow-state sm-flow-state--red">RED (STOP)</span>
+          <span class="sm-flow-arrow">&rarr; timer &rarr;</span>
+          <span class="sm-flow-state sm-flow-state--green">GREEN (GO)</span>
+          <span class="sm-flow-arrow">&rarr; timer &rarr;</span>
+          <span class="sm-flow-state sm-flow-state--amber">YELLOW (SLOW)</span>
+          <span class="sm-flow-arrow">&rarr; timer &rarr;</span>
+          <span class="sm-flow-state sm-flow-state--red">RED (STOP)</span>
+        </div>
+
+        <div class="sm-gallery">
+          <figure class="sm-plate" data-zoomable data-lightbox-group="state-machines-gallery">
+            <img src="../../../assets/images/lessons/state-machines/fsm-anatomy-diagram.svg" alt="Diagram of the Even-Zeros DFA showing Start arrow, self-loops, curved opposite arrows, double-ring accepting state, and transition table." loading="lazy" />
+            <figcaption>
+              <strong>State Graph &harr; Transition Table:</strong> Every state circle becomes a row and every event becomes a column. Reading a graph or reading a table describes the exact same rules.
+              <span class="credit">ClassroomOS Original Diagram (CC0 1.0).</span>
+            </figcaption>
           </figure>
-        </section>
-
-        <section class="cl-card" style="--card-accent:#ff9500;">
-          <h2>Draw the robot's rules before writing code</h2>
-          <p>Use circles for <strong>states</strong> and label every arrow with the <strong>event</strong> that causes it. Start with Clean → Avoid → Clean. Add a low-battery route to Dock and Charge. What should happen if an obstacle is sensed while the robot is docking? Our model ignores that event; a real design must choose a safe rule and test it.</p>
-          <p>Then take the same diagram habit to the <a href="../../engineering/arduino-and-electronics/arduino-programming-foundations.html#apf-robot-build">Arduino bumper robot build</a>. Its physical switch replaces the vacuum's obstacle sensor, and its motors make each state visible.</p>
-          <p><strong>See it in the Showcase &amp; Game Pathways:</strong> Compare how character states (`IDLE → RUN → JUMP → FALL`) and enemy patrol states (`PATROL → CHASE → RETURN`) work in <a href="../../2d-design/2d-game-dev/animation-states.html">2D Pathway 08 · Animation State Machines</a>, <a href="../../godot/godot-enemies-ai.html">Godot 05 · Enemies &amp; Simple AI</a>, and our student <a href="../../../showcase.html">Showcase games</a>.</p>
-        </section>
-
-        <!-- Practice Problems -->
-        <section class="cl-card" style="--card-accent:#5856d6;">
-          <h2>Practice Problems</h2>
-          <div class="cl-practice">
-
-            <div class="cl-problem">
-              <p><span class="diff-easy">Easy</span>1. A finite state machine can be in multiple states at the same time. True or False?</p>
-              <div class="cl-problem-row">
-                <select class="cl-ans-input" id="smans-1" style="width:120px;">
-                  <option value="">Choose…</option>
-                  <option value="true">True</option>
-                  <option value="false">False</option>
-                </select>
-                <button class="cl-check-btn" onclick="smCheckText(1,'false')">Check</button>
-                <span class="cl-feedback" id="smfb-1"></span>
-              </div>
-              <div class="cl-hint" id="smhint-1">Hint: "Finite" state machine means the system is in exactly one state at any moment. (Non-deterministic FSMs can be in multiple states, but a standard FSM cannot.)</div>
-            </div>
-
-            <div class="cl-problem">
-              <p><span class="diff-easy">Easy</span>2. In the traffic light state machine described in the lesson, how many distinct states are there?</p>
-              <div class="cl-problem-row">
-                <input type="number" class="cl-ans-input" id="smans-2" placeholder="?" />
-                <button class="cl-check-btn" onclick="smCheck(2, 3, 0)">Check</button>
-                <span class="cl-feedback" id="smfb-2"></span>
-              </div>
-              <div class="cl-hint" id="smhint-2">Hint: RED, GREEN, YELLOW — three states, cycling in order.</div>
-            </div>
-
-            <div class="cl-problem">
-              <p><span class="diff-mid">Medium</span>3. A vending machine has states: Idle → Coin Inserted → Dispensing → Idle. What event moves the machine from "Coin Inserted" to "Dispensing"?</p>
-              <div class="cl-problem-row">
-                <select class="cl-ans-input" id="smans-3" style="width:160px;">
-                  <option value="">Choose…</option>
-                  <option value="insert">Insert coin</option>
-                  <option value="select">Select product</option>
-                  <option value="collect">Collect item</option>
-                  <option value="reset">Power reset</option>
-                </select>
-                <button class="cl-check-btn" onclick="smCheckText(3,'select')">Check</button>
-                <span class="cl-feedback" id="smfb-3"></span>
-              </div>
-              <div class="cl-hint" id="smhint-3">Hint: Once money is in, the user presses a product button — that "select product" event triggers the dispense transition.</div>
-            </div>
-
-            <div class="cl-problem">
-              <p><span class="diff-mid">Medium</span>4. What is the minimum number of transitions needed for a 3-state machine to visit all states in a loop and return to the start?</p>
-              <div class="cl-problem-row">
-                <input type="number" class="cl-ans-input" id="smans-4" placeholder="?" />
-                <button class="cl-check-btn" onclick="smCheck(4, 3, 0)">Check</button>
-                <span class="cl-feedback" id="smfb-4"></span>
-              </div>
-              <div class="cl-hint" id="smhint-4">Hint: A → B → C → A requires exactly 3 transitions (one per hop in the loop).</div>
-            </div>
-
-            <div class="cl-problem">
-              <p><span class="diff-hard">Challenge</span>5. A combination door lock needs a 3-digit code (digits 0–9). To model this minimally, how many states does the FSM need? (Count: Start, after digit 1, after digit 2, after digit 3/Unlocked, plus one Error/Reset state)</p>
-              <div class="cl-problem-row">
-                <input type="number" class="cl-ans-input" id="smans-5" placeholder="?" />
-                <button class="cl-check-btn" onclick="smCheck(5, 5, 0)">Check</button>
-                <span class="cl-feedback" id="smfb-5"></span>
-              </div>
-              <div class="cl-hint" id="smhint-5">Hint: Start → Digit1Entered → Digit2Entered → Unlocked → (back to Start) plus an Error state = 5 states minimum.</div>
-            </div>
-
-          </div>
-        </section>
-
-        <section style="margin: 0 0 1rem; padding: 0.85rem 1.1rem; background: rgba(255,255,255,0.8); border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
-          <p style="margin: 0 0 0.45rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #64748b);">Innovator Profile · See Also</p>
-          <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
-            <a href="../pioneers/ada-lovelace.html" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.7rem; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 7px; font-size: 0.81rem; font-weight: 600; color: #0f5952; text-decoration: none;">💡 Ada Lovelace — First Algorithm &amp; Conditional Logic</a>
-          </div>
-        </section>
-
-        <footer class="site-footer">
-          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
-        </footer>
-      </main>
-    </div><!-- .ll-sim -->
-
-    <aside class="ll-panel" aria-hidden="false">
-      <div class="ll-panel-head">
-        <div class="ll-tabs">
-          <button class="ll-tab" aria-selected="true"  data-pane="sm-pane-sim">Controls</button>
-          <button class="ll-tab" aria-selected="false" data-pane="sm-pane-guide">Summary</button>
         </div>
-        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
-      </div>
-      <div class="ll-panel-body">
+      </section>
 
-        <div class="ll-pane ll-active" id="sm-pane-sim">
-          <span class="ll-label">Demo</span>
-          <div style="display:flex;flex-direction:column;gap:0.35rem;margin-bottom:0.9rem;">
-            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-              <input type="radio" name="sm-demo" value="traffic" checked onchange="smSetDemo('traffic')" /> Traffic Light
-            </label>
-            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-              <input type="radio" name="sm-demo" value="vending" onchange="smSetDemo('vending')" /> Vending Machine
-            </label>
-            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-              <input type="radio" name="sm-demo" value="lock" onchange="smSetDemo('lock')" /> Door Lock
-            </label>
-            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-              <input type="radio" name="sm-demo" value="vacuum" onchange="smSetDemo('vacuum')" /> Robot Vacuum
-            </label>
-          </div>
-          <hr class="ll-hr">
-          <span class="ll-label" id="sm-action-label">Actions</span>
-          <div id="sm-action-btns" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.9rem;margin-top:0.4rem;">
-            <!-- populated by JS -->
-          </div>
-          <hr class="ll-hr">
-          <button class="ll-preset" onclick="smReset()" style="width:100%;">Reset</button>
+      <!-- Worked Traces & Curriculum Robotics Hook -->
+      <section class="sm-card" style="--sm-card-accent:#d97706;" aria-labelledby="sm-trace-title">
+        <h2 id="sm-trace-title">Draw the Robot&rsquo;s Rules Before Writing Code</h2>
+        <p>Sketch circles for <strong>states</strong> and label every arrow with the <strong>event</strong> that triggers it. Start with <code>Clean &rarr; Avoid &rarr; Clean</code>, then add a low-battery path to <code>Dock</code> and <code>Charge</code>.</p>
+
+        <div class="sm-trace-grid">
+          <article class="sm-trace-box">
+            <h3>Trace A: Robot Vacuum &amp; Unhandled Edge Cases</h3>
+            <ol>
+              <li>Start in <code>Clean</code>. Trigger <code>obstacle</code> &rarr; moves to <code>Avoid</code>.</li>
+              <li>Trigger <code>lowBattery</code> while in <code>Avoid</code> &rarr; moves immediately to <code>Dock</code>.</li>
+              <li>Now trigger <code>obstacle</code> while in <code>Dock</code>: the default classroom model has <strong>no rule</strong> for <code>(Dock, obstacle)</code>! A real robot must decide: back off and re-seek, or wait?</li>
+              <li>Fork Robot Vacuum in <strong>Tab 2 (Build &amp; Debug)</strong> and add the missing rule, then export the C++ <code>switch</code> code.</li>
+            </ol>
+          </article>
+
+          <article class="sm-trace-box">
+            <h3>Trace B: 3-Digit Lock &amp; Error Trap</h3>
+            <ol>
+              <li>Start in <code>Locked</code>. Entering <code>correct</code> three times visits <code>Digit1 &rarr; Digit2 &rarr; Unlocked</code>.</li>
+              <li>Entering <code>wrong</code> from <em>any</em> partial progress jumps straight to <code>Error</code>, wiping partial progress so a guesser cannot resume midway.</li>
+              <li>Only <code>reset</code> escapes <code>Error</code> back to <code>Locked</code>. That missing escape hatch is what our Analyzer calls a <em>dead-end</em> if omitted.</li>
+            </ol>
+          </article>
         </div>
 
-        <div class="ll-pane" id="sm-pane-guide">
-          <div class="ll-info"><strong>State</strong>A distinct configuration the system can be in. The machine is always in exactly one state.</div>
-          <div class="ll-info"><strong>Event / Input</strong>Something that happens — a button press, timer, or signal — that can cause a transition.</div>
-          <div class="ll-info"><strong>Transition</strong>The rule: current state + event → next state. Deterministic: same state + same event always gives same result.</div>
-          <div class="ll-info"><strong>Why it matters</strong>FSMs are provably correct, easy to test, and the foundation for parsers, protocols, CPUs, and game AI.</div>
+        <p>Take this same state-diagram habit into the <a href="../../engineering/arduino-and-electronics/arduino-programming-foundations.html#apf-robot-build">Arduino bumper robot build</a>, where a physical switch replaces the vacuum&rsquo;s obstacle sensor and motors make each state visible, and compare <a href="../../engineering/mechanical-and-civil-design/bug-bots.html#genghis">Roomba&rsquo;s robotics lineage</a>.</p>
+        <p><strong>See it in the Showcase &amp; Game Pathways:</strong> Compare how character states (<code>IDLE &rarr; RUN &rarr; JUMP &rarr; FALL</code>) and enemy patrol states (<code>PATROL &rarr; CHASE &rarr; RETURN</code>) work in <a href="../../2d-design/2d-game-dev/animation-states.html">2D Pathway 08 &middot; Animation State Machines</a>, <a href="../../godot/godot-enemies-ai.html">Godot 05 &middot; Enemies &amp; Simple AI</a>, and our student <a href="../../../showcase.html">Showcase games</a>.</p>
+      </section>
+
+      <!-- Turing, Mealy, Moore & Memory Wall -->
+      <section class="sm-card" style="--sm-card-accent:#0284c7;" aria-labelledby="sm-history-title">
+        <h2 id="sm-history-title">Turing, Mealy, Moore &amp; What a Machine Remembers</h2>
+        <p><strong>Alan Turing (1912&ndash;1954)</strong> laid the foundation for computing in his 1936 paper <em>&ldquo;On Computable Numbers,&rdquo;</em> modeling a state machine paired with an unbounded read/write tape. In 1955&ndash;1956, two engineers adapted finite-state logic for practical switching circuits: <strong>George Mealy</strong> placed outputs on transition edges (reacting to state + input), while <strong>Edward Moore</strong> placed outputs inside states (reacting to state alone).</p>
+
+        <div class="sm-table-wrap" style="margin:0.8rem 0;">
+          <table class="sm-table" aria-label="Comparison of Moore, Mealy, and Turing models">
+            <thead>
+              <tr>
+                <th scope="col">Model</th>
+                <th scope="col">Output Rule</th>
+                <th scope="col">Memory</th>
+                <th scope="col">Strength / Limit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Moore Machine (1956)</strong></td>
+                <td>Depends only on current state</td>
+                <td>Finite states <code>Q</code></td>
+                <td>Glitch-free synchronized outputs; often needs 1+ extra state</td>
+              </tr>
+              <tr>
+                <td><strong>Mealy Machine (1955)</strong></td>
+                <td>Depends on state + current input</td>
+                <td>Finite states <code>Q</code></td>
+                <td>Fewer states, immediate response on input edge</td>
+              </tr>
+              <tr>
+                <td><strong>Pushdown Automaton</strong></td>
+                <td>Transition + stack top</td>
+                <td><code>Q</code> + LIFO Stack</td>
+                <td>Parses arbitrarily nested parentheses, HTML, and JSON</td>
+              </tr>
+              <tr>
+                <td><strong>Turing Machine (1936)</strong></td>
+                <td>Read/write head + movement</td>
+                <td><code>Q</code> + Infinite Tape</td>
+                <td>Solves any computable algorithm</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-      </div>
-    </aside>
+        <p><strong>What must an FSM remember, and what can it safely forget?</strong> To accept binary strings with an even number of <code>0</code>s, the machine safely forgets the previous thousand bits and remembers only <em>parity</em> (Even or Odd). When a task requires remembering unbounded history&mdash;like matching 100 nested opening brackets&mdash;no finite set of states suffices without adding external memory.</p>
 
-    <button class="ll-open-btn" aria-label="Open panel">
-      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
-    </button>
+        <div class="sm-gallery">
+          <figure class="sm-plate" data-zoomable data-lightbox-group="state-machines-gallery">
+            <img src="../../../assets/images/lessons/state-machines/moore-mealy-chomsky.svg" alt="Comparison diagram showing Moore 3-state vs Mealy 2-state sequence detectors on top, and the Memory Wall from Finite State Machine to Pushdown Automaton to Turing Machine below." loading="lazy" />
+            <figcaption>
+              <strong>Moore vs. Mealy &amp; the Memory Wall:</strong> Putting outputs on arrows (Mealy) trims states; breaking past fixed memory requires a stack or tape.
+              <span class="credit">ClassroomOS Original Diagram (CC0 1.0).</span>
+            </figcaption>
+          </figure>
 
-  </div><!-- .ll-stage -->
-</div><!-- .ll-viewport -->
+          <figure class="sm-plate" data-zoomable data-lightbox-group="state-machines-gallery">
+            <img src="../../../assets/images/lessons/robotics/sri-shakey-robot-1969-computer-history-museum.jpg" alt="Shakey the robot, a tall wheeled cabinet with camera and rangefinder sensors on top, preserved in a museum display case." loading="lazy" />
+            <figcaption>
+              <strong>Shakey the Robot (SRI, 1966&ndash;1972):</strong> Early mobile robots combined low-level reactive state routines (avoiding bumps) with high-level planning algorithms like A*.
+              <span class="credit">Photo: The wub &middot; <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a> &middot; <a href="https://commons.wikimedia.org/wiki/File:SRI_Shakey_robot,_1969,_Computer_History_Museum.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
 
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
-<script>
-(function () {
-  /* ── State Machine Simulator ──────────────────────── */
-  const canvas  = document.getElementById('sm-canvas');
-  const ctx     = canvas.getContext('2d');
-  const rState  = document.getElementById('sm-r-state');
-  const rEvent  = document.getElementById('sm-r-event');
-  const rSteps  = document.getElementById('sm-r-steps');
-  const logEl   = document.getElementById('sm-log');
-  const actionBtns = document.getElementById('sm-action-btns');
+      <!-- Real-World Applications & Historical Video -->
+      <section class="sm-card" style="--sm-card-accent:#2563eb;" aria-labelledby="sm-apps-title">
+        <h2 id="sm-apps-title">Real-World State Machines</h2>
+        <div class="sm-apps-grid">
+          <article class="sm-app-card">
+            <div class="sm-app-icon" aria-hidden="true">🚦</div>
+            <strong>Traffic Control Systems</strong>
+            <p>Intersection controllers guarantee opposing lanes never turn green simultaneously; inductive road sensors and pedestrian buttons trigger safe phase transitions.</p>
+          </article>
+          <article class="sm-app-card">
+            <div class="sm-app-icon" aria-hidden="true">🌐</div>
+            <strong>TCP/IP Network Handshake</strong>
+            <p>Every network socket walks through <code>CLOSED &rarr; SYN_SENT &rarr; ESTABLISHED &rarr; FIN_WAIT &rarr; CLOSED</code> as packets arrive or time out.</p>
+          </article>
+          <article class="sm-app-card">
+            <div class="sm-app-icon" aria-hidden="true">🎮</div>
+            <strong>Game Character &amp; Enemy AI</strong>
+            <p>Player animation graphs and enemy NPCs switch cleanly between <code>Patrol</code>, <code>Chase</code>, <code>Attack</code>, and <code>Flee</code> without conflicting behaviors.</p>
+          </article>
+          <article class="sm-app-card">
+            <div class="sm-app-icon" aria-hidden="true">🤖</div>
+            <strong>Autonomous Robot Behaviors</strong>
+            <p>From 1960s industrial relays to modern room-cleaning vacuums, state machines isolate safety overrides and charging loops cleanly.</p>
+          </article>
+          <article class="sm-app-card">
+            <div class="sm-app-icon" aria-hidden="true">📱</div>
+            <strong>UI Forms &amp; App Flows</strong>
+            <p>Checkout screens (<code>Cart &rarr; Shipping &rarr; Processing &rarr; Receipt</code>) use state machines so double-clicking Submit cannot charge twice.</p>
+          </article>
+          <article class="sm-app-card">
+            <div class="sm-app-icon" aria-hidden="true">🔎</div>
+            <strong>Compilers &amp; Regular Expressions</strong>
+            <p>Every compiler lexer compiles regex token rules (numbers, keywords, strings) directly into fast deterministic finite automata.</p>
+          </article>
+        </div>
 
-  let demo = 'traffic', stepCount = 0, autoRaf = null;
+        <figure data-video="leave-it-to-roll-oh-1940" style="margin-top:1rem;">
+          <figcaption>Leave It to Roll-Oh (1940): An imaginative domestic robot introduces how real relays, microswitches, and automated finite state logic revolutionized factory and automotive control.</figcaption>
+        </figure>
+      </section>
 
-  /* ── Machine Definitions ── */
-  const MACHINES = {
-    traffic: {
-      states: ['RED', 'GREEN', 'YELLOW'],
-      start: 'RED',
-      colors: { RED: '#ff3b30', GREEN: '#34c759', YELLOW: '#ffcc00' },
-      transitions: {
-        RED:    { timer: 'GREEN'  },
-        GREEN:  { timer: 'YELLOW' },
-        YELLOW: { timer: 'RED'    }
-      },
-      actions: [{ label: 'Next →', event: 'timer' }],
-      auto: true, autoDelay: 1400
-    },
-    vending: {
-      states: ['Idle', 'HasMoney', 'Dispensing'],
-      start: 'Idle',
-      colors: { Idle: '#5856d6', HasMoney: '#ff9500', Dispensing: '#34c759' },
-      transitions: {
-        Idle:       { coin: 'HasMoney'   },
-        HasMoney:   { select: 'Dispensing', refund: 'Idle' },
-        Dispensing: { collect: 'Idle'    }
-      },
-      actions: [
-        { label: '🪙 Insert Coin',    event: 'coin'    },
-        { label: '🎰 Select Product', event: 'select'  },
-        { label: '↩ Refund',          event: 'refund'  },
-        { label: '📦 Collect Item',   event: 'collect' }
-      ],
-      auto: false
-    },
-    vacuum: {
-      states: ['Clean', 'Avoid', 'Dock', 'Charge'],
-      start: 'Clean',
-      colors: { Clean: '#34c759', Avoid: '#ff9500', Dock: '#007aff', Charge: '#5856d6' },
-      transitions: {
-        Clean: { obstacle: 'Avoid', lowBattery: 'Dock' },
-        Avoid: { clear: 'Clean', lowBattery: 'Dock' },
-        Dock: { docked: 'Charge' },
-        Charge: { charged: 'Clean' }
-      },
-      actions: [
-        { label: '🧱 Obstacle sensed', event: 'obstacle' },
-        { label: '↪ Path clear', event: 'clear' },
-        { label: '🔋 Battery low', event: 'lowBattery' },
-        { label: '⌂ Dock reached', event: 'docked' },
-        { label: '✓ Charged', event: 'charged' }
-      ],
-      auto: false
-    },
-    lock: {
-      states: ['Locked', 'Digit1', 'Digit2', 'Unlocked', 'Error'],
-      start: 'Locked',
-      colors: { Locked: '#ff3b30', Digit1: '#ff9500', Digit2: '#ffcc00', Unlocked: '#34c759', Error: '#8e8e93' },
-      transitions: {
-        Locked:   { correct: 'Digit1',   wrong: 'Error'    },
-        Digit1:   { correct: 'Digit2',   wrong: 'Error'    },
-        Digit2:   { correct: 'Unlocked', wrong: 'Error'    },
-        Unlocked: { lock: 'Locked'                         },
-        Error:    { reset: 'Locked'                        }
-      },
-      actions: [
-        { label: '✓ Correct Digit', event: 'correct' },
-        { label: '✗ Wrong Digit',   event: 'wrong'   },
-        { label: '🔒 Lock',         event: 'lock'    },
-        { label: '↺ Reset',         event: 'reset'   }
-      ],
-      auto: false
-    }
-  };
+      <!-- Practice Problems -->
+      <section class="sm-card" style="--sm-card-accent:#6d28d9;" aria-labelledby="sm-practice-title">
+        <div class="sm-practice-head">
+          <h2 id="sm-practice-title" style="margin:0;">Practice &amp; Self-Check</h2>
+          <span id="sm-practice-score" class="sm-practice-score" aria-live="polite">Score: 0 / 6</span>
+        </div>
 
-  let currentState = 'RED';
+        <div class="sm-practice-grid">
+          <div class="sm-problem">
+            <p class="sm-problem-q"><span class="diff-badge diff-easy">Easy</span>1. A deterministic finite state machine can occupy two states at the exact same moment. True or False?</p>
+            <div class="sm-problem-row">
+              <label for="smans-1">Answer:</label>
+              <select class="sm-ans-input" id="smans-1">
+                <option value="">Choose&hellip;</option>
+                <option value="true">True</option>
+                <option value="false">False</option>
+              </select>
+              <button type="button" class="sm-check-btn" data-sm-check="1" data-sm-type="text" data-sm-answer="false">Check</button>
+              <span class="sm-feedback" id="smfb-1" aria-live="polite"></span>
+            </div>
+            <div class="sm-hint" id="smhint-1" hidden>Hint: A standard deterministic FSM is always in exactly one active state at any instant.</div>
+          </div>
 
-  function getMachine() { return MACHINES[demo]; }
+          <div class="sm-problem">
+            <p class="sm-problem-q"><span class="diff-badge diff-easy">Easy</span>2. In the Traffic Light state machine, how many distinct states are needed for Red, Green, and Yellow?</p>
+            <div class="sm-problem-row">
+              <label for="smans-2">States:</label>
+              <input type="number" class="sm-ans-input" id="smans-2" placeholder="?" style="width:92px;" />
+              <button type="button" class="sm-check-btn" data-sm-check="2" data-sm-type="number" data-sm-answer="3">Check</button>
+              <span class="sm-feedback" id="smfb-2" aria-live="polite"></span>
+            </div>
+            <div class="sm-hint" id="smhint-2" hidden>Hint: Count RED, GREEN, and YELLOW.</div>
+          </div>
 
-  function addLog(from, event, to) {
-    const line = document.createElement('div');
-    line.textContent = `${from} —[${event}]→ ${to}`;
-    logEl.appendChild(line);
-    logEl.scrollTop = logEl.scrollHeight;
-  }
+          <div class="sm-problem">
+            <p class="sm-problem-q"><span class="diff-badge diff-mid">Medium</span>3. In the Vending Machine preset, which event moves the machine from <code>HasMoney</code> to <code>Dispensing</code>?</p>
+            <div class="sm-problem-row">
+              <label for="smans-3">Event:</label>
+              <select class="sm-ans-input" id="smans-3">
+                <option value="">Choose&hellip;</option>
+                <option value="coin">Insert Coin</option>
+                <option value="select">Select Item</option>
+                <option value="refund">Refund</option>
+                <option value="collect">Collect Item</option>
+              </select>
+              <button type="button" class="sm-check-btn" data-sm-check="3" data-sm-type="text" data-sm-answer="select">Check</button>
+              <span class="sm-feedback" id="smfb-3" aria-live="polite"></span>
+            </div>
+            <div class="sm-hint" id="smhint-3" hidden>Hint: After inserting a coin, pressing a product button triggers the dispense transition.</div>
+          </div>
 
-  function fire(event) {
-    const m = getMachine();
-    const trans = m.transitions[currentState];
-    if (!trans || !trans[event]) {
-      rEvent.textContent = event + ' (no rule)';
-      const line = document.createElement('div');
-      line.textContent = `${currentState}: ${event} has no rule; state stays ${currentState}`;
-      logEl.appendChild(line);
-      logEl.scrollTop = logEl.scrollHeight;
-      return;
-    }
-    const from = currentState;
-    currentState = trans[event];
-    stepCount++;
-    rState.textContent = currentState;
-    rEvent.textContent = event;
-    rSteps.textContent = stepCount;
-    addLog(from, event, currentState);
-    draw();
-  }
+          <div class="sm-problem">
+            <p class="sm-problem-q"><span class="diff-badge diff-mid">Medium</span>4. What is the minimum number of transitions required for a 3-state machine to cycle through every state once and return to its start state?</p>
+            <div class="sm-problem-row">
+              <label for="smans-4">Transitions:</label>
+              <input type="number" class="sm-ans-input" id="smans-4" placeholder="?" style="width:92px;" />
+              <button type="button" class="sm-check-btn" data-sm-check="4" data-sm-type="number" data-sm-answer="3">Check</button>
+              <span class="sm-feedback" id="smfb-4" aria-live="polite"></span>
+            </div>
+            <div class="sm-hint" id="smhint-4" hidden>Hint: A &rarr; B &rarr; C &rarr; A uses one transition per hop.</div>
+          </div>
 
-  /* ── Canvas drawing ── */
-  function resize() {
-    canvas.width  = canvas.offsetWidth  || 560;
-    canvas.height = canvas.offsetHeight || 220;
-  }
+          <div class="sm-problem">
+            <p class="sm-problem-q"><span class="diff-badge diff-hard">Challenge</span>5. A keypad door lock tracks a 3-digit passcode (using Start/Locked, after digit 1, after digit 2, Unlocked, plus one Error lockout state). How many states does this minimal FSM contain?</p>
+            <div class="sm-problem-row">
+              <label for="smans-5">Total states:</label>
+              <input type="number" class="sm-ans-input" id="smans-5" placeholder="?" style="width:92px;" />
+              <button type="button" class="sm-check-btn" data-sm-check="5" data-sm-type="number" data-sm-answer="5">Check</button>
+              <span class="sm-feedback" id="smfb-5" aria-live="polite"></span>
+            </div>
+            <div class="sm-hint" id="smhint-5" hidden>Hint: Check the Door Lock preset in Tab 1 and count Locked, Digit1, Digit2, Unlocked, and Error.</div>
+          </div>
 
-  function draw() {
-    resize();
-    const m = getMachine();
-    const W = canvas.width, H = canvas.height;
-    const isDark = document.documentElement.getAttribute('data-theme') === 'night';
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = isDark ? '#1c1c1e' : '#f7f8fa';
-    ctx.fillRect(0, 0, W, H);
+          <div class="sm-problem">
+            <p class="sm-problem-q"><span class="diff-badge diff-hard">Challenge</span>6. In Tab 3&rsquo;s <code>"10"</code> sequence detector, why does the Mealy machine need only 2 states while the Moore machine needs 3 states?</p>
+            <div class="sm-problem-row">
+              <label for="smans-6">Reason:</label>
+              <select class="sm-ans-input" id="smans-6" style="max-width:100%;">
+                <option value="">Choose&hellip;</option>
+                <option value="edge">Mealy attaches outputs directly to transition arrows, not just states</option>
+                <option value="random">Mealy machines use random guessing instead of transition rules</option>
+                <option value="tape">Mealy machines have an infinite Turing tape attached</option>
+              </select>
+              <button type="button" class="sm-check-btn" data-sm-check="6" data-sm-type="text" data-sm-answer="edge">Check</button>
+              <span class="sm-feedback" id="smfb-6" aria-live="polite"></span>
+            </div>
+            <div class="sm-hint" id="smhint-6" hidden>Hint: In Tab 3, compare where output 1 appears when bit 0 arrives in state M1 vs. S1.</div>
+          </div>
+        </div>
+      </section>
 
-    const states = m.states;
-    const n = states.length;
-    const cx = W / 2, cy = H / 2;
-    const radius = Math.min(W, H) * 0.32;
-    const nodeR = Math.min(34, W / (n * 2.2));
+      <!-- Related Labs & Primary Sources -->
+      <section class="sm-card" style="--sm-card-accent:#0f766e;" aria-labelledby="sm-links-title">
+        <h2 id="sm-links-title">Explore Related ClassroomOS Labs &amp; Sources</h2>
+        <div class="sm-crosslinks">
+          <a class="sm-crosslink" href="../pioneers/ada-lovelace.html">Ada Lovelace</a>
+          <a class="sm-crosslink" href="../pioneers/margaret-hamilton.html">Margaret Hamilton</a>
+          <a class="sm-crosslink" href="../../2d-design/2d-game-dev/animation-states.html">Animation State Machines</a>
+          <a class="sm-crosslink" href="../../engineering/arduino-and-electronics/arduino-programming-foundations.html#apf-robot-build">Arduino Bumper Robot</a>
+          <a class="sm-crosslink" href="../../engineering/mechanical-and-civil-design/bug-bots.html#genghis">Bug Bots &amp; Roomba Lineage</a>
+          <a class="sm-crosslink" href="../../godot/godot-enemies-ai.html">Godot Enemies &amp; AI</a>
+          <a class="sm-crosslink" href="pathfinding.html">A* Pathfinding</a>
+          <a class="sm-crosslink" href="turing-test.html">Turing Test</a>
+        </div>
 
-    // compute node positions on a circle
-    const pos = states.map((s, i) => {
-      const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-      return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle), name: s };
-    });
+        <h3>Primary Sources &amp; Historical References</h3>
+        <ul>
+          <li><strong>Turing, Alan M. (1936).</strong> &ldquo;On Computable Numbers, with an Application to the Entscheidungsproblem.&rdquo; <em>Proceedings of the London Mathematical Society</em>, Series 2, 42, 230&ndash;265.</li>
+          <li><strong>Mealy, George H. (1955).</strong> &ldquo;A Method for Synthesizing Sequential Circuits.&rdquo; <em>Bell System Technical Journal</em>, 34(5), 1045&ndash;1079.</li>
+          <li><strong>Moore, Edward F. (1956).</strong> &ldquo;Gedanken-Experiments on Sequential Machines.&rdquo; <em>Automata Studies</em> (Annals of Mathematics Studies No. 34), Princeton University Press, 129&ndash;153.</li>
+        </ul>
+      </section>
 
-    // draw transition arrows
-    ctx.save();
-    states.forEach((s, si) => {
-      const trans = m.transitions[s] || {};
-      Object.entries(trans).forEach(([evt, target]) => {
-        const ti = states.indexOf(target);
-        if (ti < 0) return;
-        const from = pos[si], to = pos[ti];
-        const isSelf = si === ti;
-        const dx = to.x - from.x, dy = to.y - from.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        const nx = dx/dist, ny = dy/dist;
+    </div><!-- #lesson-reading -->
+  </main>
 
-        ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(100,116,139,0.35)';
-        ctx.lineWidth = 1.5;
-        ctx.fillStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(100,116,139,0.35)';
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> &middot; <a href="../../../steam-lessons.html">Lessons</a></p>
+  </footer>
 
-        if (isSelf) {
-          // self-loop
-          const lx = from.x, ly = from.y - nodeR - 10;
-          ctx.beginPath();
-          ctx.arc(lx, ly - 10, 12, 0.3, Math.PI * 2 - 0.3);
-          ctx.stroke();
-        } else {
-          const sx = from.x + nx * (nodeR + 2);
-          const sy = from.y + ny * (nodeR + 2);
-          const ex = to.x - nx * (nodeR + 8);
-          const ey = to.y - ny * (nodeR + 8);
-          ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
-          const angle = Math.atan2(ey - sy, ex - sx);
-          ctx.beginPath();
-          ctx.moveTo(ex, ey);
-          ctx.lineTo(ex - 9*Math.cos(angle-0.4), ey - 9*Math.sin(angle-0.4));
-          ctx.lineTo(ex - 9*Math.cos(angle+0.4), ey - 9*Math.sin(angle+0.4));
-          ctx.closePath(); ctx.fill();
-
-          // event label along arrow
-          ctx.fillStyle = isDark ? 'rgba(255,255,255,0.45)' : '#64748b';
-          ctx.font = '10px Inter,sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(evt, (sx+ex)/2 - ny*10, (sy+ey)/2 + nx*10);
-        }
-      });
-    });
-    ctx.restore();
-
-    // draw state nodes
-    pos.forEach(({ x, y, name }) => {
-      const isActive = name === currentState;
-      const color = m.colors[name] || '#5856d6';
-
-      ctx.beginPath();
-      ctx.arc(x, y, nodeR, 0, Math.PI * 2);
-      if (isActive) {
-        ctx.fillStyle = color;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 18;
-      } else {
-        ctx.fillStyle = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
-        ctx.shadowBlur = 0;
-      }
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = isActive ? 2.5 : 1.5;
-      ctx.stroke();
-
-      ctx.fillStyle = isActive ? '#fff' : (isDark ? 'rgba(255,255,255,0.6)' : '#3f4f65');
-      ctx.font = `${isActive ? '700' : '600'} ${Math.min(11, nodeR * 0.38)}px Inter,sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      // wrap long names
-      const words = name.split(/(?=[A-Z])/);
-      if (words.length > 1 && name.length > 7) {
-        ctx.fillText(words.slice(0, Math.ceil(words.length/2)).join(''), x, y - 5);
-        ctx.fillText(words.slice(Math.ceil(words.length/2)).join(''), x, y + 6);
-      } else {
-        ctx.fillText(name, x, y);
-      }
-      ctx.textBaseline = 'alphabetic';
-    });
-
-    // current state label centre
-    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.55)' : '#64748b';
-    ctx.font = '600 11px Inter,sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Current: ' + currentState, W/2, H - 10);
-  }
-
-  /* ── Auto-advance for traffic light ── */
-  function stopAuto() {
-    if (autoRaf) { clearTimeout(autoRaf); autoRaf = null; }
-  }
-  function startAuto() {
-    stopAuto();
-    const m = getMachine();
-    if (!m.auto) return;
-    function step() {
-      fire('timer');
-      autoRaf = setTimeout(step, m.autoDelay);
-    }
-    autoRaf = setTimeout(step, m.autoDelay);
-  }
-
-  /* ── Build action buttons ── */
-  function buildActions() {
-    const m = getMachine();
-    actionBtns.innerHTML = '';
-    m.actions.forEach(({ label, event }) => {
-      const btn = document.createElement('button');
-      btn.className = 'll-preset';
-      btn.textContent = label;
-      btn.onclick = () => fire(event);
-      actionBtns.appendChild(btn);
-    });
-  }
-
-  /* ── Public API ── */
-  window.smSetDemo = function(name) {
-    stopAuto();
-    demo = name;
-    currentState = MACHINES[name].start;
-    stepCount = 0;
-    logEl.innerHTML = 'Transition log will appear here…';
-    rState.textContent = currentState;
-    rEvent.textContent = '—';
-    rSteps.textContent = '0';
-    buildActions();
-    draw();
-    if (MACHINES[name].auto) startAuto();
-  };
-
-  window.smReset = function() {
-    smSetDemo(demo);
-  };
-
-  // Init
-  currentState = MACHINES.traffic.start;
-  buildActions();
-  resize();
-  draw();
-  startAuto();
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  canvas.addEventListener('keydown', (e) => {
-    const num = parseInt(e.key, 10);
-    const m = MACHINES[demo];
-    if (!isNaN(num) && num >= 1 && num <= m.events.length) {
-      e.preventDefault();
-      fireEvent(m.events[num - 1]);
-    } else if (e.key === 'r' || e.key === 'R') {
-      e.preventDefault();
-      window.smReset();
-    }
-  });
-
-  /* ── Practice checkers ────────────────────────────── */
-  window.smCheck = function(n, correct, tol) {
-    const input = document.getElementById('smans-' + n);
-    const fb    = document.getElementById('smfb-' + n);
-    const hint  = document.getElementById('smhint-' + n);
-    const val   = parseFloat(input.value);
-    fb.className = 'cl-feedback';
-    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('err'); return; }
-    if (Math.abs(val - correct) <= tol) {
-      fb.textContent = '✓ Correct!'; fb.classList.add('ok');
-      hint.style.display = 'none'; input.style.borderColor = '#34c759';
-    } else {
-      fb.textContent = '✗ Try again'; fb.classList.add('err');
-      hint.style.display = 'block'; input.style.borderColor = '#ff3b30';
-    }
-  };
-
-  window.smCheckText = function(n, correct) {
-    const input = document.getElementById('smans-' + n);
-    const fb    = document.getElementById('smfb-' + n);
-    const hint  = document.getElementById('smhint-' + n);
-    fb.className = 'cl-feedback';
-    if (!input.value) { fb.textContent = 'Make a selection.'; fb.classList.add('err'); return; }
-    if (input.value === correct) {
-      fb.textContent = '✓ Correct!'; fb.classList.add('ok');
-      hint.style.display = 'none'; input.style.borderColor = '#34c759';
-    } else {
-      fb.textContent = '✗ Try again'; fb.classList.add('err');
-      hint.style.display = 'block'; input.style.borderColor = '#ff3b30';
-    }
-  };
-
-})();
-</script>
-<script src="../../../assets/js/classroom-animations.js"></script>
-  <script src="../../../assets/js/lesson-layout.js"></script>
-<script src="../../../assets/js/lesson-print-button.js"></script>
-<script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
-<script src="../../../assets/js/video-embed.js"></script>
-<script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/creation-app.js"></script>
+  <script type="module" src="../../../assets/js/lessons/state-machines-app.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+  <script src="../../../assets/js/video-embed.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

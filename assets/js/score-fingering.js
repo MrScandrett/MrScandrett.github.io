@@ -739,7 +739,9 @@
     // The engine's print button asks for this so numbers reach the paper too.
     fig.scoreFingeringPrint = function () {
       return enabled ? { decorate: function (svg, layout) { addMarks(svg, layout, score, { reach: reach }); },
-        note: PRINT_TEXT + ' Comfortable reach: ' + (reach === 7 ? 'fifth' : reach === 9 ? 'sixth' : 'octave') + '.' } : {};
+        note: PRINT_TEXT + ' Comfortable reach: ' + (reach === 7 ? 'fifth' : reach === 9 ? 'sixth' : 'octave') + '.',
+        // The one-line key printed in the score's title block.
+        legend: 'Fingers: 1 thumb · 2 index · 3 middle · 4 ring · 5 little · chords read top to bottom · † ask your teacher' } : {};
     };
     bar.appendChild(addSettingsHelp ? addSettingsHelp(button, 'Piano fingering help',
       '1 thumb · 2 index · 3 middle · 4 ring · 5 little finger. Read chords from top to bottom. Select an on-score number for the keyboard guide. † means ask your teacher. Set Comfortable reach to the interval your hand can span without stretching.') : button);

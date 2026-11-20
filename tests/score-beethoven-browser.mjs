@@ -39,10 +39,16 @@ try {
         event.kind === 'note' && notation.querySelector('.se-ev[data-i="' + event.i + '"]'));
     });
     assert.equal(await go.inputValue(), '401');
-    // Composer pages show score settings in a dialog (⚙ Settings … Done).
+    // Composer pages show score settings as a rail of emoji; each opens one group (✕ hides it).
+    const pane = async (name) => {
+      const button = figure.locator('.se-rail-btn[aria-label="' + name + '"]');
+      if (await button.getAttribute('aria-expanded') !== 'true') await button.click();
+    };
+    const done = () => figure.locator('.se-settings-dialog').getByRole('button', { name: 'Hide settings' }).click();
     await figure.locator('.se-settings-button').click();
+    await pane('Playback');
     await figure.getByRole('combobox', { name: 'Playback sound quality' }).selectOption('synth');
-    await figure.locator('.se-settings-dialog').getByRole('button', { name: 'Done' }).click();
+    await done();
     await figure.locator('.se-play').click();
     await figure.locator('.se-notation-window .se-ev.is-on').first().waitFor({ state: 'attached' });
     await figure.locator('.se-stop').click();
@@ -51,8 +57,9 @@ try {
     await page.waitForFunction(() => document.querySelectorAll('#bv-score .se-measure').length === 202, null, { timeout: 30000 });
     assert.equal(await measures.count(), 202);
     await figure.locator('.se-settings-button').click();
+    await pane('Notation');
     await figure.locator('.se-fingering-toggle').click();
-    await figure.locator('.se-settings-dialog').getByRole('button', { name: 'Done' }).click();
+    await done();
     await ink.locator('.se-finger-number').first().waitFor({ state: 'attached' });
     await go.fill('180');
     await go.press('Enter');
@@ -64,6 +71,7 @@ try {
     });
     await page.evaluate(() => { window.print = () => {}; });
     await figure.locator('.se-settings-button').click();
+    await pane('Notation');
     await figure.locator('.se-print-score-button').click();
     assert.equal(await page.locator('.se-print-score-pages .se-measure').count(), 202);
     assert.deepEqual(errors, []);

@@ -1930,6 +1930,67 @@
   var printScoreCleanup = null;
   function endPrintScore() { if (printScoreCleanup) printScoreCleanup(); }
 
+  // The printed edition's lettering. A long title splits where an edition would break it
+  // ("Canon in D" over "for three violins and basso continuo, P. 37"); the arrangement line drops
+  // the composer, who is printed on the right.
+  function printTitles(score) {
+    var title = String(score.title || 'Score').trim(), main = title, sub = '';
+    if (title.length > 34) {
+      var m = /^(\S+\s.*?)\s+((?:for|from|on|after)\s.+)$/i.exec(title);
+      var dot = title.indexOf(' · '), comma = title.lastIndexOf(', ');
+      if (dot > 3) { main = title.slice(0, dot); sub = title.slice(dot + 3); }
+      else if (m) { main = m[1]; sub = m[2]; } else if (comma > 3) { main = title.slice(0, comma); sub = title.slice(comma + 2); }
+    }
+    var composer = String(score.composer || '').trim();
+    var meta = String(score.subtitle || '').split(/\s+·\s+/).map(function (part) {
+      // "Ludwig van Beethoven, 1824" keeps only the year; the name is printed on the right.
+      return composer && part.indexOf(composer) === 0 ? part.slice(composer.length).replace(/^[\s,]+/, '') : part;
+    }).filter(function (part) { return part && !/^complete\b/i.test(part); }).join(' · ');
+    // The credit's first sentence names the edition and its licence; the rest is lesson commentary.
+    var label = score.source && score.source.label ? String(score.source.label).trim() : '';
+    var credit = label ? 'Source: ' + label.replace(/^(.+?(?:[a-z]{2}|\))\.)\s+[A-Z].*$/, '$1').replace(/\.$/, '') : '';
+    return { main: main, sub: sub, meta: meta, composer: composer, credit: credit };
+  }
+
+  // A sheet's systems as runs drawn at one scale, 7.5in across: ordinary lines share the edition's
+  // width (layout.printWidth), and a line holding a bar too dense for it (a cadenza) is a run of its
+  // own, drawn smaller to fit the paper, so one bar never shrinks the whole piece.
+  function printRuns(layout, systems) {
+    var runs = [], pad = layout.S * 1.8, normal = layout.printWidth;
+    systems.forEach(function (system) {
+      var width = Math.max(normal, system.right + 1.5 * layout.S), run = runs[runs.length - 1];
+      if (!run || width > normal + 0.5 || run.width > normal + 0.5) { run = { systems: [], width: width }; runs.push(run); }
+      run.systems.push(system);
+    });
+    runs.forEach(function (run) {
+      var first = run.systems[0], last = run.systems[run.systems.length - 1];
+      // The system bound already includes space below the staff. Extending it
+      // reaches the next system's bar number, which belongs on the next sheet.
+      run.top = first.index === 0 ? 0 : Math.max(0, first.top - pad);
+      run.bottom = Math.min(layout.height, last.bottom);
+      run.inches = (run.bottom - run.top) * 7.5 / run.width;
+    });
+    return runs;
+  }
+  function printInches(layout, systems) {
+    return printRuns(layout, systems).reduce(function (sum, run) { return sum + run.inches; }, 0);
+  }
+
+  // Systems onto sheets by height (never a fixed count per sheet), within caps.first / caps.rest
+  // inches of staves. Returns the systems of each sheet.
+  function packPrintSystems(layout, caps) {
+    var groups = [];
+    layout.systems.forEach(function (system) {
+      var group = groups[groups.length - 1];
+      if (!group || printInches(layout, group.concat(system)) > (groups.length === 1 ? caps.first : caps.rest)) {
+        group = [];
+        groups.push(group);
+      }
+      group.push(system);
+    });
+    return groups;
+  }
+
   function preparePrintScorePages(score, options) {
     options = options || {};
     // A second Print score (another piece, or the same one again) starts from a fresh edition.
@@ -1937,14 +1998,46 @@
     var model = prepare(score);
     analyse(model);
     if (options.violinPlan) model.violinFingerings = options.violinPlan(model);
-    // Engrave at a fixed width so the paper edition does not depend on the
-    // learner's screen size or score zoom setting.
-    // Same large-print engraving the fake book uses: bigger staff, noteheads and
-    // letters, fewer bars per line, so a handout reads from a desk or a music stand.
-    var layout = engrave(model, 1085, true);
-    if (!layout.systems.length) return false;
+    // Engrave at a fixed width so the paper edition does not depend on the learner's screen size or
+    // score zoom setting. Large print first (the fake book's engraving: bigger staff, noteheads and
+    // letters, fewer bars per line). If a slightly smaller engraving (more bars per line, more lines
+    // per sheet) saves paper, use the largest one that prints on the fewest sheets.
+    var titles = printTitles(score);
+    var legend = options.legend || '';
+    var credit = titles.credit;
+    // Inches of staves per sheet: US Letter with 0.5in margins is 10in tall; the first sheet carries
+    // the title block, later ones a one-line running head. A little slack keeps every sheet one page.
+    // Lines are estimated from the text (average glyph widths of the edition serif at each size).
+    function lines(text, inchPerChar, width) { return text ? Math.max(1, Math.ceil(text.length * inchPerChar / (width || 7.5))) : 0; }
+    var titleIn = 0.12 + lines(titles.main, 0.17) * 0.25 + lines(titles.sub, 0.075) * 0.18 +
+      Math.max(lines(titles.meta, 0.068, 5.6), titles.composer ? 1 : 0) * 0.17 + lines(legend + ' · ' + credit, 0.058) * 0.14;
+    var caps = { first: 9.8 - titleIn, rest: 9.8 - 0.3 };
+    // Large print is never narrower than its widest bar, so smaller trials scale from what it drew.
+    // When one bar is far wider than the rest (a cadenza), the edition keeps the ordinary width and
+    // only that bar's line is drawn smaller (reading layout, see printRuns).
+    var base = 1085, largePrint = engrave(model, base, true), wide = largePrint.width > base * 1.6;
+    if (!wide) base = largePrint.width;
+    // Smaller trials are set by staff space on paper (S units = one space; 7.5in = 190.5mm): down to
+    // 1.7mm, a little under the 1.75mm of most printed music, never below.
+    var widths = [base].concat([2.2, 2, 1.85, 1.7].map(function (mm) { return Math.round(190.5 * largePrint.S / mm); })
+      .filter(function (width) { return width > base * 1.03; }));
+    var layout = null, groups = null;
+    widths.some(function (width, k) {
+      var trial = k === 0 && !wide ? largePrint : engrave(model, width, true, false, wide);
+      if (!trial.systems.length) return true;
+      trial.printWidth = wide ? width : trial.width;
+      var trialGroups = packPrintSystems(trial, caps);
+      if (!groups || trialGroups.length < groups.length) { layout = trial; groups = trialGroups; }
+      return groups.length === 1;
+    });
+    if (!layout || !layout.systems.length) return false;
     var ns = 'http://www.w3.org/2000/svg';
     var portal = el('main', { class: 'se-print-score-pages', 'aria-hidden': 'true', 'data-contrast-guard-skip': '' });
+    // Every browser gets the same 0.5in sheet. Safari ignores the named se-score-page, and the lesson's
+    // own wider @page margins made it shrink the page and spill onto an extra blank sheet. This rule
+    // comes later in the document, so it wins while the edition is in the page.
+    var pageRule = el('style', {}, '@page { size: letter portrait; margin: 0.5in; }');
+    portal.appendChild(pageRule);
     var source = document.createElementNS(ns, 'svg');
     source.innerHTML = layout.svg;
     source.querySelectorAll('.se-accidental-back').forEach(function (mask) { mask.style.setProperty('fill', '#fff', 'important'); });
@@ -1952,67 +2045,61 @@
     // Each sheet carries only its systems, rather than a <use> of the whole
     // movement. Large scores otherwise render the full SVG once per page.
     var fragments = Array.from(source.children);
-    var groups = [];
-    // Portrait US Letter, 7.5in x 9.2in of staves per sheet (0.6in less on the first,
-    // which carries the notation note). Pack by height, not by a fixed system count.
-    // iOS ignores named @page sizes, so portrait is the one layout every device prints.
-    var unitsPerInch = layout.width / 7.5;
-    layout.systems.forEach(function (system) {
-      var group = groups[groups.length - 1];
-      var maxHeight = unitsPerInch * (groups.length === 1 ? 8.6 : 9.2);
-      var cropTop = group && groups.length > 1 ? Math.max(0, group[0].top - layout.S * 1.8) : 0;
-      if (!group || system.bottom - cropTop > maxHeight) {
-        group = [];
-        groups.push(group);
-      }
-      group.push(system);
-    });
+    // The source credit goes under the last system when there's room there, else in the title block.
+    var lastUsed = printInches(layout, groups[groups.length - 1]);
+    var creditAtEnd = credit && lastUsed + 0.25 <= (groups.length > 1 ? caps.rest : caps.first);
     groups.forEach(function (systems, index) {
-      var first = systems[0], last = systems[systems.length - 1];
-      var pad = layout.S * 1.8;
-      var top = index === 0 ? 0 : Math.max(0, first.top - pad);
-      // The system bound already includes space below the staff. Extending it
-      // reaches the next system's bar number, which belongs on the next sheet.
-      var bottom = Math.min(layout.height, last.bottom);
       var page = el('section', { class: 'se-print-score-page' });
-      var header = el('header', { class: 'se-print-score-header' });
-      header.appendChild(el('strong', {}, score.title || 'Score'));
-      header.appendChild(el('span', {}, 'Score page ' + (index + 1) + ' of ' + groups.length));
-      var svg = document.createElementNS(ns, 'svg');
-      svg.setAttribute('class', 'se-score');
-      svg.setAttribute('role', 'img');
-      svg.setAttribute('aria-label', (score.title || 'Score') + ', page ' + (index + 1));
-      svg.setAttribute('viewBox', '0 ' + top + ' ' + layout.width + ' ' + (bottom - top));
-      // Explicit aspect ratio/height avoids the SVG default 300×150 viewport in
-      // print engines, and scales an unusually tall orchestral system as a unit.
-      var inches = Math.min(bottom - top, unitsPerInch * (index === 0 ? 8.6 : 9.2)) / unitsPerInch;
-      svg.style.setProperty('height', inches + 'in', 'important');
-      svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
-      var firstIndex = first.index, lastIndex = last.index;
-      fragments.forEach(function (fragment) {
-        var system = fragment.getAttribute('data-se-system');
-        var from = fragment.getAttribute('data-se-from'), to = fragment.getAttribute('data-se-to');
-        var belongs = system !== null ? +system >= firstIndex && +system <= lastIndex :
-          from !== null ? (+from >= firstIndex && +from <= lastIndex) || (+to >= firstIndex && +to <= lastIndex) : fragment.tagName.toLowerCase() === 'defs';
-        if (belongs) svg.appendChild(fragment.cloneNode(true));
-      });
-      // Keep glyph references local to the sheet, including while the screen
-      // edition remains in the DOM. Every page can render independently.
-      var idMap = {};
-      svg.querySelectorAll('[id]').forEach(function (node) { var id = node.id; node.id = idMap[id] = id + '-print-' + index; });
-      svg.querySelectorAll('use[href]').forEach(function (use) {
-        var id = use.getAttribute('href').slice(1);
-        if (idMap[id]) use.setAttribute('href', '#' + idMap[id]);
-      });
-      page.append(header, svg);
+      var header;
       if (index === 0) {
-        var aids = [];
-        if (root.MusicNotation.preferences.pitchNames) aids.push('pitch letters (accidentals in notation)');
-        if (root.MusicNotation.preferences.noteColors) aids.push('note colors');
-        page.appendChild(el('p', { class: 'se-print-score-note' },
-          (options.note ? options.note + ' ' : '') + 'Notation aids: ' + (aids.length ? aids.join(' and ') : 'off') + '. ' +
-          (score.source && score.source.label ? 'Source: ' + score.source.label + '.' : '')));
+        // An edition's title block: title, subtitle, then instrumentation left and composer right.
+        header = el('header', { class: 'se-print-score-title' });
+        header.appendChild(el('h1', {}, titles.main));
+        if (titles.sub) header.appendChild(el('p', { class: 'se-print-score-sub' }, titles.sub));
+        if (titles.meta || titles.composer) {
+          var meta = el('p', { class: 'se-print-score-meta' });
+          meta.append(el('span', {}, titles.meta), el('span', { class: 'se-print-score-composer' }, titles.composer));
+          header.appendChild(meta);
+        }
+        var small = [legend, creditAtEnd ? '' : credit].filter(Boolean).join(' · ');
+        if (small) header.appendChild(el('p', { class: 'se-print-score-key' }, small));
+      } else {
+        header = el('header', { class: 'se-print-score-header' });
+        header.append(el('span', {}, titles.main), el('span', {}, String(index + 1)));
       }
+      page.appendChild(header);
+      var cap = index === 0 ? caps.first : caps.rest;
+      printRuns(layout, systems).forEach(function (run, r) {
+        var svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('class', 'se-score');
+        if (r === 0) {
+          svg.setAttribute('role', 'img');
+          svg.setAttribute('aria-label', (score.title || 'Score') + ', page ' + (index + 1));
+        } else svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('viewBox', '0 ' + run.top + ' ' + run.width + ' ' + (run.bottom - run.top));
+        // Explicit aspect ratio/height avoids the SVG default 300×150 viewport in
+        // print engines, and scales an unusually tall orchestral system as a unit.
+        svg.style.setProperty('height', Math.min(run.inches, cap) + 'in', 'important');
+        svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+        var firstIndex = run.systems[0].index, lastIndex = run.systems[run.systems.length - 1].index;
+        fragments.forEach(function (fragment) {
+          var system = fragment.getAttribute('data-se-system');
+          var from = fragment.getAttribute('data-se-from'), to = fragment.getAttribute('data-se-to');
+          var belongs = system !== null ? +system >= firstIndex && +system <= lastIndex :
+            from !== null ? (+from >= firstIndex && +from <= lastIndex) || (+to >= firstIndex && +to <= lastIndex) : fragment.tagName.toLowerCase() === 'defs';
+          if (belongs) svg.appendChild(fragment.cloneNode(true));
+        });
+        // Keep glyph references local to the sheet, including while the screen
+        // edition remains in the DOM. Every page can render independently.
+        var idMap = {}, suffix = '-print-' + index + (r ? '-' + r : '');
+        svg.querySelectorAll('[id]').forEach(function (node) { var id = node.id; node.id = idMap[id] = id + suffix; });
+        svg.querySelectorAll('use[href]').forEach(function (use) {
+          var id = use.getAttribute('href').slice(1);
+          if (idMap[id]) use.setAttribute('href', '#' + idMap[id]);
+        });
+        page.appendChild(svg);
+      });
+      if (creditAtEnd && index === groups.length - 1) page.appendChild(el('p', { class: 'se-print-score-credit' }, credit));
       portal.appendChild(page);
     });
     document.body.appendChild(portal);
@@ -3777,10 +3864,44 @@
     function layoutChanged() { layoutControls.forEach(function (f) { f(); }); layout = null; lastDrawWidth = null; requestAnimationFrame(draw); }
     root.addEventListener('score-layout:change', layoutChanged);
     if (practiceId) {
-      var advanced = el('details', { class: 'se-advanced-settings' });
-      layoutSettings.setAttribute('aria-label', 'Layout and staves');
-      advanced.append(el('summary', {}, 'Layout and staves'), layoutSettings);
-      settingsBar.appendChild(advanced);
+      // Settings is a rail of emoji: each opens only its own group, pressing it again folds the
+      // palette back to the rail. The open group is remembered per browser.
+      layoutSettings.querySelector('legend').classList.remove('se-sr-only');
+      layoutSettings.querySelector('legend').textContent = 'Layout';
+      notationColumn.appendChild(layoutSettings);
+      var panes = [['sound', '🔊', 'Playback', soundSettings], ['view', '👁️', 'View', viewSettings],
+        ['notation', '🎼', 'Notation', displaySettings], ['layout', '📐', 'Layout and staves', layoutSettings]];
+      if (partSettings !== settingsBar) panes.push(['parts', '🎚️', 'Parts to hear', partSettings]);
+      var PANE_KEY = 'classroomos-score-pane', paneOpen = null;
+      try { paneOpen = root.localStorage.getItem(PANE_KEY); } catch (e) { /* optional */ }
+      if (!panes.some(function (p) { return p[0] === paneOpen; })) paneOpen = null;
+      var rail = el('div', { class: 'se-rail', role: 'toolbar', 'aria-label': 'Settings groups' });
+      var railTag = Math.random().toString(36).slice(2, 8);
+      var railButtons = panes.map(function (p) {
+        p[3].id = 'se-pane-' + p[0] + '-' + railTag;
+        var b = el('button', { type: 'button', class: 'se-rail-btn', title: p[2], 'aria-label': p[2], 'aria-controls': p[3].id, 'aria-expanded': 'false' });
+        b.appendChild(el('span', { class: 'se-rail-ico', 'aria-hidden': 'true' }, p[1]));
+        b.addEventListener('click', function () { showPane(paneOpen === p[0] ? null : p[0], true); });
+        rail.appendChild(b);
+        return b;
+      });
+      var railClose = el('button', { type: 'button', class: 'se-rail-btn se-rail-close', title: 'Hide settings', 'aria-label': 'Hide settings' }, '✕');
+      railClose.addEventListener('click', function () { dismissSettings.click(); });
+      rail.appendChild(railClose);
+      var showPane = function (name, remember) {
+        paneOpen = name;
+        panes.forEach(function (p, i) {
+          var on = p[0] === name;
+          p[3].hidden = !on;
+          railButtons[i].setAttribute('aria-expanded', String(on));
+          railButtons[i].classList.toggle('is-on', on);
+        });
+        settings.classList.toggle('se-rail-collapsed', !name);
+        if (remember) { try { if (name) root.localStorage.setItem(PANE_KEY, name); else root.localStorage.removeItem(PANE_KEY); } catch (e) { /* optional */ } }
+      };
+      settings.classList.add('se-tabbed');
+      settingsBar.before(rail);
+      showPane(paneOpen, false);
     } else settingsBar.appendChild(layoutSettings);
     var offFingering;
     withFingering(function (F) {
@@ -3796,7 +3917,7 @@
     player.printOptions = function () {
       var piano = fig.scoreFingeringPrint?.();
       if (!piano || !violinPrint) return violinPrint || piano;
-      return Object.assign({}, piano, violinPrint, { note: [piano.note, violinPrint.note].filter(Boolean).join(' ') });
+      return Object.assign({}, piano, violinPrint, { note: [piano.note, violinPrint.note].filter(Boolean).join(' '), legend: [piano.legend, violinPrint.legend].filter(Boolean).join(' · ') });
     };
     if (violinStaves.length && (!violinOptions || violinOptions.enabled)) {
       import(new URL('score-violin-fingering.mjs', scriptUrl || location.href).href).then(function (V) {
@@ -3808,7 +3929,7 @@
         function showViolin(show) {
           if (show && !planned) planned = planViolin(model);
           model.violinFingerings = show ? planned : null;
-          violinPrint = show ? { violinPlan: planViolin, note: V.legend } : null;
+          violinPrint = show ? { violinPlan: planViolin, note: V.legend, legend: V.printKey } : null;
           layout = null;
           draw();
         }

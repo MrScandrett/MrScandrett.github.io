@@ -19,23 +19,33 @@
   const openFile = $('open');
   openFile.disabled = true;
   const violinControls = document.createElement('div');
-  violinControls.className = 'bv-fields bv-violin-controls';
-  violinControls.innerHTML = '<label><input type="checkbox" id="bv-violin-show"> Show violin finger numbers and positions</label><label>Violin hand position <select id="bv-violin-position"><option value="auto">Automatic · fewest shifts</option><option value="1">First position</option><option value="2">Second position</option><option value="3">Third position</option><option value="4">Fourth position</option><option value="5">Fifth position</option><option value="6">Sixth position</option><option value="7">Seventh position</option></select></label>';
+  violinControls.className = 'bv-set bv-violin-controls';
+  violinControls.innerHTML = '<p class="bv-set-title">3 · Finger numbers <span>(optional)</span></p><label class="bv-check"><input type="checkbox" id="bv-violin-show"> Show violin finger numbers and positions</label><label>Violin hand position <select id="bv-violin-position"><option value="auto">Automatic · fewest shifts</option><option value="1">First position</option><option value="2">Second position</option><option value="3">Third position</option><option value="4">Fourth position</option><option value="5">Fifth position</option><option value="6">Sixth position</option><option value="7">Seventh position</option></select></label>';
   workspace.querySelector('.bv-fields').after(violinControls);
   const violinShow = $('violin-show'), violinPosition = $('violin-position');
   const pianoControls = document.createElement('div');
-  pianoControls.className = 'bv-fields';
-  pianoControls.innerHTML = '<label><input type="checkbox" id="bv-piano-show"> Show my piano finger numbers</label><p>1 = thumb, 2 = index, 3 = middle, 4 = ring, 5 = little finger. Enter one number per written note event, skipping rests. Use – to leave a note blank and / for chord fingers, lowest pitch first (for example 1/3/5). Your numbers appear in the score and in print. Use Finger numbers in the score controls for suggestions. Choose fingerings with your teacher.</p><div id="bv-piano-inputs"></div><p role="status" id="bv-piano-status"></p>';
+  pianoControls.className = 'bv-set bv-piano-controls';
+  pianoControls.innerHTML = '<p class="bv-set-title">3 · Finger numbers <span>(optional)</span></p><label class="bv-check"><input type="checkbox" id="bv-piano-show"> Add my own piano finger numbers</label><div class="bv-piano-entry" id="bv-piano-entry" hidden><p class="bv-help"><b>1</b> thumb · <b>2</b> index · <b>3</b> middle · <b>4</b> ring · <b>5</b> little. Type one per note, in order, with spaces: <code>1 2 3 1</code>. Chord: <code>1/3/5</code> (low to high). Skip a note: <code>–</code>. They print with the score.</p><div id="bv-piano-inputs" class="bv-piano-inputs"></div><p role="status" id="bv-piano-status"></p></div>';
   violinControls.after(pianoControls);
   // Keep the score immediately below a small selection row on every composer page.
   const primaryFields = workspace.querySelector('.bv-fields');
   primaryFields.classList.add('bv-primary-fields');
   const settings = document.createElement('details'); settings.className = 'bv-settings';
-  const settingsTitle = document.createElement('summary'); settingsTitle.textContent = 'Settings & files';
+  const settingsTitle = document.createElement('summary'); settingsTitle.textContent = 'Print Here!';
   const settingsBody = document.createElement('div'); settingsBody.className = 'bv-settings-body';
-  const partFields = document.createElement('div'); partFields.className = 'bv-fields';
+  // One numbered step per box: print first (why most people open this), then which part, then fingering.
+  const step = (title, ...children) => {
+    const box = document.createElement('div'); box.className = 'bv-set';
+    const head = document.createElement('p'); head.className = 'bv-set-title'; head.textContent = title;
+    box.append(head, ...children); return box;
+  };
+  const actions = workspace.querySelector('.bv-actions');
+  const printHint = document.createElement('p'); printHint.className = 'bv-help';
+  printHint.textContent = 'Prints the piece and arrangement chosen above. Save keeps your choices as a file you can open later.';
+  const partFields = document.createElement('div'); partFields.className = 'bv-fields bv-part-fields';
   [staff, voice, octave].forEach(select => partFields.append(select.closest('label')));
-  settingsBody.append(partFields, violinControls, pianoControls, note, workspace.querySelector('.bv-actions'));
+  note.classList.add('bv-help');
+  settingsBody.append(step('1 · Print or save', actions, printHint), step('2 · Choose the part', partFields), violinControls, pianoControls, note);
   settings.append(settingsTitle, settingsBody); primaryFields.append(settings);
   work.closest('label').firstChild.textContent = 'Piece';
   workspace.classList.add('bv-compact');
@@ -51,6 +61,7 @@
   function pianoGuide(score) {
     const prefs = pianoPrefs[pianoKey()] || { show: false, values: [] };
     pianoShow.checked = prefs.show;
+    $('piano-entry').hidden = !prefs.show;
     // Rebuilding the boxes on every change would drop the cursor when a student tabs to the next staff.
     if (builtPianoKey !== pianoKey() || !pianoInputs.childElementCount) {
       builtPianoKey = pianoKey();
@@ -179,7 +190,7 @@
       if (m === 'alto' || m === 'tenor') message += ' Written ' + (m === 'alto' ? 'E♭ alto' : 'B♭ tenor') + ' part; audio sounds at concert pitch. Check register and breathing.';
       if (m === 'violin') {
         message += ' Violin part at concert pitch, kept between the open G string (G3) and E7.';
-        message += ' Adjust suggested fingerings and positions in Settings & files.';
+        message += ' Adjust suggested fingerings and positions under Print Here!';
       }
     }
     if (result.registerFit) {

@@ -121,12 +121,21 @@
   .se-print-defs { position: absolute; width: 0 !important; height: 0 !important; overflow: hidden; }
   .se-print-score-page { page: se-score-page; break-after: page; page-break-after: always; }
   .se-print-score-page:last-child { break-after: auto; page-break-after: auto; }
-  .se-print-score-header { display: flex; align-items: baseline; justify-content: space-between; gap: 0.2in; margin: 0 0 0.08in; padding-bottom: 0.05in; border-bottom: 0.75pt solid #777; }
-  .se-print-score-header > * { font-family: var(--se-edition-serif) !important; }
-  .se-print-score-header strong { font-size: 13pt; }
-  .se-print-score-header span { flex: none; font-size: 8.5pt; }
-  .se-print-score-page .se-score { width: 100% !important; max-width: none !important; max-height: 9.2in !important; overflow: hidden; }
-  .se-print-score-note { margin: 0.05in 0 0; font: 8.5pt/1.25 system-ui, sans-serif; }
+  /* All print lettering is the edition serif, like an engraved score; nothing else on the paper. */
+  .se-print-score-pages :is(header, header *, .se-print-score-credit) { font-family: var(--se-edition-serif) !important; color: #111; }
+  /* First sheet: title, subtitle, instrumentation left / composer right, then a one-line key. */
+  .se-print-score-title { margin: 0 0 0.06in; text-align: center; }
+  .se-print-score-title :is(h1, p) { max-width: none !important; }
+  .se-print-score-title h1 { margin: 0; font-size: 16pt; line-height: 1.12; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; text-wrap: balance; }
+  .se-print-score-sub { margin: 0.02in 0 0; font-size: 10.5pt; line-height: 1.2; font-style: italic; text-wrap: balance; }
+  .se-print-score-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 0.3in; margin: 0.04in 0 0; font-size: 9.5pt; line-height: 1.2; }
+  .se-print-score-meta > :first-child { font-style: italic; text-align: left; }
+  .se-print-score-composer { flex: none; font-variant-caps: small-caps; letter-spacing: .05em; font-size: 11pt; }
+  .se-print-score-key { margin: 0.03in 0 0; font-size: 8pt; line-height: 1.2; text-align: left; color: #333 !important; }
+  /* Later sheets: a quiet running head, title left and page number right. */
+  .se-print-score-header { display: flex; justify-content: space-between; align-items: baseline; gap: 0.2in; margin: 0 0 0.04in; font-size: 8.5pt; line-height: 1.2; font-variant-caps: small-caps; letter-spacing: .05em; color: #444 !important; }
+  .se-print-score-page .se-score { display: block; width: 100% !important; max-width: none !important; max-height: 9.5in !important; overflow: hidden; }
+  .se-print-score-credit { margin: 0.06in 0 0; font-size: 7pt; line-height: 1.2; text-align: right; color: #555 !important; }
   .se-print-score-pages .se-accidental-back { fill: #fff; }
 
   /* A printed lesson's opening lines of a piece (ScoreEngine adds them at beforeprint). */
@@ -287,11 +296,10 @@ html.se-expanded-lock, html.se-expanded-lock body { overflow: hidden; }
   figure[data-score-print="opening"] > :is(.se-guide, .se-source) { display: none !important; }
   figure[data-score-print="opening"]:not(:has(> figcaption)) { break-inside: avoid; page-break-inside: avoid; }
   body.se-print-score-active { margin: 0 !important; padding: 0 !important; }
-  body.se-print-score-active > .se-print-score-pages { width: 7.5in !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  /* The page box's own width (7.5in at the 0.5in margins the edition asks for), never wider:
+     a fixed 7.5in in a narrower box made browsers shrink the sheet or add a blank page. */
+  body.se-print-score-active > .se-print-score-pages { width: auto !important; max-width: 7.5in !important; margin: 0 auto !important; padding: 0 !important; }
   .se-print-score-page { break-inside: avoid; page-break-inside: avoid; }
-  .se-print-score-header { align-items: start; }
-  .se-print-score-header strong { flex: 1; min-width: 0; line-height: 1.15; }
-  .se-print-score-header span { flex-shrink: 0; }
   .se-print-score-pages :is(.se-finger-number, .se-violin-finger) { fill: #69172a; stroke: #fff; stroke-width: .42em; }
 }
 
@@ -507,9 +515,55 @@ html.se-expanded-lock, html.se-expanded-lock body { overflow: hidden; }
 .se-docked .se-options .se-check { min-height: 38px; }
 .se-docked .se-view-choice { flex: 1 1 100%; justify-content: space-between; }
 .se-docked .se-layout-slider input { flex: 1; min-width: 0; }
-.se-advanced-settings { grid-column: 1 / -1; border: 1px solid #cad3df; border-radius: 6px; }
-.se-advanced-settings > summary { padding: .4rem .55rem; font-weight: 600; cursor: pointer; }
-.se-advanced-settings .se-layout-settings { border: 0; }
+/* Emoji rail: one icon per settings group; only the chosen group opens. Liquid glass, minimal. */
+.se-settings-dialog.se-tabbed .se-options { grid-template-columns: minmax(0, 1fr); }
+.se-tabbed .se-settings-column { display: contents; }
+.se-tabbed.se-rail-collapsed .se-options { display: none; }
+.se-settings-dialog.se-tabbed fieldset[hidden] { display: none; }
+.se-settings-dialog.se-tabbed fieldset { border: 0; padding: .1rem .15rem .2rem; background: transparent; }
+.se-settings-dialog.se-tabbed legend { padding: 0 0 .3rem; font: 700 .7rem/1.2 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.se-rail {
+  display: flex; gap: .2rem; align-items: center; justify-content: center; width: fit-content; margin: .45rem auto 0; padding: .25rem;
+  border: 1px solid rgb(255 255 255 / .75); border-radius: 999px;
+  background: linear-gradient(rgb(255 255 255 / .72), rgb(236 242 249 / .55));
+  -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .9), 0 6px 18px rgb(20 40 70 / .14);
+}
+.se-settings-dialog .se-rail .se-rail-btn {
+  display: grid; place-items: center; width: 40px; height: 40px; min-height: 40px; padding: 0;
+  border: 0; border-radius: 50%; background: transparent; cursor: pointer;
+  transition: background-color .15s, box-shadow .15s, transform .15s;
+}
+.se-rail-ico { font-size: 1.15rem; line-height: 1; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important; } /* beats main.css's font guard */
+.se-settings-dialog .se-rail .se-rail-btn:hover { background: rgb(255 255 255 / .8); }
+.se-settings-dialog .se-rail .se-rail-btn.is-on {
+  background: linear-gradient(#fff, rgb(227 236 246 / .95));
+  box-shadow: inset 0 0 0 1.5px #245c97, 0 2px 8px rgb(36 92 151 / .25);
+}
+.se-settings-dialog .se-rail .se-rail-btn:focus-visible { outline: 3px solid #245c97; outline-offset: 1px; }
+.se-settings-dialog .se-rail .se-rail-close { width: 32px; height: 32px; min-height: 32px; font-size: .85rem; opacity: .65; }
+.se-settings-dialog.se-settings.se-tabbed { width: min(19rem, calc(100% - 1.5rem)); padding: .25rem; border: 0; background: transparent; box-shadow: none; overflow: visible; }
+.se-settings-dialog.se-tabbed::backdrop { background: rgb(15 30 50 / .18); }
+.se-tabbed > header { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .se-settings-dialog .se-rail .se-rail-btn:active { transform: scale(.92); }
+}
+/* Docked beside the score: a vertical rail, with the open group as a glass card next to it. */
+.se-workspace.se-palette-open:has(> .se-tabbed) { grid-template-columns: minmax(0, 1fr) auto; }
+.se-settings-dialog.se-settings.se-tabbed.se-docked[open] {
+  display: flex; align-items: flex-start; gap: .45rem; padding: .5rem; border: 0; background: transparent;
+}
+.se-tabbed.se-docked .se-rail { position: sticky; top: 0; flex-direction: column; margin: 0; }
+.se-tabbed.se-docked .se-rail .se-rail-close { margin-top: .15rem; }
+.se-settings-dialog.se-tabbed.se-docked .se-options { width: 16.5rem; margin: 0; }
+.se-settings-dialog.se-tabbed .se-options {
+  box-sizing: border-box; margin-top: .4rem; padding: .55rem .6rem;
+  border: 1px solid rgb(255 255 255 / .75); border-radius: 16px;
+  background: linear-gradient(rgb(255 255 255 / .82), rgb(240 245 251 / .7));
+  -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .9), 0 8px 24px rgb(20 40 70 / .14);
+}
+.se-tabbed.se-docked.se-rail-collapsed .se-options { display: none; }
 .se-settings-dialog .se-layout-staves { margin: 0; }
 .se-settings-dialog .se-layout-staff { min-height: var(--se-setting-height); }
 .se-option-with-help { display: inline-flex; align-items: center; }
@@ -776,7 +830,7 @@ html.se-expanded-lock, html.se-expanded-lock body { overflow: hidden; }
 }
 /* Score lettering overrides the site's forced interface font on HTML text. */
 .se-page-heading, .se-page-heading > * { font-family: var(--se-edition-serif) !important; }
-.se-page-title, .se-print-score-header strong {
+.se-page-title {
   font-weight: 700;
   letter-spacing: .09em;
   text-transform: uppercase;

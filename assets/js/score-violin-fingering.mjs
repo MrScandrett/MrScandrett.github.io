@@ -7,6 +7,8 @@ const maxPosition = 11;
 const epsilon = 1e-6;
 
 export const legend = 'Suggested violin fingering: 0 open string · 1 index · 2 middle · 3 ring · 4 little finger. † means review the passage with your teacher.';
+// The one-line key printed in a score's title block.
+export const printKey = 'Violin fingers: 0 open · 1 index · 2 middle · 3 ring · 4 little · † ask your teacher';
 
 export function describe(spot) {
   if (spot.review) return spot.review;
