@@ -869,6 +869,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'pc-key pc-white';
+      btn.setAttribute('data-abs', k.absIndex);
       var tone = toneMap[k.absIndex];
       if (tone) {
         btn.classList.add('is-active');
@@ -908,6 +909,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'pc-key pc-black';
+      btn.setAttribute('data-abs', k.absIndex);
       var tone = toneMap[k.absIndex];
       if (tone) {
         btn.classList.add('is-active');
@@ -1013,20 +1015,40 @@ document.addEventListener('DOMContentLoaded', function () {
   var scalePlayUp = document.getElementById('pcScalePlayUp');
   var scalePlayDown = document.getElementById('pcScalePlayDown');
   var scalePlayUpDown = document.getElementById('pcScalePlayUpDown');
-  if (scalePlayUp) scalePlayUp.addEventListener('click', function () {
-    if (!window.PianoAudio) return;
-    window.PianoAudio.broken(scaleIndices().map(function (idx) { return PT.noteFreq(idx); }), { interval: 0.22 });
-  });
-  if (scalePlayDown) scalePlayDown.addEventListener('click', function () {
-    if (!window.PianoAudio) return;
-    window.PianoAudio.broken(scaleIndices().slice().reverse().map(function (idx) { return PT.noteFreq(idx); }), { interval: 0.22 });
-  });
-  if (scalePlayUpDown) scalePlayUpDown.addEventListener('click', function () {
+  /* Light each key and its staff note as the scale plays, so the class can follow
+     the sound on both pictures at once. steps are indices into scaleIndices(). */
+  var SCALE_STEP = 0.22;
+  var scaleFollowTimers = [];
+  function clearScaleFollow() {
+    scaleFollowTimers.forEach(clearTimeout);
+    scaleFollowTimers = [];
+    document.querySelectorAll('.pc-scale-explorer .is-sounding').forEach(function (el) { el.classList.remove('is-sounding'); });
+  }
+  function playScaleSteps(steps) {
     if (!window.PianoAudio) return;
     var abs = scaleIndices();
-    var full = abs.concat(abs.slice(0, -1).reverse());
-    window.PianoAudio.broken(full.map(function (idx) { return PT.noteFreq(idx); }), { interval: 0.22 });
+    clearScaleFollow();
+    window.PianoAudio.broken(steps.map(function (i) { return PT.noteFreq(abs[i]); }), { interval: SCALE_STEP });
+    steps.forEach(function (i, n) {
+      scaleFollowTimers.push(setTimeout(function () {
+        document.querySelectorAll('.pc-scale-explorer .is-sounding').forEach(function (el) { el.classList.remove('is-sounding'); });
+        var key = scaleBoard && scaleBoard.querySelector('[data-abs="' + abs[i] + '"]');
+        var note = document.querySelector('#pcScaleStaff .pc-note-group[data-index="' + i + '"]');
+        if (key) key.classList.add('is-sounding');
+        if (note) note.classList.add('is-sounding');
+      }, n * SCALE_STEP * 1000));
+    });
+    scaleFollowTimers.push(setTimeout(clearScaleFollow, steps.length * SCALE_STEP * 1000 + 250));
+  }
+  function scaleSteps() { return scaleIndices().map(function (_, i) { return i; }); }
+  if (scalePlayUp) scalePlayUp.addEventListener('click', function () { playScaleSteps(scaleSteps()); });
+  if (scalePlayDown) scalePlayDown.addEventListener('click', function () { playScaleSteps(scaleSteps().reverse()); });
+  if (scalePlayUpDown) scalePlayUpDown.addEventListener('click', function () {
+    var up = scaleSteps();
+    playScaleSteps(up.concat(up.slice(0, -1).reverse()));
   });
+  if (window.AudioKit && window.AudioKit.onStop) window.AudioKit.onStop(clearScaleFollow);
+  window.addEventListener('piano-studio-stop', clearScaleFollow);
 
   /* ---------- Studio bar: stop all audio, volume, keyboard size ---------- */
   var studioTimers = [];

@@ -497,3 +497,51 @@ body[data-pc-color-mode="bw"] .pc-key-tag, body[data-pc-color-mode="bw"] .pc-fin
 /* Floated so a question that wraps sits inside its card instead of having the card's top border run through it. */
 .quiz legend { float: left; width: 100%; padding: 0; margin: 0 0 .3rem; }
 .quiz legend + * { clear: both; }
+
+/* ---------- Display-only keys stay piano keys ----------
+   Keys nobody can play are disabled buttons, and the site theme repaints every disabled
+   button (inset fill, dashed border), which turned the unlit black keys white. These
+   beat that rule; :where() keeps the colour modes (rainbow, quality, b&w) on top. */
+.pc-keyboard .pc-key:disabled { opacity: 1; cursor: default; box-shadow: none; border-style: solid; }
+.pc-keyboard .pc-white:disabled { background: #fff; border-color: #c9c6d8; color: var(--pno-ink); }
+.pc-keyboard .pc-black:disabled { background: var(--pno-key-black); border-color: #0c0b16; }
+:where(.pc-keyboard) .pc-key.is-active:disabled { background: var(--pno-key-active); border-color: var(--pno-accent-deep); }
+:where(.pc-keyboard) .pc-key.is-root:disabled { background: var(--pno-ink); border-color: var(--pno-ink); }
+
+/* ---------- Scale explorer: follow the playback ---------- */
+.pc-key.is-sounding { box-shadow: inset 0 -6px 0 #f5b83d, 0 0 0 2px #f5b83d; z-index: 1; }
+.pc-black.is-sounding { z-index: 2; }
+.pc-staff-svg .pc-note-group.is-sounding .mn-note { color: #c27c00; }
+.pc-staff-svg .pc-note-group.is-sounding .pc-note-label { fill: #8a5800; }
+@media (prefers-reduced-motion: no-preference) {
+  .pc-key.is-sounding { transition: box-shadow .08s; }
+}
+
+/* ---------- Scale explorer, full screen (⛶, sim-present.js) ----------
+   One screen for the projector: both pickers across the top, the keyboard big on the
+   left with the play buttons and staff under it, the scale's facts beside it.
+   sim-present then zooms the whole block up to fill the screen. */
+.pc-scale-explorer.sp-on {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  column-gap: 1.25rem;
+  align-items: start;
+}
+.pc-scale-explorer.sp-on > * { grid-column: 1 / -1; }
+.pc-scale-explorer.sp-on > .sp-btn { grid-column: auto; }
+.pc-scale-explorer.sp-on .pc-enc-grid { display: contents; }
+.pc-scale-explorer.sp-on #pcScaleBoard { grid-column: 1; grid-row: 5; margin-top: .4rem; }
+.pc-scale-explorer.sp-on #pcScaleMeta { grid-column: 2; grid-row: 5 / span 4; margin-top: .4rem; }
+.pc-scale-explorer.sp-on .pc-se-controls { grid-column: 1; grid-row: 6; margin: .8rem 0 0 !important; }
+.pc-scale-explorer.sp-on .pc-se-staff-label { grid-column: 1; grid-row: 7; margin-top: .6rem !important; }
+.pc-scale-explorer.sp-on .pc-se-staff { grid-column: 1; grid-row: 8; overflow: visible; }
+.pc-scale-explorer.sp-on .pc-se-root-label { margin-right: 9rem; }
+.pc-scale-explorer.sp-on .pc-keyboard { height: 220px; }
+.pc-scale-explorer.sp-on .pc-degree-num { min-width: 26px; height: 26px; font-size: .8rem; }
+.pc-scale-explorer.sp-on .pc-degree-white { bottom: 34px; }
+.pc-scale-explorer.sp-on .pc-degree-black { height: 22px; min-width: 22px; font-size: .72rem; }
+.pc-scale-explorer.sp-on .pc-key-tag { font-size: .78rem; }
+.pc-scale-explorer.sp-on .pc-staff-svg { width: 100%; height: auto; max-height: 260px; }
+.pc-scale-explorer.sp-on .pc-enc-meta h3 { font-size: 2.1rem; line-height: 1.15; }
+.pc-scale-explorer.sp-on .pc-enc-notes { font-size: 1rem; line-height: 1.5; }
+.pc-scale-explorer.sp-on .pc-enc-formula { font-size: .9rem; line-height: 1.5; }
