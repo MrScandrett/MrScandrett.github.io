@@ -108,6 +108,21 @@ document.addEventListener('DOMContentLoaded', () => {
       content.querySelector('[data-restart]').onclick = () => { position = 0; feedback.textContent = `Ready for note 1 of ${model.length}.`; };
     }
     section.querySelectorAll('[data-coach-level]').forEach(button => button.addEventListener('click', () => render(button.dataset.coachLevel)));
-    render('beginner');
+    const hint = section.querySelector('#hanonLevelHint');
+    const copy = section.querySelector('#hanonCopyLink');
+    const names = { beginner: 'Beginner · 1 cell, about 2 minutes', intermediate: 'Intermediate · 3 cells, about 4 minutes', advanced: 'Advanced · 5 cells, about 6 minutes', expert: 'Expert · 7 cells, about 8 minutes' };
+    const note = level => {
+      if (hint) hint.textContent = `${names[level]}. Target speed: ♪ = ${levels[level].tempo}. Start slower.`;
+      section.dataset.level = level;
+    };
+    section.querySelectorAll('[data-coach-level]').forEach(button => button.addEventListener('click', () => note(button.dataset.coachLevel)));
+    copy?.addEventListener('click', async () => {
+      const url = new URL(location.href); url.searchParams.set('hanon', section.dataset.level || 'beginner'); url.hash = section.id;
+      try { await navigator.clipboard.writeText(url.href); copy.textContent = 'Link copied ✓'; } catch { copy.textContent = url.href; }
+      setTimeout(() => { copy.textContent = 'Copy link to this level'; }, 2500);
+    });
+    const wanted = new URLSearchParams(location.search).get('hanon');
+    const start = hint && levels[wanted] ? wanted : 'beginner';
+    render(start); note(start);
   });
 });

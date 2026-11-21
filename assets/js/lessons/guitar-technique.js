@@ -104,6 +104,37 @@
     focus: 'Technique', instruction: $('techGuide').textContent + ' Pick down/up alternately. Frets and fingers are different numbers.',
     tempo: Number($('techTempo').value), root: [...$('gcScaleRootPicker').children].findIndex(b => b.classList.contains('is-active')), scaleKey: $('gcScaleTypePicker').value, diatonic: ['thirds','groups3','groups4'].includes($('techActivity').value), preferFlat: $('techDirection').value === 'down', subdivision: Number($('techSubdivision').value),
     notes: notes.map(n => ({string:n.string, fret:n.fret, finger:n.finger})), source: 'guitarTechnique' });
+  const LEVELS = {
+    beginner: { activity: '1234', fret: 5, tempo: 50, subdivision: '1', direction: 'up' },
+    intermediate: { activity: '1324', fret: 5, tempo: 70, subdivision: '1', direction: 'both' },
+    advanced: { activity: 'spider', fret: 5, tempo: 90, subdivision: '2', direction: 'both' }
+  };
+  const apply = c => {
+    $('techActivity').value = c.activity; $('techFret').value = c.fret; $('techTempo').value = c.tempo;
+    $('techSubdivision').value = c.subdivision; $('techDirection').value = c.direction;
+    render();
+    $('techStatus').textContent = `Loaded: ${$('techActivity').selectedOptions[0].textContent} at ${c.tempo} BPM. Press Play or Next note.`;
+  };
+  document.querySelectorAll('[data-tech-level]').forEach(b => b.addEventListener('click', () => apply(LEVELS[b.dataset.techLevel])));
+  $('techPrint')?.addEventListener('click', () => window.print());
+  $('techCopyLink')?.addEventListener('click', async () => {
+    const url = new URL(location.href), q = url.searchParams;
+    q.set('tech', $('techActivity').value); q.set('fret', $('techFret').value); q.set('bpm', $('techTempo').value);
+    q.set('dir', $('techDirection').value); q.set('sub', $('techSubdivision').value);
+    url.hash = 'guitarTechnique';
+    const btn = $('techCopyLink'), label = btn.textContent;
+    try { await navigator.clipboard.writeText(url.href); btn.textContent = 'Link copied ✓'; } catch { $('techStatus').textContent = url.href; }
+    setTimeout(() => { btn.textContent = label; }, 2500);
+  });
+  const q = new URLSearchParams(location.search);
+  const has = (id, v) => [...$(id).options].some(o => o.value === v);
+  if (q.has('tech') && has('techActivity', q.get('tech'))) {
+    $('techActivity').value = q.get('tech');
+    if (q.get('fret')) $('techFret').value = q.get('fret');
+    if (q.get('bpm')) $('techTempo').value = q.get('bpm');
+    if (has('techDirection', q.get('dir'))) $('techDirection').value = q.get('dir');
+    if (has('techSubdivision', q.get('sub'))) $('techSubdivision').value = q.get('sub');
+  }
   render();
   const scaleShortcuts = document.createElement('div'); scaleShortcuts.className = 'gc-pick-row';
   [['C major',0,'ionian'], ['A minor pentatonic',9,'minorPent'], ['E blues',4,'blues'], ['D Dorian',2,'dorian']].forEach(([name, root, key]) => {
