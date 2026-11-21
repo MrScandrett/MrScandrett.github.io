@@ -12,7 +12,8 @@
   nav.setAttribute('role', 'group');
   nav.setAttribute('aria-label', 'Instrument activities');
   const label = document.createElement('label');
-  label.textContent = 'Activity ';
+  label.className = 'iw-jump';
+  label.textContent = 'Jump to ';
   const picker = document.createElement('select');
   label.append(picker);
   nav.append(label);
@@ -25,12 +26,16 @@
   stop.setAttribute('aria-label', 'Stop sound');
   stop.addEventListener('click', () => window.AudioKit?.stopAll());
   nav.append(stop);
-  const guide = document.createElement('p');
-  guide.className = 'iw-guide';
-  guide.id = 'instrument-workspace-guide';
-  guide.textContent = 'Start with First sound. Choose an Activity to explore more. Use Tab to move between controls, then Enter or Space to press a button. Start with your volume low. Stop sound ends playback.';
-  picker.setAttribute('aria-describedby', guide.id);
-  bar.after(guide);
+  // Home button, current-activity title and a settings shortcut replace the old menu and button row.
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'iw-back';
+  back.textContent = '‹ Home';
+  back.hidden = true;
+  nav.prepend(back);
+  const title = document.createElement('strong');
+  title.className = 'iw-title';
+  nav.append(title);
   const lessonLink = document.createElement('a');
   lessonLink.href = '#instrument-pathway';
   lessonLink.textContent = 'Lesson steps';
@@ -45,11 +50,27 @@
     if (target) { target.tabIndex = -1; target.focus(); target.scrollIntoView({ block: 'start' }); }
   });
   if (document.getElementById('instrument-pathway')) nav.append(lessonLink);
+  const practiceLinks = app.querySelector(':scope > .pr-entry');
+  if (practiceLinks) nav.after(practiceLinks);
   const status = document.createElement('span');
   status.className = 'iw-status';
   status.setAttribute('role', 'status');
   nav.append(status);
   const pages = [];
+  // Piano keeps its scale tool and chord library in lesson chapters; bring them into the workspace
+  // so they are one tap from Home like the guitar's (ids and listeners travel with the nodes).
+  function adopt(id, label) {
+    const section = document.getElementById(id);
+    if (!section || app.contains(section)) return;
+    const holder = section.closest('details');
+    section.dataset.routeLabel = label;
+    app.append(section);
+    if (holder && !holder.querySelector('section')) holder.remove();
+  }
+  function adoptPianoTools() {
+    adopt('scales', 'Scales and modes');
+    adopt('encyclopedia', 'Chord library');
+  }
   function page(label, nodes) {
     nodes = nodes.filter(Boolean);
     if (!nodes.length) return;
@@ -60,19 +81,107 @@
     panel.setAttribute('aria-label', label);
     app.append(panel);
     nodes.forEach(node => panel.append(node));
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = label;
-    button.setAttribute('aria-controls', panel.id);
-    button.addEventListener('click', () => show(panel));
-    // On wide screens the activities are also buttons (CSS hides them on narrow screens, where
-    // the Activity menu is enough).
-    button.className = 'iw-activity';
-    nav.append(button);
     picker.add(new Option(label, String(pages.length)));
-    pages.push({ panel, button });
+    pages.push({ panel, label });
   }
-  function show(panel) {
+
+  // ---- Home: Quick start tools, activity modules and lesson chapters -------------------------
+  const KINDS = [
+    [/sound & display/i, { kind: 'settings' }],
+    [/help|guide/i, { kind: 'help' }],
+    [/chord builder/i, { kind: 'quick', icon: '🧱', short: 'Chord builder', blurb: 'Pick notes, get a name.' }],
+    [/chord (library|encyclopedia)/i, { kind: 'quick', icon: '📚', short: 'Chord library', blurb: 'Any chord, any key.' }],
+    [/^scales/i, { kind: 'quick', icon: '🪜', short: 'Scales', blurb: 'Any scale or mode.' }],
+    [/^fingerings$/i, { kind: 'quick', icon: '🎷', short: 'Fingerings', blurb: 'Pick a note, see the keys.' }],
+    [/^fingerboard$/i, { kind: 'quick', icon: '🎻', short: 'Fingerboard', blurb: 'Notes on the strings.' }],
+    [/build a beat/i, { kind: 'quick', icon: '🥁', short: 'Build a beat', blurb: 'Draw a groove, hear it.' }],
+    [/scale learning/i, { icon: '🎯', blurb: 'Learn a scale, then recall it.' }],
+    [/hanon/i, { icon: '🖐️', blurb: 'Short patterns for even fingers.' }],
+    [/repertoire/i, { icon: '🎶', blurb: 'A path of pieces, easier to harder.' }],
+    [/progression/i, { icon: '🔁', blurb: 'Change chords on the beat.' }],
+    [/homework/i, { icon: '📝', blurb: 'Your groove sheets to practise.' }],
+    [/compose/i, { icon: '🎼', blurb: 'Write a short tune.' }],
+  ];
+  function kindOf(label) {
+    const hit = KINDS.find(([re]) => re.test(label));
+    return hit ? hit[1] : { icon: '🎵', blurb: '' };
+  }
+  function el(tag, cls, text) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+  function tile(item, info, cls, number) {
+    const b = el('button', cls);
+    b.type = 'button';
+    b.setAttribute('aria-controls', item.panel.id);
+    b.append(el('span', 'iw-icon', info.icon || '🎵'));
+    const copy = el('span', 'iw-copy');
+    copy.append(el('strong', '', (number ? number + '. ' : '') + (info.short || item.label)));
+    if (info.blurb) copy.append(el('span', '', info.blurb));
+    b.append(copy);
+    b.addEventListener('click', () => show(item.panel));
+    return b;
+  }
+  function buildHome() {
+    const items = pages.map(item => ({ ...item, info: kindOf(item.label) }));
+    const start = items[0];
+    const quick = items.filter(i => i.info.kind === 'quick');
+    const modules = items.filter(i => i !== start && !i.info.kind);
+    const helps = items.filter(i => i.info.kind === 'help');
+    const settings = items.find(i => i.info.kind === 'settings');
+    const panel = el('div', 'iw-panel iw-home');
+    panel.id = `instrument-view-${pages.length}`;
+    panel.setAttribute('role', 'region');
+    panel.setAttribute('aria-label', 'Instrument home');
+    app.append(panel);
+    // Compact on purpose: one row of tool tiles, then one line each for practice and chapters.
+    panel.append(el('h2', 'iw-sr', 'Instrument home'));
+    const row = el('div', 'iw-tiles');
+    row.setAttribute('aria-label', 'Quick start');
+    row.setAttribute('role', 'group');
+    if (start) row.append(tile(start, { icon: '🌱', short: start.label, blurb: 'New here? Start here.' }, 'iw-tile iw-start'));
+    quick.forEach(i => row.append(tile(i, i.info, 'iw-tile')));
+    panel.append(row);
+    function line(name, entries) {
+      if (!entries.length) return;
+      const wrap = el('div', 'iw-row');
+      wrap.setAttribute('role', 'group');
+      wrap.setAttribute('aria-label', name);
+      wrap.append(el('span', 'iw-row-label', name));
+      entries.forEach(([icon, text, hint, go]) => {
+        const chip = el('button', 'iw-chip');
+        chip.type = 'button';
+        chip.append(el('span', 'iw-icon', icon), el('span', '', text));
+        if (hint) chip.title = hint;
+        chip.addEventListener('click', go);
+        wrap.append(chip);
+      });
+      panel.append(wrap);
+    }
+    line('Practice', [
+      ...modules.map(i => [i.info.icon, i.label, i.info.blurb, () => show(i.panel)]),
+      ...helps.map(i => ['❓', i.label, '', () => show(i.panel)]),
+    ]);
+    line('Chapters', [...document.querySelectorAll('main details.instrument-chapter[id^="unit-"]')].map(ch => {
+      const sum = ch.querySelector(':scope > summary');
+      const name = sum.querySelector('.instrument-chapter-title')?.textContent || sum.textContent.trim();
+      return [sum.querySelector('.instrument-chapter-emoji')?.textContent || '📖', name,
+        sum.querySelector('.instrument-chapter-description')?.textContent || '',
+        () => { ch.open = true; ch.scrollIntoView({ block: 'start' }); sum.focus({ preventScroll: true }); }];
+    }));
+    picker.add(new Option('Home', String(pages.length)));
+    pages.push({ panel, label: 'Home' });
+    back.addEventListener('click', () => show(panel));
+    if (settings) {
+      const gear = el('button', 'iw-settings', '⚙ Sound & display');
+      gear.type = 'button';
+      gear.addEventListener('click', () => show(settings.panel));
+      stop.after(gear);
+    }
+  }
+  function show(panel, opts = {}) {
     app.dataset.scoreView = String(!!panel.querySelector('#guitarTechnique'));
     app.dataset.libraryView = String(!!panel.querySelector('.guitar-library'));
     const previous = pages.find(item => !item.panel.hidden);
@@ -82,11 +191,17 @@
     picker.value = String(pages.findIndex(item => item.panel === panel));
     pages.forEach(item => {
       item.panel.hidden = item.panel !== panel;
-      item.button.setAttribute('aria-pressed', String(item.panel === panel));
     });
+    const atHome = panel.classList.contains('iw-home');
+    app.dataset.iwView = atHome ? 'home' : 'activity';
+    back.hidden = atHome;
+    const current = pages.find(item => item.panel === panel);
+    title.textContent = atHome ? '' : current.label;
+    title.hidden = atHome;
+    if (!atHome && opts.scroll !== false && app.getBoundingClientRect().top < 0) app.scrollIntoView({ block: 'start' });
     const firstSound = panel.querySelector('details.fs');
     if (firstSound) firstSound.open = true;
-    status.textContent = picker.selectedOptions[0]?.textContent + ' activity';
+    status.textContent = (picker.selectedOptions[0]?.textContent || '') + ' activity';
     if (focusWasHidden) picker.focus({ preventScroll: true });
     if (app.id === 'guitarWorkspace') {
       panel.querySelectorAll('#builder, #scales').forEach(section => {
@@ -96,6 +211,8 @@
     }
     window.dispatchEvent(new Event('resize'));
   }
+  if (isPiano) adoptPianoTools();
+  else if (app.id === 'guitarWorkspace') adopt('progressions', 'Progressions');
   page('First sound', [app.querySelector(':scope > .fs, :scope > [data-first-sound]')]);
   const settings = app.querySelector('#pcDisplayBar, #gcDisplayBar, #drDisplayBar');
   if (isPiano && settings) {
@@ -164,15 +281,67 @@
     const first = app.querySelector('#first-sound');
     if (first) first.open = true;
     const hint = app.querySelector('.fs-note-below');
-    if (hint) hint.textContent = 'New to piano? Follow the glowing keys. Already play? Choose Chord builder or Progressions from the Activity menu above.';
+    if (hint) hint.textContent = 'New to piano? Follow the glowing keys. Already play? Go ‹ Home and pick Chord builder, Chord library or Scales.';
   }
-  if (pages[0]) show(pages[0].panel);
+
+  // ---- Long lesson sections fold to one line each ------------------------------------------
+  // Sax and violin sections run 1,000–2,400px each and piano's technique lab 1,400px. Each now
+  // shows one header line until opened. The section element (its id, and the pathway signs
+  // beside it) stays where it was; only its contents move into the fold body.
+  function setFold(section, open) {
+    const body = section.querySelector(':scope > .iw-fold-body');
+    const head = section.querySelector(':scope > .iw-fold-head');
+    if (!body || !head) return;
+    if (open) body.removeAttribute('hidden'); else body.setAttribute('hidden', 'until-found');
+    section.dataset.iwFold = open ? 'open' : 'closed';
+    head.setAttribute('aria-expanded', String(open));
+    head.querySelector('.iw-fold-icon').textContent = open ? 'Close ▴' : 'Open ▾';
+    if (open) window.dispatchEvent(new Event('resize'));
+  }
+  function fold(section) {
+    if (!section || section.dataset.iwFold || app.contains(section)) return;
+    const h2 = section.querySelector('h2');
+    const kicker = section.querySelector('.sax-kicker, .eyebrow, .vln-kicker, .section-kicker');
+    const label = section.dataset.stageLabel || section.dataset.routeLabel || '';
+    const body = el('div', 'iw-fold-body');
+    body.id = (section.id || 'section') + '-fold';
+    body.append(...section.childNodes);
+    const head = el('button', 'iw-fold-head');
+    head.type = 'button';
+    head.setAttribute('aria-controls', body.id);
+    head.append(el('span', 'iw-fold-label', label || (kicker ? kicker.textContent.trim() : '')),
+      el('span', 'iw-fold-title', h2 ? h2.textContent.trim() : label), el('span', 'iw-fold-icon'));
+    section.append(head, body);
+    head.addEventListener('click', () => setFold(section, section.dataset.iwFold !== 'open'));
+    body.addEventListener('beforematch', () => setFold(section, true));
+    setFold(section, false);
+  }
+  function openAround(target) {
+    for (let node = target; node && node !== document.body; node = node.parentElement) {
+      if (node.dataset?.iwFold === 'closed') setFold(node, true);
+      if (node.tagName === 'DETAILS' && !node.open) node.open = true;
+    }
+  }
+  document.querySelectorAll('main .sax-section, main .vln-sec, main #technique-lab').forEach(fold);
+  // Chapters start closed too: the Home chips and pathway open the one you want.
+  document.querySelectorAll('main details.instrument-chapter[id^="unit-"][open]').forEach(ch => { ch.open = false; });
+  // Printing is a handout of the whole lesson: open everything before the print planner measures.
+  let printed = [];
+  window.addEventListener('classroomos:print-prepare', () => {
+    printed = [...document.querySelectorAll('[data-iw-fold="closed"]')];
+    printed.forEach(section => setFold(section, true));
+  });
+  window.addEventListener('afterprint', () => { printed.forEach(section => setFold(section, false)); printed = []; });
+  buildHome();
+  const home = pages[pages.length - 1].panel;
+  show(home, { scroll: false });
   // A homework QR link (drums.html#g1=…) opens straight into Build a beat with that groove.
   const linked = app.querySelector('.dr-player[data-from-link]');
   if (linked) { const item = pages.find(entry => entry.panel.contains(linked)); if (item) show(item.panel); }
   function reveal(hash) {
     let target;
     try { target = document.getElementById(decodeURIComponent(hash.replace(/^#/, ''))); } catch { return; }
+    if (target) openAround(target);
     const item = pages.find(item => item.panel.contains(target));
     if (item) {
       show(item.panel);

@@ -158,8 +158,99 @@
 }
 /* Sound presets also appear in the lesson's reference controls. */
 body:has(.instrument-workspace) main select { max-width: 100%; min-width: 0; }
-/* Activity buttons beside the menu on wide screens; the menu alone on narrow ones. */
-.iw-navigation .iw-activity { display: none; }
-@media (min-width: 1100px) { .iw-navigation .iw-activity { display: inline-flex; align-items: center; } }
 .iw-drum-sounds { margin: .6rem 0 0; }
 .iw-drum-sounds > summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
+
+/* ---- Home: Quick start, practice modules and lesson chapters ---- */
+/* The old Activity menu stays for keyboard and screen-reader jumps, but out of sight until focused. */
+.iw-navigation .iw-jump:not(:focus-within) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.iw-navigation { align-items: center; gap: .5rem; }
+.iw-title { font-size: 1.05rem; margin-right: auto; }
+.iw-back { font-weight: 700; }
+.instrument-workspace > .creation-app-toolbar { min-height: 0; }
+.iw-home { padding: .6rem .75rem .75rem; display: grid; gap: .5rem; }
+.iw-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.iw-home :is(.iw-tile, .iw-chip) {
+  display: flex; align-items: center; gap: .55rem; text-align: left; font: inherit; color: var(--text); cursor: pointer;
+  background: var(--surface-elevated, var(--bg)); border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  transition: border-color .12s ease;
+}
+.iw-home :is(.iw-tile, .iw-chip):hover { border-color: var(--accent); }
+.iw-home :is(.iw-tile, .iw-chip):focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.iw-home .iw-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr)); gap: .45rem; }
+.iw-home .iw-tile { min-height: 52px; padding: .45rem .65rem; border-radius: 10px; }
+.iw-home .iw-start { border: 2px solid var(--accent); }
+.iw-home .iw-icon { font-size: 1.35rem; line-height: 1; flex: none; }
+.iw-home .iw-copy { display: grid; min-width: 0; }
+.iw-home .iw-copy strong { font-size: .98rem; line-height: 1.2; }
+.iw-home .iw-copy span { font-size: .8rem; opacity: .78; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.iw-home .iw-row { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.iw-home .iw-row-label { font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .7; min-width: 5.5rem; }
+.iw-home .iw-chip { gap: .35rem; min-height: 44px; padding: .25rem .7rem; border-radius: 999px; font-size: .9rem; }
+.iw-home .iw-chip .iw-icon { font-size: 1.05rem; }
+@media (max-width: 600px) {
+  .iw-home .iw-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .iw-home .iw-copy span { display: none; }
+  .iw-home .iw-row-label { flex-basis: 100%; }
+}
+/* Practice Room links sit in the toolbar instead of their own row. */
+.instrument-workspace > .creation-app-toolbar > .pr-entry { margin: 0; gap: .35rem; }
+.instrument-workspace > .creation-app-toolbar > .pr-entry a { padding: .3rem .75rem; min-height: 44px; font-size: .9rem; border-width: 1px; }
+.instrument-workspace:is(:fullscreen, .creation-app-expanded) > .creation-app-toolbar > .pr-entry { display: none; }
+@media (prefers-reduced-motion: reduce) { .iw-home :is(.iw-tile, .iw-chip) { transition: none; } }
+@media print { .instrument-workspace .iw-panel.iw-home { display: none !important; } }
+.instrument-workspace[data-iw-view="home"] .iw-essential-controls { display: none; }
+
+/* ---- Lesson body under the workspace: one short intro, no repeated menus ----
+   Home already offers today's choices, and the pathway map below lists every step, so the heroes'
+   "choose today's focus" lists, their start buttons, the violin's step strip and the
+   "Go to section" menu were a third and fourth way to do the same thing. Print keeps them hidden too. */
+body:has(.instrument-workspace) :is(.pno-hero-visual, .gtr-hero-visual, .dr-hero-visual, .hero-actions,
+  .sax-hero-actions, .sax-first-session, .vln-hero-actions, .vln-steps, .sax-steps),
+body:has(.instrument-workspace) .music-route { display: none !important; }
+body:has(.instrument-workspace) :is(.pno-hero, .gtr-hero, .dr-hero, .vln-hero) {
+  display: block; min-height: 0; padding-block: 1rem; margin-block: 0 .5rem;
+}
+body:has(.instrument-workspace) .sax-hero { min-height: 0; padding-block: 1rem; gap: 1rem; align-items: start; }
+body:has(.instrument-workspace) :is(.pno-hero, .gtr-hero, .dr-hero, .vln-hero, .sax-hero) h1 {
+  font-size: clamp(1.7rem, 3.6vw, 2.5rem); line-height: 1.1; margin: .2rem 0 .5rem;
+}
+body:has(.instrument-workspace) :is(.pno-hero, .gtr-hero, .dr-hero, .vln-hero, .sax-hero) :is(.hero-lede, .vln-hero-lede, .sax-deck) {
+  font-size: 1rem; max-width: 70ch; margin: 0;
+}
+body:has(.instrument-workspace) .sax-hero figure img { max-height: 220px; width: auto; }
+
+/* ---- Folded lesson sections (sax, violin, piano technique lab) ---- */
+body:has(.instrument-workspace) [data-iw-fold] { padding-block: .35rem !important; margin-block: 0 !important; min-height: 0 !important; }
+body:has(.instrument-workspace) [data-iw-fold="open"] { padding-block: .35rem 1.5rem !important; }
+.iw-fold-head {
+  display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 52px; padding: .5rem .8rem;
+  font: inherit; text-align: left; color: var(--text); cursor: pointer;
+  background: var(--surface-elevated, var(--bg)); border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 10px;
+}
+.iw-fold-head:hover { border-color: var(--accent); }
+.iw-fold-head:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.iw-fold-label { flex: none; min-width: 7.5rem; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.iw-fold-title { flex: 1; min-width: 0; font-weight: 700; font-size: 1rem; line-height: 1.3; }
+.iw-fold-icon { flex: none; font-size: .85rem; opacity: .8; }
+[data-iw-fold="open"] > .iw-fold-head { margin-bottom: .75rem; }
+[data-iw-fold="open"] > .iw-fold-head .iw-fold-title { opacity: 0; }
+.iw-fold-body[hidden] { display: none; }
+/* Open, the body disappears from layout so the section's own grid/flex places its children as before. */
+.iw-fold-body:not([hidden]) { display: contents; }
+.iw-fold-head { grid-column: 1 / -1; }
+/* saxophone.css styles direct children; the fold body sits between them now. */
+.sax-section > .iw-fold-body > h2 { max-width: 13ch; margin: 8px 0 26px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.25rem, 5vw, 4rem); font-weight: 500; line-height: 1; letter-spacing: -.035em; }
+.sax-section > .iw-fold-body > h2 + p { font-size: 1.08rem; }
+.sax-section > .iw-fold-body > p:not(.sax-kicker):not(.sax-task) { max-width: 76ch; }
+.piano-lesson .pno-development > .iw-fold-body > h2 { font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; }
+@media (max-width: 600px) {
+  .iw-fold-head { flex-wrap: wrap; gap: .2rem .6rem; }
+  .iw-fold-label { min-width: 0; }
+  .iw-fold-title { flex-basis: 100%; order: 3; }
+  .iw-fold-icon { margin-left: auto; }
+}
+@media print {
+  .iw-fold-head { display: none; }
+  .iw-fold-body[hidden] { display: contents !important; }
+}

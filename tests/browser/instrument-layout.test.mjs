@@ -13,7 +13,10 @@ test('instrument activities remain accessible at phone, tablet and desktop width
         await page.goto(`http://127.0.0.1:8080/lessons/music/instruments/${name}.html`);
         const picker = page.locator('.iw-navigation select');
         await picker.waitFor();
-        assert.equal(await picker.inputValue(), '0', `${name}: starts at First sound`);
+        assert.equal(await page.locator('.iw-panel:not([hidden])').getAttribute('aria-label'), 'Instrument home', `${name}: opens on Home`);
+        assert.ok(await page.locator('.iw-home .iw-start').isVisible(), `${name}: Home offers First sound`);
+        await page.locator('.iw-home .iw-start').click();
+        assert.equal(await picker.inputValue(), '0', `${name}: Start tile opens First sound`);
         assert.equal(await page.locator('details.fs').evaluate(node => node.open), true, `${name}: first instrument is expanded`);
         const options = await picker.locator('option').evaluateAll(nodes => nodes.map(node => node.value));
         for (const value of options) {
@@ -44,6 +47,7 @@ test('shared instrument controls support keyboard play, stopping and deep links'
       await page.goto(`http://127.0.0.1:8080/lessons/music/instruments/${name}.html`);
       const picker = page.locator('.iw-navigation select');
       await picker.waitFor();
+      await page.locator('.iw-home .iw-start').click();
       if (name === 'guitar') {
         const reference = page.locator('.gt-string-pick').first();
         await reference.focus();
