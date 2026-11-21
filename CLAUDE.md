@@ -175,6 +175,15 @@ chapter bar and a "find in this subject" box.
   match a whole word or the start of one; typos are a fallback only. Never add scattered-letter "fuzzy" matching
   (it put Tycho Brahe under "chess"). Tests: `node --test tests/search-rank.test.mjs`.
 
+## Lesson rule: openings stay compact
+
+The first screen should reach the lesson, not a poster. Page titles top out at 2.75rem (44px):
+write a big hero size as `min(<your size>, 2.75rem, 1.25rem + 4.5vw)` so it also shrinks on
+phones. Hero padding stays at or under 2.5rem top and bottom, hero `min-height` under 26rem,
+ledes at or under 1.2rem, and one short lede beats three paragraphs. `npm run audit:density`
+(needs `node serve-local.js`; `--width=390 --height=844` for phones, `--match=` for a subset)
+reports each lesson's hero height and title size and lists the tallest openings.
+
 ## Lesson rule: every photo must open in the lightbox
 
 Lessons are presented to a class, so any photo, portrait, or figure in a lesson must be
