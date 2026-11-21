@@ -1134,11 +1134,6 @@
         var btn = htmlEl('button', null, '▶ Play #' + ex.n, meta); btn.type = 'button';
         btn.setAttribute('aria-pressed', 'false');
         btn.addEventListener('click', function () { if (playing && playBtn === btn) { stop(); say('Stopped.'); } else play([i], btn); });
-        var weekly = htmlEl('button', 'wp-add-existing', 'Add to weekly assignment', meta); weekly.type = 'button';
-        weekly.addEventListener('click', function () {
-          window.WeeklyPracticeAdd?.({ title: 'Funk exercise ' + ex.n, tracks: ex.pattern.tracks, count: ex.pattern.count, tempo: Number(tempo.value), instruction: ex.caption + (feel.value === 'swing16' ? ' Use swung sixteenths.' : ' Use straight subdivisions.'), qrLessonOnly: feel.value === 'swing16', source: 'funk-ladder' });
-          weekly.textContent = 'Added to weekly assignment';
-        });
         lines.push({ ex: ex, row: row, view: view, btn: btn });
       });
       say(swingIsMoot() ? swingMootText()

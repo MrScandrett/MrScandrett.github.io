@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Practice Room · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
+  <meta name="description" content="Practice Room: students pick an instrument and get a short, game-like practice session one step at a time. Teachers build a one-page practice sheet, print it with a QR code, or share it as a link." />
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="stylesheet" href="assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="assets/css/practice-room.css" />
+  <script src="assets/js/theme-registry.js"></script>
+  <script src="assets/js/theme-lighting.js"></script>
+</head>
+<body class="theme-practice-room">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="steam-lessons.html">Lessons</a></li>
+          <li><a href="paths.html">Paths</a></li>
+          <li><a href="showcase.html">Showcase</a></li>
+          <li><a href="applications.html">Apps</a></li>
+          <li><a href="library.html">Library</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="pr" data-memory-ignore>
+    <div class="pr-top">
+      <h1 class="pr-logo"><span aria-hidden="true">🎶</span> Practice Room</h1>
+      <div class="pr-mode" role="tablist" aria-label="Who is using the Practice Room">
+        <button type="button" role="tab" id="pr-tab-student" aria-controls="pr-student" aria-selected="true">🎵 I'm practicing</button>
+        <button type="button" role="tab" id="pr-tab-teacher" aria-controls="pr-teacher" aria-selected="false">📝 I'm a teacher</button>
+      </div>
+    </div>
+
+    <!-- Student -->
+    <section id="pr-student" role="tabpanel" aria-labelledby="pr-tab-student" class="pr-panel">
+      <div id="pr-home" class="pr-screen">
+        <div class="pr-stats" aria-live="polite">
+          <span class="pr-stat"><b id="pr-streak">0</b> <span>🔥 day streak</span></span>
+          <span class="pr-stat"><b id="pr-stars">0</b> <span>⭐ stars</span></span>
+          <span class="pr-stat"><b id="pr-today">0</b> <span>⏱️ min today</span></span>
+        </div>
+        <ol class="pr-week" id="pr-week" aria-label="Practice this week"></ol>
+
+        <div id="pr-assigned" class="pr-assigned" hidden></div>
+
+        <h2 class="pr-ask">What are you playing?</h2>
+        <div class="pr-insts" id="pr-insts" role="radiogroup" aria-label="Instrument"></div>
+        <h2 class="pr-ask">How long?</h2>
+        <div class="pr-times" id="pr-times" role="radiogroup" aria-label="Minutes"></div>
+        <button type="button" class="pr-go" id="pr-go">Start practicing ▶</button>
+
+        <details class="pr-moves-help">
+          <summary>How good practicers practice</summary>
+          <div class="pr-moves" id="pr-moves"></div>
+        </details>
+      </div>
+
+      <div id="pr-session" class="pr-screen" hidden>
+        <div class="pr-session-bar">
+          <button type="button" class="pr-quiet" id="pr-quit">✕ Stop</button>
+          <ol class="pr-steps" id="pr-steps" aria-label="Session steps"></ol>
+          <span class="pr-clock" id="pr-clock" aria-label="Time practiced">0:00</span>
+        </div>
+        <article class="pr-card" id="pr-card" aria-live="polite"></article>
+      </div>
+
+      <div id="pr-done" class="pr-screen pr-done" hidden tabindex="-1"></div>
+    </section>
+
+    <!-- Teacher -->
+    <section id="pr-teacher" role="tabpanel" aria-labelledby="pr-tab-teacher" class="pr-panel" hidden>
+      <div class="pr-builder">
+        <div class="pr-build-left">
+          <h2 class="pr-h">1 · Who and when</h2>
+          <div class="pr-fields">
+            <label>Student <input id="t-student" maxlength="40" autocomplete="off" placeholder="Name (optional)" /></label>
+            <label>Note to student <input id="t-msg" maxlength="160" autocomplete="off" placeholder="e.g. Slow and steady wins!" /></label>
+          </div>
+          <div class="pr-row" role="radiogroup" aria-label="Instrument" id="t-insts"></div>
+          <div class="pr-row pr-row-split">
+            <div role="radiogroup" aria-label="Minutes a day" id="t-mins"></div>
+            <div role="group" aria-label="Practice days" id="t-days" class="pr-days"></div>
+          </div>
+
+          <h2 class="pr-h">2 · Pick what to practice <span class="pr-hint">click a card to add it</span></h2>
+          <div class="pr-row" role="radiogroup" aria-label="Filter cards" id="t-kinds"></div>
+          <div class="pr-library" id="t-library"></div>
+          <form class="pr-own" id="t-own">
+            <span class="pr-own-label">✏️ Your own card</span>
+            <input id="t-own-title" maxlength="50" placeholder="What (e.g. Bars 5–8 of my piece)" aria-label="Your own card: what to practise" required />
+            <input id="t-own-do" maxlength="140" placeholder="How (one short line)" aria-label="Your own card: how to practise it" />
+            <button type="submit">Add</button>
+          </form>
+        </div>
+
+        <div class="pr-build-right">
+          <div class="pr-sheet-actions">
+            <button type="button" class="pr-primary" id="t-print">🖨️ Print</button>
+            <button type="button" id="t-link">🔗 Copy student link</button>
+            <button type="button" id="t-try">▶ Try it</button>
+            <button type="button" id="t-new" class="pr-quiet">New</button>
+          </div>
+          <p class="pr-toast" id="t-toast" role="status"></p>
+          <div class="pr-sheet" id="t-sheet" aria-label="Practice sheet preview"></div>
+          <details class="pr-saved">
+            <summary>My saved sheets (<span id="t-saved-count">0</span>)</summary>
+            <ul id="t-saved"></ul>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <noscript><p>The Practice Room needs JavaScript. Enable it and reload this page.</p></noscript>
+  </main>
+
+  <script src="assets/js/lessons/qr.js"></script>
+  <script type="module" src="assets/js/practice-room/app.mjs"></script>
+  <script src="assets/js/nav-mobile.js"></script>
+</body>
+</html>
