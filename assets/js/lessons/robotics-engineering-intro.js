@@ -164,18 +164,64 @@
     ];
 
     var cfg = { sensor: 'sonar', rule: 'turn', threshold: 30, rate: 20, speed: 0.6, unplug: false, cut: false };
+    var SCENARIOS = {
+      free: {
+        start: { x: 120, y: 250, a: -0.35 },
+        boxes: DEFAULT_BOXES
+      },
+      corridor: {
+        start: { x: 75, y: 250, a: 0 },
+        boxes: [
+          { x: 150, y: 60, w: 500, h: 90 },
+          { x: 150, y: 350, w: 500, h: 90 },
+          { x: 380, y: 205, w: 55, h: 90 }
+        ]
+      },
+      maze: {
+        start: { x: 75, y: 95, a: 0 },
+        boxes: [
+          { x: 210, y: 0, w: 45, h: 310 },
+          { x: 410, y: 190, w: 45, h: 310 },
+          { x: 600, y: 0, w: 45, h: 310 }
+        ]
+      },
+      chicanes: {
+        start: { x: 75, y: 410, a: -0.45 },
+        boxes: [
+          { x: 200, y: 290, w: 70, h: 150 },
+          { x: 370, y: 60, w: 70, h: 190 },
+          { x: 540, y: 260, w: 70, h: 180 },
+          { x: 675, y: 70, w: 60, h: 140 }
+        ]
+      }
+    };
+    var currentScenario = 'free';
     var boxes, bot, trail, stats, maneuver, cmd, reading, think, liveLines;
+    var bestZeroCrash = 0, sprintActive = false, sprintRemaining = 60;
     var running = false, stepLeft = 0, ctrlAcc = 0, physAcc = 0, flash = 0;
 
     function reset() {
-      bot = { x: START.x, y: START.y, a: START.a, contact: false, blocked: 0 };
+      var sc = SCENARIOS[currentScenario] || SCENARIOS.free;
+      bot = { x: sc.start.x, y: sc.start.y, a: sc.start.a, contact: false, blocked: 0 };
       trail = [];
       stats = { ticks: 0, dist: 0, crashes: 0 };
       maneuver = null;
       cmd = { l: 0, r: 0 };
       reading = null; think = null; liveLines = [];
       ctrlAcc = 0; flash = 0;
+      if (!sprintActive) sprintRemaining = 60;
       updateReadout(); renderCode(); updateHud();
+    }
+
+    function applyScenario(name) {
+      currentScenario = SCENARIOS[name] ? name : 'free';
+      boxes = SCENARIOS[currentScenario].boxes.map(function (b) { return { x: b.x, y: b.y, w: b.w, h: b.h }; });
+      sprintActive = false;
+      sprintRemaining = 60;
+      setRunning(false);
+      stepLeft = 0;
+      reset();
+      draw();
     }
 
     /* geometry */
@@ -315,21 +361,12 @@
       var dpr = canvas.width / cw;
       ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * ox, dpr * oy);
       ctx.fillStyle = '#17262d'; ctx.fillRect(-ox / s, -oy / s, cw / s, ch / s);
-      ctx.fillStyle = '#1d3039'; ctx.fillRect(0, 0, W, H);
-      ctx.strokeStyle = 'rgba(207,228,224,.07)'; ctx.lineWidth = 1 / s;
-      for (var gx = 50; gx < W; gx += 50) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
-      for (var gy = 50; gy < H; gy += 50) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
-      ctx.strokeStyle = '#4c6a72'; ctx.lineWidth = 4; ctx.strokeRect(0, 0, W, H);
+      RoboticsVisuals.floor(ctx, W, H, { step: 25, frame: true });
       // 1 m scale bar
       ctx.fillStyle = 'rgba(207,228,224,.55)'; ctx.fillRect(W - 120, H - 18, 100, 3);
       ctx.font = '600 13px "IBM Plex Mono", monospace'; ctx.textAlign = 'center'; ctx.fillText('1 m', W - 70, H - 24);
 
-      boxes.forEach(function (b) {
-        ctx.fillStyle = '#b98a4e'; ctx.fillRect(b.x, b.y, b.w, b.h);
-        ctx.strokeStyle = '#7a5528'; ctx.lineWidth = 3; ctx.strokeRect(b.x + 1.5, b.y + 1.5, b.w - 3, b.h - 3);
-        ctx.beginPath(); ctx.moveTo(b.x + 4, b.y + 4); ctx.lineTo(b.x + b.w - 4, b.y + b.h - 4); ctx.moveTo(b.x + b.w - 4, b.y + 4); ctx.lineTo(b.x + 4, b.y + b.h - 4);
-        ctx.strokeStyle = 'rgba(122,85,40,.5)'; ctx.lineWidth = 2; ctx.stroke();
-      });
+      boxes.forEach(function (b) { RoboticsVisuals.barrier(ctx, b.x, b.y, b.w, b.h, 'wood'); });
 
       if (trail.length > 1) {
         ctx.lineWidth = 3; ctx.lineCap = 'round';
@@ -343,30 +380,16 @@
       if (cfg.sensor === 'sonar' && reading && typeof reading.value === 'number') {
         var reach = R + (cfg.unplug ? 0 : reading.value);
         var near = reading.value < cfg.threshold;
-        ctx.fillStyle = near ? 'rgba(255,120,100,.22)' : 'rgba(92,182,216,.18)';
-        ctx.beginPath(); ctx.moveTo(bot.x, bot.y); ctx.arc(bot.x, bot.y, reach, bot.a - SONAR_HALF, bot.a + SONAR_HALF); ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = near ? 'rgba(255,140,120,.8)' : 'rgba(120,200,230,.6)'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(bot.x, bot.y, reach, bot.a - SONAR_HALF, bot.a + SONAR_HALF); ctx.stroke();
+        RoboticsVisuals.sonar(ctx, bot.x, bot.y, bot.a, reach, SONAR_HALF, near);
         // threshold ring
         ctx.setLineDash([5, 5]); ctx.strokeStyle = 'rgba(242,191,63,.5)'; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(bot.x, bot.y, R + cfg.threshold, bot.a - SONAR_HALF * 1.6, bot.a + SONAR_HALF * 1.6); ctx.stroke(); ctx.setLineDash([]);
       }
 
-      ctx.save(); ctx.translate(bot.x, bot.y); ctx.rotate(bot.a);
-      ctx.fillStyle = '#0d1a20';
-      ctx.fillRect(-8, -R - 4, 16, 6); ctx.fillRect(-8, R - 2, 16, 6);
-      ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fillStyle = '#e7f0ee'; ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = '#4c6a72'; ctx.stroke();
-      ctx.fillStyle = '#146b8c'; ctx.beginPath(); ctx.arc(-3, 0, 6, 0, Math.PI * 2); ctx.fill();
-      if (cfg.sensor === 'bump') {
-        ctx.beginPath(); ctx.arc(0, 0, R + 2.5, -1.15, 1.15);
-        ctx.strokeStyle = reading && reading.value ? '#ff6b5e' : '#f2bf3f'; ctx.lineWidth = 4; ctx.stroke();
-      } else if (cfg.sensor === 'sonar') {
-        ctx.fillStyle = '#c9cfd1'; ctx.beginPath(); ctx.arc(R - 4, -5, 3.5, 0, 7); ctx.arc(R - 4, 5, 3.5, 0, 7); ctx.fill();
-      }
-      ctx.fillStyle = '#c23b32'; ctx.beginPath(); ctx.moveTo(R - 1, 0); ctx.lineTo(R - 9, -4); ctx.lineTo(R - 9, 4); ctx.closePath();
-      if (cfg.sensor === 'none') ctx.fill();
-      ctx.restore();
+      RoboticsVisuals.rover(ctx, bot.x, bot.y, bot.a, R, {
+        body: '#bcd6d8', outline: '#f0fcfa', sensor: cfg.sensor,
+        light: cfg.sensor === 'bump' && reading && reading.value ? '#ff725c' : '#f2bf3f'
+      });
 
       if (flash > 0) {
         ctx.strokeStyle = 'rgba(255,107,94,' + Math.min(1, flash * 2) + ')'; ctx.lineWidth = 4;
@@ -390,13 +413,17 @@
     }
     function updateHud() {
       $('hud-ticks').textContent = stats.ticks;
-      $('hud-dist').textContent = (stats.dist / 100).toFixed(1) + ' m';
+      var distM = stats.dist / 100;
+      if (stats.crashes === 0 && distM > bestZeroCrash) bestZeroCrash = distM;
+      $('hud-dist').textContent = distM.toFixed(1) + ' m';
+      if ($('hud-best')) $('hud-best').textContent = bestZeroCrash.toFixed(1) + ' m';
+      if ($('hud-timer')) $('hud-timer').textContent = sprintRemaining.toFixed(1) + ' s';
       var crash = $('hud-crash');
       crash.textContent = stats.crashes;
       crash.classList.toggle('is-bad', stats.crashes > 0);
       var state = $('hud-state');
-      var text = running ? 'Running' : (stepLeft > 0 ? 'Stepping' : 'Paused');
-      if (!running && !stats.ticks) text = 'Ready';
+      var text = running ? (sprintActive ? '60s Sprint' : 'Running') : (stepLeft > 0 ? 'Stepping' : (sprintRemaining <= 0 ? 'Sprint Complete' : 'Paused'));
+      if (!running && !stats.ticks && sprintRemaining >= 60) text = 'Ready';
       if (bot.blocked > 0.8) text = 'STUCK: wheels spinning against a wall';
       else if (cfg.cut && (running || stepLeft > 0)) text = 'Motors dead: the brain is shouting into nothing';
       else if (cfg.sensor === 'sonar' && cfg.unplug && cfg.rule !== 'straight' && stats.ticks) text = 'Spinning forever: it "sees" a wall at 0 cm';
@@ -509,8 +536,23 @@
       runBtn.textContent = on ? '❚❚ Pause' : '▶ Run';
       updateHud();
     }
-    runBtn.addEventListener('click', function () { stepLeft = 0; setRunning(!running); });
+    runBtn.addEventListener('click', function () {
+      stepLeft = 0;
+      if (sprintRemaining <= 0) { sprintActive = false; sprintRemaining = 60; }
+      setRunning(!running);
+    });
+    if ($('lab-sprint')) {
+      $('lab-sprint').addEventListener('click', function () {
+        sprintActive = true;
+        sprintRemaining = 60;
+        stepLeft = 0;
+        reset();
+        setRunning(true);
+        draw();
+      });
+    }
     $('lab-step').addEventListener('click', function () {
+      sprintActive = false;
       setRunning(false);
       // one controller pass, then let the robot coast on that command until the next check is due
       controllerTick();
@@ -518,8 +560,53 @@
       ctrlAcc = 0;
       updateReadout(); renderCode(); updateHud();
     });
-    $('lab-reset').addEventListener('click', function () { setRunning(false); stepLeft = 0; reset(); draw(); });
+    $('lab-reset').addEventListener('click', function () {
+      sprintActive = false;
+      sprintRemaining = 60;
+      setRunning(false);
+      stepLeft = 0;
+      reset();
+      draw();
+    });
     $('lab-clear').addEventListener('click', function () { boxes = []; draw(); });
+    if ($('lab-scenario')) {
+      $('lab-scenario').addEventListener('change', function (e) { applyScenario(e.target.value); });
+    }
+    if ($('lab-copy-code')) {
+      $('lab-copy-code').addEventListener('click', function () {
+        var pre = $('lab-code');
+        var status = $('lab-copy-status');
+        if (!pre) return;
+        var text = pre.textContent || '';
+        function done(msg) {
+          if (status) {
+            status.textContent = msg;
+            setTimeout(function () { if (status.textContent === msg) status.textContent = ''; }, 2400);
+          }
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () { done('Copied sketch'); }, function () {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); done('Copied sketch'); } catch (_) { done('Copy unavailable'); }
+            document.body.removeChild(ta);
+          });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); done('Copied sketch'); } catch (_) { done('Copy unavailable'); }
+          document.body.removeChild(ta);
+        }
+      });
+    }
 
     canvas.addEventListener('click', function (e) {
       var rect = canvas.getBoundingClientRect(), cw = view.width, ch = view.height, s = Math.min(cw / W, ch / H);
@@ -541,6 +628,17 @@
       if (flash > 0) flash = Math.max(0, flash - dt);
       var active = running || stepLeft > 0;
       if (active) {
+        if (running && sprintActive) {
+          sprintRemaining = Math.max(0, sprintRemaining - dt);
+          if (sprintRemaining <= 0) {
+            sprintRemaining = 0;
+            sprintActive = false;
+            setRunning(false);
+            updateHud();
+            draw();
+            return;
+          }
+        }
         var budget = running ? dt : Math.min(dt, stepLeft);
         if (!running) { stepLeft -= budget; if (stepLeft <= 1e-6) { stepLeft = 0; } }
         physAcc += budget;

@@ -73,8 +73,8 @@
     pose.a += w * dt;
   }
 
-  function drawRobot(ctx, p, fill, stroke) {
-    RA.drawRobot(ctx, p.x, p.y, p.a, ROBOT_R + 1, { body: fill, outline: stroke });
+  function drawRobot(ctx, p, fill, stroke, ghost) {
+    RA.drawRobot(ctx, p.x, p.y, p.a, ROBOT_R + 1, { body: fill, outline: stroke, ghost: ghost });
   }
 
   // Keyboard: arrows move a crosshair; Enter sends the robot there.
@@ -97,16 +97,16 @@
     return cur;
   }
 
-  function drawWorld(ctx, style, world) {
-    ctx.fillStyle = style;
-    (world || WORLD).forEach(function (r) { ctx.fillRect(r.x, r.y, r.w, r.h); });
+  function drawWorld(ctx, world) {
+    world.forEach(function (r) { RoboticsVisuals.barrier(ctx, r.x, r.y, r.w, r.h); });
   }
 
   /* ── Sim 1: occupancy grid mapping ─────────────────────────────── */
   function mappingSim() {
     var canvas = document.getElementById('map-canvas');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
+    if (!canvas || !window.RobotSlamEngine) return;
+    var SLAM = window.RobotSlamEngine;
+    var ctx = RA.setupHiDpiCanvas(canvas, W, H).ctx;
     var CELL = 8, GW = W / CELL, GH = H / CELL;
     var L_FREE = -0.4, L_OCC = 0.9, L_MAX = 5;
     var grid = new Float32Array(GW * GH);
@@ -114,24 +114,22 @@
     var ictx = img.getContext('2d'), idata = ictx.createImageData(GW, GH);
     var ui = {
       rays: document.getElementById('map-rays'), noise: document.getElementById('map-noise'),
+      showScan: document.getElementById('map-show-scan'),
       drift: document.getElementById('map-drift'), truth: document.getElementById('map-truth'),
+      slam: document.getElementById('map-slam'),
       run: document.getElementById('map-run'), reset: document.getElementById('map-reset'),
       readout: document.getElementById('map-readout')
     };
     var pose, belief, target, running = true, t = 0, scanTimer = 0;
+    var lastRays = [], scanPose;
 
     function reset() {
       grid.fill(0);
+      lastRays = [];
       var s = { x: 70, y: 70 };
       pose = { x: s.x, y: s.y, a: 0.3 };
       belief = { x: s.x, y: s.y, a: 0.3 };
-      target = null; t = 0;
-    }
-
-    function mark(cx, cy, delta) {
-      if (cx < 0 || cy < 0 || cx >= GW || cy >= GH) return;
-      var i = cy * GW + cx;
-      grid[i] = Math.max(-L_MAX, Math.min(L_MAX, grid[i] + delta));
+      target = null; t = 0; scanTimer = 0;
     }
 
     function scan() {
@@ -139,23 +137,31 @@
       var rays = [];
       for (var k = 0; k < n; k++) {
         var rel = -Math.PI + (k + 0.5) * (2 * Math.PI / n);
-        var trueR = RA.rayCast(pose.x, pose.y, pose.a + rel, WORLD, maxR);
+        var trueR = SLAM.rayCast(pose.x, pose.y, pose.a + rel, WORLD, maxR);
         var z = Math.max(0, trueR + RA.gauss() * sigma);
         rays.push({ rel: rel, z: z, hit: trueR < maxR });
-        // Update the map from where the robot BELIEVES it is.
-        var a = belief.a + rel, cx = Math.cos(a), sy = Math.sin(a);
-        var last = -1;
-        for (var d = 0; d < Math.min(z, maxR) - CELL * 0.5; d += CELL * 0.5) {
-          var gx = Math.floor((belief.x + cx * d) / CELL), gy = Math.floor((belief.y + sy * d) / CELL);
-          var id = gy * GW + gx;
-          if (id !== last) { mark(gx, gy, L_FREE); last = id; }
+      }
+      if (ui.drift.checked && ui.slam && ui.slam.checked) {
+        var match = SLAM.correlativeScanMatch({
+          grid: grid, gw: GW, gh: GH, cellSize: CELL, belief: belief, rays: rays
+        });
+        if (match.improved) {
+          belief.x = match.pose.x;
+          belief.y = match.pose.y;
+          belief.a = match.pose.a;
         }
-        if (trueR < maxR) mark(Math.floor((belief.x + cx * z) / CELL), Math.floor((belief.y + sy * z) / CELL), L_OCC);
+      }
+      for (var i = 0; i < rays.length; i++) {
+        var r = rays[i];
+        SLAM.updateOccupancyRay({
+          grid: grid, gw: GW, gh: GH, cellSize: CELL,
+          pose: belief, rel: r.rel, z: r.z, hit: r.hit, maxR: maxR,
+          lFree: L_FREE, lOcc: L_OCC, lMax: L_MAX
+        });
       }
       return rays;
     }
 
-    var lastRays = [];
     function step(dt) {
       if (!running) return;
       t += dt;
@@ -169,7 +175,11 @@
       if (!drift) { belief.x = pose.x; belief.y = pose.y; belief.a = pose.a; }
       else { belief.x += Math.cos(belief.a) * vOdo * dt; belief.y += Math.sin(belief.a) * vOdo * dt; belief.a += wOdo * dt; }
       scanTimer += dt;
-      if (scanTimer > 0.1) { scanTimer = 0; lastRays = scan(); }
+      if (scanTimer > 0.1) {
+        scanTimer = 0;
+        scanPose = { x: pose.x, y: pose.y, a: pose.a };
+        lastRays = scan();
+      }
     }
 
     function draw() {
@@ -188,18 +198,31 @@
         ctx.strokeStyle = 'rgba(242,191,63,.9)'; ctx.lineWidth = 1.5;
         WORLD.forEach(function (r) { ctx.strokeRect(r.x + .5, r.y + .5, r.w - 1, r.h - 1); });
       }
-      ctx.strokeStyle = 'rgba(184,216,75,.35)'; ctx.lineWidth = 1;
-      lastRays.forEach(function (r) {
-        ctx.beginPath(); ctx.moveTo(pose.x, pose.y);
-        ctx.lineTo(pose.x + Math.cos(pose.a + r.rel) * r.z, pose.y + Math.sin(pose.a + r.rel) * r.z); ctx.stroke();
-      });
+      // Keep each scan anchored at its measurement pose, even as the rover moves.
+      if (ui.showScan.checked) {
+        ctx.beginPath();
+        lastRays.forEach(function (r) {
+          ctx.moveTo(scanPose.x, scanPose.y);
+          ctx.lineTo(scanPose.x + Math.cos(scanPose.a + r.rel) * r.z,
+            scanPose.y + Math.sin(scanPose.a + r.rel) * r.z);
+        });
+        ctx.strokeStyle = '#a8f0ff80'; ctx.lineWidth = 2.5; ctx.stroke();
+        ctx.strokeStyle = '#145062c0'; ctx.lineWidth = 1; ctx.stroke();
+        lastRays.forEach(function (r) {
+          if (!r.hit) return;
+          var x = scanPose.x + Math.cos(scanPose.a + r.rel) * r.z;
+          var y = scanPose.y + Math.sin(scanPose.a + r.rel) * r.z;
+          RoboticsVisuals.disc(ctx, x, y, 2.5, '#163742');
+          RoboticsVisuals.disc(ctx, x, y, 1.4, '#a8f0ff');
+        });
+      }
       if (target) { ctx.strokeStyle = '#f2bf3f'; ctx.beginPath(); ctx.arc(target.x, target.y, 7, 0, Math.PI * 2); ctx.stroke(); }
-      if (ui.drift.checked) drawRobot(ctx, belief, 'rgba(198,94,46,.55)', '#ffb38a');
+      if (ui.drift.checked) drawRobot(ctx, belief, '#c65e2e', '#ffb38a', .75);
       drawRobot(ctx, pose, '#146b8c', '#e8f6fb');
       RA.drawCursor(ctx, mapCursor);
       var err = Math.hypot(pose.x - belief.x, pose.y - belief.y);
       ui.readout.textContent = 'Map explored: ' + Math.round(100 * known / grid.length) + '% of cells · ' + occ + ' cells marked occupied' +
-        (ui.drift.checked ? ' · odometry error: ' + (err / 20).toFixed(2) + ' m' : '');
+        (ui.drift.checked ? ' · odometry error: ' + (err / 20).toFixed(2) + ' m' + (ui.slam && ui.slam.checked ? ' (SLAM active)' : '') : '');
     }
 
     canvas.addEventListener('pointerdown', function (e) {
@@ -214,6 +237,12 @@
     var mapCursor = keyTarget(canvas, function (t) { target = t; });
     ui.reset.addEventListener('click', reset);
     ui.drift.addEventListener('change', reset);
+    if (ui.slam) {
+      ui.slam.addEventListener('change', function () {
+        if (ui.slam.checked && !ui.drift.checked) ui.drift.checked = true;
+        RA.announce(ui.slam.checked ? 'Correlative scan-matching SLAM enabled.' : 'Scan-matching SLAM disabled.', true);
+      });
+    }
     [ui.rays, ui.noise].forEach(function (el) {
       el.addEventListener('input', function () { document.getElementById(el.id + '-out').textContent = el.value; });
     });
@@ -224,8 +253,9 @@
   /* ── Sim 2: particle filter (Monte Carlo localization) ─────────── */
   function particleSim() {
     var canvas = document.getElementById('pf-canvas');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
+    if (!canvas || !window.RobotSlamEngine) return;
+    var SLAM = window.RobotSlamEngine;
+    var ctx = RA.setupHiDpiCanvas(canvas, W, H).ctx;
     var N = 500, BEAMS = 12, MAXR = 220;
     var ui = {
       sigma: document.getElementById('pf-sigma'), run: document.getElementById('pf-run'),
@@ -233,16 +263,21 @@
       inject: document.getElementById('pf-inject'), tags: document.getElementById('pf-tags'),
       symmetric: document.getElementById('pf-symmetric'), readout: document.getElementById('pf-readout')
     };
-    var pose, particles, running = true, timer = 0, updates = 0, target = null, symmetric = false, visibleTags = [];
+    var pose, particles, cachedEst, running = true, timer = 0, updates = 0, target = null, symmetric = false, visibleTags = [];
 
     function activeWorld() { return symmetric ? SYMMETRIC_WORLD : WORLD; }
     function wrapA(a) { return Math.atan2(Math.sin(a), Math.cos(a)); }
+
+    function refreshEstimate() {
+      cachedEst = SLAM.estimateClump(particles, 40);
+    }
 
     function scatter() {
       particles = [];
       var rects = activeWorld();
       for (var i = 0; i < N; i++) { var s = freeSpot(rects); particles.push({ x: s.x, y: s.y, a: Math.random() * Math.PI * 2, w: 1 / N }); }
       updates = 0;
+      refreshEstimate();
     }
     function reset() {
       var rects = activeWorld();
@@ -302,35 +337,12 @@
       // Low-variance resampling, plus a few random particles so a kidnapped
       // robot can recover.
       var injectFrac = ui.inject.checked ? 0.04 : 0;
-      var keep = Math.round(N * (1 - injectFrac)), next = [];
-      var r = Math.random() / keep, c = particles[0].w / total, i = 0;
-      for (var m = 0; m < keep; m++) {
-        var u = r + m / keep;
-        while (u > c && i < N - 1) { i++; c += particles[i].w / total; }
-        var src = particles[i];
-        next.push({ x: src.x, y: src.y, a: src.a, w: 1 / N });
-      }
+      var keep = Math.round(N * (1 - injectFrac));
+      var next = SLAM.lowVarianceResample(particles, total, keep);
       while (next.length < N) { var s = freeSpot(rects); next.push({ x: s.x, y: s.y, a: Math.random() * 6.28, w: 1 / N }); }
       particles = next;
       updates++;
-    }
-
-    // Best guess = average of the densest clump of particles (random
-    // re-injected guesses would drag a plain average toward the middle).
-    function estimate() {
-      var best = null, bestCount = -1;
-      for (var s = 0; s < 40; s++) {
-        var c = particles[(Math.random() * particles.length) | 0], count = 0;
-        particles.forEach(function (p) { if (Math.abs(p.x - c.x) < 40 && Math.abs(p.y - c.y) < 40) count++; });
-        if (count > bestCount) { bestCount = count; best = c; }
-      }
-      var sx = 0, sy = 0, sc = 0, ss = 0, n = 0, clump = [];
-      particles.forEach(function (p) {
-        if (Math.abs(p.x - best.x) < 40 && Math.abs(p.y - best.y) < 40) { sx += p.x; sy += p.y; sc += Math.cos(p.a); ss += Math.sin(p.a); n++; clump.push(p); }
-      });
-      var mx = sx / n, my = sy / n, v2 = 0;
-      clump.forEach(function (p) { v2 += (p.x - mx) * (p.x - mx) + (p.y - my) * (p.y - my); });
-      return { x: mx, y: my, a: Math.atan2(ss, sc), agree: n / particles.length, r95: Math.min(48, Math.max(12, 2 * Math.sqrt(v2 / Math.max(1, n)))) };
+      refreshEstimate();
     }
 
     function step(dt) {
@@ -347,14 +359,15 @@
         p.a += dA + RA.gauss() * 0.02;
         p.x += Math.cos(p.a) * d + RA.gauss() * 0.4; p.y += Math.sin(p.a) * d + RA.gauss() * 0.4;
       });
+      refreshEstimate();
       timer += dt;
       if (timer > 0.25) { timer = 0; update(); }
     }
 
     function draw() {
       var rects = activeWorld();
-      ctx.fillStyle = '#e8efec'; ctx.fillRect(0, 0, W, H);
-      drawWorld(ctx, '#29424b', rects);
+      RoboticsVisuals.floor(ctx, W, H, { step: 20, light: true });
+      drawWorld(ctx, rects);
       if (ui.tags && ui.tags.checked) {
         // Draw AprilTag landmarks and active camera sight lines
         visibleTags.forEach(function (obs) {
@@ -385,7 +398,7 @@
         var a = pose.a + k * 2 * Math.PI / BEAMS;
         ctx.beginPath(); ctx.moveTo(pose.x, pose.y); ctx.lineTo(pose.x + Math.cos(a) * r, pose.y + Math.sin(a) * r); ctx.stroke();
       });
-      var est = estimate();
+      var est = cachedEst || SLAM.estimateClump(particles, 40);
       drawRobot(ctx, pose, '#146b8c', '#0b2a36');
       var sure = est.agree > 0.6;
       if (sure) {
@@ -393,7 +406,7 @@
         ctx.strokeStyle = 'rgba(242,191,63,.85)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
         ctx.beginPath(); ctx.arc(est.x, est.y, est.r95, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
-        drawRobot(ctx, est, 'rgba(242,191,63,.6)', '#8a6400');
+        drawRobot(ctx, est, '#f2bf3f', '#8a6400', .75);
       }
       RA.drawCursor(ctx, pfCursor, '#12202a');
       var err = Math.hypot(est.x - pose.x, est.y - pose.y);

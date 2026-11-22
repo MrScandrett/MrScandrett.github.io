@@ -57,17 +57,14 @@
     $('#rb-clearance').textContent = clear;
     if ($('#rb-batt-pos')) $('#rb-batt-pos').textContent = battPos;
 
-    const sizeOk = l <= 150 && w <= 150;
-    const clearOk = clear >= 8;
-    const comOk = battPos >= 32 && battPos <= 68;
-    const ok = sizeOk && clearOk && comOk;
+    const { ok, issues } = window.RobotBuildPhysics.evaluateChassis({
+      length: l,
+      width: w,
+      clearance: clear,
+      battPos
+    });
 
     state.chassis = { l, w, clear, battPos, ok };
-
-    const issues = [];
-    if (!sizeOk) issues.push('exceeds 150 × 150 mm rule box');
-    if (!clearOk) issues.push('ground clearance < 8 mm drags on floor seams');
-    if (!comOk) issues.push(battPos < 32 ? 'rear-heavy CoM risks tipping backward' : 'nose-heavy CoM overloads front wheels');
 
     $('#rb-chassis-readout').innerHTML =
       `Footprint: ${l} × ${w} mm · Ground clearance: ${clear} mm · CoM: ${battPos}% from rear<br>` +
@@ -95,25 +92,7 @@
     const ctx = prepareCanvas(canvas, W, H);
     const { l, w, clear, battPos, ok } = state.chassis;
 
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0f181c';
-    ctx.fillRect(0, 0, W, H);
-
-    // Subtle millimeter grid
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    for (let x = 20; x < W; x += 20) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, H);
-      ctx.stroke();
-    }
-    for (let y = 20; y < H; y += 20) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(W, y);
-      ctx.stroke();
-    }
+    RoboticsVisuals.floor(ctx, W, H, { step: 20, frame: true });
 
     // Left viewport: Top view (scale: 1.45 px per mm)
     const scale = 1.42;
@@ -315,19 +294,15 @@
     if ($('#rb-walls')) $('#rb-walls').textContent = walls;
     if ($('#rb-slice-pct')) $('#rb-slice-pct').textContent = slicePct;
 
-    const baseMinutes = (0.24 / layer) * (22 + walls * 5 + infill * 0.35);
-    const orientMult = orient === 'flat' ? 1.0 : orient === 'edge' ? 1.35 : 1.55;
-    const minutes = Math.round(baseMinutes * orientMult);
-    const grams = Math.round((8 + walls * 1.6 + infill * 0.14) * (orient === 'tilted' ? 1.28 : 1.0));
+    const { minutes, grams, note } = window.RobotBuildPhysics.evaluatePrint({
+      layer,
+      walls,
+      infill,
+      orient,
+      slicePct
+    });
 
     state.printing = { layer, walls, infill, orient, slicePct, minutes, grams };
-
-    const note =
-      orient === 'flat'
-        ? 'largest bed contact; strongest against vertical compression; horizontal hole top bridges slightly'
-        : orient === 'edge'
-          ? 'smaller footprint and rounder vertical hole; longer print and narrower bed adhesion'
-          : 'requires support material (~28% extra filament) and leaves support marks on mounting faces';
 
     $('#rb-print-readout').textContent =
       `${layer.toFixed(2)} mm layers · ${walls} walls · ${infill}% infill · ${orient} (${minutes} min, ~${grams} g PLA): ${note}. Inspect every axle hole and mounting face in layer preview.`;
@@ -344,9 +319,7 @@
     const ctx = prepareCanvas(canvas, W, H);
     const { layer, walls, infill, orient, slicePct, minutes, grams } = state.printing;
 
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0f181c';
-    ctx.fillRect(0, 0, W, H);
+    RoboticsVisuals.floor(ctx, W, H, { step: 20, frame: true });
 
     // Left side: Build plate elevation & layer stack
     ctx.fillStyle = '#9de2ef';
@@ -497,9 +470,10 @@
       jointVal.textContent = labels[type] || type;
     }
 
-    const flexFactor = { butt: 6.2, lap: 2.3, gusset: 0.7 }[type];
-    const deflectionDeg = +(force * flexFactor).toFixed(1);
-    const pass = deflectionDeg <= 6.0;
+    const { deflectionDeg, pass } = window.RobotBuildPhysics.evaluatePenJoint({
+      joint: type,
+      force
+    });
 
     state.pen = { joint: type, force, deflectionDeg, pass };
 
@@ -526,9 +500,7 @@
     const ctx = prepareCanvas(canvas, W, H);
     const { joint, force, deflectionDeg, pass } = state.pen;
 
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0f181c';
-    ctx.fillRect(0, 0, W, H);
+    RoboticsVisuals.floor(ctx, W, H, { step: 20, frame: true });
 
     ctx.fillStyle = '#9de2ef';
     ctx.font = '700 12px "IBM Plex Mono", monospace';
@@ -646,28 +618,25 @@
     const b = +$('[data-rb="driven"]').value;
     const taskSel = $('[data-rb="mech-task"]');
     const task = taskSel ? taskSel.value : 'ramp';
-    const r = b / a;
 
     $('#rb-driver').textContent = a;
     $('#rb-driven').textContent = b;
 
-    const reqRatio = { flat: 0.8, ramp: 2.1, lift: 3.4 }[task] || 2.1;
-    const netTorque = +(r * 0.85).toFixed(2);
-    const climbs = netTorque >= reqRatio * 0.85;
-    const outputRpm = 120 / r;
-    const wheelCircM = Math.PI * 0.06; // 60 mm competition wheel
-    const speedMps = (outputRpm / 60) * wheelCircM;
-    const sprintSec = +(2.0 / Math.max(0.05, speedMps)).toFixed(1);
-    const pushFactor = +(netTorque * (task === 'flat' ? 1.0 : 0.9)).toFixed(2);
+    const gearEval = window.RobotBuildPhysics.evaluateGears({
+      driver: a,
+      driven: b,
+      task
+    });
+    const { ratio: r, netTorque, climbs, outputRpm, speedMps, sprintSec, pushFactor, reqNet } = gearEval;
 
     state.gears = { driver: a, driven: b, ratio: r, task, climbs, outputRpm, speedMps, sprintSec, pushFactor };
 
     $('#rb-gear-readout').innerHTML =
-      `Ratio ${r.toFixed(2)}:1 · ${Math.round(outputRpm)} RPM (${speedMps.toFixed(2)} m/s) · <strong>2 m field sprint ≈ ${sprintSec} s</strong> · net push/torque ≈ ${netTorque}×.<br>` +
+      `Ratio ${r.toFixed(2)}:1 · ${Math.round(outputRpm)} RPM (${speedMps.toFixed(2)} m/s) · <strong>2 m field sprint ≈ ${sprintSec} s</strong> · net torque @ 85% eff ≈ ${netTorque}× (req ≥ ${reqNet}×).<br>` +
       `<strong class="${climbs ? 'rb-ok' : 'rb-warn'}">${
         climbs
           ? (r < 1 ? 'Fast flat sprint: watch traction and motor heat on heavy defense.' : 'Task check: climbs load cleanly without stalling.')
-          : 'Stall warning: ratio too low for this load—increase driven teeth or reduce driver teeth.'
+          : 'Stall warning: net ratio after spur mesh losses is too low—increase driven teeth or reduce driver teeth.'
       }</strong>`;
 
     $('#rb-torque-bar').style.width = Math.min(100, (r / 4) * 100) + '%';
@@ -683,6 +652,7 @@
   function drawSpurGear(ctx, x, y, radius, teeth, angle, fill, stroke) {
     ctx.save();
     ctx.translate(x, y);
+    RoboticsVisuals.shadow(ctx, 3, 5, radius + 8, radius + 9);
     ctx.rotate(angle);
     const toothDepth = 5;
     const innerR = radius - toothDepth;
@@ -705,7 +675,11 @@
     ctx.strokeStyle = stroke;
     ctx.lineWidth = 2;
     ctx.fill();
+    ctx.fillStyle = RoboticsVisuals.gradient(ctx, -radius, -radius, radius, radius, ['#fff5cb8c', '#ffffff00', '#142939a0']);
+    ctx.fill();
     ctx.stroke();
+    ctx.strokeStyle = '#fff2bd52'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(0, 0, innerR * .82, 0, Math.PI * 2); ctx.stroke();
 
     // Spokes / alignment mark
     ctx.strokeStyle = 'rgba(15,24,28,0.6)';
@@ -732,9 +706,7 @@
     const ctx = prepareCanvas(canvas, W, H);
     const { driver, driven, ratio, task, climbs } = state.gears;
 
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0f181c';
-    ctx.fillRect(0, 0, W, H);
+    RoboticsVisuals.floor(ctx, W, H, { step: 20, frame: true });
 
     ctx.fillStyle = '#9de2ef';
     ctx.font = '700 12px "IBM Plex Mono", monospace';
@@ -821,22 +793,31 @@
     $('#rb-arm').textContent = arm;
     $('#rb-load').textContent = load;
 
-    const momentNm = +(((arm / 1000) * (load / 1000) * 9.81) * 10).toFixed(3); // matches existing formula (arm/10*load/1000*9.81)
-    const inStopZone = angle <= 20 || angle >= 160;
-    const overTorque = momentNm > 0.16;
-    const safe = !inStopZone && !overTorque;
+    const {
+      peakMomentNm,
+      poseMomentNm,
+      safeLimitNm,
+      stallLimitNm,
+      inStopZone,
+      overTorque,
+      overStall,
+      safe
+    } = window.RobotBuildPhysics.evaluateServo({ angle, arm, load });
+    const momentNm = peakMomentNm;
 
-    state.servo = { angle, arm, load, momentNm, safe };
+    state.servo = { angle, arm, load, momentNm, peakMomentNm, poseMomentNm, safeLimitNm, stallLimitNm, safe };
 
     $('#rb-servo-readout').innerHTML =
-      `Commanded position: ${angle}°. Estimated load moment: ${momentNm.toFixed(3)} N·m. ` +
-      `Check this against the servo's rated torque with a safety margin; never force the horn by hand while powered.<br>` +
+      `Pose ${angle}°: pose load ${poseMomentNm.toFixed(3)} N·m · worst-case horizontal sweep ${peakMomentNm.toFixed(3)} N·m ` +
+      `(SG90 safe ≤ ${safeLimitNm.toFixed(3)} N·m, stall ${stallLimitNm.toFixed(3)} N·m).<br>` +
       `<strong class="${safe ? 'rb-ok' : 'rb-warn'}">${
         inStopZone
           ? 'Hard-stop warning: angle is inside collision/binding zone (keep within 20°–160°).'
-          : overTorque
-            ? 'High load moment: shorten the horn distance or counterbalance the arm.'
-            : 'Safe operating envelope: within mechanical stops and micro-servo torque margin.'
+          : overStall
+            ? 'Exceeds SG90 stall torque: motor will lock, strip nylon gears, or brown out 5 V rail.'
+            : overTorque
+              ? 'Exceeds safe continuous torque margin: shorten horn distance or counterbalance.'
+              : 'Safe operating envelope: within mechanical stops and micro-servo torque margin.'
       }</strong>`;
 
     drawServoCanvas();
@@ -851,9 +832,7 @@
     const ctx = prepareCanvas(canvas, W, H);
     const { angle, arm, load, momentNm, safe } = state.servo;
 
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0f181c';
-    ctx.fillRect(0, 0, W, H);
+    RoboticsVisuals.floor(ctx, W, H, { step: 20, frame: true });
 
     ctx.fillStyle = '#9de2ef';
     ctx.font = '700 12px "IBM Plex Mono", monospace';
@@ -937,24 +916,37 @@
     ctx.fillText('TORQUE & STOP MARGIN', gx, 24);
 
     ctx.fillStyle = '#1d2d35';
-    roundRect(ctx, gx, 52, 175, 175, 8);
+    roundRect(ctx, gx, 52, 175, 185, 8);
     ctx.fill();
 
-    const pct = Math.min(100, Math.round((momentNm / 0.22) * 100));
+    const safeLimit = state.servo.safeLimitNm || 0.110;
+    const stallLimit = state.servo.stallLimitNm || 0.176;
+    const poseVal = state.servo.poseMomentNm ?? momentNm;
+    const pct = Math.min(100, Math.round((momentNm / stallLimit) * 100));
     ctx.fillStyle = '#d4e4e8';
     ctx.font = '600 11px "IBM Plex Mono", monospace';
-    ctx.fillText(`Demand: ${momentNm.toFixed(3)} N·m`, gx + 14, 82);
-    ctx.fillText(`Safe limit: 0.160 N·m`, gx + 14, 102);
+    ctx.fillText(`Peak: ${momentNm.toFixed(3)} N·m`, gx + 14, 78);
+    ctx.fillText(`Pose: ${poseVal.toFixed(3)} N·m`, gx + 14, 96);
+    ctx.fillText(`Safe ≤ ${safeLimit.toFixed(3)} N·m`, gx + 14, 114);
 
     ctx.fillStyle = '#0f181c';
-    ctx.fillRect(gx + 14, 118, 147, 20);
-    ctx.fillStyle = pct > 72 ? '#b95832' : '#39745a';
-    ctx.fillRect(gx + 14, 118, (147 * pct) / 100, 20);
+    ctx.fillRect(gx + 14, 128, 147, 20);
+    ctx.fillStyle = momentNm > safeLimit ? '#b95832' : '#39745a';
+    ctx.fillRect(gx + 14, 128, (147 * pct) / 100, 20);
+
+    // Safe limit tick line (~62.5% of stall scale)
+    const safeTickX = gx + 14 + Math.round((147 * safeLimit) / stallLimit);
+    ctx.strokeStyle = '#ffd66f';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(safeTickX, 124);
+    ctx.lineTo(safeTickX, 152);
+    ctx.stroke();
 
     ctx.fillStyle = safe ? '#90e2b7' : '#ffd66f';
-    ctx.fillText(safe ? 'POSE & TORQUE OK' : 'CHECK LIMIT / LOAD', gx + 14, 172);
+    ctx.fillText(safe ? 'POSE & TORQUE OK' : 'CHECK LIMIT / LOAD', gx + 14, 180);
     ctx.fillStyle = '#b9c2c1';
-    ctx.fillText('Service loop: slack OK', gx + 14, 198);
+    ctx.fillText(`Stall: ${stallLimit.toFixed(3)} N·m (SG90)`, gx + 14, 206);
   }
 
   /* ── MISSION 06: INTEGRATION & FAULT ISOLATION ─────────────────── */
@@ -1000,9 +992,7 @@
     const ctx = prepareCanvas(canvas, W, H);
     const { done, total, fault } = state.integration;
 
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0f181c';
-    ctx.fillRect(0, 0, W, H);
+    RoboticsVisuals.floor(ctx, W, H, { step: 20, frame: true });
 
     ctx.fillStyle = '#9de2ef';
     ctx.font = '700 12px "IBM Plex Mono", monospace';
@@ -1082,27 +1072,13 @@
     if ($('#rb-offset')) $('#rb-offset').textContent = offset;
 
     // Evaluate 3 trials with realistic placement/heading jitter (-4, 0, +4 mm)
-    const jitters = [-4, 0, 4];
-    const results = jitters.map((j) => {
-      const err = Math.abs(offset + j);
-      const reachOk = reach >= 95;
-      if (!reachOk) return { ok: false, why: 'short of 100 mm line' };
-      if (type === 'grip') {
-        if (jaw < 42) return { ok: false, why: 'jaw < 42 mm cannot clear 40 mm ball' };
-        if (err > (jaw - 36) * 0.75) return { ok: false, why: 'lateral offset hit finger tip' };
-        return { ok: true, why: 'captured & carried across goal' };
-      }
-      if (type === 'scoop') {
-        if (jaw < 38) return { ok: false, why: 'scoop narrower than 40 mm ball' };
-        if (err > jaw * 0.45) return { ok: false, why: 'missed side lip of scoop' };
-        return { ok: true, why: 'cradled & lifted into goal' };
-      }
-      // push arm
-      if (err > jaw * 0.55) return { ok: false, why: 'glanced off edge of push bar' };
-      return { ok: true, why: 'pushed cleanly across goal line' };
+    const { passes, results, summaryReason } = window.RobotBuildPhysics.evaluateEffector({
+      type,
+      reach,
+      jaw,
+      offset,
+      jitters: [-4, 0, 4]
     });
-
-    const passes = results.filter((r) => r.ok).length;
     state.effector = { type, reach, jaw, offset, passes, results, trialAnim: state.effector.trialAnim || 1 };
 
     const toolName = type === 'grip' ? 'Gripper' : type === 'push' ? 'Push arm' : 'Scoop';
@@ -1115,7 +1091,7 @@
 
     $('#rb-effector-readout').innerHTML =
       `${toolName} · ${reach} mm reach · ${jaw} mm width · ${offset} mm offset · ${fit}.<br>` +
-      `<strong class="${passes >= 2 ? 'rb-ok' : 'rb-warn'}">3-Trial Score: ${passes}/3 passed (${results[0].why}).</strong>`;
+      `<strong class="${passes >= 2 ? 'rb-ok' : 'rb-warn'}">3-Trial Score: ${passes}/3 passed (${summaryReason}).</strong>`;
 
     drawEffectorCanvas();
     updateSpecTable();
@@ -1129,9 +1105,7 @@
     const ctx = prepareCanvas(canvas, W, H);
     const { type, reach, jaw, offset, passes, results = [] } = state.effector;
 
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0f181c';
-    ctx.fillRect(0, 0, W, H);
+    RoboticsVisuals.floor(ctx, W, H, { step: 20, frame: true });
 
     ctx.fillStyle = '#9de2ef';
     ctx.font = '700 12px "IBM Plex Mono", monospace';
@@ -1167,12 +1141,9 @@
     ctx.fillText('GOAL ZONE', goalX + 8, H - 22);
 
     // Robot nose at startX
-    ctx.fillStyle = '#203640';
-    ctx.strokeStyle = '#f2bd3f';
-    ctx.lineWidth = 3;
-    roundRect(ctx, 24, midY - 48, startX - 24, 96, 10);
-    ctx.fill();
-    ctx.stroke();
+    RoboticsVisuals.rover(ctx, startX - 42, midY, 0, 42, {
+      body: '#258199', outline: '#b1e1e8', light: '#f2bd3f', car: true
+    });
 
     // End-effector extending by reach
     const reachPx = reach * 1.9;

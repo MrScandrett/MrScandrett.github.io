@@ -4,9 +4,10 @@
 (function () {
   'use strict';
   var RA = window.RobotAutonomy;
-  var DEG = 180 / Math.PI;
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-  function wrapDeg(d) { return ((d + 540) % 360) - 180; }
+  var ARMS = window.RobotArmsEngine;
+  var DEG = ARMS ? ARMS.DEG : 180 / Math.PI;
+  function clamp(v, lo, hi) { return ARMS ? ARMS.clamp(v, lo, hi) : Math.max(lo, Math.min(hi, v)); }
+  function wrapDeg(d) { return ARMS ? ARMS.wrapDeg(d) : ((d + 540) % 360) - 180; }
 
   armLab();
   cspaceLab();
@@ -14,14 +15,16 @@
   /* ── Sim 1: pick-and-place arm ─────────────────────────────────── */
   function armLab() {
     var canvas = document.getElementById('arm-canvas');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d'), W = canvas.width, H = canvas.height;
+    if (!canvas || !ARMS) return;
+    var W = 720, H = 440;
+    var ctx = RA.setupHiDpiCanvas(canvas, W, H).ctx;
     var FLOOR = H - 46, BASE = { x: 250, y: FLOOR - 40 };
     var L1 = 170, L2 = 140, L3 = 46, BLOCK = 34, PX_PER_CM = 4;
     var ui = {
       t1: document.getElementById('arm-t1'), t2: document.getElementById('arm-t2'), t3: document.getElementById('arm-t3'),
       modes: document.querySelectorAll('[data-arm-mode]'), grip: document.getElementById('arm-grip'),
       elbow: document.getElementById('arm-elbow'), reach: document.getElementById('arm-reach'),
+      trail: document.getElementById('arm-trail'), demo: document.getElementById('arm-demo'),
       spring: document.getElementById('arm-spring'), challenge: document.getElementById('arm-challenge'),
       reset: document.getElementById('arm-reset'), readout: document.getElementById('arm-readout'),
       math: document.getElementById('arm-math'), score: document.getElementById('arm-score')
@@ -29,23 +32,68 @@
     // Angles in degrees. θ1 from the +x axis (up is positive), θ2 and θ3 relative.
     var q = { t1: 70, t2: -60, t3: -100 }, goalQ = null;
     var mode = 'joints', target = { x: 520, y: FLOOR - 10 }, gripClosed = false, held = null, reachable = true;
-    var blocks, pads, scored = 0;
+    var blocks, pads, scored = 0, trail = [], demo = null;
     var challenge = { active: false, done: false, t: 0, jointTravel: 0, lastQ: { t1: 70, t2: -60, t3: -100 } };
 
     function gravityTorque(p) {
-      var m1 = 0.65, m2 = 0.48, mw = 0.25, mb = held ? 0.35 : 0, g = 9.81;
-      var pxToM = 1 / (PX_PER_CM * 100);
-      var x1 = (p.e.x - BASE.x) * 0.5 * pxToM;
-      var x2 = ((p.e.x + p.w.x) * 0.5 - BASE.x) * pxToM;
-      var x3 = ((p.w.x + p.t.x) * 0.5 - BASE.x) * pxToM;
-      var tau1Raw = Math.abs(m1 * g * x1 + m2 * g * x2 + (mw + mb) * g * x3);
-      var springOn = ui.spring && ui.spring.checked;
-      var tau1 = springOn ? tau1Raw * 0.32 : tau1Raw;
-      var x2e = ((p.e.x + p.w.x) * 0.5 - p.e.x) * pxToM;
-      var x3e = ((p.w.x + p.t.x) * 0.5 - p.e.x) * pxToM;
-      var tau2 = Math.abs(m2 * g * x2e + (mw + mb) * g * x3e);
-      var stall = 3.2;
-      return { tau1: tau1, tau1Raw: tau1Raw, tau2: tau2, pct: Math.round((tau1 / stall) * 100), springOn: springOn };
+      return ARMS.gravityTorque({
+        baseX: BASE.x,
+        eX: p.e.x,
+        wX: p.w.x,
+        tX: p.t.x,
+        pxPerCm: PX_PER_CM,
+        mLoad: held ? 0.35 : 0,
+        springOn: !!(ui.spring && ui.spring.checked)
+      });
+    }
+
+    function cancelDemo() {
+      if (!demo) return;
+      demo = null;
+      if (ui.demo) {
+        ui.demo.textContent = 'Auto-sort demo';
+        ui.demo.setAttribute('aria-pressed', 'false');
+      }
+    }
+
+    function buildDemoSteps() {
+      var pairs = [
+        { bx: 340, px: 70 },
+        { bx: 400, px: 135 },
+        { bx: 460, px: 540 }
+      ];
+      var steps = [];
+      pairs.forEach(function (pair) {
+        var topY = FLOOR - 78;
+        var grabY = FLOOR - BLOCK / 2;
+        var dropY = FLOOR - BLOCK / 2 - 4;
+        steps.push({ type: 'move', x: pair.bx, y: topY });
+        steps.push({ type: 'move', x: pair.bx, y: grabY });
+        steps.push({ type: 'grip', close: true });
+        steps.push({ type: 'move', x: pair.bx, y: topY });
+        steps.push({ type: 'move', x: pair.px, y: topY });
+        steps.push({ type: 'move', x: pair.px, y: dropY });
+        steps.push({ type: 'grip', close: false });
+        steps.push({ type: 'move', x: pair.px, y: topY });
+      });
+      steps.push({ type: 'move', x: 320, y: 240 });
+      return steps;
+    }
+
+    function startDemo() {
+      if (demo) {
+        cancelDemo();
+        RA.announce('Auto-sort demo stopped.', true);
+        return;
+      }
+      resetWorld();
+      setMode('reach');
+      demo = { steps: buildDemoSteps(), idx: 0, wait: 0 };
+      if (ui.demo) {
+        ui.demo.textContent = 'Stop demo';
+        ui.demo.setAttribute('aria-pressed', 'true');
+      }
+      RA.announce('Auto-sort demonstration started.', true);
     }
 
     function resetWorld() {
@@ -60,34 +108,25 @@
         { x: 135, c: '#3fa6cc', name: 'blue' },
         { x: 540, c: '#f2bf3f', name: 'yellow' }
       ];
-      held = null; gripClosed = false; scored = 0;
+      held = null; gripClosed = false; scored = 0; trail = [];
       q = { t1: 70, t2: -60, t3: -100 }; goalQ = null;
       syncSliders(); syncGrip();
     }
 
     // Forward kinematics: joint angles → every joint position.
     function fk(a) {
-      var a1 = a.t1 / DEG, a2 = (a.t1 + a.t2) / DEG, a3 = (a.t1 + a.t2 + a.t3) / DEG;
-      var e = { x: BASE.x + L1 * Math.cos(a1), y: BASE.y - L1 * Math.sin(a1) };
-      var w = { x: e.x + L2 * Math.cos(a2), y: e.y - L2 * Math.sin(a2) };
-      var t = { x: w.x + L3 * Math.cos(a3), y: w.y - L3 * Math.sin(a3) };
-      return { s: BASE, e: e, w: w, t: t, a3: a3 };
+      return ARMS.forwardKinematics({
+        baseX: BASE.x, baseY: BASE.y, l1: L1, l2: L2, l3: L3,
+        t1Deg: a.t1, t2Deg: a.t2, t3Deg: a.t3
+      });
     }
 
-    // Inverse kinematics with the gripper pointing straight down (a top-down
-    // grasp): find the wrist point, then solve the 2-link shoulder–elbow
-    // triangle with the law of cosines. Two answers: elbow up or elbow down.
     function ik(tx, ty) {
-      var wx = tx - BASE.x, wy = (BASE.y - ty) + L3; // wrist sits L3 above the tip
-      var d2 = wx * wx + wy * wy, d = Math.sqrt(d2);
-      var c2 = (d2 - L1 * L1 - L2 * L2) / (2 * L1 * L2);
-      var ok = c2 >= -1 && c2 <= 1;
-      c2 = clamp(c2, -1, 1);
       var up = !ui.elbow || ui.elbow.value !== 'down';
-      var t2 = Math.acos(c2) * (up ? -1 : 1);
-      var t1 = Math.atan2(wy, wx) - Math.atan2(L2 * Math.sin(t2), L1 + L2 * Math.cos(t2));
-      var t1d = t1 * DEG, t2d = t2 * DEG;
-      return { ok: ok && d > 1, q: { t1: t1d, t2: t2d, t3: -90 - t1d - t2d } };
+      return ARMS.inverseKinematics({
+        baseX: BASE.x, baseY: BASE.y, l1: L1, l2: L2, l3: L3,
+        tx: tx, ty: ty, elbowUp: up
+      });
     }
 
     function syncSliders() {
@@ -162,6 +201,28 @@
     }
 
     function step(dt) {
+      if (demo) {
+        if (demo.wait > 0) {
+          demo.wait -= dt;
+        } else if (demo.idx >= demo.steps.length) {
+          cancelDemo();
+          RA.announce('Auto-sort demonstration finished.', true);
+        } else {
+          var act = demo.steps[demo.idx];
+          if (act.type === 'grip') {
+            if (gripClosed !== act.close) toggleGrip();
+            demo.idx++;
+            demo.wait = 0.14;
+          } else {
+            target = { x: act.x, y: act.y };
+            var curTip = fk(q).t;
+            if (Math.hypot(curTip.x - act.x, curTip.y - act.y) < 10) {
+              demo.idx++;
+              demo.wait = 0.05;
+            }
+          }
+        }
+      }
       if (mode === 'reach') {
         var sol = ik(target.x, target.y);
         reachable = sol.ok;
@@ -169,7 +230,7 @@
       } else { goalQ = null; reachable = true; }
       if (goalQ) {
         // Real arms can't teleport: each joint turns at a limited speed.
-        var k = RA.reducedMotion ? 1 : Math.min(1, dt * 6);
+        var k = RA.reducedMotion ? 1 : Math.min(1, dt * (demo ? 9 : 6));
         q.t1 += wrapDeg(goalQ.t1 - q.t1) * k;
         q.t2 += wrapDeg(goalQ.t2 - q.t2) * k;
         q.t3 += wrapDeg(goalQ.t3 - q.t3) * k;
@@ -183,22 +244,23 @@
       }
       var p = fk(q);
       if (held) { held.x = p.t.x; held.y = p.t.y - BLOCK / 2; }
+      if (ui.trail && ui.trail.checked) {
+        var lastT = trail[trail.length - 1];
+        if (!lastT || Math.hypot(lastT.x - p.t.x, lastT.y - p.t.y) > 4) {
+          trail.push({ x: p.t.x, y: p.t.y });
+          if (trail.length > 140) trail.shift();
+        }
+      } else if (trail.length) {
+        trail = [];
+      }
     }
 
-    function drawLink(a, b, w, color) {
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = '#0b1418'; ctx.lineWidth = w + 6; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-      ctx.strokeStyle = color; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(a.x, a.y - w * 0.22); ctx.lineTo(b.x, b.y - w * 0.22); ctx.stroke();
-    }
     function drawJoint(p, r, label) {
-      ctx.fillStyle = '#12202a'; ctx.beginPath(); ctx.arc(p.x, p.y, r + 3, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#f2bf3f'; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#12202a'; ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.35, 0, Math.PI * 2); ctx.fill();
+      RoboticsVisuals.joint(ctx, p.x, p.y, r);
       if (label) {
         ctx.font = '700 12px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
         var w = ctx.measureText(label).width + 10;
-        ctx.fillStyle = 'rgba(15,29,35,.85)'; RA.roundRect(ctx, p.x + r + 6, p.y - 10, w, 20, 5); ctx.fill();
+        RoboticsVisuals.plate(ctx, p.x + r + 6, p.y - 10, w, 20, 5, '#0f1d23e8', '#7ea5ae56');
         ctx.fillStyle = '#f6fbf8'; ctx.fillText(label, p.x + r + 11, p.y);
       }
     }
@@ -208,17 +270,14 @@
     }
 
     function draw() {
-      // backdrop: workshop wall + bench
-      var g = ctx.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0, '#16303a'); g.addColorStop(1, '#0f1d23');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      ctx.strokeStyle = 'rgba(112,200,229,.07)'; ctx.lineWidth = 1;
-      for (var gx = 0; gx < W; gx += 40) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, FLOOR); ctx.stroke(); }
-      for (var gy = FLOOR; gy > 0; gy -= 40) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
-      ctx.fillStyle = '#5b4632'; ctx.fillRect(0, FLOOR, W, H - FLOOR);
-      ctx.fillStyle = '#6e5740'; ctx.fillRect(0, FLOOR, W, 6);
-      ctx.strokeStyle = 'rgba(0,0,0,.18)';
-      for (var bx = 30; bx < W; bx += 90) { ctx.beginPath(); ctx.moveTo(bx, FLOOR + 10); ctx.lineTo(bx + 40, H); ctx.stroke(); }
+      RoboticsVisuals.floor(ctx, W, FLOOR, { step: 28 });
+      ctx.fillStyle = RoboticsVisuals.gradient(ctx, 0, FLOOR, 0, H, ['#a3835e', '#5b4632', '#332925']);
+      ctx.fillRect(0, FLOOR, W, H - FLOOR);
+      ctx.fillStyle = '#e4be8c88'; ctx.fillRect(0, FLOOR, W, 2);
+      ctx.strokeStyle = '#211b1780'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (var bx = 30; bx < W; bx += 90) { ctx.moveTo(bx, FLOOR + 3); ctx.lineTo(bx + 40, H); }
+      ctx.stroke();
 
       // reach envelope
       if (!ui.reach || ui.reach.checked) {
@@ -243,9 +302,11 @@
       });
       // blocks (letter on each so colour isn't the only cue)
       blocks.forEach(function (b) {
-        RA.roundRect(ctx, b.x - BLOCK / 2, b.y, BLOCK, BLOCK, 5);
-        ctx.fillStyle = b.c; ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 2; ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(b.x - BLOCK / 2 + 4, b.y + 4, BLOCK - 8, 4);
+        var left = b.x - BLOCK / 2;
+        RoboticsVisuals.barrier(ctx, left, b.y, BLOCK, BLOCK);
+        RoboticsVisuals.plate(ctx, left + 2, b.y + 2, BLOCK - 4, BLOCK - 4, 4, b.c);
+        RoboticsVisuals.plate(ctx, left + 2, b.y + 2, BLOCK - 4, BLOCK - 4, 4,
+          RoboticsVisuals.gradient(ctx, left, b.y, left + BLOCK, b.y + BLOCK, ['#ffffff66', '#ffffff00', '#17233b55']));
         ctx.fillStyle = '#12202a'; ctx.font = '800 16px IBM Plex Mono, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(b.name[0].toUpperCase(), b.x, b.y + BLOCK / 2 + 2);
       });
@@ -259,8 +320,8 @@
       }
 
       // base pedestal
-      ctx.fillStyle = '#2d4a54'; RA.roundRect(ctx, BASE.x - 46, FLOOR - 14, 92, 18, 5); ctx.fill();
-      ctx.fillStyle = '#3c6370'; RA.roundRect(ctx, BASE.x - 26, BASE.y, 52, FLOOR - BASE.y - 10, 6); ctx.fill();
+      RoboticsVisuals.barrier(ctx, BASE.x - 46, FLOOR - 14, 92, 18);
+      RoboticsVisuals.barrier(ctx, BASE.x - 26, BASE.y, 52, FLOOR - BASE.y - 10);
 
       var p = fk(q);
       var lvl = RA.level();
@@ -271,9 +332,9 @@
       ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(242,191,63,.45)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(p.s.x, p.s.y); ctx.lineTo(p.s.x + 60, p.s.y); ctx.stroke(); ctx.setLineDash([]);
 
-      drawLink(p.s, p.e, 22, '#e86f3a');
-      drawLink(p.e, p.w, 17, '#e86f3a');
-      drawLink(p.w, { x: p.w.x + (L3 - 14) * Math.cos(p.a3), y: p.w.y - (L3 - 14) * Math.sin(p.a3) }, 12, '#c7d3d1');
+      RoboticsVisuals.link(ctx, p.s, p.e, 22, '#e86f3a');
+      RoboticsVisuals.link(ctx, p.e, p.w, 17, '#e86f3a');
+      RoboticsVisuals.link(ctx, p.w, { x: p.w.x + (L3 - 14) * Math.cos(p.a3), y: p.w.y - (L3 - 14) * Math.sin(p.a3) }, 12, '#c7d3d1');
       // gripper fingers
       var ux = Math.cos(p.a3), uy = -Math.sin(p.a3), nx = -uy, ny = ux, open = gripClosed ? (held ? BLOCK / 2 : 5) : BLOCK / 2 + 8;
       var palm = { x: p.w.x + ux * (L3 - 14), y: p.w.y + uy * (L3 - 14) };
@@ -292,20 +353,39 @@
       var below = p.e.y > FLOOR || p.w.y > FLOOR || p.t.y > FLOOR + 4;
       if (below) { ctx.fillStyle = '#ff9a8d'; ctx.font = '700 13px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('Crash! The arm is hitting the table.', 14, 14); }
 
-      // Shoulder gravity torque HUD
+      // Tip trail polyline
+      if (ui.trail && ui.trail.checked && trail.length > 1) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(112, 200, 229, 0.72)';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        for (var ti = 0; ti < trail.length; ti++) {
+          if (ti === 0) ctx.moveTo(trail[ti].x, trail[ti].y);
+          else ctx.lineTo(trail[ti].x, trail[ti].y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Shoulder gravity torque & Jacobian manipulability HUD
       var tq = gravityTorque(p);
-      var hudW = 216, hudH = tq.springOn ? 56 : 42, hx = W - hudW - 12, hy = 12;
+      var manip = ARMS.manipulability({ l1: L1, l2: L2, t2Deg: q.t2 });
+      var hudW = 224, hudH = tq.springOn ? 72 : 58, hx = W - hudW - 12, hy = 12;
       ctx.fillStyle = 'rgba(15,29,35,.88)'; RA.roundRect(ctx, hx, hy, hudW, hudH, 6); ctx.fill();
-      ctx.strokeStyle = tq.pct > 95 ? '#ff7a6b' : tq.pct >= 70 ? '#f2bf3f' : '#5cd69a';
+      ctx.strokeStyle = tq.pct > 95 ? '#ff7a6b' : manip.singular ? '#f2bf3f' : tq.pct >= 70 ? '#f2bf3f' : '#5cd69a';
       ctx.lineWidth = 1.5; RA.roundRect(ctx, hx, hy, hudW, hudH, 6); ctx.stroke();
       ctx.fillStyle = '#e8f6fb'; ctx.font = '700 10px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
       ctx.fillText('SHOULDER LOAD: ' + tq.pct + '% (' + tq.tau1.toFixed(2) + ' N·m)', hx + 10, hy + 8);
-      ctx.fillStyle = '#0b1418'; ctx.fillRect(hx + 10, hy + 25, hudW - 20, 8);
+      ctx.fillStyle = '#0b1418'; ctx.fillRect(hx + 10, hy + 23, hudW - 20, 7);
       ctx.fillStyle = tq.pct > 95 ? '#ff7a6b' : tq.pct >= 70 ? '#f2bf3f' : '#b8d84b';
-      ctx.fillRect(hx + 10, hy + 25, Math.min(hudW - 20, ((hudW - 20) * tq.pct) / 100), 8);
+      ctx.fillRect(hx + 10, hy + 23, Math.min(hudW - 20, ((hudW - 20) * tq.pct) / 100), 7);
+      ctx.fillStyle = manip.singular ? '#f2bf3f' : '#90e2b7';
+      ctx.fillText('MANIPULABILITY: ' + manip.normalized.toFixed(2) + (manip.singular ? ' (SINGULARITY)' : ''), hx + 10, hy + 36);
       if (tq.springOn) {
         ctx.fillStyle = '#90e2b7';
-        ctx.fillText('SPRING COUNTERBALANCE (-68%)', hx + 10, hy + 39);
+        ctx.fillText('SPRING COUNTERBALANCE (-68%)', hx + 10, hy + 52);
       }
 
       if (challenge.active || challenge.done) {
@@ -318,7 +398,7 @@
       var xcm = (p.t.x - BASE.x) / PX_PER_CM, ycm = (BASE.y - p.t.y) / PX_PER_CM;
       ui.readout.textContent = simple
         ? 'Hand is ' + Math.abs(xcm).toFixed(0) + ' cm ' + (xcm >= 0 ? 'right' : 'left') + ' of the shoulder and ' + Math.abs(ycm).toFixed(0) + ' cm ' + (ycm >= 0 ? 'up' : 'down') + '.' + (held ? ' Holding the ' + held.name + ' block.' : '')
-        : 'Gripper tip at x = ' + xcm.toFixed(1) + ' cm, y = ' + ycm.toFixed(1) + ' cm · τ1 = ' + tq.tau1.toFixed(2) + ' N·m (' + tq.pct + '% stall)' + (mode === 'reach' ? (reachable ? ' · IK ready' : ' · out of reach') : '') + (held ? ' · holding ' + held.name : '');
+        : 'Gripper tip at x = ' + xcm.toFixed(1) + ' cm, y = ' + ycm.toFixed(1) + ' cm · τ1 = ' + tq.tau1.toFixed(2) + ' N·m (' + tq.pct + '% stall) · manip = ' + manip.normalized.toFixed(2) + (manip.singular ? ' (near singularity)' : '') + (mode === 'reach' ? (reachable ? ' · IK ready' : ' · out of reach') : '') + (held ? ' · holding ' + held.name : '');
       if (ui.math) {
         ui.math.textContent = 'x = ' + (L1 / PX_PER_CM).toFixed(1) + '·cos(' + Math.round(q.t1) + '°) + ' + (L2 / PX_PER_CM).toFixed(1) + '·cos(' + Math.round(q.t1 + q.t2) + '°) + ' + (L3 / PX_PER_CM).toFixed(1) + '·cos(' + Math.round(q.t1 + q.t2 + q.t3) + '°) = ' + xcm.toFixed(1) + ' cm';
       }
@@ -328,6 +408,7 @@
     // gripper toggles it.
     var dragging = false;
     canvas.addEventListener('pointerdown', function (e) {
+      cancelDemo();
       var pt = RA.canvasPoint(canvas, e);
       if (mode !== 'reach') setMode('reach');
       target = { x: pt.x, y: Math.min(pt.y, FLOOR - 2) };
@@ -347,6 +428,7 @@
     var cursor = RA.keyCursor(canvas, {
       step: 12, x: target.x, y: target.y,
       onMove: function (c) {
+        cancelDemo();
         if (mode !== 'reach') setMode('reach');
         c.y = Math.min(c.y, FLOOR - 2);
         target = { x: c.x, y: c.y };
@@ -357,6 +439,7 @@
         return 'Target ' + Math.round(xcm) + ' centimetres across, ' + Math.round(ycm) + ' up.' + (s.ok ? '' : ' Out of reach.');
       },
       onKey: function (k) {
+        cancelDemo();
         if (k === 'Enter') { toggleGrip(); return true; }
         var map = { q: ['t1', 4], a: ['t1', -4], w: ['t2', 4], s: ['t2', -4], e: ['t3', 4], d: ['t3', -4] };
         var m = map[k.toLowerCase()];
@@ -373,19 +456,23 @@
     ['t1', 't2', 't3'].forEach(function (k) {
       var el = ui[k]; if (!el) return;
       el.addEventListener('input', function () {
+        cancelDemo();
         if (mode !== 'joints') setMode('joints');
         q[k] = +el.value;
         document.getElementById('arm-' + k + '-out').textContent = el.value;
       });
     });
-    ui.modes.forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.armMode); }); });
-    if (ui.grip) ui.grip.addEventListener('click', toggleGrip);
+    ui.modes.forEach(function (b) { b.addEventListener('click', function () { cancelDemo(); setMode(b.dataset.armMode); }); });
+    if (ui.grip) ui.grip.addEventListener('click', function () { cancelDemo(); toggleGrip(); });
     if (ui.reset) ui.reset.addEventListener('click', function () {
+      cancelDemo();
       challenge.active = false; challenge.done = false;
       if (ui.challenge) ui.challenge.textContent = '⏱ Start 3-block timer';
       resetWorld(); checkScore(); RA.announce('Blocks reset.', true);
     });
+    if (ui.demo) ui.demo.addEventListener('click', startDemo);
     if (ui.challenge) ui.challenge.addEventListener('click', function () {
+      cancelDemo();
       resetWorld();
       challenge = { active: true, done: false, t: 0, jointTravel: 0, lastQ: { t1: q.t1, t2: q.t2, t3: q.t3 } };
       ui.challenge.textContent = '⏱ Restart 3-block timer';
@@ -395,9 +482,10 @@
     if (ui.spring) ui.spring.addEventListener('change', function () {
       RA.announce(ui.spring.checked ? 'Shoulder counterbalance spring enabled.' : 'Shoulder counterbalance spring removed.', true);
     });
-    if (ui.elbow) ui.elbow.addEventListener('change', function () { RA.announce('Elbow ' + ui.elbow.value + '. Same hand position, different arm shape.', true); });
+    if (ui.elbow) ui.elbow.addEventListener('change', function () { cancelDemo(); RA.announce('Elbow ' + ui.elbow.value + '. Same hand position, different arm shape.', true); });
     document.querySelectorAll('[data-arm-pose]').forEach(function (b) {
       b.addEventListener('click', function () {
+        cancelDemo();
         var v = b.dataset.armPose.split(',').map(Number);
         setMode('joints'); goalQ = null;
         q = { t1: v[0], t2: v[1], t3: v[2] }; syncSliders();
@@ -411,8 +499,9 @@
   /* ── Sim 2: configuration space ────────────────────────────────── */
   function cspaceLab() {
     var canvas = document.getElementById('cs-canvas');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d'), W = canvas.width, H = canvas.height;
+    if (!canvas || !ARMS) return;
+    var W = 720, H = 360;
+    var ctx = RA.setupHiDpiCanvas(canvas, W, H).ctx;
     var PANEL = H, CS0 = { x: PANEL + 20, y: 20, s: H - 40 };   // C-space square
     var BASE = { x: PANEL / 2, y: H / 2 }, L1 = 95, L2 = 75, N = 120; // 3° cells
     var obstacles = [{ x: BASE.x + 110, y: BASE.y - 60, r: 26 }, { x: BASE.x - 70, y: BASE.y + 110, r: 22 }];
@@ -420,18 +509,16 @@
     var readout = document.getElementById('cs-readout');
 
     function joints(a, b) {
-      var a1 = a / DEG, a2 = (a + b) / DEG;
-      var e = { x: BASE.x + L1 * Math.cos(a1), y: BASE.y - L1 * Math.sin(a1) };
-      return { e: e, t: { x: e.x + L2 * Math.cos(a2), y: e.y - L2 * Math.sin(a2) } };
-    }
-    function segHits(p, r, o) {
-      var dx = r.x - p.x, dy = r.y - p.y, l2 = dx * dx + dy * dy;
-      var t = clamp(((o.x - p.x) * dx + (o.y - p.y) * dy) / l2, 0, 1);
-      return Math.hypot(p.x + t * dx - o.x, p.y + t * dy - o.y) < o.r + 6;
+      return ARMS.forwardKinematics({
+        baseX: BASE.x, baseY: BASE.y, l1: L1, l2: L2, l3: 0,
+        t1Deg: a, t2Deg: b, t3Deg: 0
+      });
     }
     function collides(a, b) {
-      var j = joints(a, b);
-      return obstacles.some(function (o) { return segHits(BASE, j.e, o) || segHits(j.e, j.t, o); });
+      return ARMS.collides2Link({
+        baseX: BASE.x, baseY: BASE.y, l1: L1, l2: L2,
+        a1Deg: a, a2Deg: b, obstacles: obstacles, clearance: 6
+      });
     }
     // θ1 ∈ [0, 360) across, θ2 ∈ [−180, 180) up the square. Both wrap: C-space is a torus.
     function cell(a, b) { return { i: Math.floor(((a % 360) + 360) % 360 / 360 * N), j: Math.floor((wrapDeg(b) + 180) / 360 * N) % N }; }
@@ -488,24 +575,20 @@
     function csY(b) { return CS0.y + CS0.s - (wrapDeg(b) + 180) / 360 * CS0.s; }
 
     function draw() {
-      ctx.fillStyle = '#0f1d23'; ctx.fillRect(0, 0, W, H);
-      // workspace panel
-      ctx.strokeStyle = 'rgba(112,200,229,.08)'; ctx.lineWidth = 1;
-      for (var g = 0; g < PANEL; g += 30) { ctx.beginPath(); ctx.moveTo(g, 0); ctx.lineTo(g, H); ctx.moveTo(0, g); ctx.lineTo(PANEL, g); ctx.stroke(); }
+      RoboticsVisuals.floor(ctx, W, H, { step: 30 });
       ctx.strokeStyle = 'rgba(184,216,75,.3)'; ctx.setLineDash([5, 5]);
       ctx.beginPath(); ctx.arc(BASE.x, BASE.y, L1 + L2, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
       obstacles.forEach(function (o) { RA.drawRock(ctx, o.x, o.y, o.r); });
       if (goal) {
         var gj = joints(goal.a, goal.b);
         ctx.globalAlpha = 0.45; ctx.strokeStyle = '#b8d84b'; ctx.lineWidth = 10; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(BASE.x, BASE.y); ctx.lineTo(gj.e.x, gj.e.y); ctx.lineTo(gj.t.x, gj.t.y); ctx.stroke(); ctx.globalAlpha = 1;
+        ctx.beginPath(); ctx.moveTo(BASE.x, BASE.y); ctx.lineTo(gj.e.x, gj.e.y); ctx.lineTo(gj.w.x, gj.w.y); ctx.stroke(); ctx.globalAlpha = 1;
       }
       var j = joints(q.a, q.b), hit = collides(q.a, q.b);
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = '#0b1418'; ctx.lineWidth = 16; ctx.beginPath(); ctx.moveTo(BASE.x, BASE.y); ctx.lineTo(j.e.x, j.e.y); ctx.lineTo(j.t.x, j.t.y); ctx.stroke();
-      ctx.strokeStyle = hit ? '#ff7a6b' : '#e86f3a'; ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(BASE.x, BASE.y); ctx.lineTo(j.e.x, j.e.y); ctx.lineTo(j.t.x, j.t.y); ctx.stroke();
-      [BASE, j.e].forEach(function (p) { ctx.fillStyle = '#f2bf3f'; ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, Math.PI * 2); ctx.fill(); });
-      ctx.fillStyle = '#b8d84b'; ctx.beginPath(); ctx.arc(j.t.x, j.t.y, 5, 0, Math.PI * 2); ctx.fill();
+      RoboticsVisuals.link(ctx, BASE, j.e, 12, hit ? '#ff7a6b' : '#e86f3a');
+      RoboticsVisuals.link(ctx, j.e, j.w, 12, hit ? '#ff7a6b' : '#e86f3a');
+      [BASE, j.e].forEach(function (p) { RoboticsVisuals.joint(ctx, p.x, p.y, 7); });
+      ctx.fillStyle = '#b8d84b'; ctx.beginPath(); ctx.arc(j.w.x, j.w.y, 5, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#d4e0df'; ctx.font = '600 11px IBM Plex Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
       ctx.fillText('WORKSPACE (the room)', 10, 10);
 

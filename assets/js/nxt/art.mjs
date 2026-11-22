@@ -13,7 +13,9 @@ export function drawRover(c,{moving=false,time=0}={}){
     const side=y<0?-1:1;
     box(c,-32,y-side*20,64,27,8,'#d1d6d5','#65737a');
     box(c,-17,y-side*12,31,16,4,'#e97e28','#a64e1c');
-    box(c,-29,y-11,58,22,6,'#23292b','#11191c');
+    const tread=c.createLinearGradient(0,y-11,0,y+11);
+    tread.addColorStop(0,'#596364');tread.addColorStop(.4,'#303a3c');tread.addColorStop(1,'#141d20');
+    box(c,-29,y-11,58,22,6,tread,'#11191c');
     c.save();c.beginPath();c.roundRect(-29,y-11,58,22,6);c.clip();
     const shift=moving?(time/45)%8:0;
     for(let x=-35+shift;x<35;x+=8){c.strokeStyle='#51595b';c.lineWidth=2;c.beginPath();c.moveTo(x,y-11);c.lineTo(x-4,y+11);c.stroke();}c.restore();

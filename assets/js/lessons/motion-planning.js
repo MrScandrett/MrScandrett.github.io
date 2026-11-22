@@ -4,18 +4,19 @@
 (function () {
   'use strict';
   var RA = window.RobotAutonomy;
+  var MP = window.MotionPlanningEngine;
   var W = 640, H = 400, R = 10;
 
   /* ── Shared course ─────────────────────────────────────────────── */
   var canvas = document.getElementById('mp-canvas');
-  if (canvas) plannerLab();
+  if (canvas && MP) plannerLab();
   kinematicsLab();
 
-  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
-  function wrap(a) { return Math.atan2(Math.sin(a), Math.cos(a)); }
+  function dist(a, b) { return MP ? MP.dist(a, b) : Math.hypot(a.x - b.x, a.y - b.y); }
+  function wrap(a) { return MP ? MP.wrapAngle(a) : Math.atan2(Math.sin(a), Math.cos(a)); }
 
   function plannerLab() {
-    var ctx = canvas.getContext('2d');
+    var ctx = RA.setupHiDpiCanvas(canvas, W, H).ctx;
     var ui = {
       modes: document.querySelectorAll('[data-mp-mode]'),
       run: document.getElementById('mp-run'), readout: document.getElementById('mp-readout'),
@@ -51,33 +52,42 @@
         obstacles.push({ x: 200, y: 90, r: 30 }, { x: 200, y: 160, r: 30 }, { x: 200, y: 230, r: 30 });
         obstacles.push({ x: 330, y: 170, r: 30 }, { x: 330, y: 240, r: 30 }, { x: 330, y: 310, r: 30 });
         obstacles.push({ x: 460, y: 90, r: 30 }, { x: 460, y: 160, r: 30 }, { x: 460, y: 230, r: 30 });
+      } else if (name === 'narrow') {
+        for (var ny = 18; ny <= 158; ny += 28) obstacles.push({ x: 320, y: ny, r: 16 });
+        for (var sy = 242; sy <= 382; sy += 28) obstacles.push({ x: 320, y: sy, r: 16 });
+        obstacles.push({ x: 215, y: 120, r: 22 }, { x: 425, y: 280, r: 22 });
       }
       obstacles.forEach(function (o) { o.vx = (Math.random() - 0.5) * 60; o.vy = (Math.random() - 0.5) * 60; });
       restart();
     }
 
     function blocked(p, pad) {
-      if (p.x < pad || p.y < pad || p.x > W - pad || p.y > H - pad) return true;
-      for (var i = 0; i < obstacles.length; i++) if (dist(p, obstacles[i]) < obstacles[i].r + pad) return true;
-      return false;
+      return MP.isBlocked({ p: p, pad: pad, obstacles: obstacles, width: W, height: H });
     }
     function segmentFree(a, b) {
-      var n = Math.ceil(dist(a, b) / 3);
-      for (var i = 0; i <= n; i++) {
-        var t = i / Math.max(1, n);
-        if (blocked({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }, R)) return false;
-      }
-      return true;
+      return MP.isSegmentFree({ a: a, b: b, pad: R, obstacles: obstacles, width: W, height: H, step: 3 });
     }
     function clearance(p) {
-      var best = Math.min(p.x, p.y, W - p.x, H - p.y);
-      obstacles.forEach(function (o) { best = Math.min(best, dist(p, o) - o.r); });
-      return best - R;
+      return MP.minClearance({ p: p, pad: R, obstacles: obstacles, width: W, height: H });
     }
 
     function restart() {
-      if (mode === 'rrt' || mode === 'rrtstar') state = { nodes: [{ x: start.x, y: start.y, parent: -1, cost: 0 }], goalNode: -1, t: 0 };
-      else state = { robot: { x: start.x, y: start.y, a: Math.atan2(goal.y - start.y, goal.x - start.x), v: 0, w: 0 }, trail: [], stuckT: 0, lastP: { x: start.x, y: start.y }, done: false, crashed: false, arcs: [], t: 0 };
+      if (mode === 'rrt' || mode === 'rrtstar') {
+        state = {
+          nodes: [{ x: start.x, y: start.y, parent: -1, cost: 0 }],
+          goalNode: -1,
+          goalCost: Infinity,
+          initialGoalCost: null,
+          treeVersion: 0,
+          cachedSmoothVer: -1,
+          cachedSmooth: null,
+          cachedRawLen: 0,
+          cachedSmoothLen: 0,
+          t: 0
+        };
+      } else {
+        state = { robot: { x: start.x, y: start.y, a: Math.atan2(goal.y - start.y, goal.x - start.x), v: 0, w: 0 }, trail: [], stuckT: 0, lastP: { x: start.x, y: start.y }, done: false, crashed: false, arcs: [], t: 0 };
+      }
       state.running = true;
       ui.run.textContent = 'Pause'; ui.run.setAttribute('aria-pressed', 'false');
     }
@@ -85,88 +95,26 @@
     /* RRT / RRT* */
     var STEP = 18, NEIGH = 45, MAX_NODES = 3000;
     function growTree() {
-      var nodes = state.nodes;
-      if (nodes.length >= MAX_NODES) return;
-      if (state.goalNode >= 0 && mode === 'rrt') return;
-      var sample = Math.random() < 0.1 ? goal : { x: Math.random() * W, y: Math.random() * H };
-      var near = 0, nd = Infinity;
-      for (var i = 0; i < nodes.length; i++) { var d = dist(nodes[i], sample); if (d < nd) { nd = d; near = i; } }
-      var from = nodes[near], s = Math.min(STEP, nd);
-      if (s < 1) return;
-      var p = { x: from.x + (sample.x - from.x) / nd * s, y: from.y + (sample.y - from.y) / nd * s };
-      if (!segmentFree(from, p)) return;
-      var node = { x: p.x, y: p.y, parent: near, cost: from.cost + s };
-      var idx = nodes.length;
-      if (mode === 'rrtstar') {
-        var neighbors = [];
-        for (var j = 0; j < nodes.length; j++) if (dist(nodes[j], p) < NEIGH) neighbors.push(j);
-        neighbors.forEach(function (j) {
-          var c = nodes[j].cost + dist(nodes[j], p);
-          if (c < node.cost && segmentFree(nodes[j], p)) { node.cost = c; node.parent = j; }
-        });
-        nodes.push(node);
-        neighbors.forEach(function (j) {
-          var c = node.cost + dist(nodes[j], node);
-          if (c < nodes[j].cost && segmentFree(node, nodes[j])) { nodes[j].parent = idx; propagate(j, c); }
-        });
-      } else nodes.push(node);
-      if (dist(node, goal) < STEP && segmentFree(node, goal)) {
-        var gc = node.cost + dist(node, goal);
-        if (state.goalNode < 0 || gc < state.goalCost) { state.goalNode = idx; state.goalCost = gc; }
-      }
-    }
-    function propagate(j, c) {
-      var nodes = state.nodes, delta = c - nodes[j].cost;
-      nodes[j].cost = c;
-      // Children inherit the saving. (Linear scan; the tree is small.)
-      var stack = [j];
-      while (stack.length) {
-        var k = stack.pop();
-        for (var m = 0; m < nodes.length; m++) if (nodes[m].parent === k) { nodes[m].cost += delta; stack.push(m); }
-      }
-      if (state.goalNode >= 0) state.goalCost = nodes[state.goalNode].cost + dist(nodes[state.goalNode], goal);
+      MP.rrtStep({
+        state: state, goal: goal, mode: mode, obstacles: obstacles,
+        width: W, height: H, pad: R, step: STEP, neigh: NEIGH, maxNodes: MAX_NODES
+      });
     }
     function treePath() {
       var out = [goal], k = state.goalNode;
       while (k >= 0) { out.push(state.nodes[k]); k = state.nodes[k].parent; }
       return out;
     }
-    function pathLength(pts) {
-      var len = 0;
-      for (var i = 1; i < pts.length; i++) len += dist(pts[i - 1], pts[i]);
-      return len;
-    }
+    function pathLength(pts) { return MP.pathLength(pts); }
     function smoothTreePath(raw) {
-      var pts = raw.slice().reverse();
-      if (pts.length <= 2) return pts;
-      var out = [pts[0]], i = 0;
-      while (i < pts.length - 1) {
-        var best = i + 1;
-        for (var j = pts.length - 1; j > i + 1; j--) {
-          if (segmentFree(pts[i], pts[j])) { best = j; break; }
-        }
-        out.push(pts[best]);
-        i = best;
-      }
-      return out;
+      return MP.shortcutPath({ rawPath: raw, pad: R, obstacles: obstacles, width: W, height: H });
     }
 
     /* Potential field */
     function force(p) {
-      var k = +ui.rep.value;
-      var gx = goal.x - p.x, gy = goal.y - p.y, gd = Math.hypot(gx, gy) || 1;
-      var att = Math.min(gd, 120) / 120;
-      var fx = gx / gd * att, fy = gy / gd * att;
-      var D0 = 70;
-      obstacles.forEach(function (o) {
-        var dx = p.x - o.x, dy = p.y - o.y, dd = Math.hypot(dx, dy) || 1, d = Math.max(1, dd - o.r - R);
-        if (d < D0) { var m = k * (1 / d - 1 / D0) * 18 / d; fx += dx / dd * m; fy += dy / dd * m; }
+      return MP.potentialFieldForce({
+        p: p, goal: goal, obstacles: obstacles, repGain: +ui.rep.value, radius: R, width: W, height: H
       });
-      [[p.x, 1, 0], [W - p.x, -1, 0], [p.y, 0, 1], [H - p.y, 0, -1]].forEach(function (wall) {
-        var d = Math.max(1, wall[0] - R);
-        if (d < 40) { var m = k * (1 / d - 1 / 40) * 10 / d; fx += wall[1] * m; fy += wall[2] * m; }
-      });
-      return { x: fx, y: fy };
     }
     function stepField(dt) {
       var rb = state.robot, f = force(rb), fm = Math.hypot(f.x, f.y);
@@ -290,10 +238,7 @@
     }
 
     function draw() {
-      ctx.fillStyle = '#0f1d23'; ctx.fillRect(0, 0, W, H);
-      ctx.strokeStyle = 'rgba(112,200,229,.07)'; ctx.lineWidth = 1;
-      for (var gx = 0; gx < W; gx += 32) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
-      for (var gy = 0; gy < H; gy += 32) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+      RoboticsVisuals.floor(ctx, W, H, { step: 32, frame: true });
 
       if (mode === 'field' && ui.showField.checked) {
         ctx.strokeStyle = 'rgba(184,216,75,.55)'; ctx.lineWidth = 1.3;
@@ -311,44 +256,68 @@
 
       var status = '';
       if (mode === 'rrt' || mode === 'rrtstar') {
-        // Branches fade from cyan near the start to violet far away, so the
-        // tree's growth outward is visible at a glance.
+        // Batch tree edges into 8 cost buckets so up to 3,000 nodes render in 8 canvas strokes.
         var maxCost = 1;
-        state.nodes.forEach(function (n) { if (n.cost > maxCost) maxCost = n.cost; });
+        for (var ni = 0; ni < state.nodes.length; ni++) {
+          if (state.nodes[ni].cost > maxCost) maxCost = state.nodes[ni].cost;
+        }
+        var BUCKETS = 8;
+        var buckets = Array.from({ length: BUCKETS }, function () { return []; });
+        for (var ei = 1; ei < state.nodes.length; ei++) {
+          var ndNode = state.nodes[ei];
+          if (ndNode.parent < 0) continue;
+          var bin = Math.min(BUCKETS - 1, Math.floor((ndNode.cost / maxCost) * BUCKETS));
+          buckets[bin].push(ndNode);
+        }
         ctx.lineWidth = 1.2;
-        state.nodes.forEach(function (n) {
-          if (n.parent < 0) return;
-          var p = state.nodes[n.parent], f = n.cost / maxCost;
-          ctx.strokeStyle = 'hsla(' + Math.round(190 + f * 80) + ',75%,' + Math.round(68 - f * 10) + '%,.6)';
-          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(n.x, n.y); ctx.stroke();
-        });
+        for (var bi = 0; bi < BUCKETS; bi++) {
+          var edges = buckets[bi];
+          if (!edges.length) continue;
+          var frac = (bi + 0.5) / BUCKETS;
+          ctx.strokeStyle = 'hsla(' + Math.round(190 + frac * 80) + ',75%,' + Math.round(68 - frac * 10) + '%,.6)';
+          ctx.beginPath();
+          for (var ej = 0; ej < edges.length; ej++) {
+            var child = edges[ej], parent = state.nodes[child.parent];
+            ctx.moveTo(parent.x, parent.y);
+            ctx.lineTo(child.x, child.y);
+          }
+          ctx.stroke();
+        }
         ctx.lineWidth = 1;
         if (state.goalNode >= 0) {
           var path = treePath();
           var useSmooth = ui.smooth && ui.smooth.checked;
           ctx.lineJoin = 'round'; ctx.lineCap = 'round';
           if (useSmooth) {
+            if (state.cachedSmoothVer !== state.treeVersion || !state.cachedSmooth) {
+              state.cachedSmooth = smoothTreePath(path);
+              state.cachedRawLen = pathLength(path);
+              state.cachedSmoothLen = pathLength(state.cachedSmooth);
+              state.cachedSmoothVer = state.treeVersion;
+            }
+            var smoothed = state.cachedSmooth;
             ctx.setLineDash([5, 5]);
             ctx.strokeStyle = 'rgba(242,191,63,.55)'; ctx.lineWidth = 2; ctx.beginPath();
             path.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
             ctx.stroke();
             ctx.setLineDash([]);
-            var smoothed = smoothTreePath(path);
             [['rgba(184,216,75,.28)', 10], ['#b8d84b', 4]].forEach(function (st) {
               ctx.strokeStyle = st[0]; ctx.lineWidth = st[1]; ctx.beginPath();
               smoothed.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
               ctx.stroke();
             });
-            var rawLen = pathLength(path), smoothLen = pathLength(smoothed);
-            var savedPct = rawLen > 0 ? Math.max(0, Math.round((1 - smoothLen / rawLen) * 100)) : 0;
-            status = 'Path found · raw ' + Math.round(rawLen) + ' px → smoothed ' + Math.round(smoothLen) + ' px (saved ' + savedPct + '%) · ' + state.nodes.length + ' nodes';
+            var savedPct = state.cachedRawLen > 0 ? Math.max(0, Math.round((1 - state.cachedSmoothLen / state.cachedRawLen) * 100)) : 0;
+            status = 'Path found · raw ' + Math.round(state.cachedRawLen) + ' px → smoothed ' + Math.round(state.cachedSmoothLen) + ' px (saved ' + savedPct + '%) · ' + state.nodes.length + ' nodes';
           } else {
             [['rgba(242,191,63,.25)', 10], ['#f2bf3f', 4]].forEach(function (st) {
               ctx.strokeStyle = st[0]; ctx.lineWidth = st[1]; ctx.beginPath();
               path.forEach(function (p, i) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
               ctx.stroke();
             });
-            status = 'Path found · length ' + Math.round(state.goalCost) + ' px · tree has ' + state.nodes.length + ' nodes' + (mode === 'rrtstar' ? (state.nodes.length < MAX_NODES ? ' · still improving…' : ' · done') : '');
+            var improvedNote = (mode === 'rrtstar' && state.initialGoalCost != null && state.initialGoalCost - state.goalCost >= 2)
+              ? ' (initial ' + Math.round(state.initialGoalCost) + ' → ' + Math.round(state.goalCost) + ' px)'
+              : '';
+            status = 'Path found · length ' + Math.round(state.goalCost) + ' px' + improvedNote + ' · tree has ' + state.nodes.length + ' nodes' + (mode === 'rrtstar' ? (state.nodes.length < MAX_NODES ? ' · still improving…' : ' · done') : '');
           }
           ctx.lineWidth = 1;
         } else status = 'Growing… ' + state.nodes.length + ' nodes, no path yet';
@@ -454,7 +423,8 @@
   function kinematicsLab() {
     var kc = document.getElementById('kin-canvas');
     if (!kc) return;
-    var ctx = kc.getContext('2d'), KW = kc.width, KH = kc.height;
+    var KW = 640, KH = 300;
+    var ctx = RA.setupHiDpiCanvas(kc, KW, KH).ctx;
     var left = document.getElementById('kin-left'), right = document.getElementById('kin-right');
     var base = document.getElementById('kin-base'), out = document.getElementById('kin-readout');
     var lookaheadEl = document.getElementById('kin-lookahead'), profileEl = document.getElementById('kin-profile');
@@ -542,7 +512,8 @@
     RA.loop(function (dt) {
       var L = +base.value;
       var vl = +left.value, vr = +right.value;
-      var v = (vr + vl) / 2, w = (vr - vl) / L;
+      var kin = MP ? MP.diffDriveKinematics({ vl: vl, vr: vr, base: L }) : { v: (vr + vl) / 2, w: (vr - vl) / L };
+      var v = kin.v, w = kin.w;
 
       if (kinMode === 'pursuit') {
         var Ld = lookaheadEl ? +lookaheadEl.value : 55;
@@ -597,10 +568,7 @@
       if (!last || Math.hypot(last.x - rb.x, last.y - rb.y) > 2) { if (last && Math.hypot(last.x - rb.x, last.y - rb.y) > 50) trail.push(null); trail.push({ x: rb.x, y: rb.y }); }
       if (trail.length > 900) trail.shift();
 
-      ctx.fillStyle = '#0f1d23'; ctx.fillRect(0, 0, KW, KH);
-      ctx.strokeStyle = 'rgba(112,200,229,.07)'; ctx.lineWidth = 1;
-      for (var gx = 0; gx < KW; gx += 32) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, KH); ctx.stroke(); }
-      for (var gy = 0; gy < KH; gy += 32) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(KW, gy); ctx.stroke(); }
+      RoboticsVisuals.floor(ctx, KW, KH, { step: 32, frame: true });
 
       if (kinMode === 'pursuit') {
         var LdVis = lookaheadEl ? +lookaheadEl.value : 55;
@@ -644,12 +612,16 @@
       ctx.stroke();
       ctx.save(); ctx.translate(rb.x, rb.y); ctx.rotate(rb.a);
       var half = L / 2;
-      RA.roundRect(ctx, -16, -half + 2, 32, L - 4, 8); ctx.fillStyle = '#146b8c'; ctx.fill();
-      ctx.strokeStyle = '#e8f6fb'; ctx.lineWidth = 2; ctx.stroke();
+      RoboticsVisuals.shadow(ctx, 3, 3, 22, half + 10);
+      RoboticsVisuals.plate(ctx, -16, -half + 2, 32, L - 4, 8,
+        RoboticsVisuals.gradient(ctx, -16, -half, 16, half, ['#5cc7da', '#246f8a', '#143849']), '#bae8f0', 1.5);
+      RoboticsVisuals.plate(ctx, -10, -6, 13, 12, 2, '#142e3b', '#8ab7c5');
       ctx.fillStyle = '#f2bf3f'; RA.roundRect(ctx, 9, -6, 6, 12, 2); ctx.fill();
       // wheels (left wheel is on the robot's -y side when facing +x), labelled
       [[-half - 4, vl, 'L'], [half - 4, vr, 'R']].forEach(function (wv) {
-        ctx.fillStyle = '#0b1418'; RA.roundRect(ctx, -11, wv[0], 22, 8, 3); ctx.fill();
+        RoboticsVisuals.plate(ctx, -11, wv[0], 22, 8, 3, '#0b1418', '#6b8791');
+        ctx.fillStyle = '#a1bbbf65';
+        for (var tx = -8; tx <= 8; tx += 4) ctx.fillRect(tx, wv[0] + 1, 1, 6);
         ctx.strokeStyle = '#f2bf3f'; ctx.lineWidth = 3; ctx.lineCap = 'round';
         var ay = wv[0] + 4 + (wv[2] === 'L' ? -9 : 9), len = wv[1] * 0.35;
         if (Math.abs(len) > 1) {

@@ -45,7 +45,7 @@ function advance(dt){if(motion){const step=Math.min(dt,motion.remaining),dl=moti
 SimKit.loop((dt,time)=>{
   advance(dt);
   const c=sim.ctx,w=sim.width,h=sim.height;
-  const desk=c.createLinearGradient(0,0,0,h);desk.addColorStop(0,'#d3d5c9');desk.addColorStop(1,'#babfb5');c.fillStyle=desk;c.fillRect(0,0,w,h);
+  RoboticsVisuals.floor(c,w,h,{light:true,step:0,frame:true});
   c.save();c.translate(w/2,h/2);const extent=Math.max(300,...trail.map(p=>Math.max(Math.abs(p.x),Math.abs(p.y))+110));const scale=Math.min(w,h)/(extent*2);c.scale(scale,scale);
   c.strokeStyle='#63756c';c.globalAlpha=.25;c.lineWidth=1/scale;for(let n=-Math.ceil(extent/100)*100;n<=extent;n+=100){c.beginPath();c.moveTo(n,-extent);c.lineTo(n,extent);c.stroke();c.beginPath();c.moveTo(-extent,n);c.lineTo(extent,n);c.stroke();}c.globalAlpha=1;
   if(studio?.worldEnabled())drawWorld(c);

@@ -35,7 +35,13 @@
     walls: [{ x: 70, y: 0, w: 10, h: 70 }, { x: 70, y: 130, w: 10, h: 70 }],
     line: loopLine
   });
-  var canvas = $('rc-sim'), ctx = canvas.getContext('2d');
+  var canvas = $('rc-sim'), trail = [];
+  var showBeam = $('rc-show-beam'), showTrail = $('rc-show-trail');
+  function resetSimPose() {
+    sim.reset();
+    trail = [{ x: sim.x, y: sim.y }];
+  }
+  resetSimPose();
   var scrimmage = {
     active: false, started: false, finished: false,
     startTime: 0, elapsed: 0, bumps: 0, wasBumped: false, bestSec: null,
@@ -85,16 +91,25 @@
   // Draws the room into the cockpit canvas, or into another one (the Code studio preview).
   function drawSim(target) {
     updateScrimmage();
-    var cv = target || canvas, ctx = cv.getContext('2d');
-    var W = cv.width, H = cv.height, s = W / sim.room.w;
+    var cv = target || canvas, W = 600, H = 400, s = W / sim.room.w;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var ctx = cv.width !== Math.round(W * dpr) || !cv.dataset.logicalW
+      ? RobotAutonomy.setupHiDpiCanvas(cv, W, H).ctx : cv.getContext('2d');
     ctx.save();
-    ctx.fillStyle = '#e9e4d8'; ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = 'rgba(18,32,42,.08)'; ctx.lineWidth = 1;
-    for (var gx = 0; gx <= sim.room.w; gx += 20) { ctx.beginPath(); ctx.moveTo(gx * s, 0); ctx.lineTo(gx * s, H); ctx.stroke(); }
-    for (var gy = 0; gy <= sim.room.h; gy += 20) { ctx.beginPath(); ctx.moveTo(0, gy * s); ctx.lineTo(W, gy * s); ctx.stroke(); }
-    // Tape line
-    ctx.strokeStyle = '#1b1f22'; ctx.lineWidth = 2.5 * s; ctx.lineJoin = 'round';
-    ctx.beginPath(); loopLine.forEach(function (p, k) { ctx[k ? 'lineTo' : 'moveTo'](p.x * s, p.y * s); }); ctx.stroke();
+    RoboticsVisuals.floor(ctx, W, H, { step: 20 * s, light: true, frame: true });
+    // Tape and driven path
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    loopLine.forEach(function (p, k) { ctx[k ? 'lineTo' : 'moveTo'](p.x * s, p.y * s); });
+    ctx.strokeStyle = '#596266'; ctx.lineWidth = 3.5 * s; ctx.stroke();
+    ctx.strokeStyle = '#202b31'; ctx.lineWidth = 2.5 * s; ctx.stroke();
+    if (showTrail.checked && trail.length > 1) {
+      ctx.beginPath();
+      trail.forEach(function (p, k) { ctx[k ? 'lineTo' : 'moveTo'](p.x * s, p.y * s); });
+      ctx.strokeStyle = '#f5f7ee'; ctx.lineWidth = 4; ctx.stroke();
+      ctx.strokeStyle = '#16758d'; ctx.lineWidth = 2; ctx.stroke();
+    }
     // Scrimmage gates
     if (scrimmage.active) {
       scrimmage.gates.forEach(function (g) {
@@ -116,27 +131,27 @@
         ctx.restore();
       });
     }
-    // Walls
-    ctx.fillStyle = '#7a5a3a';
-    sim.walls.forEach(function (w) { ctx.fillRect(w.x * s, w.y * s, w.w * s, w.h * s); });
-    ctx.strokeStyle = '#12202a'; ctx.lineWidth = 4; ctx.strokeRect(2, 2, W - 4, H - 4);
-    // Ultrasonic beam
+    sim.walls.forEach(function (w) {
+      RoboticsVisuals.barrier(ctx, w.x * s, w.y * s, w.w * s, w.h * s, 'wood');
+    });
     var d = sim.distance();
-    var ba = sim.heading + (90 - sim.pan) * Math.PI / 180;
+    var pan = (90 - sim.pan) * Math.PI / 180;
+    var ba = sim.heading + pan;
     var ox = sim.x + Math.cos(sim.heading) * 9, oy = sim.y + Math.sin(sim.heading) * 9;
-    ctx.strokeStyle = d <= E.LIMITS.obstacleCm ? 'rgba(217,75,65,.85)' : 'rgba(20,107,140,.55)';
-    ctx.setLineDash([4, 4]); ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(ox * s, oy * s); ctx.lineTo((ox + Math.cos(ba) * d) * s, (oy + Math.sin(ba) * d) * s); ctx.stroke();
-    ctx.setLineDash([]);
-    // Car body
-    ctx.translate(sim.x * s, sim.y * s); ctx.rotate(sim.heading);
-    ctx.fillStyle = '#222'; [[-9, -10], [5, -10], [-9, 7], [5, 7]].forEach(function (w) { ctx.fillRect(w[0] * s, w[1] * s, 6 * s, 3 * s); });
-    ctx.fillStyle = sim.bumped ? '#d94b41' : '#f2bf3f'; ctx.strokeStyle = '#12202a'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.rect(-11 * s, -7 * s, 22 * s, 14 * s); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#146b8c'; ctx.fillRect(7 * s, -4 * s, 4 * s, 8 * s);
-    var c = sim.color, lit = c[0] + c[1] + c[2] > 0;
-    ctx.fillStyle = lit ? 'rgb(' + c.join(',') + ')' : '#555';
-    ctx.beginPath(); ctx.arc(-3 * s, 0, 2.6 * s, 0, Math.PI * 2); ctx.fill();
+    if (showBeam.checked) {
+      var ex = (ox + Math.cos(ba) * d) * s, ey = (oy + Math.sin(ba) * d) * s;
+      ctx.strokeStyle = d <= E.LIMITS.obstacleCm ? '#bb392c' : '#2c6578';
+      ctx.setLineDash([5, 4]); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(ox * s, oy * s); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.setLineDash([]);
+      RoboticsVisuals.disc(ctx, ex, ey, 4, '#f4f9f2');
+      RoboticsVisuals.disc(ctx, ex, ey, 2.5, ctx.strokeStyle);
+    }
+    var led = sim.color.some(Boolean) ? 'rgb(' + sim.color.join(',') + ')' : '#517161';
+    RoboticsVisuals.rover(ctx, sim.x * s, sim.y * s, sim.heading, 11 * s, {
+      body: sim.bumped ? '#de624f' : '#efb44f', outline: '#4b3729',
+      sensor: 'sonar', car: true, pan: pan, led: led
+    });
     ctx.restore();
     ctx.fillStyle = '#12202a'; ctx.font = '600 12px "IBM Plex Mono", monospace';
     ctx.fillText('mode: ' + sim.mode + (sim.bumped ? ' · BUMP!' : ''), 10, H - 10);
@@ -168,6 +183,11 @@
     if (state.kind !== 'sim') return;
     if (!sim.left && !sim.right && sim.mode !== 'line' && sim.mode !== 'avoid' && sim.mode !== 'follow') return;
     while (dt > 1e-6) { var h = Math.min(0.05, dt); sim.step(h); dt -= h; }
+    var last = trail[trail.length - 1];
+    if (Math.hypot(sim.x - last.x, sim.y - last.y) >= 1.5) {
+      trail.push({ x: sim.x, y: sim.y });
+      if (trail.length > 700) trail.shift();
+    }
   }, 30);
   if (window.SimKit && SimKit.loop) SimKit.loop(function () { if (state.kind === 'sim') drawSim(); }, { el: SimKit.stage('#rc-sim') });
   drawSim();
@@ -633,7 +653,7 @@
       scrimBtn.setAttribute('aria-pressed', String(scrimmage.active));
       if (scrimmage.active) {
         stopNow();
-        sim.reset();
+        resetSimPose();
         resetScrimmage();
         drawSim();
         announce('Scrimmage course active. Pass gates 1, 2, 3, then stop cleanly inside gate 4.');
@@ -643,7 +663,7 @@
       }
     });
   }
-  $('rc-sim-reset').addEventListener('click', function () { stopNow(); sim.reset(); resetScrimmage(); drawSim(); announce('Simulator reset to x 40, y 100, facing right.'); });
+  $('rc-sim-reset').addEventListener('click', function () { stopNow(); resetSimPose(); resetScrimmage(); drawSim(); announce('Simulator reset to x 40, y 100, facing right.'); });
   $('rc-log-clear').addEventListener('click', function () { logLines = []; logEl.textContent = ''; });
 
   function announce(msg) {
@@ -661,7 +681,7 @@
     kind: function () { return state.kind; },
     speed: speed,
     drawInto: function (cv) { drawSim(cv); },
-    resetSim: function () { stopNow(); sim.reset(); resetScrimmage(); drawSim(); },
+    resetSim: function () { stopNow(); resetSimPose(); resetScrimmage(); drawSim(); },
     // A program takes the wheel: the joystick loop stays quiet and line sensors aren't polled.
     begin: function (onStop) { stopNow(); state.mission = true; programStop = onStop; },
     end: function () { programStop = null; state.mission = false; state.moving = false; },

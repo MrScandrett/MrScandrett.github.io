@@ -3,14 +3,17 @@
 (function () {
   'use strict';
   var RA = window.RobotAutonomy;
+  var SF = window.SensorFusionEngine;
   var canvas = document.getElementById('sf-canvas');
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d'), W = canvas.width, H = canvas.height;
+  if (!canvas || !SF) return;
+  var W = 640, H = 320;
+  var ctx = RA.setupHiDpiCanvas(canvas, W, H).ctx;
   var PANEL = 170, SPAN = 8, RATE = 100, DT = 1 / RATE; // seconds shown, sensor Hz
-  var DEG = 180 / Math.PI;
+  var DEG = SF.DEG;
   var ui = {
     alpha: document.getElementById('sf-alpha'), bias: document.getElementById('sf-bias'),
     noise: document.getElementById('sf-noise'), bumps: document.getElementById('sf-bumps'),
+    shock: document.getElementById('sf-shock'),
     motion: document.getElementById('sf-motion'), tilt: document.getElementById('sf-tilt'),
     reset: document.getElementById('sf-reset'), run: document.getElementById('sf-run'),
     readout: document.getElementById('sf-readout'), show: document.querySelectorAll('[data-sf-show]')
@@ -24,31 +27,27 @@
     comp: { color: '#b8d84b', width: 2.5, dash: [2, 4], label: 'Complementary', tag: 'COMP' },
     kalman: { color: '#f2bf3f', width: 2.5, dash: [14, 4, 2, 4], label: 'Kalman', tag: 'KALMAN' }
   };
-  var t, truth, prevTruth, est, hist, running = !RA.reducedMotion, acc = 0, kf, lastErr = null;
+  var t, truth, prevTruth, est, hist, running = !RA.reducedMotion, acc = 0, kf, lastErr = null, shockTimer = 0;
 
   function reset() {
-    t = 0; truth = 0; prevTruth = 0; hist = [];
+    t = 0; truth = 0; prevTruth = 0; hist = []; shockTimer = 0;
     est = { gyro: 0, accel: 0, comp: 0, kalman: 0 };
-    kf = { angle: 0, bias: 0, P: [[1, 0], [0, 1]] };
+    kf = SF.createKalmanState();
     // When the sim starts paused (reduced motion), fill the chart so there is
     // something to read before anyone presses Play.
     if (!running) for (var i = 0; i < SPAN * RATE; i++) sample();
   }
 
-  // Classic two-state (angle, gyro bias) Kalman filter used on hobby balancing robots.
   function kalmanStep(rate, measured) {
-    var Qa = 0.001, Qb = 0.003, Rm = Math.pow(Math.max(0.5, +ui.noise.value) / DEG, 2);
-    var P = kf.P;
-    kf.angle += DT * (rate - kf.bias);
-    P[0][0] += DT * (DT * P[1][1] - P[0][1] - P[1][0] + Qa);
-    P[0][1] -= DT * P[1][1];
-    P[1][0] -= DT * P[1][1];
-    P[1][1] += Qb * DT;
-    var S = P[0][0] + Rm, K0 = P[0][0] / S, K1 = P[1][0] / S, y = measured - kf.angle;
-    kf.angle += K0 * y; kf.bias += K1 * y;
-    var p00 = P[0][0], p01 = P[0][1];
-    P[0][0] -= K0 * p00; P[0][1] -= K0 * p01; P[1][0] -= K1 * p00; P[1][1] -= K1 * p01;
-    return kf.angle;
+    return SF.kalmanStep({
+      state: kf,
+      gyroRate: rate,
+      accelAngle: measured,
+      dt: DT,
+      qAngle: 0.001,
+      qBias: 0.003,
+      rMeasure: Math.pow(Math.max(0.5, +ui.noise.value) / DEG, 2)
+    });
   }
 
   function trueAngle(time) {
@@ -68,10 +67,15 @@
     var accelAngle = truth + RA.gauss() * (+ui.noise.value) / DEG;
     // Bumps: linear acceleration from driving shakes the accelerometer, not the gyro.
     if (ui.bumps.checked && Math.random() < 0.04) accelAngle += (Math.random() - 0.5) * 50 / DEG;
+    if (shockTimer > 0) {
+      var phase = (0.25 - shockTimer) / 0.25;
+      shockTimer = Math.max(0, shockTimer - DT);
+      accelAngle += (32 * Math.sin(phase * Math.PI * 2)) / DEG;
+    }
     var a = +ui.alpha.value;
     est.gyro += gyro * DT;
     est.accel = accelAngle;
-    est.comp = a * (est.comp + gyro * DT) + (1 - a) * accelAngle;
+    est.comp = SF.complementaryStep({ est: est.comp, gyroRate: gyro, accelAngle: accelAngle, dt: DT, alpha: a });
     est.kalman = kalmanStep(gyro, accelAngle);
     hist.push({ t: t, truth: truth, gyro: est.gyro, accel: est.accel, comp: est.comp, kalman: est.kalman });
     while (hist.length && hist[0].t < t - SPAN) hist.shift();
@@ -83,7 +87,9 @@
   }
 
   function draw() {
-    ctx.fillStyle = '#0f1d23'; ctx.fillRect(0, 0, W, H);
+    RoboticsVisuals.floor(ctx, W, H, { step: 0 });
+    RoboticsVisuals.plate(ctx, 5, 5, PANEL - 8, H - 10, 7, '#0e213064', '#8cb8c44a');
+    RoboticsVisuals.plate(ctx, PANEL + 4, 5, W - PANEL - 9, H - 10, 7, '#0a1726a0', '#8cb8c44a');
     // Left: the robot body, true tilt solid, estimates as ghost lines.
     var cx = PANEL / 2, cy = H / 2 + 50;
     ctx.fillStyle = '#29424b'; ctx.fillRect(12, cy + 22, PANEL - 24, 6);
@@ -103,15 +109,22 @@
     ctx.setLineDash([]);
     // Balancing robot: wheel, body, head with eyes, IMU chip
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(truth);
-    RA.roundRect(ctx, -18, -112, 36, 102, 10);
-    ctx.fillStyle = '#146b8c'; ctx.fill(); ctx.strokeStyle = '#e8f6fb'; ctx.lineWidth = 2; ctx.stroke();
+    RoboticsVisuals.plate(ctx, -18, -112, 36, 102, 10,
+      RoboticsVisuals.gradient(ctx, -18, -112, 18, -10, ['#9ce7ec', '#2486a0', '#174354']), '#b9e9ee', 1.5);
+    RoboticsVisuals.plate(ctx, -13, -74, 26, 46, 4, '#193745', '#76a8b7');
+    ctx.fillStyle = '#b9d3db';
+    for (var pin = -8; pin <= 8; pin += 4) {
+      ctx.fillRect(pin, -65, 2, 5);
+      ctx.fillRect(pin, -49, 2, 5);
+    }
     RA.roundRect(ctx, -12, -104, 24, 20, 6); ctx.fillStyle = '#e8f6fb'; ctx.fill();
     ctx.fillStyle = '#12202a'; ctx.beginPath(); ctx.arc(-5, -94, 2.6, 0, Math.PI * 2); ctx.arc(5, -94, 2.6, 0, Math.PI * 2); ctx.fill();
     RA.roundRect(ctx, -10, -62, 20, 16, 3); ctx.fillStyle = '#12202a'; ctx.fill();
     ctx.fillStyle = '#f2bf3f'; ctx.fillRect(-6, -58, 12, 8);
     ctx.restore();
-    ctx.fillStyle = '#0b1418'; ctx.beginPath(); ctx.arc(cx, cy + 8, 17, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#4d6a73'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy + 8, 10, 0, Math.PI * 2); ctx.stroke();
+    RoboticsVisuals.shadow(ctx, cx + 3, cy + 24, 26, 8);
+    RoboticsVisuals.disc(ctx, cx, cy + 8, 17, '#0b1418');
+    RoboticsVisuals.joint(ctx, cx, cy + 8, 11);
     ctx.fillStyle = '#d4e0df'; ctx.font = '600 11px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
     ctx.fillText('tilt ' + (truth * DEG).toFixed(1) + '°', cx, 24);
     ctx.fillStyle = '#8fa7a4'; ctx.fillText('yellow chip = IMU', cx, H - 10);
@@ -120,7 +133,15 @@
     var x0 = PANEL + 10, x1 = W - 10, y0 = 14, y1 = H - 20, range = 45;
     function X(tt) { return x0 + (tt - (t - SPAN)) / SPAN * (x1 - x0); }
     function Y(a) { return (y0 + y1) / 2 - Math.max(-range, Math.min(range, a * DEG)) / range * (y1 - y0) / 2; }
-    ctx.strokeStyle = 'rgba(112,200,229,.12)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = '#92c7d62b'; ctx.lineWidth = 1;
+    for (var secondsAgo = 0; secondsAgo <= SPAN; secondsAgo += 2) {
+      var gx = X(t - secondsAgo);
+      ctx.beginPath(); ctx.moveTo(gx, y0); ctx.lineTo(gx, y1); ctx.stroke();
+      ctx.fillStyle = '#9bb6bf'; ctx.font = '10px IBM Plex Mono, monospace';
+      ctx.textAlign = secondsAgo === 0 ? 'right' : 'left'; ctx.textBaseline = 'top';
+      ctx.fillText(secondsAgo ? '−' + secondsAgo + ' s' : 'now', gx, y1 + 4);
+    }
+    ctx.textBaseline = 'alphabetic';
     [-30, -15, 0, 15, 30].forEach(function (d) { ctx.beginPath(); ctx.moveTo(x0, Y(d / DEG)); ctx.lineTo(x1, Y(d / DEG)); ctx.stroke(); });
     ctx.fillStyle = '#8fa7a4'; ctx.textAlign = 'right'; ctx.font = '10px IBM Plex Mono, monospace';
     [-30, 0, 30].forEach(function (d) { ctx.fillText(d + '°', x0 + 26, Y(d / DEG) - 3); });
@@ -146,20 +167,39 @@
     ctx.textBaseline = 'alphabetic';
 
     // Error scoreboard over the visible window.
-    var err = { gyro: 0, accel: 0, comp: 0, kalman: 0 };
-    hist.forEach(function (h) { Object.keys(err).forEach(function (k) { err[k] += (h[k] - h.truth) * (h[k] - h.truth); }); });
-    var n = Math.max(1, hist.length);
+    var err = { gyro: [], accel: [], comp: [], kalman: [] };
+    hist.forEach(function (h) {
+      Object.keys(err).forEach(function (k) { err[k].push(h[k] - h.truth); });
+    });
     lastErr = {};
-    Object.keys(err).forEach(function (k) { lastErr[k] = Math.sqrt(err[k] / n) * DEG; });
+    Object.keys(err).forEach(function (k) { lastErr[k] = SF.rmseDeg(err[k]); });
     ui.readout.textContent = 'Average error (last ' + SPAN + ' s): ' + Object.keys(err).map(function (k) {
-      return SERIES[k].label.toLowerCase() + ' ' + (Math.sqrt(err[k] / n) * DEG).toFixed(1) + '°';
+      return SERIES[k].label.toLowerCase() + ' ' + lastErr[k].toFixed(1) + '°';
     }).join(' · ') + ' · Kalman learned bias: ' + (kf.bias * DEG).toFixed(1) + '°/s (true ' + (+ui.bias.value).toFixed(1) + '°/s)';
   }
 
-  [['alpha', 3], ['bias', 1], ['noise', 0], ['tilt', 0]].forEach(function (pair) {
+  function updateAlphaReadout() {
+    var out = document.getElementById('sf-alpha-out');
+    if (!out || !ui.alpha) return;
+    var a = +ui.alpha.value;
+    var tau = SF.crossoverTimeConstant(a, DT);
+    var tauText = !isFinite(tau) ? '∞' : (tau >= 10 ? tau.toFixed(1) : tau.toFixed(2)) + ' s';
+    out.textContent = a.toFixed(3) + ' (τ = ' + tauText + ')';
+  }
+  updateAlphaReadout();
+  if (ui.alpha) ui.alpha.addEventListener('input', updateAlphaReadout);
+
+  [['bias', 1], ['noise', 0], ['tilt', 0]].forEach(function (pair) {
     var el = ui[pair[0]], out = document.getElementById('sf-' + pair[0] + '-out');
     el.addEventListener('input', function () { out.textContent = (+el.value).toFixed(pair[1]); });
   });
+  if (ui.shock) {
+    ui.shock.addEventListener('click', function () {
+      shockTimer = 0.25;
+      if (!running) { running = true; syncRun(); }
+      RA.announce('Injecting 0.25 second lateral shock disturbance to the accelerometer.', true);
+    });
+  }
   ui.motion.addEventListener('change', function () { ui.tilt.disabled = ui.motion.value !== 'manual'; });
   ui.reset.addEventListener('click', reset);
   function syncRun() {
@@ -194,7 +234,8 @@
   (function navSim() {
     var navCanvas = document.getElementById('sf-nav-canvas');
     if (!navCanvas) return;
-    var nctx = navCanvas.getContext('2d'), NW = navCanvas.width, NH = navCanvas.height;
+    var NW = 640, NH = 340;
+    var nctx = RA.setupHiDpiCanvas(navCanvas, NW, NH).ctx;
     var nui = {
       modes: document.querySelectorAll('[data-sf-nav]'),
       asym: document.getElementById('sf-asym'),
@@ -347,10 +388,7 @@
     }
 
     function drawNav() {
-      nctx.fillStyle = '#0f1d23'; nctx.fillRect(0, 0, NW, NH);
-      nctx.strokeStyle = 'rgba(112,200,229,.08)'; nctx.lineWidth = 1;
-      for (var gx = 0; gx < NW; gx += 40) { nctx.beginPath(); nctx.moveTo(gx, 0); nctx.lineTo(gx, NH); nctx.stroke(); }
-      for (var gy = 0; gy < NH; gy += 40) { nctx.beginPath(); nctx.moveTo(0, gy); nctx.lineTo(NW, gy); nctx.stroke(); }
+      RoboticsVisuals.floor(nctx, NW, NH, { step: 20, frame: true });
 
       // Ideal planned route
       nctx.setLineDash([5, 5]); nctx.strokeStyle = 'rgba(232,246,251,.3)'; nctx.lineWidth = 2;

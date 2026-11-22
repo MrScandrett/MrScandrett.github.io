@@ -31,13 +31,27 @@
     });
   }
 
-  // Canvas drawn at a fixed logical size (its width/height attributes) and
-  // scaled by CSS; convert a pointer event to logical coordinates.
+  // Configure a canvas for crisp HiDPI rendering at a fixed logical coordinate space.
+  function setupHiDpiCanvas(canvas, logicalW, logicalH) {
+    var dpr = Math.min(global.devicePixelRatio || 1, 2);
+    canvas.dataset.logicalW = String(logicalW);
+    canvas.dataset.logicalH = String(logicalH);
+    canvas.width = Math.round(logicalW * dpr);
+    canvas.height = Math.round(logicalH * dpr);
+    var ctx = canvas.getContext('2d');
+    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: logicalW, h: logicalH, dpr: dpr };
+  }
+
+  // Canvas drawn at a fixed logical size (dataset.logicalW/H or width/height
+  // attributes) and scaled by CSS; convert a pointer event to logical coordinates.
   function canvasPoint(canvas, event) {
     var rect = canvas.getBoundingClientRect();
+    var lw = Number(canvas.dataset.logicalW) || canvas.width;
+    var lh = Number(canvas.dataset.logicalH) || canvas.height;
     return {
-      x: (event.clientX - rect.left) * canvas.width / rect.width,
-      y: (event.clientY - rect.top) * canvas.height / rect.height
+      x: (event.clientX - rect.left) * lw / Math.max(1, rect.width),
+      y: (event.clientY - rect.top) * lh / Math.max(1, rect.height)
     };
   }
 
@@ -45,6 +59,8 @@
   // rectangle {x, y, w, h}, or maxRange if nothing is hit.
   function rayCast(x, y, a, rects, maxRange) {
     var dx = Math.cos(a), dy = Math.sin(a), best = maxRange;
+    if (Math.abs(dx) < 1e-12) dx = dx < 0 ? -1e-12 : 1e-12;
+    if (Math.abs(dy) < 1e-12) dy = dy < 0 ? -1e-12 : 1e-12;
     for (var i = 0; i < rects.length; i++) {
       var r = rects[i];
       var t1 = (r.x - x) / dx, t2 = (r.x + r.w - x) / dx;
@@ -112,7 +128,9 @@
   function keyCursor(canvas, opts) {
     opts = opts || {};
     var step = opts.step || 20;
-    var cur = { x: opts.x != null ? opts.x : canvas.width / 2, y: opts.y != null ? opts.y : canvas.height / 2, focused: false, used: false };
+    var lw = function () { return Number(canvas.dataset.logicalW) || canvas.width; };
+    var lh = function () { return Number(canvas.dataset.logicalH) || canvas.height; };
+    var cur = { x: opts.x != null ? opts.x : lw() / 2, y: opts.y != null ? opts.y : lh() / 2, focused: false, used: false };
     if (!canvas.hasAttribute('tabindex')) canvas.tabIndex = 0;
     canvas.addEventListener('focus', function () { cur.focused = true; });
     canvas.addEventListener('blur', function () { cur.focused = false; });
@@ -124,8 +142,8 @@
       else if (k === 'ArrowUp') { cur.y -= step * mult; moved = true; }
       else if (k === 'ArrowDown') { cur.y += step * mult; moved = true; }
       if (moved) {
-        cur.x = Math.max(step / 2, Math.min(canvas.width - step / 2, cur.x));
-        cur.y = Math.max(step / 2, Math.min(canvas.height - step / 2, cur.y));
+        cur.x = Math.max(step / 2, Math.min(lw() - step / 2, cur.x));
+        cur.y = Math.max(step / 2, Math.min(lh() - step / 2, cur.y));
         cur.used = true;
         e.preventDefault();
         if (opts.onMove) opts.onMove(cur);
@@ -166,31 +184,7 @@
   // Top-down two-wheeled robot facing +x after rotation by a.
   // opts: { body, outline, ghost (0–1 alpha), face: 'happy'|'oops'|null, light }
   function drawRobot(ctx, x, y, a, r, opts) {
-    opts = opts || {};
-    ctx.save();
-    ctx.translate(x, y); ctx.rotate(a || 0);
-    if (opts.ghost != null) ctx.globalAlpha = opts.ghost;
-    // wheels
-    ctx.fillStyle = '#0b1418';
-    roundRect(ctx, -r * 0.6, -r * 1.12, r * 1.2, r * 0.42, r * 0.16); ctx.fill();
-    roundRect(ctx, -r * 0.6, r * 0.7, r * 1.2, r * 0.42, r * 0.16); ctx.fill();
-    // body
-    ctx.fillStyle = opts.body || '#146b8c';
-    ctx.strokeStyle = opts.outline || '#e8f6fb'; ctx.lineWidth = Math.max(1.5, r * 0.16);
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    // sensor bar on the front
-    ctx.fillStyle = opts.light || '#f2bf3f';
-    roundRect(ctx, r * 0.42, -r * 0.5, r * 0.36, r, r * 0.14); ctx.fill();
-    if (opts.face && r >= 9) {
-      // a face drawn upright-ish relative to heading, for younger viewers
-      ctx.fillStyle = '#0f1d23';
-      ctx.beginPath(); ctx.arc(r * 0.05, -r * 0.32, r * 0.13, 0, Math.PI * 2); ctx.arc(r * 0.05, r * 0.32, r * 0.13, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#0f1d23'; ctx.lineWidth = Math.max(1.2, r * 0.1); ctx.beginPath();
-      if (opts.face === 'oops') ctx.arc(-r * 0.5, 0, r * 0.22, -Math.PI / 2, Math.PI / 2, true);
-      else ctx.arc(-r * 0.22, 0, r * 0.3, -Math.PI / 2.6, Math.PI / 2.6);
-      ctx.stroke();
-    }
-    ctx.restore();
+    global.RoboticsVisuals.rover(ctx, x, y, a, r, opts);
   }
 
   function drawFlag(ctx, x, y, s, color) {
@@ -222,6 +216,7 @@
 
   // A rounded boulder with a highlight, so obstacles read as objects, not dots.
   function drawRock(ctx, x, y, r, base) {
+    global.RoboticsVisuals.shadow(ctx, x + r * .14, y + r * .28, r * 1.13, r * 1.07);
     var g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
     g.addColorStop(0, '#f08a55'); g.addColorStop(0.55, base || '#c65e2e'); g.addColorStop(1, '#7a3216');
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
@@ -351,7 +346,7 @@
   }
 
   global.RobotAutonomy = {
-    initQuiz: initQuiz, canvasPoint: canvasPoint, rayCast: rayCast, hitsRect: hitsRect, gauss: gauss, loop: loop,
+    initQuiz: initQuiz, setupHiDpiCanvas: setupHiDpiCanvas, canvasPoint: canvasPoint, rayCast: rayCast, hitsRect: hitsRect, gauss: gauss, loop: loop,
     announce: announce, keyCursor: keyCursor, drawCursor: drawCursor, reducedMotion: reducedMotion,
     roundRect: roundRect, drawRobot: drawRobot, drawFlag: drawFlag, drawPad: drawPad, drawRock: drawRock,
     mascotSVG: mascotSVG, level: function () { return document.documentElement.getAttribute('data-ra-level') || 'builder'; }

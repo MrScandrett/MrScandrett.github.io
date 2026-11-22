@@ -10,6 +10,6 @@ export function worldReading(name,pose){
 }
 export function drawWorld(c){
  c.save();c.strokeStyle='#2e3436';c.lineWidth=18;c.lineCap='round';c.beginPath();for(let y=-400;y<=400;y+=5){const x=lineX(y);if(y===-400)c.moveTo(x,y);else c.lineTo(x,y);}c.stroke();
- for(const r of obstacles){c.shadowColor='#24332f44';c.shadowBlur=8;c.shadowOffsetY=5;c.fillStyle='#c2a16e';c.fillRect(r.x,r.y,r.w,r.h);c.shadowColor='transparent';c.strokeStyle='#806e50';c.lineWidth=2;c.strokeRect(r.x,r.y,r.w,r.h);for(let x=r.x+8;x<r.x+r.w;x+=18){c.beginPath();c.moveTo(x,r.y+2);c.lineTo(Math.min(x+8,r.x+r.w),r.y+r.h-2);c.strokeStyle='#b39262';c.lineWidth=1;c.stroke();}}
+ for(const r of obstacles) RoboticsVisuals.barrier(c,r.x,r.y,r.w,r.h,'wood');
  c.restore();
 }
