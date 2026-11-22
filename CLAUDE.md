@@ -523,6 +523,10 @@ showcase cards, and a "welcome back" strip on the homepage.
   checkboxes inside `<main>`, then autosaves as the student types. Restoring is explicit,
   so opening a lesson never overwrites saved work. Put `data-memory-ignore` on any
   container whose inputs are sim controls rather than answers.
+- **Backup file** (Switching computers? in My Stuff): `exportBackup()` / `importBackup(text)` write and merge a
+  `classroomos-my-stuff` JSON (newer entries win, loading twice changes nothing, `local:` books skipped). The file is
+  untrusted: every entry is rebuilt field by field, lesson keys must be plain `*.html` site paths and project links
+  same-origin. `<span data-memory-avatar>` anywhere shows the current picture (the My Stuff settings tab uses it).
 - **Profile pictures** are curated lesson images listed in `data/avatars.json` (credit,
   license, source, lesson). To add one, append an entry and run `npm run build:avatars`.
   The entry's `src` must be an image its `lesson` actually uses; `npm run check:avatars`

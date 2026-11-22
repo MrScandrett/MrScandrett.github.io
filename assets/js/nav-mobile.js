@@ -334,8 +334,13 @@
       '.nav-settings-pane .nav-skin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem; }' +
       '.nav-settings-pane .nav-skin-grid .nav-theme-chip { min-height: 0; padding: 0.55rem; gap: 0.55rem; border-radius: 14px; grid-template-columns: auto minmax(0, 1fr); align-items: center; }' +
       '@media (max-width: 680px) { html body .nav-settings-panel { left: max(0.75rem, env(safe-area-inset-left)) !important; right: max(0.75rem, env(safe-area-inset-right)) !important; width: auto !important; } }' +
-      'html body .nav-settings-panel .nav-settings-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 16px; overflow: visible; }' +
-      'html body .nav-settings-panel .nav-settings-tab { min-width: 0; padding-inline: 0.3rem; border-radius: 10px; }' +
+      /* Rows of three that stretch to fill, so five tabs (the published site, no Editor) leave no empty slot. */
+      'html body .nav-settings-panel .nav-settings-tabs { display: flex; flex-wrap: wrap; border-radius: 16px; overflow: visible; }' +
+      'html body .nav-settings-panel .nav-settings-tab { flex: 1 1 28%; display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; min-width: 0; padding-inline: 0.3rem; border-radius: 10px; }' +
+      '.nav-settings-tab [data-memory-avatar]:empty { display: none; }' +
+      '.nav-settings-tab .memory-avatar { width: 1.25rem; height: 1.25rem; box-shadow: 0 0 0 1.5px currentColor; }' +
+      /* The theme readout only matters on the appearance tabs; elsewhere the heading names the tab. */
+      '.nav-settings-panel[data-settings-tab="access"] .nav-settings-current, .nav-settings-panel[data-settings-tab="mine"] .nav-settings-current, .nav-settings-panel[data-settings-tab="editor"] .nav-settings-current { display: none; }' +
       'html body .nav-settings-panel .nav-skin-grid .nav-theme-chip { grid-template-columns: minmax(0, 1fr); justify-items: start; align-content: start; min-width: 0; padding: 0.75rem; }' +
       'html body .nav-settings-panel .nav-theme-label { min-width: 0; overflow-wrap: anywhere; }' +
       'html body .nav-settings-panel .nav-skin-grid .nav-theme-label small { display: block; line-height: 1.4; }' +
@@ -955,7 +960,7 @@
         '<span>Settings</span>' +
         '<span class="nav-settings-status" aria-hidden="true"></span>' +
       "</button>" +
-      '<div class="nav-settings-panel" id="' + panelId + '" role="dialog" aria-modal="true" aria-label="Settings" hidden>' +
+      '<div class="nav-settings-panel" id="' + panelId + '" role="dialog" aria-modal="true" aria-label="Settings" data-settings-tab="theme" hidden>' +
         '<button type="button" class="nav-settings-close" aria-label="Close settings">&times;</button>' +
         '<div class="nav-settings-head">' +
           '<p class="nav-settings-eyebrow">Theme Controller</p>' +
@@ -966,7 +971,7 @@
           '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-skin" data-tab="skin" aria-controls="' + panelId + '-pane-skin" aria-selected="false" tabindex="-1">Skin</button>' +
           '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-background" data-tab="background" aria-controls="' + panelId + '-pane-background" aria-selected="false" tabindex="-1">Background</button>' +
           '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-access" data-tab="access" aria-controls="' + panelId + '-pane-access" aria-selected="false" tabindex="-1">Access</button>' +
-          '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-mine" data-tab="mine" aria-controls="' + panelId + '-pane-mine" aria-selected="false" tabindex="-1">My Stuff</button>' +
+          '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-mine" data-tab="mine" aria-controls="' + panelId + '-pane-mine" aria-selected="false" tabindex="-1"><span data-memory-avatar aria-hidden="true"></span>My Stuff</button>' +
           (isLocalDev ? '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-editor" data-tab="editor" aria-controls="' + panelId + '-pane-editor" aria-selected="false" tabindex="-1">Editor</button>' : '') +
         '</div>' +
         '<div class="nav-settings-pane" role="tabpanel" data-pane="theme" id="' + panelId + '-pane-theme" aria-labelledby="' + panelId + '-tab-theme">' +
@@ -1247,6 +1252,11 @@
     var TAB_KEY = "classroomos-settings-tab";
     var tabButtons = Array.prototype.slice.call(settingsContainer.querySelectorAll(".nav-settings-tab"));
     var tabPanes = Array.prototype.slice.call(settingsContainer.querySelectorAll(".nav-settings-pane"));
+    var settingsEyebrow = settingsContainer.querySelector(".nav-settings-head .nav-settings-eyebrow");
+    var TAB_HEADINGS = {
+      theme: "Theme Controller", skin: "Skin", background: "Page Background",
+      access: "Access & presentation", mine: "My Stuff", editor: "Editor"
+    };
     function selectSettingsTab(name, focus) {
       tabButtons.forEach(function (tab) {
         var on = tab.getAttribute("data-tab") === name;
@@ -1255,6 +1265,8 @@
         if (on && focus) tab.focus();
       });
       tabPanes.forEach(function (pane) { pane.hidden = pane.getAttribute("data-pane") !== name; });
+      settingsPanel.setAttribute("data-settings-tab", name);
+      if (settingsEyebrow) settingsEyebrow.textContent = TAB_HEADINGS[name] || "Settings";
       writeStorage(TAB_KEY, name);
       if (name === "skin") withSkins(buildSkinUi);
       if (name === "editor" && editorLink) refreshEditorLink();

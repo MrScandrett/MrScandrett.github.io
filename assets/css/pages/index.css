@@ -7379,8 +7379,12 @@ html[data-lighting="night"] .cos-home .home-widget--weather .weather-learning-pa
   flex-shrink: 0;
 }
 
+/* The photo runs edge to edge, so the card has no padding of its own and the text
+   column carries the same inset as every other widget. (.cos-home .home-widget is
+   more specific than .home-widget--lotd, which doubled the inset.) */
+.cos-home .home-widget--lotd { padding: 0; }
 .home-widget--lotd .lotd-main {
-  padding: 1rem 1.25rem;
+  padding: clamp(1rem, 2vw, 1.25rem);
 }
 .lotd-main {
   display: flex;
@@ -9447,7 +9451,22 @@ body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title {
 @media (max-width: 780px) {
   .home-support-grid { grid-template-columns: minmax(0, 1fr); }
   body.theme-home main.homepage-main :is(.home-launchpad.hero, .home-tabs, .today-panel, .home-support-grid) { width: 100%; }
-  .today-shortcuts ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* One swipeable row instead of 4–5 rows of buttons above the first widget. */
+  .today-shortcuts { margin-inline: -.25rem; }
+  .today-shortcuts ul {
+    display: flex;
+    gap: .4rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: .25rem;
+    scrollbar-width: none;
+    padding: .25rem 2rem .25rem .25rem;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 2rem), transparent);
+  }
+  .today-shortcuts ul::-webkit-scrollbar { display: none; }
+  .today-shortcuts li { flex: none; scroll-snap-align: start; }
+  .today-shortcuts a { white-space: nowrap; border-radius: 999px; padding-inline: .85rem; }
 }
 
 @media (max-width: 480px) {
@@ -9458,16 +9477,12 @@ body.theme-home .cos-home .home-launchpad .home-launch-brand .home-hero-title {
   .cos-home .home-launch-actions .command-anchor { height: 100%; grid-template-columns: auto minmax(0, 1fr); }
   .home-launch-actions .command-anchor kbd { display: none; }
   .cos-home .home-launch-actions .home-start-class .home-launch-title { font-size: .9rem; }
-  .today-shortcuts ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 360px) {
   .home-launch-actions { display: flex; }
   .cos-home .home-launch-actions .home-start-class { min-height: 44px; grid-template-columns: 1fr; }
   .cos-home .home-launch-actions :is(.home-start-class-stage, .home-launch-desc) { display: none; }
-  .today-shortcuts ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .today-shortcuts a { justify-content: center; padding-inline: .25rem; font-size: .75rem; text-align: center; }
-  .today-shortcuts a > span { display: none; }
 }
 
 

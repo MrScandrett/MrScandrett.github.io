@@ -3912,7 +3912,18 @@
     el('[data-fb-player-ask]').hidden = !!opts.player;
     root.querySelectorAll('[data-fb-speedup]').forEach(function (c) { c.checked = !!opts.speedUp; });
     // Guitar tab is guitar notation: a player who picked a horn, voice or keyboard doesn't need the switch.
-    if (opts.player && !custom && !PLAYERS[opts.player].tab && !tabOn()) el('[data-fb-tab-toolbar]').hidden = true;
+    syncTabRow();
+  }
+  // The Tab switch sits with the other quick toggles; its options row (style, position, octave,
+  // fingerings) only shows while tab is on. Players who picked a horn, voice or keyboard don't get the switch.
+  function syncTabRow() {
+    var row = el('[data-fb-tab-toolbar]'), pill = el('[data-fb-tab-pill]');
+    if (!row) return;
+    var notation = opts.sheetView !== 'drums' && opts.sheetView !== 'arrangement';
+    var custom = !!opts.player && !playerFits(opts.player);
+    var wanted = notation && (!opts.player || custom || !!PLAYERS[opts.player].tab || tabOn());
+    if (pill) pill.hidden = !wanted;
+    row.hidden = !wanted || !tabOn();
   }
   function applyPlayer(id) {
     var pl = PLAYERS[id];
@@ -4126,8 +4137,7 @@
         (pins.length - stale) + ' pinned fingering' + (pins.length - stale === 1 ? '' : 's') + ' (◆ above the tab)' +
         (stale ? '. ' + stale + ' pick' + (stale === 1 ? ' is' : 's are') + ' for other notes (another melody, rhythm or tab style) and wait until those notes come back.' : '.');
     }
-    var tabToolbar = el('[data-fb-tab-toolbar]');
-    if (tabToolbar) tabToolbar.hidden = opts.sheetView === 'drums' || opts.sheetView === 'arrangement';
+    syncTabRow();
     var tabHint = el('[data-fb-tab-toolbar-hint]');
     if (tabHint) tabHint.textContent = !on ? 'Show tab, then choose where to play it.' :
       opts.tabPick && pickable ? 'Roman numerals under the tab mark each move to a new hand position.' :
@@ -5733,33 +5743,14 @@
   }
 
   function modeOk(m) { var o = el('[data-fb-mode] option[value="' + m + '"]'); return !!o && !o.disabled; }
-  // The "Fifteen minutes with one tune" plan as buttons: each one sets up its step.
-  function practiceStep(step) {
-    var chordsOnly = !!tune.chordsOnly, tip = '', go = false;
-    root.querySelectorAll('[data-fb-plan-step]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-fb-plan-step') === step)); });
-    if (step === 'listen') {
-      opts.mode = modeOk('all') ? 'all' : (modeOk('score') ? 'score' : opts.mode);
-      opts.tempo = Math.max(40, Math.round(tune.raw.tempo * 0.8));
-      opts.from = 1; opts.to = tune.bars; opts.loop = true; startBar = 0;
-      tip = chordsOnly ? 'Listen to the band play the changes, slower than usual. Hum the bass notes and feel where each chord changes.' : 'Listen at a slower tempo. Follow the highlighted bar and sing along quietly.';
-      go = true;
-    } else if (step === 'play') {
-      if (modeOk('band')) opts.mode = 'band';
-      tip = chordsOnly ? 'This chart has chords only. Play the roots for one chorus, then the 3rds and 7ths, moving to the nearest note each time.' : 'The band plays and you play the melody. ' + (matchMedia('(pointer: coarse)').matches ? 'To loop a hard spot, tap its first bar, open “Ready at measure” and press 2 bars' : 'Drag across a hard spot to loop it') + ', and slow the tempo until it’s easy.';
-      go = true;
-    } else if (step === 'key') {
-      openTools('key');
-      tip = 'Pick a new key in the drawer, then play it again. The shape of the tune stays the same; only the starting note moves.';
-    } else if (step === 'vary') {
-      if (chordsOnly || scoreTiming()) tip = 'This tune has no lead-sheet melody to change. Try a new key or a different band style instead.';
-      else { openTools('melody'); tip = 'Pick one melody change and one rhythm change. Play the variation, then make up your own in between.'; }
-    } else if (step === 'trade') {
-      if (modeOk('trade')) { opts.mode = 'trade'; go = true; tip = 'The tune plays four bars, then the shaded four bars are yours to answer. Start with chord tones and a rhythm you like.'; }
-      else tip = 'Trading fours needs the lead-sheet band; this score plays as written.';
-    }
-    el('[data-fb-plan-tip]').textContent = tip;
-    syncControls(); refresh(); paintLoop(); save();
-    if (go) play(); else stop();
+  // Key ◀ ▶ beside the sheet: one half step down or up (the key lists are chromatic), wrapping round.
+  function stepKey(dir) {
+    var list = tune.key.minor ? MINOR_KEYS : MAJOR_KEYS;
+    var i = list.indexOf(opts.key);
+    opts.key = list[((i < 0 ? 0 : i) + dir + list.length) % list.length];
+    syncControls(); refresh(); respin(); save();
+    var live = el('[data-fb-live]');
+    if (live) live.textContent = 'Key: ' + el('[data-fb-quick-key]').selectedOptions[0].textContent + '.';
   }
 
   function updateLiveLoop() {
@@ -5990,8 +5981,8 @@
         opts.saxFingers = false; opts.sheetView = 'lead';
         syncControls(); refresh(); renderBarPop(); return;
       }
-      var planStep = t.closest('[data-fb-plan-step]');
-      if (planStep) { practiceStep(planStep.getAttribute('data-fb-plan-step')); return; }
+      var keyStep = t.closest('[data-fb-key-step]');
+      if (keyStep) { stepKey(Number(keyStep.getAttribute('data-fb-key-step'))); return; }
       var lvl = t.closest('[data-fb-level]');
       if (lvl) { libLevel = lvl.getAttribute('data-fb-level'); renderLibrary(); return; }
       if (t.closest('[data-fb-surprise]')) {

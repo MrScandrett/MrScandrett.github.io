@@ -18,6 +18,11 @@
  *   <a data-memory-play ...same attributes...>                  "recently played"
  *   <div data-memory-profile>                                   the My Stuff profile
  *   <div data-memory-continue hidden>                           "welcome back" strip
+ *   <span data-memory-avatar></span>                            the profile picture, kept current
+ *                                                               (left empty when there is none)
+ *
+ * My Stuff can be saved to a backup file and loaded on another computer (no account, so a
+ * file the student carries is the only way across). Loading merges: newer entries win.
  *
  * Lesson pages also get a heart and a Save answers control beside Print, and a history
  * entry (visits and how far down the page they got).
@@ -109,6 +114,8 @@
   function siteHref(path) { return new URL(path, ROOT).href; }
 
   function safeUrl(url) {
+    // An empty or missing value would otherwise resolve to the current page's address.
+    if (typeof url !== 'string' || !url.trim()) return '';
     try {
       var u = new URL(url, location.href);
       return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : '';
@@ -526,6 +533,22 @@
     return face;
   }
 
+  // [data-memory-avatar] slots elsewhere on the page (the My Stuff settings tab) show the
+  // current picture; a slot with no picture stays empty so it can hide itself with :empty.
+  function syncAvatarSlots(scope, data) {
+    var slots = (scope || document).querySelectorAll ? (scope || document).querySelectorAll('[data-memory-avatar]') : [];
+    if (!slots.length) return;
+    var avatar = (data || load()).avatar || null;
+    var id = avatar ? avatar.id : '';
+    Array.prototype.forEach.call(slots, function (slot) {
+      if (slot.getAttribute('data-memory-avatar-id') === id && slot.__memoryAvatarSet) return;
+      slot.__memoryAvatarSet = true;
+      slot.setAttribute('data-memory-avatar-id', id);
+      slot.textContent = '';
+      if (avatar) slot.appendChild(avatarFace(avatar, 'memory-avatar--xs'));
+    });
+  }
+
   function forget(bucketName, id) {
     return update(function (data) {
       if (!data[bucketName] || !data[bucketName][id]) return false;
@@ -550,6 +573,131 @@
     } catch (e) { return false; }
     emit();
     return true;
+  }
+
+  /* ── Backup file (carry My Stuff to another computer) ────────────── */
+
+  var BACKUP_FORMAT = 'classroomos-my-stuff';
+  var BACKUP_MAX_BYTES = 2 * 1024 * 1024;
+  var LESSON_PATH = /^[a-z0-9][a-z0-9._\/-]{0,200}\.html$/i;
+  var STAMP = { lessons: 'last', favs: 'at', sheets: 'at', likes: 'at', plays: 'at' };
+
+  function exportBackup() {
+    var data = load();
+    var bookPos = {};
+    books().forEach(function (b) {
+      if (b.local) return; // a file opened from this computer isn't on the next one
+      try { bookPos[b.id] = JSON.parse(localStorage.getItem(BOOK_PREFIX + b.id)); } catch (e) { /* skip */ }
+    });
+    return { format: BACKUP_FORMAT, v: 1, saved: new Date().toISOString(), memory: data, books: bookPos };
+  }
+
+  function downloadBackup() {
+    var json = JSON.stringify(exportBackup(), null, 1);
+    var blob = new Blob([json], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'my-stuff-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+
+  // A backup file is untrusted input (it could be edited, or come from anyone): every
+  // entry is rebuilt field by field, lesson keys must be plain site paths, and project
+  // links must point at this site, so nothing in it can become a javascript: or off-site link.
+  function sameSite(url) {
+    var u = safeUrl(url);
+    try { return u && new URL(u).origin === ROOT.origin ? u : ''; } catch (e) { return ''; }
+  }
+  function num(v) { v = Number(v); return isFinite(v) && v >= 0 ? v : 0; }
+  function isPath(id) { return LESSON_PATH.test(id) && id.indexOf('..') === -1 && id.indexOf('//') === -1; }
+
+  function cleanEntry(kind, id, rec) {
+    if (!rec || typeof rec !== 'object') return null;
+    if (kind === 'lessons') {
+      if (!isPath(id)) return null;
+      return { first: num(rec.first), last: num(rec.last), n: Math.min(num(rec.n), 1e5), deep: Math.min(1, num(rec.deep)), t: clip(rec.t), m: clip(rec.m, 60) };
+    }
+    if (kind === 'favs') {
+      if (!isPath(id)) return null;
+      return { t: clip(rec.t) || id, by: clip(rec.by, 80), url: id, at: num(rec.at) };
+    }
+    if (kind === 'sheets') {
+      if (!isPath(id) || !rec.f || typeof rec.f !== 'object') return null;
+      var f = {}, n = 0;
+      Object.keys(rec.f).slice(0, CAP.fields).forEach(function (k) {
+        var v = rec.f[k];
+        if (typeof v === 'string') v = v.slice(0, CAP.fieldChars);
+        else if (typeof v === 'number') v = v === 1 ? 1 : 0;
+        else if (Array.isArray(v)) v = v.filter(function (x) { return typeof x === 'string'; }).map(function (x) { return x.slice(0, 200); });
+        else return;
+        f[String(k).slice(0, 200)] = v;
+        n++;
+      });
+      return n ? { t: clip(rec.t) || id, m: clip(rec.m, 60), at: num(rec.at), n: n, f: f } : null;
+    }
+    // likes / plays: showcase projects, keyed by an opaque id
+    if (!id || id.length > 200) return null;
+    var out = { t: clip(rec.t) || id, by: clip(rec.by, 80), url: sameSite(rec.url), thumb: sameSite(rec.thumb), at: num(rec.at) };
+    if (kind === 'plays') out.n = Math.min(num(rec.n), 1e5) || 1;
+    return out;
+  }
+
+  function importBackup(text) {
+    var file;
+    try { file = JSON.parse(text); } catch (e) { return { ok: false, why: 'That file isn’t a My Stuff backup.' }; }
+    if (!file || file.format !== BACKUP_FORMAT || !file.memory || typeof file.memory !== 'object') {
+      return { ok: false, why: 'That file isn’t a My Stuff backup.' };
+    }
+    var added = 0;
+    var ok = update(function (data) {
+      Object.keys(STAMP).forEach(function (kind) {
+        var incoming = file.memory[kind];
+        if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) return;
+        Object.keys(incoming).forEach(function (id) {
+          var rec = cleanEntry(kind, id, incoming[id]);
+          if (!rec) return;
+          var mine = data[kind][id];
+          if (!mine) { data[kind][id] = rec; added++; return; }
+          if (kind === 'lessons') { // the same lesson on both computers: one entry
+            mine.n = Math.max(mine.n || 0, rec.n); // max, not sum, so loading a file twice changes nothing
+            mine.deep = Math.max(mine.deep || 0, rec.deep);
+            if (rec.first && (!mine.first || rec.first < mine.first)) mine.first = rec.first;
+            if (rec.last > (mine.last || 0)) { mine.last = rec.last; mine.t = rec.t || mine.t; }
+          } else if (rec[STAMP[kind]] > (mine[STAMP[kind]] || 0)) {
+            data[kind][id] = rec; // the newer save wins
+          }
+        });
+      });
+      var av = file.memory.avatar;
+      if (!data.avatar && av && typeof av === 'object' && AVATAR_ID.test(av.id || '')) {
+        data.avatar = { id: av.id, label: clip(av.label, 80) };
+      }
+    });
+    if (!ok) return { ok: false, why: 'Couldn’t save. This browser may be full or in private mode.' };
+
+    var bookPos = file.books && typeof file.books === 'object' ? file.books : {};
+    Object.keys(bookPos).slice(0, 100).forEach(function (id) {
+      var pos = bookPos[id];
+      if (!id || id.length > 300 || id.indexOf('local:') === 0 || !pos || typeof pos !== 'object') return;
+      var clean = {};
+      Object.keys(pos).slice(0, 20).forEach(function (k) {
+        var v = pos[k];
+        if (typeof v === 'number' && isFinite(v)) clean[k] = v;
+        else if (typeof v === 'string') clean[k] = v.slice(0, 300);
+      });
+      if (!isFinite(Number(clean.p))) return;
+      try {
+        var mine = JSON.parse(localStorage.getItem(BOOK_PREFIX + id) || 'null');
+        if (mine && num(mine.at) >= num(clean.at)) return;
+        localStorage.setItem(BOOK_PREFIX + id, JSON.stringify(clean));
+        added++;
+      } catch (e) { /* storage full or blocked: keep what loaded */ }
+    });
+    emit();
+    return { ok: true, added: added };
   }
 
   /* ── Shared UI bits ──────────────────────────────────────────────── */
@@ -759,6 +907,9 @@
   /* ── Profile ("My Stuff") ────────────────────────────────────────── */
 
   var SECTION_LIMIT = 5;
+  // Sections the student pressed "Show all" on stay expanded when a change re-renders the
+  // profile (removing the 8th history entry used to fold the list back to five).
+  var expanded = {};
 
   function profileSection(id, title, emptyText, items, renderItem, open) {
     var details = el('details', 'memory-section');
@@ -775,16 +926,21 @@
     var list = el('ul', 'memory-list');
     items.forEach(function (item, i) {
       var li = renderItem(item);
-      if (i >= SECTION_LIMIT) li.hidden = true;
+      if (i >= SECTION_LIMIT && !expanded[id]) li.hidden = true;
       list.appendChild(li);
     });
     details.appendChild(list);
-    if (items.length > SECTION_LIMIT) {
+    if (items.length > SECTION_LIMIT && !expanded[id]) {
       var more = el('button', 'memory-more', 'Show all ' + items.length);
       more.type = 'button';
       more.addEventListener('click', function () {
+        expanded[id] = true;
+        var first = list.querySelector('li[hidden]');
         list.querySelectorAll('li[hidden]').forEach(function (li) { li.hidden = false; });
         more.remove();
+        // Keep keyboard users in the list rather than dropping focus on <body>.
+        var next = first && first.querySelector('a, button');
+        if (next) next.focus();
       });
       details.appendChild(more);
     }
@@ -878,12 +1034,24 @@
       });
       wrap.appendChild(groups);
 
+      // Tiles are faces with no words, so name whichever one is under the pointer or focus.
+      var restingName = current ? current.label + ' (your picture)' : 'Point at a picture to see who or what it is';
+      var caption = el('p', 'memory-picker__name', restingName);
+      caption.setAttribute('aria-hidden', 'true'); // each tile already has its own label
+      wrap.appendChild(caption);
+
       var grid = el('div', 'memory-picker__grid');
-      cat.avatars.filter(function (a) { return a.group === picker.group && AVATAR_ID.test(a.id); }).forEach(function (a) {
+      var shown = cat.avatars.filter(function (a) { return a.group === picker.group && AVATAR_ID.test(a.id); });
+      var hasCurrent = shown.some(function (a) { return snap.avatar && snap.avatar.id === a.id; });
+      shown.forEach(function (a, i) {
         var on = Boolean(snap.avatar && snap.avatar.id === a.id);
         var b = el('button', 'memory-picker__tile');
         b.type = 'button';
         b.title = a.label;
+        // One tab stop for the whole grid (the chosen tile, else the first); arrows move inside.
+        b.tabIndex = on || (!hasCurrent && i === 0) ? 0 : -1;
+        b.addEventListener('mouseenter', function () { caption.textContent = a.label; });
+        b.addEventListener('focus', function () { caption.textContent = a.label; });
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
         b.setAttribute('aria-label', a.label);
         b.setAttribute('data-focus-key', 'avatar:' + a.id);
@@ -898,6 +1066,25 @@
           announce('Profile picture: ' + a.label);
         });
         grid.appendChild(b);
+      });
+      grid.addEventListener('mouseleave', function () { caption.textContent = restingName; });
+      grid.addEventListener('focusout', function (e) {
+        if (!grid.contains(e.relatedTarget)) caption.textContent = restingName;
+      });
+      grid.addEventListener('keydown', function (e) {
+        var tiles = Array.prototype.slice.call(grid.children);
+        var i = tiles.indexOf(document.activeElement);
+        if (i === -1) return;
+        // Columns come from the layout (auto-fill), so count tiles on the first row.
+        var cols = 1;
+        while (cols < tiles.length && tiles[cols].offsetTop === tiles[0].offsetTop) cols++;
+        var step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols }[e.key];
+        var to = e.key === 'Home' ? 0 : e.key === 'End' ? tiles.length - 1 : step != null ? i + step : -1;
+        if (to < 0 || to >= tiles.length || to === i) { if (step != null || e.key === 'Home' || e.key === 'End') e.preventDefault(); return; }
+        e.preventDefault();
+        tiles[i].tabIndex = -1;
+        tiles[to].tabIndex = 0;
+        tiles[to].focus();
       });
       wrap.appendChild(grid);
 
@@ -1115,8 +1302,47 @@
       clearAll();
       announce('Activity cleared from this device.');
     });
+    box.appendChild(backupBlock());
     box.appendChild(clear);
-    box.appendChild(el('p', 'memory-fineprint', 'Clearing removes history, favorites, likes, saved answers, reading places and your picture. Bookmarks and notes inside books, and game high scores, are kept.'));
+    box.appendChild(el('p', 'memory-fineprint','Clearing removes history, favorites, likes, saved answers, reading places and your picture. Bookmarks and notes inside books, and game high scores, are kept.'));
+    return box;
+  }
+
+  function backupBlock() {
+    var box = el('div', 'memory-backup');
+    box.appendChild(el('p', 'memory-backup__title', 'Switching computers?'));
+    box.appendChild(el('p', 'memory-fineprint', 'Save a backup file, then load it on the other computer. Loading adds to what’s there; nothing is replaced with something older.'));
+    var row = el('div', 'memory-backup__actions');
+
+    var save = el('button', 'memory-clear', 'Save a backup');
+    save.type = 'button';
+    save.setAttribute('data-focus-key', 'backup-save');
+    save.addEventListener('click', function () {
+      try { downloadBackup(); announce('Backup saved to your downloads.'); }
+      catch (e) { announce('This browser wouldn’t save the file.'); }
+    });
+
+    var input = el('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.hidden = true;
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      input.value = '';
+      if (!file) return;
+      if (file.size > BACKUP_MAX_BYTES) { announce('That file is too big to be a My Stuff backup.'); return; }
+      file.text().then(function (text) {
+        var r = importBackup(text);
+        announce(!r.ok ? r.why : r.added ? 'Loaded ' + r.added + ' thing' + (r.added === 1 ? '' : 's') + ' from your backup.' : 'Everything in that backup was already here.');
+      }, function () { announce('Couldn’t read that file.'); });
+    });
+    var loadBtn = el('button', 'memory-clear', 'Load a backup');
+    loadBtn.type = 'button';
+    loadBtn.setAttribute('data-focus-key', 'backup-load');
+    loadBtn.addEventListener('click', function () { input.click(); });
+
+    row.append(save, loadBtn, input);
+    box.appendChild(row);
     return box;
   }
 
@@ -1204,11 +1430,14 @@
       var likes = s.matches && s.matches('[data-memory-like]') ? [s] : [];
       Array.prototype.push.apply(likes, s.querySelectorAll('[data-memory-like]'));
       likes.forEach(function (btn) { syncLikeButton(btn, data || (data = load())); });
+      if (s.matches && s.matches('[data-memory-avatar]')) syncAvatarSlots(s.parentNode);
+      else syncAvatarSlots(s);
     }
   }
 
   window.addEventListener(CHANGE_EVENT, function () {
     syncAllLikes();
+    syncAvatarSlots(document);
     mounts = mounts.filter(function (m) { return m.node.isConnected; });
     mounts.forEach(function (m) { m.fn(m.node); });
   });
@@ -1244,6 +1473,8 @@
     clearAll: clearAll,
     saveWorksheet: saveWorksheet,
     restoreWorksheet: restoreWorksheet,
+    exportBackup: exportBackup,
+    importBackup: importBackup,
     sitePath: sitePath,
   };
 

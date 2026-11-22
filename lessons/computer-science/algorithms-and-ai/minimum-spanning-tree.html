@@ -6,9 +6,6 @@
   <title>Minimum Spanning Tree · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
   <meta name="description" content="Computer Science Lesson 15 — explore Kruskal's and Prim's algorithms for finding minimum spanning trees in graphs. Interactive step-by-step visualiser with real greedy algorithm animation." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/algorithms-ai-module.css" />
@@ -66,7 +63,37 @@
     [data-lighting="night"] .cl-canvas-wrap,
     [data-theme="vaporwave"] .cl-canvas-wrap,
     [data-theme="bark"] .cl-canvas-wrap { background: #1c1c1e; }
-    #mst-canvas { width: 100%; height: 260px; display: block; }
+    .cl-canvas-wrap { height: clamp(260px, 46vw, 420px); }
+    #mst-canvas { width: 100%; height: 100%; display: block; touch-action: manipulation; }
+    #mst-canvas:focus-visible { outline: 3px solid #ff9f0a; outline-offset: -3px; }
+
+    /* Sim toolbar, narration and edge queue */
+    .mst-bar { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.6rem 0 0; }
+    .mst-bar button { border: 1px solid var(--line,#d2d2d7); background: var(--white,#fff); color: var(--text,#1d1d1f); border-radius: 9px; padding: 0.45rem 0.85rem; font: inherit; font-size: 0.84rem; font-weight: 700; cursor: pointer; }
+    .mst-bar button.mst-primary { background: #a36300; border-color: #a36300; color: #fff; }
+    .mst-bar button:disabled { opacity: 0.45; cursor: default; }
+    .mst-bar--col { flex-direction: column; margin: 0; }
+    .mst-bar .mst-keys { margin-left: auto; align-self: center; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .mst-narration { margin: 0.6rem 0 0; padding: 0.65rem 0.85rem; border-radius: 10px; background: rgba(255,159,10,0.08); border: 1px solid rgba(255,159,10,0.25); font-size: 0.88rem; line-height: 1.55; min-height: 2.9rem; }
+    .mst-ok { color: #1f7a35; font-weight: 800; }
+    .mst-no { color: #c0392b; font-weight: 800; }
+    [data-lighting="night"] .mst-ok { color: #4cd964; }
+    [data-lighting="night"] .mst-no { color: #ff6b6b; }
+    .mst-queue-label { display: block; margin: 0.7rem 0 0.3rem; font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); }
+    .mst-queue { display: flex; gap: 0.35rem; overflow-x: auto; padding: 0.1rem 0 0.4rem; scroll-behavior: smooth; }
+    .mst-chip { flex: none; border: 1.5px solid var(--line,#d2d2d7); border-radius: 999px; padding: 0.18rem 0.55rem; font-size: 0.76rem; white-space: nowrap; }
+    .mst-chip b { font-weight: 800; margin-left: 0.15rem; }
+    .mst-chip--added, .mst-chip--mine-ok { border-color: #34c759; background: rgba(52,199,89,0.14); }
+    .mst-chip--rejected { border-color: #ff3b30; text-decoration: line-through; opacity: 0.75; }
+    .mst-chip--skipped { opacity: 0.45; }
+    .mst-chip--frontier { border-color: #007aff; background: rgba(0,122,255,0.08); }
+    .mst-chip--mine { border-color: #5856d6; background: rgba(88,86,214,0.12); }
+    .mst-chip.is-current { border-color: #ff9f0a; box-shadow: 0 0 0 2px rgba(255,159,10,0.45); font-weight: 700; }
+    .mst-chip-empty { font-size: 0.78rem; color: var(--text-muted, #64748b); }
+    .cl-algo-toggle { margin-bottom: 0.6rem; }
+    #mst-sources .cl-steps li { display: block; }
+    @media (max-width: 600px), (pointer: coarse) { .mst-bar .mst-keys { display: none; } }
+    @media print { .cl-canvas-wrap { height: 300px; } .mst-bar { display: none; } .mst-queue { flex-wrap: wrap; } }
 
     /* Readouts */
     .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
@@ -190,7 +217,7 @@
           <div class="cl-bio">
             <div class="cl-bio-portrait" aria-hidden="true">🌐</div>
             <p class="cl-bio-text">
-              In 1956, mathematician <strong>Joseph Kruskal</strong> published an elegant greedy algorithm: sort all edges in a graph by weight, then keep adding the cheapest edge that doesn't create a cycle — until every node is connected. One year later in 1957, computer scientist <strong>Robert Prim</strong> independently found a different approach: start from any node, and repeatedly add the cheapest edge that connects the current tree to a node not yet in it. Both algorithms always produce the same optimal result — the minimum spanning tree — and both are provably correct. Their work appears in network design, biology, image segmentation, and cluster analysis to this day.
+              In 1956, mathematician <strong>Joseph Kruskal</strong> published an elegant greedy algorithm: sort all edges in a graph by weight, then keep adding the cheapest edge that doesn't create a cycle — until every node is connected. One year later in 1957, computer scientist <strong>Robert Prim</strong> independently found a different approach: start from any node, and repeatedly add the cheapest edge that connects the current tree to a node not yet in it. Both algorithms always produce the same optimal result — the minimum spanning tree — and both are provably correct. Neither was first: in 1926 the Czech mathematician <strong>Otakar Borůvka</strong> had solved the same problem to wire up the electricity grid of Moravia. Their work appears in network design, biology, image segmentation, and cluster analysis to this day.
             </p>
           </div>
         </section>
@@ -228,35 +255,64 @@
           </ul>
 
           <p>Both are <strong>greedy algorithms</strong> — they always make the locally cheapest choice available. Kruskal's thinks in terms of the whole edge list at once; Prim's grows outward one connected blob at a time, like a snowball rolling through the graph. Remarkably, both strategies are provably globally optimal — try both below and you'll always end up with the same total cost.</p>
+
+          <h3>Why Is Being Greedy Safe Here?</h3>
+          <p>Greedy choices usually fail: grabbing the biggest coin first doesn't always give the fewest coins. MSTs are special because of two facts:</p>
+          <ul class="cl-steps">
+            <li><span class="cl-step-num">✂</span><span><strong>The cut property.</strong> Split the nodes into any two groups. The cheapest edge crossing between them belongs in a minimum spanning tree. If a tree skipped it, you could swap it in for whichever dearer edge the tree uses to cross that gap and get a cheaper tree. Prim's blue frontier <em>is</em> such a cut.</span></li>
+            <li><span class="cl-step-num">↻</span><span><strong>The cycle property.</strong> In any loop, the most expensive edge is never needed: the rest of the loop already connects its ends more cheaply. That's every red edge Kruskal throws away.</span></li>
+          </ul>
         </section>
 
         <!-- Simulator -->
         <section class="cl-card" style="--card-accent:#ff9f0a;">
           <h2>MST Visualiser</h2>
           <div class="cl-algo-toggle" role="group" aria-label="Choose an algorithm">
-            <button type="button" class="cl-algo-btn is-active" id="mst-algo-kruskal" aria-pressed="true">Kruskal's<small>Sort all edges, add the cheapest safe one</small></button>
-            <button type="button" class="cl-algo-btn" id="mst-algo-prim" aria-pressed="false">Prim's<small>Grow one connected tree outward</small></button>
+            <button type="button" class="cl-algo-btn is-active" id="mst-algo-kruskal" aria-pressed="true">Kruskal's<small>Cheapest edges first, skip loops</small></button>
+            <button type="button" class="cl-algo-btn" id="mst-algo-prim" aria-pressed="false">Prim's<small>Grow one tree outward</small></button>
+            <button type="button" class="cl-algo-btn" id="mst-algo-build" aria-pressed="false">You build it<small>Beat the algorithm by hand</small></button>
           </div>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);" id="mst-sim-instructions">Click <strong>Step</strong> to add one edge at a time, or <strong>Run All</strong> to complete instantly. Green edges are in the MST; red edges were rejected (would create a cycle); grey edges have not yet been considered.</p>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);" id="mst-sim-instructions"></p>
           <div class="cl-canvas-wrap">
-            <canvas id="mst-canvas" aria-label="Minimum spanning tree algorithm visualiser. Press Space or Enter to step, R to reset." tabindex="0" role="region"></canvas>
+            <canvas id="mst-canvas" aria-label="Minimum spanning tree visualiser. Space or right arrow steps forward, left arrow steps back, P plays, R resets." tabindex="0" role="img"></canvas>
           </div>
+          <div class="mst-bar" id="mst-stepbar" data-memory-ignore>
+            <button type="button" id="mst-back">◀ Back</button>
+            <button type="button" id="mst-step" class="mst-primary">Step ▶</button>
+            <button type="button" id="mst-play">▶ Play</button>
+            <button type="button" id="mst-reset">Reset</button>
+            <span class="mst-keys">Keys: Space / ← → / P / R</span>
+          </div>
+          <div class="mst-bar" id="mst-buildbar" hidden data-memory-ignore>
+            <button type="button" id="mst-check" class="mst-primary">Check my tree</button>
+            <button type="button" id="mst-reveal">Show a cheapest tree</button>
+            <button type="button" id="mst-clear">Clear</button>
+          </div>
+          <p class="mst-narration" id="mst-narration" aria-live="polite"></p>
+          <span class="mst-queue-label" id="mst-queue-label">Edge queue</span>
+          <div class="mst-queue" id="mst-queue"></div>
           <div class="cl-readouts">
-            <div class="cl-readout"><span class="cl-readout-label">Total Cost</span><span class="cl-readout-val" id="mst-r-cost">—</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">Edges Added</span><span class="cl-readout-val" id="mst-r-added">0</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">Considered</span><span class="cl-readout-val" id="mst-r-considered">0</span></div>
+            <div class="cl-readout"><span class="cl-readout-label" id="mst-r-cost-label">Total Cost</span><span class="cl-readout-val" id="mst-r-cost">—</span></div>
+            <div class="cl-readout"><span class="cl-readout-label" id="mst-r-added-label">Edges Added</span><span class="cl-readout-val" id="mst-r-added">0</span></div>
+            <div class="cl-readout"><span class="cl-readout-label" id="mst-r-considered-label">Considered</span><span class="cl-readout-val" id="mst-r-considered">0</span></div>
           </div>
           <div class="cl-legend" aria-label="Edge colour legend" id="mst-legend-kruskal">
             <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#34c759;height:4px;"></span>Added to MST</span>
-            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#ff3b30;height:4px;"></span>Rejected (cycle)</span>
-            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#d2d2d7;height:4px;"></span>Not yet considered</span>
-            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#ff9f0a;height:4px;"></span>Currently examining</span>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#ff3b30;height:4px;"></span>Rejected (would close a loop)</span>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#ff9f0a;height:4px;"></span>Just examined</span>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#c5c7cf;height:4px;"></span>Still in the queue</span>
+            <span class="cl-legend-item">Same-coloured nodes are already joined</span>
           </div>
-          <div class="cl-legend" aria-label="Edge colour legend" id="mst-legend-prim" style="display:none;">
+          <div class="cl-legend" aria-label="Edge colour legend" id="mst-legend-prim" hidden>
             <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#34c759;height:4px;"></span>Added to MST</span>
-            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#007aff;height:4px;"></span>Frontier (crosses the tree's edge)</span>
-            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#ff3b30;height:4px;"></span>No longer useful (both ends inside)</span>
-            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#d2d2d7;height:4px;"></span>Not adjacent yet</span>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#007aff;height:4px;"></span>Frontier (crosses the cut)</span>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#ff3b30;height:4px;"></span>Both ends inside: no longer useful</span>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#c5c7cf;height:4px;"></span>Not reachable yet</span>
+          </div>
+          <div class="cl-legend" aria-label="Edge colour legend" id="mst-legend-build" hidden>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#5856d6;height:4px;"></span>Your edges</span>
+            <span class="cl-legend-item"><span class="cl-legend-swatch" style="background:#34c759;height:4px;"></span>In a cheapest tree</span>
+            <span class="cl-legend-item">Same-coloured nodes are joined by your edges</span>
           </div>
         </section>
 
@@ -379,7 +435,7 @@
 
           <div style="background: rgba(255, 159, 10, 0.06); border: 1px solid rgba(255, 159, 10, 0.22); border-radius: 12px; padding: 1.1rem; margin: 0.8rem 0;">
             <h3 style="margin-top:0;">Problem: Connect 5 Cities {A, B, C, D, E} with Minimum Fiber Optic Cable</h3>
-            <p>We are given an undirected graph with 5 vertices (\(V = 5\)) and 7 candidate cable links. A valid spanning tree requires exactly \(V - 1 = 4\) edges with no cycles. The candidate links with their installation costs are:</p>
+            <p>We are given an undirected graph with 5 vertices (<em>V</em> = 5) and 7 candidate cable links. A valid spanning tree requires exactly <em>V</em> − 1 = 4 edges with no cycles. The candidate links with their installation costs are:</p>
             <p style="font-family: monospace; font-size: 0.88rem; background: rgba(0,0,0,0.04); padding: 0.5rem; border-radius: 6px;">
               (A-B: 2), (B-C: 3), (A-C: 4), (C-D: 5), (B-D: 6), (D-E: 7), (C-E: 8)
             </p>
@@ -399,14 +455,14 @@
                 Edge (A-C: 4) connects node A and node C. When the algorithm runs <code>find(A)</code> and <code>find(C)</code>, both return the same representative root {A, B, C}. Because A and C are already connected through B, adding (A-C) would form a closed cycle (A-B-C-A). Therefore, the algorithm <strong>rejects edge (A-C)</strong>, which means no redundant cable is installed.
               </li>
               <li>
-                <strong>Step 4: Inspect (C-D: 5) and (D-E: 7).</strong><br/>
+                <strong>Step 4: Inspect (C-D: 5), (B-D: 6) and (D-E: 7).</strong><br/>
                 Edge (C-D: 5) merges {A, B, C} with {D}. Accepted! Edges added = 3.<br/>
                 Edge (B-D: 6) connects nodes already in the same component {A, B, C, D}. Cycle detected; rejected!<br/>
                 Edge (D-E: 7) merges {A, B, C, D} with {E}. Accepted! Edges added = 4.
               </li>
               <li>
-                <strong>Termination:</strong> Because exactly \(V - 1 = 4\) edges have been added, the algorithm halts immediately without inspecting (C-E: 8).<br/>
-                <strong>Total MST Weight:</strong> \(2 + 3 + 5 + 7 = 17\). The Cut Property of minimum spanning trees guarantees this greedy result is mathematically optimal.
+                <strong>Termination:</strong> Because exactly <em>V</em> − 1 = 4 edges have been added, the algorithm halts immediately without inspecting (C-E: 8).<br/>
+                <strong>Total MST Weight:</strong> 2 + 3 + 5 + 7 = 17. The Cut Property of minimum spanning trees guarantees this greedy result is mathematically optimal.
               </li>
             </ol>
 
@@ -415,7 +471,7 @@
               <p style="margin: 0 0 0.5rem; font-size: 0.88rem;">If a connected graph has 10 routers and 25 possible links, how many links will its Minimum Spanning Tree contain, and what happens if you add one more link to the completed MST?</p>
               <details style="font-size: 0.85rem;">
                 <summary style="cursor: pointer; font-weight: 700; color: #ff9f0a;">Show Answer &amp; Proof</summary>
-                <p style="margin: 0.35rem 0 0; line-height: 1.6;"><strong>Answer:</strong> The MST will always contain exactly \(V - 1 = 10 - 1 = 9\) links. If any additional link is added to an existing spanning tree, it will inevitably create exactly one cycle, because a tree provides a unique simple path between every pair of vertices. Therefore, introducing a second path between any two vertices closes a loop.</p>
+                <p style="margin: 0.35rem 0 0; line-height: 1.6;"><strong>Answer:</strong> The MST will always contain exactly <em>V</em> − 1 = 10 − 1 = 9 links. If any additional link is added to an existing spanning tree, it will inevitably create exactly one cycle, because a tree provides a unique simple path between every pair of vertices. Therefore, introducing a second path between any two vertices closes a loop.</p>
               </details>
             </div>
           </div>
@@ -452,16 +508,16 @@
         <div class="ll-pane ll-active" id="mst-pane-sim">
           <span class="ll-label">Node Count</span>
           <div style="margin-bottom:0.9rem;">
-            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Nodes <span id="mst-node-val">8</span></label>
-            <input type="range" class="nl-slider" id="mst-node-count" min="5" max="10" value="8" style="width:100%;" />
+            <label for="mst-node-count" style="font-size:0.8rem;display:flex;justify-content:space-between;">Nodes <span id="mst-node-val">8</span></label>
+            <input type="range" class="nl-slider" id="mst-node-count" min="5" max="12" value="8" style="width:100%;" />
           </div>
           <hr class="ll-hr">
-          <div style="display:flex;flex-direction:column;gap:0.45rem;">
-            <button class="ll-preset" onclick="mstGenerate()" style="background:#ff9f0a;color:#fff;">Generate New Graph</button>
-            <button class="ll-preset" onclick="mstStep()">Step →</button>
-            <button class="ll-preset" onclick="mstRunAll()">Run All</button>
-            <button class="ll-preset" onclick="mstReset()">Reset</button>
+          <div class="mst-bar mst-bar--col" data-memory-ignore>
+            <button type="button" class="mst-primary" onclick="mstGenerate()">Generate new graph</button>
+            <button type="button" onclick="mstRunAll()">Jump to the end</button>
+            <button type="button" onclick="mstReset()">Reset</button>
           </div>
+          <p style="font-size:0.75rem;line-height:1.5;margin:0.8rem 0 0;opacity:0.8;">Step, Back and Play sit under the graph. In <strong>You build it</strong>, click edges on the graph to choose them.</p>
         </div>
 
         <div class="ll-pane" id="mst-pane-guide">
@@ -484,380 +540,9 @@
 
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
-<script>
-(function () {
-  /* ── MST Visualiser (Kruskal's + Prim's) ─────────── */
-  const canvas   = document.getElementById('mst-canvas');
-  const ctx      = canvas.getContext('2d');
-  const rCost    = document.getElementById('mst-r-cost');
-  const rAdded   = document.getElementById('mst-r-added');
-  const rConsid  = document.getElementById('mst-r-considered');
-  const nodeSlider = document.getElementById('mst-node-count');
-  const btnKruskal = document.getElementById('mst-algo-kruskal');
-  const btnPrim     = document.getElementById('mst-algo-prim');
-  const instructions = document.getElementById('mst-sim-instructions');
-  const legendKruskal = document.getElementById('mst-legend-kruskal');
-  const legendPrim    = document.getElementById('mst-legend-prim');
-
-  let algoMode = 'kruskal'; // 'kruskal' | 'prim'
-  let nodes = [], edges = [], sortedEdges = [];
-  let edgeStatus = []; // 'none' | 'examining' | 'added' | 'rejected' | 'frontier'
-  let parent = [], rank = [];
-  let inTree = new Set();
-  let stepIdx = 0, totalCost = 0, addedCount = 0, consideredCount = 0;
-  let done = false;
-
-  const INSTR = {
-    kruskal: 'Click <strong>Step</strong> to add one edge at a time, or <strong>Run All</strong> to complete instantly. Green edges are in the MST; red edges were rejected (would create a cycle); grey edges have not yet been considered.',
-    prim: 'Click <strong>Step</strong> to grow the tree by one node, or <strong>Run All</strong> to complete instantly. Green edges are in the MST; blue edges are the current frontier (crossing the tree\'s boundary); red edges are no longer useful once both ends are inside.'
-  };
-
-  function setAlgoMode(mode) {
-    algoMode = mode;
-    btnKruskal.classList.toggle('is-active', mode === 'kruskal');
-    btnKruskal.setAttribute('aria-pressed', mode === 'kruskal');
-    btnPrim.classList.toggle('is-active', mode === 'prim');
-    btnPrim.setAttribute('aria-pressed', mode === 'prim');
-    instructions.innerHTML = INSTR[mode];
-    legendKruskal.style.display = mode === 'kruskal' ? '' : 'none';
-    legendPrim.style.display = mode === 'prim' ? '' : 'none';
-    if (nodes.length) window.mstReset();
-  }
-  btnKruskal.addEventListener('click', () => setAlgoMode('kruskal'));
-  btnPrim.addEventListener('click', () => setAlgoMode('prim'));
-
-  /* ── Union-Find ── */
-  function ufInit(n) {
-    parent = Array.from({ length: n }, (_, i) => i);
-    rank   = new Array(n).fill(0);
-  }
-  function ufFind(x) {
-    if (parent[x] !== x) parent[x] = ufFind(parent[x]);
-    return parent[x];
-  }
-  function ufUnion(a, b) {
-    const ra = ufFind(a), rb = ufFind(b);
-    if (ra === rb) return false;
-    if (rank[ra] < rank[rb]) parent[ra] = rb;
-    else if (rank[ra] > rank[rb]) parent[rb] = ra;
-    else { parent[rb] = ra; rank[ra]++; }
-    return true;
-  }
-
-  /* ── Graph Generation ── */
-  function generateGraph() {
-    const N = parseInt(nodeSlider.value);
-    const W = canvas.offsetWidth || 560;
-    const H = canvas.offsetHeight || 260;
-    const pad = 40, nodeR = 18;
-
-    // Place nodes avoiding overlap
-    nodes = [];
-    let attempts = 0;
-    while (nodes.length < N && attempts < 2000) {
-      attempts++;
-      const x = pad + Math.random() * (W - pad * 2);
-      const y = pad + Math.random() * (H - pad * 2);
-      let ok = true;
-      for (const n of nodes) {
-        const dx = n.x - x, dy = n.y - y;
-        if (Math.sqrt(dx*dx + dy*dy) < nodeR * 3.2) { ok = false; break; }
-      }
-      if (ok) nodes.push({ x, y });
-    }
-
-    // Generate edges — connect each node to 2-4 nearest neighbours + some random
-    edges = [];
-    const added = new Set();
-    function addEdge(a, b) {
-      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
-      if (added.has(key) || a === b) return;
-      added.add(key);
-      const dx = nodes[a].x - nodes[b].x, dy = nodes[a].y - nodes[b].y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      const w = Math.round(dist * 0.04 + Math.random() * 4 + 1);
-      edges.push({ a, b, w });
-    }
-
-    // nearest neighbours
-    nodes.forEach((n, i) => {
-      const dists = nodes.map((m, j) => {
-        const dx = n.x - m.x, dy = n.y - m.y;
-        return { j, d: Math.sqrt(dx*dx + dy*dy) };
-      }).filter(d => d.j !== i).sort((a, b) => a.d - b.d);
-      const k = Math.min(3, dists.length);
-      for (let t = 0; t < k; t++) addEdge(i, dists[t].j);
-    });
-
-    // ensure connectivity via a spanning path
-    const order = nodes.map((_, i) => i).sort(() => Math.random() - 0.5);
-    for (let i = 0; i < order.length - 1; i++) addEdge(order[i], order[i+1]);
-
-    // sort edges by weight for Kruskal's
-    sortedEdges = edges.slice().sort((a, b) => a.w - b.w);
-    edgeStatus = new Array(edges.length).fill('none');
-
-    // reset state
-    ufInit(N);
-    inTree = new Set([0]);
-    stepIdx = 0; totalCost = 0; addedCount = 0; consideredCount = 0; done = false;
-    rCost.textContent = '—';
-    rAdded.textContent = '0';
-    rConsid.textContent = '0';
-
-    draw();
-  }
-
-  /* ── Drawing ── */
-  function resize() {
-    canvas.width  = canvas.offsetWidth  || 560;
-    canvas.height = canvas.offsetHeight || 260;
-  }
-
-  function getEdgeOriginalIdx(sortedEdge) {
-    return edges.indexOf(sortedEdge);
-  }
-
-  function draw() {
-    resize();
-    const W = canvas.width, H = canvas.height;
-    const isDark = document.documentElement.getAttribute('data-theme') === 'night';
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = isDark ? '#1c1c1e' : '#f7f8fa';
-    ctx.fillRect(0, 0, W, H);
-
-    if (nodes.length === 0) {
-      ctx.fillStyle = '#64748b';
-      ctx.font = '600 14px Inter,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('Click "Generate New Graph" to start', W/2, H/2);
-      ctx.textBaseline = 'alphabetic';
-      return;
-    }
-
-    // Recompute node positions scaled to current canvas size
-    const scaleX = W / (canvas.offsetWidth || W);
-    const scaleY = H / (canvas.offsetHeight || H);
-
-    // Draw edges
-    edges.forEach((e, i) => {
-      const status = edgeStatus[i];
-      let color, lw;
-      if (status === 'added')    { color = '#34c759'; lw = 3; }
-      else if (status === 'rejected') { color = '#ff3b30'; lw = 2; }
-      else if (status === 'examining') { color = '#ff9f0a'; lw = 3; }
-      else if (status === 'frontier') { color = '#007aff'; lw = 2; }
-      else { color = isDark ? 'rgba(255,255,255,0.15)' : '#d2d2d7'; lw = 1.5; }
-
-      ctx.strokeStyle = color;
-      ctx.lineWidth   = lw;
-      ctx.beginPath();
-      ctx.moveTo(nodes[e.a].x, nodes[e.a].y);
-      ctx.lineTo(nodes[e.b].x, nodes[e.b].y);
-      ctx.stroke();
-
-      // Weight label
-      const mx = (nodes[e.a].x + nodes[e.b].x) / 2;
-      const my = (nodes[e.a].y + nodes[e.b].y) / 2;
-      const labelColor = status === 'added' ? '#1a7a2e' : status === 'rejected' ? '#c0392b' : status === 'examining' ? '#b35900' : status === 'frontier' ? '#0060d0' : (isDark ? 'rgba(255,255,255,0.4)' : '#94a3b8');
-      ctx.fillStyle = isDark ? (status !== 'none' ? labelColor : 'rgba(255,255,255,0.35)') : labelColor;
-      ctx.font = `${status !== 'none' ? '700' : '500'} 10px Inter,sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(e.w, mx, my - 7);
-      ctx.textBaseline = 'alphabetic';
-    });
-
-    // Draw nodes
-    const nodeR = Math.min(18, Math.max(12, (Math.min(W, H) / nodes.length) * 0.6));
-    nodes.forEach((n, i) => {
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, nodeR, 0, Math.PI * 2);
-      ctx.fillStyle = isDark ? '#2c2c2e' : '#fff';
-      ctx.fill();
-      ctx.strokeStyle = '#ff9f0a';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      ctx.fillStyle = isDark ? 'rgba(255,255,255,0.85)' : '#1d1d1f';
-      ctx.font = '700 11px Inter,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String.fromCharCode(65 + i), n.x, n.y);
-      ctx.textBaseline = 'alphabetic';
-    });
-
-    // Status text
-    if (done) {
-      ctx.fillStyle = '#34c759';
-      ctx.font = '700 12px Inter,sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText('MST Complete — Total Cost: ' + totalCost, W - 10, H - 10);
-    }
-  }
-
-  /* ── Kruskal's Step ── */
-  function kruskalStep() {
-    if (done || nodes.length === 0) return;
-    if (stepIdx >= sortedEdges.length) { done = true; draw(); return; }
-
-    const se = sortedEdges[stepIdx];
-    const oi = getEdgeOriginalIdx(se);
-    consideredCount++;
-    rConsid.textContent = consideredCount;
-
-    // Flash as examining
-    edgeStatus[oi] = 'examining';
-    draw();
-
-    const canAdd = ufUnion(se.a, se.b);
-    if (canAdd) {
-      edgeStatus[oi] = 'added';
-      totalCost += se.w;
-      addedCount++;
-      rAdded.textContent = addedCount;
-      rCost.textContent = totalCost;
-    } else {
-      edgeStatus[oi] = 'rejected';
-    }
-
-    stepIdx++;
-
-    // Check if MST is complete
-    if (addedCount === nodes.length - 1) {
-      // Mark remaining edges as rejected
-      for (let i = stepIdx; i < sortedEdges.length; i++) {
-        const ri = getEdgeOriginalIdx(sortedEdges[i]);
-        edgeStatus[ri] = 'rejected';
-      }
-      done = true;
-    }
-
-    draw();
-  }
-
-  /* ── Prim's Step ── */
-  function primStep() {
-    if (done || nodes.length === 0) return;
-    if (inTree.size >= nodes.length) { done = true; draw(); return; }
-
-    // Find edges crossing the cut between inTree and the rest; mark edges now fully inside as no longer useful.
-    const frontierIdx = [];
-    edges.forEach((e, i) => {
-      if (edgeStatus[i] === 'added') return;
-      const aIn = inTree.has(e.a), bIn = inTree.has(e.b);
-      if (aIn !== bIn) { edgeStatus[i] = 'frontier'; frontierIdx.push(i); }
-      else if (aIn && bIn) { edgeStatus[i] = 'rejected'; }
-    });
-    consideredCount += frontierIdx.length;
-    rConsid.textContent = consideredCount;
-
-    if (frontierIdx.length === 0) { done = true; draw(); return; }
-
-    let bestIdx = frontierIdx[0];
-    frontierIdx.forEach(i => { if (edges[i].w < edges[bestIdx].w) bestIdx = i; });
-
-    const e = edges[bestIdx];
-    edgeStatus[bestIdx] = 'added';
-    totalCost += e.w;
-    addedCount++;
-    rAdded.textContent = addedCount;
-    rCost.textContent = totalCost;
-    inTree.add(e.a);
-    inTree.add(e.b);
-
-    if (addedCount === nodes.length - 1) done = true;
-
-    draw();
-  }
-
-  /* ── Public controls ── */
-  window.mstGenerate = function() {
-    resize();
-    generateGraph();
-  };
-
-  window.mstStep = function() {
-    if (nodes.length === 0) { resize(); generateGraph(); return; }
-    if (algoMode === 'prim') primStep(); else kruskalStep();
-  };
-
-  window.mstRunAll = function() {
-    if (nodes.length === 0) { resize(); generateGraph(); }
-    const step = algoMode === 'prim' ? primStep : kruskalStep;
-    let guard = 0;
-    while (!done && guard++ < edges.length + 1) step();
-    draw();
-  };
-
-  window.mstReset = function() {
-    if (nodes.length === 0) return;
-    // Reset edge statuses, union-find, and Prim's tree without regenerating
-    edgeStatus = new Array(edges.length).fill('none');
-    ufInit(nodes.length);
-    inTree = new Set([0]);
-    stepIdx = 0; totalCost = 0; addedCount = 0; consideredCount = 0; done = false;
-    rCost.textContent = '—';
-    rAdded.textContent = '0';
-    rConsid.textContent = '0';
-    draw();
-  };
-
-  nodeSlider.addEventListener('input', () => {
-    document.getElementById('mst-node-val').textContent = nodeSlider.value;
-  });
-
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  canvas.addEventListener('keydown', (e) => {
-    if (e.key === ' ' || e.key === 'Enter') {
-      e.preventDefault();
-      window.mstStep();
-    } else if (e.key === 'r' || e.key === 'R') {
-      e.preventDefault();
-      window.mstReset();
-    }
-  });
-
-  // Init — draw placeholder
-  resize();
-  draw();
-  window.addEventListener('resize', () => { resize(); draw(); });
-
-  /* ── Practice checkers ────────────────────────────── */
-  window.mstCheck = function(n, correct, tol) {
-    const input = document.getElementById('mstans-' + n);
-    const fb    = document.getElementById('mstfb-' + n);
-    const hint  = document.getElementById('msthint-' + n);
-    const val   = parseFloat(input.value);
-    fb.className = 'cl-feedback';
-    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.classList.add('err'); return; }
-    if (Math.abs(val - correct) <= tol) {
-      fb.textContent = '✓ Correct!'; fb.classList.add('ok');
-      hint.style.display = 'none'; input.style.borderColor = '#34c759';
-    } else {
-      fb.textContent = '✗ Try again'; fb.classList.add('err');
-      hint.style.display = 'block'; input.style.borderColor = '#ff3b30';
-    }
-  };
-
-  window.mstCheckText = function(n, correct) {
-    const input = document.getElementById('mstans-' + n);
-    const fb    = document.getElementById('mstfb-' + n);
-    const hint  = document.getElementById('msthint-' + n);
-    fb.className = 'cl-feedback';
-    if (!input.value) { fb.textContent = 'Make a selection.'; fb.classList.add('err'); return; }
-    if (input.value === correct) {
-      fb.textContent = '✓ Correct!'; fb.classList.add('ok');
-      hint.style.display = 'none'; input.style.borderColor = '#34c759';
-    } else {
-      fb.textContent = '✗ Try again'; fb.classList.add('err');
-      hint.style.display = 'block'; input.style.borderColor = '#ff3b30';
-    }
-  };
-
-})();
-</script>
+<script src="../../../assets/js/sim-kit.js"></script>
+<script src="../../../assets/js/lessons/mst-core.js"></script>
+<script src="../../../assets/js/lessons/minimum-spanning-tree.js"></script>
 <script src="../../../assets/js/photo-lightbox.js"></script>
 <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
