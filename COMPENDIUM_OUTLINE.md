@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 508 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 510 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -606,7 +606,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 144 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 146 lessons
 
 ## Visual Art & Design (DES)
 
@@ -634,50 +634,52 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **MUS-01** — Sheet Music Trainer
 - **MUS-02** — The Circle of Fifths
 - **MUS-03** — The Guitar: History, Frets & Chords
-- **MUS-04** — The Piano: History, Keys & Chords
-- **MUS-05** — The Violin: Hold It, Tune It, Think in Fifths
-- **MUS-06** — Drum Lab: Kit, Notation, Rudiments & Fills
-- **MUS-07** — The Saxophone: Reed, Breath & Melody
-- **MUS-08** — Fake Book: Lead Sheets, Variations & Play-Along
-- **MUS-09** — Chord Progressions & Arranging
-- **MUS-10** — Drop Voicings: Open Up the Chord
+- **MUS-04** — Ukulele: First Chords & Strums
+- **MUS-05** — Kalimba: First Notes & Melodies
+- **MUS-06** — The Piano: History, Keys & Chords
+- **MUS-07** — The Violin: Hold It, Tune It, Think in Fifths
+- **MUS-08** — Drum Lab: Kit, Notation, Rudiments & Fills
+- **MUS-09** — The Saxophone: Reed, Breath & Melody
+- **MUS-10** — Fake Book: Lead Sheets, Variations & Play-Along
+- **MUS-11** — Chord Progressions & Arranging
+- **MUS-12** — Drop Voicings: Open Up the Chord
 
 ### Composers & Music History
 
-- **MUS-11** — Composers Pathway
-- **MUS-12** — Modes: From Greece to Today
-- **MUS-13** — Antonio Vivaldi
-- **MUS-14** — Johann Sebastian Bach
-- **MUS-15** — Wolfgang Amadeus Mozart
-- **MUS-16** — Ludwig van Beethoven
-- **MUS-17** — Frédéric Chopin
-- **MUS-18** — Pyotr Ilyich Tchaikovsky
-- **MUS-19** — Francisco Tárrega
-- **MUS-20** — Franz Liszt
-- **MUS-21** — Sergei Rachmaninoff
-- **MUS-22** — Robert Schumann
-- **MUS-23** — Franz Schubert
-- **MUS-24** — Johannes Brahms
-- **MUS-25** — Claude Debussy
-- **MUS-26** — Erik Satie
-- **MUS-27** — Maurice Ravel
-- **MUS-28** — Alexander Scriabin
-- **MUS-29** — Johann Pachelbel
-- **MUS-30** — George Frideric Handel
-- **MUS-31** — Camille Saint-Saëns
-- **MUS-32** — Jules Massenet
-- **MUS-33** — Edvard Grieg
-- **MUS-34** — Gabriel Fauré
-- **MUS-35** — Edward Elgar
-- **MUS-36** — Pietro Mascagni
-- **MUS-37** — Samuel Barber
-- **MUS-38** — Scott Joplin
-- **MUS-39** — Jelly Roll Morton
-- **MUS-40** — George Gershwin
-- **MUS-41** — Duke Ellington
-- **MUS-42** — Louis Armstrong
-- **MUS-43** — Django Reinhardt
-- **MUS-44** — Charlie Parker
+- **MUS-13** — Composers Pathway
+- **MUS-14** — Modes: From Greece to Today
+- **MUS-15** — Antonio Vivaldi
+- **MUS-16** — Johann Sebastian Bach
+- **MUS-17** — Wolfgang Amadeus Mozart
+- **MUS-18** — Ludwig van Beethoven
+- **MUS-19** — Frédéric Chopin
+- **MUS-20** — Pyotr Ilyich Tchaikovsky
+- **MUS-21** — Francisco Tárrega
+- **MUS-22** — Franz Liszt
+- **MUS-23** — Sergei Rachmaninoff
+- **MUS-24** — Robert Schumann
+- **MUS-25** — Franz Schubert
+- **MUS-26** — Johannes Brahms
+- **MUS-27** — Claude Debussy
+- **MUS-28** — Erik Satie
+- **MUS-29** — Maurice Ravel
+- **MUS-30** — Alexander Scriabin
+- **MUS-31** — Johann Pachelbel
+- **MUS-32** — George Frideric Handel
+- **MUS-33** — Camille Saint-Saëns
+- **MUS-34** — Jules Massenet
+- **MUS-35** — Edvard Grieg
+- **MUS-36** — Gabriel Fauré
+- **MUS-37** — Edward Elgar
+- **MUS-38** — Pietro Mascagni
+- **MUS-39** — Samuel Barber
+- **MUS-40** — Scott Joplin
+- **MUS-41** — Jelly Roll Morton
+- **MUS-42** — George Gershwin
+- **MUS-43** — Duke Ellington
+- **MUS-44** — Louis Armstrong
+- **MUS-45** — Django Reinhardt
+- **MUS-46** — Charlie Parker
 
 ## Language, Media & Critical Thinking (LAN)
 

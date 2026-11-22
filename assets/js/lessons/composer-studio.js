@@ -232,6 +232,7 @@
       } : undefined;
       player = ScoreEngine.render(host, result, {
         practiceId: src.id + (src.guitarArrangement && ['guitar', 'guitar-solo'].includes(m) ? ':guitar' : ''),
+        defaultLayout: 'lines',
         violinFingering
       });
       if (!player) throw new Error('The score could not be prepared.');

@@ -20,6 +20,7 @@ const PIV_ENGINE_PATH = path.join(ROOT, "lib", "piv-engine.js");
 const PIV_PLAYER_PATH = path.join(ROOT, "lib", "piv-player.js");
 const TOUCH_CONTROLS_PATH = path.join(ROOT, "lib", "touch-controls.js");
 const TOUCH_CONTROLS_CONFIG_PATH = path.join(ROOT, "data", "touch-controls.json");
+const SHARED_CREATION_ASSETS = new Set(["/assets/css/creation-app.css", "/assets/js/creation-app.js"]);
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg"]);
 const MODEL_EXTENSIONS = new Set([".stl", ".obj"]);
@@ -155,7 +156,9 @@ function rewriteHtmlPaths(html, options = {}) {
 
   // Rewrite absolute paths to relative paths.
   out = out.replace(/\b(src|href|poster)\s*=\s*(["'])([^"']+)\2/gi, (match, attr, quote, value) => {
-    const next = normalizeRelativeUrl(value.trim());
+    const url = value.trim();
+    // Creation tools share site assets outside their generated apps/<slug>/ folders.
+    const next = SHARED_CREATION_ASSETS.has(url) ? `../..${url}` : normalizeRelativeUrl(url);
     return `${attr}=${quote}${next}${quote}`;
   });
 

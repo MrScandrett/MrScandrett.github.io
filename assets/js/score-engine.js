@@ -2207,15 +2207,16 @@
     medium: { width: 1400, readable: false, label: 'Medium' },
     large: { width: 1085, readable: true, label: 'Large print' }
   };
-  function readView() {
+  function readView(defaultLayout) {
     var saved = null;
     try { saved = JSON.parse(root.localStorage.getItem(VIEW_KEY)); } catch (err) { /* private mode */ }
     saved = saved && typeof saved === 'object' ? saved : {};
+    var chosen = saved.layout === 'lines' || saved.layout === 'page';
     return {
-      layout: saved.layout === 'lines' ? 'lines' : 'page',
+      layout: chosen ? saved.layout : defaultLayout || 'page',
       // A phone shows a whole letter page too small to read, so narrow panes start in line view
       // unless the reader chose a layout themselves.
-      chosen: saved.layout === 'lines' || saved.layout === 'page',
+      chosen: chosen,
       fit: saved.fit === 'width' ? 'width' : 'page',
       size: PAGE_SIZES[saved.size] ? saved.size : 'medium'
     };
@@ -3059,7 +3060,7 @@
     // Page view (pioneer readers): the piece engraved at a fixed letter-page width and laid out on
     // sheets, one sheet filling the pane at a time, like a printed part or MuseScore's page view.
     // Line view is the older layout that reflows lines to the pane. Remembered per browser.
-    var view = readView(), pageZoom = null, pageSnapEls = [], pageIndex = 0;
+    var view = readView(options && options.defaultLayout), pageZoom = null, pageSnapEls = [], pageIndex = 0;
     function paged() { return !!practiceId && view.layout === 'page' && (view.chosen || (paper.clientWidth || 1e4) >= 600); }
     function pageScale() {
       var pages = layout.pages, pw = Math.max(120, paper.clientWidth - 24), ph = Math.max(160, paper.clientHeight);

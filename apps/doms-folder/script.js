@@ -1338,7 +1338,7 @@ function initMenu() {
             // Locked State
             btn.style.borderColor = "#550000";
             btn.style.opacity = "0.8";
-            btn.innerHTML = `<span style="color:red">LOCKED</span><span style='font-size:12px; color:gold'>${k.price} G</span>`;
+            btn.innerHTML = `<span style="color:#ff9292">LOCKED</span><span style='font-size:12px; color:gold'>${k.price} G</span>`;
             btn.onclick = () => {
                 if (gCells >= k.price) {
                     gCells -= k.price;

@@ -16,6 +16,8 @@
     { file: 'lessons/music/theory/chord-progressions.html', label: 'Chord Progressions' },
     { file: 'lessons/music/theory/drop-voicings.html', label: 'Drop Voicings' },
     { file: 'lessons/music/instruments/guitar.html', label: 'Guitar' },
+    { file: 'lessons/music/instruments/ukulele.html', label: 'Ukulele' },
+    { file: 'lessons/music/instruments/kalimba.html', label: 'Kalimba' },
     { file: 'lessons/music/instruments/violin-fingerboard.html', label: 'Violin' },
     { file: 'lessons/music/instruments/drums.html', label: 'Drums' },
     { file: 'lessons/music/instruments/saxophone.html', label: 'Saxophone' },
@@ -268,9 +270,11 @@
 
     // Viewport lessons scroll inside .ll-sim. Keep the hub in that same flow
     // so it scrolls away with the lesson instead of reserving a permanent row.
+    var placement = document.querySelector('[data-music-family-placement]');
     var lessonScroller = document.querySelector('.ll-viewport .ll-stage .ll-sim');
     var anchor = document.querySelector('.ll-topbar, .pno-topbar, .gtr-topbar, .vln-topbar, header.site-header, header');
-    if (lessonScroller) lessonScroller.insertBefore(nav, lessonScroller.firstChild);
+    if (placement) placement.replaceWith(nav);
+    else if (lessonScroller) lessonScroller.insertBefore(nav, lessonScroller.firstChild);
     else if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(nav, anchor.nextSibling);
     else document.body.insertBefore(nav, document.body.firstChild);
     theory._fit();
