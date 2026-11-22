@@ -1326,6 +1326,7 @@
     input.type = 'file';
     input.accept = '.json,application/json';
     input.hidden = true;
+    input.setAttribute('aria-label', 'Load a My Stuff backup file');
     input.addEventListener('change', function () {
       var file = input.files && input.files[0];
       input.value = '';
