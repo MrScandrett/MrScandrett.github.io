@@ -1,6 +1,6 @@
 # NXT Robot Lab
 
-Lesson: `lessons/engineering/robotics/nxt-robot-lab.html`. Static GitHub Pages source; nothing is generated under `apps/`.
+Lesson: `lessons/computer-science/robotics/nxt-robot-lab.html`. Static GitHub Pages source; nothing is generated under `apps/`.
 
 Default original-kit wiring: touch 1, sound 2, light 3, ultrasonic 4; attachment A, left drive B, right drive C. Sensor ports are configurable. The two-touch remote template requires a second switch on 2 and disconnects the sound sensor. No color-sensor driver is provided: original NXT light sensors cannot recognize colors.
 

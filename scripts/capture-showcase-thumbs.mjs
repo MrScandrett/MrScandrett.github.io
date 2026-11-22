@@ -6,8 +6,9 @@ import sharp from "sharp";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(new URL(import.meta.url))), "..");
 const OUT = path.join(ROOT, "assets/thumbs/showcase/shots");
 const [base = "http://localhost:8080", ...only] = process.argv.slice(2);
 

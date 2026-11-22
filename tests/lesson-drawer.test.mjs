@@ -2,12 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // The phone drawer (.ll-panel) only opens and closes through assets/js/lesson-layout.js.
 // A lesson that has the markup but not the script shows a drawer that is stuck open (or
 // dead to taps), and its own hand-rolled handlers can't fix it: lesson-layout.css only
 // listens to data-ll-collapsed.
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 
 // Pages that run their own drawer on purpose.
 const OWN_DRAWER = new Set([

@@ -11,8 +11,9 @@ import fs from "node:fs/promises";
 import fssync from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(new URL(import.meta.url))), "..");
 const CATALOG = path.join(ROOT, "steam-lessons.html");
 const CATALOG_CSS = path.join(ROOT, "assets/css/pages/steam-lessons.css");
 const OUT = path.join(ROOT, "assets/thumbs/lessons");

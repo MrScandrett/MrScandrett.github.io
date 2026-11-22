@@ -7,9 +7,12 @@
   var dirs = {
     "lessons/blender/": "lessons/3d-design/blender/",
     "lessons/game-asset-studio/": "lessons/3d-design/game-asset-studio/",
-    "lessons/2d-game-dev/": "lessons/2d-design/2d-game-dev/"
+    "lessons/2d-game-dev/": "lessons/2d-design/2d-game-dev/",
+    "lessons/engineering/robotics/": "lessons/computer-science/robotics/"
   };
   var pages = {
+    "lessons/engineering/mechanical-and-civil-design/robotics-engineering-intro": "lessons/computer-science/robotics/robotics-engineering-intro",
+    "lessons/engineering/mechanical-and-civil-design/bug-bots": "lessons/computer-science/robotics/bug-bots",
     "lessons/pi": "lessons/mathematics/geometry-and-trigonometry/pi",
     "lessons/cambrian-explosion": "lessons/life-sciences/cambrian-explosion",
     "lessons/3d-design": "lessons/3d-design/3d-design",
@@ -124,5 +127,5 @@
     }
     return moved ? p : null;
   }
-  root.ClassroomOSLessonMoves = { version: 5, resolve: resolve };
+  root.ClassroomOSLessonMoves = { version: 6, resolve: resolve };
 }(typeof window !== 'undefined' ? window : globalThis));

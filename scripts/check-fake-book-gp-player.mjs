@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import { importer, exporter } from '../node_modules/@coderline/alphatab/dist/alphaTab.core.mjs';
 import { findChromium } from '../lib/find-chromium.mjs';
+import { fileURLToPath } from 'node:url';
 const executablePath = findChromium(['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH']);
 if (!executablePath) throw new Error('Set PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH to an installed Chromium browser.');
 const browser = await chromium.launch({ executablePath, headless: true });
@@ -35,7 +36,7 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.FakeBookGPPlayer.state()?.ready);
   assert.equal(await page.locator('.fb-gp-track').count(), 2, 'saved original restored after reload');
-  await page.locator('[data-fb-import-file]').setInputFiles(new URL('../tests/fixtures/scores/guitar-pro/guitarpro6-notes.gpx', import.meta.url).pathname);
+  await page.locator('[data-fb-import-file]').setInputFiles(fileURLToPath(new URL('../tests/fixtures/scores/guitar-pro/guitarpro6-notes.gpx', import.meta.url)));
   await page.waitForFunction(() => window.FakeBookGPPlayer.state()?.ready && document.querySelectorAll('.fb-gp-track').length === 1);
   await page.locator('[data-gp-play]').click();
   await page.waitForFunction(() => window.FakeBookGPPlayer.state()?.tick > 100);

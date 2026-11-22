@@ -263,7 +263,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 124 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 114 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -284,48 +284,38 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **ENG-10** — Multimeter Lab
 - **ENG-11** — Soldering
 - **ENG-12** — From Transistor to Logic Gate
-- **ENG-13** — Robotics Engineering Intro
-- **ENG-14** — Arduino: The Robot Brain
-- **ENG-15** — Arduino Board Anatomy Lab
-- **ENG-16** — Arduino Programming: Variables, Functions & Libraries
-- **ENG-17** — Inputs: Beyond the Button
-- **ENG-18** — Outputs: Beyond the LED
-- **ENG-19** — Sensor Modules Kit
-- **ENG-20** — Sensor to Webpage
-- **ENG-21** — The Internet of Things
-- **ENG-22** — Electronics Capstone: Design, Build, Prove
+- **ENG-13** — Arduino: The Robot Brain
+- **ENG-14** — Arduino Board Anatomy Lab
+- **ENG-15** — Arduino Programming: Variables, Functions & Libraries
+- **ENG-16** — Inputs: Beyond the Button
+- **ENG-17** — Outputs: Beyond the LED
+- **ENG-18** — Sensor Modules Kit
+- **ENG-19** — Sensor to Webpage
+- **ENG-20** — The Internet of Things
+- **ENG-21** — Electronics Capstone: Design, Build, Prove
 
 ### Mechanisms, Feedback & Control
 
-- **ENG-23** — Mechanisms and Gear Systems
-- **ENG-24** — PID Control & Feedback Loops
-- **ENG-25** — Robot Build Studio
-- **ENG-26** — Pilot the ELEGOO Robot Car
-- **ENG-27** — NXT Robot Lab
-- **ENG-28** — Sensor Fusion: Gyro + Accelerometer
-- **ENG-29** — Where Am I? Robot Mapping & Localization
-- **ENG-30** — Beyond A*: Motion Planning Lab
-- **ENG-31** — Reach, Grab, Place: Robot Arms
-- **ENG-32** — Robot Reinforcement Learning: Q-Learning Lab
-- **ENG-33** — Maglev Train Engineering
-- **ENG-34** — Bug Bots: Genghis & the Insect Robots
-- **ENG-35** — Engineering Design Process Studio
+- **ENG-22** — Mechanisms and Gear Systems
+- **ENG-23** — PID Control & Feedback Loops
+- **ENG-24** — Maglev Train Engineering
+- **ENG-25** — Engineering Design Process Studio
 
 ### Structural Design Projects
 
-- **ENG-36** — Bridge Over Troubled Water
-- **ENG-37** — Engineering an Immersive Sphere
-- **ENG-38** — Biomimicry: Engineering Nature's Genius
+- **ENG-26** — Bridge Over Troubled Water
+- **ENG-27** — Engineering an Immersive Sphere
+- **ENG-28** — Biomimicry: Engineering Nature's Genius
 
 ### People Who Changed Engineering
 
-- **ENG-39** — Emily Roebling
-- **ENG-40** — Gustave Eiffel
-- **ENG-41** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-42** — James Watt and the Steam Engine
-- **ENG-43** — Rube Goldberg Machine Lab
-- **ENG-44** — Siege Engines: Physics You Can Launch
-- **ENG-45** — Hedy Lamarr
+- **ENG-29** — Emily Roebling
+- **ENG-30** — Gustave Eiffel
+- **ENG-31** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-32** — James Watt and the Steam Engine
+- **ENG-33** — Rube Goldberg Machine Lab
+- **ENG-34** — Siege Engines: Physics You Can Launch
+- **ENG-35** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 
@@ -470,7 +460,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 79 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 89 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -523,6 +513,24 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **CSC-33** — Grace Hopper
 - **CSC-34** — Margaret Hamilton: Software for the Moon
 - **CSC-35** — Steve Jobs
+
+## Robotics (ROB)
+
+### Meet & Build Robots
+
+- **ROB-01** — Robotics Engineering Intro
+- **ROB-02** — Bug Bots: Genghis & the Insect Robots
+- **ROB-03** — Robot Build Studio
+- **ROB-04** — Pilot the ELEGOO Robot Car
+- **ROB-05** — NXT Robot Lab
+
+### Robot Brains: Sense, Map, Plan, Learn
+
+- **ROB-06** — Sensor Fusion: Gyro + Accelerometer
+- **ROB-07** — Where Am I? Robot Mapping & Localization
+- **ROB-08** — Beyond A*: Motion Planning Lab
+- **ROB-09** — Reach, Grab, Place: Robot Arms
+- **ROB-10** — Robot Reinforcement Learning: Q-Learning Lab
 
 ## Web Design & Development (WEB)
 

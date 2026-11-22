@@ -3,6 +3,7 @@ import { findChromium } from '../lib/find-chromium.mjs';
 import fs from 'node:fs';
 import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 // Minimal original three-page PDF: a contents page and two numbered song pages.
 const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>'];
 for(let i=0;i<3;i++) {
@@ -16,7 +17,7 @@ fs.writeFileSync('/tmp/fake-book-test.pdf',data);
 let server;
 if (process.env.FAKE_BOOK_TEST_START_SERVER) {
   const url = new URL(process.env.FAKE_BOOK_TEST_URL || 'http://127.0.0.1:8080');
-  server = spawn(process.execPath, [new URL('../serve-local.js', import.meta.url).pathname], { env: { ...process.env, PORT: url.port, HOST: url.hostname }, stdio: ['ignore', 'pipe', 'pipe'] });
+  server = spawn(process.execPath, [fileURLToPath(new URL('../serve-local.js', import.meta.url))], { env: { ...process.env, PORT: url.port, HOST: url.hostname }, stdio: ['ignore', 'pipe', 'pipe'] });
   process.on('exit', () => server.kill());
   await new Promise((resolve, reject) => { server.stdout.on('data', b => { if (b.toString().includes('Local server running')) resolve(); }); server.on('error', reject); server.on('exit', code => reject(new Error('Test server exited: ' + code))); });
 }

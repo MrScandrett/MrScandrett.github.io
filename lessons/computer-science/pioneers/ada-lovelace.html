@@ -5,382 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ada Lovelace · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Explore the life and legacy of Ada Lovelace — the world's first computer programmer. Learn how she envisioned algorithms, loops, and general-purpose computing a century before the first computer was built." />
+  <meta name="description" content="Explore Ada Lovelace's 1843 Note G algorithm, run exact fractions on an Analytical Engine simulator, debug history's first printed computer bug, punch decimal and binary cards, and weave music on a Poetical Science Jacquard loom." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
-  <style>
-    :root {
-      --al-teal: #0f766e;
-      --al-violet: #7c3aed;
-      --al-brass: #b45309;
-      --al-rose: #be185d;
-      --al-ink: #042f2e;
-      --al-muted: #475569;
-      --al-line: #e2e8f0;
-      --al-soft: #f0fdfa;
-    }
-
-    .al-page { padding-bottom: 0; }
-    .ll-viewport { --ll-panel-w: 280px; }
-
-    .al-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .al-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
-    .al-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .al-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .al-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .al-lede,
-    [data-theme="vaporwave"] .al-lede,
-    [data-theme="bark"] .al-lede { color: rgba(245,245,247,0.7); }
-
-    .al-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#0f766e); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
-    .al-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .al-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
-    .al-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .al-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .al-card,
-    [data-theme="vaporwave"] .al-card,
-    [data-theme="bark"] .al-card { background: var(--white,#2c2c2e); }
-/* Dark surface at night: keep night text tokens. */
-:where(html[data-lighting="night"]) [data-lighting="night"] .al-card, :where(html[data-lighting="night"]) [data-theme="vaporwave"] .al-card, :where(html[data-lighting="night"]) [data-theme="bark"] .al-card { --text: #f5f5f7; --muted: #98989d; --text-primary: #f5f5f7; --text-secondary: #dddde4; --text-muted: #98989d; --text-subtle: #b3b3ba; --ink: #f5f5f7; --ink-2: #dddde4; --ink-muted: #98989d; --accent: #69a8ff; --accent-strong: #8ec0ff; --accent-hover: #8ec0ff; --info: #69a8ff; --success: #4dbd87; --warning: #e0a84b; --danger: #f06a6a; --lesson-violet-text: #c4b5fd; --lesson-orange-text: #ffbd66; --blue: #69a8ff; --accent-gold: #69a8ff; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) [data-lighting="night"] .al-card, :where(html:not([data-lighting])) [data-theme="vaporwave"] .al-card, :where(html:not([data-lighting])) [data-theme="bark"] .al-card { --text: #f5f5f7; --muted: #98989d; --text-primary: #f5f5f7; --text-secondary: #dddde4; --text-muted: #98989d; --text-subtle: #b3b3ba; --ink: #f5f5f7; --ink-2: #dddde4; --ink-muted: #98989d; --accent: #69a8ff; --accent-strong: #8ec0ff; --accent-hover: #8ec0ff; --info: #69a8ff; --success: #4dbd87; --warning: #e0a84b; --danger: #f06a6a; --lesson-violet-text: #c4b5fd; --lesson-orange-text: #ffbd66; --blue: #69a8ff; --accent-gold: #69a8ff; } }
-    [data-lighting="night"] .al-card p,
-    [data-theme="vaporwave"] .al-card p,
-    [data-theme="bark"] .al-card p { color: rgba(245,245,247,0.72); }
-
-    .al-formula-box { background: linear-gradient(135deg,rgba(15,118,110,0.09),rgba(15,118,110,0.03)); border: 1px solid rgba(15,118,110,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
-    .al-formula-sym { font-size: clamp(1.1rem,3vw,1.4rem); font-weight: 800; letter-spacing: -0.02em; color: var(--al-teal); display: block; margin-bottom: 0.5rem; font-family: monospace; }
-    .al-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .al-formula-vars,
-    [data-theme="vaporwave"] .al-formula-vars,
-    [data-theme="bark"] .al-formula-vars { color: rgba(245,245,247,0.7); }
-    .al-formula-note { font-size: 0.79rem; color: var(--text-muted, #64748b); margin-top: 0.55rem; font-style: italic; }
-    [data-lighting="night"] .al-formula-note,
-    [data-theme="vaporwave"] .al-formula-note,
-    [data-theme="bark"] .al-formula-note { color: rgba(245,245,247,0.5); }
-
-    .al-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
-    .al-callout.teal   { background: rgba(15,118,110,0.09);  border-left: 3px solid var(--al-teal); }
-    .al-callout.violet { background: rgba(124,58,237,0.09);  border-left: 3px solid var(--al-violet); }
-    .al-callout.brass  { background: rgba(180,83,9,0.10);    border-left: 3px solid var(--al-brass); }
-
-    /* Timeline */
-    .al-timeline { list-style: none; padding: 0 0 0 36px; margin: 0.7rem 0; position: relative; }
-    .al-timeline::before { content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 2px; background: var(--al-violet); opacity: 0.3; border-radius: 2px; }
-    .al-tl-item { position: relative; margin-bottom: 0.75rem; font-size: 0.87rem; color: var(--text-secondary, #3f4f65); line-height: 1.55; }
-    [data-lighting="night"] .al-tl-item,
-    [data-theme="vaporwave"] .al-tl-item,
-    [data-theme="bark"] .al-tl-item { color: rgba(245,245,247,0.72); }
-    .al-tl-item::before { content: ''; position: absolute; left: -24px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--al-violet); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--al-violet); }
-    .al-tl-year { display: inline-block; background: var(--al-violet); color: #fff; font-size: 0.72rem; font-weight: 700; border-radius: 5px; padding: 0.05rem 0.4rem; margin-right: 0.4rem; vertical-align: middle; }
-
-    /* Canvas / readouts */
-    .al-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #1a0f02; }
-    #al-canvas { width: 100%; height: 320px; display: block; }
-
-    .al-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
-    .al-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
-    [data-lighting="night"] .al-readout,
-    [data-theme="vaporwave"] .al-readout,
-    [data-theme="bark"] .al-readout { background: rgba(255,255,255,0.06); }
-    .al-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
-    .al-readout-val   { font-size: 1rem; font-weight: 700; color: var(--al-teal); }
-
-    /* Step explanation panel */
-    .al-step-explain {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      margin-top: 0.6rem;
-      padding: 0.8rem 1rem;
-      border-radius: 12px;
-      background: rgba(15,118,110,0.07);
-      border: 1px solid rgba(15,118,110,0.25);
-    }
-    .al-step-phase {
-      display: inline-block;
-      align-self: flex-start;
-      font-size: 0.66rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #fff;
-      background: var(--al-teal);
-      border-radius: 999px;
-      padding: 0.18rem 0.6rem;
-    }
-    .al-step-detail { margin: 0; font-size: 0.86rem; line-height: 1.6; color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .al-step-detail,
-    [data-theme="vaporwave"] .al-step-detail,
-    [data-theme="bark"] .al-step-detail { color: rgba(245,245,247,0.78); }
-
-    /* Grids */
-    .al-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.75rem; }
-
-    /* Contribution cards */
-    .al-contribution-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.85rem; }
-    .al-contribution-icon { font-size: 1.6rem; margin-bottom: 0.35rem; }
-    .al-contribution-card strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; color: var(--al-ink); }
-    .al-contribution-card p { font-size: 0.77rem; color: var(--text-muted, #64748b); line-height: 1.5; margin: 0; }
-    [data-lighting="night"] .al-contribution-card strong,
-    [data-theme="vaporwave"] .al-contribution-card strong,
-    [data-theme="bark"] .al-contribution-card strong { color: rgba(245,245,247,0.9); }
-
-    /* Practice problems */
-    .al-practice .al-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
-    .al-practice .al-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; }
-    [data-lighting="night"] .al-problem p,
-    [data-theme="vaporwave"] .al-problem p,
-    [data-theme="bark"] .al-problem p { color: rgba(245,245,247,0.72); }
-    .al-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .al-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 130px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
-    .al-check-btn { background: var(--al-teal); color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
-    .al-check-btn:hover { background: #0d5c56; }
-    .al-feedback { font-size: 0.82rem; font-weight: 600; }
-    .al-feedback.ok  { color: #34c759; }
-    .al-feedback.err { color: #dc2626; }
-    .al-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
-    .al-show-hints .al-hint { display: block; }
-
-    /* Photo gallery */
-    .al-gallery-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1rem; margin-top: 0.75rem; }
-    .al-gallery-card { margin: 0; border: 1px solid var(--line,#d2d2d7); border-radius: 12px; overflow: hidden; background: var(--white,#fff); display: flex; flex-direction: column; cursor: zoom-in; }
-    .al-gallery-photo { width: 100%; aspect-ratio: 1; overflow: hidden; background: #eef2f5; }
-/* Light surface in every theme: keep day text tokens. */
-.al-gallery-photo { --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349; --text-muted: #5f5f64; --text-subtle: #73737a; --ink: #1d1d1f; --ink-2: #434349; --ink-muted: #5f5f64; --accent: #0066cc; --accent-strong: #005ec3; --accent-hover: #005ec3; --info: #0066cc; --success: #1c8257; --warning: #8f5d0b; --danger: #c23b3b; --lesson-violet-text: #6d28d9; --lesson-orange-text: #8a4500; --blue: #0066cc; --accent-gold: #0066cc; }
-:where(html[data-lighting="night"]) .al-gallery-photo { color: #1d1d1f; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .al-gallery-photo { color: #1d1d1f; } }
-    .al-gallery-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .al-gallery-body { padding: 0.75rem 0.8rem; display: flex; flex-direction: column; gap: 0.3rem; flex-grow: 1; }
-    .al-gallery-body strong { display: block; font-size: 0.82rem; color: var(--al-ink); }
-    [data-lighting="night"] .al-gallery-body strong,
-    [data-theme="vaporwave"] .al-gallery-body strong,
-    [data-theme="bark"] .al-gallery-body strong { color: rgba(245,245,247,0.9); }
-    .al-gallery-body p, .al-gallery-body span { margin: 0; font-size: 0.76rem; color: var(--text-muted, #64748b); line-height: 1.5; }
-    .al-gallery-body .plb-credit { font-size: 0.7rem; color: var(--text-muted, #64748b); margin-top: auto; border-top: 1px dashed var(--line,#d2d2d7); padding-top: 0.35rem; }
-    .al-credits { margin-top: 0.9rem; padding-top: 0.8rem; border-top: 1px solid var(--line,#d2d2d7); font-size: 0.72rem; color: var(--text-muted, #64748b); line-height: 1.9; }
-    .al-credits a { color: var(--al-teal); text-decoration: none; }
-:where(html[data-lighting="night"]) .al-credits a { color: #15a89c; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .al-credits a { color: #15a89c; } }
-    .al-credits a:hover { text-decoration: underline; }
-
-    /* Engine anatomy */
-    .al-anatomy-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 0.7rem; margin: 0.8rem 0; }
-    .al-anatomy-card { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.75rem; text-align: center; }
-    .al-anatomy-icon { font-size: 1.4rem; margin-bottom: 0.3rem; }
-    .al-anatomy-card strong { display: block; font-size: 0.8rem; margin-bottom: 0.2rem; color: var(--al-ink); }
-    [data-lighting="night"] .al-anatomy-card strong,
-    [data-theme="vaporwave"] .al-anatomy-card strong,
-    [data-theme="bark"] .al-anatomy-card strong { color: rgba(245,245,247,0.9); }
-    .al-anatomy-card p { font-size: 0.73rem; color: var(--text-muted, #64748b); line-height: 1.45; margin: 0; }
-    .al-anatomy-modern { display: block; font-size: 0.68rem; font-weight: 700; color: var(--al-teal); margin-top: 0.3rem; text-transform: uppercase; letter-spacing: 0.03em; }
-:where(html[data-lighting="night"]) .al-anatomy-modern { color: #15a89c; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .al-anatomy-modern { color: #15a89c; } }
-
-    /* Mission box */
-    .al-mission { background: linear-gradient(135deg, rgba(15,118,110,0.08), rgba(124,58,237,0.05)); border: 1.5px solid rgba(15,118,110,0.3); border-radius: 14px; padding: 1rem 1.2rem; margin: 1rem 0; }
-    .al-mission h3 { margin: 0 0 0.45rem; font-size: 0.95rem; color: var(--al-teal); display: flex; align-items: center; gap: 0.45rem; }
-    .al-mission ul { margin: 0; padding-left: 1.3rem; font-size: 0.85rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; }
-    [data-lighting="night"] .al-mission ul,
-    [data-theme="vaporwave"] .al-mission ul,
-    [data-theme="bark"] .al-mission ul { color: rgba(245,245,247,0.85); }
-
-    /* Punched card widget & dual-mode tabs */
-    .al-card-tabs { display: flex; gap: 0.4rem; margin-bottom: 0.75rem; justify-content: center; }
-    .al-card-tab { background: rgba(0,0,0,0.05); border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; color: var(--text-secondary,#3f4f65); }
-    .al-card-tab.active { background: var(--al-teal); color: #fff; border-color: var(--al-teal); }
-    [data-lighting="night"] .al-card-tab { background: rgba(255,255,255,0.08); color: rgba(245,245,247,0.8); }
-    [data-lighting="night"] .al-card-tab.active { background: var(--al-teal); color: #fff; }
-
-    .al-punchcard-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; margin: 0.9rem 0; }
-    .al-punchcard {
-      position: relative;
-      width: min(100%, 480px);
-      aspect-ratio: 480 / 220;
-      background: linear-gradient(155deg, #f3e6c8, #e8d5a8);
-      border: 1px solid #cbb27a;
-      border-radius: 6px;
-      clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 34px, 100% 100%, 0 100%);
-      box-shadow: 0 14px 32px rgba(0,0,0,0.14);
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      align-items: center;
-      justify-items: center;
-      padding: 0 1.5rem;
-    }
-    .al-hole {
-      width: clamp(26px, 6vw, 40px);
-      height: clamp(26px, 6vw, 40px);
-      border-radius: 50%;
-      border: 2px solid #8a6d2f;
-      background: rgba(138,109,47,0.12);
-      cursor: pointer;
-      transition: background 120ms ease, box-shadow 120ms ease, transform 120ms ease;
-    }
-    .al-hole:hover { transform: scale(1.06); }
-    .al-hole.punched {
-      background: #1a0f02;
-      box-shadow: inset 0 3px 6px rgba(0,0,0,0.5);
-      border-color: #1a0f02;
-    }
-    .al-punchcard-readout { display: flex; gap: 1.4rem; align-items: center; }
-    .al-punchcard-readout .al-readout { padding: 0.5rem 1rem; }
-    .al-punchcard-readout .al-readout-val { font-family: monospace; letter-spacing: 0.08em; }
-
-    /* Babbage Operation Card view */
-    .al-opcard-panel { width: 100%; max-width: 480px; display: none; flex-direction: column; gap: 0.75rem; align-items: center; }
-    .al-opcard-panel.active { display: flex; }
-    .al-opcard {
-      width: 100%;
-      background: linear-gradient(155deg, #f7ecd5, #eadbb5);
-      border: 1.5px solid #c5aa6e;
-      border-radius: 8px;
-      padding: 1rem 1.2rem;
-      box-shadow: 0 12px 28px rgba(0,0,0,0.12);
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
-    }
-    .al-opcard-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
-    .al-opcard-label { font-size: 0.78rem; font-weight: 700; color: #5c3e0a; text-transform: uppercase; letter-spacing: 0.04em; }
-    .al-opcard-select { font-family: monospace; font-size: 0.88rem; padding: 0.35rem 0.6rem; border: 1.5px solid #a88846; border-radius: 6px; background: #fff; color: #1a0f02; }
-    .al-opcard-result { padding: 0.6rem 0.8rem; border-radius: 8px; background: rgba(15,118,110,0.12); border: 1px solid rgba(15,118,110,0.3); font-size: 0.85rem; font-family: monospace; font-weight: 700; color: var(--al-teal); text-align: center; }
-
-    /* Poetical Science mini-lab */
-    .al-poetical-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; padding: 1.1rem; margin: 0.9rem 0; background: rgba(124,58,237,0.04); }
-    .al-chimes-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.45rem; margin: 0.8rem 0; }
-    .al-chime-col { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
-    .al-chime-note { font-size: 0.76rem; font-weight: 700; color: var(--al-violet); font-family: monospace; }
-    .al-chime-btn { width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1.5px solid var(--line,#d2d2d7); background: var(--white,#fff); cursor: pointer; transition: all 120ms ease; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; color: var(--text-muted,#64748b); }
-    .al-chime-btn.active { background: var(--al-violet); color: #fff; border-color: var(--al-violet); transform: scale(1.05); box-shadow: 0 4px 10px rgba(124,58,237,0.3); }
-    .al-loom-canvas { width: 100%; height: 70px; border-radius: 8px; border: 1px solid var(--line,#d2d2d7); background: #1a0f02; display: block; margin-top: 0.6rem; }
-
-    /* Code-syntax bridge table */
-    .al-code-table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; font-size: 0.82rem; }
-    .al-code-table th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #64748b); padding: 0.4rem 0.6rem; border-bottom: 2px solid var(--line,#d2d2d7); }
-    .al-code-table td { padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--line,#d2d2d7); vertical-align: top; color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .al-code-table td,
-    [data-theme="vaporwave"] .al-code-table td,
-    [data-theme="bark"] .al-code-table td { color: rgba(245,245,247,0.78); }
-    .al-code-table td.al-code-concept { font-weight: 700; color: var(--al-ink); white-space: nowrap; }
-    [data-lighting="night"] .al-code-table td.al-code-concept,
-    [data-theme="vaporwave"] .al-code-table td.al-code-concept,
-    [data-theme="bark"] .al-code-table td.al-code-concept { color: rgba(245,245,247,0.92); }
-    .al-code-table code { font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.05); border-radius: 5px; padding: 0.15rem 0.4rem; display: inline-block; }
-    [data-lighting="night"] .al-code-table code,
-    [data-theme="vaporwave"] .al-code-table code,
-    [data-theme="bark"] .al-code-table code { background: rgba(255,255,255,0.08); }
-    .al-code-table .al-code-python code { color: var(--al-teal); }
-
-    /* Trace table */
-    .al-trace-given { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.7rem 0; }
-    .al-trace-given span { background: rgba(180,83,9,0.09); border: 1px solid rgba(180,83,9,0.28); border-radius: 8px; padding: 0.35rem 0.65rem; font-family: monospace; font-size: 0.84rem; font-weight: 700; color: var(--al-brass); }
-    .al-trace-table { width: 100%; border-collapse: collapse; margin: 0.7rem 0; font-size: 0.82rem; }
-    .al-trace-table th { text-align: center; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted, #64748b); padding: 0.4rem; border-bottom: 2px solid var(--line,#d2d2d7); }
-    .al-trace-table th:first-child, .al-trace-table th:nth-child(2) { text-align: left; }
-    .al-trace-table td { padding: 0.45rem; border-bottom: 1px solid var(--line,#d2d2d7); text-align: center; color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .al-trace-table td,
-    [data-theme="vaporwave"] .al-trace-table td,
-    [data-theme="bark"] .al-trace-table td { color: rgba(245,245,247,0.78); }
-    .al-trace-table td.al-trace-step { font-weight: 700; text-align: center; color: var(--al-ink); }
-    [data-lighting="night"] .al-trace-table td.al-trace-step,
-    [data-theme="vaporwave"] .al-trace-table td.al-trace-step,
-    [data-theme="bark"] .al-trace-table td.al-trace-step { color: rgba(245,245,247,0.9); }
-    .al-trace-table td.al-trace-op { text-align: left; font-family: monospace; font-size: 0.78rem; white-space: nowrap; }
-    .al-trace-input { width: 62px; min-height: 36px; border: 1px solid var(--line,#d2d2d7); border-radius: 6px; padding: 0.35rem; font-size: 0.86rem; text-align: center; background: var(--white,#fff); color: var(--text,#1d1d1f); font-family: monospace; }
-    .al-trace-input.al-trace-ok  { border-color: #34c759; background: rgba(52,199,89,0.1); }
-    .al-trace-input.al-trace-bad { border-color: #dc2626; background: rgba(220,38,38,0.08); }
-    .al-trace-actions { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-top: 0.7rem; }
-    .al-trace-feedback { font-size: 0.84rem; font-weight: 600; }
-    .al-trace-breakdown { font-size: 0.8rem; color: var(--text-muted,#64748b); margin-top: 0.4rem; }
-
-    /* Experiments */
-    .al-experiments { background: linear-gradient(135deg, rgba(180,83,9,0.06), rgba(15,118,110,0.05)); border: 1.5px solid rgba(180,83,9,0.25); border-radius: 14px; padding: 1rem 1.2rem; margin: 1.1rem 0 0.5rem; }
-    .al-experiments h3 { margin: 0 0 0.5rem; font-size: 0.95rem; color: var(--al-brass); }
-    .al-experiments ol { margin: 0; padding-left: 1.3rem; font-size: 0.85rem; color: var(--text-secondary,#3f4f65); line-height: 1.6; }
-    [data-lighting="night"] .al-experiments ol,
-    [data-theme="vaporwave"] .al-experiments ol,
-    [data-theme="bark"] .al-experiments ol { color: rgba(245,245,247,0.85); }
-
-    /* Practice progress */
-    .al-practice-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.6rem; }
-    .al-practice-score { font-size: 0.8rem; font-weight: 700; color: var(--al-teal); background: rgba(15,118,110,0.1); border: 1px solid rgba(15,118,110,0.25); padding: 0.25rem 0.65rem; border-radius: 999px; }
-
-    @media (max-width: 600px) {
-      figure[style*="float:right"] {
-        float: none !important;
-        width: 100% !important;
-        margin: 0 0 1rem 0 !important;
-      }
-    }
-    @media (max-width: 560px) {
-      .al-grid-2 { grid-template-columns: 1fr; }
-      .al-readouts { grid-template-columns: repeat(3,1fr); }
-      .al-gallery-grid { grid-template-columns: repeat(2,1fr); }
-      .al-anatomy-grid { grid-template-columns: repeat(2,1fr); }
-      .al-code-table { font-size: 0.74rem; }
-      .al-trace-table { font-size: 0.72rem; }
-      .al-trace-input { width: 48px; }
-      .al-chimes-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-      /* Night: credits and the punch-card preset sit on dark panels. */
-    :where(html[data-lighting="night"]) .al-credits strong { color: #a7f3eb; }
-    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .al-credits strong { color: #a7f3eb; } }
-    :where(html[data-lighting="night"]) .al-punchcard-wrap .ll-preset { color: #f5f5f7; }
-    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .al-punchcard-wrap .ll-preset { color: #f5f5f7; } }
-
-.al-dock { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin:.8rem 0; }
-.al-dock button, #al-tour button, .al-dock select { font:inherit; color:var(--text); background:var(--bg); border:1px solid var(--text-muted); border-radius:8px; padding:.6rem .8rem; min-height:44px; }
-#al-sec-simulator :focus-visible, #al-sec-simulator:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
-#al-milestones button[aria-current="step"] { outline:3px solid var(--accent); font-weight:bold; }
-.al-table-scroll { overflow-x:auto; } .al-python { overflow:auto; padding:1rem; background:var(--bg); color:var(--text); }
-#al-tour { border:2px solid var(--accent); padding:1rem; margin-top:1rem; } #al-tour label { display:block; padding:.5rem; }
-#al-sec-simulator [hidden] { display:none !important; }
-
-/* A visible instruction path: teal reads, brass writes, labels explain both. */
-.al-learning { --learn-read: #0f766e; --learn-write: #92500c; }
-.al-learning .al-learning-intro { font-size:1rem; max-width:60ch; }
-.al-learning h3 { font-size:1.15rem; }
-.al-learning-stage { padding:1.3rem 0; border-top:1px solid var(--line); }
-.al-memory-strip { display:flex; flex-wrap:wrap; gap:.75rem; margin:1rem 0; }
-.al-memory-box { flex:1 1 100px; border:2px solid var(--learn-read); border-radius:5px 5px 14px 14px; text-align:center; overflow:hidden; min-width:0; }
-.al-memory-box > span { display:block; padding:.35rem; background:var(--learn-read); color:white; font-weight:700; }
-.al-memory-box strong { display:block; font:700 2.1rem/1.3 ui-monospace,monospace; padding:.5rem; color:var(--text); }
-.al-memory-box small { display:block; padding:0 .4rem .65rem; color:var(--text-secondary); }
-.al-memory-box[data-written="true"] { border-color:var(--learn-write); }
-.al-memory-box[data-written="true"] > span { background:var(--learn-write); }
-.al-workbench { border:1px solid var(--line); border-radius:14px; padding:1rem; background:var(--bg); }
-.al-workbench .al-instruction { font:700 clamp(1.2rem,3vw,1.8rem)/1.5 ui-monospace,monospace; margin:.6rem 0; color:var(--text); }
-.al-flow { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:center; gap:.6rem; margin:1rem 0; }
-.al-flow > div { text-align:center; padding:.8rem .5rem; border:1px solid var(--line); border-radius:8px; }
-.al-flow strong { display:block; font-size:1.25rem; margin:.25rem 0; }
-.al-flow small { display:block; color:var(--text-secondary); }
-.al-flow .al-flow-arrow { font-size:1.6rem; color:var(--text); }
-.al-learning button { min-height:44px; }
-.al-learning :focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
-.al-symbol-key { display:flex; flex-wrap:wrap; gap:.5rem; margin:.8rem 0; }
-.al-symbol-key span { border-bottom:2px solid var(--line); padding:.5rem; }
-.al-symbol-key b { font:700 1.3rem ui-monospace,monospace; margin-right:.4rem; }
-.al-function { display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:.75rem; align-items:center; margin:1rem 0; }
-.al-function > div { padding:1rem; text-align:center; border:1px solid var(--line); border-radius:8px; }
-.al-function .al-function-machine { border:2px solid var(--learn-read); }
-.al-function strong { display:block; font-size:1.3rem; margin:.5rem 0; }
-.al-loop-path { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin:1rem 0; }
-.al-loop-path > div { padding:1rem; border-left:4px solid var(--learn-read); background:var(--bg); }
-.al-loop-path strong { display:block; font-size:1.2rem; margin:.3rem 0; }
-.al-loop-path .al-loop-stop { border-color:var(--learn-write); }
-.al-math-ladder { list-style:none; padding:0; counter-reset:math; margin:1rem 0; }
-.al-math-ladder li { counter-increment:math; display:grid; grid-template-columns:2rem minmax(0,1fr); gap:.75rem; padding:1rem 0; border-bottom:1px solid var(--line); }
-.al-math-ladder li::before { content:counter(math); display:grid; place-items:center; align-self:start; width:2rem;height:2rem; border-radius:50%; background:var(--learn-read,#0f766e);color:white;font-weight:700; }
-.al-math-ladder code { display:block; font-size:clamp(1rem,2.5vw,1.35rem); white-space:normal; overflow-wrap:anywhere; margin-bottom:.4rem; }
-@media(max-width:600px) { .al-flow { grid-template-columns:1fr; } .al-flow .al-flow-arrow { text-align:center; transform:rotate(90deg); } .al-function,.al-loop-path { grid-template-columns:1fr; } .al-learning-stage { padding:1rem 0; } }
-
-</style>
-  <script src="../../../assets/js/sim-kit.js"></script>
-  <script src="../../../assets/js/photo-lightbox.js" defer></script>
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/algorithms-ai-module.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/ada-lovelace.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-print.css" media="print" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
-<div class="ll-viewport">
 
   <header class="site-header">
     <div class="nav-wrap">
@@ -399,1510 +34,785 @@
     </div>
   </header>
 
-  <div class="ll-stage">
-    <div class="ll-sim">
-      <main id="main-content" class="al-page">
+  <main id="main-content" class="al-lesson-main">
+    <!-- ===================================================================
+         1. FIRST-VIEW FITTED ANALYTICAL ENGINE & POETICAL SCIENCE STUDIO
+         =================================================================== -->
+    <section id="al-studio" class="al-studio creation-app" data-creation-app data-creation-fit data-no-glossary data-memory-ignore tabindex="-1" aria-labelledby="al-studio-title">
+      <div class="al-studio__header">
+        <div class="al-studio__title-wrap">
+          <h1 id="al-studio-title">Ada Lovelace &middot; Analytical Engine Studio</h1>
+          <span class="al-studio__sub">1843 Note G &middot; Punch Cards &middot; Loom</span>
+        </div>
+        <a class="al-studio__read-link" href="#lesson-reading">Read Ada&rsquo;s story &darr;</a>
+      </div>
 
-        <nav class="ll-breadcrumb" aria-label="Breadcrumb">
-          <a href="../../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
-          <a href="../../../steam-lessons.html">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
-          <span class="ll-crumb-current" aria-current="page">Ada Lovelace</span>
-        </nav>
+      <div id="al-studio-primary" class="al-studio__primary" data-creation-primary>
+        <div class="al-mode-tabs" role="tablist" aria-label="Analytical Engine studio modes">
+          <button type="button" class="al-mode-tab is-active" role="tab" aria-selected="true" aria-controls="al-panel-engine" id="al-tab-engine" data-al-tab="engine">
+            1. Note G Engine
+          </button>
+          <button type="button" class="al-mode-tab" role="tab" aria-selected="false" aria-controls="al-panel-cards" id="al-tab-cards" data-al-tab="cards" tabindex="-1">
+            2. Punch-Card Programmer
+          </button>
+          <button type="button" class="al-mode-tab" role="tab" aria-selected="false" aria-controls="al-panel-loom" id="al-tab-loom" data-al-tab="loom" tabindex="-1">
+            3. Poetical Science Loom
+          </button>
+          <button type="button" id="al-challenge-pill" class="al-challenge-pill" aria-expanded="false" aria-controls="al-challenges-drawer">
+            Challenges: 0 / 5
+          </button>
+        </div>
 
-        <!-- Hero -->
-        <section class="hero al-hero">
-          <p class="eyebrow">Computer Science · Mathematics · History of Science</p>
-          <h1>Ada Lovelace</h1>
-          <div class="al-hero-meta">
-            <span>Algorithms</span><span class="dot"></span>
-            <span>The Analytical Engine</span><span class="dot"></span>
-            <span>First Programmer</span><span class="dot"></span>
-            <span>Pioneering Women in STEAM</span>
+        <!-- Mastery Challenges Drawer -->
+        <div id="al-challenges-drawer" class="al-challenges-drawer" role="region" aria-label="Studio mastery challenges" hidden>
+          <div class="al-challenges-head">
+            <h2>Studio Mastery Challenges</h2>
+            <button type="button" id="al-challenges-close" class="al-mini-btn">Close</button>
           </div>
-          <p class="al-lede">Augusta Ada King, Countess of Lovelace, was born in 1815 as the daughter of the poet Lord Byron. She never met a working computer — yet in 1843 she wrote the world's first algorithm: a precise, step-by-step set of instructions intended for Charles Babbage's Analytical Engine. Her notes introduced concepts like loops, subroutines, and the idea that a machine could manipulate symbols beyond mere arithmetic — a vision that predates Alan Turing by nearly a century.</p>
-          <div class="al-mission">
-            <h3>🎯 Your Mission</h3>
-            <ul>
-              <li><strong>Trace data flow:</strong> Follow intermediate values across registers and explain why variable reuse is essential to computing memory.</li>
-              <li><strong>Spot reusable blocks:</strong> Identify subroutines and loops that eliminate redundant mechanical instructions.</li>
-              <li><strong>Connect symbol manipulation:</strong> Discover how Ada saw beyond number-crunching to universal computing, music, and algorithmic art.</li>
-            </ul>
-          </div>
-        </section>
+          <div id="al-challenges-list" class="al-challenges-list"></div>
+        </div>
 
-        <nav class="ll-lesson-steps" aria-label="Lesson sections">
-          <a href="#al-sec-bio">Biography</a>
-          <a href="#al-sec-gallery">Gallery</a>
-          <a href="#al-sec-timeline">Timeline</a>
-          <a href="#al-sec-foundations">Start Here</a>
-          <a href="#al-sec-algorithm">Algorithm</a>
-          <a href="#al-sec-cards">Punched Cards</a>
-          <a href="#al-sec-poetical">Poetical Science</a>
-          <a href="#al-sec-trace">Trace</a>
-          <a href="#al-sec-simulator">Simulator</a>
-          <a href="#al-sec-contributions">Contributions</a>
-          <a href="#al-sec-legacy">Legacy</a>
-          <a href="#al-sec-practice">Practice</a>
-        </nav>
-
-        <!-- Biography -->
-        <section class="al-card" id="al-sec-bio" style="--card-accent:#b45309;">
-          <h2>Who Was Ada Lovelace?</h2>
-          <figure data-zoomable style="float:right;width:200px;margin:0 0 0.6rem 1.1rem;text-align:center;">
-            <img src="../../../assets/thumbs/ada-lovelace.png" alt="Watercolor portrait of Ada Lovelace as a young woman by Alfred Edward Chalon, 1840" style="width:100%;display:block;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.14);" />
-            <figcaption style="font-size:0.72rem;color: var(--text-muted, #64748b);margin-top:0.35rem;">Ada Lovelace, watercolor by Alfred Edward Chalon, 1840. Public domain.</figcaption>
-          </figure>
-          <p>Born December 10, 1815 in London, Ada's father was the Romantic poet Lord Byron, who left the family when Ada was one month old. Her mother, Anne Isabella Milbanke, fearful Ada would inherit Byron's "poetic madness," raised her on a strict diet of mathematics and logic — ironically the very discipline that made Ada famous.</p>
-          <p>At 17, Ada met Charles Babbage at a dinner party and immediately grasped the potential of his Difference Engine — a mechanical calculator. Babbage was so impressed that he introduced her to his plans for the far more ambitious Analytical Engine: a general-purpose mechanical computer with a mill (processor), store (memory), input via punched cards, and output via printer.</p>
-          <p>In 1842, Italian mathematician Luigi Menabrea published a description of the Analytical Engine in French. Babbage asked Ada to translate it. She did — and added her own notes (labeled A through G) that were nearly three times longer than the original article. Note G contained an algorithm for computing Bernoulli numbers — history's first published computer program.</p>
-          <p>Ada died of uterine cancer on November 27, 1852, aged 36 — the same age as her father Byron. She was buried beside him at the Church of St. Mary Magdalene in Hucknall, Nottinghamshire. In 1980, the US Department of Defense named its new programming language "Ada" in her honor.</p>
-        </section>
-
-        <!-- Real Machines, Real Documents -->
-        <section class="al-card" id="al-sec-gallery" style="--card-accent:#0369a1;">
-          <h2>Real Machines, Real Documents</h2>
-          <p>This isn't an abstract story. The man, the machine, and the algorithm all survive — in a photograph, a working replica, and Ada's own handwritten table of instructions. Select any image to enlarge and step through the collection.</p>
-          <div class="al-gallery-grid">
-            <figure class="al-gallery-card" data-zoomable data-lightbox-group="lovelace-history">
-              <div class="al-gallery-photo">
-                <img src="../../../assets/images/ada-lovelace-history/babbage-portrait.webp" alt="1860 photographic portrait of Charles Babbage, seated, in a dark suit" width="700" height="700" loading="lazy" decoding="async" />
-              </div>
-              <figcaption class="al-gallery-body">
-                <strong>Charles Babbage, 1860</strong>
-                <p>The mathematician and inventor who designed the Difference Engine and the Analytical Engine — and who invited Ada into his circle.</p>
-                <span class="plb-credit">Photo: Photographic portrait, 1860 (public domain via Wikimedia Commons)</span>
-              </figcaption>
-            </figure>
-            <figure class="al-gallery-card" data-zoomable data-lightbox-group="lovelace-history">
-              <div class="al-gallery-photo">
-                <img src="../../../assets/images/ada-lovelace-history/difference-engine.webp" alt="Photograph of the built Difference Engine No. 2, a large mechanical calculator with rows of number wheels, on display at the Science Museum, London" width="700" height="700" loading="lazy" decoding="async" />
-              </div>
-              <figcaption class="al-gallery-body">
-                <strong>Difference Engine No. 2</strong>
-                <p>Built from Babbage's design in 2002, nearly two centuries later — proof his mechanical calculator would have worked. On display in London.</p>
-                <span class="plb-credit">Photo: User:geni, CC BY-SA 4.0 via Wikimedia Commons</span>
-              </figcaption>
-            </figure>
-            <figure class="al-gallery-card" data-zoomable data-lightbox-group="lovelace-history">
-              <div class="al-gallery-photo">
-                <img src="../../../assets/images/ada-lovelace-history/analytical-engine-plan.webp" alt="1840 engineering plan drawing of Babbage's Analytical Engine, showing gear columns, operation cards, variable cards, and number cards" width="700" height="700" loading="lazy" decoding="async" />
-              </div>
-              <figcaption class="al-gallery-body">
-                <strong>The General Plan, 1840</strong>
-                <p>Babbage's own drawing of the Analytical Engine, labeling the operation cards, variable cards, and number cards that would program it.</p>
-                <span class="plb-credit">Photo: ArnoldReinhold, CC BY 4.0 via Wikimedia Commons</span>
-              </figcaption>
-            </figure>
-            <figure class="al-gallery-card" data-zoomable data-lightbox-group="lovelace-history">
-              <div class="al-gallery-photo">
-                <img src="../../../assets/images/ada-lovelace-history/note-g-diagram.webp" alt="Ada Lovelace's 1843 Note G diagram, a printed table showing the step-by-step operations of the Bernoulli number algorithm" width="700" height="700" loading="lazy" decoding="async" />
-              </div>
-              <figcaption class="al-gallery-body">
-                <strong>Note G, 1843</strong>
-                <p>The actual published table — 25 operations across working variables — that historians recognize as the first computer program.</p>
-                <span class="plb-credit">Source: 1843 publication (public domain via Wikimedia Commons)</span>
-              </figcaption>
-            </figure>
-          </div>
-          <div class="al-credits">
-            <strong style="color:var(--al-ink)">Photo credits:</strong>
-            <a href="https://commons.wikimedia.org/wiki/File:Charles_Babbage_-_1860.jpg" target="_blank" rel="noopener">Charles Babbage, 1860</a> (public domain) ·
-            <a href="https://commons.wikimedia.org/wiki/File:Babbage_Difference_Engine.jpg" target="_blank" rel="noopener">Difference Engine No. 2</a> (photo: User:geni, CC BY-SA 4.0) ·
-            <a href="https://commons.wikimedia.org/wiki/File:Babbage_Analytical_Engine_Plan_1840_CHM.agr.jpg" target="_blank" rel="noopener">General Plan, 1840</a> (photo: ArnoldReinhold, CC BY 4.0) ·
-            <a href="https://commons.wikimedia.org/wiki/File:Diagram_for_the_computation_of_Bernoulli_numbers.jpg" target="_blank" rel="noopener">Note G diagram</a> (1843, public domain), all via Wikimedia Commons.
-          </div>
-        </section>
-
-        <!-- Timeline -->
-        <section class="al-card" id="al-sec-timeline" style="--card-accent:#7c3aed;">
-          <h2>A Life Ahead of Its Time</h2>
-          <ol class="al-timeline">
-            <li class="al-tl-item"><span class="al-tl-year">1815</span> Born in London; father is poet Lord Byron.</li>
-            <li class="al-tl-item"><span class="al-tl-year">1816</span> Byron leaves; mother raises Ada on a strict curriculum of mathematics and logic.</li>
-            <li class="al-tl-item"><span class="al-tl-year">1832</span> Contracts measles; temporarily paralyzed; spends years bedridden — studies mathematics intensively.</li>
-            <li class="al-tl-item"><span class="al-tl-year">1833</span> Meets Charles Babbage at a dinner party; sees the Difference Engine prototype.</li>
-            <li class="al-tl-item"><span class="al-tl-year">1835</span> Marries William King (later Earl of Lovelace); becomes Countess of Lovelace.</li>
-            <li class="al-tl-item"><span class="al-tl-year">1840</span> Babbage lectures in Turin on the Analytical Engine; Menabrea writes a description in French.</li>
-            <li class="al-tl-item"><span class="al-tl-year">1842</span> Asked to translate Menabrea's paper from French; begins adding her own extensive notes.</li>
-            <li class="al-tl-item"><span class="al-tl-year">1843</span> Publishes translation + Notes A–G; Note G contains the Bernoulli algorithm — the first computer program.</li>
-            <li class="al-tl-item"><span class="al-tl-year">1844</span> Notes describe loops, subroutines, and the idea the machine could compose music.</li>
-            <li class="al-tl-item"><span class="al-tl-year">1852</span> Dies aged 36; buried beside Lord Byron at the Church of St. Mary Magdalene.</li>
-            <li class="al-tl-item"><span class="al-tl-year">1980</span> US Department of Defense names the "Ada" programming language in her honor (MIL-STD-1815).</li>
-          </ol>
-        </section>
-
-        <!-- The Algorithm Explained -->
-        <section class="al-card al-learning" id="al-sec-foundations" style="--card-accent:#0f766e;">
-          <h2>Watch an idea become an algorithm</h2>
-          <p class="al-learning-intro">Four tickets. Ten dollars each. A six-dollar fee. Two people sharing the bill. Let's teach a machine to find each person's share.</p>
-          <nav class="al-symbol-key" aria-label="Learning sequence"><a href="#al-learn-memory">1. Store</a><a href="#al-learn-calculate">2. Calculate</a><a href="#al-learn-function">3. Reuse</a><a href="#al-learn-loop">4. Repeat</a></nav>
-          <div class="al-learning-stage" id="al-learn-memory">
-            <h3>1. Give each value a home</h3>
-            <p>A <strong>variable</strong> names a stored value. A <strong>register</strong> is a machine's storage location. The label stays; the number inside can change.</p>
-            <div class="al-memory-strip" aria-label="Input registers">
-              <div class="al-memory-box"><span>V0</span><strong>10</strong><small>Dollars per ticket</small></div>
-              <div class="al-memory-box"><span>V1</span><strong>4</strong><small>Tickets</small></div>
-              <div class="al-memory-box"><span>V2</span><strong>6</strong><small>Fee in dollars</small></div>
-            </div>
-            <p><code>V1</code> is a location's name, not V × 1. Its current value is 4.</p>
-          </div>
-          <div class="al-learning-stage" id="al-learn-calculate">
-            <h3>2. Read → calculate → store</h3>
-            <p>An <strong>algorithm</strong> is a precise, ordered list of instructions. Step through this one and watch its memory change.</p>
-            <div class="al-workbench">
-              <p id="al-learn-progress">Ready · inputs loaded</p>
-              <div class="al-instruction" id="al-learn-instruction">Find the ticket cost, add the fee, then share.</div>
-              <div class="al-flow">
-                <div><small>Read</small><strong id="al-learn-read">10 and 4</strong><small id="al-learn-source">From V0 and V1</small></div>
-                <span class="al-flow-arrow" aria-hidden="true">→</span>
-                <div><small>Calculate</small><strong id="al-learn-math">10 × 4</strong><small id="al-learn-meaning">Ticket cost</small></div>
-                <span class="al-flow-arrow" aria-hidden="true">→</span>
-                <div><small>Store</small><strong id="al-learn-write">V3 is waiting</strong><small id="al-learn-dest">A home for the result</small></div>
-              </div>
-              <div class="al-memory-strip" aria-label="Result registers">
-                <div class="al-memory-box" id="al-learn-box-3"><span>V3</span><strong>—</strong><small>Ticket cost</small></div>
-                <div class="al-memory-box" id="al-learn-box-4"><span>V4</span><strong>—</strong><small>Total bill</small></div>
-                <div class="al-memory-box" id="al-learn-box-5"><span>V5</span><strong>—</strong><small>Each person's share</small></div>
-              </div>
-              <p id="al-learn-status" role="status">Predict the ticket cost, then run the first instruction. A dash means no value is stored yet.</p>
-              <div class="al-dock"><button type="button" id="al-learn-next">Run instruction 1</button><button type="button" id="al-learn-reset">Start again</button></div>
-            </div>
-            <div class="al-symbol-key" aria-label="Arithmetic symbols"><span><b>+</b>Add</span><span><b>−</b>Subtract</span><span><b>×</b>Multiply</span><span><b>÷</b>Divide</span><span><b>←</b>Store in</span></div>
-            <details class="ll-accordion"><summary>How does this look in Python?</summary><div class="ll-accordion-body"><code>v3 = v0 * v1</code> means calculate v0 times v1, then store the result in v3. Python uses <code>*</code> for multiplication, <code>/</code> for division, and <code>=</code> for assignment. The mathematical equation 10 × 4 = 40 states equality; the program instruction tells the machine what to do.</div></details>
-            <details class="ll-accordion"><summary>Predict: replace V3 with 7. Does V4 change too?</summary><div class="ll-accordion-body">V3 becomes 7. V4 stays 46. A saved result does not automatically recalculate. Run the addition again to update V4. This is called overwriting: one current value replaces another.</div></details>
-          </div>
-          <div class="al-learning-stage" id="al-learn-function">
-            <h3>3. Keep the recipe. Change the inputs.</h3>
-            <p>A <strong>function</strong> is a reusable calculation that takes inputs and returns a result. These supplied inputs are its <strong>arguments</strong>. A subroutine is a reusable instruction block; it need not return a value.</p>
-            <div class="al-function">
-              <div>Inputs<strong>10, 4, 6</strong>Price, tickets, fee</div>
-              <div class="al-function-machine">Function: share the bill<strong>(price × tickets + fee) ÷ 2</strong>Multiply → add → divide</div>
-              <div>Output<strong>23 dollars</strong>Each person's share</div>
-            </div>
-            <details class="ll-accordion"><summary>Same function, two tickets: predict the new share</summary><div class="ll-accordion-body">(10 × 2 + 6) ÷ 2 = 26 ÷ 2 = 13 dollars each. The arguments changed; the recipe stayed the same. Parentheses group the bill calculation before division.</div></details>
-            <p>The simulator below uses a different five-instruction subroutine. These first three calculations are its opening steps; its remaining steps are memory exercises.</p>
-          </div>
-          <div class="al-learning-stage" id="al-learn-loop">
-            <h3>4. Repeat only when the test says “yes”</h3>
-            <p>A <strong>loop</strong> repeats instructions. In the simulator, the counter <code>n</code> records the pass number. The test <code>n &lt; 2</code> asks “is n smaller than 2?”</p>
-            <div class="al-loop-path">
-              <div>After pass 1<strong>1 &lt; 2 → True</strong>Prepare new inputs → set n to 2 → run the same block again.</div>
-              <div class="al-loop-stop">After pass 2<strong>2 &lt; 2 → False</strong>Leave the loop → print the saved results.</div>
-            </div>
-            <p>That choice of what happens next is <strong>conditional branching</strong>.</p>
-            <details class="ll-accordion"><summary>What if we forget to change n?</summary><div class="ll-accordion-body">If n stays 1, the test keeps saying true. A loop controlled only by that test never stops. We need both progress and a stopping rule.</div></details>
-          </div>
-          <a class="al-check-btn" href="#al-sec-trace">Try the register trace</a>
-        </section>
-
-        <section class="al-card" id="al-sec-algorithm" style="--card-accent:#0f766e;">
-          <h2>What Is an Algorithm — and Why Did It Matter?</h2>
-          <p>An algorithm is a finite, ordered sequence of precise instructions for solving a problem. Ada's 1843 Note G showed in detail how the proposed Analytical Engine could calculate Bernoulli numbers. It connected mathematical rules to operations, storage locations, and repeated steps.</p>
-          <p>Our simple trace teaches the same kinds of programming ideas using small whole numbers. Once you can explain reading, calculating, storing, and repeating, you are ready to ask what the more advanced mathematics is for.</p>
-          <p>Most radically, she wrote that the Engine "might act upon other things besides number... supposing, for instance, that the fundamental relations of pitched sounds in the science of harmony and of musical composition were susceptible of such expression... the Engine might compose elaborate and scientific pieces of music." — 1843</p>
-
-          <h3>What is a Bernoulli number?</h3>
-          <p>Bernoulli numbers are a particular sequence of numbers used in formulas, including formulas for sums of powers such as 1² + 2² + 3². They are not register names. <code>B₂</code> means “the Bernoulli number at index 2,” not B × 2 or B squared. An <strong>index</strong> identifies a position in a sequence. A <strong>fraction</strong> such as 1/6 is one divided by six; −1/2 is negative one-half.</p>
-          <p>Using the modern convention in our Python reference, B₀ = 1 and B₁ = −1/2. A <strong>recurrence</strong> is a rule that finds a new sequence value using earlier values. Here is the small case that finds B₂:</p>
-          <ol class="al-math-ladder">
-            <li><div><code>B₀ + 3 × B₁ + 3 × B₂ = 0</code>Our rule. B₂ is the unknown; B₀ and B₁ are already known.</div></li>
-            <li><div><code>1 + 3 × (−1/2) + 3 × B₂ = 0</code>Substitute B₀ = 1 and B₁ = −1/2.</div></li>
-            <li><div><code>−1/2 + 3 × B₂ = 0</code>Combine the known terms: 1 − 3/2 = −1/2.</div></li>
-            <li><div><code>3 × B₂ = 1/2</code>Add 1/2 to both sides. The unknown term stands alone.</div></li>
-            <li><div><code>B₂ = (1/2) ÷ 3 = 1/6</code>Divide both sides by 3. Save the result for the next calculation.</div></li>
-          </ol>
-          <p>The full recurrence handles larger indices with more earlier terms. The key programming task is to keep those earlier values, compute each contribution, add the contributions, and store the new result. You do not need to derive the full formula to understand that process. Ada's historical indexing differs from this modern convention.</p>
-          <p><a href="https://www.fourmilab.ch/babbage/sketch.html" target="_blank" rel="noopener">Read the 1843 translation and Notes, including Note G</a>. Our worked example and Python below are modern teaching explanations, not a transcription of her operation table.</p>
-
-          <h3>The Engine's Four Parts — Mapped to a Modern Computer</h3>
-          <p style="font-size:0.84rem;color:var(--text-muted, #64748b);">The Analytical Engine had every major part a computer still has today, just built from brass and steam instead of silicon.</p>
-          <div class="al-anatomy-grid">
-            <div class="al-anatomy-card">
-              <div class="al-anatomy-icon">&#9881;&#65039;</div>
-              <strong>The Mill</strong>
-              <p>Performed arithmetic on numbers fed to it.</p>
-              <span class="al-anatomy-modern">= CPU</span>
-            </div>
-            <div class="al-anatomy-card">
-              <div class="al-anatomy-icon">&#128209;</div>
-              <strong>The Store</strong>
-              <p>Held up to 1,000 numbers of 50 digits each, in columns of gears.</p>
-              <span class="al-anatomy-modern">= Memory / RAM</span>
-            </div>
-            <div class="al-anatomy-card">
-              <div class="al-anatomy-icon">&#128200;</div>
-              <strong>Punched Cards</strong>
-              <p>Fed in the sequence of operations and the data, borrowed from the Jacquard loom.</p>
-              <span class="al-anatomy-modern">= Program / Input</span>
-            </div>
-            <div class="al-anatomy-card">
-              <div class="al-anatomy-icon">&#128424;&#65039;</div>
-              <strong>The Printer</strong>
-              <p>Planned to print results directly, removing human transcription error.</p>
-              <span class="al-anatomy-modern">= Output</span>
-            </div>
-          </div>
-
-          <h3>From Ada's Notation to Modern Code</h3>
-          <p style="font-size:0.84rem;color:var(--text-muted, #64748b);">Compare our classroom notation with Python. These examples explain programming concepts; they do not reproduce Ada's historical instructions.</p>
-          <div style="overflow-x:auto;">
-          <table class="al-code-table">
-            <thead>
-              <tr><th>Concept</th><th>Classroom notation</th><th>Modern Python</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="al-code-concept">Loop</td>
-                <td><code>FOR n FROM 1 TO 8: repeat block</code></td>
-                <td class="al-code-python"><code>for n in range(1, 9):</code></td>
-              </tr>
-              <tr>
-                <td class="al-code-concept">Register / Variable</td>
-                <td><code>V3 ← V0 × V1</code></td>
-                <td class="al-code-python"><code>v3 = v0 * v1</code></td>
-              </tr>
-              <tr>
-                <td class="al-code-concept">Conditional Branch</td>
-                <td><code>Loop check: n &lt; 8?</code></td>
-                <td class="al-code-python"><code>if n &lt; 8:</code></td>
-              </tr>
-              <tr>
-                <td class="al-code-concept">Output</td>
-                <td><code>Output: V6</code></td>
-                <td class="al-code-python"><code>print(v6)</code></td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
-          <p style="font-size:0.78rem;color:var(--text-muted, #64748b);font-style:italic;">Python's <code style="font-family:monospace;background:rgba(0,0,0,0.05);border-radius:4px;padding:0.1rem 0.3rem;">range(1, 9)</code> counts 1 through 8 — it stops <em>before</em> the second number. That's a real, common bug source; you'll see it again in the Practice section below.</p>
-
-          <div class="ll-accordion-group">
-            <details class="ll-accordion">
-              <summary>Where does the Turing Test connect to this?</summary>
-              <div class="ll-accordion-body">Ada distinguished between the Analytical Engine's ability to do what it is programmed to do and the ability to originate anything — anticipating debates Turing would formalize a century later as the "Turing Test."</div>
-            </details>
-            <details class="ll-accordion">
-              <summary>Is the Ada programming language still used?</summary>
-              <div class="ll-accordion-body">The programming language Ada (MIL-STD-1815, named for Ada's birth year) was mandated for US military software in the 1980s and is still used in aviation, rail signaling, and nuclear systems today.</div>
-            </details>
-            <details class="ll-accordion">
-              <summary>Was the Analytical Engine ever actually built?</summary>
-              <div class="ll-accordion-body">Charles Babbage's Analytical Engine was never completed in his lifetime. A working portion was built at the Science Museum in London in 1991. A full replica was proposed for 2021 but funding has remained elusive.</div>
-            </details>
-          </div>
-        </section>
-
-        <!-- Punched Cards -->
-        <section class="al-card" id="al-sec-cards" style="--card-accent:#be185d;">
-          <h2>Punched Cards: How the Engine Was Programmed</h2>
-          <p>Babbage borrowed his input method from the <strong>Jacquard loom</strong>, which used punched cards to weave patterns into fabric — a hole let a sensing hook pass through to lift a thread, while solid cardboard blocked it. The Analytical Engine adapted this mechanical principle: punched holes represent <strong>1</strong> (engaged), and blank cardboard represents <strong>0</strong> (unengaged).</p>
-          <p style="font-size:0.84rem;color:var(--text-muted, #64748b);">Explore both how numbers were encoded into cardboard and how Babbage's cards commanded the Mill to calculate:</p>
-
-          <div class="al-card-tabs" role="tablist">
-            <button class="al-card-tab active" type="button" id="al-tab-btn-binary" role="tab" aria-selected="true" aria-controls="al-panel-binary">Data Card (Binary)</button>
-            <button class="al-card-tab" type="button" id="al-tab-btn-babbage" role="tab" aria-selected="false" aria-controls="al-panel-babbage">Operation &amp; Variable Card</button>
-          </div>
-
-          <!-- Tab 1: Binary Data Card -->
-          <div class="al-punchcard-wrap" id="al-panel-binary" role="tabpanel" aria-labelledby="al-tab-btn-binary">
-            <div class="al-punchcard" id="al-punchcard" role="group" aria-label="Interactive 8-hole punched card"></div>
-            <div class="al-punchcard-readout">
-              <div class="al-readout"><span class="al-readout-label">Binary Pattern</span><span class="al-readout-val" id="al-pc-binary">00000000</span></div>
-              <div class="al-readout"><span class="al-readout-label">Decimal Value</span><span class="al-readout-val" id="al-pc-decimal">0</span></div>
-            </div>
-            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;justify-content:center;">
-              <button class="ll-preset" type="button" id="al-pc-zero">Reset (0)</button>
-              <button class="ll-preset" type="button" id="al-pc-const">Constant 10</button>
-              <button class="ll-preset" type="button" id="al-pc-42">42</button>
-              <button class="ll-preset" type="button" id="al-pc-max">Max (255)</button>
-              <button class="ll-preset" type="button" id="al-pc-random">Random Byte</button>
-            </div>
-          </div>
-
-          <!-- Tab 2: Operation & Variable Card -->
-          <div class="al-punchcard-wrap" id="al-panel-babbage" role="tabpanel" aria-labelledby="al-tab-btn-babbage" style="display:none;">
-            <div class="al-opcard">
-              <div class="al-opcard-row">
-                <span class="al-opcard-label">1. Operation Card (Mill Action):</span>
-                <select class="al-opcard-select" id="al-op-select" aria-label="Mill arithmetic operation">
-                  <option value="*">Multiplication (×)</option>
-                  <option value="+">Addition (+)</option>
-                  <option value="-">Subtraction (−)</option>
-                  <option value="/">Division (÷)</option>
-                </select>
-              </div>
-              <div class="al-opcard-row">
-                <span class="al-opcard-label">2. Variable Cards (Operands):</span>
-                <div style="display:flex;gap:0.5rem;align-items:center;">
-                  <select class="al-opcard-select" id="al-op-in1" aria-label="Input Register 1">
-                    <option value="V0">V0 (10)</option>
-                    <option value="V1" selected>V1 (4)</option>
-                    <option value="V2">V2 (6)</option>
+        <!-- PANEL 1: NOTE G ANALYTICAL ENGINE SIMULATOR -->
+        <section id="al-panel-engine" class="al-mode-panel" role="tabpanel" aria-labelledby="al-tab-engine" data-al-panel="engine">
+          <div class="al-engine-grid">
+            <div class="al-stage-col">
+              <div class="al-toolbar" role="group" aria-label="Analytical Engine controls">
+                <label for="al-preset-select">
+                  <span>Program</span>
+                  <select id="al-preset-select" class="al-select" aria-label="Choose Analytical Engine program"></select>
+                </label>
+                <button type="button" id="al-bug-toggle" class="al-btn al-btn--bug" aria-pressed="false" title="Inject the historic 1843 Operation 4 printing typo (V5 / V4)">1843 Op 4 Bug: Off</button>
+                <button type="button" id="al-back" class="al-btn" title="Step back">Back</button>
+                <button type="button" id="al-play" class="al-btn al-btn--primary" aria-pressed="false" title="Play or pause (Space)">Play</button>
+                <button type="button" id="al-next" class="al-btn" title="Step forward">Step</button>
+                <button type="button" id="al-reset" class="al-btn" title="Reset (R)">Reset</button>
+                <label for="al-speed-select">
+                  <span>Speed</span>
+                  <select id="al-speed-select" class="al-select" aria-label="Playback speed">
+                    <option value="1">Slow</option>
+                    <option value="2" selected>Normal</option>
+                    <option value="3">Fast</option>
+                    <option value="4">Quick</option>
                   </select>
-                  <span id="al-op-sym">×</span>
-                  <select class="al-opcard-select" id="al-op-in2" aria-label="Input Register 2">
-                    <option value="V0">V0 (10)</option>
-                    <option value="V1">V1 (4)</option>
-                    <option value="V2" selected>V2 (6)</option>
-                  </select>
+                </label>
+                <button type="button" id="al-sound-toggle" class="al-btn" aria-pressed="false">Sound FX: Off</button>
+              </div>
+
+              <div class="al-canvas-shell">
+                <canvas id="al-engine-canvas" tabindex="0" aria-label="Analytical Engine Store columns and Mill arithmetic visualization. Use Space to play or pause, arrow keys to step, R to reset."></canvas>
+                <div class="al-canvas-hud" aria-hidden="true">
+                  <span id="al-hud-left" class="al-hud-pill">1843 Note G &middot; n = 1</span>
+                  <span id="al-hud-right" class="al-hud-pill">Exact Fractions</span>
                 </div>
               </div>
-              <div class="al-opcard-row">
-                <span class="al-opcard-label">3. Destination Variable Card:</span>
-                <select class="al-opcard-select" id="al-op-out" aria-label="Output Register">
-                  <option value="V3" selected>Store into V3</option>
-                  <option value="V4">Store into V4</option>
-                  <option value="V5">Store into V5</option>
-                  <option value="V6">Store into V6</option>
-                  <option value="V7">Store into V7</option>
-                </select>
+
+              <div class="al-scrubber-row">
+                <label for="al-seek">Scrub</label>
+                <input id="al-seek" type="range" min="1" max="10" value="1" />
+                <span>Keys: Space / &larr; &rarr; / R</span>
               </div>
-              <div class="al-opcard-result" id="al-op-result">Card instruction: V3 ← V1 (4) × V2 (6) = 24</div>
+
+              <div class="al-telemetry-strip" aria-label="Current instruction telemetry">
+                <div class="al-stat"><span class="al-stat-label">Step</span><span class="al-stat-val" id="al-stat-step">1 / 10</span></div>
+                <div class="al-stat"><span class="al-stat-label">Operation</span><span class="al-stat-val" id="al-stat-op">Setup</span></div>
+                <div class="al-stat"><span class="al-stat-label">Reading</span><span class="al-stat-val" id="al-stat-read">&mdash;</span></div>
+                <div class="al-stat"><span class="al-stat-label">Writing</span><span class="al-stat-val" id="al-stat-write">V1, V2, V3</span></div>
+              </div>
             </div>
-            <button class="ll-preset" type="button" id="al-op-feed" style="background:var(--al-teal);color:#fff;">Feed Card to The Mill</button>
+
+            <div class="al-ctrl-col">
+              <div id="al-narration-box" class="al-narration-box" role="status" aria-live="polite">
+                <span id="al-phase-pill" class="al-phase-pill">Data Cards &middot; Setup</span>
+                <p id="al-narration-text" class="al-narration-text"></p>
+              </div>
+
+              <div id="al-tape-bar" class="al-tape-bar" aria-live="polite">
+                <span>Printer tape: waiting for output&hellip;</span>
+              </div>
+
+              <div class="al-subtabs" role="tablist" aria-label="Engine inspector views">
+                <button type="button" class="al-subtab is-active" role="tab" aria-selected="true" data-al-insp-tab="store">Store</button>
+                <button type="button" class="al-subtab" role="tab" aria-selected="false" data-al-insp-tab="table">1843 Table (25 Ops)</button>
+                <button type="button" class="al-subtab" role="tab" aria-selected="false" data-al-insp-tab="python">Python</button>
+              </div>
+
+              <div class="al-inspector-body">
+                <div class="al-subpanel" data-al-insp-panel="store">
+                  <table class="al-vm-table" aria-label="Store column register values">
+                    <thead>
+                      <tr><th scope="col">Col</th><th scope="col">Role</th><th scope="col">Value</th><th scope="col">Prev</th><th scope="col">State</th></tr>
+                    </thead>
+                    <tbody id="al-store-tbody"></tbody>
+                  </table>
+                </div>
+
+                <div class="al-subpanel" data-al-insp-panel="table" hidden>
+                  <table class="al-vm-table" aria-label="Ada Lovelace 1843 Note G operations">
+                    <thead>
+                      <tr><th scope="col">Op</th><th scope="col">Card Instruction</th><th scope="col">Result</th></tr>
+                    </thead>
+                    <tbody id="al-1843-tbody"></tbody>
+                  </table>
+                </div>
+
+                <div class="al-subpanel" data-al-insp-panel="python" hidden>
+                  <div style="display:flex;justify-content:flex-end;margin-bottom:0.3rem;">
+                    <button type="button" id="al-copy-python" class="al-mini-btn">Copy Python</button>
+                  </div>
+                  <pre class="al-code-pre"><code id="al-python-out"></code></pre>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <!-- Poetical Science: Symbolic Computation -->
-        <section class="al-card" id="al-sec-poetical" style="--card-accent:#7c3aed;">
-          <h2>Poetical Science: From Arithmetic to Symbols &amp; Music</h2>
-          <p>Ada called her approach <em>"poetical science."</em> While Babbage saw a magnificent machine for calculating mathematical tables, Ada had a profound realization: <strong>numbers can represent symbols</strong>. If numbers could represent pitches, the Engine could compose music; if numbers could represent weaving levers, it could weave intricate brocades.</p>
-          <div class="al-callout violet" style="margin:0.8rem 0;">
-            <em>"The Analytical Engine weaves algebraical patterns just as the Jacquard-loom weaves flowers and leaves... It might compose elaborate and scientific pieces of music of any degree of complexity or extent."</em>
-            <div style="font-size:0.8rem;margin-top:0.35rem;font-weight:700;color:var(--al-violet);">— Ada Lovelace, Note A (1843)</div>
-          </div>
-          <p style="font-size:0.84rem;color:var(--text-muted,#64748b);">Tap holes on the punch strip below to compose a 6-step melodic sequence. As each hole trips, the Engine translates the card's physical pattern into chime frequencies and woven tapestry threads:</p>
-          <div class="al-poetical-wrap">
-            <div class="al-chimes-grid" id="al-chimes-grid" role="group" aria-label="Symbolic musical punched card">
-              <!-- Rendered via JS -->
+        <!-- PANEL 2: PUNCH-CARD PROGRAMMER -->
+        <section id="al-panel-cards" class="al-mode-panel" role="tabpanel" aria-labelledby="al-tab-cards" data-al-panel="cards" hidden>
+          <div class="al-cards-grid">
+            <div class="al-cards-left">
+              <div class="al-toolbar" role="group" aria-label="Number card encoding mode">
+                <div role="tablist" aria-label="Card type" style="display:flex;gap:0.3rem;">
+                  <button type="button" id="al-cmode-decimal" class="al-btn is-active" role="tab" aria-selected="true">Babbage Decimal Card (1843)</button>
+                  <button type="button" id="al-cmode-binary" class="al-btn" role="tab" aria-selected="false">Modern Binary Byte Card</button>
+                </div>
+                <label for="al-card-target-reg" style="margin-left:auto;">
+                  <span>Target</span>
+                  <select id="al-card-target-reg" class="al-select" aria-label="Target Store register">
+                    <option value="V1" selected>V1</option>
+                    <option value="V2">V2</option>
+                    <option value="V3">V3</option>
+                  </select>
+                </label>
+              </div>
+
+              <div id="al-card-decimal-panel" class="al-cardboard">
+                <div class="al-cardboard-head">
+                  <span>DECIMAL NUMBER CARD (BASE 10 &middot; WHEELS 0&ndash;9)</span>
+                  <span id="al-decimal-val" class="al-hud-pill">V1 = 10</span>
+                </div>
+                <div id="al-decimal-grid" class="al-decimal-grid"></div>
+              </div>
+
+              <div id="al-card-binary-panel" class="al-cardboard" hidden>
+                <div class="al-cardboard-head">
+                  <span>MODERN 8-BIT BINARY CARD (BASE 2 &middot; HOLES 1/0)</span>
+                  <span id="al-binary-pat" class="al-hud-pill">00001010</span>
+                  <span id="al-binary-val" class="al-hud-pill">Decimal: 10</span>
+                </div>
+                <div id="al-binary-holes" class="al-binary-holes" role="group" aria-label="8-bit binary card holes"></div>
+                <div class="al-toolbar">
+                  <button type="button" class="al-mini-btn" data-bin-preset="0">0</button>
+                  <button type="button" class="al-mini-btn" data-bin-preset="10">10</button>
+                  <button type="button" class="al-mini-btn" data-bin-preset="42">42</button>
+                  <button type="button" class="al-mini-btn" data-bin-preset="255">255</button>
+                  <button type="button" class="al-mini-btn" data-bin-preset="random">Random</button>
+                </div>
+              </div>
+
+              <form id="al-deck-form" class="al-deck-form">
+                <strong style="font-size:0.74rem;color:#fef3c7;">Add Card:</strong>
+                <select id="al-deck-dest" class="al-select" aria-label="Destination register">
+                  <option value="V1">V1</option>
+                  <option value="V2">V2</option>
+                  <option value="V3">V3</option>
+                  <option value="V4" selected>V4</option>
+                  <option value="V5">V5</option>
+                  <option value="V6">V6</option>
+                </select>
+                <span>&larr;</span>
+                <select id="al-deck-a" class="al-select" aria-label="First operand register">
+                  <option value="V0">V0 (0)</option>
+                  <option value="V1" selected>V1</option>
+                  <option value="V2">V2</option>
+                  <option value="V3">V3</option>
+                  <option value="V4">V4</option>
+                  <option value="V5">V5</option>
+                  <option value="V6">V6</option>
+                </select>
+                <select id="al-deck-op" class="al-select" aria-label="Arithmetic operation">
+                  <option value="+">+</option>
+                  <option value="-">&minus;</option>
+                  <option value="*">&times;</option>
+                  <option value="/">&divide;</option>
+                </select>
+                <select id="al-deck-b" class="al-select" aria-label="Second operand register">
+                  <option value="V0">V0 (0)</option>
+                  <option value="V1">V1</option>
+                  <option value="V2" selected>V2</option>
+                  <option value="V3">V3</option>
+                  <option value="V4">V4</option>
+                  <option value="V5">V5</option>
+                  <option value="V6">V6</option>
+                </select>
+                <button type="submit" class="al-btn al-btn--brass">+ Add Card</button>
+              </form>
             </div>
-            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;margin-top:0.7rem;">
-              <button class="ll-preset" type="button" id="al-chime-play" style="background:var(--al-violet);color:#fff;">▶ Play Chimes &amp; Weave</button>
-              <button class="ll-preset" type="button" id="al-chime-preset-melody">Victorian Melody</button>
-              <button class="ll-preset" type="button" id="al-chime-preset-tapestry">Jacquard Tapestry</button>
-              <button class="ll-preset" type="button" id="al-chime-clear">Clear</button>
+
+            <div class="al-cards-right">
+              <div class="al-toolbar" role="group" aria-label="Card deck presets and execution">
+                <button type="button" class="al-mini-btn" data-deck-preset="ticket-bill">Ticket Bill</button>
+                <button type="button" class="al-mini-btn" data-deck-preset="powers-of-2">Powers of 2</button>
+                <button type="button" class="al-mini-btn" data-deck-preset="fibonacci-loop">Fibonacci</button>
+                <button type="button" class="al-mini-btn" data-deck-preset="clear">Clear</button>
+                <label for="al-deck-repeat" style="margin-left:auto;">
+                  <span>Repeat</span>
+                  <select id="al-deck-repeat" class="al-select" aria-label="Loop repeat passes">
+                    <option value="1">1&times;</option>
+                    <option value="2">2&times;</option>
+                    <option value="3">3&times;</option>
+                    <option value="4">4&times;</option>
+                    <option value="5">5&times;</option>
+                  </select>
+                </label>
+              </div>
+
+              <div id="al-reg-strip" class="al-reg-strip" aria-label="Live Store registers V0 to V6"></div>
+
+              <div class="al-toolbar">
+                <button type="button" id="al-deck-step" class="al-btn">Step Card</button>
+                <button type="button" id="al-deck-run" class="al-btn al-btn--primary">Run Deck</button>
+                <button type="button" id="al-deck-reset" class="al-btn">Reset Store</button>
+              </div>
+
+              <div id="al-deck-status" class="al-narration-text" role="status" aria-live="polite"></div>
+
+              <div id="al-deck-list" class="al-deck-list" aria-label="Program card sequence"></div>
+
+              <div class="al-inspector-body" style="flex:1 1 auto;">
+                <pre class="al-code-pre"><code id="al-deck-python"></code></pre>
+              </div>
             </div>
-            <canvas class="al-loom-canvas" id="al-loom-canvas" width="600" height="70" aria-label="Woven tapestry visualization corresponding to punch card pattern"></canvas>
           </div>
         </section>
 
-        <!-- Trace Table -->
-        <section class="al-card" id="al-sec-trace" style="--card-accent:#b45309;">
-          <h2>Trace It Yourself: Predict the Registers</h2>
-          <p>Before you watch the simulator run, try being the engine. This classroom exercise uses easy inputs rather than computing Bernoulli numbers. Steps 4–8 form the core reusable subroutine (five operations), called twice in the simulator below. The last two rows are extra practice in overwriting and scaling, separate from the simulator’s Steps 9–10.</p>
-          <p><strong>How to read this table:</strong> each row shows memory <em>after</em> that instruction. Only the destination changes; carry the other values forward. A dash means no value has been loaded yet, not zero. Steps 1–3 loaded the three given inputs, so the arithmetic starts at Step 4. For the first blank, read V0 = 10 and V1 = 4, multiply them, and write the result in V3.</p>
-          <div class="al-trace-given">
-            <span>V0 = 10</span><span>V1 = 4</span><span>V2 = 6</span>
+        <!-- PANEL 3: POETICAL SCIENCE JACQUARD LOOM -->
+        <section id="al-panel-loom" class="al-mode-panel" role="tabpanel" aria-labelledby="al-tab-loom" data-al-panel="loom" hidden>
+          <div class="al-loom-grid">
+            <div class="al-loom-left">
+              <div class="al-toolbar" role="group" aria-label="Loom presets">
+                <button type="button" class="al-btn" data-loom-preset="victorian-chime">Victorian Chime</button>
+                <button type="button" class="al-btn" data-loom-preset="jacquard-diamond">Jacquard Diamond</button>
+                <button type="button" class="al-btn" data-loom-preset="bernoulli-symmetry">Symmetry</button>
+                <button type="button" class="al-btn" data-loom-preset="clear">Clear</button>
+              </div>
+
+              <div class="al-matrix-wrap">
+                <div class="al-cardboard-head">
+                  <span>8-BEAT SYMBOLIC PUNCHED CARD (CLICK HOLES TO COMPOSE &amp; WEAVE)</span>
+                </div>
+                <div id="al-loom-matrix" class="al-matrix-grid" role="group" aria-label="6 by 8 musical loom punched card"></div>
+              </div>
+
+              <p class="al-narration-text">Ada realized numbers are just symbols. Each column of punched holes is simultaneously a binary code, a decimal integer, a musical chord, and a row of silk heddles lifted on a Jacquard loom.</p>
+            </div>
+
+            <div class="al-loom-right">
+              <div class="al-toolbar" role="group" aria-label="Loom playback controls">
+                <button type="button" id="al-loom-play" class="al-btn al-btn--primary" aria-pressed="false">&#9654; Play &amp; Weave</button>
+                <label for="al-loom-tempo">
+                  <span>Tempo</span>
+                  <select id="al-loom-tempo" class="al-select" aria-label="Playback tempo">
+                    <option value="90">90 BPM</option>
+                    <option value="120" selected>120 BPM</option>
+                    <option value="160">160 BPM</option>
+                  </select>
+                </label>
+                <button type="button" id="al-loom-mute" class="al-btn" aria-pressed="false">Audio: On</button>
+              </div>
+
+              <div class="al-loom-stage">
+                <canvas id="al-loom-canvas" aria-label="Live Jacquard loom weaving silk weft threads from the punched card pattern"></canvas>
+              </div>
+
+              <div class="al-encode-strip" aria-label="Four-way symbolic encoding readout">
+                <div class="al-stat"><span class="al-stat-label">Binary Code</span><span class="al-stat-val" id="al-enc-binary">000101</span></div>
+                <div class="al-stat"><span class="al-stat-label">Decimal</span><span class="al-stat-val" id="al-enc-decimal">5</span></div>
+                <div class="al-stat"><span class="al-stat-label">Musical Notes</span><span class="al-stat-val" id="al-enc-notes">E4 + C4</span></div>
+                <div class="al-stat"><span class="al-stat-label">Lifted Heddles</span><span class="al-stat-val" id="al-enc-heddles">#4, #6</span></div>
+              </div>
+            </div>
           </div>
-          <p style="font-size:0.84rem;color:var(--text-muted, #64748b);">For each row, work out the value the operation writes into the register, and type it into the blank. Everything you need is already in the table — either a "given" value above, or a result from an earlier row.</p>
-          <div style="overflow-x:auto;">
-          <table class="al-trace-table">
-            <caption>Steps 4–8: core reusable subroutine. Steps 9–10: extra practice.</caption>
+        </section>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         2. EDITORIAL LESSON READING BELOW THE STUDIO
+         =================================================================== -->
+    <div id="lesson-reading" class="al-reading">
+      <nav class="al-section-nav" aria-label="Lesson sections">
+        <a href="#al-sec-bio">Biography</a>
+        <a href="#al-sec-gallery">Primary Sources</a>
+        <a href="#al-sec-timeline">Timeline</a>
+        <a href="#al-sec-anatomy">Engine Anatomy</a>
+        <a href="#al-sec-noteg">Note G &amp; 1843 Bug</a>
+        <a href="#al-sec-trace">Hand Trace</a>
+        <a href="#al-sec-legacy">Legacy &amp; Vocab</a>
+        <a href="#al-sec-practice">Practice</a>
+      </nav>
+
+      <!-- Biography -->
+      <section class="al-card" id="al-sec-bio" style="--card-accent:#b45309;">
+        <h2>Who Was Ada Lovelace?</h2>
+        <div class="al-bio-grid">
+          <div>
+            <p><strong>Augusta Ada King, Countess of Lovelace (December 10, 1815 &ndash; November 27, 1852)</strong> was a British mathematician and writer celebrated as the world&rsquo;s first computer programmer. Her father was the famous Romantic poet Lord Byron, who left England when Ada was one month old. Hoping to steer Ada away from her father&rsquo;s volatility, her mother &mdash; Anne Isabella Milbanke, herself mathematically gifted &mdash; arranged rigorous tutoring in mathematics, logic, and astronomy.</p>
+            <p>At seventeen, mentored by scientist Mary Somerville, Ada attended a London salon hosted by inventor <strong>Charles Babbage</strong> and saw a working section of his Difference Engine. While visitors admired its brass wheels, Ada asked <em>how the machine worked</em> and soon began studying Babbage&rsquo;s far more ambitious design: the <strong>Analytical Engine</strong>, a steam-driven, programmable mechanical computer.</p>
+            <p>In 1842, Italian mathematician Luigi Menabrea published a French summary of Babbage&rsquo;s 1840 Turin lectures. Babbage invited Ada to translate it for <em>Taylor&rsquo;s Scientific Memoirs</em>. She translated the paper and appended seven essays &mdash; <strong>Notes A through G</strong> &mdash; nearly three times as long as Menabrea&rsquo;s original text. Published in <strong>1843</strong>, Note G laid out a 25-operation algorithm to compute Bernoulli numbers, while Note A articulated why a programmable machine could manipulate music, language, and symbols beyond pure arithmetic.</p>
+            <div class="al-callout violet">
+              <em>&ldquo;The Analytical Engine weaves algebraical patterns just as the Jacquard-loom weaves flowers and leaves.&rdquo;</em> &mdash; Ada Lovelace, Note A (1843)
+            </div>
+          </div>
+          <aside class="al-bio-aside">
+            <figure class="al-portrait-fig" data-zoomable data-lightbox-group="lovelace-history">
+              <img src="../../../assets/thumbs/ada-lovelace.png" alt="Sepia daguerreotype photograph of Ada Lovelace seated with folded hands, taken by Antoine Claudet around 1843" width="600" height="750" />
+              <figcaption>
+                <strong>Ada Lovelace, c. 1843.</strong> Daguerreotype photograph by Antoine Claudet &mdash; one of only two surviving photographs of Lovelace, taken around the year her Notes appeared. Public domain via Wikimedia Commons.
+              </figcaption>
+            </figure>
+            <div class="al-facts" aria-label="Ada Lovelace at a glance">
+              <h3>At a glance</h3>
+              <dl>
+                <div><dt>Born</dt><dd>Dec 10, 1815 &middot; London</dd></div>
+                <div><dt>Key work</dt><dd>Translation &amp; Notes A&ndash;G (1843)</dd></div>
+                <div><dt>Core insight</dt><dd>General-purpose symbolic computing</dd></div>
+                <div><dt>Died</dt><dd>Nov 27, 1852 (aged 36)</dd></div>
+              </dl>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- Real Machines, Real Documents -->
+      <section class="al-card" id="al-sec-gallery" style="--card-accent:#0369a1;">
+        <h2>Real Machines, Real Documents</h2>
+        <p>Every concept in the studio above connects to surviving historical artifacts &mdash; a portrait photograph, a modern working replica of Babbage&rsquo;s Difference Engine, his 1840 engineering blueprint, and Ada&rsquo;s 1843 printed operation table. Select any image to enlarge and inspect details.</p>
+        <div class="pg-grid">
+          <figure class="pg-card" data-zoomable data-lightbox-group="lovelace-history">
+            <img src="../../../assets/images/ada-lovelace-history/babbage-portrait.webp" alt="1860 photographic portrait of Charles Babbage, seated, in a dark suit" width="700" height="700" loading="lazy" decoding="async" />
+            <figcaption>
+              <strong>Charles Babbage (1791&ndash;1871)</strong>
+              <span>Mathematician and inventor who designed the Difference Engine and Analytical Engine, and collaborated closely with Lovelace on her 1843 Notes.</span>
+              <span class="pg-credit" data-no-glossary>Portrait photograph, 1860 &middot; Public domain via <a href="https://commons.wikimedia.org/wiki/File:Charles_Babbage_-_1860.jpg" target="_blank" rel="noopener">Wikimedia Commons</a></span>
+            </figcaption>
+          </figure>
+
+          <figure class="pg-card" data-zoomable data-lightbox-group="lovelace-history">
+            <img src="../../../assets/images/ada-lovelace-history/difference-engine.webp" alt="Working replica of Babbage's Difference Engine No. 2 with columns of bronze and steel number wheels on display at the Science Museum, London" width="700" height="700" loading="lazy" decoding="async" />
+            <figcaption>
+              <strong>Difference Engine No. 2</strong>
+              <span>Constructed by the Science Museum in London (1991&ndash;2002) from Babbage&rsquo;s 1840s plans &mdash; proving his mechanical tolerances worked.</span>
+              <span class="pg-credit" data-no-glossary>Photo: User:geni &middot; CC BY-SA 4.0 via <a href="https://commons.wikimedia.org/wiki/File:Babbage_Difference_Engine.jpg" target="_blank" rel="noopener">Wikimedia Commons</a></span>
+            </figcaption>
+          </figure>
+
+          <figure class="pg-card pg-contain" data-zoomable data-lightbox-group="lovelace-history">
+            <img src="../../../assets/images/ada-lovelace-history/analytical-engine-plan.webp" alt="1840 engineering plan drawing of Babbage's Analytical Engine showing central Mill gears, Store racks, and card readers" width="700" height="700" loading="lazy" decoding="async" />
+            <figcaption>
+              <strong>Analytical Engine General Plan, 1840</strong>
+              <span>Babbage&rsquo;s Plan 25 drawing showing the circular Mill at center, Store columns along the right rack, and separate Operation, Variable, and Number cards.</span>
+              <span class="pg-credit" data-no-glossary>Photo: ArnoldReinhold &middot; CC BY 4.0 via <a href="https://commons.wikimedia.org/wiki/File:Babbage_Analytical_Engine_Plan_1840_CHM.agr.jpg" target="_blank" rel="noopener">Wikimedia Commons</a></span>
+            </figcaption>
+          </figure>
+
+          <figure class="pg-card pg-contain" data-zoomable data-lightbox-group="lovelace-history">
+            <img src="../../../assets/images/ada-lovelace-history/note-g-diagram.webp" alt="Ada Lovelace's 1843 printed Note G diagram showing 25 operations across Data, Working, and Result variable columns" width="700" height="700" loading="lazy" decoding="async" />
+            <figcaption>
+              <strong>Note G Table, 1843</strong>
+              <span>The published fold-out diagram: 25 numbered operations across Store columns V1&ndash;V24 computing Bernoulli numbers, complete with nested loops.</span>
+              <span class="pg-credit" data-no-glossary>1843 Taylor&rsquo;s Scientific Memoirs &middot; Public domain via <a href="https://commons.wikimedia.org/wiki/File:Diagram_for_the_computation_of_Bernoulli_numbers.jpg" target="_blank" rel="noopener">Wikimedia Commons</a></span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- Timeline -->
+      <section class="al-card" id="al-sec-timeline" style="--card-accent:#7c3aed;">
+        <h2>A Life &amp; Legacy Ahead of Its Time</h2>
+        <p>Switch between Track and List views or launch the tour to see how Ada&rsquo;s 1843 work connects 19th-century brass gears to 20th-century software.</p>
+        <ol class="al-timeline" data-timeline data-timeline-title="Ada Lovelace: Life &amp; Computing Legacy" data-timeline-tour>
+          <li data-when="1815" data-label="Born in London" data-group="Early Life" data-major>Born December 10, 1815 in London as Augusta Ada Byron, daughter of poet Lord Byron and mathematician Anne Isabella Milbanke.</li>
+          <li data-when="1816" data-label="Mathematical education begins" data-group="Early Life">After Byron separates from the family, Ada&rsquo;s mother designs a rigorous education in mathematics, logic, and science.</li>
+          <li data-when="1832" data-label="Intensive study after illness" data-group="Early Life">Recovering from measles and temporary paralysis, Ada studies mathematics intensively, mentored by astronomer Mary Somerville.</li>
+          <li data-when="1833" data-label="Meets Charles Babbage" data-group="Engine" data-major>At age 17, Ada meets Charles Babbage in London and inspects his Difference Engine prototype, asking to borrow its blueprints.</li>
+          <li data-when="1835" data-label="Countess of Lovelace" data-group="Early Life">Marries William King (later created Earl of Lovelace), becoming Countess of Lovelace while continuing mathematical studies with Augustus De Morgan.</li>
+          <li data-when="1840" data-label="Babbage lectures in Turin" data-group="Engine">Babbage presents the Analytical Engine in Turin; Italian mathematician Luigi Menabrea attends and drafts an engineering summary.</li>
+          <li data-when="1842" data-label="Menabrea paper &amp; translation" data-group="Note G" data-major>Menabrea publishes his sketch in French. Babbage invites Ada to translate it and expand it with her own analytical commentary.</li>
+          <li data-when="1843" data-label="Notes A–G &amp; Note G program" data-group="Note G" data-major>Publishes her translation plus Notes A&ndash;G in <em>Taylor&rsquo;s Scientific Memoirs</em> (Vol. 3). Note G details the 25-operation Bernoulli algorithm, loops, and symbolic computing.</li>
+          <li data-when="1852" data-label="Dies at age 36" data-group="Early Life">Dies November 27, 1852 in London at age 36 and is buried beside her father in Hucknall, Nottinghamshire.</li>
+          <li data-when="1950" data-label="Turing cites Lovelace" data-group="Legacy" data-major>Alan Turing cites &ldquo;Lady Lovelace&rsquo;s Objection&rdquo; in his landmark paper <em>Computing Machinery and Intelligence</em>.</li>
+          <li data-when="1980" data-label="Ada language (MIL-STD-1815)" data-group="Legacy" data-major>The U.S. Department of Defense standardizes the safety-critical programming language <strong>Ada</strong>, numbered 1815 after her birth year.</li>
+          <li data-when="2009" data-label="First Ada Lovelace Day" data-group="Legacy">First annual Ada Lovelace Day is celebrated globally to honor women in science, technology, engineering, and mathematics.</li>
+        </ol>
+      </section>
+
+      <!-- Engine Anatomy & Code Bridge -->
+      <section class="al-card" id="al-sec-anatomy" style="--card-accent:#0f766e;">
+        <h2>Inside the Analytical Engine &amp; Modern Code</h2>
+        <p>Even though Babbage&rsquo;s machine ran on steam and brass gears rather than silicon transistors, its logical blueprint contained the same four core subsystems found inside your phone or laptop today.</p>
+
+        <div class="al-anatomy-grid">
+          <div class="al-anatomy-card">
+            <div class="al-anatomy-icon" aria-hidden="true">&#9881;&#65039;</div>
+            <strong>The Mill</strong>
+            <p>Central gear train that adds, subtracts, multiplies, and divides numbers sent from memory.</p>
+            <span class="al-anatomy-modern">= CPU / ALU</span>
+          </div>
+          <div class="al-anatomy-card">
+            <div class="al-anatomy-icon" aria-hidden="true">&#128209;</div>
+            <strong>The Store</strong>
+            <p>Planned for up to 1,000 columns of 50 decimal gear wheels (0&ndash;9) storing data and results.</p>
+            <span class="al-anatomy-modern">= RAM / Registers</span>
+          </div>
+          <div class="al-anatomy-card">
+            <div class="al-anatomy-icon" aria-hidden="true">&#128200;</div>
+            <strong>Punched Cards</strong>
+            <p>Three separate decks: Operation cards, Variable address cards, and Decimal Number cards.</p>
+            <span class="al-anatomy-modern">= Program / Input</span>
+          </div>
+          <div class="al-anatomy-card">
+            <div class="al-anatomy-icon" aria-hidden="true">&#128424;&#65039;</div>
+            <strong>The Printer</strong>
+            <p>Mechanical typesetter and curve plotter that recorded finished results automatically.</p>
+            <span class="al-anatomy-modern">= Output</span>
+          </div>
+        </div>
+
+        <figure class="al-diagram-fig" data-zoomable data-lightbox-group="lovelace-history">
+          <img src="../../../assets/images/lessons/ada-lovelace/engine-architecture.svg" alt="Architectural block diagram mapping Punched Cards, The Mill, The Store, and Output Devices of the 1843 Analytical Engine to a modern computer" loading="lazy" />
+          <figcaption>
+            <strong>Architecture Map:</strong> Unlike binary electronic computers (base 2), Babbage&rsquo;s Engine stored numbers in <strong>decimal (base 10)</strong> gear wheels &mdash; yet Ada&rsquo;s insight that replaceable punched cards separate <em>software</em> from <em>hardware</em> applies identically to both. Click to zoom.
+          </figcaption>
+        </figure>
+
+        <h3>From 1843 Notation to Modern Python</h3>
+        <div class="al-table-scroll">
+          <table class="al-code-table">
             <thead>
-              <tr><th>Step</th><th>Operation</th><th>V3</th><th>V4</th><th>V5</th><th>V6</th><th>V7</th></tr>
+              <tr><th scope="col">Concept</th><th scope="col">Studio / 1843 Idea</th><th scope="col">Modern Python</th></tr>
             </thead>
             <tbody>
               <tr>
-                <td class="al-trace-step">4</td><td class="al-trace-op">V3 ← V0 × V1</td>
-                <td><input type="number" class="al-trace-input" id="al-tr-1" data-answer="40" aria-label="Step 4 V3 value" /></td>
-                <td>—</td><td>—</td><td>—</td><td>—</td>
+                <td><strong>Assignment &amp; Overwrite</strong></td>
+                <td><code>V4 &larr; V4 &minus; V1</code></td>
+                <td><code>v4 = v4 - v1</code></td>
               </tr>
               <tr>
-                <td class="al-trace-step">5</td><td class="al-trace-op">V4 ← V3 + V2</td>
-                <td>40</td>
-                <td><input type="number" class="al-trace-input" id="al-tr-2" data-answer="46" aria-label="Step 5 V4 value" /></td>
-                <td>—</td><td>—</td><td>—</td>
+                <td><strong>Exact Rational Arithmetic</strong></td>
+                <td><code>V11 &larr; V4 &divide; V5</code></td>
+                <td><code>v11 = Fraction(v4, v5)</code></td>
               </tr>
               <tr>
-                <td class="al-trace-step">6</td><td class="al-trace-op">V5 ← V4 / 2</td>
-                <td>40</td><td>46</td>
-                <td><input type="number" class="al-trace-input" id="al-tr-3" data-answer="23" aria-label="Step 6 V5 value" /></td>
-                <td>—</td><td>—</td>
+                <td><strong>Conditional Branch</strong></td>
+                <td><code>If V10 = 0, jump to Op 24</code></td>
+                <td><code>if v10 &gt; 0: ...</code></td>
               </tr>
               <tr>
-                <td class="al-trace-step">7</td><td class="al-trace-op">V3 ← V1 × V2</td>
-                <td><input type="number" class="al-trace-input" id="al-tr-4" data-answer="24" aria-label="Step 7 V3 value" /></td>
-                <td>46</td><td>23</td><td>—</td><td>—</td>
+                <td><strong>Repeated Inner Loop</strong></td>
+                <td><code>While V10 &gt; 0, rewind Ops 13&ndash;23</code></td>
+                <td><code>while v10 &gt; 0:</code></td>
               </tr>
               <tr>
-                <td class="al-trace-step">8</td><td class="al-trace-op">V6 ← V3 + V5</td>
-                <td>24</td><td>46</td><td>23</td>
-                <td><input type="number" class="al-trace-input" id="al-tr-5" data-answer="47" aria-label="Step 8 V6 value" /></td>
-                <td>—</td>
-              </tr>
-              <tr>
-                <td class="al-trace-step">9</td><td class="al-trace-op">V3 ← V2 × V2</td>
-                <td><input type="number" class="al-trace-input" id="al-tr-6" data-answer="36" aria-label="Step 9 V3 value" /></td>
-                <td>46</td><td>23</td><td>47</td><td>—</td>
-              </tr>
-              <tr>
-                <td class="al-trace-step">10</td><td class="al-trace-op">V7 ← V3 / 6</td>
-                <td>36</td><td>46</td><td>23</td><td>47</td>
-                <td><input type="number" class="al-trace-input" id="al-tr-7" data-answer="6" aria-label="Step 10 V7 value" /></td>
+                <td><strong>Counted Outer Loop</strong></td>
+                <td><code>Op 25: V3 &larr; V1 + V3; repeat</code></td>
+                <td><code>for n in range(1, 5):</code></td>
               </tr>
             </tbody>
           </table>
-          </div>
-          <div class="al-trace-actions">
-            <button class="al-check-btn" type="button" id="al-trace-check">Check My Trace</button>
-            <button class="al-check-btn" type="button" id="al-trace-reveal" style="background:var(--al-brass);">Reveal Answers</button>
-            <button class="al-check-btn" type="button" id="al-trace-reset" style="background:var(--al-muted);">Reset Blanks</button>
-            <span class="al-trace-feedback" id="al-trace-feedback"></span>
-          </div>
-          <div class="al-trace-breakdown" id="al-trace-breakdown"></div>
-          <div class="al-callout brass" style="margin-top:0.9rem;">Notice V3 gets a <strong>new</strong> value three separate times (Steps 4, 7, and 9), each time overwriting whatever it held before. That's exactly how a variable works in code — it's reusable storage, not a permanent label for one number.</div>
-        </section>
-
-        <!-- Simulator -->
-        <section class="al-card" id="al-sec-simulator" tabindex="0" style="--card-accent:#0f766e;">
-          <h2>Interactive Analytical Engine — Architectural Trace</h2>
-          <p>A classroom model of the Store (memory), Mill (arithmetic), reusable instructions, and branching. This demonstration uses simple inputs; it does not execute Ada’s historical Bernoulli operation cards.</p>
-          <div class="al-dock"><button type="button" id="al-view-trace" aria-pressed="true">Pedagogical trace</button><button type="button" id="al-view-code" aria-pressed="false">Modern exact recurrence</button></div>
-          <div id="al-trace-view">
-          <div class="al-experiments"><h3>Predict, test, explain</h3><div class="al-dock"><button type="button" data-tour="overwrite">Overwrite challenge</button><button type="button" data-tour="subroutine">Compare subroutines</button><button type="button" data-tour="loop">Loop boundary</button></div>
-          <div id="al-tour" hidden><h4 id="al-tour-title">Guided inquiry</h4><div id="al-tour-body"></div><button type="button" id="al-tour-exit">Exit inquiry</button></div></div>
-          <div class="al-canvas-wrap"><canvas id="al-canvas" tabindex="0" aria-label="Store and Mill visualization. The register table below provides the same values."></canvas></div>
-          <div class="al-dock" aria-label="Simulator playback">
-            <button type="button" id="al-inline-reset">Reset</button><button type="button" id="al-back" title="Restore previous state">Step back</button><button type="button" id="al-play">Play</button><button type="button" id="al-next">Step forward</button>
-            <label>Speed <select id="al-inline-speed"><option value="1">Slow</option><option value="2" selected>Normal</option><option value="3">Fast</option><option value="4">Faster</option><option value="5">Quick</option></select></label><button type="button" id="al-sound" aria-pressed="false">Sound FX: Off</button>
-          </div>
-          <p class="al-shortcuts">Focus the canvas or card: Space plays/pauses, ←/P restores, →/N advances, R resets. Seeking pauses playback.</p>
-          <label for="al-seek">Seek to step</label><input id="al-seek" type="range" min="1" max="17" value="1" style="width:100%">
-          <div id="al-milestones" class="al-dock" aria-label="Step timeline"></div>
-          <div class="al-readouts"><div class="al-readout"><span class="al-readout-label">Current step</span><span class="al-readout-val" id="al-r-step">1 / 17</span></div><div class="al-readout"><span class="al-readout-label">Active registers</span><span class="al-readout-val" id="al-r-reg">V0</span></div><div class="al-readout"><span class="al-readout-label">Playback</span><span class="al-readout-val" id="al-r-op">Ready</span></div></div>
-          <div class="al-step-explain" id="al-step-explain" role="status" aria-live="polite"><span class="al-step-phase" id="al-step-phase"></span><p id="al-step-detail"></p></div>
-          <p id="al-counter"></p><div class="al-table-scroll"><table class="al-code-table"><caption>Store registers — current and previous stored values</caption><thead><tr><th scope="col">Register</th><th scope="col">Role</th><th scope="col">Value</th><th scope="col">Previous value</th><th scope="col">Status</th></tr></thead><tbody id="al-registers"></tbody></table></div>
-          <p id="al-tape" class="al-callout">Printer tape: waiting for derived results.</p>
-          <p>Steps 4–8 and 11–15 execute the same five instructions with different inputs. Step back restores a saved teaching state; it does not reverse a physical engine.</p>
-          </div>
-          <div id="al-code-view" hidden><h3>Modern Exact Bernoulli Recurrence (Python Reference)</h3><p>This modern calculation uses exact fractions. It is separate from the classroom trace and is not a card-by-card reconstruction of Note G. Odd indices greater than 1 are zero; this function returns B₀, B₁ and even indices.</p><details class="ll-accordion"><summary>Advanced reading guide: what do the Python names mean?</summary><div class="ll-accordion-body"><p><code>B</code> is a collection of saved Bernoulli values; <code>B[j]</code> retrieves the value at index j. <code>limit</code> is the largest index requested. <code>m</code> counts the even-index calculations, and <code>j = 2 * m</code> makes j equal 2, 4, 6, and so on. <code>k</code> selects earlier even-index values.</p><p><code>Fraction(1, 2)</code> stores an exact half. <code>comb(a, b)</code> counts the ways to choose b items from a items; here it supplies a coefficient in the recurrence. <code>sum(...)</code> adds the contributions. <code>acc</code>, short for accumulator, holds their running total. <code>acc += ...</code> adds another contribution to that total. Finally, <code>B[j] = -acc / (j + 1)</code> stores the new number: negate the known total, then divide by its coefficient, just as we solved for B₂ above. <code>return B</code> gives the saved collection back to the caller.</p><p>This is a reference to read, not an in-page Python runner. Start with the small worked example before trying to follow the whole function.</p></div></details><pre class="al-python"><code id="al-python-code"></code></pre><p>Through B₈: 1, −½, ⅙, 0, −1/30, 0, 1/42, 0, −1/30.</p></div>
-        </section>
-
-        <!-- Key Contributions -->
-        <section class="al-card" id="al-sec-contributions" style="--card-accent:#0369a1;">
-          <h2>Ada's Key Contributions</h2>
-          <div class="al-grid-2">
-
-            <div class="al-contribution-card">
-              <div class="al-contribution-icon">&#128221;</div>
-              <strong>First Published Algorithm (1843)</strong>
-              <p>Note G of her translation described a step-by-step process for computing Bernoulli numbers — the first algorithm intended for execution by a machine, not a human.</p>
-            </div>
-
-            <div class="al-contribution-card">
-              <div class="al-contribution-icon">&#128260;</div>
-              <strong>Concept of Loops</strong>
-              <p>Ada described how a sequence of operations could be repeated with updated values — the foundation of every for-loop, while-loop, and recursive function in computing today.</p>
-            </div>
-
-            <div class="al-contribution-card">
-              <div class="al-contribution-icon">&#128256;</div>
-              <strong>Conditional Branching</strong>
-              <p>She recognized the Engine could take different action paths based on intermediate results — the origin of if/then/else logic in all programming languages.</p>
-            </div>
-
-            <div class="al-contribution-card">
-              <div class="al-contribution-icon">&#127925;</div>
-              <strong>Symbolic Computation</strong>
-              <p>Ada foresaw that if numbers could represent musical notes, the Engine could compose music. This is the earliest documented vision of a general-purpose symbolic computer.</p>
-            </div>
-
-            <div class="al-contribution-card">
-              <div class="al-contribution-icon">&#129513;</div>
-              <strong>Subroutines</strong>
-              <p>She described reusable operation sequences — the concept that became functions, procedures, and methods in all modern software.</p>
-            </div>
-
-            <div class="al-contribution-card">
-              <div class="al-contribution-icon">&#128187;</div>
-              <strong>"Ada" Programming Language (1980)</strong>
-              <p>The US Department of Defense named its safety-critical programming language Ada in her honor, recognizing her as the mother of software. Ada is still used in aviation, rail, and defense.</p>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- Legacy -->
-        <section class="al-card" id="al-sec-legacy" style="--card-accent:#059669;">
-          <h2>Ada Lovelace's Legacy Today</h2>
-          <p><strong>Ada Lovelace Day</strong> (second Tuesday of October) celebrates women in STEAM globally, inspired by her legacy. Alan Turing cited Babbage and Lovelace's work in his 1950 paper "Computing Machinery and Intelligence" — the paper that introduced the Turing Test.</p>
-          <p>Every modern programming concept — <strong>variables, loops, conditionals, subroutines</strong> — traces conceptually to Ada's 1843 notes. The <strong>separation of hardware and software</strong> (the Engine could run any algorithm on punched cards) is Ada's most profound insight — 100 years before von Neumann architecture.</p>
-          <p>Ada grasped that the Analytical Engine's punched-card programs were separate from the machine — the first conception of software as distinct from hardware. This idea, that the same machine could be reprogrammed to solve any problem, is the founding principle of every computer ever built.</p>
-
-          <div class="al-formula-box" role="img" aria-label="Big-O notation: O of n squared means the number of operations grows quadratically with input n">
-            <span class="al-formula-sym">O(n²)</span>
-            <div class="al-formula-vars">
-              <div><strong>O(n²)</strong> = quadratic time complexity</div>
-              <div><strong>n</strong> = number of Bernoulli terms computed</div>
-              <div>Triangular operations: 1 + 2 + … + n = n(n+1)/2</div>
-            </div>
-            <p class="al-formula-note">Ada's Note G computed each new Bernoulli number by summing across all prior values. Computing \(n\) values takes \(1 + 2 + \dots + n = O(n^2)\) operations — making memory reuse and caching (memoization) vital.</p>
-          </div>
-        </section>
-
-        <!-- Practice Problems -->
-        <section class="al-card" id="al-sec-practice" style="--card-accent:#007aff;">
-          <div class="al-practice-header">
-            <h2>Practice Problems</h2>
-            <span class="al-practice-score" id="al-practice-score">Completed: 0 / 9</span>
-          </div>
-          <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Think about algorithms, loops, and the history of computing.</p>
-          <label class="ll-toggle" style="margin-bottom:0.8rem;">
-            <input type="checkbox" id="al-hints-toggle">
-            <span class="ll-toggle-track" aria-hidden="true"></span>
-            <span>Show hints automatically</span>
-          </label>
-          <div class="al-practice">
-
-            <div class="al-problem">
-              <p><span class="ll-badge" data-tone="easy">Easy</span>1. In what year did Ada Lovelace publish the world's first algorithm?</p>
-              <div class="al-problem-row">
-                <select class="al-ans-input" id="alans-1" style="width:120px;" aria-label="Problem 1 answer">
-                  <option value="">Choose…</option>
-                  <option value="1833">1833</option>
-                  <option value="1843">1843</option>
-                  <option value="1852">1852</option>
-                  <option value="1871">1871</option>
-                </select>
-                <button class="al-check-btn" type="button" data-check="text" data-q="1" data-ans="1843">Check</button>
-                <span class="al-feedback" id="alfb-1"></span>
-              </div>
-              <div class="al-hint" id="alhint-1">Hint: Ada published her translation of Menabrea's paper, with her famous Notes A–G, in the same year she met Babbage at the British Association meeting in Cambridge.</div>
-            </div>
-
-            <div class="al-problem">
-              <p><span class="ll-badge" data-tone="easy">Easy</span>2. What programming concept did Ada describe as repeating a sequence of operations with updated values?</p>
-              <div class="al-problem-row">
-                <select class="al-ans-input" id="alans-2" style="width:150px;" aria-label="Problem 2 answer">
-                  <option value="">Choose…</option>
-                  <option value="variable">Variable</option>
-                  <option value="loop">Loop</option>
-                  <option value="subroutine">Subroutine</option>
-                  <option value="compiler">Compiler</option>
-                </select>
-                <button class="al-check-btn" type="button" data-check="text" data-q="2" data-ans="loop">Check</button>
-                <span class="al-feedback" id="alfb-2"></span>
-              </div>
-              <div class="al-hint" id="alhint-2">Hint: Ada's Bernoulli algorithm repeated a block of 25 operations, updating register values on each pass. Every for-loop and while-loop in modern code traces to this idea.</div>
-            </div>
-
-            <div class="al-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>3. An algorithm has 3 nested loops each running n = 10 times. How many total operations are executed? (Hint: 10 × 10 × 10 = ?)</p>
-              <div class="al-problem-row">
-                <input type="number" class="al-ans-input" id="alans-3" step="1" placeholder="operations" aria-label="Problem 3 answer" />
-                <button class="al-check-btn" type="button" data-check="num" data-q="3" data-ans="1000" data-tol="0">Check</button>
-                <span class="al-feedback" id="alfb-3"></span>
-              </div>
-              <div class="al-hint" id="alhint-3">Hint: Each nested loop multiplies the operation count. 3 loops × n = 10 each gives n³ = 10 × 10 × 10 = 1,000. In Big-O notation, this is O(n³) — cubic time complexity.</div>
-            </div>
-
-            <div class="al-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>4. Ada's Note G computed which mathematical sequence?</p>
-              <div class="al-problem-row">
-                <select class="al-ans-input" id="alans-4" style="width:200px;" aria-label="Problem 4 answer">
-                  <option value="">Choose…</option>
-                  <option value="fibonacci">Fibonacci numbers</option>
-                  <option value="prime">Prime numbers</option>
-                  <option value="bernoulli">Bernoulli numbers</option>
-                  <option value="pascal">Pascal's triangle</option>
-                </select>
-                <button class="al-check-btn" type="button" data-check="text" data-q="4" data-ans="bernoulli">Check</button>
-                <span class="al-feedback" id="alfb-4"></span>
-              </div>
-              <div class="al-hint" id="alhint-4">Hint: These are rational numbers that appear in the Taylor series expansions of many trigonometric and hyperbolic functions. Ada's algorithm computed the first eight of them using a loop across 25 operation steps.</div>
-            </div>
-
-            <div class="al-problem">
-              <p><span class="ll-badge" data-tone="hard">Challenge</span>5. Which of these is closest to Ada's most radical insight about the Analytical Engine?</p>
-              <div class="al-problem-row">
-                <select class="al-ans-input" id="alans-5" style="width:380px;" aria-label="Problem 5 answer">
-                  <option value="">Choose…</option>
-                  <option value="a">It could add faster than a human clerk</option>
-                  <option value="b">It could manipulate any symbols, not just numbers, making it a general-purpose machine</option>
-                  <option value="c">It could run without electricity</option>
-                  <option value="d">It could store more data than any book</option>
-                </select>
-                <button class="al-check-btn" type="button" data-check="text" data-q="5" data-ans="b">Check</button>
-                <span class="al-feedback" id="alfb-5"></span>
-              </div>
-              <div class="al-hint" id="alhint-5">Hint: Ada explicitly wrote that the Engine could act on "other things besides number" — including musical notes. This is the origin of the idea that a computer is a universal symbol-manipulating machine, not just a calculator.</div>
-            </div>
-
-            <div class="al-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>6. On an 8-hole punched card, holes 1, 3, and 8 are punched — all others are left blank. Hole 1 = 128, hole 2 = 64, hole 3 = 32, hole 4 = 16, hole 5 = 8, hole 6 = 4, hole 7 = 2, hole 8 = 1. What decimal number does this card represent?</p>
-              <div class="al-problem-row">
-                <input type="number" class="al-ans-input" id="alans-6" step="1" placeholder="decimal value" aria-label="Problem 6 answer" />
-                <button class="al-check-btn" type="button" data-check="num" data-q="6" data-ans="161" data-tol="0">Check</button>
-                <span class="al-feedback" id="alfb-6"></span>
-              </div>
-              <div class="al-hint" id="alhint-6">Hint: Add up the value of every punched hole: 128 (hole 1) + 32 (hole 3) + 1 (hole 8) = 161.</div>
-            </div>
-
-            <div class="al-problem">
-              <p><span class="ll-badge" data-tone="easy">Easy</span>7. Which part of the Analytical Engine is the direct ancestor of a modern computer's RAM (memory)?</p>
-              <div class="al-problem-row">
-                <select class="al-ans-input" id="alans-7" style="width:170px;" aria-label="Problem 7 answer">
-                  <option value="">Choose…</option>
-                  <option value="mill">The Mill</option>
-                  <option value="store">The Store</option>
-                  <option value="cards">Punched Cards</option>
-                  <option value="printer">The Printer</option>
-                </select>
-                <button class="al-check-btn" type="button" data-check="text" data-q="7" data-ans="store">Check</button>
-                <span class="al-feedback" id="alfb-7"></span>
-              </div>
-              <div class="al-hint" id="alhint-7">Hint: This part held up to 1,000 numbers of 50 digits each, in columns of gears — a place to store data, not to calculate with it.</div>
-            </div>
-
-            <div class="al-problem">
-              <p><span class="ll-badge" data-tone="mid">Debug</span>8. This code should copy Step 4 of the algorithm — with V0 = 10 and V1 = 4, it should produce 40. Instead, it produces 14: <code style="font-family:monospace;background:rgba(0,0,0,0.05);border-radius:4px;padding:0.1rem 0.35rem;">v3 = v0 + v1</code>. What's the bug?</p>
-              <div class="al-problem-row">
-                <select class="al-ans-input" id="alans-8" style="width:340px;" aria-label="Problem 8 answer">
-                  <option value="">Choose…</option>
-                  <option value="a">v0 and v1 are misspelled</option>
-                  <option value="b">It should use multiplication (*), not addition (+)</option>
-                  <option value="c">It's missing a loop</option>
-                  <option value="d">v3 should be named v4</option>
-                </select>
-                <button class="al-check-btn" type="button" data-check="text" data-q="8" data-ans="b">Check</button>
-                <span class="al-feedback" id="alfb-8"></span>
-              </div>
-              <div class="al-hint" id="alhint-8">Hint: 10 + 4 = 14, which matches the buggy output exactly. Compare that to what Step 4's real operation, V3 ← V0 × V1, should be doing.</div>
-            </div>
-
-            <div class="al-problem">
-              <p><span class="ll-badge" data-tone="hard">Debug</span>9. This loop should compute all 8 Bernoulli numbers (n = 1 through 8), but it only computes 7: <code style="font-family:monospace;background:rgba(0,0,0,0.05);border-radius:4px;padding:0.1rem 0.35rem;">for n in range(1, 8):</code>. In Python, <code style="font-family:monospace;background:rgba(0,0,0,0.05);border-radius:4px;padding:0.1rem 0.35rem;">range(1, 8)</code> produces 1, 2, 3, 4, 5, 6, 7 — it stops <em>before</em> the second number. What's the fix?</p>
-              <div class="al-problem-row">
-                <select class="al-ans-input" id="alans-9" style="width:260px;" aria-label="Problem 9 answer">
-                  <option value="">Choose…</option>
-                  <option value="a">Change it to range(1, 9)</option>
-                  <option value="b">Change it to range(0, 8)</option>
-                  <option value="c">Change it to range(2, 8)</option>
-                  <option value="d">Change it to range(1, 8, 2)</option>
-                </select>
-                <button class="al-check-btn" type="button" data-check="text" data-q="9" data-ans="a">Check</button>
-                <span class="al-feedback" id="alfb-9"></span>
-              </div>
-              <div class="al-hint" id="alhint-9">Hint: This is a classic "off-by-one" bug — one of the most common bugs in real code. To get 8 numbers starting at 1, the range needs to stop just after 8, not before it.</div>
-            </div>
-
-          </div>
-        </section>
-
-        <footer class="site-footer">
-          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
-        </footer>
-      </main>
-    </div><!-- .ll-sim -->
-
-    <aside class="ll-panel" aria-hidden="false">
-      <div class="ll-panel-head">
-        <div class="ll-tabs">
-          <button class="ll-tab" aria-selected="true"  data-pane="al-pane-sim">Controls</button>
-          <button class="ll-tab" aria-selected="false" data-pane="al-pane-guide">Vocab</button>
         </div>
-        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
-      </div>
-      <div class="ll-panel-body">
+        <p class="al-formula-note">Watch out for Python&rsquo;s <code>range(1, 5)</code>: it runs for <code>1, 2, 3, 4</code> and stops <em>before</em> 5 &mdash; a classic off-by-one boundary tested in the Practice section.</p>
 
-        <div class="ll-pane ll-active" id="al-pane-sim">
-          <span class="ll-label">Playback speed</span>
-          <div style="margin-bottom:0.9rem;">
-            <label for="al-speed-slider" style="font-size:0.8rem;display:flex;justify-content:space-between;">Speed <span id="al-speed-val">2</span></label>
-            <input type="range" class="nl-slider" id="al-speed-slider" min="1" max="5" value="2" style="width:100%;" />
-          </div>
-          <hr class="ll-hr">
-          <button class="ll-preset" onclick="alRun()"   style="width:100%;margin-bottom:0.4rem;">Play trace</button>
-          <button class="ll-preset" onclick="alPause()" style="width:100%;margin-bottom:0.4rem;">Pause</button>
-          <button class="ll-preset" onclick="alStep()"  style="width:100%;margin-bottom:0.4rem;">Step Forward</button>
-          <button type="button" class="ll-preset" onclick="alBack()" style="width:100%;margin-bottom:0.4rem;">Restore previous state</button>
-          <button class="ll-preset" onclick="alReset()" style="width:100%;margin-bottom:0.4rem;">Reset</button>
-          <hr class="ll-hr">
-          <button class="ll-preset" onclick="alPreset(1)" style="width:100%;margin-bottom:0.4rem;">Auto Run (slow)</button>
-          <button class="ll-preset" onclick="alPreset(5)" style="width:100%;">Auto Run (fast)</button>
+        <div class="ll-accordion-group" style="margin-top:0.85rem;">
+          <details class="ll-accordion">
+            <summary>How does Ada connect to Alan Turing&rsquo;s 1950 paper?</summary>
+            <div class="ll-accordion-body">In Note G, Ada cautioned that the Engine &ldquo;has no pretensions whatever to <em>originate</em> anything. It can do whatever we know how to order it to perform.&rdquo; In 1950, Alan Turing quoted this as <em>&ldquo;Lady Lovelace&rsquo;s Objection&rdquo;</em> when debating whether machines could learn and surprise their programmers.</div>
+          </details>
+          <details class="ll-accordion">
+            <summary>Was the Analytical Engine ever built?</summary>
+            <div class="ll-accordion-body">No complete Analytical Engine was built in Babbage&rsquo;s lifetime. His son Henry Babbage assembled a small trial Mill and printing mechanism between 1888 and 1910 (now at the Science Museum in London). Separately, the Science Museum built a working replica of the simpler <strong>Difference Engine No. 2</strong> in 1991 (adding its printer in 2002). Today, the Plan 28 project aims to construct a full Analytical Engine from Babbage&rsquo;s surviving drawings.</div>
+          </details>
+          <details class="ll-accordion">
+            <summary>Why does Babbage&rsquo;s decimal card differ from a modern binary card?</summary>
+            <div class="ll-accordion-body">Modern electronics naturally represent two states &mdash; voltage OFF (0) or ON (1) &mdash; so a punched card in the 1960s encoded bits in base 2. Babbage&rsquo;s mechanical wheels each had 10 teeth (digits 0 through 9), so his Number Cards encoded <strong>base-10</strong> decimal digits directly. You can compare both card styles in Tab 2 of the studio above!</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Note G & History's First Bug -->
+      <section class="al-card" id="al-sec-noteg" style="--card-accent:#be185d;">
+        <h2>Decoding Note G &amp; History&rsquo;s First Printed Bug</h2>
+        <p>Bernoulli numbers appear in sums of powers (like 1&sup2; + 2&sup2; + &hellip; + k&sup2;) and series expansions across calculus. Because each new Bernoulli number depends on every previous one, computing them by hand is tedious &mdash; making it a tough stress test for a programmable machine.</p>
+
+        <div class="al-callout rose">
+          <strong>Catching the 1843 Operation 4 Bug:</strong> In the original printed table of Note G, Operation 4 reads <code>V5 / V4</code> instead of <code>V4 / V5</code>. Because <code>V4 = 2n &minus; 1</code> and <code>V5 = 2n + 1</code>, swapping those two registers flips the fraction upside down (for <code>n = 1</code>, producing <code>3/2</code> instead of <code>1/6</code>!). Toggle <strong>1843 Op 4 Bug: On</strong> in Tab 1 to watch this 183-year-old bug propagate live across the Store.
         </div>
 
-        <div class="ll-pane" id="al-pane-guide">
-          <dl class="ll-details-list">
-            <div><dt>Algorithm</dt><dd>A finite, ordered set of unambiguous instructions. Ada's Note G presented a detailed algorithm for a proposed computing machine.</dd></div>
-            <div><dt>Loop</dt><dd>Repeat a block of instructions until a condition is met. Ada described this structure before any computer existed.</dd></div>
-            <div><dt>Conditional Branch</dt><dd>Execute different instructions depending on a result. Origin of if/then/else in all languages.</dd></div>
-            <div><dt>Subroutine</dt><dd>A named, reusable block of operations. The simulator’s Steps 4–8 and 11–15 call the same five-instruction subroutine with different inputs.</dd></div>
-            <div><dt>Register</dt><dd>A single memory location that holds one value at a time — like a labeled jar. Writing a new value into it overwrites the old one.</dd></div>
-            <div><dt>Trace Table</dt><dd>A table used to predict a program's variables by hand, step by step, before running it — the classic way to learn how loops actually behave.</dd></div>
-            <div><dt>Debugging</dt><dd>Finding and fixing a mistake in a set of instructions. An "off-by-one" error — a loop that runs one time too many or too few — is one of the most common bugs in real code.</dd></div>
-            <div><dt>Binary</dt><dd>A way of writing numbers using only 0 and 1. A punched card's holes (punched = 1, blank = 0) are binary encoded in cardboard.</dd></div>
-            <div><dt>Mill / Store</dt><dd>The Analytical Engine's calculating unit and its memory — the direct ancestors of a modern computer's CPU and RAM.</dd></div>
-            <div><dt>Hardware vs. Software</dt><dd>Ada grasped that the Analytical Engine's punched-card programs were separate from the machine — the first conception of software as distinct from hardware.</dd></div>
-          </dl>
+        <p><strong>Indexing difference &amp; sign note:</strong> Ada numbered the nonzero terms <code>B&#x2081;, B&#x2083;, B&#x2085;, B&#x2087;</code> (<code>1/6, &minus;1/30, 1/42, &minus;1/30</code>). Modern textbooks index those same even terms as <code>B&#x2082;, B&#x2084;, B&#x2086;, B&#x2088;</code> (starting with <code>B&#x2080; = 1</code> and <code>B&#x2081; = &minus;1/2</code>). Also notice Operation 24: the 1843 print listed <code>+</code> on transfer to <code>V24</code>, expecting the Result column to invert the negative accumulator <code>V13</code> so <code>B&#x2087; = &minus;1/30</code>.</p>
+
+        <h3>Solving for B&#x2082; (Ada&rsquo;s B&#x2081;) Step by Step</h3>
+        <ol class="al-math-ladder">
+          <li><div><code>B&#x2080; + 3 &times; B&#x2081; + 3 &times; B&#x2082; = 0</code>Modern recurrence equation where <code>B&#x2080; = 1</code> and <code>B&#x2081; = &minus;1/2</code> are already known.</div></li>
+          <li><div><code>1 + 3 &times; (&minus;1/2) + 3 &times; B&#x2082; = 0</code>Substitute the known starting fractions.</div></li>
+          <li><div><code>&minus;1/2 + 3 &times; B&#x2082; = 0</code>Combine <code>1 &minus; 3/2 = &minus;1/2</code>.</div></li>
+          <li><div><code>B&#x2082; = (1/2) &divide; 3 = 1/6</code>Solve for the unknown term &mdash; matching Ada&rsquo;s <code>V21 = 1/6</code>!</div></li>
+        </ol>
+
+        <div class="al-formula-box" role="img" aria-label="Big-O notation: O of n squared means operations grow quadratically with n">
+          <span class="al-formula-sym">O(n&sup2;)</span>
+          <div class="al-formula-vars">
+            <div><strong>O(n&sup2;)</strong> = quadratic time complexity</div>
+            <div><strong>n</strong> = Bernoulli terms computed</div>
+            <div>Inner loop operations: 1 + 2 + &hellip; + n = n(n + 1)/2</div>
+          </div>
+          <p class="al-formula-note">Saving earlier Bernoulli numbers in Store columns V21, V22, V23 avoids recomputing them from scratch &mdash; an early form of memoization.</p>
+        </div>
+        <p><a href="https://www.fourmilab.ch/babbage/sketch.html" target="_blank" rel="noopener">Read the complete 1843 Menabrea translation and Notes A&ndash;G online</a>.</p>
+      </section>
+
+      <!-- Unspoiled Trace Table -->
+      <section class="al-card" id="al-sec-trace" data-memory-ignore style="--card-accent:#b45309;">
+        <h2>Trace It Yourself: Predict the Registers</h2>
+        <p>Before letting the simulator run automatically, try acting as The Mill yourself. Unlike older worksheets that accidentally showed earlier answers on the next row, every destination stays hidden until you solve and check it.</p>
+
+        <div class="al-trace-tabs" role="group" aria-label="Choose trace exercise">
+          <button type="button" class="al-trace-tab is-active" data-trace-mode="warmup-overwrite" aria-pressed="true">Warm-Up: Register Overwrite</button>
+          <button type="button" class="al-trace-tab" data-trace-mode="note-g-bug-hunt" aria-pressed="false">1843 Bug Hunt: Note G Ops 1&ndash;6 (n = 4)</button>
         </div>
 
-      </div>
-    </aside>
-
-    <button class="ll-open-btn" aria-label="Open panel">
-      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
-    </button>
-
-  </div><!-- .ll-stage -->
-</div><!-- .ll-viewport -->
-
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
-<script src="../../../assets/js/lesson-layout.js"></script>
-<script src="../../../assets/js/lesson-content.js"></script>
-<script>
-(function () {
-  // ── Panel tab logic ───────────────────────────────────────────────────────
-  document.querySelectorAll('.ll-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const pane = btn.dataset.pane;
-      document.querySelectorAll('.ll-tab').forEach(b => b.setAttribute('aria-selected','false'));
-      btn.setAttribute('aria-selected','true');
-      document.querySelectorAll('.ll-pane').forEach(p => p.classList.remove('ll-active'));
-      document.getElementById(pane).classList.add('ll-active');
-    });
-  });
-
-  // ── Punched card dual-mode widget ──────────────────────────────────────────
-  (function () {
-    // Tab switching
-    const tabBinary = document.getElementById('al-tab-btn-binary');
-    const tabBabbage = document.getElementById('al-tab-btn-babbage');
-    const panelBinary = document.getElementById('al-panel-binary');
-    const panelBabbage = document.getElementById('al-panel-babbage');
-
-    tabBinary?.addEventListener('click', () => {
-      tabBinary.classList.add('active'); tabBinary.setAttribute('aria-selected', 'true');
-      tabBabbage?.classList.remove('active'); tabBabbage?.setAttribute('aria-selected', 'false');
-      panelBinary.style.display = 'flex';
-      if (panelBabbage) panelBabbage.style.display = 'none';
-    });
-
-    tabBabbage?.addEventListener('click', () => {
-      tabBabbage.classList.add('active'); tabBabbage.setAttribute('aria-selected', 'true');
-      tabBinary?.classList.remove('active'); tabBinary?.setAttribute('aria-selected', 'false');
-      panelBinary.style.display = 'none';
-      if (panelBabbage) panelBabbage.style.display = 'flex';
-    });
-
-    // Tab 1: Binary Card
-    const card = document.getElementById('al-punchcard');
-    if (card) {
-      const binaryOut  = document.getElementById('al-pc-binary');
-      const decimalOut = document.getElementById('al-pc-decimal');
-      const bits = new Array(8).fill(0);
-
-      for (let i = 0; i < 8; i++) {
-        const hole = document.createElement('button');
-        hole.type = 'button';
-        hole.className = 'al-hole';
-        hole.setAttribute('aria-label', 'Punch hole ' + (i + 1) + ' (value ' + Math.pow(2, 7 - i) + ')');
-        hole.dataset.index = i;
-        hole.addEventListener('click', () => {
-          bits[i] = bits[i] ? 0 : 1;
-          hole.classList.toggle('punched', !!bits[i]);
-          update();
-        });
-        card.appendChild(hole);
-      }
-
-      function update() {
-        if (binaryOut) binaryOut.textContent = bits.join('');
-        if (decimalOut) decimalOut.textContent = parseInt(bits.join(''), 2);
-      }
-
-      function setBits(arr) {
-        const holes = card.querySelectorAll('.al-hole');
-        for (let i = 0; i < 8; i++) {
-          bits[i] = arr[i] ? 1 : 0;
-          holes[i]?.classList.toggle('punched', !!bits[i]);
-        }
-        update();
-      }
-
-      document.getElementById('al-pc-zero')?.addEventListener('click', () => setBits([0,0,0,0,0,0,0,0]));
-      document.getElementById('al-pc-const')?.addEventListener('click', () => setBits([0,0,0,0,1,0,1,0])); // 10
-      document.getElementById('al-pc-42')?.addEventListener('click', () => setBits([0,0,1,0,1,0,1,0]));    // 42
-      document.getElementById('al-pc-max')?.addEventListener('click', () => setBits([1,1,1,1,1,1,1,1]));   // 255
-      document.getElementById('al-pc-random')?.addEventListener('click', () => {
-        setBits(Array.from({ length: 8 }, () => Math.random() < 0.5 ? 1 : 0));
-      });
-
-      update();
-    }
-
-    // Tab 2: Babbage Operation Card
-    const opSelect = document.getElementById('al-op-select');
-    const in1Select = document.getElementById('al-op-in1');
-    const in2Select = document.getElementById('al-op-in2');
-    const outSelect = document.getElementById('al-op-out');
-    const opSym = document.getElementById('al-op-sym');
-    const opResult = document.getElementById('al-op-result');
-    const opFeedBtn = document.getElementById('al-op-feed');
-
-    const regDefaults = { V0: 10, V1: 4, V2: 6, V3: 0, V4: 0, V5: 0, V6: 0, V7: 0 };
-
-    function updateOpCard() {
-      if (!opSelect || !in1Select || !in2Select || !outSelect) return;
-      const op = opSelect.value;
-      const r1 = in1Select.value;
-      const r2 = in2Select.value;
-      const ro = outSelect.value;
-      const v1 = regDefaults[r1];
-      const v2 = regDefaults[r2];
-
-      if (opSym) {
-        opSym.textContent = op === '*' ? '×' : op === '/' ? '÷' : op === '-' ? '−' : '+';
-      }
-
-      let res = 0;
-      if (op === '*') res = v1 * v2;
-      else if (op === '+') res = v1 + v2;
-      else if (op === '-') res = v1 - v2;
-      else if (op === '/') res = v2 !== 0 ? (v1 / v2).toFixed(2) : 'Error (div 0)';
-
-      if (opResult) {
-        const sym = op === '*' ? '×' : op === '/' ? '÷' : op === '-' ? '−' : '+';
-        opResult.textContent = `Card instruction: ${ro} ← ${r1} (${v1}) ${sym} ${r2} (${v2}) = ${res}`;
-      }
-    }
-
-    [opSelect, in1Select, in2Select, outSelect].forEach(el => el?.addEventListener('change', updateOpCard));
-    updateOpCard();
-
-    opFeedBtn?.addEventListener('click', () => {
-      window.LessonContent?.toast('⚙️ Card fed to Mill — instruction calculated!');
-    });
-  })();
-
-  // ── Poetical Science: Symbolic Music & Tapestry Weaver ────────────────────
-  (function () {
-    const grid = document.getElementById('al-chimes-grid');
-    const canvas = document.getElementById('al-loom-canvas');
-    if (!grid || !canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    const notes = [
-      { name: 'C4', freq: 261.63, color: '#0f766e' },
-      { name: 'D4', freq: 293.66, color: '#0369a1' },
-      { name: 'E4', freq: 329.63, color: '#7c3aed' },
-      { name: 'G4', freq: 392.00, color: '#b45309' },
-      { name: 'A4', freq: 440.00, color: '#be185d' },
-      { name: 'C5', freq: 523.25, color: '#059669' }
-    ];
-
-    const punched = new Array(6).fill(false);
-
-    // Audio context (initialized on user gesture)
-    let audioCtx = null;
-    function playNote(freq) {
-      try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.6);
-      } catch (e) {
-        // Audio unavailable / muted
-      }
-    }
-
-    function renderButtons() {
-      grid.innerHTML = '';
-      notes.forEach((note, i) => {
-        const col = document.createElement('div');
-        col.className = 'al-chime-col';
-        const lbl = document.createElement('span');
-        lbl.className = 'al-chime-note';
-        lbl.textContent = note.name;
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'al-chime-btn' + (punched[i] ? ' active' : '');
-        btn.setAttribute('aria-label', `Punch note ${note.name}`);
-        btn.textContent = punched[i] ? '●' : '○';
-
-        btn.addEventListener('click', () => {
-          punched[i] = !punched[i];
-          btn.classList.toggle('active', punched[i]);
-          btn.textContent = punched[i] ? '●' : '○';
-          if (punched[i]) playNote(note.freq);
-          drawLoom();
-        });
-
-        col.appendChild(lbl);
-        col.appendChild(btn);
-        grid.appendChild(col);
-      });
-    }
-
-    function drawLoom() {
-      const W = canvas.width = canvas.offsetWidth || 600;
-      const H = canvas.height = 70;
-      ctx.fillStyle = '#1a0f02';
-      ctx.fillRect(0, 0, W, H);
-
-      // Warp threads (vertical)
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-      ctx.lineWidth = 1;
-      for (let x = 10; x < W; x += 15) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-      }
-
-      // Weft patterns (horizontal threads lifted by punched holes)
-      notes.forEach((note, i) => {
-        if (punched[i]) {
-          const y = 10 + i * 9;
-          ctx.strokeStyle = note.color;
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          for (let x = 0; x < W; x += 30) {
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + 18, y);
-          }
-          ctx.stroke();
-
-          // Interlocking brocade nodes
-          ctx.fillStyle = '#fff';
-          for (let x = 18; x < W; x += 30) {
-            ctx.beginPath();
-            ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      });
-    }
-
-    document.getElementById('al-chime-play')?.addEventListener('click', () => {
-      let delay = 0;
-      notes.forEach((note, i) => {
-        if (punched[i]) {
-          setTimeout(() => playNote(note.freq), delay);
-          delay += 250;
-        }
-      });
-      if (delay === 0) {
-        window.LessonContent?.toast('Punch one or more notes first to compose!');
-      } else {
-        window.LessonContent?.toast('🎶 Weaving algebraical pattern into sound...');
-      }
-    });
-
-    document.getElementById('al-chime-preset-melody')?.addEventListener('click', () => {
-      [true, false, true, true, false, true].forEach((v, i) => punched[i] = v);
-      renderButtons();
-      drawLoom();
-      document.getElementById('al-chime-play')?.click();
-    });
-
-    document.getElementById('al-chime-preset-tapestry')?.addEventListener('click', () => {
-      [true, true, true, true, true, true].forEach((v, i) => punched[i] = v);
-      renderButtons();
-      drawLoom();
-    });
-
-    document.getElementById('al-chime-clear')?.addEventListener('click', () => {
-      punched.fill(false);
-      renderButtons();
-      drawLoom();
-    });
-
-    renderButtons();
-    setTimeout(drawLoom, 50);
-  })();
-
-  // ── Trace table ───────────────────────────────────────────────────────────
-  (function () {
-    const inputs = [...document.querySelectorAll('.al-trace-input')];
-    if (!inputs.length) return;
-    const feedback = document.getElementById('al-trace-feedback');
-    const breakdown = document.getElementById('al-trace-breakdown');
-
-    const explanations = [
-      'Step 4: V3 ← V0 (10) × V1 (4) = 40',
-      'Step 5: V4 ← V3 (40) + V2 (6) = 46',
-      'Step 6: V5 ← V4 (46) ÷ 2 = 23',
-      'Step 7: V3 ← V1 (4) × V2 (6) = 24 (V3 overwritten!)',
-      'Step 8: V6 ← V3 (24) + V5 (23) = 47',
-      'Step 9: V3 ← V2 (6) × V2 (6) = 36 (V3 overwritten again!)',
-      'Step 10: V7 ← V3 (36) ÷ 6 = 6'
-    ];
-
-    document.getElementById('al-trace-check')?.addEventListener('click', () => {
-      let correct = 0;
-      const mistakes = [];
-      inputs.forEach((input, idx) => {
-        const ok = input.value !== '' && parseFloat(input.value) === parseFloat(input.dataset.answer);
-        input.classList.toggle('al-trace-ok', ok);
-        input.classList.toggle('al-trace-bad', !ok);
-        if (ok) correct++;
-        else mistakes.push(explanations[idx]);
-      });
-      if (correct === inputs.length) {
-        if (feedback) {
-          feedback.textContent = '✓ All ' + inputs.length + ' correct — you just traced the algorithm by hand!';
-          feedback.style.color = '#34c759';
-        }
-        if (breakdown) breakdown.textContent = '';
-        window.LessonContent?.toast('✓ Trace complete — all correct!');
-      } else {
-        if (feedback) {
-          feedback.textContent = correct + ' / ' + inputs.length + ' correct so far. Check the red cells.';
-          feedback.style.color = '#dc2626';
-        }
-        if (breakdown && mistakes.length) {
-          breakdown.innerHTML = '<strong>Arithmetic hints for incorrect rows:</strong><br>' + mistakes.join('<br>');
-        }
-      }
-    });
-
-    document.getElementById('al-trace-reveal')?.addEventListener('click', () => {
-      inputs.forEach(input => {
-        input.value = input.dataset.answer;
-        input.classList.remove('al-trace-bad');
-        input.classList.add('al-trace-ok');
-      });
-      if (feedback) {
-        feedback.textContent = 'Answers revealed.';
-        feedback.style.color = 'var(--text-muted, #64748b)';
-      }
-      if (breakdown) breakdown.innerHTML = explanations.join('<br>');
-    });
-
-    document.getElementById('al-trace-reset')?.addEventListener('click', () => {
-      inputs.forEach(input => {
-        input.value = '';
-        input.classList.remove('al-trace-bad', 'al-trace-ok');
-      });
-      if (feedback) feedback.textContent = '';
-      if (breakdown) breakdown.textContent = '';
-    });
-  })();
-
-  // ── Show-hints toggle ─────────────────────────────────────────────────────
-  document.getElementById('al-hints-toggle')?.addEventListener('change', function (e) {
-    document.body.classList.toggle('al-show-hints', e.target.checked);
-  });
-
-  // ── Practice check & Score tracking ───────────────────────────────────────
-  (function () {
-    const solved = new Set();
-    const totalQuestions = 9;
-    const scoreBadge = document.getElementById('al-practice-score');
-
-    function updateScore() {
-      if (scoreBadge) {
-        scoreBadge.textContent = `Completed: ${solved.size} / ${totalQuestions}`;
-        if (solved.size === totalQuestions) {
-          scoreBadge.style.background = '#34c759';
-          scoreBadge.style.color = '#fff';
-          window.LessonContent?.toast('🎉 Outstanding! You solved all 9 practice problems!');
-        }
-      }
-    }
-
-    document.querySelectorAll('.al-practice button[data-check]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const q = btn.dataset.q;
-        const type = btn.dataset.check;
-        const ans = btn.dataset.ans;
-        const input = document.getElementById('alans-' + q);
-        const fb = document.getElementById('alfb-' + q);
-        const hint = document.getElementById('alhint-' + q);
-        if (!input || !fb) return;
-
-        let isCorrect = false;
-        if (type === 'num') {
-          const val = parseFloat(input.value);
-          const tol = parseFloat(btn.dataset.tol || '0');
-          if (isNaN(val)) {
-            fb.textContent = 'Enter a number.';
-            fb.className = 'al-feedback err';
-            return;
-          }
-          isCorrect = Math.abs(val - parseFloat(ans)) <= tol;
-        } else {
-          const val = input.value.toString().toLowerCase().trim();
-          isCorrect = val === ans.toLowerCase();
-        }
-
-        if (isCorrect) {
-          fb.textContent = '✓ Correct!';
-          fb.className = 'al-feedback ok';
-          solved.add(q);
-          updateScore();
-          window.LessonContent?.toast('✓ Correct!');
-        } else {
-          fb.textContent = '✗ Try again.';
-          fb.className = 'al-feedback err';
-          if (hint) hint.style.display = 'block';
-          window.LessonContent?.toast('Not quite — check the hint below.');
-        }
-      });
-    });
-  })();
-
-  // ── Analytical Engine Register & Mill Visualizer (SimKit) ──────────────────
-  (function() {
-    const canvas = document.getElementById('al-canvas');
-    if (!canvas) return;
-
-    // Use SimKit for crisp DPR scaling
-    let sim2d = null;
-    if (window.SimKit?.canvas2d) {
-      sim2d = window.SimKit.canvas2d(canvas, { dpr: 2, height: 320, onResize: () => requestAnimationFrame(drawFrame) });
-    }
-    const ctx = canvas.getContext('2d');
-
-    // Generate immutable teaching snapshots from arithmetic, including saved outputs.
-    const ops = [];
-    const registers = Array(8).fill(null);
-    let counter = 1;
-    const results = [];
-    function record(label, active, dest, phase, detail) {
-      ops.push({label, active, dest, phase, detail, mill:label,
-        regs:registers.map(v => v === null ? '—' : String(v)), n:counter, results:[...results]});
-    }
-    [10,4,6].forEach((v,i) => { registers[i]=v; record(`Load V${i} ← ${v}`, [i], i, 'Setup', `Number card loads ${v} into Store column V${i}.`); });
-    function compute(pass) {
-      const instructions = [
-        [3,[0,1],'V0 × V1',()=>registers[0]*registers[1]],
-        [4,[3,2],'V3 + V2',()=>registers[3]+registers[2]],
-        [5,[4],'V4 ÷ 2',()=>registers[4]/2],
-        [3,[1,2],'V1 × V2',()=>registers[1]*registers[2]],
-        [6,[3,5],'V3 + V5',()=>registers[3]+registers[5]]
-      ];
-      instructions.forEach(([dest,inputs,formula,calculate],i) => {
-        const old=registers[dest]; const value=calculate(); registers[dest]=value;
-        if(i===4) results.push(value);
-        record(`V${dest} ← ${formula} = ${value}`,inputs.concat(dest),dest,`Subroutine #${pass} · Op ${i+1}`,
-          `The Mill computes ${formula} = ${value} and writes it into V${dest}.` + (old!==null ? ` Previous value ${old} is replaced.` : '') + (i===4 ? ` Pass ${pass} result ${value} is saved for printing.` : ''));
-      });
-    }
-    compute(1);
-    record('Check n < 2: true',[],null,'Loop control','n = 1: 1 < 2 is true. Prepare new arguments and repeat the same instruction block.');
-    registers[1]=2; registers[2]=3; counter=2;
-    record('Prepare V1 ← 2; V2 ← 3; n ← 2',[1,2],null,'Argument preparation','New number cards load 2 and 3; the pass counter becomes 2.');
-    compute(2);
-    record('Check n < 2: false',[],null,'Loop control','n = 2: 2 < 2 is false. Exit the loop and print the saved results.');
-    record('Print saved pass results',[],null,'Printer output',`The printer outputs the calculated results: ${results.join(' and ')}.`);
-
-    let step = 0;
-    let running = false;
-    let intervalId = null;
-    let gearAngle = 0;
-    let transitionStart = -Infinity;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-    function getSpeed() {
-      const slider = document.getElementById('al-speed-slider');
-      return slider ? parseInt(slider.value) : 2;
-    }
-
-    function drawFrame() {
-      const W = canvas.offsetWidth || 600;
-      const H = 320;
-      if (!sim2d) {
-        canvas.width = W;
-        canvas.height = H;
-      }
-
-      // Read theme colors
-      const themeColors = window.SimKit?.theme?.colors ? window.SimKit.theme.colors() : {};
-      const teal = '#0f766e';
-      const brass = '#b45309';
-
-      // Background
-      const bg = ctx.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, '#180f03');
-      bg.addColorStop(1, '#0c0701');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, W, H);
-
-      const numCols = 8;
-      const colW = Math.floor((W - 40) / numCols);
-      const colH = 150;
-      const colY = 40;
-      const op = ops[step] || ops[ops.length - 1];
-      const activeCols = op.active;
-      const destCol = op.dest;
-
-      // Draw gear columns
-      for (let i = 0; i < numCols; i++) {
-        const cx = 20 + i * colW + colW / 2;
-        const isActive = activeCols.includes(i);
-        const isDest = destCol === i;
-
-        // Gear tower body
-        const colGrad = ctx.createLinearGradient(cx - colW * 0.36, 0, cx + colW * 0.36, 0);
-        if (isDest) {
-          colGrad.addColorStop(0, '#b45309');
-          colGrad.addColorStop(0.5, '#d97706');
-          colGrad.addColorStop(1, '#b45309');
-        } else if (isActive) {
-          colGrad.addColorStop(0, '#0d4d48');
-          colGrad.addColorStop(0.5, '#0f766e');
-          colGrad.addColorStop(1, '#0d4d48');
-        } else {
-          colGrad.addColorStop(0, '#2e1e07');
-          colGrad.addColorStop(0.5, '#4a320c');
-          colGrad.addColorStop(1, '#2e1e07');
-        }
-        ctx.fillStyle = colGrad;
-        ctx.beginPath();
-        ctx.roundRect(cx - colW * 0.38, colY, colW * 0.76, colH, 6);
-        ctx.fill();
-        ctx.strokeStyle = isDest ? '#f59e0b' : isActive ? 'rgba(20,180,160,0.8)' : 'rgba(180,83,9,0.35)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Animated gear teeth
-        const teethCount = 6;
-        for (let g = 0; g < teethCount; g++) {
-          const gy = colY + 22 + g * 20;
-          ctx.strokeStyle = isActive ? 'rgba(94,234,212,0.45)' : 'rgba(180,100,10,0.25)';
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          const offset = isActive ? Math.sin(gearAngle + g) * 3 : 0;
-          ctx.moveTo(cx - colW * 0.34 + offset, gy);
-          ctx.lineTo(cx + colW * 0.34 + offset, gy);
-          ctx.stroke();
-        }
-
-        // Value readout box at top
-        ctx.fillStyle = '#140c02';
-        ctx.beginPath();
-        ctx.roundRect(cx - colW * 0.36, colY - 4, colW * 0.72, 26, 5);
-        ctx.fill();
-        ctx.strokeStyle = isDest ? '#f59e0b' : isActive ? '#14b8a6' : '#5c3e0f';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        ctx.fillStyle = isDest ? '#fef08a' : isActive ? '#5eead4' : '#ead6b0';
-        ctx.font = `bold ${colW > 60 ? 12 : 9.5}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const valText = op.regs ? op.regs[i] : '—';
-        ctx.fillText(valText, cx, colY + 9);
-
-        // Column register label at bottom
-        ctx.fillStyle = isDest ? '#fde047' : isActive ? '#99f6e4' : '#ead6b0';
-        ctx.font = 'bold 11px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText('V' + i, cx, colY + colH + 4);
-
-        // Destination write / overwrite tag
-        if (isDest) {
-          ctx.fillStyle = '#f59e0b';
-          ctx.font = 'bold 8px sans-serif';
-          ctx.fillText('WRITE', cx, colY + colH + 18);
-        }
-      }
-
-      // Schematic rails: operands travel from the Store to the Mill; result returns.
-      const progress = reducedMotion.matches ? 1 : Math.min(1,(performance.now()-transitionStart)/650);
-      const millCenter = W/2;
-      op.active.filter(i=>i!==destCol).forEach(i=>{
-        const x=20+i*colW+colW/2;
-        ctx.strokeStyle='#5eead4'; ctx.lineWidth=1.5;
-        ctx.beginPath();ctx.moveTo(x,colY+colH);ctx.lineTo(x,216);ctx.lineTo(millCenter,216);ctx.stroke();
-        if(progress<1){ctx.fillStyle='#99f6e4';ctx.beginPath();ctx.arc(x+(millCenter-x)*progress,216,3,0,Math.PI*2);ctx.fill();}
-      });
-      if(destCol!==null){const x=20+destCol*colW+colW/2;ctx.strokeStyle='#fbbf24';ctx.beginPath();ctx.moveTo(millCenter,220);ctx.lineTo(x,220);ctx.lineTo(x,colY+colH);ctx.stroke();}
-      if(destCol!==null && step>0 && ops[step-1].regs[destCol]!=='—' && ops[step-1].regs[destCol]!==op.regs[destCol]){
-        ctx.fillStyle='#fef08a';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(`V${destCol}: ${ops[step-1].regs[destCol]} → ${op.regs[destCol]} (overwrite)`,W/2,20);
-      }
-
-      // The Mill processor bar
-      const millY = colY + colH + 32;
-      ctx.fillStyle = '#221504';
-      ctx.beginPath();
-      ctx.roundRect(20, millY, W - 40, 26, 4);
-      ctx.fill();
-      ctx.strokeStyle = '#b45309';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.fillStyle = '#fbbf24';
-      ctx.font = 'bold 11px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`THE MILL: ${op.mill || op.label}`, W / 2, millY + 13, W-48);
-
-      // Punched card instruction readout
-      const cardY = millY + 32;
-      ctx.fillStyle = '#f5e6c8';
-      ctx.beginPath();
-      ctx.roundRect(20, cardY, W - 40, 32, 4);
-      ctx.fill();
-      ctx.strokeStyle = '#92400e';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.fillStyle = '#1a0f02';
-      ctx.font = 'bold 11.5px sans-serif';
-      ctx.fillText(op.label, W / 2, cardY + 16, W-48);
-
-      // Progress bar
-      const pct = step / (ops.length - 1);
-      const barY = cardY + 38;
-      ctx.fillStyle = 'rgba(255,255,255,0.08)';
-      ctx.beginPath(); ctx.roundRect(20, barY, W - 40, 6, 3); ctx.fill();
-      ctx.fillStyle = teal;
-      ctx.beginPath(); ctx.roundRect(20, barY, (W - 40) * pct, 6, 3); ctx.fill();
-
-      // Update DOM readouts
-      const rStep = document.getElementById('al-r-step');
-      const rReg = document.getElementById('al-r-reg');
-      const rOp = document.getElementById('al-r-op');
-      const sPhase = document.getElementById('al-step-phase');
-      const sDetail = document.getElementById('al-step-detail');
-
-      if (rStep) rStep.textContent = (step + 1) + ' / ' + ops.length;
-      if (rReg) rReg.textContent = activeCols.length ? activeCols.map(c => 'V' + c).join(', ') : '—';
-      if (rOp) rOp.textContent = step < ops.length - 1 ? (running ? 'Running' : 'Ready') : 'Done';
-      if (sPhase && sPhase.textContent !== op.phase) sPhase.textContent = op.phase || '—';
-      if (sDetail && sDetail.textContent !== op.detail) sDetail.textContent = op.detail || '';
-
-      ctx.textBaseline = 'alphabetic';
-    }
-
-    const card=document.getElementById('al-sec-simulator');
-    const byId=id=>document.getElementById(id);
-    let soundEnabled=false, audio=null;
-    function sound() {
-      if(!soundEnabled) return;
-      try { audio ||= new (window.AudioContext || window.webkitAudioContext)(); audio.resume();
-        const oscillator=audio.createOscillator(), gain=audio.createGain();
-        oscillator.frequency.value=step===16?1200:180; oscillator.type=step===16?'sine':'triangle';
-        gain.gain.setValueAtTime(.035,audio.currentTime); gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.09);
-        oscillator.connect(gain); gain.connect(audio.destination); oscillator.start(); oscillator.stop(audio.currentTime+.1);
-      } catch {} }
-    function sync() {
-      const op=ops[step], prior=ops[step-1];
-      byId('al-play').textContent=running?'Pause':'Play';
-      card.setAttribute('data-playback',running?'running':'paused');
-      const sidebar=document.getElementById('al-pane-sim');
-      sidebar.querySelector('[onclick="alRun()"]').disabled=running;
-      sidebar.querySelector('[onclick="alPause()"]').disabled=!running;
-      sidebar.querySelector('[onclick="alStep()"]').disabled=step===16;
-      sidebar.querySelector('[onclick="alBack()"]').disabled=step===0;
-      byId('al-back').disabled=step===0; byId('al-next').disabled=step===16;
-      byId('al-seek').value=step+1; byId('al-seek').setAttribute('aria-valuetext',`Step ${step+1}: ${op.label}`);
-      byId('al-counter').textContent=`Pass counter n = ${op.n}. Saved results: ${op.results.join(', ') || 'none yet'}.`;
-      const roles=['Constant A','Argument B','Argument C','Scratchpad','Intermediate sum','Half sum','Pass result','Unused'];
-      byId('al-registers').innerHTML=op.regs.map((v,i)=>{
-        let previous='—'; for(let k=step-1;k>=0;k--) if(ops[k].regs[i]!==v) {previous=ops[k].regs[i];break;}
-        const changed=prior && prior.regs[i]!==v;
-        const status=changed && previous!=='—'?'Overwritten':op.dest===i?'Written':op.active.includes(i)?'Operand':'Idle';
-        return `<tr><th scope="row">V${i}</th><td>${roles[i]}</td><td>${v}</td><td>${previous}</td><td>${status}</td></tr>`;
-      }).join('');
-      byId('al-tape').textContent=step===16?`Printer tape: [Pass 1: ${op.results[0]}] [Pass 2: ${op.results[1]}]`:'Printer tape: waiting for derived results.';
-      [...byId('al-milestones').children].forEach((button,i)=> {if(i===step) button.setAttribute('aria-current','step'); else button.removeAttribute('aria-current');});
-    }
-    function render(){drawFrame();sync();}
-    window.alPause=()=>{clearInterval(intervalId); running=false; render();};
-    function seek(index){alPause(); step=Math.max(0,Math.min(16,index));gearAngle+=.8;transitionStart=performance.now();render();sound();}
-    function schedule(){clearInterval(intervalId);intervalId=setInterval(()=>{if(step<16){step++;gearAngle+=.8;transitionStart=performance.now();sound();} if(step===16){clearInterval(intervalId);running=false;}render();},Math.max(200,1600-getSpeed()*260));}
-    window.alRun=()=>{if(running)return;if(step===16)step=0;running=true;schedule();render();};
-    window.alBack=()=>seek(step-1);
-    window.alStep=()=>seek(step+1);
-    window.alReset=()=>seek(0);
-    window.alPreset=speed=>{setSpeed(speed);alReset();alRun();};
-    function setSpeed(value){byId('al-speed-slider').value=value;byId('al-speed-val').textContent=value;byId('al-inline-speed').value=value;if(running)schedule();}
-    byId('al-speed-slider').addEventListener('input',e=>setSpeed(e.target.value));
-    byId('al-inline-speed').addEventListener('change',e=>setSpeed(e.target.value));
-    byId('al-inline-reset').onclick=()=>alReset();byId('al-back').onclick=()=>seek(step-1);byId('al-next').onclick=()=>alStep();byId('al-play').onclick=()=>running?alPause():alRun();
-    byId('al-seek').oninput=e=>seek(Number(e.target.value)-1);
-    ops.forEach((op,i)=>{const button=document.createElement('button');button.type='button';button.textContent=i+1;button.title=`Step ${i+1}: ${op.phase} — ${op.label}`;button.setAttribute('aria-label',button.title);button.onclick=()=>seek(i);byId('al-milestones').append(button);});
-    byId('al-sound').onclick=()=>{soundEnabled=!soundEnabled;byId('al-sound').textContent=`Sound FX: ${soundEnabled?'On':'Off'}`;byId('al-sound').setAttribute('aria-pressed',String(soundEnabled));sound();};
-    card.addEventListener('keydown',e=>{if(e.target!==card && e.target!==canvas || e.altKey || e.ctrlKey || e.metaKey)return;
-      const actions={' ':()=>running?alPause():alRun(),ArrowRight:()=>alStep(),ArrowLeft:()=>seek(step-1),n:()=>alStep(),p:()=>seek(step-1),r:()=>alReset()}; const action=actions[e.key]||actions[e.key.toLowerCase()];if(action){e.preventDefault();action();}});
-    function setView(code){alPause();byId('al-trace-view').hidden=code;byId('al-code-view').hidden=!code;byId('al-view-code').setAttribute('aria-pressed',String(code));byId('al-view-trace').setAttribute('aria-pressed',String(!code));if(!code)render();}
-    byId('al-view-code').onclick=()=>setView(true);byId('al-view-trace').onclick=()=>setView(false);
-    byId('al-python-code').textContent=`from fractions import Fraction
-from math import comb
-
-def bernoulli_recurrence(limit):
-    # sum(comb(j + 1, k) * B[k] for k in range(j + 1)) = 0
-    # B1 uses the -1/2 convention; odd indices > 1 are zero.
-    B = {0: Fraction(1), 1: Fraction(-1, 2)}
-    for m in range(1, limit // 2 + 1):
-        j = 2 * m
-        acc = sum((Fraction(comb(j + 1, 2*k)) * B[2*k]
-                   for k in range(m)), Fraction(0))
-        acc += (j + 1) * B[1]
-        B[j] = -acc / (j + 1)
-    return B
-
-print(bernoulli_recurrence(8))`;
-    let tourTrigger=null;
-    document.querySelectorAll('[data-tour]').forEach(button=>button.onclick=()=>{
-      tourTrigger=button;const kind=button.dataset.tour;seek(kind==='overwrite'?3:kind==='loop'?8:3);byId('al-tour').hidden=false;
-      byId('al-tour-title').textContent=button.textContent;
-      if(kind==='subroutine'){
-        byId('al-tour-body').innerHTML='<p>Both passes execute ×, +, ÷2, ×, +. Compare each instruction and its derived result.</p><div class="al-table-scroll"><table class="al-code-table"><caption>Same instructions, different inputs</caption><thead><tr><th>Operation</th><th>Pass 1</th><th>Pass 2</th></tr></thead><tbody>'+ops.slice(3,8).map((op,i)=>`<tr><th>${i+1}</th><td>${op.label}</td><td>${ops[10+i].label}</td></tr>`).join('')+'</tbody></table></div><button type="button" id="al-tour-test">View pass 2</button>';
-        byId('al-tour-test').onclick=()=>seek(10);
-      }else{
-        const overwrite=kind==='overwrite'; const question=overwrite?'Step 7 writes 24 into V3. What happens to its current value, 40?':'n = 1. What does the test n < 2 do?';
-        const choices=overwrite?['Stores both numbers','Replaces 40 with 24','Halts with an error']:['False: print immediately','True: prepare inputs and repeat'];
-        byId('al-tour-body').innerHTML=`<fieldset><legend>${question}</legend>${choices.map((choice,i)=>`<label><input type="radio" name="al-prediction" value="${i}"> ${choice}</label>`).join('')}</fieldset><button type="button" id="al-tour-test">Check prediction and test</button><p id="al-tour-feedback" role="status"></p>`;
-        byId('al-tour-test').onclick=()=>{const selected=card.querySelector('[name="al-prediction"]:checked');if(!selected){byId('al-tour-feedback').textContent='Choose a prediction first.';return;}
-          byId('al-tour-feedback').textContent=(selected.value==='1'?'Correct. ':'Not quite. ')+(overwrite?'24 replaces 40. Each register holds one current value. The teaching controls can restore a saved earlier state.':'1 < 2 is true. Step 10 prepares the second pass; at Step 16, 2 < 2 is false and the loop exits.');seek(overwrite?6:9);};
-      }
-      byId('al-tour-exit').focus();
-    });
-    byId('al-tour-exit').onclick=()=>{byId('al-tour').hidden=true;tourTrigger?.focus();};
-    document.addEventListener('visibilitychange',()=>{if(document.hidden)alPause();});
-    window.SimKit?.theme?.onChange(()=>render());
-    window.SimKit?.loop(()=>{if(!reducedMotion.matches && performance.now()-transitionStart<700)drawFrame();}, { el: window.SimKit.stage(canvas) });
-    sync();
-    window.addEventListener('resize', drawFrame);
-    drawFrame();
-  })();
-
-})();
-</script>
-
-<script>
-(() => {
-  const get = id => document.getElementById('al-learn-' + id);
-  const steps = [
-    {formula:'V3 ← V0 × V1',read:'10 and 4',source:'From V0 and V1',math:'10 × 4 = 40',meaning:'Ticket cost',dest:3,value:40,note:'Read 10 and 4. Store 40 in V3. Both inputs stay unchanged. Next: predict 40 + 6.'},
-    {formula:'V4 ← V3 + V2',read:'40 and 6',source:'From V3 and V2',math:'40 + 6 = 46',meaning:'Total bill',dest:4,value:46,note:'Read the saved 40 and the fee 6. Store 46 in V4. Next: predict 46 divided by 2.'},
-    {formula:'V5 ← V4 ÷ 2',read:'46 and 2',source:'From V4 and the instruction',math:'46 ÷ 2 = 23',meaning:'Split between two people',dest:5,value:23,note:'Store 23 in V5: each person pays 23 dollars. V4 keeps the intermediate total, 46.'}
-  ];
-  let next = 0;
-  get('next').addEventListener('click', () => {
-    const step = steps[next]; if (!step) return;
-    ['instruction','read','source','math','meaning'].forEach((key) => get(key).textContent = key === 'instruction' ? step.formula : step[key]);
-    get('write').textContent = 'V' + step.dest + ' ← ' + step.value;
-    get('dest').textContent = 'Result saved'; get('status').textContent = step.note;
-    [3,4,5].forEach(i => get('box-' + i).dataset.written = String(i === step.dest));
-    get('box-' + step.dest).querySelector('strong').textContent = step.value;
-    next++; get('progress').textContent = 'Instruction ' + next + ' of 3' + (next === 3 ? ' · complete' : '');
-    get('next').textContent = next === 3 ? 'All three instructions complete' : 'Run instruction ' + (next + 1);
-    get('next').disabled = next === 3;
-  });
-  get('reset').addEventListener('click', () => {
-    next = 0; get('progress').textContent = 'Ready · inputs loaded'; get('instruction').textContent = 'Find the ticket cost, add the fee, then share.';
-    get('read').textContent='10 and 4';get('source').textContent='From V0 and V1';get('math').textContent='10 × 4';get('meaning').textContent='Ticket cost';get('write').textContent='V3 is waiting';get('dest').textContent='A home for the result';
-    get('status').textContent='Predict the ticket cost, then run the first instruction. A dash means no value is stored yet.';
-    [3,4,5].forEach(i => {get('box-' + i).dataset.written='false';get('box-' + i).querySelector('strong').textContent='—';});
-    get('next').disabled=false;get('next').textContent='Run instruction 1';
-  });
-})();
-</script>
-<script src="../../../assets/js/lesson-print-button.js"></script>
+        <div id="al-trace-given" class="al-trace-given"></div>
+
+        <div class="al-table-scroll">
+          <table class="al-trace-table">
+            <thead>
+              <tr><th scope="col">Step</th><th scope="col">Operation</th><th scope="col">Writes To</th><th scope="col">New Value (integer, decimal, or fraction e.g. 7/9)</th></tr>
+            </thead>
+            <tbody id="al-trace-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="al-trace-actions">
+          <button type="button" id="al-trace-check" class="al-check-btn">Check My Trace</button>
+          <button type="button" id="al-trace-reveal" class="al-check-btn brass">Reveal Answers</button>
+          <button type="button" id="al-trace-reset" class="al-check-btn muted">Reset Blanks</button>
+          <span id="al-trace-feedback" class="al-feedback" role="status" aria-live="polite"></span>
+        </div>
+        <div id="al-trace-breakdown" style="margin-top:0.5rem;"></div>
+      </section>
+
+      <!-- Contributions, Vocabulary & Legacy -->
+      <section class="al-card" id="al-sec-legacy" style="--card-accent:#059669;">
+        <h2>Key Contributions, Vocabulary &amp; Legacy</h2>
+        <div class="al-grid-2">
+          <div class="al-contrib-card">
+            <strong>1. First Published Machine Algorithm (1843)</strong>
+            <p>Note G laid out exact Store columns, operation sequence, and control flow for an unbuilt general-purpose machine.</p>
+          </div>
+          <div class="al-contrib-card">
+            <strong>2. Loops &amp; Nested Iteration</strong>
+            <p>Operations 13&ndash;23 repeat an inner summation block while Operation 25 wraps an outer loop across n = 1, 2, 3, 4.</p>
+          </div>
+          <div class="al-contrib-card">
+            <strong>3. Conditional Branching</strong>
+            <p>Operations 7 and 12 inspect whether V10 reaches zero to skip unnecessary inner passes &mdash; early <code>if / else</code> control flow.</p>
+          </div>
+          <div class="al-contrib-card">
+            <strong>4. Symbolic Computing (&ldquo;Poetical Science&rdquo;)</strong>
+            <p>Note A foresaw that machines manipulating numbers could represent music, words, or weaving patterns if properly encoded.</p>
+          </div>
+          <div class="al-contrib-card">
+            <strong>5. Hardware vs. Software Separation</strong>
+            <p>Swapping card decks transforms what the same brass mechanism computes &mdash; the core idea of programmable software.</p>
+          </div>
+          <div class="al-contrib-card">
+            <strong>6. The &ldquo;Ada&rdquo; Programming Language (1980)</strong>
+            <p>Standardized as MIL-STD-1815 in her honor and still used in aviation, rail signaling, satellites, and safety-critical systems.</p>
+          </div>
+        </div>
+
+        <h3>Vocabulary Reference</h3>
+        <dl class="al-vocab-grid">
+          <div class="al-vocab-card"><dt>Algorithm</dt><dd>A finite, ordered sequence of unambiguous instructions that solves a problem or performs a computation.</dd></div>
+          <div class="al-vocab-card"><dt>The Mill &amp; The Store</dt><dd>Babbage&rsquo;s arithmetic unit (ancestor of the CPU) and column gear memory (ancestor of RAM and registers).</dd></div>
+          <div class="al-vocab-card"><dt>Register Overwrite</dt><dd>Writing a new value into a register replaces whatever value sat there previously; old results must be saved elsewhere first.</dd></div>
+          <div class="al-vocab-card"><dt>Conditional Branch</dt><dd>Testing a condition (such as <code>V10 = 0</code>) to decide which card operation executes next.</dd></div>
+          <div class="al-vocab-card"><dt>Loop (Inner &amp; Outer)</dt><dd>Rewinding cards to repeat instructions: Note G nests an inner summation loop (Ops 13&ndash;23) inside an outer term loop (Op 25).</dd></div>
+          <div class="al-vocab-card"><dt>Trace Table</dt><dd>Tracking each register&rsquo;s contents by hand step by step to verify logic and catch bugs before running code.</dd></div>
+          <div class="al-vocab-card"><dt>Symbolic Representation</dt><dd>Encoding non-numeric ideas &mdash; musical pitches, letters, loom threads &mdash; as numbers a machine can process.</dd></div>
+          <div class="al-vocab-card"><dt>Decimal vs. Binary Cards</dt><dd>Babbage&rsquo;s Engine used base-10 (0&ndash;9) decimal wheels, whereas 20th-century electronic computers used base-2 (0/1) binary.</dd></div>
+        </dl>
+
+        <h3>Continue Exploring in ClassroomOS</h3>
+        <div class="al-crosslinks">
+          <a class="al-crosslink" href="grace-hopper.html">Grace Hopper &amp; Compilers &rarr;</a>
+          <a class="al-crosslink" href="margaret-hamilton.html">Margaret Hamilton &amp; Apollo Software &rarr;</a>
+          <a class="al-crosslink" href="../algorithms-and-ai/turing-test.html">Alan Turing &amp; Lady Lovelace&rsquo;s Objection &rarr;</a>
+          <a class="al-crosslink" href="../foundations/binary-bits-and-logic.html">Binary, Bits &amp; Logic Gates &rarr;</a>
+          <a class="al-crosslink" href="../foundations/python-foundations.html">Python Foundations &rarr;</a>
+        </div>
+      </section>
+
+      <!-- Practice Problems -->
+      <section class="al-card" id="al-sec-practice" style="--card-accent:#0284c7;">
+        <div class="al-practice-header">
+          <h2>Practice &amp; Debugging Problems</h2>
+          <span class="al-practice-score" id="al-practice-score">Completed: 0 / 9</span>
+        </div>
+        <p>Test your grasp of Note G, registers, loops, punched cards, and debugging.</p>
+        <label class="ll-toggle" style="margin-bottom:0.8rem;">
+          <input type="checkbox" id="al-hints-toggle">
+          <span class="ll-toggle-track" aria-hidden="true"></span>
+          <span>Show hints automatically</span>
+        </label>
+
+        <div class="al-practice">
+          <div class="al-problem">
+            <p><span class="al-badge easy">Easy</span>1. In what year did Ada Lovelace publish her translation of Menabrea&rsquo;s paper together with Notes A&ndash;G?</p>
+            <div class="al-problem-row">
+              <select class="al-ans-input" id="alans-1" aria-label="Problem 1 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="1833">1833</option>
+                <option value="1843">1843</option>
+                <option value="1852">1852</option>
+                <option value="1871">1871</option>
+              </select>
+              <button class="al-check-btn" type="button" data-check="text" data-q="1" data-ans="1843">Check</button>
+              <span class="al-feedback" id="alfb-1" role="status"></span>
+            </div>
+            <div class="al-hint" id="alhint-1">Hint: Ada met Babbage in 1833 at age 17, and published her landmark Notes ten years later in 1843 in <em>Taylor&rsquo;s Scientific Memoirs</em>.</div>
+          </div>
+
+          <div class="al-problem">
+            <p><span class="al-badge easy">Easy</span>2. Which part of the Analytical Engine stored up to 1,000 numbers in columns of gears, acting as the ancestor of modern RAM?</p>
+            <div class="al-problem-row">
+              <select class="al-ans-input" id="alans-2" aria-label="Problem 2 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="mill">The Mill</option>
+                <option value="store">The Store</option>
+                <option value="cards">Operation Cards</option>
+                <option value="printer">The Printer</option>
+              </select>
+              <button class="al-check-btn" type="button" data-check="text" data-q="2" data-ans="store">Check</button>
+              <span class="al-feedback" id="alfb-2" role="status"></span>
+            </div>
+            <div class="al-hint" id="alhint-2">Hint: The Mill performed arithmetic (like a CPU); the memory columns where numbers sat were called The Store.</div>
+          </div>
+
+          <div class="al-problem">
+            <p><span class="al-badge easy">Easy</span>3. What mathematical sequence did Note G&rsquo;s 25-operation algorithm compute?</p>
+            <div class="al-problem-row">
+              <select class="al-ans-input" id="alans-3" aria-label="Problem 3 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="fibonacci">Fibonacci numbers</option>
+                <option value="primes">Prime numbers</option>
+                <option value="bernoulli">Bernoulli numbers</option>
+                <option value="pascal">Pascal&rsquo;s triangle</option>
+              </select>
+              <button class="al-check-btn" type="button" data-check="text" data-q="3" data-ans="bernoulli">Check</button>
+              <span class="al-feedback" id="alfb-3" role="status"></span>
+            </div>
+            <div class="al-hint" id="alhint-3">Hint: Check the title of Note G&rsquo;s diagram &mdash; it computed Bernoulli numbers (1/6, &minus;1/30, 1/42, &minus;1/30).</div>
+          </div>
+
+          <div class="al-problem">
+            <p><span class="al-badge mid">Medium</span>4. In Babbage&rsquo;s hardware, what number base did the Store gear wheels actually use (unlike modern binary electronic computers)?</p>
+            <div class="al-problem-row">
+              <select class="al-ans-input" id="alans-4" aria-label="Problem 4 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="binary">Base 2 (Binary)</option>
+                <option value="decimal">Base 10 (Decimal)</option>
+                <option value="hex">Base 16 (Hexadecimal)</option>
+                <option value="roman">Roman numerals</option>
+              </select>
+              <button class="al-check-btn" type="button" data-check="text" data-q="4" data-ans="decimal">Check</button>
+              <span class="al-feedback" id="alfb-4" role="status"></span>
+            </div>
+            <div class="al-hint" id="alhint-4">Hint: Each gear wheel had ten teeth numbered 0 through 9 &mdash; base 10 (decimal).</div>
+          </div>
+
+          <div class="al-problem">
+            <p><span class="al-badge mid">Medium</span>5. On an 8-bit modern binary punch card (hole weights 128, 64, 32, 16, 8, 4, 2, 1), holes 1, 3, and 8 are punched. What decimal number does this encode?</p>
+            <div class="al-problem-row">
+              <input type="number" class="al-ans-input" id="alans-5" step="1" placeholder="decimal" style="width:130px;" aria-label="Problem 5 answer" />
+              <button class="al-check-btn" type="button" data-check="num" data-q="5" data-ans="161" data-tol="0">Check</button>
+              <span class="al-feedback" id="alfb-5" role="status"></span>
+            </div>
+            <div class="al-hint" id="alhint-5">Hint: Add the punched bit weights: 128 (hole 1) + 32 (hole 3) + 1 (hole 8) = 161.</div>
+          </div>
+
+          <div class="al-problem">
+            <p><span class="al-badge mid">Medium</span>6. In Note G, Operation 7 computes <code>V10 &larr; V3 &minus; V1</code>. When <code>n = 4</code>, how many times does the inner loop (Operations 13&ndash;23) execute before exiting?</p>
+            <div class="al-problem-row">
+              <input type="number" class="al-ans-input" id="alans-6" step="1" placeholder="passes" style="width:120px;" aria-label="Problem 6 answer" />
+              <button class="al-check-btn" type="button" data-check="num" data-q="6" data-ans="2" data-tol="0">Check</button>
+              <span class="al-feedback" id="alfb-6" role="status"></span>
+            </div>
+            <div class="al-hint" id="alhint-6">Hint: Op 7 sets V10 = 3, Op 12 sets V10 = 2, and Ops 13&ndash;23 decrement V10 by 1 each pass until it hits 0 (try running n = 4 in Tab 1!).</div>
+          </div>
+
+          <div class="al-problem">
+            <p><span class="al-badge hard">Challenge</span>7. Which statement captures Ada&rsquo;s most radical insight in Note A (1843)?</p>
+            <div class="al-problem-row">
+              <select class="al-ans-input" id="alans-7" aria-label="Problem 7 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="a">Steam boilers double clock speed</option>
+                <option value="b">If ideas like music or logic are encoded as symbols, a programmable engine can compose and process any symbol, not just numbers</option>
+                <option value="c">Computers can originate original consciousness without instructions</option>
+                <option value="d">Only base-10 gears can multiply</option>
+              </select>
+              <button class="al-check-btn" type="button" data-check="text" data-q="7" data-ans="b">Check</button>
+              <span class="al-feedback" id="alfb-7" role="status"></span>
+            </div>
+            <div class="al-hint" id="alhint-7">Hint: Remember &ldquo;poetical science&rdquo; &mdash; Ada argued the Engine could compose music if musical harmony were expressed mathematically.</div>
+          </div>
+
+          <div class="al-problem">
+            <p><span class="al-badge mid">Debug</span>8. In the 1843 printing of Note G, Operation 4 contained a famous typo: <code>V5 / V4</code> instead of <code>V4 / V5</code>. With <code>n = 1</code> (<code>V4 = 1</code>, <code>V5 = 3</code>), what wrong value of <code>B&#x2081;</code> does that typo cause?</p>
+            <div class="al-problem-row">
+              <select class="al-ans-input" id="alans-8" aria-label="Problem 8 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="1/6">1/6 (no effect)</option>
+                <option value="3/2">3/2 (9 times too large!)</option>
+                <option value="-1/30">&minus;1/30</option>
+                <option value="0">0 (divide by zero)</option>
+              </select>
+              <button class="al-check-btn" type="button" data-check="text" data-q="8" data-ans="3/2">Check</button>
+              <span class="al-feedback" id="alfb-8" role="status"></span>
+            </div>
+            <div class="al-hint" id="alhint-8">Hint: Swapping 1/3 to 3/1 makes V11 nine times bigger &mdash; toggle &ldquo;1843 Op 4 Bug: On&rdquo; in Tab 1 at n = 1 to verify!</div>
+          </div>
+
+          <div class="al-problem">
+            <p><span class="al-badge hard">Debug</span>9. This Python loop should compute all 4 terms <code>n = 1, 2, 3, 4</code> like Note G, but only runs 3 times: <code>for n in range(1, 4):</code>. What fixes this off-by-one bug?</p>
+            <div class="al-problem-row">
+              <select class="al-ans-input" id="alans-9" aria-label="Problem 9 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="a">Change it to range(1, 5)</option>
+                <option value="b">Change it to range(0, 4)</option>
+                <option value="c">Change it to range(2, 4)</option>
+                <option value="d">Change it to range(1, 4, 2)</option>
+              </select>
+              <button class="al-check-btn" type="button" data-check="text" data-q="9" data-ans="a">Check</button>
+              <span class="al-feedback" id="alfb-9" role="status"></span>
+            </div>
+            <div class="al-hint" id="alhint-9">Hint: Python&rsquo;s <code>range(start, stop)</code> stops <em>before</em> <code>stop</code>, so <code>range(1, 5)</code> produces <code>1, 2, 3, 4</code>.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="site-footer">
+      <p>Mr. Scandrett&rsquo;s ClassroomOS &mdash; <a href="../../../index.html">Home</a> &middot; <a href="../../../steam-lessons.html">Lessons</a></p>
+    </footer>
+  </main>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/creation-app.js"></script>
+  <script type="module" src="../../../assets/js/lessons/ada-lovelace-app.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
   <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

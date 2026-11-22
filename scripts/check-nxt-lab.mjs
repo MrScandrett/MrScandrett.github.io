@@ -4,7 +4,7 @@ import {findChromium} from '../lib/find-chromium.mjs';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({executablePath:findChromium(),headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:1050}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
-await page.goto('http://127.0.0.1:8080/lessons/engineering/robotics/nxt-robot-lab.html');await page.waitForSelector('#steps li');
+await page.goto('http://127.0.0.1:8080/lessons/computer-science/robotics/nxt-robot-lab.html');await page.waitForSelector('#steps li');
 assert.equal(await page.locator('#steps li').count(),3);
 await page.getByRole('button',{name:'Full screen',exact:true}).click();
 await page.waitForFunction(()=>!!document.fullscreenElement);

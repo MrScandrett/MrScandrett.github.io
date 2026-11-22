@@ -31,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
-const LESSON = '/lessons/engineering/robotics/robot-car-pilot.html';
+const LESSON = '/lessons/computer-science/robotics/robot-car-pilot.html';
 
 export function parseArgs(argv) {
   const opts = { car: '192.168.4.1', port: 8787, mock: false, lan: false, origins: [] };

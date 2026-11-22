@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const T = require('../assets/js/timeline.js');
@@ -139,7 +140,7 @@ test('lesson timelines: every data-when parses', () => {
       }
     }
   };
-  walk(new URL('../lessons', import.meta.url).pathname);
+  walk(fileURLToPath(new URL('../lessons', import.meta.url)));
   assert.deepEqual(bad, []);
 });
 
@@ -167,11 +168,11 @@ test('legacy semantic timeline lists are discoverable by the shared engine', () 
       }
     }
   };
-  walk(new URL('../lessons', import.meta.url).pathname);
+  walk(fileURLToPath(new URL('../lessons', import.meta.url)));
   assert.deepEqual(bad, []);
 });
 
 test("The Ages' Grand Timeline is built from data/ages-timeline.json and every link and date checks out", () => {
-  const out = execFileSync(process.execPath, [new URL('../scripts/build-ages-timeline.mjs', import.meta.url).pathname, '--check'], { encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [fileURLToPath(new URL('../scripts/build-ages-timeline.mjs', import.meta.url)), '--check'], { encoding: 'utf8' });
   assert.match(out, /up to date/);
 });

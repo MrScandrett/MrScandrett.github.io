@@ -57,7 +57,7 @@
     'computer-science/algorithms-and-ai/sorting-algorithms.html': [
       ['tower-of-hanoi', 'Merge sort and quicksort solve a problem by solving smaller copies of it. Hanoi is the purest example of that recursion.']
     ],
-    'engineering/robotics/motion-planning.html': [
+    'computer-science/robotics/motion-planning.html': [
       ['sliding-puzzle', 'A* on a puzzle instead of a map: the same algorithm plans the shortest sequence of tile moves.']
     ],
     'mathematics/foundations/numbers.html': [

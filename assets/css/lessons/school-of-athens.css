@@ -1,0 +1,1443 @@
+:root {
+  --athens-ink: #172233;
+  --athens-muted: #4b5b6d;
+  --athens-accent: #9c6a1f;
+  --athens-accent-ink: #6a4c1b;
+  --athens-blue: #245987;
+  --athens-link: #1c4e7a;
+  --athens-rose: #8f3f37;
+  --athens-line: rgba(45, 65, 90, 0.18);
+  --athens-panel: #fffcf7;
+  --athens-panel-soft: #f5efe4;
+  --athens-surface: #ffffff;
+  --athens-chip-bg: #edf4fc;
+  --athens-chip-ink: #1c4e7a;
+  --athens-gold-glow: #d89a2b;
+  --athens-shadow: 0 18px 46px rgba(23, 34, 51, 0.1);
+}
+
+html[data-lighting="night"] {
+  --athens-ink: #f1ede4;
+  --athens-muted: #bcc6d4;
+  --athens-accent: #e2b45d;
+  --athens-accent-ink: #ecc472;
+  --athens-blue: #8dc5f8;
+  --athens-link: #8dc5f8;
+  --athens-rose: #e5938a;
+  --athens-line: rgba(236, 196, 114, 0.22);
+  --athens-panel: #151b24;
+  --athens-panel-soft: #1c2430;
+  --athens-surface: #1b222e;
+  --athens-chip-bg: #1e2d40;
+  --athens-chip-ink: #cfe6ff;
+  --athens-gold-glow: #e7ad44;
+  --athens-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body.athens-page {
+  margin: 0;
+  color: var(--athens-ink);
+  font-family: "DM Sans", var(--font-sans), system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(940px 480px at 0% 0%, rgba(194, 138, 60, 0.14), transparent 58%),
+    radial-gradient(880px 460px at 100% 0%, rgba(61, 111, 158, 0.12), transparent 56%),
+    linear-gradient(180deg, #f8f5ef 0%, #eef2f5 100%);
+}
+
+html[data-lighting="night"] body.athens-page {
+  background:
+    radial-gradient(920px 480px at 0% 0%, rgba(226, 180, 93, 0.11), transparent 56%),
+    radial-gradient(880px 460px at 100% 0%, rgba(88, 149, 212, 0.11), transparent 56%),
+    var(--bg, #10151d);
+}
+
+/* ── Gallery Jump Bar (sits cleanly beneath sticky .site-header) ── */
+.athens-topbar {
+  position: static;
+  top: auto;
+  background: rgba(248, 245, 239, 0.88);
+  border-bottom: 1px solid var(--athens-line);
+}
+
+html[data-lighting="night"] .athens-topbar {
+  background: rgba(16, 21, 29, 0.88);
+}
+
+[data-jump-target] {
+  scroll-margin-top: 84px;
+}
+
+.athens-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.athens-topbar-inner,
+.athens-shell {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.athens-topbar-inner {
+  min-height: 46px;
+  padding: 0.3rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.athens-back-link {
+  color: var(--athens-link);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.athens-back-link:hover,
+.athens-back-link:focus-visible {
+  text-decoration: underline;
+}
+
+.athens-jump-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.26rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: 0.12rem 0.08rem;
+  min-width: 0;
+}
+
+.athens-jump-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.48rem;
+  border-radius: 999px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  color: var(--athens-ink);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.athens-jump-pill:hover,
+.athens-jump-pill:focus-visible,
+.athens-jump-pill.is-current {
+  border-color: var(--athens-accent);
+  background: var(--athens-chip-bg);
+  color: var(--athens-chip-ink);
+}
+
+.athens-progress-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-chip-bg);
+  color: var(--athens-chip-ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Main Shell & Cards ──────────────────────────────────────── */
+.athens-shell {
+  padding: 1.25rem 0 3.5rem;
+  display: grid;
+  gap: 1.15rem;
+}
+
+.athens-shell > *,
+.athens-hero > *,
+.athens-grid > *,
+.athens-exhibit-shell > *,
+.athens-bio-header > * {
+  min-width: 0;
+}
+
+.athens-card {
+  border-radius: 24px;
+  border: 1px solid var(--athens-line);
+  background: linear-gradient(180deg, var(--athens-panel), var(--athens-panel-soft));
+  box-shadow: var(--athens-shadow);
+  overflow: hidden;
+}
+
+.athens-card-body,
+.athens-section,
+.athens-lab,
+.athens-pepper {
+  padding: 1.25rem 1.35rem;
+}
+
+/* ── Compact Hero ────────────────────────────────────────────── */
+.athens-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.22fr) minmax(290px, 0.78fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.athens-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--athens-accent-ink);
+}
+
+.athens-hero h1,
+.athens-section h2,
+.athens-lab h2,
+.athens-pepper h2 {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  letter-spacing: -0.025em;
+  color: var(--athens-ink);
+}
+
+.athens-hero h1 {
+  font-size: min(clamp(1.95rem, 3.8vw, 2.75rem), 2.75rem, 1.25rem + 4.5vw);
+  line-height: 1.04;
+}
+
+.athens-hero-sub {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-size: min(clamp(1.05rem, 1.8vw, 1.2rem), 1.2rem);
+  color: var(--athens-rose);
+  margin: 0.3rem 0 0.65rem;
+}
+
+.athens-lede {
+  margin: 0;
+  max-width: 64ch;
+  font-size: 0.96rem;
+  line-height: 1.62;
+  color: var(--athens-muted);
+}
+
+.athens-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+
+.athens-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0.22rem 0.68rem;
+  border-radius: 999px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-chip-bg);
+  color: var(--athens-chip-ink);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.athens-big-idea,
+.athens-side-box,
+.athens-note,
+.athens-source-box,
+.athens-pepper-card,
+.athens-discuss,
+.athens-exit,
+.athens-anamorph-box {
+  border-radius: 18px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  padding: 0.9rem 1rem;
+}
+
+.athens-big-idea {
+  margin-top: 0.85rem;
+  background: linear-gradient(135deg, rgba(194, 138, 60, 0.13), rgba(61, 111, 158, 0.08));
+}
+
+.athens-big-idea strong,
+.athens-side-box strong,
+.athens-note strong,
+.athens-source-box strong,
+.athens-pepper-card strong,
+.athens-discuss strong,
+.athens-exit strong,
+.athens-anamorph-box strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--athens-accent-ink);
+}
+
+.athens-big-idea p,
+.athens-side-box p,
+.athens-note p,
+.athens-source-box p,
+.athens-pepper-card p,
+.athens-discuss p,
+.athens-exit p {
+  margin: 0;
+  color: var(--athens-muted);
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+
+.athens-hero-side {
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+}
+
+.athens-side-list,
+.athens-outline,
+.athens-questions,
+.athens-source-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: var(--athens-muted);
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+/* ── Section Typography & Grids ──────────────────────────────── */
+.athens-section h2,
+.athens-lab h2,
+.athens-pepper h2 {
+  font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+  line-height: 1.1;
+  margin-bottom: 0.35rem;
+}
+
+.athens-section-intro,
+.athens-lab-intro,
+.athens-pepper-intro {
+  margin: 0 0 0.95rem;
+  color: var(--athens-muted);
+  line-height: 1.64;
+  max-width: 72ch;
+}
+
+.athens-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(290px, 0.85fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+/* ── Interactive Exhibit Shell & Painting Stage ──────────────── */
+.athens-exhibit-shell {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(300px, 0.88fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.athens-painting-card {
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+}
+
+.athens-exhibit-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--athens-line);
+  background: var(--athens-panel-soft);
+}
+
+.athens-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.athens-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  color: var(--athens-ink);
+  font: inherit;
+  font-size: 0.77rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.athens-tool-btn:hover,
+.athens-tool-btn:focus-visible {
+  border-color: var(--athens-accent);
+}
+
+.athens-tool-btn[aria-pressed="true"],
+.athens-tool-btn.is-active {
+  background: var(--athens-chip-bg);
+  color: var(--athens-chip-ink);
+  border-color: var(--athens-blue);
+}
+
+.athens-exhibit-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--athens-accent-ink);
+}
+
+/* Filter Bar (e.g., Solvay rows/Nobel) */
+.athens-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.athens-filter-status {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--athens-muted);
+}
+
+/* Zoomable Figure + Interactive Stage */
+.athens-stage-figure {
+  margin: 0;
+}
+
+.athens-stage {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: #141922;
+}
+
+.athens-stage-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: zoom-in;
+}
+
+.athens-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.athens-stage.has-guide .athens-overlay {
+  opacity: 1;
+}
+
+.athens-guide-line {
+  stroke: rgba(255, 224, 148, 0.85);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.athens-guide-dashed {
+  stroke: rgba(141, 197, 248, 0.9);
+  stroke-width: 2;
+  stroke-dasharray: 7 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.athens-guide-node {
+  fill: rgba(216, 154, 43, 0.88);
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.athens-guide-pill {
+  fill: rgba(15, 23, 36, 0.78);
+  stroke: rgba(255, 224, 148, 0.7);
+  stroke-width: 1.5;
+}
+
+.athens-guide-text {
+  fill: #fffaf0;
+  font-family: "DM Sans", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.athens-hotspots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.athens-stage.is-clean-view .athens-hotspots {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* High-Contrast Accessible Hotspot Pins */
+.athens-hotspot {
+  pointer-events: auto;
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #fffcf7;
+  background: rgba(21, 52, 86, 0.86);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.55),
+    0 0 0 2px rgba(21, 52, 86, 0.45);
+  cursor: pointer;
+  transition: transform 0.16s ease, background-color 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease;
+}
+
+.athens-hotspot::before {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+}
+
+.athens-hotspot.is-explored {
+  border-color: #ffe3a3;
+}
+
+.athens-hotspot.is-dimmed {
+  opacity: 0.2;
+  transform: scale(0.78);
+}
+
+.athens-hotspot:hover,
+.athens-hotspot:focus-visible,
+.athens-hotspot.is-active {
+  z-index: 6;
+  opacity: 1;
+  transform: scale(1.26);
+  background: var(--athens-gold-glow);
+  border-color: #ffffff;
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.6),
+    0 0 0 4px rgba(216, 154, 43, 0.45);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .athens-hotspot.is-active {
+    animation: athensPinPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes athensPinPulse {
+    0%, 100% {
+      box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.6),
+        0 0 0 3px rgba(216, 154, 43, 0.5);
+    }
+    50% {
+      box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.6),
+        0 0 0 7px rgba(216, 154, 43, 0.18);
+    }
+  }
+}
+
+/* Edge-aware label badges */
+.athens-hotspot::after {
+  content: attr(data-short);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 7px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 0.22rem 0.52rem;
+  border-radius: 999px;
+  background: rgba(16, 25, 38, 0.92);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.14s ease;
+}
+
+.athens-hotspot.is-edge-left::after {
+  left: 0;
+  transform: none;
+}
+
+.athens-hotspot.is-edge-right::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.athens-hotspot.is-edge-bottom::after {
+  top: auto;
+  bottom: calc(100% + 7px);
+}
+
+.athens-hotspot:hover::after,
+.athens-hotspot:focus-visible::after,
+.athens-hotspot.is-active::after {
+  opacity: 1;
+}
+
+.athens-stage-tip {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--athens-muted);
+  border-top: 1px solid var(--athens-line);
+  background: var(--athens-panel-soft);
+}
+
+.athens-stage-caption {
+  margin: 0;
+  padding: 0.72rem 0.9rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--athens-muted);
+  border-top: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+}
+
+.athens-stage-caption strong {
+  color: var(--athens-ink);
+}
+
+/* ── Bio Panel & Detail Loupe ────────────────────────────────── */
+.athens-panel {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.athens-bio-panel {
+  border-radius: 20px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  padding: 1.05rem 1.1rem;
+}
+
+.athens-bio-header {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.athens-loupe {
+  width: 84px;
+  height: 84px;
+  border-radius: 14px;
+  border: 2px solid var(--athens-accent);
+  background-color: var(--athens-panel-soft);
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 4px 12px rgba(0, 0, 0, 0.12);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.athens-loupe::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.athens-bio-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-right: 2.3rem;
+}
+
+.athens-bio-kicker {
+  margin: 0;
+  color: var(--athens-accent-ink);
+  font-size: 0.71rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.athens-step-nav {
+  display: inline-flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.athens-step-btn {
+  min-width: 1.9rem;
+  min-height: 1.9rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-panel-soft);
+  color: var(--athens-ink);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.athens-step-btn:hover,
+.athens-step-btn:focus-visible {
+  border-color: var(--athens-accent);
+  background: var(--athens-chip-bg);
+  color: var(--athens-chip-ink);
+}
+
+.athens-bio-panel h3 {
+  margin: 0.25rem 0 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.42rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--athens-ink);
+}
+
+.athens-bio-meta {
+  margin: 0.35rem 0 0;
+  color: var(--athens-blue);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.athens-bio-summary,
+.athens-bio-impact,
+.athens-bio-lookfor {
+  margin: 0.55rem 0 0;
+  color: var(--athens-muted);
+  line-height: 1.62;
+  font-size: 0.92rem;
+}
+
+.athens-bio-panel h4 {
+  margin: 0.85rem 0 0.18rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--athens-accent-ink);
+}
+
+.athens-bio-system {
+  margin: 0.85rem 0 0;
+  padding: 0.65rem 0.8rem;
+  border-left: 3px solid var(--athens-accent);
+  border-radius: 0 12px 12px 0;
+  background: var(--athens-panel-soft);
+  font-size: 0.87rem;
+  line-height: 1.56;
+  color: var(--athens-ink);
+}
+
+.athens-bio-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.athens-bio-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.68rem;
+  border-radius: 999px;
+  background: var(--athens-chip-bg);
+  color: var(--athens-chip-ink);
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.athens-bio-nobel {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.68rem;
+  border-radius: 999px;
+  background: rgba(194, 138, 60, 0.18);
+  color: var(--athens-accent-ink);
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+/* ── Collapsible Figure Roster ───────────────────────────────── */
+.athens-roster {
+  border-radius: 18px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  overflow: hidden;
+}
+
+.athens-roster summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--athens-accent-ink);
+}
+
+.athens-roster summary::-webkit-details-marker {
+  display: none;
+}
+
+.athens-roster summary::after {
+  content: "Open Roster";
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--athens-chip-ink);
+  padding: 0.3rem 0.68rem;
+  border-radius: 999px;
+  background: var(--athens-chip-bg);
+}
+
+.athens-roster[open] summary::after {
+  content: "Hide Roster";
+}
+
+.athens-roster-body {
+  padding: 0.75rem 0.9rem 0.95rem;
+  border-top: 1px solid var(--athens-line);
+  background: var(--athens-panel-soft);
+}
+
+.athens-figure-list {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.athens-figure-btn {
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  color: var(--athens-ink);
+  border-radius: 12px;
+  padding: 0.62rem 0.72rem;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.athens-figure-btn:hover,
+.athens-figure-btn:focus-visible,
+.athens-figure-btn.is-active {
+  border-color: var(--athens-accent);
+  background: var(--athens-chip-bg);
+  color: var(--athens-chip-ink);
+}
+
+.athens-figure-btn strong {
+  display: block;
+  margin-bottom: 0.12rem;
+  font-size: 0.84rem;
+}
+
+.athens-figure-btn span {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--athens-muted);
+}
+
+.athens-figure-btn.is-active span {
+  color: var(--athens-chip-ink);
+}
+
+.athens-figure-btn[hidden] {
+  display: none;
+}
+
+/* ── Holbein Anamorphic Skull Lab ────────────────────────────── */
+.athens-anamorph-box {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: minmax(260px, 420px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+
+.athens-anamorph-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  border: 1px solid var(--athens-line);
+  background: #141210;
+}
+
+.athens-anamorph-controls {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.athens-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.athens-slider-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--athens-accent);
+}
+
+.athens-angle-readout {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--athens-ink);
+  min-width: 3.2rem;
+  text-align: right;
+}
+
+.athens-anamorph-status {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--athens-muted);
+}
+
+/* ── Harlem Rights-Safe Jazz Directory ───────────────────────── */
+.harlem-controls {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem 0.95rem;
+  border-bottom: 1px solid var(--athens-line);
+  background: var(--athens-panel-soft);
+}
+
+.harlem-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.harlem-controls input[type="search"].harlem-search-input {
+  flex: 1 1 200px;
+  min-width: 0;
+  min-height: 2.3rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--athens-line);
+  background-color: var(--athens-surface);
+  color: var(--athens-ink);
+  font: inherit;
+  font-size: 0.88rem;
+}
+
+.harlem-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.harlem-filter-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--athens-accent-ink);
+  margin-right: 0.15rem;
+}
+
+.harlem-directory-grid {
+  max-height: 29rem;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.45rem;
+  padding: 0.85rem;
+  background: var(--athens-panel-soft);
+}
+
+.harlem-card-btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.2rem;
+  min-height: 3.1rem;
+  padding: 0.5rem 0.62rem;
+  border-radius: 10px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  color: var(--athens-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background-color 0.14s ease;
+}
+
+.harlem-card-btn strong {
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.harlem-card-btn span {
+  font-size: 0.7rem;
+  color: var(--athens-muted);
+}
+
+.harlem-card-btn:hover,
+.harlem-card-btn:focus-visible,
+.harlem-card-btn.is-active {
+  border-color: var(--athens-blue);
+  background: var(--athens-chip-bg);
+  color: var(--athens-chip-ink);
+}
+
+.harlem-card-btn.is-active span {
+  color: var(--athens-chip-ink);
+}
+
+.harlem-empty {
+  grid-column: 1 / -1;
+  margin: 0.5rem 0;
+  color: var(--athens-muted);
+  font-size: 0.9rem;
+}
+
+/* ── Sgt. Pepper & Iconoclasm Grids ──────────────────────────── */
+.athens-pepper-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 290px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.athens-pepper-figure {
+  margin: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+}
+
+.athens-pepper-cover {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: zoom-in;
+}
+
+.athens-pepper-figure figcaption {
+  padding: 0.7rem 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--athens-muted);
+  border-top: 1px solid var(--athens-line);
+}
+
+.athens-pepper-grid,
+.athens-case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.athens-pepper-card h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  color: var(--athens-ink);
+}
+
+.athens-pepper-card[hidden] {
+  display: none;
+}
+
+/* ── Compare Two Gatherings Systems Lab ──────────────────────── */
+.athens-compare-controls {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.95rem;
+}
+
+.athens-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.athens-select-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.athens-select-field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.athens-select-field label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--athens-accent-ink);
+}
+
+.athens-select-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.35rem;
+  padding: 0.42rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  color: var(--athens-ink);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.athens-compare-table-wrap {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+}
+
+.athens-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.athens-compare-table th,
+.athens-compare-table td {
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid var(--athens-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.athens-compare-table thead th {
+  background: var(--athens-panel-soft);
+  color: var(--athens-ink);
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1rem;
+}
+
+.athens-compare-table tbody th {
+  width: 19%;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--athens-accent-ink);
+}
+
+.athens-compare-prompt {
+  margin-top: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-chip-bg);
+  color: var(--athens-chip-ink);
+  font-size: 0.92rem;
+  line-height: 1.58;
+}
+
+/* ── Lesson Flow, Check & Exit Ticket ────────────────────────── */
+.athens-plan-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.8rem;
+}
+
+.athens-plan-card {
+  border-radius: 16px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  padding: 0.95rem;
+}
+
+.athens-plan-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.98rem;
+  color: var(--athens-ink);
+}
+
+.athens-plan-card ul {
+  margin: 0;
+  padding-left: 1.05rem;
+  color: var(--athens-muted);
+  line-height: 1.6;
+  font-size: 0.88rem;
+}
+
+.athens-exit-grid {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.85rem;
+}
+
+.athens-exit-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.athens-exit-field label {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--athens-ink);
+}
+
+.athens-exit-field textarea {
+  width: 100%;
+  min-height: 4.6rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  color: var(--athens-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.athens-footnote {
+  margin: 0.8rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--athens-muted);
+}
+
+.athens-footnote a,
+.athens-source-list a,
+.athens-stage-caption a {
+  color: var(--athens-link);
+}
+
+.athens-related-strip {
+  padding: 0.95rem 1.2rem;
+}
+
+.athens-related-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.athens-related-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.36rem 0.78rem;
+  border-radius: 10px;
+  border: 1px solid var(--athens-line);
+  background: var(--athens-surface);
+  color: var(--athens-link);
+  font-size: 0.83rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.athens-related-link:hover,
+.athens-related-link:focus-visible {
+  border-color: var(--athens-accent);
+  background: var(--athens-chip-bg);
+}
+
+/* ── Chronology List Fallback & Timeline Spacing ─────────────── */
+.athens-chronology {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.55rem;
+  color: var(--athens-muted);
+  line-height: 1.55;
+}
+
+/* ── Projector Full-Screen Layout ────────────────────────────── */
+.sp-frame .athens-exhibit-shell.sp-on {
+  max-width: 1260px;
+  gap: 1.1rem;
+  align-items: start;
+}
+
+/* ── Responsive Breakpoints ──────────────────────────────────── */
+@media (max-width: 980px) {
+  .athens-hero,
+  .athens-grid,
+  .athens-exhibit-shell,
+  .athens-plan-grid,
+  .athens-pepper-grid,
+  .athens-case-grid,
+  .athens-pepper-layout,
+  .athens-anamorph-box,
+  .athens-select-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .athens-topbar-inner,
+  .athens-shell {
+    width: min(100% - 1.25rem, 1180px);
+  }
+
+  .athens-progress-pill {
+    display: none;
+  }
+
+  .athens-card-body,
+  .athens-section,
+  .athens-lab,
+  .athens-pepper {
+    padding: 1rem;
+  }
+
+  .athens-bio-header {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .athens-loupe {
+    width: 72px;
+    height: 72px;
+  }
+}
+
+/* ── Clean Letter Print Layout ───────────────────────────────── */
+@media print {
+  :root,
+  html[data-lighting="night"],
+  body.athens-page,
+  main.athens-shell {
+    color-scheme: light;
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  .athens-topbar,
+  .athens-exhibit-toolbar,
+  .athens-hotspots,
+  .athens-overlay,
+  .athens-filter-bar,
+  .athens-step-nav,
+  .athens-loupe,
+  .athens-anamorph-controls,
+  .harlem-controls,
+  .athens-compare-controls,
+  .athens-roster {
+    display: none !important;
+  }
+
+  .athens-shell {
+    width: 100%;
+    padding: 0;
+    gap: 0.75rem;
+  }
+
+  .athens-card,
+  .athens-bio-panel,
+  .athens-big-idea,
+  .athens-side-box,
+  .athens-note,
+  .athens-source-box,
+  .athens-pepper-card,
+  .athens-discuss,
+  .athens-exit,
+  .athens-plan-card,
+  .athens-anamorph-box,
+  .athens-compare-table-wrap {
+    background: #ffffff !important;
+    color: #111111 !important;
+    box-shadow: none !important;
+    border-color: #cccccc !important;
+  }
+
+  .athens-exhibit-shell,
+  .athens-hero,
+  .athens-grid,
+  .athens-pepper-layout,
+  .athens-anamorph-box {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .athens-bio-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .athens-bio-top-bar {
+    padding-right: 0;
+  }
+
+  .harlem-directory-grid {
+    max-height: none;
+    overflow: visible;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    background: #ffffff !important;
+  }
+
+  .athens-exit-field textarea {
+    min-height: 4.5rem;
+    border: 1px solid #888888 !important;
+    background: #ffffff !important;
+  }
+}

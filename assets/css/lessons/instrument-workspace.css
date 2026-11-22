@@ -281,3 +281,30 @@ body:has(.instrument-workspace) [data-iw-fold="open"] { padding-block: .35rem 1.
 .fs-ages ul { align-items: start; margin-top: .4rem; gap: .5rem; }
 .fs-ages li { padding: .5rem .7rem; font-size: .92rem; line-height: 1.4; }
 .fs-ages b { margin-bottom: 0; }
+
+/* ---- One toolbar row in an activity ----
+   The panel's own heading names the activity, so the toolbar title is for screen readers only, and
+   piano's Volume / Keyboard size sit in the toolbar instead of a second row (its Stop button stays
+   in the DOM for scripts that click it, but the toolbar's Stop sound already does the job). */
+.instrument-workspace .iw-navigation .iw-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.instrument-workspace .iw-lesson-link { font-size: .9rem; }
+.instrument-workspace > .creation-app-toolbar > .iw-essential-controls { margin: 0; gap: .4rem; flex-wrap: nowrap; font-size: .85rem; }
+.instrument-workspace > .creation-app-toolbar > .iw-essential-controls #pcStop { display: none; }
+.instrument-workspace > .creation-app-toolbar > .iw-essential-controls input[type="range"] { width: 6rem; }
+@media (pointer: fine) {
+  .instrument-workspace > .creation-app-toolbar :is(.iw-navigation button, .iw-lesson-link, .pr-entry a, .iw-essential-controls select) { min-height: 36px; }
+  .instrument-workspace > .creation-app-toolbar .iw-navigation select { min-height: 36px; }
+}
+@media (min-width: 601px) {
+  .instrument-workspace > .creation-app-toolbar { gap: .35rem; }
+  .instrument-workspace > .creation-app-toolbar .iw-navigation { flex: 0 1 auto; flex-wrap: nowrap; gap: .35rem; }
+  .instrument-workspace > .creation-app-toolbar :is(.iw-navigation button, .iw-lesson-link, .pr-entry a) { font-size: .85rem; padding: .25rem .6rem; white-space: nowrap; }
+  .instrument-workspace > .creation-app-toolbar > .iw-essential-controls input[type="range"] { width: 5rem; }
+}
+/* In the toolbar the volume label is a speaker icon; the word stays as its accessible name. */
+.instrument-workspace > .creation-app-toolbar > .iw-essential-controls label[for="pcVolume"] { font-size: 0; }
+.instrument-workspace > .creation-app-toolbar > .iw-essential-controls label[for="pcVolume"]::before { content: '🔊'; font-size: 1rem; }
+/* Sticky offset under the site header, measured by instrument-workspace.js (0 in the app shell). */
+.instrument-workspace > .creation-app-toolbar, .ll-sim .instrument-workspace > .creation-app-toolbar { top: var(--iw-sticky-top, 0px); }
+html[data-header-hidden="true"] .instrument-workspace > .creation-app-toolbar,
+.instrument-workspace:is(:fullscreen, .creation-app-expanded) > .creation-app-toolbar { top: 0; }

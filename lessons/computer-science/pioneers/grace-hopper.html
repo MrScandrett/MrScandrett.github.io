@@ -5,33 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Grace Hopper · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Explore Grace Hopper's life as a mathematician, Navy rear admiral, and computing pioneer — the first compiler, the origins of COBOL, and the first computer bug." />
+  <meta name="description" content="Explore Grace Hopper's compiler pipeline in a live FLOW-MATIC and COBOL studio, measure the physical speed of a nanosecond on wire, and debug Relay #70 on the 1947 Harvard Mark II." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
-  <link rel="stylesheet" href="../../../assets/css/lessons/figure-lesson.css" />
-  <style>
-    :root { --fl-accent: #0f766e; --fl-accent-2: #7c3aed; --fl-ink: #042f2e; }
-    .gh-lab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.9rem 0; }
-    @media (max-width: 720px) { .gh-lab-grid { grid-template-columns: 1fr; } }
-    .gh-console { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 14px; padding: 0.9rem 1rem; font-family: ui-monospace, "Cascadia Code", Menlo, monospace; font-size: 0.8rem; line-height: 1.6; }
-    .gh-console-head { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #38bdf8; margin-bottom: 0.45rem; display: block; }
-    .gh-btn-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.65rem 0; }
-    .gh-btn { padding: 0.42rem 0.8rem; border-radius: 8px; border: 1px solid var(--line, #cbd5e1); background: var(--white, #fff); color: var(--text, #0f172a); font: 700 0.8rem/1.2 inherit; cursor: pointer; }
-    :where(html[data-lighting="night"]) .gh-btn { background: #1e293b; border-color: #475569; color: #f8fafc; }
-    .gh-btn.is-active { background: #0f766e; border-color: #0f766e; color: #fff; }
-    .gh-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-top: 0.85rem; }
-    .gh-gallery figure { margin: 0; border: 1px solid var(--line, #cbd5e1); border-radius: 14px; overflow: hidden; background: var(--white, #fff); display: flex; flex-direction: column; }
-    :where(html[data-lighting="night"]) .gh-gallery figure { background: #1e293b; border-color: #334155; }
-    .gh-gallery img { width: 100%; height: 210px; object-fit: cover; display: block; }
-    .gh-gallery figcaption { padding: 0.75rem 0.9rem; font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary, #475569); flex: 1; }
-    :where(html[data-lighting="night"]) .gh-gallery figcaption { color: #cbd5e1; }
-    .gh-gallery-credit { display: block; margin-top: 0.35rem; font-size: 0.72rem; color: var(--text-muted, #64748b); }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/algorithms-ai-module.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/grace-hopper.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-print.css" media="print" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
-<div class="ll-viewport">
 
   <header class="site-header">
     <div class="nav-wrap">
@@ -50,421 +34,725 @@
     </div>
   </header>
 
-  <div class="ll-stage">
-    <div class="ll-sim">
-      <main id="main-content" class="fl-page">
+  <main id="main-content" class="gh-lesson-main">
+    <!-- ===================================================================
+         1. FIRST-VIEW FITTED COMPILER, NANOSECOND & MARK II DEBUG STUDIO
+         =================================================================== -->
+    <section id="gh-studio" class="gh-studio creation-app" data-creation-app data-creation-fit data-no-glossary data-memory-ignore tabindex="-1" aria-labelledby="gh-studio-title">
+      <div class="gh-studio__header">
+        <div class="gh-studio__title-wrap">
+          <h1 id="gh-studio-title">Grace Hopper &middot; Compiler &amp; Nanosecond Studio</h1>
+          <span class="gh-studio__sub">COBOL Compiler VM &middot; Speed-of-Light Wire &middot; 1947 Mark II Debugger</span>
+        </div>
+        <a class="gh-studio__read-link" href="#lesson-reading">Read Hopper&rsquo;s story &darr;</a>
+      </div>
 
-        <nav class="ll-breadcrumb" aria-label="Breadcrumb">
-          <a href="../../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
-          <a href="../computer-science-pathway.html">Computer Science</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
-          <span class="ll-crumb-current" aria-current="page">Grace Hopper</span>
-        </nav>
+      <div id="gh-studio-primary" class="gh-studio__primary" data-creation-primary>
+        <div class="gh-mode-tabs" role="tablist" aria-label="Grace Hopper studio modes">
+          <button type="button" class="gh-mode-tab is-active" role="tab" aria-selected="true" aria-controls="gh-panel-compiler" id="gh-tab-compiler" data-gh-tab="compiler">
+            1. Compiler Lab
+          </button>
+          <button type="button" class="gh-mode-tab" role="tab" aria-selected="false" aria-controls="gh-panel-wire" id="gh-tab-wire" data-gh-tab="wire" tabindex="-1">
+            2. Nanosecond Wire
+          </button>
+          <button type="button" class="gh-mode-tab" role="tab" aria-selected="false" aria-controls="gh-panel-bug" id="gh-tab-bug" data-gh-tab="bug" tabindex="-1">
+            3. 1947 Mark II Debugger
+          </button>
+          <button type="button" id="gh-challenge-pill" class="gh-challenge-pill" aria-expanded="false" aria-controls="gh-challenges-drawer">
+            Challenges: 0 / 5
+          </button>
+        </div>
 
-        <!-- Hero -->
-        <section class="hero fl-hero">
-          <p class="eyebrow">Computer Science · Compilers · History of Computing</p>
-          <h1>Grace Hopper</h1>
-          <div class="fl-hero-meta">
-            <span>The First Compiler</span><span class="dot"></span>
-            <span>COBOL</span><span class="dot"></span>
-            <span>U.S. Navy Rear Admiral</span><span class="dot"></span>
-            <span>"Amazing Grace"</span>
+        <!-- Mastery Challenges Drawer -->
+        <div id="gh-challenges-drawer" class="gh-challenges-drawer" role="region" aria-label="Studio mastery challenges" hidden>
+          <div class="gh-challenges-head">
+            <h2>Studio Mastery Challenges</h2>
+            <button type="button" id="gh-challenges-close" class="gh-mini-btn">Close</button>
           </div>
-          <p class="fl-lede">Grace Hopper (1906–1992) was a mathematician, U.S. Navy rear admiral, and computing pioneer whose 1952 compiler, A-0, first let programmers write in English-like words instead of raw machine code. Her insistence that computers should understand human language, not the other way around, led directly to COBOL and shaped how nearly every programming language works today.</p>
-        </section>
+          <div id="gh-challenges-list" class="gh-challenges-list"></div>
+        </div>
 
-        <nav class="ll-lesson-steps" aria-label="Lesson sections">
-          <a href="#fl-sec-bio">Biography</a>
-          <a href="#fl-sec-timeline">Timeline</a>
-          <a href="#fl-sec-science">The Science</a>
-          <a href="#fl-sec-lab">Compiler Lab</a>
-          <a href="#fl-sec-gallery">Archival Photos</a>
-          <a href="#fl-sec-contributions">Contributions</a>
-          <a href="#fl-sec-watch">Watch</a>
-          <a href="#fl-sec-legacy">Legacy</a>
-          <a href="#fl-sec-practice">Practice</a>
-        </nav>
+        <!-- PANEL 1: FLOW-MATIC / COBOL COMPILER LAB -->
+        <section id="gh-panel-compiler" class="gh-mode-panel" role="tabpanel" aria-labelledby="gh-tab-compiler" data-gh-panel="compiler">
+          <div class="gh-compiler-grid">
+            <div class="gh-stage-col">
+              <div class="gh-toolbar" role="group" aria-label="Compiler execution controls">
+                <label for="gh-preset-select">
+                  <span>Preset</span>
+                  <select id="gh-preset-select" class="gh-select" aria-label="Choose COBOL sample program"></select>
+                </label>
+                <button type="button" id="gh-compile-btn" class="gh-btn gh-btn--primary">Compile &amp; Run</button>
+                <button type="button" id="gh-back" class="gh-btn" title="Step back">Back</button>
+                <button type="button" id="gh-play" class="gh-btn gh-btn--brass" aria-pressed="false" title="Play or pause (Space)">Play</button>
+                <button type="button" id="gh-next" class="gh-btn" title="Step forward">Step</button>
+                <button type="button" id="gh-reset" class="gh-btn" title="Reset (R)">Reset</button>
+                <button type="button" id="gh-bug-toggle" class="gh-btn gh-btn--bug" aria-pressed="false" title="Simulate a manual hand-coded hex address mistake">Hand-Code Bug: Off</button>
+                <button type="button" id="gh-sound-toggle" class="gh-btn" aria-pressed="false">Sound FX: Off</button>
+              </div>
 
-        <!-- Biography -->
-        <section class="fl-card" id="fl-sec-bio" style="--card-accent:#0f766e;">
-          <h2>Who Was Grace Hopper?</h2>
-          <p>Born Grace Brewster Murray on December 9, 1906 in New York City, Hopper showed an early curiosity for how things worked — as a child she famously took apart alarm clocks to see their mechanisms. She earned a B.A. in mathematics and physics from Vassar College in 1928, then a Ph.D. in mathematics from Yale University in 1934, one of relatively few women to hold a math doctorate from Yale at the time. She taught mathematics at Vassar through the 1930s.</p>
-          <p>In 1943, during World War II, Hopper joined the U.S. Naval Reserve — after initially being told she was too old and underweight to enlist, she obtained a waiver. She was assigned to the Bureau of Ships Computation Project at Harvard, working under Howard Aiken on the Harvard Mark I, one of the earliest large-scale electromechanical computers. After the war she continued in computing, working on the UNIVAC I — one of the first commercial computers — at the Eckert-Mauchly Computer Corporation.</p>
-          <p>In 1952, Hopper developed A-0, the first compiler: a program that translated symbolic mathematical code into machine code that a computer could run. She championed the then-doubted idea that programs should be written in English-like words rather than pure numeric machine code, and her team's work led directly to COBOL (Common Business-Oriented Language), first specified in 1959 — one of the earliest high-level programming languages designed for business use, and still running in legacy systems today. She is also closely associated with popularizing the term "debugging," after a real moth was found causing a relay failure in the Harvard Mark II in 1947, which her team taped into their logbook.</p>
-          <p>Hopper retired from the Navy and was recalled to active duty multiple times over her career. She retired for the final time in 1986 at age 79 as a rear admiral, at the time the oldest serving officer in the U.S. Navy. She was awarded the National Medal of Technology in 1991 and died on January 1, 1992, at age 85. In 2016 she was posthumously awarded the Presidential Medal of Freedom.</p>
-        </section>
+              <div class="gh-canvas-shell">
+                <canvas id="gh-compiler-canvas" tabindex="0" aria-label="Compiler translation pipeline, symbol table memory slots, CPU registers, and teletype output. Use Space to play or pause, arrow keys to step, R to reset."></canvas>
+                <div class="gh-canvas-hud" aria-hidden="true">
+                  <span id="gh-hud-left" class="gh-hud-pill">Payroll Calculation &middot; Step 1</span>
+                  <span id="gh-hud-right" class="gh-hud-pill">Compiler Clean</span>
+                </div>
+              </div>
 
-        <!-- Timeline -->
-        <section class="fl-card" id="fl-sec-timeline" style="--card-accent:#7c3aed;">
-          <h2>A Life in Computing</h2>
-          <ol class="fl-timeline" data-timeline>
-            <li class="fl-tl-item"><span class="fl-tl-year">1906</span> Born Grace Brewster Murray in New York City.</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">1928</span> Earns a B.A. in mathematics and physics from Vassar College.</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">1934</span> Earns a Ph.D. in mathematics from Yale University.</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">1943</span> Joins the U.S. Naval Reserve during World War II after obtaining a waiver.</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">1944</span> Assigned to the Harvard Mark I project under Howard Aiken.</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">1947</span> Team traces a Harvard Mark II relay failure to a real moth, popularizing "debugging."</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">1952</span> Develops A-0, the first compiler, while working on UNIVAC I.</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">1959</span> Her team's work leads directly to the first specification of COBOL.</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">1986</span> Retires from the Navy for the final time as a rear admiral at age 79.</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">1991</span> Awarded the National Medal of Technology.</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">1992</span> Dies on January 1 at age 85.</li>
-            <li class="fl-tl-item"><span class="fl-tl-year">2016</span> Posthumously awarded the Presidential Medal of Freedom.</li>
-          </ol>
-        </section>
+              <div class="gh-scrubber-row">
+                <label for="gh-seek">Scrub</label>
+                <input id="gh-seek" type="range" min="1" max="10" value="1" />
+                <span>Keys: Space / &larr; &rarr; / R</span>
+              </div>
 
-        <!-- The Science -->
-        <section class="fl-card" id="fl-sec-science" style="--card-accent:#0f766e;">
-          <h2>What a Compiler Actually Does</h2>
-          <p>In the early 1950s, most programmers wrote instructions in raw machine code or assembly — long strings of numbers and cryptic mnemonics addressed directly to the hardware, painstaking to write and nearly impossible to reuse across different machines. A compiler is a program that translates human-readable source code into the binary machine instructions a computer's processor actually executes, so a programmer can describe what they want in something closer to ordinary language or notation, and let software handle the translation to hardware.</p>
-          <p>Hopper's A-0, completed in 1952, was the first program to do this: it took symbolic, English-like instructions and translated them into the machine code a computer could run directly. At the time, many of her colleagues doubted computers could be made to understand anything resembling English at all — computers were assumed to be number-crunchers, not language processors. Hopper's insight — that the computer, not the human, should absorb the burden of translation — became the foundational idea behind every high-level programming language that followed.</p>
-
-          <div class="fl-formula-box" role="img" aria-label="Example of source code translating to a machine instruction">
-            <span class="fl-formula-sym">ADD hours, rate &rarr; TOTAL</span>
-            <div class="fl-formula-vars">
-              <div>English-like source code a programmer writes</div>
-              <div>the compiler translates it into a machine instruction</div>
-              <div>e.g. <strong>0110 1010 0001 1110</strong> — binary the processor executes</div>
+              <div class="gh-telemetry-strip" aria-label="Compiler and CPU telemetry">
+                <div class="gh-stat"><span class="gh-stat-label">Stage</span><span class="gh-stat-val" id="gh-stat-stage">Compile</span></div>
+                <div class="gh-stat"><span class="gh-stat-label">Registers</span><span class="gh-stat-val" id="gh-stat-regs">R1=0 R2=0</span></div>
+                <div class="gh-stat"><span class="gh-stat-label">Memory Bus</span><span class="gh-stat-val" id="gh-stat-bus">Internal</span></div>
+                <div class="gh-stat"><span class="gh-stat-label">Latest Out</span><span class="gh-stat-val is-brass" id="gh-stat-out">&mdash;</span></div>
+              </div>
             </div>
-            <p class="fl-formula-note">The programmer never has to write the binary by hand — the compiler does the translating, every time the code runs.</p>
-          </div>
 
-          <h3>From Compiler to COBOL</h3>
-          <p>Once a compiler could translate symbolic instructions into machine code, the next step was designing a language that read even more like ordinary English, so people without a mathematics background — accountants, clerks, business managers — could write and understand programs. Hopper's advocacy and her team's compiler work fed directly into COBOL, specified in 1959, which used plain English-style statements for business computing tasks like payroll and inventory.</p>
+            <div class="gh-ctrl-col">
+              <div class="gh-editor-box">
+                <div class="gh-editor-head">
+                  <label for="gh-code-editor">English-Like Source Code (Editable COBOL / FLOW-MATIC)</label>
+                  <span id="gh-editor-status">Ready</span>
+                </div>
+                <textarea id="gh-code-editor" class="gh-code-editor" spellcheck="false" aria-label="Editable COBOL and FLOW-MATIC source code"></textarea>
+                <div id="gh-compile-errors" class="gh-error-banner" role="alert" hidden></div>
+              </div>
 
-          <div class="ll-accordion-group">
-            <details class="ll-accordion">
-              <summary>Did Hopper write COBOL herself?</summary>
-              <div class="ll-accordion-body">Not single-handedly — COBOL was developed by a committee of computer manufacturers and government representatives in 1959. But it built directly on the compiler concepts and English-like language philosophy that Hopper had already pioneered and championed, and she is widely regarded as its intellectual godmother.</div>
-            </details>
-            <details class="ll-accordion">
-              <summary>Did Hopper coin the word "bug"?</summary>
-              <div class="ll-accordion-body">No — "bug" was already old engineering slang for a mechanical fault. But Hopper's team's 1947 logbook, with an actual moth taped inside next to the note "First actual case of bug being found," is the most famous artifact tying the term "debugging" to computing, and Hopper enjoyed retelling the story for the rest of her career.</div>
-            </details>
+              <div id="gh-narration-box" class="gh-narration-box" role="status" aria-live="polite">
+                <span id="gh-phase-pill" class="gh-phase-pill">Compiler &middot; 1. Lexer</span>
+                <p id="gh-narration-text" class="gh-narration-text"></p>
+              </div>
+
+              <div id="gh-teletype-bar" class="gh-teletype-bar" aria-live="polite">
+                <span>Teletype output: waiting for DISPLAY&hellip;</span>
+              </div>
+
+              <div class="gh-subtabs" role="tablist" aria-label="Compiler output views">
+                <button type="button" class="gh-subtab is-active" role="tab" aria-selected="true" data-gh-insp-tab="asm">Assembly</button>
+                <button type="button" class="gh-subtab" role="tab" aria-selected="false" data-gh-insp-tab="bin">Machine Binary</button>
+                <button type="button" class="gh-subtab" role="tab" aria-selected="false" data-gh-insp-tab="sym">Memory &amp; Symbols</button>
+                <button type="button" class="gh-subtab" role="tab" aria-selected="false" data-gh-insp-tab="python">Python</button>
+              </div>
+
+              <div class="gh-inspector-body">
+                <div class="gh-subpanel" data-gh-insp-panel="asm">
+                  <table class="gh-vm-table" aria-label="Generated symbolic assembly instructions">
+                    <thead>
+                      <tr><th scope="col">#</th><th scope="col">Assembly</th><th scope="col">Meaning</th></tr>
+                    </thead>
+                    <tbody id="gh-asm-tbody"></tbody>
+                  </table>
+                </div>
+
+                <div class="gh-subpanel" data-gh-insp-panel="bin" hidden>
+                  <table class="gh-vm-table" aria-label="Compiled 32-bit machine binary instructions">
+                    <thead>
+                      <tr><th scope="col">#</th><th scope="col">Hex</th><th scope="col">32-Bit Machine Word</th></tr>
+                    </thead>
+                    <tbody id="gh-bin-tbody"></tbody>
+                  </table>
+                </div>
+
+                <div class="gh-subpanel" data-gh-insp-panel="sym" hidden>
+                  <table class="gh-vm-table" aria-label="Compiler symbol table and live memory values">
+                    <thead>
+                      <tr><th scope="col">Symbol</th><th scope="col">Address</th><th scope="col">Value</th><th scope="col">Line</th></tr>
+                    </thead>
+                    <tbody id="gh-sym-tbody"></tbody>
+                  </table>
+                </div>
+
+                <div class="gh-subpanel" data-gh-insp-panel="python" hidden>
+                  <div style="display:flex;justify-content:flex-end;margin-bottom:0.25rem;">
+                    <button type="button" id="gh-copy-python" class="gh-mini-btn">Copy Python</button>
+                  </div>
+                  <pre class="gh-code-pre"><code id="gh-python-out"></code></pre>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <!-- Interactive Compiler & Nanosecond Lab -->
-        <section class="fl-card" id="fl-sec-lab" style="--card-accent:#0284c7;">
-          <h2>Interactive Lab: Inside Hopper's Compiler &amp; Nanosecond Wire</h2>
-          <p>Before Hopper's A-0 compiler (1952) and FLOW-MATIC / COBOL (1959), programmers had to look up octal or binary machine instructions by hand and wire every memory address themselves. Pick an English-like COBOL statement below to watch how a compiler translates human words into assembly mnemonics and raw binary machine code—and compare how many manual errors a human programmer avoids.</p>
+        <!-- PANEL 2: NANOSECOND & SPEED-OF-LIGHT WIRE LAB -->
+        <section id="gh-panel-wire" class="gh-mode-panel" role="tabpanel" aria-labelledby="gh-tab-wire" data-gh-panel="wire" hidden>
+          <div class="gh-wire-grid">
+            <div class="gh-wire-left">
+              <div class="gh-toolbar">
+                <label for="gh-wire-medium">
+                  <span>Medium</span>
+                  <select id="gh-wire-medium" class="gh-select" aria-label="Choose signal propagation medium"></select>
+                </label>
+                <button type="button" id="gh-wire-pulse-btn" class="gh-btn gh-btn--primary" style="margin-left:auto;">Fire Signal Pulse</button>
+              </div>
 
-          <div class="gh-btn-row" role="group" aria-label="Choose a COBOL statement to compile">
-            <button type="button" class="gh-btn is-active" data-gh-stmt="payroll">1. MULTIPLY HOURS BY RATE GIVING PAY</button>
-            <button type="button" class="gh-btn" data-gh-stmt="tax">2. SUBTRACT TAX FROM PAY GIVING NET</button>
-            <button type="button" class="gh-btn" data-gh-stmt="check">3. IF STOCK LESS THAN 10 DISPLAY "REORDER"</button>
-          </div>
+              <div id="gh-wire-presets" class="gh-preset-pills" role="group" aria-label="Signal duration presets"></div>
 
-          <div class="gh-lab-grid">
-            <div class="gh-console">
-              <span class="gh-console-head">Step 1 · Human-Readable Source (COBOL / FLOW-MATIC)</span>
-              <div id="gh-src-out">MULTIPLY HOURS BY RATE GIVING PAY.</div>
-              <hr style="border:none;border-top:1px solid #334155;margin:0.65rem 0;" />
-              <span class="gh-console-head" style="color:#a78bfa;">Step 2 · Compiler Subroutine Lookup (Symbolic Assembly)</span>
-              <div id="gh-asm-out">LOAD   R1, [0x0104]  ; HOURS<br>MUL    R1, [0x0108]  ; RATE<br>STORE  [0x010C], R1  ; PAY</div>
+              <div class="gh-slider-card">
+                <div class="gh-slider-head">
+                  <label for="gh-wire-time">Clock Window (Duration)</label>
+                  <output id="gh-wire-time-out" for="gh-wire-time">1 ns (1.00 GHz)</output>
+                </div>
+                <input id="gh-wire-time" type="range" min="0" max="1000" value="72" aria-label="Clock window duration slider" />
+              </div>
+
+              <div class="gh-slider-card">
+                <div class="gh-slider-head">
+                  <label for="gh-wire-length">Wire / Trace Length</label>
+                  <output id="gh-wire-len-out" for="gh-wire-length">30.00 cm (11.81 in)</output>
+                </div>
+                <input id="gh-wire-length" type="range" min="0" max="1000" value="165" aria-label="Wire or trace length slider" />
+              </div>
+
+              <div id="gh-wire-analogy" class="gh-wire-readout" aria-live="polite">
+                <strong>Vacuum / Space (1.00c):</strong> Signal covers 29.98 cm in 1 ns.
+              </div>
             </div>
-            <div class="gh-console">
-              <span class="gh-console-head" style="color:#34d399;">Step 3 · Compiled Machine Binary (Executed by CPU)</span>
-              <div id="gh-bin-out">00010010 00000001 00000001 00000100<br>00101100 00000001 00000001 00001000<br>00011011 00000001 00000001 00001100</div>
-              <hr style="border:none;border-top:1px solid #334155;margin:0.65rem 0;" />
-              <div id="gh-stat-out" style="color:#fde68a;font-size:0.76rem;">1 English sentence → 3 machine instructions (96 bits). A-0 automated this lookup in milliseconds instead of hours of hand-coding.</div>
-            </div>
-          </div>
 
-          <h3>Hold a Nanosecond: Signal Latency Calculator</h3>
-          <p>Why did Hopper hand out <strong>11.8-inch (30 cm)</strong> pieces of wire to admirals and engineers? Because electricity and light travel at most ~30 cm in one <strong>nanosecond</strong> (10<sup>−9</sup> s). Slide or pick a time unit below to see how far a signal can travel—and why faster computers must be physically smaller.</p>
-          <div class="gh-btn-row" role="group" aria-label="Choose a time unit">
-            <button type="button" class="gh-btn is-active" data-gh-time="ns">1 Nanosecond (10⁻⁹ s)</button>
-            <button type="button" class="gh-btn" data-gh-time="us">1 Microsecond (10⁻⁶ s)</button>
-            <button type="button" class="gh-btn" data-gh-time="ms">1 Millisecond (10⁻³ s)</button>
-            <button type="button" class="gh-btn" data-gh-time="s">1 Full Second (1 s)</button>
-          </div>
-          <div class="gh-console" id="gh-wire-out" aria-live="polite">
-            <strong>1 Nanosecond (billionth of a second):</strong> Light/electricity in vacuum travels <strong>11.8 inches (29.98 cm)</strong> — the length of one sheet of paper. Inside a silicon chip, signals travel even slower (~15–20 cm), so if two parts of a CPU are too far apart, a 3 GHz clock tick finishes before the signal arrives!
+            <div class="gh-wire-right">
+              <div class="gh-wire-stage">
+                <canvas id="gh-wire-canvas" aria-label="Signal pulse propagation along a scaled conductor with 11.8-inch nanosecond benchmark"></canvas>
+                <div class="gh-canvas-hud" aria-hidden="true">
+                  <span id="gh-wire-hud-left" class="gh-hud-pill">Vacuum (1.00c) &middot; 1.00 GHz</span>
+                  <span id="gh-wire-hud-right" class="gh-hud-pill is-bug">TIMING VIOLATION</span>
+                </div>
+              </div>
+
+              <div class="gh-telemetry-strip" aria-label="Signal propagation telemetry">
+                <div class="gh-stat"><span class="gh-stat-label">Medium Reach</span><span class="gh-stat-val" id="gh-wire-stat-dist">29.98 cm</span></div>
+                <div class="gh-stat"><span class="gh-stat-label">Vacuum Limit</span><span class="gh-stat-val is-brass" id="gh-wire-stat-vac">29.98 cm</span></div>
+                <div class="gh-stat"><span class="gh-stat-label">Clock Freq</span><span class="gh-stat-val" id="gh-wire-stat-freq">1.00 GHz</span></div>
+                <div class="gh-stat"><span class="gh-stat-label">Tick Check</span><span class="gh-stat-val" id="gh-wire-stat-status">Too Slow!</span></div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <!-- Archival Photo Gallery -->
-        <section class="fl-card" id="fl-sec-gallery" style="--card-accent:#7c3aed;">
-          <h2>Archival Photo Gallery</h2>
-          <p>Click any photograph to open it full-screen in the classroom lightbox and inspect the historical artifacts with your class.</p>
-          <div class="gh-gallery">
-            <figure data-zoomable data-lightbox-group="grace-hopper" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Commodore_Grace_M._Hopper,_USN_(covered).jpg?width=1400">
-              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Commodore_Grace_M._Hopper,_USN_(covered).jpg?width=600" alt="Official U.S. Navy portrait of Commodore Grace M. Hopper in uniform, January 1984" loading="lazy" />
+        <!-- PANEL 3: 1947 HARVARD MARK II RELAY PANEL F DEBUGGER -->
+        <section id="gh-panel-bug" class="gh-mode-panel" role="tabpanel" aria-labelledby="gh-tab-bug" data-gh-panel="bug" hidden>
+          <div class="gh-bug-grid">
+            <div class="gh-bug-left">
+              <div class="gh-toolbar" role="group" aria-label="Harvard Mark II debugger controls">
+                <label for="gh-bug-case">
+                  <span>Fault Case</span>
+                  <select id="gh-bug-case" class="gh-select" aria-label="Choose Harvard Mark II fault case"></select>
+                </label>
+                <button type="button" id="gh-bug-run-btn" class="gh-btn gh-btn--primary">Run Test</button>
+                <button type="button" id="gh-bug-inspect-btn" class="gh-btn gh-btn--brass">Inspect Selected</button>
+                <button type="button" id="gh-bug-repair-btn" class="gh-btn" disabled>Repair &amp; Log</button>
+                <button type="button" id="gh-bug-reset-btn" class="gh-btn">Reset</button>
+              </div>
+
+              <div class="gh-switch-bank" role="group" aria-label="4-bit binary input switches">
+                <span style="font-size:0.72rem;font-weight:700;color:#cbd5e1;">Input Switches:</span>
+                <button type="button" class="gh-bit-btn" data-gh-bit="3" aria-pressed="true">Bit 3 (8)</button>
+                <button type="button" class="gh-bit-btn" data-gh-bit="2" aria-pressed="true">Bit 2 (4)</button>
+                <button type="button" class="gh-bit-btn" data-gh-bit="1" aria-pressed="false">Bit 1 (2)</button>
+                <button type="button" class="gh-bit-btn" data-gh-bit="0" aria-pressed="true">Bit 0 (1)</button>
+              </div>
+
+              <div class="gh-canvas-shell">
+                <canvas id="gh-bug-canvas" aria-label="Harvard Mark II Panel F relay bank R67 through R72 and mechanical contact magnifier"></canvas>
+                <div class="gh-canvas-hud" aria-hidden="true">
+                  <span id="gh-bug-hud-left" class="gh-hud-pill">Case 1 &middot; Relay #70 (Moth)</span>
+                  <span id="gh-bug-hud-right" class="gh-hud-pill is-bug">FAULT DETECTED</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="gh-bug-right">
+              <div>
+                <span style="display:block;font-size:0.7rem;font-weight:800;text-transform:uppercase;color:#93c5fd;margin-bottom:0.24rem;">Select Relay to Inspect (Keyboard or Click)</span>
+                <div id="gh-relay-pills" class="gh-relay-pills" role="group" aria-label="Panel F relays R67 to R72"></div>
+              </div>
+
+              <div class="gh-compare-card" aria-label="Expected versus actual Panel F output">
+                <div class="gh-compare-col">
+                  <span>Expected Output</span>
+                  <strong id="gh-bug-expected">13 (1101)</strong>
+                </div>
+                <div class="gh-compare-col">
+                  <span>Actual Output</span>
+                  <strong id="gh-bug-actual" class="is-mismatch">9 (1001)</strong>
+                </div>
+              </div>
+
+              <div id="gh-bug-inspect-text" class="gh-inspect-card" role="status" aria-live="polite"></div>
+
+              <div id="gh-bug-logbook" class="gh-logbook-card" aria-live="polite">
+                <strong>1947 Harvard Mark II Logbook &middot; Pending Repair</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div id="gh-toast" class="gh-toast" role="status" aria-live="polite" hidden></div>
+    </section>
+
+    <!-- ===================================================================
+         2. EDITORIAL LESSON READING BELOW THE STUDIO
+         =================================================================== -->
+    <div id="lesson-reading" class="gh-reading">
+      <nav class="gh-section-nav" aria-label="Lesson sections">
+        <a href="#fl-sec-bio">Biography</a>
+        <a href="#fl-sec-gallery">Primary Sources</a>
+        <a href="#fl-sec-timeline">Timeline</a>
+        <a href="#fl-sec-science">Compiler Pipeline</a>
+        <a href="#fl-sec-watch">Nanosecond Lecture</a>
+        <a href="#fl-sec-trace">Hand Trace</a>
+        <a href="#fl-sec-legacy">Legacy &amp; Vocab</a>
+        <a href="#fl-sec-practice">Practice</a>
+      </nav>
+
+      <!-- Biography -->
+      <section class="gh-card" id="fl-sec-bio" style="--card-accent:#0f766e;">
+        <h2>Who Was Grace Hopper?</h2>
+        <div class="gh-bio-grid">
+          <div>
+            <p><strong>Grace Brewster Murray Hopper (December 9, 1906 &ndash; January 1, 1992)</strong> was a Yale-trained mathematician, U.S. Navy rear admiral, and pioneering computer scientist who reshaped how humans communicate with machines. As a child in New York City, she famously dismantled seven alarm clocks in the house to figure out how their gears meshed. She earned a B.A. in mathematics and physics from Vassar College in 1928 and a Ph.D. in mathematics from Yale University in 1934, then taught mathematics at Vassar.</p>
+            <p>In 1943, during World War II, Hopper joined the U.S. Naval Reserve &mdash; obtaining an age and weight waiver &mdash; and was assigned to the Bureau of Ships Computation Project at Harvard under Howard Aiken. There she programmed the <strong>Harvard Mark I</strong> and <strong>Mark II</strong> electromechanical computers and wrote the manual for how machines were operated and debugged.</p>
+            <p>After the war, Hopper joined the team building <strong>UNIVAC I</strong>, the first commercial electronic computer in the United States. In 1952 she completed <strong>A-0</strong>, the first compiler/linker that turned symbolic subroutine calls into executable machine code. Against skepticism that computers could ever process human words, she led the creation of <strong>FLOW-MATIC</strong> (1955), the first English-language data-processing language, which directly inspired <strong>COBOL</strong> in 1959.</p>
+            <div class="gh-callout">
+              <em>&ldquo;Humans are allergic to change. They love to say, &lsquo;We&rsquo;ve always done it this way.&rsquo; I try to fight that.&rdquo;</em> &mdash; Rear Admiral Grace Hopper
+            </div>
+          </div>
+          <aside class="gh-bio-aside">
+            <figure class="gh-portrait-fig" data-zoomable data-lightbox-group="grace-hopper" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Commodore_Grace_M._Hopper,_USN_(covered).jpg?width=1400">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Commodore_Grace_M._Hopper,_USN_(covered).jpg?width=600" alt="Official U.S. Navy portrait of Commodore Grace M. Hopper in uniform, January 1984" />
               <figcaption>
-                <strong>Commodore Grace M. Hopper, USN (1984)</strong>
-                <span>Official U.S. Navy portrait of Hopper in Washington, D.C., two years before her final retirement as a rear admiral at age 79.</span>
-                <span class="gh-gallery-credit">Photo: James S. Davis / U.S. Navy · Public domain (Wikimedia Commons)</span>
+                <strong>Commodore Grace M. Hopper, USN (1984).</strong> Official U.S. Navy portrait taken two years before her final retirement aboard the USS <em>Constitution</em> as Rear Admiral at age 79. Public domain via Wikimedia Commons.
               </figcaption>
             </figure>
-            <figure data-zoomable data-lightbox-group="grace-hopper" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Grace_Hopper_and_UNIVAC.jpg?width=1400">
-              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grace_Hopper_and_UNIVAC.jpg?width=600" alt="Grace Hopper seated at the UNIVAC I console keyboard in 1960" loading="lazy" />
-              <figcaption>
-                <strong>Grace Hopper at the UNIVAC I Console (1960)</strong>
-                <span>Hopper at the keyboard of UNIVAC I, the first commercial electronic computer in the United States, where she developed the A-0 compiler series and FLOW-MATIC.</span>
-                <span class="gh-gallery-credit">Smithsonian Institution Archives / Science Service · Public domain (Wikimedia Commons)</span>
-              </figcaption>
-            </figure>
-            <figure data-zoomable data-lightbox-group="grace-hopper" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/First_Computer_Bug,_1945.jpg?width=1400">
-              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/First_Computer_Bug,_1945.jpg?width=600" alt="Harvard Mark II logbook page from September 9, 1947 with a real moth taped to the page and the note: First actual case of bug being found" loading="lazy" />
-              <figcaption>
-                <strong>The Harvard Mark II "First Actual Bug" Logbook (1947)</strong>
-                <span>On September 9, 1947, operators traced a failure in Relay #70, Panel F of the Harvard Mark II to a trapped moth and taped it into the logbook with the note: "First actual case of bug being found."</span>
-                <span class="gh-gallery-credit">Smithsonian National Museum of American History / U.S. Naval Surface Warfare Center · Public domain</span>
-              </figcaption>
-            </figure>
-          </div>
-        </section>
+            <div class="gh-facts" aria-label="Grace Hopper at a glance">
+              <h3>At a glance</h3>
+              <dl>
+                <div><dt>Born</dt><dd>Dec 9, 1906 &middot; New York City</dd></div>
+                <div><dt>Education</dt><dd>B.A. Vassar (1928) &middot; Ph.D. Yale (1934)</dd></div>
+                <div><dt>Breakthrough</dt><dd>A-0 Compiler (1952) &middot; FLOW-MATIC &rarr; COBOL</dd></div>
+                <div><dt>Honors</dt><dd>National Medal of Technology (1991) &middot; Presidential Medal of Freedom (2016)</dd></div>
+              </dl>
+            </div>
+          </aside>
+        </div>
+      </section>
 
-        <!-- Key Contributions -->
-        <section class="fl-card" id="fl-sec-contributions" style="--card-accent:#7c3aed;">
-          <h2>Hopper's Key Contributions</h2>
-          <div class="fl-grid-2">
-            <div class="fl-contribution-card">
-              <div class="fl-contribution-icon">&#128187;</div>
-              <strong>First Compiler (A-0, 1952)</strong>
-              <p>Translated symbolic mathematical code into machine code, proving programs could be written above the level of raw hardware instructions.</p>
-            </div>
-            <div class="fl-contribution-card">
-              <div class="fl-contribution-icon">&#128203;</div>
-              <strong>Foundational Work on COBOL</strong>
-              <p>Her compiler research and advocacy directly shaped COBOL, one of the first high-level languages built for business computing.</p>
-            </div>
-            <div class="fl-contribution-card">
-              <div class="fl-contribution-icon">&#128172;</div>
-              <strong>English-Like Programming</strong>
-              <p>Pushed the then-doubted idea that programs should read like language, not numeric code — now standard across nearly every language.</p>
-            </div>
-            <div class="fl-contribution-card">
-              <div class="fl-contribution-icon">&#9881;&#65039;</div>
-              <strong>Harvard Mark I &amp; II</strong>
-              <p>Programmed and documented two of the earliest large-scale computers, laying groundwork for how computing projects were run.</p>
-            </div>
-            <div class="fl-contribution-card">
-              <div class="fl-contribution-icon">&#128027;</div>
-              <strong>Popularizing "Debugging"</strong>
-              <p>Her team's 1947 moth-in-the-logbook incident became the most famous story tying "bug" and "debugging" to computer science.</p>
-            </div>
-            <div class="fl-contribution-card">
-              <div class="fl-contribution-icon">&#9875;&#65039;</div>
-              <strong>Decades of Navy Service</strong>
-              <p>Served and trained generations of Navy programmers across a career that stretched from World War II to her final retirement in 1986.</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- Watch -->
-        <section class="fl-card" id="fl-sec-watch" style="--card-accent:#0f766e;">
-          <h2>Hopper Hands Out Nanoseconds</h2>
-          <p>Hopper was famous for making invisible things concrete. In this 1982 lecture at the National Security Agency she explains a <strong>nanosecond</strong>, a billionth of a second, by handing out pieces of wire cut to the farthest distance electricity can travel in that time. The video stops twice to ask you to predict.</p>
-          <figure data-video="grace-hopper-nanoseconds">
-            <figcaption>Capt. Grace Hopper, “Future Possibilities: Data, Hardware, Software, and People,” NSA, August 19, 1982 (clip 40:06–43:23). Public domain (NSA, U.S. government work); digitized by the National Archives, via Wikimedia Commons.</figcaption>
+      <!-- Primary Sources Gallery -->
+      <section class="gh-card" id="fl-sec-gallery" style="--card-accent:#0284c7;">
+        <h2>Real Machines, Real Artifacts</h2>
+        <p>Every workspace in the studio above connects to surviving historical photographs and artifacts. Click any image to open the full-screen classroom lightbox and examine the details together.</p>
+        <div class="pg-grid">
+          <figure class="pg-card" data-zoomable data-lightbox-group="grace-hopper" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Commodore_Grace_M._Hopper,_USN_(covered).jpg?width=1400">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Commodore_Grace_M._Hopper,_USN_(covered).jpg?width=600" alt="Official U.S. Navy portrait of Commodore Grace M. Hopper in uniform, January 1984" loading="lazy" />
+            <figcaption>
+              <strong>Rear Admiral Grace Hopper (1984)</strong>
+              <span>Recalled from retirement repeatedly to standardize Navy software and compilers; retired in 1986 as the oldest active-duty officer in the U.S. Navy.</span>
+              <span class="pg-credit" data-no-glossary>Photo: James S. Davis / U.S. Navy &middot; Public domain via <a href="https://commons.wikimedia.org/wiki/File:Commodore_Grace_M._Hopper,_USN_(covered).jpg" target="_blank" rel="noopener">Wikimedia Commons</a></span>
+            </figcaption>
           </figure>
-        </section>
 
-        <!-- Legacy -->
-        <section class="fl-card" id="fl-sec-legacy" style="--card-accent:#059669;">
-          <h2>Hopper's Legacy Today</h2>
-          <p>Nearly every modern programming language relies on a compiler or interpreter that traces conceptually back to Hopper's founding insight: that a computer, not a human, should do the work of translating readable instructions into machine code. That single idea unlocked the entire field of software development as it exists today.</p>
-          <p>COBOL, the language her work made possible, is still running in banking, government, and insurance systems worldwide more than sixty years after its first specification — a testament to how durable her English-like design philosophy proved to be. Her legacy is also honored each year at the Grace Hopper Celebration, one of the world's largest gatherings of women technologists, named for her in recognition of a career spent proving that computers could be made to speak — and that anyone could learn to speak to them.</p>
-        </section>
+          <figure class="pg-card" data-zoomable data-lightbox-group="grace-hopper" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Grace_Hopper_and_UNIVAC.jpg?width=1400">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grace_Hopper_and_UNIVAC.jpg?width=600" alt="Grace Hopper seated at the UNIVAC I console keyboard in 1960" loading="lazy" />
+            <figcaption>
+              <strong>At the UNIVAC I Console (1960)</strong>
+              <span>On UNIVAC I, Hopper built A-0, A-2, and FLOW-MATIC, proving software could compile human-readable English statements into machine binary.</span>
+              <span class="pg-credit" data-no-glossary>Smithsonian Institution / Science Service &middot; Public domain via <a href="https://commons.wikimedia.org/wiki/File:Grace_Hopper_and_UNIVAC.jpg" target="_blank" rel="noopener">Wikimedia Commons</a></span>
+            </figcaption>
+          </figure>
 
-        <!-- Practice Problems -->
-        <section class="fl-card" id="fl-sec-practice" style="--card-accent:#007aff;">
-          <h2>Practice Problems</h2>
-          <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Think about compilers, the Navy, and Hopper's life.</p>
-          <label class="ll-toggle" style="margin-bottom:0.8rem;">
-            <input type="checkbox" id="fl-hints-toggle">
-            <span class="ll-toggle-track" aria-hidden="true"></span>
-            <span>Show hints automatically</span>
-          </label>
-          <div class="fl-practice">
+          <figure class="pg-card pg-contain" data-zoomable data-lightbox-group="grace-hopper" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/First_Computer_Bug,_1945.jpg?width=1400">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/First_Computer_Bug,_1945.jpg?width=600" alt="Harvard Mark II logbook page from September 9, 1947 with a real moth taped inside next to the note: First actual case of bug being found" loading="lazy" />
+            <figcaption>
+              <strong>1947 Harvard Mark II &ldquo;First Bug&rdquo; Logbook</strong>
+              <span>On Sept 9, 1947, engineers traced a calculation failure in Relay #70, Panel F to a trapped moth and taped it into the logbook at 15:45.</span>
+              <span class="pg-credit" data-no-glossary>Smithsonian NMAH / U.S. Navy &middot; Public domain via <a href="https://commons.wikimedia.org/wiki/File:First_Computer_Bug,_1945.jpg" target="_blank" rel="noopener">Wikimedia Commons</a></span>
+            </figcaption>
+          </figure>
 
-            <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="easy">Easy</span>1. In what year did Hopper complete A-0, the first compiler?</p>
-              <div class="fl-problem-row">
-                <select class="fl-ans-input" id="flans-1" style="width:120px;">
-                  <option value="">Choose…</option>
-                  <option value="1934">1934</option>
-                  <option value="1947">1947</option>
-                  <option value="1952">1952</option>
-                  <option value="1959">1959</option>
-                </select>
-                <button class="fl-check-btn" onclick="flCheckText(1,'1952')">Check</button>
-                <span class="fl-feedback" id="flfb-1"></span>
-              </div>
-              <div class="fl-hint" id="flhint-1">Hint: This was while she was working on the UNIVAC I, seven years before COBOL's first specification.</div>
-            </div>
+          <figure class="pg-card" data-zoomable data-lightbox-group="grace-hopper">
+            <img src="../../../assets/images/video-library/grace-hopper-nanoseconds.webp" alt="Captain Grace Hopper holding up an 11.8-inch piece of wire during her 1982 NSA lecture" loading="lazy" />
+            <figcaption>
+              <strong>Holding a Nanosecond (1982 NSA Lecture)</strong>
+              <span>Hopper holds a wire cut to 11.8 inches &mdash; the farthest electricity or light can travel in one billionth of a second.</span>
+              <span class="pg-credit" data-no-glossary>NSA / National Archives &middot; Public domain</span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
 
-            <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="easy">Easy</span>2. What does a compiler do?</p>
-              <div class="fl-problem-row">
-                <select class="fl-ans-input" id="flans-2" style="width:340px;">
-                  <option value="">Choose…</option>
-                  <option value="translate">Translates human-readable source code into machine code</option>
-                  <option value="store">Stores data permanently on a hard drive</option>
-                  <option value="network">Connects computers over a network</option>
-                  <option value="power">Regulates a computer's power supply</option>
-                </select>
-                <button class="fl-check-btn" onclick="flCheckText(2,'translate')">Check</button>
-                <span class="fl-feedback" id="flfb-2"></span>
-              </div>
-              <div class="fl-hint" id="flhint-2">Hint: Before compilers, programmers had to write raw machine code or assembly by hand.</div>
-            </div>
+      <!-- Timeline -->
+      <section class="gh-card" id="fl-sec-timeline" style="--card-accent:#7c3aed;">
+        <h2>A Life &amp; Legacy Ahead of Its Time</h2>
+        <p>Switch between Track and List views or press Play to tour how Hopper&rsquo;s career bridged electromechanical relays and modern high-level software.</p>
+        <ol class="gh-timeline" data-timeline data-timeline-title="Grace Hopper: Life &amp; Computing Legacy" data-timeline-tour>
+          <li data-when="1906" data-label="Born in NYC" data-group="Early Life" data-major>Born December 9, 1906 as Grace Brewster Murray in New York City; takes apart alarm clocks to study how gears work.</li>
+          <li data-when="1928" data-label="Vassar B.A." data-group="Early Life">Graduates Phi Beta Kappa from Vassar College with a B.A. in mathematics and physics.</li>
+          <li data-when="1934" data-label="Yale Math Ph.D." data-group="Early Life" data-major>Earns a Ph.D. in mathematics from Yale University, becoming one of very few women to hold the degree at the time.</li>
+          <li data-when="1943" data-label="Joins Navy" data-group="Navy" data-major>Joins the U.S. Naval Reserve during World War II after securing an age and weight waiver.</li>
+          <li data-when="1944" data-label="Harvard Mark I" data-group="Computing" data-major>Assigned to Harvard&rsquo;s Bureau of Ships Computation Project, writing programs and the first manual for the Mark I.</li>
+          <li data-when="1947" data-label="Mark II Moth" data-group="Computing" data-major>On September 9, 1947, her team finds a real moth wedged in Relay #70, Panel F of the Mark II and logs &ldquo;First actual case of bug being found.&rdquo;</li>
+          <li data-when="1952" data-label="A-0 Compiler" data-group="Compilers" data-major>Completes A-0 at Remington Rand while working on UNIVAC I &mdash; the first program to link symbolic subroutines into machine code.</li>
+          <li data-when="1955" data-label="FLOW-MATIC" data-group="Compilers">Leads development of FLOW-MATIC, proving business programs can be written in English words instead of numbers.</li>
+          <li data-when="1959" data-label="COBOL Spec" data-group="Compilers" data-major>Serves as technical advisor to CODASYL as FLOW-MATIC inspires COBOL (Common Business-Oriented Language).</li>
+          <li data-when="1986" data-label="Retires Rear Adm." data-group="Navy" data-major>Retires from the Navy aboard the USS <em>Constitution</em> at age 79 as Rear Admiral, the oldest active-duty officer at the time.</li>
+          <li data-when="1991" data-label="Tech Medal" data-group="Legacy">Awarded the National Medal of Technology, becoming its first individual female recipient.</li>
+          <li data-when="1992" data-label="Dies at 85" data-group="Legacy">Dies January 1, 1992 in Arlington, Virginia, and is buried with full military honors at Arlington National Cemetery.</li>
+          <li data-when="2016" data-label="Medal of Freedom" data-group="Legacy" data-major>Posthumously awarded the Presidential Medal of Freedom for foundational contributions to computer science.</li>
+        </ol>
+      </section>
 
-            <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>3. COBOL was first specified in 1959. How many years passed between Hopper's A-0 compiler in 1952 and COBOL's first specification in 1959?</p>
-              <div class="fl-problem-row">
-                <input type="number" class="fl-ans-input" id="flans-3" step="1" placeholder="years" />
-                <button class="fl-check-btn" onclick="flCheck(3, 7, 0)">Check</button>
-                <span class="fl-feedback" id="flfb-3"></span>
-              </div>
-              <div class="fl-hint" id="flhint-3">Hint: Subtract 1952 from 1959.</div>
-            </div>
+      <!-- The Science: How a Compiler Works -->
+      <section class="gh-card" id="fl-sec-science" style="--card-accent:#0f766e;">
+        <h2>How a Compiler Works: Words to Machine Binary</h2>
+        <p>Before Hopper&rsquo;s A-0 (1952) and FLOW-MATIC (1955), writing software meant manually consulting thick codebooks to look up numeric instruction opcodes and tracking every memory address by hand. One transposed digit could crash a run or silently corrupt payroll totals. Hopper argued that <strong>the computer itself should handle translation and bookkeeping</strong> so human engineers could focus on logic.</p>
 
-            <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>4. What incident in 1947 is most closely associated with Hopper's team and the term "debugging"?</p>
-              <div class="fl-problem-row">
-                <select class="fl-ans-input" id="flans-4" style="width:340px;">
-                  <option value="">Choose…</option>
-                  <option value="moth">A real moth caused a relay failure in the Harvard Mark II</option>
-                  <option value="fire">A fire destroyed the Harvard Mark I</option>
-                  <option value="virus">The first computer virus was discovered</option>
-                  <option value="storm">A thunderstorm knocked out the UNIVAC I</option>
-                </select>
-                <button class="fl-check-btn" onclick="flCheckText(4,'moth')">Check</button>
-                <span class="fl-feedback" id="flfb-4"></span>
-              </div>
-              <div class="fl-hint" id="flhint-4">Hint: Her team taped the culprit into their logbook, next to a note calling it "the first actual case of bug being found."</div>
-            </div>
-
-            <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="hard">Challenge</span>5. Why was Hopper's push for English-like programming languages considered radical among her colleagues in the early 1950s?</p>
-              <div class="fl-problem-row">
-                <select class="fl-ans-input" id="flans-5" style="width:380px;">
-                  <option value="">Choose…</option>
-                  <option value="a">Most computers at the time had no keyboards at all</option>
-                  <option value="b">Many colleagues doubted computers could be made to understand anything resembling human language</option>
-                  <option value="c">English-language programs required more electricity to run</option>
-                  <option value="d">The Navy had banned non-numeric programming</option>
-                </select>
-                <button class="fl-check-btn" onclick="flCheckText(5,'b')">Check</button>
-                <span class="fl-feedback" id="flfb-5"></span>
-              </div>
-              <div class="fl-hint" id="flhint-5">Hint: Computers were widely assumed to be number-crunchers only, not language processors.</div>
-            </div>
-
-            <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>6. Hopper retired from the Navy for the final time in 1986 at age 79. She was born in 1906. In what year would she have turned 80?</p>
-              <div class="fl-problem-row">
-                <input type="number" class="fl-ans-input" id="flans-6" step="1" placeholder="year" />
-                <button class="fl-check-btn" onclick="flCheck(6, 1986, 0)">Check</button>
-                <span class="fl-feedback" id="flfb-6"></span>
-              </div>
-              <div class="fl-hint" id="flhint-6">Hint: Her birthday was December 9 — add 80 to 1906.</div>
-            </div>
-
-            <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="easy">Easy</span>7. What rank did Hopper hold at her final Navy retirement in 1986?</p>
-              <div class="fl-problem-row">
-                <select class="fl-ans-input" id="flans-7" style="width:220px;">
-                  <option value="">Choose…</option>
-                  <option value="a">Rear Admiral</option>
-                  <option value="b">Lieutenant</option>
-                  <option value="c">Fleet Admiral</option>
-                  <option value="d">Ensign</option>
-                </select>
-                <button class="fl-check-btn" onclick="flCheckText(7,'a')">Check</button>
-                <span class="fl-feedback" id="flfb-7"></span>
-              </div>
-              <div class="fl-hint" id="flhint-7">Hint: At the time, she was the oldest serving officer in the U.S. Navy.</div>
-            </div>
-
-            <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="hard">Challenge</span>8. Which language is most directly traced back to Hopper's compiler work and her advocacy for English-like programming?</p>
-              <div class="fl-problem-row">
-                <select class="fl-ans-input" id="flans-8" style="width:260px;">
-                  <option value="">Choose…</option>
-                  <option value="a">COBOL</option>
-                  <option value="b">Python</option>
-                  <option value="c">FORTRAN</option>
-                  <option value="d">Assembly</option>
-                </select>
-                <button class="fl-check-btn" onclick="flCheckText(8,'a')">Check</button>
-                <span class="fl-feedback" id="flfb-8"></span>
-              </div>
-              <div class="fl-hint" id="flhint-8">Hint: It stands for Common Business-Oriented Language and was first specified in 1959.</div>
-            </div>
-
+        <div class="gh-stage-grid">
+          <div class="gh-stage-card">
+            <div class="gh-stage-icon" aria-hidden="true">&#128221;</div>
+            <strong>1. Source Code</strong>
+            <p>Human writes English-like statements such as <code>MULTIPLY HOURS BY RATE GIVING PAY</code>.</p>
+            <span class="gh-stage-modern">Human Intent</span>
           </div>
-        </section>
+          <div class="gh-stage-card">
+            <div class="gh-stage-icon" aria-hidden="true">&#128269;</div>
+            <strong>2. Lexer &amp; Symbols</strong>
+            <p>Splits keywords and assigns every variable a unique hex address (e.g. <code>0x0104</code>).</p>
+            <span class="gh-stage-modern">Bookkeeping</span>
+          </div>
+          <div class="gh-stage-card">
+            <div class="gh-stage-icon" aria-hidden="true">&#9881;&#65039;</div>
+            <strong>3. Assembly Gen</strong>
+            <p>Expands one high-level sentence into exact CPU steps (<code>LOAD</code>, <code>MUL</code>, <code>STORE</code>).</p>
+            <span class="gh-stage-modern">Translation</span>
+          </div>
+          <div class="gh-stage-card">
+            <div class="gh-stage-icon" aria-hidden="true">&#128187;</div>
+            <strong>4. Machine Binary</strong>
+            <p>Encodes 32-bit binary words that flip real hardware switches inside the processor.</p>
+            <span class="gh-stage-modern">CPU Execution</span>
+          </div>
+        </div>
 
-        <footer class="site-footer">
-          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
-        </footer>
-      </main>
-    </div><!-- .ll-sim -->
-  </div><!-- .ll-stage -->
-  </div><!-- .ll-viewport -->
+        <figure class="gh-diagram-fig" data-zoomable data-lightbox-group="grace-hopper">
+          <img src="../../../assets/images/lessons/grace-hopper/compiler-pipeline.svg" width="960" height="490" alt="Four-stage compiler pipeline diagram showing COBOL source code flowing through Lexer and Symbol Table, Symbolic Assembly Code Generator, and 32-bit Machine Binary, above an evolution timeline from 1944 Mark I tape to modern programming languages" />
+          <figcaption>
+            <strong>Compiler Pipeline:</strong> One English sentence expands into multiple unambiguous machine instructions, automatically avoiding the address typos tested by <em>Hand-Code Bug</em> mode in Tab 1. Click to enlarge.
+          </figcaption>
+        </figure>
 
-<script>
-(() => {
-  'use strict';
-  const STMTS = {
-    payroll: {
-      src: 'MULTIPLY HOURS BY RATE GIVING PAY.',
-      asm: 'LOAD   R1, [0x0104]  ; HOURS<br>MUL    R1, [0x0108]  ; RATE<br>STORE  [0x010C], R1  ; PAY',
-      bin: '00010010 00000001 00000001 00000100<br>00101100 00000001 00000001 00001000<br>00011011 00000001 00000001 00001100',
-      stat: '1 English sentence → 3 machine instructions (96 bits). A-0 automated this lookup in milliseconds instead of hours of hand-coding.'
-    },
-    tax: {
-      src: 'SUBTRACT TAX FROM PAY GIVING NET.',
-      asm: 'LOAD   R2, [0x010C]  ; PAY<br>SUB    R2, [0x0110]  ; TAX<br>STORE  [0x0114], R2  ; NET',
-      bin: '00010010 00000010 00000001 00001100<br>00100101 00000010 00000001 00010000<br>00011011 00000010 00000001 00010100',
-      stat: '1 English sentence → 3 machine instructions (96 bits). The compiler tracks variable addresses (0x010C, 0x0110, 0x0114) automatically.'
-    },
-    check: {
-      src: 'IF STOCK LESS THAN 10 DISPLAY "REORDER".',
-      asm: 'LOAD   R3, [0x0200]  ; STOCK<br>CMP    R3, #10       ; compare 10<br>BGE    SKIP_MSG      ; branch if >= 10<br>CALL   SYS_PRINT     ; "REORDER"',
-      bin: '00010010 00000011 00000010 00000000<br>00110001 00000011 00000000 00001010<br>01000110 00000000 00000000 00000100<br>01111000 00000000 00001111 00100100',
-      stat: '1 English conditional → 4 machine instructions (128 bits) including a conditional branch and system call.'
-    }
-  };
-  document.querySelectorAll('[data-gh-stmt]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const d = STMTS[btn.dataset.ghStmt];
-      if (!d) return;
-      document.querySelectorAll('[data-gh-stmt]').forEach(b => b.classList.toggle('is-active', b === btn));
-      document.getElementById('gh-src-out').textContent = d.src;
-      document.getElementById('gh-asm-out').innerHTML = d.asm;
-      document.getElementById('gh-bin-out').innerHTML = d.bin;
-      document.getElementById('gh-stat-out').textContent = d.stat;
-    });
-  });
+        <h3>From A-0 and FLOW-MATIC to Modern Languages</h3>
+        <div class="gh-table-scroll">
+          <table class="gh-code-table">
+            <thead>
+              <tr><th scope="col">Era / System</th><th scope="col">How Programmers Wrote It</th><th scope="col">Key Breakthrough</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Pre-1952 Machine Code</strong></td>
+                <td><code>00010010 00000001 00000001 00000100</code></td>
+                <td>Raw binary/octal opcodes and manual hex addresses</td>
+              </tr>
+              <tr>
+                <td><strong>1952 &middot; A-0</strong></td>
+                <td>Symbolic subroutine call + parameter tape</td>
+                <td>First automatic linker/compiler pulling tested routines</td>
+              </tr>
+              <tr>
+                <td><strong>1955 &middot; FLOW-MATIC</strong></td>
+                <td><code>MULTIPLY HOURS BY RATE GIVING PAY.</code></td>
+                <td>First English-word business programming language</td>
+              </tr>
+              <tr>
+                <td><strong>1959 &middot; COBOL</strong></td>
+                <td><code>IF STOCK LESS THAN 10 DISPLAY "REORDER".</code></td>
+                <td>Portable standard running across different hardware brands</td>
+              </tr>
+              <tr>
+                <td><strong>Modern Python / Rust / Swift</strong></td>
+                <td><code>pay = hours * rate</code></td>
+                <td>Rich readable syntax compiled or interpreted automatically</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-  const TIMES = {
-    ns: '<strong>1 Nanosecond (billionth of a second):</strong> Light/electricity in vacuum travels <strong>11.8 inches (29.98 cm)</strong> — the length of one sheet of paper. Inside a silicon chip, signals travel even slower (~15–20 cm), so if two parts of a CPU are too far apart, a 3 GHz clock tick finishes before the signal arrives!',
-    us: '<strong>1 Microsecond (millionth of a second):</strong> Light travels <strong>984 feet (299.8 meters)</strong> — nearly three football fields! Hopper carried a heavy 984-foot coil of wire and joked she wanted to hang it around a programmer\'s neck whenever they wasted a microsecond.',
-    ms: '<strong>1 Millisecond (thousandth of a second):</strong> Light travels <strong>186 miles (299.8 km)</strong> — roughly the distance from New York City to Boston or Baltimore. Network ping times across a continent are measured in tens of milliseconds because of this physical speed limit.',
-    s:  '<strong>1 Full Second:</strong> Light travels <strong>186,282 miles (299,792 km)</strong> — 7.5 times around the Earth, or almost all the way from Earth to the Moon (1.3 light-seconds)!'
-  };
-  document.querySelectorAll('[data-gh-time]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const html = TIMES[btn.dataset.ghTime];
-      if (!html) return;
-      document.querySelectorAll('[data-gh-time]').forEach(b => b.classList.toggle('is-active', b === btn));
-      document.getElementById('gh-wire-out').innerHTML = html;
-    });
-  });
-})();
-</script>
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
-<script src="../../../assets/js/lesson-content.js"></script>
-<script src="../../../assets/js/figure-lesson.js"></script>
-<script src="../../../assets/js/lesson-print-button.js"></script>
-<script src="../../../assets/js/video-embed.js"></script>
-<script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
-<script src="../../../assets/js/photo-lightbox.js"></script>
+        <div class="ll-accordion-group" style="margin-top:0.85rem;">
+          <details class="ll-accordion">
+            <summary>How did A-0 differ from FLOW-MATIC and COBOL?</summary>
+            <div class="ll-accordion-body">A-0 (1952) acted more like a modern linker/loader: it matched symbolic call codes to pre-written mathematical subroutines on magnetic tape and stitched them into machine code. FLOW-MATIC (1955) pushed further by introducing English words for business data processing, and its design directly guided the CODASYL committee when specifying COBOL in 1959.</div>
+          </details>
+          <details class="ll-accordion">
+            <summary>Did Hopper write COBOL by herself?</summary>
+            <div class="ll-accordion-body">No &mdash; COBOL was created in 1959 by CODASYL, a committee of computer manufacturers, universities, and U.S. government representatives. However, Hopper served as a key technical advisor, and her FLOW-MATIC compiler proved that English-like programming worked in real business software.</div>
+          </details>
+          <details class="ll-accordion">
+            <summary>Did Hopper invent the word &ldquo;bug&rdquo;?</summary>
+            <div class="ll-accordion-body">Engineers had used &ldquo;bug&rdquo; for mechanical glitches since at least Thomas Edison&rsquo;s 1870s workshop. However, on September 9, 1947, operators on the Harvard Mark II traced a relay malfunction to a literal moth trapped inside Relay #70, Panel F, taped it into their logbook with the caption <em>&ldquo;First actual case of bug being found,&rdquo;</em> and Hopper&rsquo;s retelling cemented &ldquo;debugging&rdquo; in software culture.</div>
+          </details>
+          <details class="ll-accordion">
+            <summary>What is the difference between a compiler and an interpreter?</summary>
+            <div class="ll-accordion-body">A <strong>compiler</strong> (like C, Rust, or COBOL compilers) translates the entire source program into machine code ahead of time so the CPU runs it at full speed. An <strong>interpreter</strong> (like early BASIC or parts of Python) translates and executes statements one by one while the program is running. Both descend from Hopper&rsquo;s principle that software should translate human intent for hardware.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Watch: Nanoseconds Lecture (ID preserved for external link from clocks-and-time.html) -->
+      <section class="gh-card" id="fl-sec-watch" style="--card-accent:#0284c7;">
+        <h2>Hopper Hands Out Nanoseconds</h2>
+        <p>Hopper was famous for turning invisible timing scales into physical props you could hold. In this 1982 lecture at the National Security Agency, she explains why a billionth of a second &mdash; a <strong>nanosecond</strong> &mdash; dictates the physical size of every fast computer. The video pauses twice to ask you to predict before revealing the answer.</p>
+        <figure data-video="grace-hopper-nanoseconds">
+          <figcaption>Capt. Grace Hopper, &ldquo;Future Possibilities: Data, Hardware, Software, and People,&rdquo; NSA, August 19, 1982 (clip 40:06&ndash;43:23). Public domain (NSA, U.S. government work); digitized by the National Archives, via Wikimedia Commons.</figcaption>
+        </figure>
+
+        <div class="gh-formula-box" role="img" aria-label="Distance equals speed of light multiplied by time: 299,792,458 meters per second times 1 nanosecond equals 29.98 centimeters">
+          <span class="gh-formula-sym">d = c &times; t &approx; 29.98 cm (11.8 in) per ns</span>
+          <div class="gh-formula-vars">
+            <div><strong>c</strong> = 299,792,458 m/s (vacuum light speed)</div>
+            <div><strong>t</strong> = 1 nanosecond (10<sup>&minus;9</sup> s)</div>
+            <div><strong>Copper / PCB</strong> &approx; 0.50c to 0.67c (even shorter!)</div>
+          </div>
+          <p class="gh-formula-note">At 3 GHz, one clock tick lasts only 0.333 ns &mdash; giving a signal on a silicon board just ~5 cm of travel budget. Test this live in Tab 2 above.</p>
+        </div>
+      </section>
+
+      <!-- Unspoiled Trace Exercise -->
+      <section class="gh-card" id="fl-sec-trace" data-memory-ignore style="--card-accent:#b45309;">
+        <h2>Trace It Yourself: Compiler &amp; Nanosecond Math</h2>
+        <p>Work through these values by hand before checking your answers. Nothing is pre-filled, so you can verify your own reasoning.</p>
+
+        <div class="gh-trace-tabs" role="group" aria-label="Choose hand-trace exercise">
+          <button type="button" class="gh-trace-tab is-active" data-trace-mode="cobol-trace" aria-pressed="true">COBOL Memory Trace</button>
+          <button type="button" class="gh-trace-tab" data-trace-mode="nanosecond-trace" aria-pressed="false">Nanosecond Distance Trace</button>
+        </div>
+
+        <div id="gh-trace-given" class="gh-trace-given"></div>
+
+        <div class="gh-table-scroll">
+          <table class="gh-trace-table">
+            <thead>
+              <tr><th scope="col">Step</th><th scope="col">Operation</th><th scope="col">Target</th><th scope="col">Your Result</th></tr>
+            </thead>
+            <tbody id="gh-trace-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="gh-trace-actions">
+          <button type="button" id="gh-trace-check" class="gh-check-btn">Check My Trace</button>
+          <button type="button" id="gh-trace-reveal" class="gh-check-btn brass">Reveal Answers</button>
+          <button type="button" id="gh-trace-reset" class="gh-check-btn muted">Reset Blanks</button>
+          <span id="gh-trace-feedback" class="gh-feedback" role="status" aria-live="polite"></span>
+        </div>
+        <div id="gh-trace-breakdown" style="margin-top:0.5rem;"></div>
+      </section>
+
+      <!-- Key Contributions, Vocabulary & Legacy -->
+      <section class="gh-card" id="fl-sec-legacy" style="--card-accent:#059669;">
+        <h2>Key Contributions, Vocabulary &amp; Legacy</h2>
+        <div class="gh-grid-2">
+          <div class="gh-contrib-card">
+            <strong>1. First Compiler (A-0, 1952)</strong>
+            <p>Proved a computer could translate symbolic instructions into machine code automatically, eliminating tedious manual coding.</p>
+          </div>
+          <div class="gh-contrib-card">
+            <strong>2. FLOW-MATIC &amp; COBOL (1955&ndash;1959)</strong>
+            <p>Built the first English-word business language and helped shape COBOL, which still powers global banking and payroll systems.</p>
+          </div>
+          <div class="gh-contrib-card">
+            <strong>3. Machine-Independent Software</strong>
+            <p>Championed portable languages and compiler validation suites so programs could move across new computer hardware.</p>
+          </div>
+          <div class="gh-contrib-card">
+            <strong>4. Physical Latency Intuition</strong>
+            <p>Used 11.8-inch nanosecond wires and 984-foot microsecond coils to teach why speed-of-light delays govern chip size.</p>
+          </div>
+          <div class="gh-contrib-card">
+            <strong>5. Hardware &amp; Software Debugging</strong>
+            <p>Her team&rsquo;s 1947 Relay #70 moth logbook turned physical hardware troubleshooting into the enduring story of &ldquo;debugging.&rdquo;</p>
+          </div>
+          <div class="gh-contrib-card">
+            <strong>6. Decades of Naval Leadership</strong>
+            <p>Mentored generations of Navy engineers until 1986 and inspired the annual Grace Hopper Celebration for women in computing.</p>
+          </div>
+        </div>
+
+        <h3>Vocabulary Reference</h3>
+        <dl class="gh-vocab-grid">
+          <div class="gh-vocab-card"><dt>Compiler</dt><dd>A program that translates human-readable source code into machine code before execution.</dd></div>
+          <div class="gh-vocab-card"><dt>Symbol Table</dt><dd>The compiler&rsquo;s lookup table mapping variable names like <code>HOURS</code> to numeric RAM addresses like <code>0x0104</code>.</dd></div>
+          <div class="gh-vocab-card"><dt>Machine Code</dt><dd>Binary instructions (<code>0</code>s and <code>1</code>s) decoded directly by a processor&rsquo;s control unit and ALU.</dd></div>
+          <div class="gh-vocab-card"><dt>FLOW-MATIC / COBOL</dt><dd>Hopper&rsquo;s English-word business programming language and the standardized 1959 language it inspired.</dd></div>
+          <div class="gh-vocab-card"><dt>Nanosecond (ns)</dt><dd>One billionth of a second (10<sup>&minus;9</sup> s) &mdash; the time it takes light in vacuum to travel ~29.98 cm (11.8 in).</dd></div>
+          <div class="gh-vocab-card"><dt>Propagation Delay</dt><dd>The physical time required for an electrical or optical pulse to travel from transmitter to receiver.</dd></div>
+          <div class="gh-vocab-card"><dt>Electromechanical Relay</dt><dd>An electrically controlled magnetic switch used inside early computers like the Harvard Mark I and II.</dd></div>
+          <div class="gh-vocab-card"><dt>Debugging</dt><dd>Isolating and fixing hardware or software faults by comparing expected versus actual outputs step by step.</dd></div>
+        </dl>
+
+        <h3>Continue Exploring in ClassroomOS</h3>
+        <div class="gh-crosslinks">
+          <a class="gh-crosslink" href="ada-lovelace.html">&larr; Ada Lovelace &amp; Note G</a>
+          <a class="gh-crosslink" href="margaret-hamilton.html">Margaret Hamilton &amp; Apollo Software &rarr;</a>
+          <a class="gh-crosslink" href="../foundations/anatomy-of-a-computer.html">Anatomy of a Computer &rarr;</a>
+          <a class="gh-crosslink" href="../foundations/binary-bits-and-logic.html">Binary, Bits &amp; Logic Gates &rarr;</a>
+          <a class="gh-crosslink" href="../foundations/python-foundations.html">Python Foundations &rarr;</a>
+          <a class="gh-crosslink" href="../../mathematics/foundations/clocks-and-time.html">Clocks &amp; Time &rarr;</a>
+          <a class="gh-crosslink" href="../../physics/modern-and-thermal/speed-of-light.html">Speed of Light &rarr;</a>
+        </div>
+      </section>
+
+      <!-- Practice Problems -->
+      <section class="gh-card" id="fl-sec-practice" style="--card-accent:#0284c7;">
+        <div class="gh-practice-header">
+          <h2>Practice &amp; Debugging Problems</h2>
+          <span class="gh-practice-score" id="gh-practice-score">Completed: 0 / 9</span>
+        </div>
+        <p>Test your understanding of compilers, symbol tables, nanosecond physics, and debugging.</p>
+        <label class="ll-toggle" style="margin-bottom:0.8rem;">
+          <input type="checkbox" id="gh-hints-toggle">
+          <span class="ll-toggle-track" aria-hidden="true"></span>
+          <span>Show hints automatically</span>
+        </label>
+
+        <div class="gh-practice">
+          <div class="gh-problem">
+            <p><span class="gh-badge easy">Easy</span>1. In what year did Hopper complete A-0, the first compiler/linker?</p>
+            <div class="gh-problem-row">
+              <select class="gh-ans-input" id="ghans-1" aria-label="Problem 1 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="1934">1934</option>
+                <option value="1947">1947</option>
+                <option value="1952">1952</option>
+                <option value="1959">1959</option>
+              </select>
+              <button class="gh-check-btn" type="button" data-check="text" data-q="1" data-ans="1952">Check</button>
+              <span class="gh-feedback" id="ghfb-1" role="status"></span>
+            </div>
+            <div class="gh-hint" id="ghhint-1">Hint: She built A-0 while working on UNIVAC I, seven years before COBOL was specified in 1959.</div>
+          </div>
+
+          <div class="gh-problem">
+            <p><span class="gh-badge easy">Easy</span>2. What job does a compiler&rsquo;s symbol table perform?</p>
+            <div class="gh-problem-row">
+              <select class="gh-ans-input" id="ghans-2" aria-label="Problem 2 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="map">Maps human variable names like HOURS and RATE to numeric memory addresses</option>
+                <option value="cool">Cools down vacuum tubes inside UNIVAC</option>
+                <option value="encrypt">Encrypts messages for Navy radio transmission</option>
+                <option value="speed">Increases the physical speed of light inside copper wire</option>
+              </select>
+              <button class="gh-check-btn" type="button" data-check="text" data-q="2" data-ans="map">Check</button>
+              <span class="gh-feedback" id="ghfb-2" role="status"></span>
+            </div>
+            <div class="gh-hint" id="ghhint-2">Hint: Check the &ldquo;Memory &amp; Symbols&rdquo; sub-tab in Tab 1 to see variables paired with hex addresses like 0x0104.</div>
+          </div>
+
+          <div class="gh-problem">
+            <p><span class="gh-badge mid">Medium</span>3. COBOL was first specified in 1959. How many years passed between A-0 (1952) and COBOL (1959)?</p>
+            <div class="gh-problem-row">
+              <input type="number" class="gh-ans-input" id="ghans-3" step="1" placeholder="years" style="width:120px;" aria-label="Problem 3 answer" />
+              <button class="gh-check-btn" type="button" data-check="num" data-q="3" data-ans="7" data-tol="0">Check</button>
+              <span class="gh-feedback" id="ghfb-3" role="status"></span>
+            </div>
+            <div class="gh-hint" id="ghhint-3">Hint: Subtract 1952 from 1959.</div>
+          </div>
+
+          <div class="gh-problem">
+            <p><span class="gh-badge easy">Easy</span>4. What physical artifact did Hopper&rsquo;s team tape into the Harvard Mark II logbook on September 9, 1947?</p>
+            <div class="gh-problem-row">
+              <select class="gh-ans-input" id="ghans-4" aria-label="Problem 4 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="moth">A real moth trapped inside Relay #70, Panel F</option>
+                <option value="wire">An 11.8-inch piece of copper wire</option>
+                <option value="tape">A torn magnetic tape spool from UNIVAC</option>
+                <option value="card">A bent Jacobi punch card</option>
+              </select>
+              <button class="gh-check-btn" type="button" data-check="text" data-q="4" data-ans="moth">Check</button>
+              <span class="gh-feedback" id="ghfb-4" role="status"></span>
+            </div>
+            <div class="gh-hint" id="ghhint-4">Hint: Test Case 1 in Tab 3 and click Inspect Selected on Relay #70!</div>
+          </div>
+
+          <div class="gh-problem">
+            <p><span class="gh-badge mid">Medium</span>5. Why did Hopper hand out 11.8-inch (30 cm) pieces of wire during her lectures?</p>
+            <div class="gh-problem-row">
+              <select class="gh-ans-input" id="ghans-5" aria-label="Problem 5 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="a">It was the standard length of a UNIVAC keyboard cable</option>
+                <option value="b">It showed the maximum distance electricity or light can travel in one nanosecond (10⁻⁹ s)</option>
+                <option value="c">It measured the width of a COBOL punched card</option>
+                <option value="d">It prevented static shocks on naval ships</option>
+              </select>
+              <button class="gh-check-btn" type="button" data-check="text" data-q="5" data-ans="b">Check</button>
+              <span class="gh-feedback" id="ghfb-5" role="status"></span>
+            </div>
+            <div class="gh-hint" id="ghhint-5">Hint: Nothing can travel faster than c &approx; 30 cm/ns, so physical wire length limits how fast computers can tick.</div>
+          </div>
+
+          <div class="gh-problem">
+            <p><span class="gh-badge mid">Medium</span>6. In a PCB trace where signals travel at half the speed of light (0.50c &approx; 15 cm/ns), how far (in cm) does a signal travel during one 2 GHz clock tick (0.5 ns)?</p>
+            <div class="gh-problem-row">
+              <input type="number" class="gh-ans-input" id="ghans-6" step="0.1" placeholder="cm" style="width:120px;" aria-label="Problem 6 answer" />
+              <button class="gh-check-btn" type="button" data-check="num" data-q="6" data-ans="7.5" data-tol="0.2">Check</button>
+              <span class="gh-feedback" id="ghfb-6" role="status"></span>
+            </div>
+            <div class="gh-hint" id="ghhint-6">Hint: Multiply 15 cm/ns by 0.5 ns = 7.5 cm.</div>
+          </div>
+
+          <div class="gh-problem">
+            <p><span class="gh-badge hard">Debug</span>7. In Tab 1&rsquo;s <code>Payroll Calculation</code> preset (<code>HOURS = 40</code>, <code>RATE = 18</code>, <code>SUBTRACT 95 FROM PAY</code>), toggling <strong>Hand-Code Bug: On</strong> mis-punches <code>MUL R1, [0x0104]</code> (<code>HOURS</code>) instead of <code>[0x0108]</code> (<code>RATE</code>). What wrong <code>NET PAY</code> prints?</p>
+            <div class="gh-problem-row">
+              <input type="number" class="gh-ans-input" id="ghans-7" step="1" placeholder="NET PAY" style="width:130px;" aria-label="Problem 7 answer" />
+              <button class="gh-check-btn" type="button" data-check="num" data-q="7" data-ans="1505" data-tol="0">Check</button>
+              <span class="gh-feedback" id="ghfb-7" role="status"></span>
+            </div>
+            <div class="gh-hint" id="ghhint-7">Hint: The buggy instruction computes 40 &times; 40 = 1600, then subtracts 95 (1600 &minus; 95 = 1505). Toggle Hand-Code Bug: On in Tab 1 to confirm!</div>
+          </div>
+
+          <div class="gh-problem">
+            <p><span class="gh-badge mid">Debug</span>8. In Tab 3&rsquo;s Case 1 (Relay #70 jammed open by a moth), the 4-bit input switches are set to <code>1101</code> (decimal 13). What broken decimal value appears at the output?</p>
+            <div class="gh-problem-row">
+              <input type="number" class="gh-ans-input" id="ghans-8" step="1" placeholder="decimal" style="width:120px;" aria-label="Problem 8 answer" />
+              <button class="gh-check-btn" type="button" data-check="num" data-q="8" data-ans="9" data-tol="0">Check</button>
+              <span class="gh-feedback" id="ghfb-8" role="status"></span>
+            </div>
+            <div class="gh-hint" id="ghhint-8">Hint: Relay #70 controls Bit 2 (weight 4). Dropping weight 4 from 13 (8 + 4 + 1) leaves 8 + 1 = 9 (binary 1001).</div>
+          </div>
+
+          <div class="gh-problem">
+            <p><span class="gh-badge hard">Challenge</span>9. Why was Hopper&rsquo;s 1950s vision for English-like programming languages initially dismissed by many colleagues?</p>
+            <div class="gh-problem-row">
+              <select class="gh-ans-input" id="ghans-9" aria-label="Problem 9 answer">
+                <option value="">Choose&hellip;</option>
+                <option value="a">They believed computers were strictly numerical calculators that could only do arithmetic, not manipulate words or translate languages</option>
+                <option value="b">COBOL required color touchscreens that did not exist yet</option>
+                <option value="c">English words occupied more memory on paper punched tape than allowed by law</option>
+                <option value="d">No computer in the 1950s could multiply integers</option>
+              </select>
+              <button class="gh-check-btn" type="button" data-check="text" data-q="9" data-ans="a">Check</button>
+              <span class="gh-feedback" id="ghfb-9" role="status"></span>
+            </div>
+            <div class="gh-hint" id="ghhint-9">Hint: Just like Ada Lovelace&rsquo;s colleagues a century earlier, skeptics assumed computers only worked with raw numbers &mdash; Hopper proved software could translate human words.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="site-footer">
+      <p>Mr. Scandrett&rsquo;s ClassroomOS &mdash; <a href="../../../index.html">Home</a> &middot; <a href="../../../steam-lessons.html">Lessons</a></p>
+    </footer>
+  </main>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/creation-app.js"></script>
+  <script type="module" src="../../../assets/js/lessons/grace-hopper-app.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/video-embed.js"></script>
+  <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

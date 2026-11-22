@@ -13,7 +13,7 @@ SOURCE = ROOT/'data/path-lesson-images.json'
 # Art direction: real objects, primary sources, and working tools, rather than
 # screenshots of whole pages or generic decorative illustrations.
 PHOTOS = {
- 'ada-lovelace': ('assets/thumbs/ada-lovelace.png', 'Alfred Edward Chalon’s portrait of Ada Lovelace'),
+ 'ada-lovelace': ('assets/thumbs/ada-lovelace.png', 'Antoine Claudet’s c. 1843 daguerreotype portrait of Ada Lovelace'),
  'grace-hopper': ('assets/images/video-library/grace-hopper-nanoseconds.webp', 'Grace Hopper explaining the distance light travels in a nanosecond'),
  'margaret-hamilton': ('assets/images/lessons/margaret-hamilton/software-listings.webp', 'Margaret Hamilton beside the Apollo software listings'),
  'cymatics': ('assets/images/lessons/cymatics/chladni-plate-exhibit.jpg', 'A Chladni plate making vibration patterns visible'),

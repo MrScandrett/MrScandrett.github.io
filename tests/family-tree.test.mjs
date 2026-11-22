@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as cheerio from 'cheerio';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const FT = require('../assets/js/family-tree.js');
@@ -176,7 +177,7 @@ test('lesson family trees are well-formed: unique ids, resolvable data-also-from
       }
     }
   };
-  walk(new URL('../lessons', import.meta.url).pathname);
+  walk(fileURLToPath(new URL('../lessons', import.meta.url)));
   assert.ok(found.length >= 2, 'expected the Genesis 10 and Pleistocene trees');
   // Every tree must parse into real descent: at least one parent → child link. Small, deliberately
   // selected lines are fine (joshua-to-david.html traces Boaz → Obed → Jesse → David from Ruth 4).

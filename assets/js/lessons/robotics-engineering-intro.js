@@ -1,4 +1,4 @@
-/* Robotics Engineering Intro — lessons/engineering/mechanical-and-civil-design/robotics-engineering-intro.html
+/* Robotics Engineering Intro — lessons/computer-science/robotics/robotics-engineering-intro.html
  * Hero loop demo, Robot-or-not / Safe-or-not judges, the Robot Lab sim,
  * the clickable breadboard, part cards, reveal, and quiz.
  */

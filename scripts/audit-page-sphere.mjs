@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { findChromium } from '../lib/find-chromium.mjs';
+import { fileURLToPath } from 'node:url';
 
 const arg = (name, fallback) => {
   const hit = process.argv.find(a => a.startsWith(`--${name}=`));
@@ -20,7 +21,7 @@ const match = arg('match', '');
 const limit = Number(arg('limit', 0));
 const out = arg('out', 'tmp/sphere-audit/report.json');
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const root = path.resolve(path.dirname(fileURLToPath(new URL(import.meta.url))), '..');
 const catalog = JSON.parse(fs.readFileSync(path.join(root, 'data/lessons.json'), 'utf8'));
 let pages = ['index.html', ...(Array.isArray(catalog) ? catalog : catalog.lessons || [])
   .filter(l => l.status === 'live' && l.url).map(l => l.url)];

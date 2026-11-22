@@ -838,7 +838,7 @@ send audio to the browser maker), so it stays off until the teacher accepts the 
 
 ## ELEGOO robot car (Robot Car Pilot lesson)
 
-`lessons/engineering/robotics/robot-car-pilot.html` drives the class ELEGOO Smart Robot Car
+`lessons/computer-science/robotics/robot-car-pilot.html` drives the class ELEGOO Smart Robot Car
 V4.0. `assets/js/elegoo-car.js` holds the JSON protocol (taken from ELEGOO's firmware), the
 Bluetooth/Wi-Fi/USB/simulator links, and `SimCar`, which obeys the same commands. Browsers
 can't open the car's raw TCP port, so Wi-Fi goes through `npm run robot-car`

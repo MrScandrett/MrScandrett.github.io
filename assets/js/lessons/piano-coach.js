@@ -40,11 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const natural = ['C4','D4','E4','F4','G4','A4','B4','C5','D5','E5','F5','G5','A5','B5'];
       const notes = scale ? d.notes : Array.from({length:d.cells}, (_, i) => [0,2,3,4,5,4,3,2].map(n => natural[i+n])).flat();
       const model = scale ? notes.concat(notes.slice(0,-1).reverse()) : notes;
-      content.innerHTML = `<h3>${scale ? d.scale : 'Hanon No. 1 · ascending excerpt'}</h3><p>${scale ? d.goal : d.hanon}</p><p>${scale ? 'Ascending fingering · RH: '+d.rh+' · LH: '+d.lh : 'Each cell: 1–3–4–5–6–5–4–3 in C major; shift up one scale step. RH: 1–2–3–4–5–4–3–2; LH: 5–4–3–2–1–2–3–4. Model plays the upper hand; left hand can practice an octave lower.'}</p><p class="coach-notes">${notes.join(' · ')}</p><div class="pc-builder-controls"><label>Notes per minute <input data-tempo type="number" min="40" max="120" value="${d.tempo}"></label><button class="pc-btn" type="button" data-model>Hear model</button><button class="pc-btn" type="button" data-stop>Stop</button><button class="pc-btn" type="button" data-restart>Restart recall</button></div><p>After listening, tap the note names in order ${scale ? 'up and back down' : 'through the excerpt'}. This checks note order, not timing or physical technique. Finger 1 = thumb; 5 = little finger.</p><div class="pc-builder-controls" data-note-buttons></div><p role="status" aria-live="polite" data-feedback>Ready for note 1 of ${model.length}.</p>${scale ? '' : '<p>Based on C.-L. Hanon, <cite>The Virtuoso Pianist</cite>, Exercise 1. This is a short ascending excerpt; the complete exercise also returns downward.</p>'}`;
+      content.innerHTML = `${scale ? '<h3>' + d.scale + '</h3>' : ''}<div class="pc-coach-line"><p>${scale ? d.goal : d.hanon}</p></div>${scale ? '<p>Ascending fingering · RH: ' + d.rh + ' · LH: ' + d.lh + '</p>' : ''}<div class="coach-anchor"></div><div class="pc-builder-controls pc-recall-bar"><strong>Recall</strong><label>Notes per minute <input data-tempo type="number" min="40" max="120" value="${d.tempo}"></label><button class="pc-btn" type="button" data-model>Hear model</button><button class="pc-btn" type="button" data-stop>Stop</button><button class="pc-btn" type="button" data-restart>Restart</button></div><div class="pc-builder-controls pc-recall-keys" data-note-buttons><span role="status" aria-live="polite" data-feedback>Tap the notes in order${scale ? ', up and back down' : ''}: note 1 of ${model.length}.</span></div>`;
       const fingerControl = document.createElement('label');
       const fingerToggle = document.createElement('input'); fingerToggle.type = 'checkbox'; fingerToggle.checked = showFingers;
-      fingerControl.append(fingerToggle, ' Show finger numbers on the notes');
-      content.querySelector('.coach-notes').before(fingerControl);
+      fingerControl.append(fingerToggle, ' Show finger numbers (1 = thumb, 5 = little finger)');
+      content.querySelector('.pc-coach-line').append(fingerControl);
       fingerToggle.addEventListener('change', () => { showFingers = fingerToggle.checked; render(level); });
       const rh = scale ? d.rh.split(' ') : notes.map((_, i) => [1,2,3,4,5,4,3,2][i % 8]);
       const lh = scale ? d.lh.split(' ') : notes.map((_, i) => [5,4,3,2,1,2,3,4][i % 8]);
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ['Right hand', 'Left hand'].forEach((hand, i) => {
           const heading = document.createElement('h4'); heading.textContent = hand;
           const staff = document.createElement('div'); staff.style.overflowX = 'auto';
-          content.querySelector('.coach-notes').before(heading, staff);
+          content.querySelector('.coach-anchor').before(heading, staff);
           const fingers = i ? lh : rh;
           const handNotes = i ? notes.map(note => note.replace(/\d$/, octave => Number(octave) - 1)) : notes;
           const sequence = handNotes.concat(handNotes.slice(0, -1).reverse());
@@ -63,11 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!scale) {
         const figure = document.createElement('figure');
         figure.dataset.hanonScore = '';
+        figure.setAttribute('data-score-readable', ''); // large-print staff: the exercise is short, give it the room
         figure.setAttribute('aria-label', `${level} Hanon No. 1 generated piano sheet music`);
-        const caption = document.createElement('figcaption');
-        caption.textContent = 'Generated from the same note sequence as the recall activity. Each cell is one bar of eight eighth notes in 4/4. Both hands move in parallel, one octave apart. Use the score player to hear both hands, or Print score to save a PDF.';
-        figure.append(caption);
-        content.querySelector('.coach-notes').before(figure);
+        content.querySelector('.coach-anchor').before(figure);
         const bars = pitches => Array.from({length: d.cells}, (_, i) =>
           pitches.slice(i * 8, i * 8 + 8).map(note => `${note}/8`).join(' ')).join(' | ');
         window.ScoreEngine.render(figure, {
@@ -81,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
             {clef: 'treble', name: 'Right hand', notes: bars(notes)},
             {clef: 'bass', name: 'Left hand', notes: bars(notes.map(note => note.replace(/\d$/, octave => Number(octave) - 1)))}
           ],
+          justifyLast: true, // stretch even a one-bar excerpt across the pane
           source: {label: 'The Virtuoso Pianist, Exercise 1 · opening ascending cells, generated classroom engraving', license: 'Public-domain composition'}
         });
       }
@@ -97,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             feedback.textContent = position === model.length ? 'Complete! Now try it on a keyboard with relaxed, even movement.' : `Correct. Next: note ${position + 1} of ${model.length}.`;
           } else feedback.textContent = `Try again. Note ${position + 1} is ${model[position]}.`;
         });
-        content.querySelector('[data-note-buttons]').append(button);
+        feedback.before(button);
       });
       content.querySelector('[data-model]').onclick = () => {
         const input = content.querySelector('[data-tempo]');
@@ -105,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         play(model, Number(input.value));
       };
       content.querySelector('[data-stop]').onclick = () => window.PianoAudio.stop();
-      content.querySelector('[data-restart]').onclick = () => { position = 0; feedback.textContent = `Ready for note 1 of ${model.length}.`; };
+      content.querySelector('[data-restart]').onclick = () => { position = 0; feedback.textContent = `Tap the notes in order: note 1 of ${model.length}.`; };
     }
     section.querySelectorAll('[data-coach-level]').forEach(button => button.addEventListener('click', () => render(button.dataset.coachLevel)));
     const hint = section.querySelector('#hanonLevelHint');

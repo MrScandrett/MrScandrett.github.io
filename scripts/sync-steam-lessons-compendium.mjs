@@ -47,7 +47,7 @@ const modulePresentations = {
     level: "K–12 Progression · Earth & Environmental Science",
   },
   engineering: {
-    subtitle: "Mechanisms, circuits, robotics, structures, and feedback control.",
+    subtitle: "Mechanisms, circuits, structures, and feedback control.",
     level: "K–12 Progression · Engineering Design",
   },
   "fabrication-materials": {
@@ -61,6 +61,10 @@ const modulePresentations = {
   "computer-science": {
     subtitle: "Programming, algorithms, simulation, and AI.",
     level: "K–12 Progression · Computer Science & AI",
+  },
+  robotics: {
+    subtitle: "Build, drive, and program robots that sense, map, plan, and learn.",
+    level: "Grades 3–12 · Sense → Think → Act",
   },
   "web-design": {
     subtitle: "HTML, CSS, JavaScript, servers, and publishing your own site.",

@@ -1,4 +1,4 @@
-/* Robot Car Pilot: the cockpit for lessons/engineering/robotics/robot-car-pilot.html.
+/* Robot Car Pilot: the cockpit for lessons/computer-science/robotics/robot-car-pilot.html.
    Connects to an ELEGOO Smart Robot Car V4.0 (or the simulator) through
    assets/js/elegoo-car.js, then drives it from a joystick, the keyboard, a
    gamepad, or a list of mission steps, and reads its sensors. */

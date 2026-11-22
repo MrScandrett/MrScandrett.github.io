@@ -211,13 +211,37 @@
     }
     window.dispatchEvent(new Event('resize'));
   }
+  // The toolbar sticks under the site header when the page itself scrolls (piano, guitar). In the
+  // app shell, where .ll-sim scrolls, nothing sits above it.
+  const siteHeader = document.querySelector('.site-header');
+  function setStickyTop() {
+    let inner = false;
+    for (let node = app.parentElement; node && node !== document.body; node = node.parentElement) {
+      if (/(auto|scroll)/.test(getComputedStyle(node).overflowY) && node.scrollHeight > node.clientHeight) { inner = true; break; }
+    }
+    const pos = siteHeader ? getComputedStyle(siteHeader).position : '';
+    app.style.setProperty('--iw-sticky-top', !inner && (pos === 'sticky' || pos === 'fixed') ? siteHeader.offsetHeight + 'px' : '0px');
+  }
+  setStickyTop();
+  window.addEventListener('resize', setStickyTop);
+  if (siteHeader && window.ResizeObserver) new ResizeObserver(setStickyTop).observe(siteHeader);
   if (isPiano) adoptPianoTools();
   else if (app.id === 'guitarWorkspace') adopt('progressions', 'Progressions');
   page('First sound', [app.querySelector(':scope > .fs, :scope > [data-first-sound]')]);
   const settings = app.querySelector('#pcDisplayBar, #gcDisplayBar, #drDisplayBar');
   if (isPiano && settings) {
     const essentials = settings.querySelector('.pc-builder-controls');
-    if (essentials) { essentials.classList.add('iw-essential-controls'); bar.after(essentials); }
+    if (essentials) {
+      essentials.classList.add('iw-essential-controls');
+      nav.after(essentials);
+      // Keyboard size is a display setting: it stays on the Sound & display page so the toolbar fits one row.
+      const size = essentials.querySelector('#pcSize');
+      if (size) {
+        const row = el('div', 'pc-builder-controls');
+        row.append(essentials.querySelector('label[for="pcSize"]') || '', size);
+        settings.prepend(row);
+      }
+    }
   }
   page('Sound & display', [settings]);
   const homework = app.querySelector('.dr-sheet-wrap');

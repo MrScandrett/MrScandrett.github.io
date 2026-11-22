@@ -2,7 +2,7 @@
 import {chromium} from 'playwright';import {findChromium} from '../lib/find-chromium.mjs';import assert from 'node:assert/strict';
 const b=await chromium.launch({executablePath:findChromium(),headless:true});const page=await b.newPage({viewport:{width:1600,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
- await page.goto('http://127.0.0.1:8080/lessons/engineering/robotics/nxt-robot-lab.html');await page.waitForSelector('#steps li');
+ await page.goto('http://127.0.0.1:8080/lessons/computer-science/robotics/nxt-robot-lab.html');await page.waitForSelector('#steps li');
  await page.click('#mode-blocks');await page.waitForSelector('.blocklySvg');assert.match(await page.locator('#block-status').innerText(),/Ready/);
  const templates=await page.locator('#project-starter option').evaluateAll(options=>options.map(o=>o.value));assert.equal(templates.length,12);
  for(const key of templates){await page.selectOption('#project-starter',key);await page.click('#load-project');assert.match(await page.locator('#block-status').innerText(),/Ready/,key);assert.match(await page.locator('#code').innerText(),/task main\(\)/,key);}
