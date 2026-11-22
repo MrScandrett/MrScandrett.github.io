@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mars Rover Landing · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Land a rover on Mars. Manage fuel, fight Martian wind, and nail the landing pad." />
+  <meta name="description" content="Land a rover on Mars. Manage fuel, fight Martian wind, compare planetary gravity, and nail the landing pad." />
   <meta property="og:title"       content="Mars Rover Landing · Mr. Scandrett's ClassroomOS" />
   <meta property="og:description" content="Land a Mars lander safely on the red planet. Manage fuel, fight Martian winds, and nail the landing pad." />
   <meta property="og:image"       content="https://mrscandrett.github.io/assets/thumbs/mars-rover-lander.svg" />
@@ -13,117 +13,584 @@
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <style>
-    body { background: #100604; color: #e8d0c0; margin: 0; overflow-x: hidden; }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+    }
 
     .mrl-topbar {
-      position: sticky; top: 0; z-index: 30;
+      position: sticky;
+      top: 0;
+      z-index: 30;
       backdrop-filter: blur(12px) saturate(140%);
-      background: rgba(18, 6, 2, 0.9);
-      border-bottom: 1px solid rgba(180, 60, 20, 0.25);
+      background: rgba(18, 6, 2, 0.94);
+      border-bottom: 1px solid rgba(220, 100, 50, 0.28);
     }
     .mrl-topbar-inner {
-      width: min(1180px, calc(100% - 2rem));
-      margin: 0 auto; min-height: 48px;
-      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      width: min(1240px, calc(100% - 2rem));
+      margin: 0 auto;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
     }
-    .mrl-topbar a { color: #d08060; text-decoration: none; font-size: 0.82rem; }
-    .mrl-topbar a:hover { color: #fff; }
-    .mrl-topbar-title { font-size: 0.9rem; font-weight: 700; color: #e8b090; }
+    .mrl-topbar a {
+      color: #f2baa0;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .mrl-topbar a:hover { color: #ffffff; text-decoration: underline; }
+    .mrl-topbar-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #ffcfb3;
+    }
 
-    .mrl-hero {
-      text-align: center; padding: 2.5rem 1.5rem 1.2rem;
-      max-width: 640px; margin: 0 auto;
+    .ll-stage {
+      --ll-panel-w: 324px;
     }
-    .mrl-hero h1 {
-      font-size: clamp(1.6rem, 4vw, 2.5rem);
-      font-weight: 800; color: #fff; margin: 0 0 0.4rem; letter-spacing: -0.02em;
+
+    .ll-sim {
+      background: radial-gradient(circle at 50% 0%, #240b06 0%, #100604 68%);
+      color: #f6e6dc;
+      padding: 0.45rem 0.9rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .mrl-hero p { font-size: 0.88rem; color: #d1a18d; line-height: 1.6; margin: 0; }
+
+    .ll-sim .mrl-hero {
+      padding: 0.2rem 0.5rem 0.3rem;
+      text-align: center;
+      max-width: 820px;
+      margin: 0;
+    }
+    .ll-sim .mrl-hero h1 {
+      font-size: clamp(1.22rem, 2.4vw, 1.65rem);
+      font-weight: 800;
+      color: #fff6f0;
+      margin: 0 0 0.16rem;
+      letter-spacing: -0.02em;
+    }
+    .ll-sim .mrl-hero p {
+      font-size: 0.8rem;
+      color: #e4c1af;
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .mrl-toolbar {
+      width: min(900px, 100%);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.35rem;
+      margin: 0.15rem 0 0.4rem;
+    }
+
+    .mrl-site-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.24rem;
+    }
+
+    .ll-sim .mrl-chip,
+    .ll-sim .mrl-btn {
+      background: rgba(66, 23, 12, 0.9);
+      border: 1px solid rgba(235, 120, 68, 0.45);
+      color: #ffd7c2;
+      border-radius: 8px;
+      padding: 0.26rem 0.5rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .ll-sim .mrl-chip:hover,
+    .ll-sim .mrl-btn:hover:not(:disabled) {
+      background: rgba(185, 65, 25, 0.65);
+      border-color: #fb923c;
+      color: #ffffff;
+    }
+    .ll-sim .mrl-chip[aria-pressed="true"],
+    .ll-sim .mrl-btn[aria-pressed="true"] {
+      background: #c2410c;
+      border-color: #fb923c;
+      color: #ffffff;
+    }
+    .ll-sim .mrl-btn:disabled {
+      background: rgba(48, 18, 9, 0.72);
+      border-color: rgba(235, 120, 68, 0.24);
+      color: #c29b87;
+      opacity: 0.72;
+      cursor: not-allowed;
+    }
+    .ll-sim .mrl-btn-primary {
+      background: #c2410c;
+      border-color: #fdba74;
+      color: #ffffff;
+    }
+    .ll-sim .mrl-btn-primary:hover:not(:disabled) {
+      background: #ea580c;
+    }
+
+    .mrl-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      align-items: center;
+    }
 
     .mrl-game-wrap {
-      max-width: 920px; margin: 1.2rem auto 0;
-      border-radius: 18px; overflow: hidden;
-      border: 1px solid rgba(160, 50, 20, 0.3);
-      box-shadow: 0 0 60px rgba(180, 60, 20, 0.12);
+      flex: 0 0 auto;
+      width: min(820px, calc((100dvh - 295px) * 280 / 165));
+      max-width: 100%;
+      aspect-ratio: 280 / 165;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(230, 100, 50, 0.38);
+      box-shadow: 0 12px 44px rgba(0, 0, 0, 0.55);
       position: relative;
+      background: #080302;
     }
-    #mrl-canvas { display: block; width: 100%; cursor: default; }
+    #mrl-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    #mrl-canvas:focus-visible {
+      outline: 2px solid #fbbf24;
+      outline-offset: -2px;
+    }
 
-    .mrl-controls-row {
-      max-width: 920px; margin: 1rem auto 0;
-      padding: 0 1rem;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 0.8rem;
+    .mrl-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem;
+      background: rgba(8, 3, 2, 0.56);
+      backdrop-filter: blur(2px);
     }
-    .mrl-key-legend { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
-    .mrl-key {
-      display: inline-flex; align-items: center; gap: 0.35rem;
-      background: rgba(60, 20, 10, 0.7);
-      border: 1px solid rgba(160, 60, 30, 0.5);
-      border-radius: 8px; padding: 0.3rem 0.6rem;
-      font-size: 0.75rem; font-weight: 700; color: #c08060;
-      letter-spacing: 0.02em;
+    .mrl-overlay[hidden] { display: none; }
+    .mrl-overlay.mrl-overlay-top {
+      align-items: flex-start;
+      padding-top: 3.6rem;
+      background: linear-gradient(180deg, rgba(8, 3, 2, 0.78) 0%, rgba(8, 3, 2, 0.14) 72%, transparent 100%);
+      backdrop-filter: none;
     }
-    .mrl-key kbd {
-      background: rgba(200, 80, 30, 0.2);
-      border-radius: 4px; padding: 1px 5px;
-      font-size: 0.72rem; color: #ff9060;
-      font-family: inherit;
+
+    .mrl-overlay-card {
+      width: min(460px, 94%);
+      background: rgba(20, 8, 4, 0.92);
+      border: 1px solid rgba(245, 130, 70, 0.42);
+      border-radius: 14px;
+      padding: 0.9rem 1.05rem;
+      text-align: center;
+      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.6);
     }
-    .mrl-btn {
-      background: rgba(200, 60, 20, 0.25);
-      border: 1px solid rgba(200, 80, 30, 0.5);
-      color: #e08060; border-radius: 10px;
-      padding: 0.45rem 1.2rem; font-size: 0.82rem; font-weight: 700;
-      cursor: pointer; transition: background 0.15s;
+    .mrl-badge {
+      display: inline-block;
+      padding: 0.16rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
     }
-    .mrl-btn:hover { background: rgba(200, 60, 20, 0.5); color: #fff; }
+    .mrl-badge-ready { background: rgba(251, 146, 60, 0.22); color: #fed7aa; border: 1px solid rgba(251, 146, 60, 0.45); }
+    .mrl-badge-safe { background: rgba(16, 185, 129, 0.24); color: #a7f3d0; border: 1px solid rgba(52, 211, 153, 0.5); }
+    .mrl-badge-crash { background: rgba(244, 63, 94, 0.24); color: #fecdd3; border: 1px solid rgba(251, 113, 133, 0.5); }
+
+    .mrl-overlay-card h2 {
+      margin: 0 0 0.25rem;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .mrl-overlay-card p {
+      margin: 0 0 0.65rem;
+      font-size: 0.8rem;
+      color: #ebd0c1;
+      line-height: 1.45;
+    }
+    .mrl-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.4rem;
+      margin-bottom: 0.65rem;
+    }
+    .mrl-stat {
+      background: rgba(45, 16, 8, 0.85);
+      border: 1px solid rgba(235, 120, 68, 0.25);
+      border-radius: 8px;
+      padding: 0.35rem 0.3rem;
+    }
+    .mrl-stat span {
+      display: block;
+      font-size: 0.64rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #deb9a4;
+    }
+    .mrl-stat strong {
+      font-size: 0.82rem;
+      font-family: ui-monospace, monospace;
+      color: #fff5ef;
+    }
+    .mrl-stat.is-ok strong { color: #6ee7b7; }
+    .mrl-stat.is-bad strong { color: #fda4af; }
+
+    .mrl-tip {
+      font-size: 0.76rem;
+      color: #fde68a;
+      background: rgba(120, 53, 15, 0.38);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      border-radius: 8px;
+      padding: 0.4rem 0.6rem;
+      margin-bottom: 0.65rem;
+    }
+    .mrl-overlay-actions {
+      display: flex;
+      justify-content: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
 
     .mrl-touch-controls {
-      max-width: 920px; margin: 0.8rem auto 0;
-      padding: 0 1rem;
+      width: min(820px, 100%);
+      margin-top: 0.5rem;
       display: none;
-      justify-content: center; gap: 1rem;
+      justify-content: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
     }
-    @media (pointer: coarse) { .mrl-touch-controls { display: flex; } }
+    @media (pointer: coarse), (max-width: 960px) {
+      .mrl-touch-controls { display: flex; }
+    }
     .mrl-touch-btn {
-      width: 64px; height: 64px; border-radius: 50%;
-      background: rgba(180, 60, 20, 0.25);
-      border: 2px solid rgba(200, 80, 40, 0.5);
-      color: #ff9060; font-size: 1.4rem;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; user-select: none;
+      min-width: 68px;
+      min-height: 46px;
+      padding: 0.45rem 0.9rem;
+      border-radius: 12px;
+      background: rgba(66, 23, 12, 0.9);
+      border: 2px solid rgba(245, 130, 70, 0.55);
+      color: #ffd7c2;
+      font-size: 0.85rem;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
+    .mrl-touch-btn.is-active,
+    .mrl-touch-btn:active {
+      background: #c2410c;
+      border-color: #fde68a;
+      color: #ffffff;
+    }
 
-    .mrl-info {
-      max-width: 920px; margin: 1.5rem auto 3rem;
-      padding: 0 1rem;
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 0.7rem;
+    /* Sidebar controls & flight log (theme-adaptive across Day/Night) */
+    .ll-panel .mrl-chip,
+    .ll-panel .mrl-btn {
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      color: var(--text-strong);
+      border-radius: 8px;
+      padding: 0.36rem 0.6rem;
+      font-size: 0.76rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    .mrl-info-card {
-      background: rgba(30, 10, 5, 0.7);
-      border: 1px solid rgba(120, 40, 15, 0.35);
-      border-radius: 12px; padding: 0.8rem 1rem;
+    .ll-panel .mrl-chip:hover,
+    .ll-panel .mrl-btn:hover:not(:disabled) {
+      border-color: var(--accent);
     }
-    .mrl-info-title { font-size: 0.78rem; font-weight: 700; color: #c07050; margin: 0 0 0.25rem; text-transform: uppercase; letter-spacing: 0.06em; }
-    .mrl-info-body  { font-size: 0.78rem; color: #806050; margin: 0; line-height: 1.5; }
+    .ll-panel .mrl-chip[aria-pressed="true"],
+    .ll-panel .mrl-btn-primary {
+      background: var(--accent, #c2410c);
+      border-color: var(--accent, #c2410c);
+      color: var(--accent-contrast, #ffffff);
+    }
+    .ll-panel .mrl-stat {
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      text-align: center;
+    }
+    .ll-panel .mrl-stat span {
+      color: var(--text-muted);
+    }
+    .ll-panel .mrl-stat strong {
+      color: var(--text-strong);
+    }
+    .ll-panel .mrl-stat.is-ok strong {
+      color: var(--success, #167a3c);
+    }
 
-    .ll-viewport {
-      --ll-panel-bg:      rgba(18, 6, 2, 0.97);
-      --ll-panel-border:  rgba(180, 60, 20, 0.22);
-      --ll-tab-color:     rgba(200, 130, 90, 0.7);
-      --ll-tab-active-bg: rgba(200, 80, 30, 0.18);
-      --ll-tab-active:    #e08060;
-      --ll-toggle-bg:     rgba(18, 6, 2, 0.97);
+    .mrl-world-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.35rem;
+      margin-bottom: 0.35rem;
     }
-    .mrl-game-wrap { max-height: calc(100dvh - 140px); }
+    .mrl-world-note {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin: 0 0 0.55rem;
+    }
+    .mrl-select {
+      width: 100%;
+      background: var(--surface-2);
+      color: var(--text-strong);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 0.42rem 0.55rem;
+      font: inherit;
+      font-size: 0.8rem;
+      margin-bottom: 0.35rem;
+    }
+    .mrl-check-row {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.78rem;
+      color: var(--text-body);
+      margin-bottom: 0.4rem;
+      cursor: pointer;
+    }
+    .mrl-check-row input {
+      accent-color: var(--accent, #c2410c);
+      width: 16px;
+      height: 16px;
+    }
+    .mrl-key-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 0.65rem;
+    }
+    .mrl-key {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.3rem 0.55rem;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-body);
+    }
+    .mrl-key kbd {
+      background: var(--surface-1);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 0.7rem;
+      color: var(--text-strong);
+      font-family: ui-monospace, monospace;
+    }
+
+    .mrl-log-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.35rem;
+      margin-bottom: 0.6rem;
+    }
+    .mrl-log-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: var(--surface-2);
+      margin-bottom: 0.6rem;
+    }
+    .mrl-log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.68rem;
+      color: var(--text-body);
+      font-variant-numeric: tabular-nums;
+    }
+    .mrl-log-table caption {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+    }
+    .mrl-log-table th,
+    .mrl-log-table td {
+      padding: 0.36rem 0.32rem;
+      border-bottom: 1px solid var(--border-subtle);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .mrl-log-table th {
+      color: var(--text-strong);
+      background: var(--surface-1);
+      font-weight: 700;
+    }
+    .mrl-log-table tr.is-safe td:last-child { color: var(--success, #167a3c); font-weight: 700; }
+    .mrl-log-table tr.is-crash td:last-child { color: var(--danger, #c32235); font-weight: 700; }
+    .mrl-log-empty td {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 0.85rem 0.4rem;
+      white-space: normal;
+    }
+
+    .mrl-log-table tr.is-shown td { background: color-mix(in srgb, var(--accent, #c2410c) 14%, transparent); }
+    .mrl-row-btn {
+      background: none;
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      color: var(--text-strong);
+      font: inherit;
+      font-weight: 700;
+      padding: 0.05rem 0.4rem;
+      cursor: pointer;
+    }
+    .mrl-row-btn:hover { border-color: var(--accent); }
+
+    /* Flight graph (Flight Log tab) */
+    .mrl-chart-wrap {
+      margin: 0 0 0.6rem;
+      padding: 0.5rem 0.5rem 0.45rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: var(--surface-2);
+      --mrl-alt: #0369a1;
+      --mrl-stop: #b45309;
+      --mrl-v: #9f1239;
+      --mrl-ok: #15803d;
+    }
+    html[data-lighting="night"] .mrl-chart-wrap {
+      --mrl-alt: #7dd3fc;
+      --mrl-stop: #fbbf24;
+      --mrl-v: #fda4af;
+      --mrl-ok: #6ee7b7;
+    }
+    .mrl-chart-title {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--text-strong);
+      margin-bottom: 0.3rem;
+    }
+    .mrl-chart { display: block; width: 100%; height: auto; overflow: visible; }
+    .mrl-chart[hidden] { display: none; }
+    .mrl-chart-note {
+      font-size: 0.72rem;
+      line-height: 1.45;
+      color: var(--text-body);
+      margin: 0.35rem 0 0;
+    }
+    .mrl-ch-grid { stroke: var(--border-subtle); stroke-width: 0.6; }
+    .mrl-ch-tick { font: 600 7.5px ui-monospace, monospace; fill: var(--text-muted); }
+    .mrl-ch-head { font: 700 8px system-ui, sans-serif; fill: var(--text-strong); }
+    .mrl-ch-alt, .mrl-ch-stop, .mrl-ch-v { fill: none; stroke-width: 1.6; stroke-linejoin: round; }
+    .mrl-ch-alt { stroke: var(--mrl-alt); }
+    .mrl-ch-stop { stroke: var(--mrl-stop); stroke-dasharray: 4 2.5; }
+    .mrl-ch-v { stroke: var(--mrl-v); }
+    .mrl-ch-burn { fill: var(--mrl-stop); }
+    .mrl-ch-safe { fill: var(--mrl-ok); fill-opacity: 0.14; }
+    .mrl-ch-safe-label { fill: var(--mrl-ok); }
+    .mrl-ch-mark { stroke-width: 0.9; stroke-dasharray: 2 2; }
+    .mrl-ch-mark.mrl-ch-mark-burn { stroke: var(--mrl-stop); }
+    .mrl-ch-mark.mrl-ch-mark-late { stroke: var(--mrl-v); }
+    text.mrl-ch-mark-burn { fill: var(--mrl-stop); }
+    text.mrl-ch-mark-late { fill: var(--mrl-v); }
+    .mrl-ch-end-ok { fill: var(--mrl-ok); }
+    .mrl-ch-end-bad { fill: var(--mrl-v); }
+
+    .mrl-formula {
+      display: block;
+      margin: 0.35rem 0;
+      font-family: ui-monospace, monospace;
+      font-size: 0.82rem;
+      color: var(--text-strong);
+    }
+
+    .mrl-showcase-cta {
+      display: inline-block;
+      margin-top: 0.45rem;
+      padding: 0.42rem 0.78rem;
+      border-radius: 8px;
+      background: var(--accent, #c2410c);
+      color: var(--accent-contrast, #ffffff);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.78rem;
+    }
+    .mrl-showcase-cta:hover { filter: brightness(1.08); }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    /* Narrow screens: one page that scrolls (game first, controls below) instead of
+       two boxes that each scroll and clip the canvas. */
+    @media (max-width: 960px) {
+      .ll-stage { flex-direction: column; overflow-y: auto; }
+      .ll-sim { flex: 0 0 auto; overflow: visible; }
+      .ll-panel[data-ll-panel-static] {
+        position: static;
+        flex: 0 0 auto;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible;
+        transform: none;
+        border-left: none;
+        border-top: 1px solid var(--ll-panel-border);
+      }
+      .ll-panel[data-ll-panel-static] .ll-panel-body { overflow: visible; }
+      .mrl-game-wrap {
+        width: 100%;
+      }
+    }
+
+    /* Phones: the canvas is too short to hold the briefing/result card, so the card
+       sits under it instead of on top of it. */
+    @media (max-width: 600px) {
+      .mrl-game-wrap { aspect-ratio: auto; }
+      .mrl-overlay,
+      .mrl-overlay.mrl-overlay-top {
+        position: static;
+        padding: 0.5rem;
+        background: #140804;
+        backdrop-filter: none;
+      }
+      .mrl-overlay-card { width: 100%; padding: 0.7rem 0.75rem; box-shadow: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
   </style>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
-<div class="ll-viewport ll-dark">
+<div class="ll-viewport">
   <header class="site-header">
     <div class="nav-wrap">
       <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
@@ -141,12 +608,11 @@
     </div>
   </header>
 
-
-  <nav class="mrl-topbar ll-topbar">
+  <nav class="mrl-topbar ll-topbar" aria-label="Lesson navigation">
     <div class="mrl-topbar-inner">
       <a href="../../steam-lessons.html">← Space Science</a>
       <span class="mrl-topbar-title">Mars Rover Landing</span>
-      <a href="../../index.html">ClassroomOS</a>
+      <a href="../../apps/mars-rover-lander/">Arcade Game ↗</a>
     </div>
   </nav>
 
@@ -155,45 +621,152 @@
 
       <div class="mrl-hero ll-hero">
         <h1>Mars Rover Landing</h1>
-        <p>You're entering Martian atmosphere. Fight gravity and wind, manage your fuel, and land precisely on the pad. Too fast or off-target — and it's over.</p>
+        <p>Fall, then brake. Burn when the stopping-distance bracket says so, and touch down under 4.0 m/s, 2.5 m/s sideways, and 12° tilt.</p>
+      </div>
+
+      <div class="mrl-toolbar" aria-label="Quick flight controls">
+        <div class="mrl-site-chips" id="mrl-site-chips" role="group" aria-label="Landing site presets"></div>
+        <div class="mrl-quick-actions">
+          <button type="button" class="mrl-btn mrl-btn-primary" id="mrl-launch-top">Launch</button>
+          <button type="button" class="mrl-btn" id="mrl-autopilot-btn" aria-pressed="false">Watch Autopilot</button>
+          <button type="button" class="mrl-btn" id="mrl-pause-btn" disabled>Pause</button>
+          <button type="button" class="mrl-btn" id="mrl-sas-btn" aria-pressed="true">SAS: On</button>
+          <button type="button" class="mrl-btn" id="mrl-arc-btn" aria-pressed="true">Arc: On</button>
+          <button type="button" class="mrl-btn" id="mrl-sound-btn" aria-pressed="true">Audio: On</button>
+        </div>
       </div>
 
       <div class="mrl-game-wrap">
-        <canvas id="mrl-canvas"></canvas>
+        <canvas id="mrl-canvas" tabindex="0" role="img" aria-label="Mars Rover Landing interactive physics simulation"></canvas>
+        <div class="mrl-overlay" id="mrl-overlay">
+          <div class="mrl-overlay-card">
+            <span class="mrl-badge mrl-badge-ready" id="mrl-overlay-badge">Cadet · Perseverance 2021</span>
+            <h2 id="mrl-overlay-title">Jezero Crater (Mars)</h2>
+            <p id="mrl-overlay-desc">Ancient river delta basin. Wide landing pad and a gentle, steady Martian breeze.</p>
+            <div class="mrl-stats-grid" id="mrl-overlay-stats"></div>
+            <div class="mrl-tip" id="mrl-overlay-tip" hidden></div>
+            <div class="mrl-overlay-actions">
+              <button type="button" class="mrl-btn mrl-btn-primary" id="mrl-overlay-primary">Launch Descent</button>
+              <button type="button" class="mrl-btn" id="mrl-overlay-secondary" hidden>Replay</button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="mrl-touch-controls" id="mrl-touch">
-        <button class="mrl-touch-btn" id="tc-left">◀</button>
-        <button class="mrl-touch-btn" id="tc-thrust">▲</button>
-        <button class="mrl-touch-btn" id="tc-right">▶</button>
+      <div class="mrl-touch-controls" id="mrl-touch" aria-label="Touch flight controls">
+        <button type="button" class="mrl-touch-btn" id="tc-left" aria-label="Rotate left">◀ Left</button>
+        <button type="button" class="mrl-touch-btn" id="tc-hover" aria-label="Hover trim thrust">Hover</button>
+        <button type="button" class="mrl-touch-btn" id="tc-thrust" aria-label="Main thruster">▲ Thrust</button>
+        <button type="button" class="mrl-touch-btn" id="tc-right" aria-label="Rotate right">Right ▶</button>
       </div>
 
+      <p class="sr-only" id="mrl-announcer" aria-live="polite"></p>
     </div>
 
-    <aside class="ll-panel" aria-hidden="false">
+    <aside class="ll-panel" aria-hidden="false" data-ll-panel-static>
       <div class="ll-panel-head">
-        <div class="ll-tabs">
-          <button class="ll-tab" aria-selected="true"  data-pane="mrl-params">Controls</button>
-          <button class="ll-tab" aria-selected="false" data-pane="mrl-guide">About</button>
+        <div class="ll-tabs" role="tablist" aria-label="Mission sidebar">
+          <button class="ll-tab" role="tab" aria-selected="true" data-pane="mrl-params">Controls</button>
+          <button class="ll-tab" role="tab" aria-selected="false" data-pane="mrl-log-pane">Flight Log</button>
+          <button class="ll-tab" role="tab" aria-selected="false" data-pane="mrl-guide">About</button>
         </div>
-        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
       </div>
       <div class="ll-panel-body">
 
         <div class="ll-pane ll-active" id="mrl-params">
-          <span class="ll-label">Keyboard Controls</span>
-          <div class="mrl-key-legend" style="flex-direction:column;gap:0.4rem;margin-bottom:0.75rem;">
-            <span class="mrl-key"><kbd>↑</kbd> Main thruster</span>
-            <span class="mrl-key"><kbd>←</kbd><kbd>→</kbd> Rotate</span>
-            <span class="mrl-key"><kbd>R</kbd> Restart</span>
+          <label class="ll-label" for="mrl-site-select">Landing Site</label>
+          <select id="mrl-site-select" class="mrl-select"></select>
+          <p class="mrl-world-note" id="mrl-site-desc"></p>
+
+          <span class="ll-label">Planetary Gravity Comparison</span>
+          <div class="mrl-world-grid" role="group" aria-label="World gravity">
+            <button type="button" class="mrl-chip" data-world="mars" aria-pressed="true">Mars</button>
+            <button type="button" class="mrl-chip" data-world="moon" aria-pressed="false">Moon</button>
+            <button type="button" class="mrl-chip" data-world="earth" aria-pressed="false">Earth</button>
           </div>
-          <button class="mrl-btn" id="mrl-restart-btn" style="width:100%;justify-content:center;">↺ Restart</button>
+          <p class="mrl-world-note" id="mrl-world-desc">3.72 m/s² · Thin CO₂ air</p>
+
+          <div class="ll-param">
+            <div class="ll-param-label">
+              <label for="mrl-wind-slider">Base Wind</label>
+              <span class="ll-val" id="mrl-wind-val">Auto</span>
+            </div>
+            <input type="range" id="mrl-wind-slider" min="-18" max="18" step="0.5" value="5" data-range-accent="#fb923c" />
+            <label class="mrl-check-row" style="margin-top:0.35rem;">
+              <input type="checkbox" id="mrl-wind-random" checked />
+              <span>Randomize wind each flight</span>
+            </label>
+          </div>
+
+          <div class="ll-param">
+            <div class="ll-param-label">
+              <label for="mrl-fuel-slider">Fuel Load</label>
+              <span class="ll-val" id="mrl-fuel-val">100%</span>
+            </div>
+            <input type="range" id="mrl-fuel-slider" min="60" max="150" step="5" value="100" data-range-accent="#fb923c" />
+          </div>
+
           <hr class="ll-hr" />
-          <span class="ll-label">Landing Criteria</span>
-          <div class="ll-info">
-            <strong>Safe Thresholds</strong>
-            V-Speed &lt; 4 m/s · H-Speed &lt; 2.5 m/s · Tilt within 12°
+          <span class="ll-label">Flight Assists</span>
+          <label class="mrl-check-row"><input type="checkbox" id="mrl-toggle-arc" checked /><span>Ballistic trajectory arc (G)</span></label>
+          <label class="mrl-check-row"><input type="checkbox" id="mrl-toggle-vec" checked /><span>Velocity vector arrow</span></label>
+          <label class="mrl-check-row"><input type="checkbox" id="mrl-toggle-brake" checked /><span>Stopping-distance bracket</span></label>
+          <label class="mrl-check-row"><input type="checkbox" id="mrl-toggle-sas" checked /><span>SAS auto-level stabilizer (T)</span></label>
+          <label class="mrl-check-row"><input type="checkbox" id="mrl-toggle-mute" checked /><span>Cockpit audio effects (M)</span></label>
+
+          <hr class="ll-hr" />
+          <span class="ll-label">Keyboard Controls</span>
+          <div class="mrl-key-legend">
+            <span class="mrl-key"><kbd>↑</kbd> <kbd>W</kbd> <kbd>Space</kbd> Main thruster</span>
+            <span class="mrl-key"><kbd>↓</kbd> <kbd>S</kbd> <kbd>Shift</kbd> Hover trim burn</span>
+            <span class="mrl-key"><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> Rotate</span>
+            <span class="mrl-key"><kbd>R</kbd> Restart · <kbd>P</kbd> Pause</span>
+            <span class="mrl-key">Any flight key takes over from the autopilot</span>
           </div>
+          <button class="mrl-btn mrl-btn-primary" id="mrl-restart-btn" style="width:100%;">↺ Restart Flight</button>
+
+          <hr class="ll-hr" />
+          <div class="ll-info">
+            <strong>Safe Landing Thresholds</strong>
+            V-Speed &lt; 4.0 m/s · H-Speed &lt; 2.5 m/s · Tilt ≤ 12° on pad
+          </div>
+        </div>
+
+        <div class="ll-pane" id="mrl-log-pane">
+          <span class="ll-label">Flight-Test Session</span>
+          <div class="mrl-log-kpis">
+            <div class="mrl-stat"><span>Runs</span><strong id="mrl-log-attempts">0</strong></div>
+            <div class="mrl-stat is-ok"><span>Safe</span><strong id="mrl-log-safe">0</strong></div>
+            <div class="mrl-stat"><span>Best Fuel</span><strong id="mrl-log-best-fuel">–</strong></div>
+          </div>
+
+          <figure class="mrl-chart-wrap" data-present="off">
+            <figcaption class="mrl-chart-title" id="mrl-chart-title">Flight graph</figcaption>
+            <svg class="mrl-chart" id="mrl-chart" role="img" hidden></svg>
+            <p class="mrl-chart-note" id="mrl-chart-note">Land (or crash) once and your altitude, stopping distance and descent speed appear here.</p>
+          </figure>
+
+          <div class="mrl-log-table-wrap">
+            <table class="mrl-log-table">
+              <caption>Recorded Mars rover descent attempts</caption>
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Site</th>
+                  <th scope="col">Wind</th>
+                  <th scope="col">V</th>
+                  <th scope="col">H</th>
+                  <th scope="col">Tilt</th>
+                  <th scope="col">Fuel</th>
+                  <th scope="col">Result</th>
+                </tr>
+              </thead>
+              <tbody id="mrl-flight-log">
+                <tr class="mrl-log-empty"><td colspan="8">Fly a descent to log your landing telemetry.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <button type="button" class="mrl-btn" id="mrl-clear-log" style="width:100%;">Clear Flight Log</button>
         </div>
 
         <div class="ll-pane" id="mrl-guide">
@@ -203,889 +776,81 @@
           </div>
           <div class="ll-info">
             <strong>Mars Gravity</strong>
-            3.72 m/s² — about 38% of Earth's. Objects fall slower, but you still need thrust to slow your descent.
+            3.72 m/s² — about 38% of Earth's (9.81 m/s²). Switch to Moon or Earth in the Controls tab to compare how gravity changes your required braking burn!
           </div>
           <div class="ll-info">
             <strong>Martian Wind</strong>
-            Mars has thin but persistent winds. A new wind direction and strength is set each game — watch the indicator.
+            Mars has thin but persistent winds and seasonal gusts. Watch the animated windsock next to the pad and the live wind strip at the top center.
           </div>
           <div class="ll-info">
-            <strong>Fuel Management</strong>
-            Every thruster burn costs fuel. If you run out before landing, you'll fall uncontrolled. Burn smart.
+            <strong>The Stopping-Distance Rule</strong>
+            A full burn pushes up harder than gravity pulls down. What is left over is your braking:
+            <span class="mrl-formula">braking = thrust − g</span>
+            Falling at speed <em>v</em>, you need this much height to slow down:
+            <span class="mrl-formula">d = v² ÷ (2 × braking)</span>
+            The dashed bracket under the lander draws <em>d</em> live. Green: plenty of room. Yellow <em>BURN NOW</em>: start your full burn. Red: even a full burn is too late. Double your speed and <em>d</em> grows four times.
+          </div>
+          <div class="ll-info">
+            <strong>Why Late Burns Save Fuel</strong>
+            Every second the engine runs, part of its thrust only cancels gravity. Hovering high wastes propellant just holding still; one late, steady burn (the "suicide burn") wastes the least. Tilting wastes thrust too: only the upward part of the push brakes your fall.
+          </div>
+          <div class="ll-info">
+            <strong>Try This: Three Worlds</strong>
+            This lander's full thrust is 11.6 m/s². On the Moon that leaves about 10 m/s² of braking, on Mars about 7.9, and on Earth only 1.8. Fall at 15 m/s on each world and watch the bracket: about 12 m, 15 m, and over 60 m. That is why real Earth rockets need far more thrust for their weight.
           </div>
           <div class="ll-info">
             <strong>Landing Criteria</strong>
-            Hit the pad with vertical speed &lt; 4 m/s, horizontal speed &lt; 2.5 m/s, and tilt within 12°.
+            Touch both outer footpads on a landing pad with vertical speed &lt; 4.0 m/s, horizontal speed &lt; 2.5 m/s, and tilt within 12°.
           </div>
           <div class="ll-info">
             <strong>The Real Thing</strong>
             <figure data-zoomable data-lightbox-group="mars-rover-lander" style="margin:0.5rem 0;text-align:center;max-width:260px;">
               <img src="../../assets/thumbs/curiosity-rover-selfportrait.jpg" alt="NASA self-portrait photo of the Curiosity rover on the Martian surface" style="width:100%;display:block;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.25);" />
-              <figcaption style="font-size:0.72rem;color: var(--text-muted, #64748b);margin-top:0.35rem;">Curiosity rover self-portrait on Mars. Public domain, NASA/JPL-Caltech.</figcaption>
+              <figcaption style="font-size:0.72rem;color:var(--text-muted, #dbb8a4);margin-top:0.35rem;">Curiosity rover self-portrait on Mars. Public domain, NASA/JPL-Caltech.</figcaption>
             </figure>
-            NASA's Curiosity rover safely landed on Mars in 2012 using a real "sky crane" descent stage — the same kind of fuel, gravity, and timing tradeoffs you just managed.
+            NASA's Curiosity rover safely landed on Mars in 2012 using a real "sky crane" descent stage — the same kind of fuel, gravity, and timing tradeoffs you manage here.
+          </div>
+          <div class="ll-info">
+            <strong>Watch the Autopilot</strong>
+            Press <em>Watch Autopilot</em> and the lander flies itself, using only the same thrust and turn controls you have. Every moment it asks three questions: how far am I from the pad, how fast am I falling, and how much room do I have to stop? It leans into the wind, stays above a cone over the pad, and falls on the braking curve <span class="mrl-formula">v = √(2 × braking × height)</span> so it burns as late as it safely can. Press any flight key to take over mid-flight.
+            <br /><br />
+            Then open the Flight Log and compare its graph with yours: where did it start braking? It is not perfect. On Olympus Mons and Arcadia strong winds sometimes drain its fuel, and on Earth it never lands. Can you beat it?
+          </div>
+          <div class="ll-info">
+            <strong>How Real Rovers Land</strong>
+            Curiosity (2012) and Perseverance (2021) hit the top of Mars's air at about 20,000 km/h. A heat shield uses the thin air to shed most of that speed, a supersonic parachute takes it to roughly 300 km/h, and rockets do the last part, just like here. Then a "sky crane" hovers and lowers the rover on cables at under 1 m/s.
+            <br /><br />
+            Engineers call it the "seven minutes of terror": the whole descent takes about seven minutes, but a radio signal from Mars takes over ten minutes to reach Earth. By the time mission control hears that entry has begun, the rover has already landed (or crashed). The landing computer flies alone, using the same rule as your bracket.
           </div>
           <div class="ll-info">
             <strong>Flight-Test Challenge</strong>
-            Complete three attempts. For each one, record starting wind, remaining fuel, vertical speed, horizontal speed, and tilt at touchdown. Change only one strategy between attempts so your evidence supports a fair comparison.
+            Complete three attempts and open the <em>Flight Log</em> tab. The graph shows your altitude, your stopping distance, and your descent speed; press a flight's number to compare runs. Find where the dashed stopping-distance line meets the altitude line: that is the last moment a full burn could save you. Change only one variable (wind, gravity, or burn timing) between runs.
           </div>
           <div class="ll-info">
             <strong>Explain Your Best Landing</strong>
-            Identify when you used a long burn, short pulses, and rotation. Explain how each choice changed momentum and why waiting until the final second usually fails.
+            Identify when you used a long burn, hover trim pulses, and rotation. Explain how each choice changed momentum and why waiting until the final second usually fails.
           </div>
           <div class="ll-info">
             <strong>Exit Ticket</strong>
             Mars has weaker gravity than Earth. Why does a lander still need a powered descent? Use the words <em>velocity</em>, <em>force</em>, and <em>fuel</em> in your answer.
           </div>
+          <div class="ll-info">
+            <strong>Teacher Studio Arcade Edition</strong>
+            Ready for Campaign stars, 2×/2.5× bonus pads, and Endless Arcade drops?
+            <br />
+            <a class="mrl-showcase-cta" href="../../apps/mars-rover-lander/">Play in Student Showcase ↗</a>
+          </div>
         </div>
 
       </div>
     </aside>
-
-    <button class="ll-open-btn" aria-label="Open panel">
-      <span class="ll-open-dot"></span>
-      <span class="ll-open-dot"></span>
-      <span class="ll-open-dot"></span>
-    </button>
   </main>
-
 </div>
 
-  <script src="../../assets/js/sim-kit.js"></script>
-<script>
-  (function () {
-    const canvas = document.getElementById('mrl-canvas');
-    const ctx    = canvas.getContext('2d');
-    const wrap   = canvas.parentElement;
-
-    // ── Sizing ──
-    let W, H;
-    function resize() {
-      W = wrap.clientWidth;
-      H = Math.round(W * 0.58);
-      H = Math.max(H, 340);
-      canvas.width  = W;
-      canvas.height = H;
-    }
-    resize();
-    window.addEventListener('resize', () => { resize(); buildTerrain(); generateStars(); });
-
-    // ── Physics constants ──
-    const FPS       = 60;
-    const DT        = 1 / FPS;
-    const GRAVITY   = 38;
-    const THRUST    = 110;
-    const ROT_SPD   = 90;
-    const FUEL_MAX  = 100;
-    const FUEL_BURN = 22;
-    const SAFE_VSPD = 75;
-    const SAFE_HSPD = 55;
-    const SAFE_TILT = 12;
-
-    // ── State ──
-    let state;
-    let lander, terrain, padX, padW, wind, windLabel;
-    let keys          = {};
-    let particles     = [];
-    let rocks         = [];
-    let craters       = [];
-    let stars         = [];
-    let time          = 0;
-    let shakeTime     = 0;
-    let shakeAmp      = 0;
-    let crashSpawned  = false;
-    let dustSpawned   = false;
-
-    // ── Stars ──
-    function generateStars() {
-      stars = [];
-      for (let i = 0; i < 240; i++) {
-        stars.push({
-          x:    Math.random(),
-          y:    Math.random() * 0.74,
-          r:    Math.random() < 0.07 ? 1.8 : (Math.random() < 0.25 ? 1.2 : 0.65),
-          base: 0.3 + Math.random() * 0.65,
-          amp:  0.15 + Math.random() * 0.35,
-          freq: 0.6 + Math.random() * 2.8,
-          phase: Math.random() * Math.PI * 2,
-        });
-      }
-    }
-    generateStars();
-
-    // ── Terrain ──
-    function buildTerrain() {
-      const pts  = [];
-      const segW = W / 14;
-      let y = H * 0.72;
-      for (let i = 0; i <= 14; i++) {
-        if (i === 0 || i === 14) { pts.push({ x: i * segW, y }); continue; }
-        y = H * 0.68 + Math.random() * H * 0.10;
-        pts.push({ x: i * segW, y });
-      }
-      const padSeg = 4 + Math.floor(Math.random() * 6);
-      const pY     = H * 0.70 + Math.random() * H * 0.06;
-      pts[padSeg].y = pY;
-      pts[padSeg + 1] = pts[padSeg + 1] || {};
-      pts[padSeg + 1].x = (padSeg + 1) * segW;
-      pts[padSeg + 1].y = pY;
-      padX    = pts[padSeg].x;
-      padW    = segW;
-      terrain = pts;
-
-      // Rocks
-      rocks = [];
-      for (let i = 0; i < 24; i++) {
-        const rx = Math.random() * W;
-        if (rx > padX - 24 && rx < padX + padW + 24) continue;
-        const ry = terrainYAt(rx);
-        rocks.push({
-          x:     rx,
-          y:     ry,
-          w:     5 + Math.random() * 15,
-          h:     3 + Math.random() * 9,
-          shade: Math.random(),
-          rot:   (Math.random() - 0.5) * 0.6,
-        });
-      }
-
-      // Craters (behind terrain surface)
-      craters = [];
-      for (let i = 0; i < 5; i++) {
-        craters.push({
-          x:     30 + Math.random() * (W - 60),
-          yFrac: 0.76 + Math.random() * 0.16,
-          rx:    16 + Math.random() * 34,
-          ry:    4  + Math.random() * 10,
-        });
-      }
-    }
-
-    function resetLander() {
-      lander = {
-        x: W * 0.5, y: H * 0.08,
-        vx: 0, vy: 0,
-        angle: 0,
-        fuel: FUEL_MAX,
-        thrusting: false,
-      };
-      const wmag = 8 + Math.random() * 18;
-      const wdir = Math.random() < 0.5 ? 1 : -1;
-      wind      = wmag * wdir;
-      windLabel = (wdir > 0 ? '→' : '←') + ' ' + wmag.toFixed(1) + ' m/s';
-    }
-
-    function initGame() {
-      buildTerrain();
-      resetLander();
-      state        = 'playing';
-      particles    = [];
-      crashSpawned = false;
-      dustSpawned  = false;
-      shakeTime    = 0;
-    }
-
-    // ── Terrain helpers ──
-    function terrainYAt(x) {
-      if (!terrain || terrain.length < 2) return H;
-      for (let i = 0; i < terrain.length - 1; i++) {
-        const a = terrain[i], b = terrain[i + 1];
-        if (x >= a.x && x <= b.x) {
-          const t = (x - a.x) / (b.x - a.x);
-          return a.y + t * (b.y - a.y);
-        }
-      }
-      return H;
-    }
-    function isOnPad(x) { return x >= padX && x <= padX + padW; }
-
-    // ── Collision ──
-    function checkLanding() {
-      const gY = terrainYAt(lander.x);
-      if (lander.y + 30 >= gY) {
-        const vspd     = Math.abs(lander.vy);
-        const hspd     = Math.abs(lander.vx);
-        const tilt     = Math.abs(lander.angle) % 360;
-        const normTilt = tilt > 180 ? 360 - tilt : tilt;
-        const onPad    = isOnPad(lander.x);
-        if (onPad && vspd < SAFE_VSPD && hspd < SAFE_HSPD && normTilt < SAFE_TILT) {
-          state = 'landed';
-          if (!dustSpawned) { spawnDustParticles(lander.x, gY); dustSpawned = true; }
-        } else {
-          state = 'crashed';
-          if (!crashSpawned) {
-            spawnCrashParticles(lander.x, gY);
-            crashSpawned = true;
-            shakeTime    = 0.55;
-            shakeAmp     = 11;
-          }
-        }
-        lander.y  = gY - 30;
-        lander.vy = 0; lander.vx = 0;
-      }
-    }
-
-    // ── Particles ──
-    function spawnThrusterParticles() {
-      const rad = (lander.angle + 90) * Math.PI / 180;
-      const px  = lander.x + Math.cos(rad) * 22;
-      const py  = lander.y + Math.sin(rad) * 22;
-      for (let i = 0; i < 2; i++) {
-        const spread = (Math.random() - 0.5) * 0.45;
-        const speed  = 75 + Math.random() * 65;
-        const a      = rad + spread;
-        particles.push({
-          x: px + (Math.random() - 0.5) * 7,
-          y: py + (Math.random() - 0.5) * 7,
-          vx: Math.cos(a) * speed + lander.vx * 0.3,
-          vy: Math.sin(a) * speed + lander.vy * 0.3,
-          life: 1, maxLife: 0.14 + Math.random() * 0.18,
-          size: 2.2 + Math.random() * 2.8, type: 'exhaust',
-        });
-      }
-    }
-
-    function spawnCrashParticles(x, y) {
-      for (let i = 0; i < 60; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 25 + Math.random() * 200;
-        const isFire = i < 22;
-        particles.push({
-          x: x + (Math.random() - 0.5) * 24,
-          y: y - Math.random() * 14,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - (isFire ? 110 + Math.random() * 80 : 0),
-          life: 1, maxLife: 0.5 + Math.random() * 1.3,
-          size: 2.5 + Math.random() * (isFire ? 9 : 7),
-          type: isFire ? 'fire' : 'debris',
-          col:  Math.random() < 0.55 ? '#ff7030' : '#c84010',
-        });
-      }
-      for (let i = 0; i < 14; i++) {
-        particles.push({
-          x: x + (Math.random() - 0.5) * 36,
-          y: y - 6,
-          vx: (Math.random() - 0.5) * 50,
-          vy: -18 - Math.random() * 65,
-          life: 1, maxLife: 1.3 + Math.random() * 0.9,
-          size: 9 + Math.random() * 18, type: 'smoke',
-        });
-      }
-    }
-
-    function spawnDustParticles(x, y) {
-      for (let i = 0; i < 28; i++) {
-        particles.push({
-          x: x + (Math.random() - 0.5) * 56,
-          y: y,
-          vx: (Math.random() - 0.5) * 90,
-          vy: -14 - Math.random() * 58,
-          life: 1, maxLife: 1.1 + Math.random() * 0.9,
-          size: 3 + Math.random() * 7, type: 'dust',
-        });
-      }
-    }
-
-    function updateParticles() {
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.life -= DT / p.maxLife;
-        if (p.life <= 0) { particles.splice(i, 1); continue; }
-        p.x  += p.vx * DT;
-        p.y  += p.vy * DT;
-        if (p.type !== 'exhaust') p.vy += GRAVITY * 0.55 * DT;
-        p.vx *= 0.985;
-      }
-    }
-
-    function drawParticles() {
-      for (const p of particles) {
-        const a = Math.max(0, p.life);
-        ctx.globalAlpha = a;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        if (p.type === 'exhaust') {
-          ctx.fillStyle = p.life > 0.5 ? '#ffcc40' : '#ff7020';
-        } else if (p.type === 'fire') {
-          ctx.fillStyle = p.col;
-        } else if (p.type === 'smoke') {
-          ctx.fillStyle = `rgba(70,35,18,${a * 0.38})`;
-        } else if (p.type === 'debris') {
-          ctx.fillStyle = p.col;
-        } else {
-          ctx.fillStyle = '#c07040'; // dust
-        }
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // ── Update ──
-    function update() {
-      if (state !== 'playing') return;
-
-      if (keys['ArrowLeft']  || keys['a']) lander.angle -= ROT_SPD * DT;
-      if (keys['ArrowRight'] || keys['d']) lander.angle += ROT_SPD * DT;
-
-      const thrusting = (keys['ArrowUp'] || keys['w'] || keys[' ']) && lander.fuel > 0;
-      lander.thrusting = thrusting;
-      if (thrusting) {
-        const rad = (lander.angle - 90) * Math.PI / 180;
-        lander.vx += Math.cos(rad) * THRUST * DT;
-        lander.vy += Math.sin(rad) * THRUST * DT;
-        lander.fuel = Math.max(0, lander.fuel - FUEL_BURN * DT);
-        spawnThrusterParticles();
-      }
-
-      lander.vx += wind * DT;
-      lander.vy += GRAVITY * DT;
-      lander.x  += lander.vx * DT;
-      lander.y  += lander.vy * DT;
-
-      if (lander.x < 10) { lander.x = 10; lander.vx *= -0.4; }
-      if (lander.x > W - 10) { lander.x = W - 10; lander.vx *= -0.4; }
-
-      checkLanding();
-      updateParticles();
-      if (shakeTime > 0) shakeTime -= DT;
-    }
-
-    // ── Draw: Sky ──
-    function drawSky() {
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.76);
-      skyGrad.addColorStop(0,    '#040101');
-      skyGrad.addColorStop(0.28, '#160806');
-      skyGrad.addColorStop(0.60, '#361208');
-      skyGrad.addColorStop(0.82, '#5e1c0a');
-      skyGrad.addColorStop(1,    '#8c3010');
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, W, H);
-
-      // Stars
-      for (const s of stars) {
-        const alpha = s.base + s.amp * Math.sin(time * s.freq + s.phase);
-        ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-        ctx.beginPath();
-        ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-
-      // Phobos (small moon)
-      const phX = W * 0.77, phY = H * 0.11;
-      ctx.save();
-      ctx.shadowBlur  = 8;
-      ctx.shadowColor = 'rgba(210,190,155,0.5)';
-      ctx.beginPath();
-      ctx.ellipse(phX, phY, W * 0.010, W * 0.006, -0.2, 0, Math.PI * 2);
-      ctx.fillStyle = '#c8a882';
-      ctx.fill();
-      ctx.restore();
-
-      // Horizon haze
-      const haze = ctx.createLinearGradient(0, H * 0.58, 0, H * 0.76);
-      haze.addColorStop(0, 'rgba(155,55,18,0)');
-      haze.addColorStop(1, 'rgba(155,55,18,0.24)');
-      ctx.fillStyle = haze;
-      ctx.fillRect(0, H * 0.58, W, H * 0.18);
-    }
-
-    // ── Draw: Terrain ──
-    function drawTerrain() {
-      if (!terrain) return;
-
-      // Craters (sub-surface ellipses)
-      for (const c of craters) {
-        const cy = c.yFrac * H;
-        ctx.beginPath();
-        ctx.ellipse(c.x, cy, c.rx, c.ry, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(18,5,2,0.5)';
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(c.x, cy - c.ry * 0.25, c.rx * 1.06, c.ry * 0.55, 0, Math.PI, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(130,55,25,0.4)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-
-      // Terrain fill
-      ctx.beginPath();
-      ctx.moveTo(0, H);
-      terrain.forEach(p => ctx.lineTo(p.x, p.y));
-      ctx.lineTo(W, H);
-      ctx.closePath();
-      const tGrad = ctx.createLinearGradient(0, H * 0.65, 0, H);
-      tGrad.addColorStop(0,   '#6b2a14');
-      tGrad.addColorStop(0.3, '#4a1a0a');
-      tGrad.addColorStop(1,   '#2a0d05');
-      ctx.fillStyle = tGrad;
-      ctx.fill();
-
-      // Terrain edge
-      ctx.beginPath();
-      terrain.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-      ctx.strokeStyle = '#8b3a1e';
-      ctx.lineWidth   = 2;
-      ctx.stroke();
-
-      // Rocks
-      for (const r of rocks) {
-        ctx.save();
-        ctx.translate(r.x, r.y);
-        ctx.rotate(r.rot);
-        const s = Math.round(75 + r.shade * 80);
-        ctx.beginPath();
-        ctx.ellipse(0, -r.h / 2, r.w / 2, r.h / 2, 0, 0, Math.PI * 2);
-        ctx.fillStyle = `rgb(${s + 18},${Math.round(s * 0.45)},${Math.round(s * 0.28)})`;
-        ctx.fill();
-        // Highlight
-        ctx.beginPath();
-        ctx.ellipse(-r.w * 0.12, -r.h * 0.7, r.w * 0.22, r.h * 0.18, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(200,145,105,0.22)';
-        ctx.fill();
-        ctx.restore();
-      }
-
-      // Landing pad
-      const pY = terrainYAt(padX + padW / 2);
-      ctx.fillStyle = '#e08040';
-      ctx.fillRect(padX, pY - 6, padW, 6);
-
-      // Blinking pad lights
-      for (let i = 0; i <= 4; i++) {
-        const on = Math.sin(time * 2.8 + i * 1.1) > 0.15;
-        const lx = padX + (i / 4) * padW;
-        if (on) {
-          ctx.save();
-          ctx.shadowBlur  = 10;
-          ctx.shadowColor = '#ffe080';
-          ctx.beginPath();
-          ctx.arc(lx, pY - 6, 4.5, 0, Math.PI * 2);
-          ctx.fillStyle = '#ffe080';
-          ctx.fill();
-          ctx.restore();
-        } else {
-          ctx.beginPath();
-          ctx.arc(lx, pY - 6, 4, 0, Math.PI * 2);
-          ctx.fillStyle = '#886030';
-          ctx.fill();
-        }
-      }
-
-      ctx.font      = 'bold 11px -apple-system, sans-serif';
-      ctx.fillStyle = '#ffc060';
-      ctx.textAlign = 'center';
-      ctx.fillText('LANDING ZONE', padX + padW / 2, pY - 14);
-    }
-
-    // ── Draw: Lander ──
-    function drawLander() {
-      const { x, y, angle, thrusting } = lander;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(angle * Math.PI / 180);
-
-      // === Engine bell ===
-      ctx.beginPath();
-      ctx.moveTo(-7, 12); ctx.lineTo(-5, 24);
-      ctx.lineTo(5, 24);  ctx.lineTo(7, 12);
-      ctx.closePath();
-      ctx.fillStyle   = '#8a7a6a';
-      ctx.fill();
-      ctx.strokeStyle = '#5a4a3a';
-      ctx.lineWidth   = 1;
-      ctx.stroke();
-
-      // === Thruster flame ===
-      if (thrusting) {
-        const fLen = 24 + Math.random() * 16;
-        const fGrad = ctx.createLinearGradient(0, 16, 0, 16 + fLen * 1.9);
-        fGrad.addColorStop(0,    'rgba(255,235,110,1)');
-        fGrad.addColorStop(0.22, 'rgba(255,160,40,0.95)');
-        fGrad.addColorStop(0.55, 'rgba(255,75,18,0.72)');
-        fGrad.addColorStop(1,    'rgba(200,18,0,0)');
-        ctx.beginPath();
-        ctx.moveTo(-8, 16);
-        ctx.bezierCurveTo(-5, 16 + fLen * 0.55, -3, 16 + fLen, 0, 16 + fLen * 1.8);
-        ctx.bezierCurveTo(3,  16 + fLen, 5, 16 + fLen * 0.55, 8, 16);
-        ctx.closePath();
-        ctx.fillStyle = fGrad;
-        ctx.fill();
-
-        // Inner bright core
-        const cGrad = ctx.createLinearGradient(0, 16, 0, 16 + fLen);
-        cGrad.addColorStop(0, 'rgba(255,255,215,1)');
-        cGrad.addColorStop(0.5, 'rgba(255,220,80,0.85)');
-        cGrad.addColorStop(1, 'rgba(255,90,20,0)');
-        ctx.beginPath();
-        ctx.moveTo(-3.5, 16);
-        ctx.bezierCurveTo(-1.5, 16 + fLen * 0.4, -0.5, 16 + fLen * 0.7, 0, 16 + fLen);
-        ctx.bezierCurveTo(0.5, 16 + fLen * 0.7, 1.5, 16 + fLen * 0.4, 3.5, 16);
-        ctx.closePath();
-        ctx.fillStyle = cGrad;
-        ctx.fill();
-      }
-
-      // === Landing legs ===
-      ctx.strokeStyle = '#b8a898';
-      ctx.lineWidth   = 2.5;
-      ctx.lineCap     = 'round';
-      // Left
-      ctx.beginPath(); ctx.moveTo(-12, 10); ctx.lineTo(-23, 30); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-27, 30); ctx.lineTo(-19, 30); ctx.stroke();
-      // Right
-      ctx.beginPath(); ctx.moveTo(12, 10); ctx.lineTo(23, 30); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(19, 30); ctx.lineTo(27, 30); ctx.stroke();
-      // Center
-      ctx.strokeStyle = '#b0a090';
-      ctx.lineWidth   = 2;
-      ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(0, 32); ctx.stroke();
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(-4, 32); ctx.lineTo(4, 32); ctx.stroke();
-      // Diagonal struts
-      ctx.strokeStyle = '#988878';
-      ctx.lineWidth   = 1.6;
-      ctx.beginPath(); ctx.moveTo(-8, 9); ctx.lineTo(-23, 30); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(8, 9);  ctx.lineTo(23, 30);  ctx.stroke();
-      ctx.lineCap = 'butt';
-
-      // === Main body ===
-      ctx.beginPath();
-      ctx.roundRect(-14, -8, 28, 20, 3);
-      ctx.fillStyle = '#d4c4aa';
-      ctx.fill();
-      ctx.strokeStyle = '#806a52';
-      ctx.lineWidth   = 1.5;
-      ctx.stroke();
-
-      // Thermal foil overlay
-      ctx.beginPath();
-      ctx.roundRect(-12, -6, 24, 16, 2);
-      ctx.fillStyle = 'rgba(200,165,40,0.42)';
-      ctx.fill();
-
-      // Panel seam lines
-      ctx.strokeStyle = 'rgba(138,108,34,0.52)';
-      ctx.lineWidth   = 0.8;
-      for (let px = -8; px <= 8; px += 4) {
-        ctx.beginPath(); ctx.moveTo(px, -6); ctx.lineTo(px, 10); ctx.stroke();
-      }
-
-      // === Left solar panel ===
-      ctx.fillStyle = '#9a8a7a';
-      ctx.fillRect(-16, -1, 2, 8);
-      ctx.beginPath(); ctx.roundRect(-42, -4, 24, 14, 2);
-      ctx.fillStyle   = '#1a2840';
-      ctx.fill();
-      ctx.strokeStyle = '#0a1828';
-      ctx.lineWidth   = 1.5;
-      ctx.stroke();
-      ctx.fillStyle = '#1e3a8a';
-      for (let row = 0; row < 2; row++) {
-        for (let col = 0; col < 3; col++) {
-          ctx.beginPath();
-          ctx.rect(-40 + col * 7.5, -2 + row * 5.5, 6.5, 4.5);
-          ctx.fill();
-        }
-      }
-      ctx.strokeStyle = 'rgba(100,160,255,0.22)';
-      ctx.lineWidth   = 0.6;
-      [-33.5, -26].forEach(lx => {
-        ctx.beginPath(); ctx.moveTo(lx, -4); ctx.lineTo(lx, 10); ctx.stroke();
-      });
-      ctx.beginPath(); ctx.moveTo(-42, 3); ctx.lineTo(-18, 3); ctx.stroke();
-      ctx.beginPath(); ctx.roundRect(-42, -4, 24, 14, 2);
-      ctx.fillStyle = 'rgba(100,165,255,0.055)';
-      ctx.fill();
-
-      // === Right solar panel ===
-      ctx.fillStyle = '#9a8a7a';
-      ctx.fillRect(14, -1, 2, 8);
-      ctx.beginPath(); ctx.roundRect(18, -4, 24, 14, 2);
-      ctx.fillStyle   = '#1a2840';
-      ctx.fill();
-      ctx.strokeStyle = '#0a1828';
-      ctx.lineWidth   = 1.5;
-      ctx.stroke();
-      ctx.fillStyle = '#1e3a8a';
-      for (let row = 0; row < 2; row++) {
-        for (let col = 0; col < 3; col++) {
-          ctx.beginPath();
-          ctx.rect(20 + col * 7.5, -2 + row * 5.5, 6.5, 4.5);
-          ctx.fill();
-        }
-      }
-      ctx.strokeStyle = 'rgba(100,160,255,0.22)';
-      ctx.lineWidth   = 0.6;
-      [27, 34.5].forEach(lx => {
-        ctx.beginPath(); ctx.moveTo(lx, -4); ctx.lineTo(lx, 10); ctx.stroke();
-      });
-      ctx.beginPath(); ctx.moveTo(18, 3); ctx.lineTo(42, 3); ctx.stroke();
-      ctx.beginPath(); ctx.roundRect(18, -4, 24, 14, 2);
-      ctx.fillStyle = 'rgba(100,165,255,0.055)';
-      ctx.fill();
-
-      // === UHF antenna ===
-      ctx.strokeStyle = '#d0c0b0';
-      ctx.lineWidth   = 1.5;
-      ctx.beginPath(); ctx.moveTo(8, -8); ctx.lineTo(12, -23); ctx.stroke();
-      ctx.strokeStyle = '#e8d8c8';
-      ctx.lineWidth   = 1.2;
-      ctx.beginPath();
-      ctx.arc(12, -23, 5.5, Math.PI * 1.1, Math.PI * 2.05);
-      ctx.stroke();
-
-      // === Camera mast ===
-      ctx.strokeStyle = '#c0b0a0';
-      ctx.lineWidth   = 1.3;
-      ctx.beginPath(); ctx.moveTo(-6, -8); ctx.lineTo(-8, -21); ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(-8, -21, 4, 0, Math.PI * 2);
-      ctx.fillStyle   = '#4a8ab0';
-      ctx.fill();
-      ctx.strokeStyle = '#2a5a80';
-      ctx.lineWidth   = 1;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(-9.2, -22.2, 1.4, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(205,245,255,0.78)';
-      ctx.fill();
-
-      // === Attitude thrusters (RCS) ===
-      if (keys['ArrowLeft'] || keys['a']) {
-        const rGrad = ctx.createLinearGradient(14, 0, 30, 0);
-        rGrad.addColorStop(0, 'rgba(170,215,255,0.82)');
-        rGrad.addColorStop(1, 'rgba(170,215,255,0)');
-        ctx.beginPath();
-        ctx.moveTo(14, 2); ctx.lineTo(28 + Math.random() * 5, 0); ctx.lineTo(14, -2);
-        ctx.closePath();
-        ctx.fillStyle = rGrad;
-        ctx.fill();
-      }
-      if (keys['ArrowRight'] || keys['d']) {
-        const rGrad = ctx.createLinearGradient(-14, 0, -30, 0);
-        rGrad.addColorStop(0, 'rgba(170,215,255,0.82)');
-        rGrad.addColorStop(1, 'rgba(170,215,255,0)');
-        ctx.beginPath();
-        ctx.moveTo(-14, 2); ctx.lineTo(-28 - Math.random() * 5, 0); ctx.lineTo(-14, -2);
-        ctx.closePath();
-        ctx.fillStyle = rGrad;
-        ctx.fill();
-      }
-
-      ctx.restore();
-    }
-
-    // ── Draw: Velocity vector ──
-    function drawVelocityVector() {
-      if (state !== 'playing') return;
-      const speed = Math.hypot(lander.vx, lander.vy);
-      if (speed < 6) return;
-      const nx  = lander.vx / speed;
-      const ny  = lander.vy / speed;
-      const len = Math.min(speed * 0.45, 52);
-      const ex  = lander.x + nx * (len + 36);
-      const ey  = lander.y + ny * (len + 36);
-      const safe = Math.abs(lander.vy) < SAFE_VSPD && Math.abs(lander.vx) < SAFE_HSPD;
-      const col  = safe ? 'rgba(110,215,110,0.62)' : 'rgba(255,115,55,0.62)';
-
-      ctx.save();
-      ctx.strokeStyle = col;
-      ctx.lineWidth   = 1.5;
-      ctx.setLineDash([4, 3]);
-      ctx.beginPath();
-      ctx.moveTo(lander.x, lander.y);
-      ctx.lineTo(ex, ey);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle = col;
-      const a = Math.atan2(ny, nx);
-      ctx.save();
-      ctx.translate(ex, ey);
-      ctx.rotate(a);
-      ctx.beginPath();
-      ctx.moveTo(0, 0); ctx.lineTo(-9, -4); ctx.lineTo(-9, 4);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-      ctx.restore();
-    }
-
-    // ── Draw: HUD ──
-    function drawHUD() {
-      const pad     = 14;
-      const fuelPct = lander.fuel / FUEL_MAX;
-
-      // Fuel bar
-      const bx = pad, by = pad, bw = 116, bh = 14;
-      ctx.fillStyle = 'rgba(20,8,4,0.72)';
-      ctx.beginPath(); ctx.roundRect(bx - 6, by - 6, bw + 52, bh + 28, 8); ctx.fill();
-
-      ctx.font      = 'bold 10px -apple-system, sans-serif';
-      ctx.fillStyle = '#c07050';
-      ctx.textAlign = 'left';
-      ctx.fillText('FUEL', bx, by + 10);
-
-      ctx.fillStyle = 'rgba(100,30,10,0.58)';
-      ctx.fillRect(bx + 36, by, bw, bh);
-      ctx.fillStyle = fuelPct > 0.3 ? '#e07030' : '#ff3808';
-      ctx.fillRect(bx + 36, by, bw * fuelPct, bh);
-      ctx.strokeStyle = 'rgba(180,60,20,0.5)';
-      ctx.lineWidth   = 1;
-      ctx.strokeRect(bx + 36, by, bw, bh);
-
-      // Fuel % text
-      ctx.font      = '9px -apple-system, monospace';
-      ctx.fillStyle = 'rgba(200,130,80,0.7)';
-      ctx.textAlign = 'left';
-      ctx.fillText(Math.round(fuelPct * 100) + '%', bx + 36 + bw + 5, by + 10);
-
-      // Telemetry
-      const tx    = W - pad;
-      const vspd  = lander.vy.toFixed(1);
-      const hspd  = lander.vx.toFixed(1);
-      const alt   = Math.max(0, terrainYAt(lander.x) - lander.y - 30).toFixed(0);
-      const tilt  = Math.abs(lander.angle) % 360;
-      const normT = (tilt > 180 ? 360 - tilt : tilt).toFixed(1);
-
-      ctx.fillStyle = 'rgba(20,8,4,0.72)';
-      ctx.beginPath(); ctx.roundRect(tx - 142, pad - 6, 146, 96, 8); ctx.fill();
-
-      ctx.font      = '11px -apple-system, monospace';
-      ctx.textAlign = 'right';
-      const rows = [
-        ['ALT',   `${alt} m`],
-        ['V-SPD', `${Number(vspd) > 0 ? '↓' : '↑'} ${Math.abs(vspd)} m/s`],
-        ['H-SPD', `${Number(hspd) >= 0 ? '→' : '←'} ${Math.abs(hspd)} m/s`],
-        ['TILT',  `${normT}°`],
-      ];
-      rows.forEach(([label, val], i) => {
-        const ly = pad + 15 + i * 19;
-        ctx.fillStyle = '#7a4c38';
-        ctx.fillText(label, tx - 64, ly);
-        const danger = (label === 'V-SPD' && Math.abs(lander.vy) > SAFE_VSPD) ||
-                       (label === 'H-SPD' && Math.abs(lander.vx) > SAFE_HSPD) ||
-                       (label === 'TILT'  && parseFloat(normT) > SAFE_TILT);
-        ctx.fillStyle = danger ? '#ff5a28' : '#d09070';
-        ctx.fillText(val, tx, ly);
-      });
-
-      // Wind indicator
-      const wx = W / 2, wy = pad + 8;
-      ctx.fillStyle = 'rgba(20,8,4,0.68)';
-      ctx.beginPath(); ctx.roundRect(wx - 72, wy - 5, 144, 24, 6); ctx.fill();
-      ctx.font      = '11px -apple-system, sans-serif';
-      ctx.fillStyle = '#c07848';
-      ctx.textAlign = 'center';
-      ctx.fillText(`WIND  ${windLabel}`, wx, wy + 13);
-    }
-
-    // ── Draw: End overlay ──
-    function drawOverlay() {
-      ctx.fillStyle = 'rgba(10,4,2,0.76)';
-      ctx.fillRect(0, 0, W, H);
-      const cx = W / 2, cy = H / 2;
-
-      if (state === 'landed') {
-        // Grade based on fuel and approach
-        const fuel = lander.fuel;
-        const grade = fuel > 60 ? 'PERFECT' : fuel > 40 ? 'EXCELLENT' : fuel > 20 ? 'GOOD' : 'SAFE';
-        const gradeCol = fuel > 60 ? '#60ffb0' : fuel > 40 ? '#80ff80' : '#aaee80';
-
-        ctx.font      = `bold ${Math.round(W * 0.054)}px -apple-system, sans-serif`;
-        ctx.fillStyle = '#80ff80';
-        ctx.textAlign = 'center';
-        ctx.fillText('LANDED SUCCESSFULLY', cx, cy - 32);
-
-        ctx.font      = `bold ${Math.round(W * 0.038)}px -apple-system, sans-serif`;
-        ctx.fillStyle = gradeCol;
-        ctx.fillText(grade + ' LANDING', cx, cy + 10);
-
-        ctx.font      = `${Math.round(W * 0.026)}px -apple-system, sans-serif`;
-        ctx.fillStyle = '#90d090';
-        ctx.fillText(`Fuel remaining: ${fuel.toFixed(1)}%`, cx, cy + 42);
-      } else {
-        ctx.font      = `bold ${Math.round(W * 0.054)}px -apple-system, sans-serif`;
-        ctx.fillStyle = '#ff5530';
-        ctx.textAlign = 'center';
-        const onPad = isOnPad(lander.x);
-        ctx.fillText(onPad ? 'CRASH — TOO FAST' : 'CRASH — MISSED PAD', cx, cy - 28);
-        ctx.font      = `${Math.round(W * 0.024)}px -apple-system, sans-serif`;
-        ctx.fillStyle = '#cc6644';
-        const hints = onPad
-          ? 'Burn longer before touchdown to reduce descent speed'
-          : 'Guide the lander over the lit pad before descending';
-        ctx.fillText(hints, cx, cy + 12);
-      }
-
-      ctx.font      = `${Math.round(W * 0.024)}px -apple-system, sans-serif`;
-      ctx.fillStyle = '#c07050';
-      ctx.fillText('Press R or tap Restart to try again', cx, cy + 56);
-    }
-
-    // ── Main loop ──
-    let lastTs = 0, accum = 0;
-    function loop(ts) {
-      const elapsed = Math.min((ts - lastTs) / 1000, 0.05);
-      lastTs = ts;
-      if (state === 'playing') {
-        time  += elapsed;
-        accum += elapsed;
-        while (accum >= DT) { update(); accum -= DT; }
-      } else {
-        // Keep time ticking so pad lights still blink
-        time += elapsed;
-        updateParticles();
-      }
-
-      ctx.save();
-      // Screen shake on crash
-      if (shakeTime > 0) {
-        const s = shakeAmp * (shakeTime / 0.55);
-        ctx.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
-      }
-
-      drawSky();
-      drawTerrain();
-      drawParticles();
-      drawVelocityVector();
-      drawLander();
-      drawHUD();
-      if (state !== 'playing') drawOverlay();
-
-      ctx.restore();
-      SimKit.frame('#mrl-canvas', loop);
-    }
-
-    // ── Input ──
-    document.addEventListener('keydown', e => {
-      keys[e.key] = true;
-      if (e.key === 'r' || e.key === 'R') initGame();
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
-    });
-    document.addEventListener('keyup', e => { keys[e.key] = false; });
-    document.getElementById('mrl-restart-btn').addEventListener('click', initGame);
-
-    // Touch controls
-    function touchKey(id, key) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener('touchstart', e => { e.preventDefault(); keys[key] = true;  }, { passive: false });
-      el.addEventListener('touchend',   e => { e.preventDefault(); keys[key] = false; }, { passive: false });
-    }
-    touchKey('tc-thrust', 'ArrowUp');
-    touchKey('tc-left',   'ArrowLeft');
-    touchKey('tc-right',  'ArrowRight');
-
-    // ── Boot ──
-    initGame();
-    SimKit.frame('#mrl-canvas', loop);
-  })();
-  </script>
-
-  <script src="../../assets/js/classroom-animations.js"></script>
-  <script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/sim-kit.js"></script>
+<script type="module" src="../../assets/js/lessons/mars-rover-lander.js"></script>
+<script src="../../assets/js/classroom-animations.js"></script>
+<script src="../../assets/js/lesson-layout.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/photo-lightbox.js"></script>
 <script src="../../assets/js/theme-registry.js"></script>

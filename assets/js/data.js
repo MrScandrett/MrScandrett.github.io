@@ -5,6 +5,7 @@ const PLACEHOLDER_THUMB = "/assets/thumbs/showcase/student-showcase-thumb.png";
 // survive regeneration of apps/ from student-projects/.
 const PROJECT_LESSONS = {
   "app-classic-snake": "lessons/computer-science/graphics-and-games/inside-classic-snake.html",
+  "app-mars-rover-lander": "lessons/cosmology/mars-rover-lander.html",
 };
 
 function getAvatarForProject(projectSlug) {
