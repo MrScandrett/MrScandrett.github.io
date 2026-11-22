@@ -2618,7 +2618,7 @@
 
     function pressureAt(h) {
       if (h < 0) return P0 + 1025 * 9.80665 * (-h); // seawater density
-      return P0 * Math.exp(-h / 8434);
+      return P0 * Math.exp(-h / 8000);
     }
 
     function nearest(h) {

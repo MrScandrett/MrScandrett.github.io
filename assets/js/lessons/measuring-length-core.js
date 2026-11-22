@@ -266,7 +266,7 @@
   var P0 = 101325;
   function pressureAtAltitude(h) {
     if (h < 0) return P0 + 1025 * 9.80665 * (-h);
-    return P0 * Math.exp(-h / 8434);
+    return P0 * Math.exp(-h / 8000);
   }
 
   /* Water's boiling point from the Antoine equation (valid ~1–100 °C range, extended gently).
