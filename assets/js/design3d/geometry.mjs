@@ -1,3 +1,4 @@
+import { sculptGeometry } from './sculpt-surface.mjs';
 import { makeInstances } from './procedural.mjs';
 import { addHeroEquipment } from './hero-detail.mjs';
 import { buildStyledCharacter } from './character-styles.mjs';
@@ -92,10 +93,8 @@ export function buildDesign(THREE, state, texture) {
   group.scale.setScalar(p.height/5.2);
   group.userData.characterHeight=layout.headY+layout.H*(Math.round(p.hairStyle)===4&&p.hair>0?.95:.58);
  } else if(mode==='sculpt'){
-  const geo=new THREE.PlaneGeometry(4,4,48,48);geo.rotateX(-Math.PI/2);const positions=geo.attributes.position;
-  for(let i=0;i<positions.count;i++)positions.setY(i,.45+.18*Math.cos(positions.getX(i))*Math.cos(positions.getZ(i)));
-  for(const stroke of state.strokes){const old=Array.from({length:positions.count},(_,i)=>positions.getY(i));for(let i=0;i<positions.count;i++){const d=Math.hypot(positions.getX(i)-stroke.x,positions.getZ(i)-stroke.z)/stroke.radius;if(d>=1)continue;const fall=(1-d)**2;let y=old[i];if(stroke.type==='smooth'){const row=Math.floor(i/49),col=i%49;const neighbors=[col>0?i-1:i,col<48?i+1:i,row>0?i-49:i,row<48?i+49:i];y+=((neighbors.reduce((sum,j)=>sum+old[j],0)/4)-y)*fall*.8*(stroke.strength/.3);}else y+=(stroke.type==='lower'?-1:1)*stroke.strength*fall;positions.setY(i,y);}}
-  geo.computeVertexNormals();const m=mesh(geo);m.material.side=THREE.DoubleSide;
+  const surface=mesh(sculptGeometry(THREE,state));
+  surface.material.side=THREE.DoubleSide;
  } else if(mode==='props'){
   const shape=new THREE.Shape();const w=p.width/2,h=p.height/2;shape.moveTo(-w,-h);shape.lineTo(w,-h);shape.lineTo(w,h);shape.lineTo(-w,h);shape.closePath();const geo=new THREE.ExtrudeGeometry(shape,{depth:.5,bevelEnabled:p.bevel>0,bevelSize:p.bevel,bevelThickness:p.bevel,bevelSegments:3,steps:1});geo.translate(0,0,-.25);mesh(geo,0,p.handle+p.height/2);box(.25,p.handle,.3,0,p.handle/2,0,state.secondary);
  } else if(mode==='procedural'){

@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 511 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 513 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -263,7 +263,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 115 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 117 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -437,27 +437,29 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **D3D-09** — Shape a character · Extrusion and symmetry
 - **D3D-10** — Sculpt a surface · Brush radius, displacement and smoothing
 - **D3D-11** — In the Likeness · Carve a marble sculpture
-- **D3D-12** — Finish a hard-surface prop · Beveled edges
-- **D3D-13** — Light and present your model · Material properties and directional lighting
-- **D3D-14** — Build a repeatable design · Parameter-driven repetition
-- **D3D-15** — Compose a finished image · Exposure and foreground/background decisions
+- **D3D-12** — Pottery Studio · Throw, pinch and coil
+- **D3D-13** — Clay Sculpture Studio · Build, join and carve
+- **D3D-14** — Finish a hard-surface prop · Beveled edges
+- **D3D-15** — Light and present your model · Material properties and directional lighting
+- **D3D-16** — Build a repeatable design · Parameter-driven repetition
+- **D3D-17** — Compose a finished image · Exposure and foreground/background decisions
 
 ### Make It Play · Game Asset Studio
 
-- **D3D-16** — Game Asset Studio
-- **D3D-17** — Design a repeating surface · Texture repetition and scale
-- **D3D-18** — Build a reusable chair · Proportion and repeated parts
-- **D3D-19** — Assemble a room kit · Grid snapping and modular repetition
-- **D3D-20** — Map and export a surface · UV coordinates and texture density
-- **D3D-21** — Bind a bending mesh · Joint position and skin weights
-- **D3D-22** — Author a looping action · Keyframes and interpolation
+- **D3D-18** — Game Asset Studio
+- **D3D-19** — Design a repeating surface · Texture repetition and scale
+- **D3D-20** — Build a reusable chair · Proportion and repeated parts
+- **D3D-21** — Assemble a room kit · Grid snapping and modular repetition
+- **D3D-22** — Map and export a surface · UV coordinates and texture density
+- **D3D-23** — Bind a bending mesh · Joint position and skin weights
+- **D3D-24** — Author a looping action · Keyframes and interpolation
 
 ### Optional Blender Walkthroughs & Workspace Reference
 
-- **D3D-23** — 3D Modeling Field Guide
-- **D3D-24** — 3D Workflow & Techniques
-- **D3D-25** — Build a reusable chair · Proportion and repeated parts
-- **D3D-26** — Assemble a room kit · Grid snapping and modular repetition
+- **D3D-25** — 3D Modeling Field Guide
+- **D3D-26** — 3D Workflow & Techniques
+- **D3D-27** — Build a reusable chair · Proportion and repeated parts
+- **D3D-28** — Assemble a room kit · Grid snapping and modular repetition
 
 # Volume V — Computer Science, AI & Interactive Media
 

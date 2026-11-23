@@ -15,6 +15,47 @@ document.addEventListener('DOMContentLoaded', () => {
       works: [['mozart','Rondo alla turca · c. 1783','Control repeated notes and contrasts across the complete movement.'],['beethoven','Moonlight Sonata · movement III · 1801','Study a small passage of arpeggios and contrasting voices before joining sections.'],['debussy','Clair de lune · published 1905','Balance layered textures, flexible phrases, and clear pedal changes.']],
       songs: [['tea-for-two','Tea for Two','1 · Create a solo arrangement with melody, bass, and inner guide tones.'],['i-got-rhythm','I Got Rhythm','2 · Improvise through the form; vary voicings and rhythmic placement.'],['stardust','Stardust','3 · Build a solo introduction and reharmonize a phrase while preserving its melody.']] }
   };
+  /* Hanon-type exercises. Each is one 8-note cell (steps of the C-major scale, 0 = middle C) that
+     moves up one scale step per cell. LH plays the same notes an octave lower with finger 6 - f. */
+  const exercises = {
+    hanon1: { name: 'No. 1 · Evenness', skill: 'Equal tone in all five fingers',
+      idx: [0,2,3,4,5,4,3,2], fing: [1,2,3,4,5,4,3,2], shift: 1,
+      how: 'The classic pattern: a quiet, level line while the fingers move one at a time. Listen for no accents on 4 and 5.',
+      vary: ['Staccato (fingertip, wrist loose), then legato', 'Long–short, then short–long rhythm', 'Soft (p), then crescendo up the cells and diminuendo down'] },
+    five: { name: 'Five-finger steps', skill: 'Finger numbers and stepwise reading (warm-up)',
+      idx: [0,1,2,3,4,3,2,1], fing: [1,2,3,4,5,4,3,2], shift: 1,
+      how: 'Neighbour notes only, one finger per key, the easiest pattern to read. Say the note names aloud as you play.',
+      vary: ['Play the first cell on every white key', 'Close your eyes for the second cell', 'Echo: teacher plays a cell, you answer it'] },
+    thirds: { name: 'Skipping & stepping', skill: 'Finger independence: 1-3-2-4-3-5-4-3',
+      idx: [0,2,1,3,2,4,3,2], fing: [1,3,2,4,3,5,4,3], shift: 1,
+      how: 'Each finger jumps over its neighbour then steps back. This trains the fingers to separate cleanly, a skill scales and Czerny rely on.',
+      vary: ['Group in twos (slur pairs, lift on the second)', 'Accent every third note', 'Play on the edge of the keys, then deeper'] },
+    weak: { name: 'Weak fingers 3-4-5', skill: 'Strengthen the ring and little finger',
+      idx: [0,1,0,1,0,2,1,0], fing: [3,4,3,4,3,5,4,3], shift: 1,
+      base: 2,
+      how: 'The ring and little fingers are the weakest because they share tendons. Play gently, in small movements, and stop if the hand tires or the forearm aches.',
+      vary: ['Slow, with a relaxed hand (never press harder)', 'Hold the quiet 4 and 5 equal to the 3', 'Short sets of two cells, then shake out the hands'] },
+    anchor: { name: 'Hold the 5th', skill: 'Independence: one finger still, others move',
+      idx: [0,4,1,4,2,4,3,4], fing: [1,5,2,5,3,5,4,5], shift: 1,
+      how: 'The little finger stays quiet and steady while 1-2-3-4 each take a turn. Keep the whole hand balanced and the 5th as light as the others.',
+      vary: ['Hold the 5th down and play only 1–2–3–4', 'Swap: keep the thumb on a held note', 'Make the moving fingers soft and the 5th even softer'] },
+    triads: { name: 'Broken triads', skill: 'Hand shape and chord spelling',
+      idx: [0,2,4,2,0,2,4,2], fing: [1,3,5,3,1,3,5,3], shift: 1,
+      how: 'Fingers 1-3-5 outline a chord (C-E-G, then D-F-A, and so on up the scale). Feel the hand open evenly; do not tilt the wrist.',
+      vary: ['Block the triad first, then break it', 'Name the chord for each cell', 'Play the same shapes starting on black keys'] },
+    alberti: { name: 'Alberti bass', skill: 'Wrist rotation, classical accompaniment',
+      idx: [0,4,2,4,0,4,2,4], fing: [1,5,3,5,1,5,3,5], shift: 1,
+      how: 'Low–high–middle–high, the pattern under many Mozart and Haydn melodies. A small rocking turn of the forearm does the work, not the fingers alone.',
+      vary: ['Emphasise the low note, keep the rest light', 'LH alone while you hum a melody', 'Add a tune on top with the other hand'] }
+  };
+  const generalVary = ['Slow first: 🐢 = metronome 50, then raise by 4 only after three clean repeats', 'Play it in G major or F major (move the starting note)'];
+  const levelHow = {
+    beginner: 'Play only the first cell, right hand first.',
+    intermediate: 'Sequence three ascending cells. Learn each hand separately before combining in parallel octaves.',
+    advanced: 'Connect five cells evenly, then repeat softly. Keep fingers close to the keys; do not force high lifts.',
+    expert: 'Connect seven ascending cells. Then repeat with long–short and short–long rhythms on your keyboard; finish with an even version.'
+  };
+  const natName = i => 'CDEFGAB'[((i % 7) + 7) % 7] + (4 + Math.floor(i / 7));
   const hz = note => {
     const m = note.match(/^([A-G])(#?)(\d)$/);
     const midi = 12 * (+m[3] + 1) + {C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]] + (m[2] ? 1 : 0);
@@ -26,9 +67,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   document.querySelectorAll('.piano-coach').forEach(section => {
     let showFingers = false;
+    let exId = 'hanon1', curLevel = 'beginner';
     function render(level) {
       window.PianoAudio.stop();
+      curLevel = level;
       const d = levels[level];
+      const ex = exercises[exId];
       section.querySelectorAll('[data-coach-level]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.coachLevel === level)));
       const content = section.querySelector('[data-coach-content]');
       content.querySelector('[data-hanon-score]')?.scorePlayer?.destroy?.();
@@ -37,17 +81,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       const scale = section.id === 'scale-coach';
-      const natural = ['C4','D4','E4','F4','G4','A4','B4','C5','D5','E5','F5','G5','A5','B5'];
-      const notes = scale ? d.notes : Array.from({length:d.cells}, (_, i) => [0,2,3,4,5,4,3,2].map(n => natural[i+n])).flat();
+      const notes = scale ? d.notes : Array.from({length:d.cells}, (_, i) => ex.idx.map(n => natName((ex.base || 0) + n + i * ex.shift))).flat();
       const model = scale ? notes.concat(notes.slice(0,-1).reverse()) : notes;
-      content.innerHTML = `${scale ? '<h3>' + d.scale + '</h3>' : ''}<div class="pc-coach-line"><p>${scale ? d.goal : d.hanon}</p></div>${scale ? '<p>Ascending fingering · RH: ' + d.rh + ' · LH: ' + d.lh + '</p>' : ''}<div class="coach-anchor"></div><div class="pc-builder-controls pc-recall-bar"><strong>Recall</strong><label>Notes per minute <input data-tempo type="number" min="40" max="120" value="${d.tempo}"></label><button class="pc-btn" type="button" data-model>Hear model</button><button class="pc-btn" type="button" data-stop>Stop</button><button class="pc-btn" type="button" data-restart>Restart</button></div><div class="pc-builder-controls pc-recall-keys" data-note-buttons><span role="status" aria-live="polite" data-feedback>Tap the notes in order${scale ? ', up and back down' : ''}: note 1 of ${model.length}.</span></div>`;
+      content.innerHTML = `${scale ? '<h3>' + d.scale + '</h3>' : ''}<div class="pc-coach-line"><p>${scale ? d.goal : '<strong>' + ex.name + ':</strong> ' + ex.how + ' ' + (exId === 'hanon1' ? d.hanon : levelHow[level])}</p></div>${scale ? '' : '<p><strong>Trains:</strong> ' + ex.skill + '</p>'}${scale ? '<p>Ascending fingering · RH: ' + d.rh + ' · LH: ' + d.lh + '</p>' : ''}<div class="coach-anchor"></div><div class="pc-builder-controls pc-recall-bar"><strong>Recall</strong><label>Notes per minute <input data-tempo type="number" min="40" max="120" value="${d.tempo}"></label><button class="pc-btn" type="button" data-model>Hear model</button><button class="pc-btn" type="button" data-stop>Stop</button><button class="pc-btn" type="button" data-restart>Restart</button></div><div class="pc-builder-controls pc-recall-keys" data-note-buttons><span role="status" aria-live="polite" data-feedback>Tap the notes in order${scale ? ', up and back down' : ''}: note 1 of ${model.length}.</span></div>`;
       const fingerControl = document.createElement('label');
       const fingerToggle = document.createElement('input'); fingerToggle.type = 'checkbox'; fingerToggle.checked = showFingers;
       fingerControl.append(fingerToggle, ' Show finger numbers (1 = thumb, 5 = little finger)');
       content.querySelector('.pc-coach-line').append(fingerControl);
       fingerToggle.addEventListener('change', () => { showFingers = fingerToggle.checked; render(level); });
-      const rh = scale ? d.rh.split(' ') : notes.map((_, i) => [1,2,3,4,5,4,3,2][i % 8]);
-      const lh = scale ? d.lh.split(' ') : notes.map((_, i) => [5,4,3,2,1,2,3,4][i % 8]);
+      const rh = scale ? d.rh.split(' ') : notes.map((_, i) => ex.fing[i % 8]);
+      const lh = scale ? d.lh.split(' ') : notes.map((_, i) => 6 - ex.fing[i % 8]);
       if (scale) {
         ['Right hand', 'Left hand'].forEach((hand, i) => {
           const heading = document.createElement('h4'); heading.textContent = hand;
@@ -64,15 +107,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const figure = document.createElement('figure');
         figure.dataset.hanonScore = '';
         figure.setAttribute('data-score-readable', ''); // large-print staff: the exercise is short, give it the room
-        figure.setAttribute('aria-label', `${level} Hanon No. 1 generated piano sheet music`);
+        figure.setAttribute('aria-label', `${level} ${ex.name} generated piano sheet music`);
         content.querySelector('.coach-anchor').before(figure);
         const bars = pitches => Array.from({length: d.cells}, (_, i) =>
           pitches.slice(i * 8, i * 8 + 8).map(note => `${note}/8`).join(' ')).join(' | ');
         window.ScoreEngine.render(figure, {
-          title: `Hanon No. 1 · ${level[0].toUpperCase() + level.slice(1)} excerpt`,
-          subtitle: `${d.cells} ascending ${d.cells === 1 ? 'cell' : 'cells'} · RH 1–2–3–4–5–4–3–2 · LH 5–4–3–2–1–2–3–4`,
+          title: `${ex.name} · ${level[0].toUpperCase() + level.slice(1)} excerpt`,
+          subtitle: `${d.cells} ascending ${d.cells === 1 ? 'cell' : 'cells'} · RH ${ex.fing.join('–')} · LH ${ex.fing.map(f => 6 - f).join('–')}`,
           fingerings: showFingers ? [rh, lh] : [],
-          composer: 'C.-L. Hanon · classroom excerpt',
+          composer: exId === 'hanon1' ? 'C.-L. Hanon · classroom excerpt' : 'Hanon-type pattern · classroom exercise',
           key: 0, keyName: 'C major', time: '4/4', instrument: 'piano',
           tempo: d.tempo / 2, tempoText: `Even eighth notes · ♪ = ${d.tempo}`,
           staves: [
@@ -80,8 +123,13 @@ document.addEventListener('DOMContentLoaded', () => {
             {clef: 'bass', name: 'Left hand', notes: bars(notes.map(note => note.replace(/\d$/, octave => Number(octave) - 1)))}
           ],
           justifyLast: true, // stretch even a one-bar excerpt across the pane
-          source: {label: 'The Virtuoso Pianist, Exercise 1 · opening ascending cells, generated classroom engraving', license: 'Public-domain composition'}
+          source: exId === 'hanon1' ? {label: 'The Virtuoso Pianist, Exercise 1 · opening ascending cells, generated classroom engraving', license: 'Public-domain composition'} : {label: 'Generated classroom engraving of a standard technical pattern (Hanon / Czerny / Schmitt tradition)', license: 'Original pattern, no copyright'}
         });
+      }
+      if (!scale) {
+        const vary = document.createElement('details'); vary.className = 'pc-plan';
+        vary.innerHTML = '<summary>Ways to vary this exercise</summary><ul>' + ex.vary.concat(generalVary).map(v => '<li>' + v + '</li>').join('') + '</ul>';
+        content.querySelector('.coach-anchor').before(vary);
       }
       let position = 0;
       const feedback = content.querySelector('[data-feedback]');
@@ -107,6 +155,21 @@ document.addEventListener('DOMContentLoaded', () => {
       content.querySelector('[data-restart]').onclick = () => { position = 0; feedback.textContent = `Tap the notes in order: note 1 of ${model.length}.`; };
     }
     section.querySelectorAll('[data-coach-level]').forEach(button => button.addEventListener('click', () => render(button.dataset.coachLevel)));
+    const exBar = section.querySelector('[data-coach-exercises]');
+    if (exBar) {
+      Object.entries(exercises).forEach(([id, e]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'pc-btn'; b.dataset.coachEx = id;
+        b.textContent = e.name; b.setAttribute('aria-pressed', String(id === exId));
+        b.addEventListener('click', () => {
+          exId = id;
+          exBar.querySelectorAll('[data-coach-ex]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.coachEx === id)));
+          render(curLevel);
+        });
+        exBar.append(b);
+      });
+      const wantedEx = new URLSearchParams(location.search).get('ex');
+      if (exercises[wantedEx]) { exId = wantedEx; exBar.querySelectorAll('[data-coach-ex]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.coachEx === exId))); }
+    }
     const hint = section.querySelector('#hanonLevelHint');
     const copy = section.querySelector('#hanonCopyLink');
     const names = { beginner: 'Beginner · 1 cell, about 2 minutes', intermediate: 'Intermediate · 3 cells, about 4 minutes', advanced: 'Advanced · 5 cells, about 6 minutes', expert: 'Expert · 7 cells, about 8 minutes' };
@@ -116,9 +179,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     section.querySelectorAll('[data-coach-level]').forEach(button => button.addEventListener('click', () => note(button.dataset.coachLevel)));
     copy?.addEventListener('click', async () => {
-      const url = new URL(location.href); url.searchParams.set('hanon', section.dataset.level || 'beginner'); url.hash = section.id;
+      const url = new URL(location.href); url.searchParams.set('hanon', section.dataset.level || 'beginner'); if (exBar) url.searchParams.set('ex', exId); url.hash = section.id;
       try { await navigator.clipboard.writeText(url.href); copy.textContent = 'Link copied ✓'; } catch { copy.textContent = url.href; }
-      setTimeout(() => { copy.textContent = 'Copy link to this level'; }, 2500);
+      setTimeout(() => { copy.textContent = 'Copy link to this exercise'; }, 2500);
     });
     const wanted = new URLSearchParams(location.search).get('hanon');
     const start = hint && levels[wanted] ? wanted : 'beginner';
