@@ -417,6 +417,7 @@ if (root) {
   const started = performance.now();
   const clock = q('[data-engine-clock]');
   window.setInterval(() => {
+    if (document.hidden || !root.offsetParent) return;
     const elapsed = Math.floor((performance.now() - started) / 1000);
     const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
     const seconds = String(elapsed % 60).padStart(2, '0');

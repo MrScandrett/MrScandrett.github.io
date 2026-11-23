@@ -112,6 +112,9 @@ export function toDxf(project) {
           pairs(out, 0, 'VERTEX', 8, layer, 10, num(p[0]), 20, num(p[1]), 30, num(0));
         }
         pairs(out, 0, 'SEQEND', 8, layer);
+      } else if (s.kind === 'circle') {
+        const r = Math.hypot(s.x2 - s.x1, s.y2 - s.y1) / UNITS_PER_MM;
+        if (r > 0) pairs(out, 0, 'CIRCLE', 8, LAYER_OF[s.type] || 'OUTLINE', 10, num(a[0]), 20, num(a[1]), 30, num(0), 40, num(r));
       } else {
         line(LAYER_OF[s.type] || 'OUTLINE', a, b);
       }
@@ -543,7 +546,12 @@ function extents(shapes, types = ['object', 'hidden']) {
   const pts = [];
   for (const s of shapes || []) {
     if (s.kind === 'dimension' || !types.includes(s.type)) continue;
-    pts.push([s.x1, s.y1], [s.x2, s.y2]);
+    if (s.kind === 'circle') {
+      const r = Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+      pts.push([s.x1 - r, s.y1 - r], [s.x1 + r, s.y1 + r]);
+    } else {
+      pts.push([s.x1, s.y1], [s.x2, s.y2]);
+    }
   }
   if (!pts.length) return null;
   const b = bbox(pts);
@@ -577,9 +585,20 @@ export function topOutline(project) {
   const shapes = (project.views?.top || []).filter((s) => s.kind !== 'dimension' && s.type === 'object');
   const loops = [];
   for (const s of shapes) {
-    if (s.kind !== 'rect') continue;
-    const x0 = Math.min(s.x1, s.x2), x1 = Math.max(s.x1, s.x2), y0 = Math.min(s.y1, s.y2), y1 = Math.max(s.y1, s.y2);
-    loops.push([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
+    if (s.kind === 'rect') {
+      const x0 = Math.min(s.x1, s.x2), x1 = Math.max(s.x1, s.x2), y0 = Math.min(s.y1, s.y2), y1 = Math.max(s.y1, s.y2);
+      loops.push([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
+    } else if (s.kind === 'circle') {
+      const r = Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+      if (r > 0) {
+        const segs = 48, ring = [];
+        for (let k = 0; k < segs; k++) {
+          const th = (k / segs) * Math.PI * 2;
+          ring.push([s.x1 + r * Math.cos(th), s.y1 + r * Math.sin(th)]);
+        }
+        loops.push(ring);
+      }
+    }
   }
   const lines = shapes.filter((s) => s.kind === 'line');
   const key = (x, y) => `${x},${y}`;

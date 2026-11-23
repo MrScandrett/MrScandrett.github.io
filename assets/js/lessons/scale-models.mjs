@@ -14,6 +14,7 @@
  */
 
 import { DEFAULT_PRINTER, printerFit, writeBinaryStl, edgeReport } from '../fab-io.mjs';
+import { sendAndOpen } from '../handoff.mjs';
 
 export const GRID = 0.5;                       // plan grid, metres
 export const NOZZLE = DEFAULT_PRINTER.nozzle;  // 0.4 mm
@@ -390,6 +391,13 @@ function mountMaker(root) {
   let drag = null;
   let hover = null;
   const history = [];
+  const redoHistory = [];
+  const undoBtn = $('[data-sm-undo]');
+  const redoBtn = $('[data-sm-redo]');
+  function syncUndoRedo() {
+    if (undoBtn) undoBtn.disabled = history.length === 0;
+    if (redoBtn) redoBtn.disabled = redoHistory.length === 0;
+  }
   let model = null;
 
   // canvas2d sizes the canvas (and calls onResize) before it returns, so the
@@ -440,8 +448,57 @@ function mountMaker(root) {
     settings = { ...settings, ...p.settings };
     syncControls(); rebuild();
   }));
-  $('[data-sm-undo]').addEventListener('click', () => { if (history.length) { plan = history.pop(); rebuild(); } });
+  $('[data-sm-undo]').addEventListener('click', () => {
+    if (!history.length) return;
+    redoHistory.push(structuredClone(plan));
+    plan = history.pop();
+    syncUndoRedo();
+    rebuild();
+  });
+  $('[data-sm-redo]')?.addEventListener('click', () => {
+    if (!redoHistory.length) return;
+    history.push(structuredClone(plan));
+    plan = redoHistory.pop();
+    syncUndoRedo();
+    rebuild();
+  });
   $('[data-sm-stl]').addEventListener('click', download);
+  $('[data-sm-workbench]')?.addEventListener('click', async () => {
+    if (!model?.meshes.length) return;
+    try {
+      const { buffer } = stlFor(model);
+      await sendAndOpen('../../../workbench.html', {
+        bytes: new Uint8Array(buffer),
+        filename: `scale-model-1-${settings.scale}.stl`,
+        from: 'Scale Models',
+      });
+    } catch (_) { /* Handoff optional when storage blocked */ }
+  });
+  $('[data-sm-save]')?.addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 1, plan, settings }, null, 2)], { type: 'application/json' }));
+    a.download = `scale-plan-1-${settings.scale}.json`;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  $('[data-sm-open]')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      const nextPlan = parsed.plan || parsed;
+      if (!Array.isArray(nextPlan.rooms) || !Array.isArray(nextPlan.doors)) throw new Error('Invalid floor plan JSON');
+      remember();
+      plan = {
+        rooms: nextPlan.rooms.map((r) => ({ x0: Number(r.x0), y0: Number(r.y0), x1: Number(r.x1), y1: Number(r.y1) })).filter((r) => [r.x0, r.y0, r.x1, r.y1].every(Number.isFinite)),
+        doors: nextPlan.doors.filter((d) => typeof d === 'string'),
+      };
+      if (parsed.settings && typeof parsed.settings === 'object') settings = { ...settings, ...parsed.settings };
+      syncControls();
+      rebuild();
+    } catch (_) { /* Invalid file ignored cleanly */ }
+  });
   $('[data-sm-add]').addEventListener('submit', (e) => {
     e.preventDefault();
     const w = Math.round(Number($('[data-sm-add-w]').value) / GRID), d = Math.round(Number($('[data-sm-add-d]').value) / GRID);
@@ -456,7 +513,12 @@ function mountMaker(root) {
     rebuild();
   });
 
-  function remember() { history.push(structuredClone(plan)); if (history.length > 40) history.shift(); }
+  function remember() {
+    history.push(structuredClone(plan));
+    if (history.length > 40) history.shift();
+    redoHistory.length = 0;
+    syncUndoRedo();
+  }
 
   /* pointer → grid */
   const toGrid = (e) => {
@@ -556,7 +618,7 @@ function mountMaker(root) {
         const span = doorKeys.has(next) ? 2 : 1;
         ctx.beginPath();
         if (dir === 'h') { ctx.moveTo(i * c, j * c); ctx.arc(i * c, j * c, span * c, 0, Math.PI / 2); }
-        else { ctx.moveTo(i * c, j * c); ctx.arc(i * c, j * c, span * c, 0, Math.PI / 2); }
+        else { ctx.moveTo(i * c, j * c); ctx.arc(i * c, j * c, span * c, Math.PI / 2, Math.PI); }
         ctx.closePath(); ctx.stroke();
       }
     }
@@ -610,10 +672,22 @@ function mountMaker(root) {
     showModel(true);
   }
 
+  function disposeChildren(container) {
+    container.traverse((o) => {
+      if (o === container) return;
+      o.geometry?.dispose();
+      if (o.material) {
+        for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.dispose();
+      }
+    });
+    container.clear();
+  }
+
   function showModel(frame = false) {
     if (!three || !model) return;
     const { THREE, group, bed, camera, controls, render } = three;
-    group.clear(); bed.clear();
+    disposeChildren(group);
+    disposeChildren(bed);
     const hex = (h) => new THREE.Color(h);
     const thinTone = { 2: wallVerdict(model.printed.ext).tone, 3: wallVerdict(model.printed.int).tone, 1: slabVerdict(model.printed.slab).tone };
     const colorFor = (label) => {

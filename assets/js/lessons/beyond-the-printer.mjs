@@ -81,6 +81,8 @@ function preview3d(box, { label }) {
 function showSheets(host, sheets, { name, laserSheets }) {
   host.innerHTML = '';
   sheets.forEach((svg, i) => {
+    const item = document.createElement('div');
+    item.className = 'btp-sheet-item';
     const fig = document.createElement('figure');
     fig.className = 'btp-page';
     fig.setAttribute('data-zoomable', '');
@@ -90,9 +92,13 @@ function showSheets(host, sheets, { name, laserSheets }) {
     img.alt = `Template page ${i + 1} of ${sheets.length}: cutting lines on letter paper.`;
     img.width = 216; img.height = 279;
     const cap = document.createElement('figcaption');
-    cap.innerHTML = `Page ${i + 1} of ${sheets.length} · <a href="#" data-btp-dl="${i}">SVG</a>` + (laserSheets ? ` · <a href="#" data-btp-dl-laser="${i}">laser SVG</a>` : '');
+    cap.textContent = `Page ${i + 1} of ${sheets.length}`;
     fig.append(img, cap);
-    host.appendChild(fig);
+    const actions = document.createElement('div');
+    actions.className = 'btp-sheet-actions';
+    actions.innerHTML = `<a href="#" data-btp-dl="${i}">SVG</a>` + (laserSheets ? ` · <a href="#" data-btp-dl-laser="${i}">laser SVG</a>` : '');
+    item.append(fig, actions);
+    host.appendChild(item);
   });
   $all('[data-btp-dl]', host).forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); download(sheets[+a.dataset.btpDl], `${name}-page-${+a.dataset.btpDl + 1}.svg`); }));
   $all('[data-btp-dl-laser]', host).forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); download(laserSheets[+a.dataset.btpDlLaser], `${name}-laser-page-${+a.dataset.btpDlLaser + 1}.svg`); }));
@@ -157,6 +163,7 @@ function initSlice(root) {
   const allow = $('[data-btp-allowance]', root);
   const kerf = $('[data-btp-kerf]', root);
   const countA = $('[data-btp-count-a]', root), countB = $('[data-btp-count-b]', root);
+  const countAOut = $('[data-btp-count-a-out]', root), countBOut = $('[data-btp-count-b-out]', root);
   const note = $('[data-btp-shape-note]', root);
   const stats = $('[data-btp-stats]', root);
   const sheetsHost = $('[data-btp-sheets]', root);
@@ -164,15 +171,21 @@ function initSlice(root) {
   let sheets = [], laser = [];
 
   for (const [id, s] of Object.entries(B.SHAPES)) shapeSel.add(new Option(s.name, id));
+  function syncCountOutputs() {
+    if (countAOut) countAOut.textContent = countA.value;
+    if (countBOut) countBOut.textContent = countB.value;
+  }
   function buildParams() {
     const s = B.SHAPES[shapeSel.value];
     paramsHost.innerHTML = '';
     for (const p of s.params) paramsHost.appendChild(sliderRow(p, p.value));
     countA.value = s.counts[0]; countB.value = s.counts[1];
+    syncCountOutputs();
     note.innerHTML = `<b>${s.trait}.</b> ${s.note}`;
   }
 
   function run() {
+    syncCountOutputs();
     const t = Math.max(0.3, num(thick, 3));
     const k = Math.max(0, num(kerf, 0));
     const form = B.computeSliceForm({ shape: shapeSel.value, params: readParams(paramsHost), thickness: t, allowance: num(allow, 0), kerf: k, countA: +countA.value, countB: +countB.value });
@@ -201,7 +214,12 @@ function initSlice(root) {
   }
   const later = debounce(run, 120);
   shapeSel.addEventListener('change', () => { buildParams(); run(); });
-  root.addEventListener('input', (e) => { if (e.target.closest('[data-btp-params], [data-btp-settings]')) later(); });
+  root.addEventListener('input', (e) => {
+    if (e.target.closest('[data-btp-params], [data-btp-settings]')) {
+      syncCountOutputs();
+      later();
+    }
+  });
   $('[data-btp-print]', root).addEventListener('click', () => printSheets(sheets));
   buildParams();
   run();

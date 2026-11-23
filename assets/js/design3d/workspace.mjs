@@ -40,11 +40,26 @@ const MATERIAL_PRESETS={
  plastic:{label:'Molded plastic',params:{roughness:.48,metalness:0},color:'#e1ab35'}
 };
 let sequence=0;
+const mountedWorkshops=[];
+document.addEventListener('keydown',event=>{
+ if(event.defaultPrevented||event.isComposing||event.altKey||!(event.ctrlKey||event.metaKey))return;
+ if(event.target.closest('input, select, textarea, [contenteditable="true"]'))return;
+ const key=event.key.toLowerCase();
+ const action=event.shiftKey?(key==='z'?'redo':null):({z:'undo',y:'redo',s:'save'}[key]||null);
+ if(!action)return;
+ const entry=mountedWorkshops.find(m=>m.host.contains(document.activeElement)&&m.host.offsetParent!==null)||mountedWorkshops.find(m=>m.host.offsetParent!==null);
+ if(!entry)return;
+ const button=entry.host.querySelector(`[data-action="${action}"]`);
+ if(!button)return;
+ event.preventDefault();
+ if(!event.repeat&&!button.disabled)button.click();
+});
 for(const host of document.querySelectorAll('[data-design3d-workshop]'))mount(host);
 async function mount(host){
  const mode=host.dataset.design3dWorkshop,def=WORKSHOPS[mode];if(!def)return;
+ mountedWorkshops.push({host});
  const id='d3w-'+(++sequence),store='classroomos:design3d:'+mode;
- let state=freshState(mode),undo=[],redo=[],playing=false,dirty=true,level='guided',brush='raise',group,texture,three,sceneKit,controls,loop,visible=true,pointerStroke=false,lastStroke=0,baseline,gestureStarted=false,brushRing;
+ let state=freshState(mode),undo=[],redo=[],playing=false,dirty=true,level='guided',brush='raise',sculptSym=false,propWire=false,compositeRaw=false,group,texture,three,sceneKit,controls,loop,visible=true,pointerStroke=false,lastStroke=0,baseline,gestureStarted=false,brushRing,mirrorRing;
  try{
   const saved=localStorage.getItem(store);
   if(saved){const candidate=validateState(JSON.parse(saved));if(candidate.mode===mode)state=candidate;}
@@ -74,7 +89,8 @@ async function mount(host){
  const scheme=`<div class="d3w-scheme"><label for="${id}-scheme">${pattern?'Camera controls':'Control scheme'}</label><select id="${id}-scheme" data-scheme><option value="tinkercad">Tinkercad / Default</option><option value="blender">Blender${pattern?'':' (MMB)'}</option><option value="fusion">Fusion 360 / CAD${pattern?'':' (Shift+MMB)'}</option></select><span class="d3w-scheme-hint" data-scheme-hint>Left-drag: Orbit · Right-drag: Pan · Scroll: Zoom</span></div>`;
  const guideMarkup=`<ol class="d3w-guide">${def.steps.map(s=>'<li>'+escape(s)+'</li>').join('')}</ol>`;
  const explain=`<fieldset><legend>Test and explain</legend><label for="${id}-reflection">I changed ___ because ___.</label><textarea id="${id}-reflection" data-reflection rows="3" maxlength="1000">${escape(state.reflection)}</textarea><p>${escape(def.check)}</p><button type="button" data-action="check">Test my design</button><ul data-checks></ul><p class="d3w-completion" data-completion></p></fieldset>`;
- const projectActions=`<div class="d3w-actions"><button type="button" data-action="undo">Undo</button><button type="button" data-action="redo">Redo</button><button type="button" data-action="reset">Reset starter</button><button type="button" data-action="save">Save project</button><button type="button" data-action="open">Open project</button><button type="button" data-action="export">Export OBJ</button>${mode==='sculpt'?'<button type="button" data-action="heightmap">Heightmap PNG</button>':''}${['procedural','sculpt'].includes(mode)?'<button type="button" data-action="glb">Export color GLB</button>':''}${['print','clearance'].includes(mode)?'<button type="button" data-action="stl">Export STL (mm)</button>':''}<button type="button" data-action="workbench">Open in Workbench</button>${mode==='sculpt'?'<button type="button" data-action="printprep">Send to Print Prep</button>':''}<button type="button" data-action="capture">Capture image</button>${fitted&&mode==='character'?'<button type="button" data-character-formats aria-expanded="false">GLB and STL…</button>':''}${mode==='texture'?'<button type="button" data-action="texture">Export texture PNG</button>':''}</div><input type="file" data-file accept=".json" hidden>`;
+ const glbModes=['procedural','sculpt','furniture','modular','props','boolean','transform','uv','composite','materials'];
+ const projectActions=`<div class="d3w-actions"><button type="button" data-action="undo">Undo</button><button type="button" data-action="redo">Redo</button><button type="button" data-action="reset">Reset starter</button><button type="button" data-action="save">Save project</button><button type="button" data-action="open">Open project</button><button type="button" data-action="export">Export OBJ</button>${mode==='sculpt'?'<button type="button" data-action="heightmap">Heightmap PNG</button>':''}${glbModes.includes(mode)?'<button type="button" data-action="glb">Export color GLB</button>':''}${['print','clearance'].includes(mode)?'<button type="button" data-action="stl">Export STL (mm)</button>':''}<button type="button" data-action="workbench">Open in Workbench</button>${mode==='sculpt'?'<button type="button" data-action="printprep">Send to Print Prep</button>':''}<button type="button" data-action="capture">Capture image</button>${fitted&&mode==='character'?'<button type="button" data-character-formats aria-expanded="false">GLB and STL…</button>':''}${mode==='texture'?'<button type="button" data-action="texture">Export texture PNG</button>':''}</div><input type="file" data-file accept=".json" hidden>`;
  const status='<p role="status" data-status>Loading the editable scene…</p>';
  host.innerHTML=`${fitted?'<div data-creation-primary>':''}<header class="d3w-head">${fitted?'':`<p>3D workshop · ${escape(def.technique)}</p>`}<${hx} id="${id}-title">${escape(def.title)}</${hx}>${fitted?'':`<p>${escape(def.challenge)}</p>`}</header>
  ${fitted?'':`<div class="d3w-options">${support}${scheme}</div>`}
@@ -83,18 +99,21 @@ async function mount(host){
  ${mode==='furniture'?fitted?`<div class="d3w-toolbar d3w-starting-tools" role="group" aria-label="Furniture starters"><span>Furniture starters</span>${Object.entries(FURNITURE_PRESETS).map(([key,preset])=>`<button type="button" data-furniture-preset="${key}">${escape(preset.label)}</button>`).join('')}</div>`:`<section class="d3w-character-cast d3w-furniture-cast" aria-labelledby="${id}-cast"><div><h2 id="${id}-cast">Choose a furniture form</h2><p>Use these as design seeds. Every dimension, detail and color remains editable.</p></div><div class="d3w-presets">${Object.entries(FURNITURE_PRESETS).map(([key,preset])=>`<button type="button" data-furniture-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>` : ''}
  ${mode==='materials'?fitted?`<div class="d3w-toolbar d3w-starting-tools" role="group" aria-label="Material swatches"><span>Material swatches</span>${Object.entries(MATERIAL_PRESETS).map(([key,preset])=>`<button type="button" data-material-preset="${key}">${escape(preset.label)}</button>`).join('')}</div>`:`<section class="d3w-character-cast d3w-material-bench" aria-labelledby="${id}-bench"><div><h2 id="${id}-bench">Start with a material hypothesis</h2><p>Apply a swatch, then change one property. The sphere shows highlight width; the beveled block shows edge response.</p></div><div class="d3w-presets">${Object.entries(MATERIAL_PRESETS).map(([key,preset])=>`<button type="button" data-material-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>` : ''}
  ${pattern?`<div class="d3w-toolbar d3w-starting-tools" role="group" aria-label="Pattern starters"><span>Start with</span>${Object.keys(presets).map(name=>`<button type="button" data-pattern-preset="${name}">${name}</button>`).join('')}<button type="button" data-action="source">Import source OBJ</button><input type="file" data-pattern-file accept=".obj" hidden></div>`:''}
- <div class="d3w-layout"><div class="d3w-stage"><div class="d3w-view"><canvas tabindex="0" aria-label="Editable 3D scene. Drag to orbit; use view buttons or arrow keys. In sculpt mode, turn on Brush mode to edit the mesh." data-canvas></canvas><p class="d3w-unit">${['print','clearance'].includes(mode)?'Coordinates in millimeters':'Y up · starter-scene units · not a manufacturing specification'}</p></div>
- ${mode==='sculpt'?'<div class="d3w-toolbar" role="group" aria-label="Quick sculpt tools"><button type="button" data-sculpt-tool="raise" aria-pressed="false">Raise</button><button type="button" data-sculpt-tool="lower" aria-pressed="false">Lower</button><button type="button" data-sculpt-tool="smooth" aria-pressed="false">Smooth</button><button type="button" data-sculpt-tool="level" aria-pressed="false">Level</button><label data-level-control hidden>Target height <input type="number" data-level-height min="-4" max="4" step="0.05" value="0.5"></label><button type="button" data-sculpt-orbit aria-pressed="true">Orbit</button></div>':''}
+ <div class="d3w-layout"><div class="d3w-stage"><div class="d3w-view"><canvas tabindex="0" aria-label="Editable 3D scene. Drag to orbit; use view buttons or arrow keys. In sculpt mode, turn on Brush mode to edit the mesh." data-canvas></canvas>${mode==='composite'?'<div class="d3w-vignette" data-vignette hidden></div>':''}<p class="d3w-unit" data-unit-note>${['print','clearance'].includes(mode)?'Coordinates in millimeters':'Y up · starter-scene units · not a manufacturing specification'}</p></div>
+ ${mode==='sculpt'?'<div class="d3w-toolbar" role="group" aria-label="Quick sculpt tools"><button type="button" data-sculpt-tool="raise" aria-pressed="false">Raise</button><button type="button" data-sculpt-tool="lower" aria-pressed="false">Lower</button><button type="button" data-sculpt-tool="crease" aria-pressed="false">Crease</button><button type="button" data-sculpt-tool="smooth" aria-pressed="false">Smooth</button><button type="button" data-sculpt-tool="level" aria-pressed="false">Level</button><label data-level-control hidden>Target height <input type="number" data-level-height min="-4" max="4" step="0.05" value="0.5"></label><button type="button" data-sculpt-symmetry aria-pressed="false">X Symmetry</button><button type="button" data-sculpt-orbit aria-pressed="true">Orbit</button></div>':''}
  <div class="d3w-toolbar" role="group" aria-label="Camera views"><button type="button" data-view="perspective">Perspective</button><button type="button" data-view="front">Front</button><button type="button" data-view="side">Side</button><button type="button" data-view="top">Top</button><button type="button" data-zoom="in">Zoom in</button><button type="button" data-zoom="out">Zoom out</button><button type="button" data-fit>Fit model</button></div>
  ${fitted?scheme:projectActions}
  ${fitted?'':'<p class="d3w-help">X runs across · Y is up · Z is depth. Drag to orbit · right-drag to pan · pinch or use Zoom · keyboard arrows orbit, +/− zoom. Numeric controls work without dragging.</p>'}<p data-description class="d3w-description${fitted?' d3w-sr-only':''}"></p>
  ${mode==='navigate'?`<div class="d3w-missions"><p><strong>Camera practice mission</strong></p><ul data-missions><li data-m="orbit">○ Orbit the view to inspect the stepped silhouette</li><li data-m="views">○ Inspect Front, Side and Top views</li><li data-m="zoom">○ Zoom in or out to examine detail</li><li data-m="fit">○ Use Fit model or view buttons</li><li data-m="proportions">○ Adjust dimensions to set your proportions</li></ul></div>`:''}
  ${fitted?'':guideMarkup}
  ${fitted?'':status}</div>
- <div class="d3w-controls"><fieldset><legend>${mode==='character'?'Character features':'Design controls'}</legend>${def.fields.map((f,index)=>`${mode==='character'&&[0,7,13,14].includes(index)?`<h3 class="d3w-control-heading">${index===0?'Body and proportions':index===7?'Face':index===13?'Hair':'Outfit'}</h3>`:''}<div class="d3w-field"><label for="${id}-${f.key}">${escape(f.label)}</label>${f.options?`<select id="${id}-${f.key}" data-param="${f.key}">${f.options.map((label,value)=>`<option value="${value}">${escape(label)}</option>`).join('')}</select>`:`<input id="${id}-${f.key}" data-param="${f.key}" type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}"><input data-slider="${f.key}" aria-label="${escape(f.label)} slider" type="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}">`}</div>`).join('')}${pairedColors?'<div class="d3w-color">':''}<label for="${id}-color">${mode==='character'?'Skin tone':'Surface color'}</label><input id="${id}-color" type="color" data-color="color" value="${state.color}">${pairedColors?'</div>':''}${['texture','procedural','modular','furniture','character'].includes(mode)?`${pairedColors?'<div class="d3w-color">':''}<label for="${id}-secondary">${mode==='character'?'Outfit color':'Second color'}</label><input id="${id}-secondary" type="color" data-color="secondary" value="${state.secondary}">${pairedColors?'</div>':''}`:''}${['composite','materials'].includes(mode)?`${pairedColors?'<div class="d3w-color">':''}<label for="${id}-background">Background color</label><input id="${id}-background" type="color" data-color="background" value="${state.background}">${pairedColors?'</div>':''}`:''}</fieldset>
+ <div class="d3w-controls"><fieldset><legend>${mode==='character'?'Character features':'Design controls'}</legend>${def.fields.map((f,index)=>`${mode==='character'&&[0,7,13,14].includes(index)?`<h3 class="d3w-control-heading">${index===0?'Body and proportions':index===7?'Face':index===13?'Hair':'Outfit'}</h3>`:''}<div class="d3w-field"><label for="${id}-${f.key}">${escape(f.label)}</label>${f.options?`<select id="${id}-${f.key}" data-param="${f.key}">${f.options.map((label,value)=>`<option value="${value}">${escape(label)}</option>`).join('')}</select>`:`<input id="${id}-${f.key}" data-param="${f.key}" type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}"><input data-slider="${f.key}" aria-label="${escape(f.label)} slider" type="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}">`}</div>`).join('')}${pairedColors?'<div class="d3w-color">':''}<label for="${id}-color">${mode==='character'?'Skin tone':'Surface color'}</label><input id="${id}-color" type="color" data-color="color" value="${state.color}">${pairedColors?'</div>':''}${['texture','procedural','modular','furniture','character','props','boolean'].includes(mode)?`${pairedColors?'<div class="d3w-color">':''}<label for="${id}-secondary">${mode==='character'?'Outfit color':'Second color'}</label><input id="${id}-secondary" type="color" data-color="secondary" value="${state.secondary}">${pairedColors?'</div>':''}`:''}${['composite','materials'].includes(mode)?`${pairedColors?'<div class="d3w-color">':''}<label for="${id}-background">Background color</label><input id="${id}-background" type="color" data-color="background" value="${state.background}">${pairedColors?'</div>':''}`:''}</fieldset>
  ${mode==='boolean'?'<button type="button" data-action="cut" aria-pressed="false">Apply Difference</button>':''}
+ ${mode==='props'?'<button type="button" data-action="wireframe" aria-pressed="false">Wireframe overlay</button>':''}
+ ${mode==='composite'?'<button type="button" data-action="raw-toggle" aria-pressed="false">Compare raw</button>':''}
+ ${mode==='print'?'<div class="d3w-toolbar" role="group" aria-label="Quick orientation"><button type="button" data-print-angle="0">0° Upright</button><button type="button" data-print-angle="90">90° Lay flat</button><button type="button" data-print-angle="180">180° Flipped</button></div>':''}
  ${mode==='modular'?'<button type="button" data-action="snap">Snap wall to grid</button>':''}
- ${mode==='sculpt'?'<fieldset><legend>Sculpt tools</legend><label>Brush operation <select data-brush><option value="raise">Raise</option><option value="lower">Lower</option><option value="smooth">Smooth</option><option value="level">Level</option></select></label><button type="button" data-action="brushmode" aria-pressed="false">Brush mode: off</button><button type="button" data-action="stroke">Apply brush at numeric position</button><p>In Brush mode, drag on the mesh. Turn it off to orbit. Numeric X/Z and Apply brush offer the same operation without a pointer.</p></fieldset>':''}
+ ${mode==='sculpt'?'<fieldset><legend>Sculpt tools</legend><label>Brush operation <select data-brush><option value="raise">Raise</option><option value="lower">Lower</option><option value="crease">Crease</option><option value="smooth">Smooth</option><option value="level">Level</option></select></label><button type="button" data-action="brushmode" aria-pressed="false">Brush mode: off</button><button type="button" data-action="stroke">Apply brush at numeric position</button><p>In Brush mode, drag on the mesh. Turn it off to orbit. Numeric X/Z and Apply brush offer the same operation without a pointer.</p></fieldset>':''}
  ${mode==='animation'?'<fieldset><legend>Authored action</legend><button type="button" data-action="key">Add / replace keyframe</button><button type="button" data-action="remove-key">Remove key at this time</button><button type="button" data-action="play" aria-pressed="false">Play my action</button><ol data-keys></ol></fieldset>':''}
  ${fitted?'':explain}</div></div>
  ${fitted?`${projectActions}
@@ -163,7 +182,9 @@ async function mount(host){
  }updateCharacterPanels?.(state.params);
  if(mode==='materials')for(const b of host.querySelectorAll('[data-material-preset]')){const p=MATERIAL_PRESETS[b.dataset.materialPreset];b.setAttribute('aria-pressed',String(state.color===p.color&&Object.entries(p.params).every(([k,v])=>state.params[k]===v)));}
  if(mode==='character')for(const button of host.querySelectorAll('[data-character-preset]')){const preset=CHARACTER_PRESETS[button.dataset.characterPreset];button.setAttribute('aria-pressed',String(Object.entries(preset.params).every(([key,value])=>state.params[key]===value)&&(![1,2,3].includes(state.params.artStyle)||state.color===preset.color)&&state.secondary===preset.secondary));}if(three&&sceneKit)rebuild();dirty=true;host.dataset.revision=String(undo.length);host.dataset.mode=mode;
- const cut=$('[data-action="cut"]');if(cut){cut.textContent=state.cut?'Remove Difference':'Apply Difference';cut.setAttribute('aria-pressed',String(state.cut));}
+ const cut=$('[data-action="cut"]');if(cut){const opLabel=['Difference','Union','Intersect'][Math.round(state.params.operation||0)]||'Difference';cut.textContent=(state.cut?'Remove ':'Apply ')+opLabel;cut.setAttribute('aria-pressed',String(state.cut));}
+ const wireBtn=$('[data-action="wireframe"]');if(wireBtn)wireBtn.setAttribute('aria-pressed',String(propWire));
+ const rawBtn=$('[data-action="raw-toggle"]');if(rawBtn){rawBtn.setAttribute('aria-pressed',String(compositeRaw));rawBtn.textContent=compositeRaw?'Show graded':'Compare raw';}
  const play=$('[data-action="play"]');if(play){play.textContent=playing?'Pause my action':'Play my action';play.setAttribute('aria-pressed',String(playing));}
  const keys=$('[data-keys]');if(keys)keys.innerHTML=state.keys.map(k=>`<li>Time ${k.time.toFixed(2)} · ${k.angle}°</li>`).join('')||'<li>No keys yet. Choose a time and pose, then add a key.</li>';
  $('[data-action="undo"]').disabled=!undo.length;$('[data-action="redo"]').disabled=!redo.length;$('[data-checks]').replaceChildren();$('[data-completion]').textContent='';
@@ -227,15 +248,17 @@ async function mount(host){
  $('[data-level-control]').hidden=value!=='level';
  $('[data-sculpt-orbit]').setAttribute('aria-pressed',String(!pointerStroke));const select=$('[data-brush]');if(select)select.value=value;for(const b of host.querySelectorAll('[data-sculpt-tool]'))b.setAttribute('aria-pressed',String(pointerStroke&&b.dataset.sculptTool===value));}
  $('[data-sculpt-orbit]')?.addEventListener('click',()=>{if(pointerStroke)actions.brushmode();});
+ $('[data-sculpt-symmetry]')?.addEventListener('click',()=>{sculptSym=!sculptSym;$('[data-sculpt-symmetry]').setAttribute('aria-pressed',String(sculptSym));if(mirrorRing)mirrorRing.visible=false;dirty=true;say(sculptSym?'X Symmetry enabled for brush strokes.':'X Symmetry disabled.');});
  $('[data-brush]')?.addEventListener('change',e=>chooseBrush(e.target.value));
  for(const b of host.querySelectorAll('[data-sculpt-tool]'))b.addEventListener('click',()=>{chooseBrush(b.dataset.sculptTool);if(!pointerStroke)actions.brushmode();say(`${brush} brush ready. Drag on the surface; hold Shift to smooth.`);});
+ for(const b of host.querySelectorAll('[data-print-angle]'))b.addEventListener('click',()=>{const ang=Number(b.dataset.printAngle);edit(()=>{state.params.angle=ang;state.edits=[...new Set([...state.edits,'angle'])];});say(`Bracket rotated to ${ang}°. Check red overhang areas and bed contact.`);});
  function stroke(x=state.params.brushX,z=state.params.brushZ,type=brush,gesture=false){
  if(state.strokes.length>=400){say('This surface has reached 400 brush samples. Save or export your work, or undo a stroke before continuing.');return;}
  const target=type==='level'?$('[data-level-height]').valueAsNumber:null;
  if(type==='level'&&(!Number.isFinite(target)||Math.abs(target)>4)){say('Enter a target height between −4 and 4.');return;}
  if(!gesture||!gestureStarted)checkpoint();
  if(gesture)gestureStarted=true;
- state.strokes.push({type,x,z,...(type==='level'?{target}:{}),radius:state.params.radius,strength:state.params.strength});
+ state.strokes.push({type,x,z,...(sculptSym?{sym:true}:{}),...(type==='level'?{target}:{}),radius:state.params.radius,strength:state.params.strength});
  state.edits=[...new Set([...state.edits,'strength'])];state.saved=false;state.captured=false;state.exported=false;persist();refresh();
  say(`${type} applied · ${state.strokes.length}/400 brush samples. Undo restores the whole drag.`);
  }
@@ -248,10 +271,12 @@ async function mount(host){
  undo(){if(undo.length){redo.push(clone(state));state=undo.pop();playing=false;persist();refresh();say('Previous design restored.');}},
  redo(){if(redo.length){undo.push(clone(state));state=redo.pop();persist();refresh();say('Design change restored.');}},
  reset(){edit(()=>{state=freshState(mode);});say('Starter restored. Undo brings your design back.');},
- cut(){edit(()=>{state.cut=!state.cut;});say('Through-cut difference updated. Inspect the opening.');},
+ cut(){edit(()=>{state.cut=!state.cut;});say('Boolean operation updated. Inspect the opening from front and side.');},
+ wireframe(){propWire=!propWire;$('[data-action="wireframe"]')?.setAttribute('aria-pressed',String(propWire));if(group)group.traverse(o=>{if(o.isMesh)for(const m of Array.isArray(o.material)?o.material:[o.material])m.wireframe=propWire;});dirty=true;say(propWire?'Wireframe overlay on: inspect bevel segment loops.':'Wireframe overlay off.');},
+ 'raw-toggle'(){compositeRaw=!compositeRaw;rebuild();refresh();say(compositeRaw?'Showing raw ungraded render.':'Showing color-graded composite.');},
  snap(){edit(()=>{state.params.offset=Math.round(state.params.offset/state.params.module)*state.params.module;state.snapped=true;state.edits=[...new Set([...state.edits,'offset'])];});say('Wall snapped to the nearest grid module.');},
  stroke(){stroke();},
- brushmode(){pointerStroke=!pointerStroke;chooseBrush(brush);if(controls)controls.enabled=!pointerStroke;if(brushRing)brushRing.visible=false;dirty=true;canvas.style.cursor=pointerStroke?'crosshair':'grab';const b=$('[data-action="brushmode"]');b.setAttribute('aria-pressed',String(pointerStroke));b.textContent='Brush mode: '+(pointerStroke?'on':'off');say(pointerStroke?'Drag on the surface to sculpt. Numeric brush controls also work.':'Camera orbit restored.');},
+ brushmode(){pointerStroke=!pointerStroke;chooseBrush(brush);if(controls)controls.enabled=!pointerStroke;if(brushRing)brushRing.visible=false;if(mirrorRing)mirrorRing.visible=false;dirty=true;canvas.style.cursor=pointerStroke?'crosshair':'grab';const b=$('[data-action="brushmode"]');b.setAttribute('aria-pressed',String(pointerStroke));b.textContent='Brush mode: '+(pointerStroke?'on':'off');say(pointerStroke?'Drag on the surface to sculpt. Numeric brush controls also work.':'Camera orbit restored.');},
  key(){edit(()=>{state.keys=state.keys.filter(k=>Math.abs(k.time-state.params.time)>.001);state.keys.push({time:state.params.time,angle:state.params.angle});state.keys.sort((a,b)=>a.time-b.time);state.edits=[...new Set([...state.edits,'angle'])];});say('Your pose is keyed at the selected time.');},
  'remove-key'(){edit(()=>{state.keys=state.keys.filter(k=>Math.abs(k.time-state.params.time)>.001);});say('Keyframe removed at the selected time.');},
  play(){if(state.keys.length<2){say('Add at least two keyframes before playing.');return;}playing=!playing;state.played=true;persist();const b=$('[data-action="play"]');b.textContent=playing?'Pause my action':'Play my action';b.setAttribute('aria-pressed',String(playing));say(playing?'Playing only the keyframes you authored.':'Playback paused.');},
@@ -275,8 +300,10 @@ async function mount(host){
   button.disabled=true;
   const {params, color, secondary, imported}=state;
   const revision=JSON.stringify([params,state.sculptBase,state.strokes]);
-  const filename=mode==='sculpt'?(state.sculptBase||'meadow')+'.glb':'pattern.glb';
+  const filename=mode==='sculpt'?(state.sculptBase||'meadow')+'.glb':mode==='procedural'?'pattern.glb':mode+'.glb';
   const model=buildDesign(three.THREE,state,texture);
+  const removePreviews=[];model.traverse(o=>{if(o.userData?.preview)removePreviews.push(o);});
+  for(const o of removePreviews){o.removeFromParent();o.traverse(c=>{c.geometry?.dispose();c.material?.dispose?.();});}
   try{
    const {GLTFExporter}=await import('../../vendor/three-extras.min.js');
    const bytes=await new GLTFExporter().parseAsync(model,{binary:true});
@@ -291,7 +318,7 @@ async function mount(host){
  stl(){if(!group){say('3D is unavailable. Export your model in your chosen app.');return;}download(new Blob([stlBytes()],{type:'model/stl'}),mode+'.stl');state.exported=true;persist();say('STL exported in millimeters with Z up. Verify size, supports and separate parts in your slicer; the print remains untested.');},
  workbench(){handOff('workbench.html','Workbench');},
  printprep(){handOff('print-prep.html','Print Prep');},
- capture(){if(!sceneKit)return;render();sceneKit.renderer.domElement.toBlob(blob=>{if(blob){download(blob,mode+'.png');state.captured=true;persist();say('Image captured from your current camera view.');}},'image/png');},
+ capture(){if(!sceneKit)return;render();const src=sceneKit.renderer.domElement;const finishCapture=blob=>{if(blob){download(blob,mode+'.png');state.captured=true;persist();say('Image captured from your current camera view.');}};if(mode==='composite'&&!compositeRaw){const out=document.createElement('canvas');out.width=src.width;out.height=src.height;const ctx=out.getContext('2d');ctx.filter=src.style.filter||'none';ctx.drawImage(src,0,0);ctx.filter='none';const vig=state.params.vignette??.2;if(vig>0){const r=Math.hypot(out.width,out.height)*.55,g=ctx.createRadialGradient(out.width/2,out.height/2,r*.35,out.width/2,out.height/2,r);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${(vig*.75).toFixed(2)})`);ctx.fillStyle=g;ctx.fillRect(0,0,out.width,out.height);}out.toBlob(finishCapture,'image/png');}else src.toBlob(finishCapture,'image/png');},
  texture(){if(!texture)return;downloadTexture();},
  check(){if(!group||host.dataset.ready!=='true'){say('The 3D scene is unavailable. Complete and test the technique in your chosen app.');return;}const checks=checkState(state);$('[data-checks]').innerHTML=checks.map(([text,pass])=>`<li>${pass?'✓':'○'} ${escape(text)}</li>`).join('');const pass=checks.every(c=>c[1]);$('[data-completion]').textContent=pass?'Workshop checkpoint met. Save the project and verify its use in your chosen app.':'Keep designing: complete the open checks, then test again.';host.dataset.check=pass?'pass':'revise';say(pass?'Practice criteria met. These checks do not certify a production asset or physical print.':'Design needs another revision. See the open checks.');}
  };
@@ -312,9 +339,48 @@ async function mount(host){
  }else if(['materials','composite','uv'].includes(mode)){
  const source=buildDesign(three.THREE,loaded,texture);const model=snapshotDesign(three.THREE,source);disposeDesign(source);edit(()=>{state.imported=model;});fit();say('Your existing model is ready for this presentation or UV exercise. Original recipe remains in its saved file.');
  }else{throw Error('This project is for '+WORKSHOPS[loaded.mode].title+'. Open it in that workshop, or in another Chapter 1 foundation workshop to reuse the model.');}}catch(error){say(error.message);}e.target.value='';});
- function checkerTexture(){const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d');for(let y=0;y<8;y++)for(let x=0;x<8;x++){ctx.fillStyle=(x+y)%2?state.color:state.secondary;ctx.fillRect(x*32,y*32,32,32);}const t=new three.THREE.CanvasTexture(canvas);t.colorSpace=three.THREE.SRGBColorSpace;t.wrapS=t.wrapT=three.THREE.RepeatWrapping;t.repeat.set(state.params.repeat??1,state.params.repeat??1);return t;}
- function downloadTexture(){texture.image.toBlob(blob=>{if(blob){download(blob,'checker-texture.png');state.exported=true;persist();say('Base tile exported. Repeat count is a material setting in the destination app.');}},'image/png');}
- function rebuild(){if(group){sceneKit.scene.remove(group);disposeDesign(group);}texture?.dispose();texture=checkerTexture();group=buildDesign(three.THREE,state,texture);sceneKit.scene.add(group);if(mode==='character'){group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});applyInspection();}sceneKit.renderer.setClearColor(state.background);sceneKit.renderer.toneMappingExposure=state.params.exposure??1;
+ function checkerTexture(){
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d');
+  const pat=Math.round(state.params.pattern||0), wear=state.params.wear??.15;
+  ctx.fillStyle=state.secondary;ctx.fillRect(0,0,256,256);
+  if(pat===1){ // Brick / Tile
+   ctx.fillStyle=state.color;
+   for(let row=0;row<8;row++){const off=(row%2)*32;for(let col=-1;col<4;col++)ctx.fillRect(col*64+off+3,row*32+3,58,26);}
+  } else if(pat===2){ // Wood planks
+   for(let row=0;row<4;row++){
+    ctx.fillStyle=row%2?state.color:state.secondary;ctx.fillRect(0,row*64+2,256,60);
+    ctx.fillStyle='rgba(0,0,0,0.16)';ctx.fillRect(0,row*64,256,3);
+    for(let g=0;g<7;g++){ctx.fillStyle=g%2?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.08)';ctx.fillRect(0,row*64+6+g*8,256,2);}
+   }
+  } else if(pat===3){ // Brushed metal
+   const grad=ctx.createLinearGradient(0,0,256,256);grad.addColorStop(0,state.color);grad.addColorStop(.5,state.secondary);grad.addColorStop(1,state.color);
+   ctx.fillStyle=grad;ctx.fillRect(0,0,256,256);
+   for(let y=0;y<256;y+=3){ctx.fillStyle=y%6?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';ctx.fillRect(0,y,256,1);}
+  } else if(pat===4){ // Stone grid
+   ctx.fillStyle=state.color;
+   for(let y=0;y<4;y++)for(let x=0;x<4;x++)ctx.fillRect(x*64+4,y*64+4,56,56);
+  } else { // Checker
+   ctx.fillStyle=state.color;for(let y=0;y<8;y++)for(let x=0;x<8;x++)if((x+y)%2)ctx.fillRect(x*32,y*32,32,32);
+  }
+  if(wear>0){
+   for(let i=0;i<Math.round(wear*360);i++){
+    const sx=(i*73)%256, sy=(i*137)%256, sz=2+(i%4);
+    ctx.fillStyle=i%2?`rgba(255,255,255,${(wear*.22).toFixed(2)})`:`rgba(0,0,0,${(wear*.25).toFixed(2)})`;
+    ctx.fillRect(sx,sy,sz,1);
+   }
+  }
+  const t=new three.THREE.CanvasTexture(canvas);t.colorSpace=three.THREE.SRGBColorSpace;t.wrapS=t.wrapT=three.THREE.RepeatWrapping;t.repeat.set(state.params.repeat??1,state.params.repeat??1);return t;
+ }
+ function downloadTexture(){const names=['checker','brick','wood','metal','stone'];const name=(names[Math.round(state.params.pattern||0)]||'surface')+'-texture.png';texture.image.toBlob(blob=>{if(blob){download(blob,name);state.exported=true;persist();say('Base tile exported. Repeat count is a material setting in the destination app.');}},'image/png');}
+ function applyCompositeLook(){
+  if(mode!=='composite'||!sceneKit)return;
+  const src=sceneKit.renderer.domElement, vig=$('[data-vignette]');
+  if(compositeRaw){src.style.filter='';if(vig)vig.hidden=true;sceneKit.renderer.toneMappingExposure=1;return;}
+  const c=state.params.contrast??1,sat=state.params.saturation??1,w=state.params.warmth??0,bl=state.params.bloom??0,v=state.params.vignette??.2;
+  src.style.filter=`contrast(${c}) saturate(${sat}) ${w>=0?`sepia(${(w*.38).toFixed(2)})`:`hue-rotate(${(w*16).toFixed(1)}deg)`} brightness(${(1+bl*.15).toFixed(2)})`;
+  if(vig){vig.hidden=v<=0;vig.style.setProperty('--vig',String(v));}
+ }
+ function rebuild(){if(group){sceneKit.scene.remove(group);disposeDesign(group);}texture?.dispose();texture=checkerTexture();group=buildDesign(three.THREE,state,texture);sceneKit.scene.add(group);if(mode==='character'){group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});applyInspection();}if(mode==='props'){group.traverse(o=>{if(o.isMesh)for(const m of Array.isArray(o.material)?o.material:[o.material])m.wireframe=propWire;});}if(mode==='print'&&group.userData.printStats){const s=group.userData.printStats;$('[data-unit-note]').textContent=`mm · Bed contact: ${s.bedArea} mm² · >45° overhang: ${s.overhangTris} faces (${s.overhangPct}%)`;}sceneKit.renderer.setClearColor(state.background);sceneKit.renderer.toneMappingExposure=state.params.exposure??1;applyCompositeLook();
  const angle=(state.params.light??45)*Math.PI/180;sceneKit.light.position.set(Math.cos(angle)*8,state.params.lightHeight??8,Math.sin(angle)*8);sceneKit.light.intensity=state.params.intensity??(mode==='character'?3:2);if(sceneKit.fill)sceneKit.fill.intensity=state.params.fill??.7;if(mode==='materials'){sceneKit.world.intensity=state.params.ambient;sceneKit.rim.intensity=state.params.rim;}dirty=true;}
  function fit(){if(!group)return;sceneKit.syncSize();const bounds=new three.THREE.Box3().setFromObject(group),size=bounds.getSize(new three.THREE.Vector3()),center=bounds.getCenter(new three.THREE.Vector3()),radius=mode==='character'?Math.max(size.y/(2*Math.tan(sceneKit.camera.fov*Math.PI/360)),size.x/(2*Math.tan(sceneKit.camera.fov*Math.PI/360)*sceneKit.camera.aspect))*1.32:Math.max(size.length()/2,1)/Math.sin(sceneKit.camera.fov*Math.PI/360)/Math.min(1,sceneKit.camera.aspect)*(mode==='materials'?.85:1.25);controls.target.copy(center);sceneKit.camera.position.copy(center).add(new three.THREE.Vector3(...(mode==='character'?[.55,.32,1]:[1,.7,1])).normalize().multiplyScalar(radius));sceneKit.camera.far=Math.max(1000,radius*20);sceneKit.camera.updateProjectionMatrix();controls.update();dirty=true;baseline=radius;state.fitted=true;updateMissions();}
  function view(name){if(!controls)return;const center=controls.target,radius=baseline||8,vectors={front:[0,.001,1],side:[1,.001,0],top:[0,1,.001],perspective:[1,.7,1]};sceneKit.camera.position.copy(center).add(new three.THREE.Vector3(...vectors[name]).normalize().multiplyScalar(radius));controls.update();state.views=[...new Set([...state.views,name])];persist();dirty=true;updateMissions();say(name+' view. Object dimensions have not changed.');for(const b of host.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===name));}
@@ -328,6 +394,7 @@ async function mount(host){
  ray.setFromCamera(new three.THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),sceneKit.camera);
  const hit=ray.intersectObject(group,true)[0];
  if(brushRing){brushRing.visible=!!hit;if(hit){brushRing.position.copy(hit.point);brushRing.position.y+=.025;brushRing.scale.setScalar(state.params.radius);}dirty=true;}
+ if(mirrorRing){mirrorRing.visible=!!(hit&&sculptSym);if(mirrorRing.visible){mirrorRing.position.set(-hit.point.x,hit.point.y+.025,hit.point.z);mirrorRing.scale.setScalar(state.params.radius);}dirty=true;}
  if(hit&&apply&&(lastStroke===0||performance.now()-lastStroke>80)){
  lastStroke=performance.now();const type=e.shiftKey?'smooth':e.ctrlKey?(brush==='raise'?'lower':brush==='lower'?'raise':brush):brush;
  stroke(hit.point.x,hit.point.z,type,true);
@@ -338,7 +405,7 @@ async function mount(host){
  canvas.addEventListener('pointermove',e=>{if(activePointer===null||e.pointerId===activePointer)pointerSculpt(e,down);});
  function endStroke(e){if(e.pointerId!==activePointer)return;down=false;activePointer=null;gestureStarted=false;lastStroke=0;}
  canvas.addEventListener('pointerup',endStroke);canvas.addEventListener('pointercancel',endStroke);canvas.addEventListener('lostpointercapture',endStroke);
- canvas.addEventListener('pointerleave',()=>{if(brushRing){brushRing.visible=false;dirty=true;}});
+ canvas.addEventListener('pointerleave',()=>{if(brushRing){brushRing.visible=false;dirty=true;}if(mirrorRing){mirrorRing.visible=false;dirty=true;}});
  function render(){if(!sceneKit)return;sceneKit.syncSize();sceneKit.renderer.render(sceneKit.scene,sceneKit.camera);dirty=false;}
  guide();refresh();
  try{
@@ -373,6 +440,7 @@ async function mount(host){
  if(mode==='sculpt'){
  const points=Array.from({length:65},(_,i)=>new THREE.Vector3(Math.cos(i/64*Math.PI*2),0,Math.sin(i/64*Math.PI*2)));
  brushRing=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0xffe2a8,depthTest:false,transparent:true,opacity:.95}));brushRing.visible=false;brushRing.renderOrder=10;sceneKit.scene.add(brushRing);
+ mirrorRing=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0x7dd3fc,depthTest:false,transparent:true,opacity:.9}));mirrorRing.visible=false;mirrorRing.renderOrder=10;sceneKit.scene.add(mirrorRing);
  }
  rebuild();fit();refresh();
  const observer=new ResizeObserver(()=>{dirty=true;});observer.observe(canvas);
@@ -383,6 +451,6 @@ async function mount(host){
  host.dataset.ready='true';say('Scene ready. Make a design choice, inspect it, then test your technique.');
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();playing=false;host.dataset.ready='false';host.dataset.check='revise';$('[data-completion]').textContent='';say('The 3D view was interrupted. Your project is still available to save.');});
  canvas.addEventListener('webglcontextrestored',()=>{dirty=true;host.dataset.ready='true';say('3D view restored. Continue editing your project.');});
- window.addEventListener('pagehide',event=>{if(event.persisted)return;loop?.stop?.();observer.disconnect();intersection.disconnect();controls.dispose();brushRing?.geometry.dispose();brushRing?.material.dispose();disposeDesign(group);texture.dispose();sceneKit.studioEnvironment?.dispose();sceneKit.dispose();},{once:true});
+ window.addEventListener('pagehide',event=>{if(event.persisted)return;loop?.stop?.();observer.disconnect();intersection.disconnect();controls.dispose();brushRing?.geometry.dispose();brushRing?.material.dispose();mirrorRing?.geometry.dispose();mirrorRing?.material.dispose();disposeDesign(group);texture.dispose();sceneKit.studioEnvironment?.dispose();sceneKit.dispose();},{once:true});
  }catch(error){host.dataset.ready='false';canvas.hidden=true;const fallback=document.createElement('p');fallback.className='d3w-fallback';fallback.textContent='Interactive 3D is unavailable in this browser. The technique steps, numeric design plan, Tool Rosetta and project saving remain available. Complete the model in your chosen app and test it there.';$('.d3w-view').append(fallback);say('3D unavailable. Use the external-app workflow below.');console.warn('3D workshop fallback:',error.message);}
 }

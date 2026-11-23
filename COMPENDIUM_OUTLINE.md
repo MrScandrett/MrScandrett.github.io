@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 513 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 514 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -197,7 +197,7 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 57 l
 
 # Volume III — Living Systems, Earth & Environment
 
-Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 40 lessons
+Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 41 lessons
 
 ## Biology & Life Science (BIO)
 
@@ -223,18 +223,19 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 - **BIO-12** — Ecosystems & Food Webs
 - **BIO-13** — Alexander von Humboldt: The Father of Ecology
 - **BIO-14** — Classifying Life: Taxonomy of Every Kingdom — _also indexed in Chemistry & Chemical Systems_
-- **BIO-15** — Entomology: The Science of Insects
-- **BIO-16** — Axolotls & Neoteny
-- **BIO-17** — Slime Molds & Swarm Intelligence
-- **BIO-18** — Cryptozoology: From Footprints to Facts
+- **BIO-15** — How Fish Work
+- **BIO-16** — Entomology: The Science of Insects
+- **BIO-17** — Axolotls & Neoteny
+- **BIO-18** — Slime Molds & Swarm Intelligence
+- **BIO-19** — Cryptozoology: From Footprints to Facts
 
 ### Evolution & Deep Time
 
-- **BIO-19** — Natural Selection Lab
-- **BIO-20** — LUCA: Last Universal Common Ancestor
-- **BIO-21** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
-- **BIO-22** — The K-Pg Extinction
-- **BIO-23** — The Evolution of Wood
+- **BIO-20** — Natural Selection Lab
+- **BIO-21** — LUCA: Last Universal Common Ancestor
+- **BIO-22** — Life Invented the Animal — _also indexed in Chemistry & Chemical Systems_
+- **BIO-23** — The K-Pg Extinction
+- **BIO-24** — The Evolution of Wood
 
 ## Earth & Environmental Science (EAR)
 

@@ -134,8 +134,9 @@
     summary.textContent='Jump to another stage';
     details.append(summary,list);nav.append(details);
     host.append(nav);
-    const workshop = document.querySelector('[data-design3d-workshop]');
-    const handoff = workshop && handoffs[workshop.dataset.design3dWorkshop];
+    const workshop = document.querySelector('[data-design3d-workshop],[data-project-bridge]');
+    const bridgeKey = workshop?.dataset.design3dWorkshop || workshop?.dataset.projectBridge;
+    const handoff = bridgeKey && handoffs[bridgeKey];
     if (handoff && (host.nextElementSibling === workshop || host.hasAttribute('data-project-after'))) {
       const section = document.createElement('section');
       section.className = 'd3-project-bridge';

@@ -579,3 +579,33 @@ test('Build it in Workbench is refused when the views disagree or the top has no
   const o = workbenchSvg(open);
   assert.match(o.error, /no closed outline \(its 3 object lines don’t close/);
 });
+
+test('circles export as DXF CIRCLE entities, count in viewsAgree, and close in topOutline', () => {
+  const proj = {
+    version: 1,
+    title: 'Cylinder peg',
+    guide: 'custom',
+    views: {
+      front: [{ kind: 'rect', type: 'object', x1: 100, y1: 100, x2: 180, y2: 200 }],
+      top: [{ kind: 'circle', type: 'object', x1: 200, y1: 200, x2: 240, y2: 200 }],
+      right: [{ kind: 'rect', type: 'object', x1: 100, y1: 100, x2: 180, y2: 200 }],
+    },
+  };
+  const agree = viewsAgree(proj);
+  assert.equal(agree.ok, true, agree.reason);
+  assert.deepEqual(agree.size, { width: 40, depth: 40, height: 50 });
+
+  const outline = topOutline(proj);
+  assert.equal(outline.loops.length, 1);
+  assert.equal(outline.loops[0].length, 48);
+
+  const dxf = toDxf(proj);
+  const parsed = parseDxf(dxf);
+  const circles = parsed.entities.filter((e) => e.type === 'CIRCLE');
+  assert.equal(circles.length, 1);
+  assert.equal(circles[0].g.get(40)?.[0], '20.0');
+
+  const wb = workbenchSvg(proj);
+  assert.ok(!wb.error, wb.error);
+  assert.deepEqual(wb.size, { width: 40, depth: 40, height: 50 });
+});

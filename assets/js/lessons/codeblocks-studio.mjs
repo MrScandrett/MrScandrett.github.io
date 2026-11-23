@@ -3,13 +3,25 @@ import { createScene } from '../sim-kit-three.mjs';
 import { rings, checks } from './codeblocks-rings.mjs';
 
 export function createRingStudio(params) {
-  const root = document.getElementById('cb-studio');
   const canvas = document.getElementById('cb-3d');
   const status = document.getElementById('cb-execution');
   let world, controls, group, shown = params().n, current;
+  function themeBg() {
+    const bg = window.SimKit?.theme?.colors?.()?.bg;
+    return bg || '#eaf2f5';
+  }
+  function syncTheme() {
+    if (!world) return;
+    const bg = themeBg();
+    world.scene.background = new THREE.Color(bg);
+    canvas.style.background = bg;
+    draw();
+  }
   // Keep the dimension diagram and exports usable when WebGL is unavailable.
   try {
-    world = createScene(canvas, { THREE, far: 1000, clearColor: 0xeaf2f5 });
+    world = createScene(canvas, { THREE, far: 1000, clearColor: new THREE.Color(themeBg()).getHex() });
+    syncTheme();
+    window.SimKit?.theme?.onChange?.(syncTheme);
     world.scene.add(new THREE.HemisphereLight(0xffffff, 0x506479, 2.5));
     const light = new THREE.DirectionalLight(0xffffff, 3);
     light.position.set(40, 90, 60); world.scene.add(light);
@@ -75,17 +87,5 @@ export function createRingStudio(params) {
     ['3d', 'top'].forEach(v => document.getElementById('cb-view-' + v).setAttribute('aria-pressed', String(v === mode)));
     window.dispatchEvent(new Event('resize')); draw();
   }));
-  const focus = document.getElementById('cb-focus');
-  const anchor = document.createComment('Studio position');
-  root.before(anchor);
-  function expand(on) {
-    if (on) document.body.append(root); else anchor.after(root);
-    root.classList.toggle('cb-expanded', on); focus.setAttribute('aria-pressed', String(on));
-    focus.textContent = on ? 'Exit studio · Esc' : 'Expand studio';
-    document.body.style.overflow = on ? 'hidden' : '';
-    window.dispatchEvent(new Event('resize')); draw();
-  }
-  focus.addEventListener('click', () => expand(!root.classList.contains('cb-expanded')));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && root.classList.contains('cb-expanded')) { expand(false); focus.focus(); } });
   return { rebuild };
 }

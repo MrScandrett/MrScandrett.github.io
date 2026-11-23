@@ -26,7 +26,7 @@ test('number parsing and verniers', () => {
 });
 
 test('fit test coupons are watertight for every option', () => {
-  for (const item of [3, 6.5, 7.94, 14.2, 25.5, 40, 80]) for (const shape of ['round', 'slot']) for (const set of ['full', 'short']) {
+  for (const item of [3, 6.5, 7.94, 14.2, 25.5, 40, 80]) for (const shape of ['round', 'slot', 'peg']) for (const set of ['full', 'short']) {
     const s = F.meshStats(F.buildCouponMesh({ item, shape, set, thickness: 5 }));
     assert.ok(s.watertight && s.volume > 0, `${item} ${shape} ${set}`);
   }

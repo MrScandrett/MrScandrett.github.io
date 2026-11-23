@@ -184,7 +184,11 @@
     });
     $('[data-st-copy]', host).addEventListener('click', function () {
       var text = current.req + '\nTest: ' + current.test + '\n' + current.pass;
-      if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { status.textContent = 'Copied.'; }, function () { status.textContent = 'Copy blocked: select the text instead.'; });
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { status.textContent = 'Copied to clipboard.'; }, function () { status.textContent = 'Copy blocked by browser: select text from the card above instead.'; });
+      } else {
+        status.textContent = 'Clipboard unavailable here: press “Add to row” or copy the requirement sentence directly.';
+      }
     });
     wishIn.addEventListener('input', renderMeter);
     userIn.addEventListener('input', render);
@@ -204,15 +208,15 @@
     if (/\b(don'?t you|isn'?t it|aren'?t they|wouldn'?t you|right\?|annoying|frustrating|terrible|great|love)\b/.test(s)) {
       return ['bad', 'Leading. The question hands them the answer (or a feeling) you expect. Strip out the opinion word and ask what happened.'];
     }
+    if (/^(how|what|when|where|which|who|tell me|describe|show me|walk me|talk me|can you (show|tell|walk|describe)|could you (show|tell|walk|describe)|what'?s)\b/.test(s)) {
+      if (/\b(usually|last time|show me|walk me|tell me about|what happens|how do you|what do you do)\b/.test(s)) return ['good', 'Open and about real behaviour. This is the kind of question that turns up requirements. Follow up with "What happened next?"'];
+      return ['good', 'Open. Good. Even better if it asks about a real, recent time ("the last time you…") rather than a guess about the future.'];
+    }
     if (/^(do|does|did|is|are|was|were|would|will|can|could|should|have|has|had)\b/.test(s)) {
       return ['warn', 'Closed. It can be answered with yes or no, so you\'ll learn one bit. Try starting with "How", "What", "Tell me about" or "Show me".'];
     }
     if (/^why\b/.test(s)) {
       return ['warn', 'Open, but "why" can sound like a challenge and invites a made-up reason. "What made you…" or "Tell me about…" gets the same story more gently.'];
-    }
-    if (/^(how|what|when|where|which|who|tell me|describe|show me|walk me|talk me|can you show|could you show|what'?s)\b/.test(s)) {
-      if (/\b(usually|last time|show me|walk me|tell me about|what happens|how do you|what do you do)\b/.test(s)) return ['good', 'Open and about real behaviour. This is the kind of question that turns up requirements. Follow up with "What happened next?"'];
-      return ['good', 'Open. Good. Even better if it asks about a real, recent time ("the last time you…") rather than a guess about the future.'];
     }
     return ['warn', 'Hard to tell. Open questions usually start with How, What, Tell me about, or Show me.'];
   }

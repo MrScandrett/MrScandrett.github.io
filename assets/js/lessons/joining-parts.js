@@ -5,6 +5,58 @@
 (function () {
   'use strict';
 
+  var scriptUrl = (document.currentScript && document.currentScript.src) || '';
+
+  function extrudeCCW(poly, depth, offsetY) {
+    var verts = poly.map(function (p, i) { return { x: p[0], y: p[1], i: i }; });
+    var tris = [];
+    function area2(a, b, c) { return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x); }
+    function inside(p, a, b, c) { return area2(a, b, p) >= -1e-9 && area2(b, c, p) >= -1e-9 && area2(c, a, p) >= -1e-9; }
+    var guard = 0;
+    while (verts.length > 3 && guard++ < 400) {
+      var clipped = false;
+      for (var k = 0; k < verts.length; k++) {
+        var prev = verts[(k - 1 + verts.length) % verts.length], cur = verts[k], next = verts[(k + 1) % verts.length];
+        if (area2(prev, cur, next) <= 1e-9) continue;
+        if (verts.some(function (v) { return v !== prev && v !== cur && v !== next && inside(v, prev, cur, next); })) continue;
+        tris.push([prev.i, cur.i, next.i]);
+        verts.splice(k, 1); clipped = true; break;
+      }
+      if (!clipped) break;
+    }
+    if (verts.length === 3) tris.push([verts[0].i, verts[1].i, verts[2].i]);
+    var soup = [];
+    function pushT(ax, ay, az, bx, by, bz, cx, cy, cz) { soup.push(ax, ay + offsetY, az, bx, by + offsetY, bz, cx, cy + offsetY, cz); }
+    tris.forEach(function (t) {
+      var a = poly[t[0]], b = poly[t[1]], c = poly[t[2]];
+      pushT(a[0], a[1], depth, b[0], b[1], depth, c[0], c[1], depth);
+      pushT(a[0], a[1], 0, c[0], c[1], 0, b[0], b[1], 0);
+    });
+    for (var i = 0; i < poly.length; i++) {
+      var p1 = poly[i], p2 = poly[(i + 1) % poly.length];
+      pushT(p1[0], p1[1], 0, p2[0], p2[1], 0, p2[0], p2[1], depth);
+      pushT(p1[0], p1[1], 0, p2[0], p2[1], depth, p1[0], p1[1], depth);
+    }
+    return soup;
+  }
+
+  function buildSnapPairSoup(p, g) {
+    // 1. Arm + base block (CCW in X-Y), extruded along Z = 0..b
+    var armPoly = [
+      [-6, -6], [0, -6], [0, 0], [g.xa, 0],
+      [g.xb, -p.y], [g.xc, -p.y], [g.xd, 0], [g.xd, p.t],
+      [0, p.t], [-6, p.t + 4]
+    ];
+    // 2. Mating catch block with notch, placed cleanly ahead in Y so both lie flat on Z = 0
+    var catchPoly = [
+      [g.plateLeft, -g.depth], [g.plateRight, -g.depth], [g.plateRight, 0],
+      [g.wr + 0.25, 0], [g.wr + 0.25, -p.y - 0.8],
+      [g.wl - 0.25, -p.y - 0.8], [g.wl - 0.25, 0], [g.plateLeft, 0]
+    ];
+    var shiftY = p.t + 4 + g.depth + 8;
+    return new Float32Array(extrudeCCW(armPoly, p.b, 0).concat(extrudeCCW(catchPoly, p.b, shiftY)));
+  }
+
   /* Allowable strain (%) for ONE snap, by print orientation. How each number was made is
      explained on the page ("Where the safe-strain numbers come from"):
        flat    = 70 % of the strain at yield of printed test bars (Prusament TDS, horizontal bars),
@@ -161,11 +213,10 @@
       ctx.fillStyle = col.bg; ctx.fillRect(0, 0, W, H);
 
       var baseW = 5;
-      var spanX = baseW + g.plateRight + g.S0 * 0 + 2;   // world width shown (plate parks at s = S0 only during insert)
       var maxS = g.S0;
-      spanX = baseW + Math.max(g.plateRight, g.plateRight + maxS * 0.0) + 3;
+      var spanX = baseW + g.plateRight + maxS + 2;
       var spanY = p.t + 3 + g.depth + p.y + 3;
-      var k = Math.min((W - 40) / (spanX + maxS * 0.35), (H - 70) / spanY);
+      var k = Math.min((W - 40) / spanX, (H - 70) / spanY);
       var ox = 20 + baseW * k;                 // screen x of root
       var drawnH = (p.t + 4 + g.depth) * k;    // base block top (t + 3) down to its foot (−depth − 1)
       var oy = 30 + Math.max(0, (H - 60 - drawnH) / 2) + (p.t + 3) * k;   // screen y of arm underside (y = 0), centred
@@ -339,21 +390,56 @@
       draw();
     }
 
+    var fallbackRaf = 0, lastTs = 0;
+    function stepFrame(dt) {
+      if (!playing) return;
+      state.phase += dt * 0.45;
+      if (state.phase >= 2) { state.phase = 2; draw(); setPlaying(false); return; }
+      draw();
+    }
     function setPlaying(on) {
       playing = on;
       playBtn.textContent = on ? '❚❚ Pause' : '▶ Snap it in and pull it out';
       playBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
       if (on) {
         if (state.phase >= 2) state.phase = 0;
-        if (!loop && window.SimKit) {
-          loop = window.SimKit.loop(function (dt) {
+        if (window.SimKit) {
+          if (!loop) loop = window.SimKit.loop(stepFrame, { el: window.SimKit.stage(canvas), maxDt: 0.1 });
+          else loop.resume();
+        } else {
+          lastTs = performance.now();
+          function tick(now) {
             if (!playing) return;
-            state.phase += dt * 0.45;
-            if (state.phase >= 2) { state.phase = 2; draw(); setPlaying(false); return; }
-            draw();
-          }, { el: window.SimKit.stage(canvas), maxDt: 0.1 });
-        } else if (loop) loop.resume();
-      } else if (loop) loop.pause();
+            var dt = Math.min(0.1, Math.max(0.001, (now - lastTs) / 1000));
+            lastTs = now;
+            stepFrame(dt);
+            if (playing) fallbackRaf = requestAnimationFrame(tick);
+          }
+          fallbackRaf = requestAnimationFrame(tick);
+        }
+      } else {
+        if (loop) loop.pause();
+        if (fallbackRaf) { cancelAnimationFrame(fallbackRaf); fallbackRaf = 0; }
+      }
+    }
+    var stlBtn = $('[data-jp-stl]', root);
+    if (stlBtn) {
+      stlBtn.addEventListener('click', async function () {
+        try {
+          var fab = await import(scriptUrl ? new URL('../fab-io.mjs', scriptUrl).href : '../../../assets/js/fab-io.mjs');
+          var p = params(), g = geometry(p);
+          var soup = buildSnapPairSoup(p, g);
+          var stl = fab.writeBinaryStl(fab.prepareForPrint(soup, { yUp: false }), 'ClassroomOS Snap-Fit Test Pair (mm)');
+          var url = URL.createObjectURL(new Blob([stl], { type: 'model/stl' }));
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'snap-fit-test-pair.stl';
+          a.click();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+        } catch (err) {
+          meterText.textContent = 'STL export unavailable: ' + err.message;
+        }
+      });
     }
 
     Object.keys(inputs).forEach(function (key) {

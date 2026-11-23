@@ -114,11 +114,23 @@
     function toScreen(x, y) { return [geom.ox + (x - VIEW.x0) * geom.s, geom.oy + (y - VIEW.y0) * geom.s]; }
     function toWorld(px, py) { return [(px - geom.ox) / geom.s + VIEW.x0, (py - geom.oy) / geom.s + VIEW.y0]; }
 
+    function parseLuminance(str) {
+      var s = (str || '').trim();
+      var hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(s);
+      if (hex) {
+        var h = hex[1];
+        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        var n = parseInt(h, 16);
+        return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255));
+      }
+      var rgb = /^rgba?\(\s*([\d.]+)\s*[,\s]\s*([\d.]+)\s*[,\s]\s*([\d.]+)/i.exec(s);
+      if (rgb) return 0.299 * (+rgb[1]) + 0.587 * (+rgb[2]) + 0.114 * (+rgb[3]);
+      return null;
+    }
     function palette() {
       var c = SimKit.theme.colors();
-      var m = /#([0-9a-f]{6})/i.exec(c.bg || '');
-      var dark = false;
-      if (m) { var n = parseInt(m[1], 16); dark = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) < 110; }
+      var lum = parseLuminance(c.bg);
+      var dark = document.documentElement.dataset.lighting === 'night' || (lum !== null && lum < 110);
       return dark ? { bg: '#1b2227', grid: 'rgba(255,255,255,0.07)', ink: '#e8eef0', muted: '#9fb0b6', obj: '#8a6f4d', fov: 'rgba(160,190,200,0.10)' }
                   : { bg: '#f7f5ee', grid: 'rgba(25,63,73,0.08)', ink: '#193f49', muted: '#5b7076', obj: '#d9c3a0', fov: 'rgba(30,95,105,0.07)' };
     }
@@ -427,11 +439,87 @@
       if (stats) stats.textContent = total + ' photos in total · ' + fmt(step, 1) + '° between shots · frame ' + Math.round(frameW) + ' cm wide at ' + Math.round(dist) + ' cm';
       return { overlap: overlap, fill: fill, total: total, checks: checks };
     }
+    function textOf(name) {
+      var el = form.querySelector('[name="' + name + '"]');
+      if (!el) return '';
+      if (el.tagName === 'SELECT' && el.selectedOptions && el.selectedOptions[0]) return el.selectedOptions[0].textContent.trim();
+      return el.value;
+    }
+    function buildTurntableSvg() {
+      var cx = 105, cy = 105, lines = [];
+      for (var deg = 0; deg < 360; deg += 15) {
+        var rad = (deg - 90) * Math.PI / 180;
+        var major = deg % 45 === 0;
+        var rIn = major ? 80 : 84, rOut = 90;
+        var x1 = (cx + rIn * Math.cos(rad)).toFixed(2), y1 = (cy + rIn * Math.sin(rad)).toFixed(2);
+        var x2 = (cx + rOut * Math.cos(rad)).toFixed(2), y2 = (cy + rOut * Math.sin(rad)).toFixed(2);
+        lines.push('<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#193f49" stroke-width="' + (major ? '0.9' : '0.45') + '" />');
+        if (deg % 30 === 0) {
+          var lx = (cx + 73 * Math.cos(rad)).toFixed(2), ly = (cy + 73 * Math.sin(rad)).toFixed(2);
+          lines.push('<text x="' + lx + '" y="' + ly + '" font-size="4.2" font-family="system-ui,sans-serif" text-anchor="middle" dominant-baseline="central" fill="#193f49">' + deg + '°</text>');
+        }
+      }
+      var markers = [[18, 18], [192, 18], [18, 192], [192, 192]].map(function (pt, idx) {
+        return '<rect x="' + (pt[0] - 4) + '" y="' + (pt[1] - 4) + '" width="8" height="8" rx="' + (idx % 2 ? 4 : 1) + '" fill="#193f49" />' +
+          '<circle cx="' + pt[0] + '" cy="' + pt[1] + '" r="1.6" fill="#ffffff" />';
+      }).join('');
+      var rulerTicks = [];
+      for (var mm = 0; mm <= 50; mm += 5) {
+        var rx = 80 + mm;
+        var h = mm % 10 === 0 ? 4.2 : 2.5;
+        rulerTicks.push('<line x1="' + rx + '" y1="214" x2="' + rx + '" y2="' + (214 - h) + '" stroke="#193f49" stroke-width="' + (mm % 10 === 0 ? '0.7' : '0.4') + '" />');
+        if (mm % 10 === 0) rulerTicks.push('<text x="' + rx + '" y="220" font-size="3.6" font-family="system-ui,sans-serif" text-anchor="middle" fill="#193f49">' + mm + '</text>');
+      }
+      return '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="236mm" viewBox="0 0 210 236">\n' +
+        '  <rect x="0" y="0" width="210" height="236" fill="#ffffff" />\n' +
+        '  <rect x="6" y="6" width="198" height="224" fill="none" stroke="#cbd5e1" stroke-width="0.4" />\n' +
+        '  <circle cx="105" cy="105" r="90" fill="none" stroke="#193f49" stroke-width="0.9" />\n' +
+        '  <circle cx="105" cy="105" r="60" fill="none" stroke="#94a3b8" stroke-width="0.4" stroke-dasharray="2 2" />\n' +
+        '  <circle cx="105" cy="105" r="30" fill="none" stroke="#94a3b8" stroke-width="0.4" stroke-dasharray="2 2" />\n' +
+        '  <line x1="99" y1="105" x2="111" y2="105" stroke="#193f49" stroke-width="0.5" />\n' +
+        '  <line x1="105" y1="99" x2="105" y2="111" stroke="#193f49" stroke-width="0.5" />\n' +
+        '  ' + lines.join('\n  ') + '\n' +
+        '  ' + markers + '\n' +
+        '  <line x1="80" y1="214" x2="130" y2="214" stroke="#193f49" stroke-width="0.8" />\n' +
+        '  ' + rulerTicks.join('\n  ') + '\n' +
+        '  <text x="105" y="227" font-size="3.8" font-weight="700" font-family="system-ui,sans-serif" text-anchor="middle" fill="#193f49">50.0 mm scale bar · 180 mm turntable ring (15° = 24 shots) · print at 100%</text>\n' +
+        '</svg>\n';
+    }
+    var copyBtn = root.querySelector('[data-sal-copy-plan]');
+    var copyStatus = root.querySelector('[data-sal-copy-status]');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function () {
+        var r = evaluate();
+        var sheetInput = document.querySelector('#sal-capture input[aria-label="Shooting plan"]') || document.querySelector('.sal-sheet input[aria-label="Shooting plan"]');
+        if (!sheetInput) return;
+        var summaryTxt = (val('per') || 12) + ' × ' + (val('rings') || 1) + ' ring' + (Number(val('rings')) > 1 ? 's' : '') + ' (' + r.total + ' total), ' + textOf('light') + ', ' + textOf('method') + ', scale: ' + textOf('scale');
+        sheetInput.value = summaryTxt;
+        sheetInput.dispatchEvent(new Event('input', { bubbles: true }));
+        if (copyStatus) copyStatus.textContent = 'Copied to Record Sheet ↓';
+        sheetInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        sheetInput.focus();
+      });
+    }
+    var matBtn = root.querySelector('[data-sal-mat-svg]');
+    if (matBtn) {
+      matBtn.addEventListener('click', function () {
+        var blob = new Blob([buildTurntableSvg()], { type: 'image/svg+xml;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'photogrammetry-scale-mat.svg';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      });
+    }
     form.addEventListener('input', evaluate);
     form.addEventListener('change', evaluate);
     form.addEventListener('submit', function (e) { e.preventDefault(); });
     evaluate();
-    root.salDebug = { evaluate: evaluate };
+    root.salDebug = { evaluate: evaluate, buildTurntableSvg: buildTurntableSvg };
   }
 
   /* ---------- scale calculator ---------- */

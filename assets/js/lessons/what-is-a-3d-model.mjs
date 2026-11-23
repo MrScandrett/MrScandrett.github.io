@@ -2,6 +2,7 @@
 // The geometry and the watertight check live in what-is-a-3d-model.mesh.mjs (pure, no DOM).
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
+import { writeBinaryStl } from '../fab-io.mjs';
 import * as M from './what-is-a-3d-model.mesh.mjs';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -212,6 +213,7 @@ function initInspector(root) {
     renderCounts();
     renderSelection();
     renderReport();
+    renderFileText();
     requestRender();
   }
 
@@ -396,6 +398,34 @@ function initInspector(root) {
     if (btn) btn.textContent = state.reveal ? 'Hide counts' : 'Reveal counts';
   }
 
+  function meshObjName() {
+    return state.mode === 'repair' ? `puzzle-${state.puzzle?.seed || 1}` : (state.shape || 'mesh');
+  }
+  function meshToObjText(m) {
+    const name = meshObjName();
+    const lines = [`# ClassroomOS Mesh Inspector (millimetres, Z up)`, `o ${name}`];
+    m.v.forEach(([x, y, z]) => lines.push(`v ${+x.toFixed(3)} ${+y.toFixed(3)} ${+z.toFixed(3)}`));
+    m.f.forEach((face) => lines.push(`f ${face.map((i) => i + 1).join(' ')}`));
+    return lines.join('\n') + '\n';
+  }
+  function meshToTriangleSoup(m) {
+    const coords = [];
+    for (const face of m.f) {
+      for (let i = 1; i + 1 < face.length; i++) {
+        const a = m.v[face[0]], b = m.v[face[i]], c = m.v[face[i + 1]];
+        if (!a || !b || !c) continue;
+        coords.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+      }
+    }
+    return new Float32Array(coords);
+  }
+  const peekDetails = $('[data-wm-peek]', root);
+  const peekPre = $('[data-wm-obj-text]', root);
+  function renderFileText() {
+    if (!peekPre || (peekDetails && !peekDetails.open)) return;
+    peekPre.textContent = meshToObjText(state.mesh);
+  }
+
   function renderReport() {
     if (state.mode !== 'repair' || !state.puzzle) return;
     const total = state.puzzle.faults.length;
@@ -496,7 +526,7 @@ function initInspector(root) {
       const prev = state.puzzle.history.pop();
       if (!prev) { toolMsg.textContent = 'Nothing to undo.'; return; }
       state.mesh = prev;
-      state.puzzle.moves++;
+      state.puzzle.moves = Math.max(0, state.puzzle.moves - 1);
       state.sel = null;
       toolMsg.textContent = 'Undone.';
       rebuild();
@@ -553,6 +583,23 @@ function initInspector(root) {
   $('[data-wm-prev]', root).addEventListener('click', () => step(-1));
   $('[data-wm-step]', root).addEventListener('click', () => step(1));
   $('[data-wm-reveal]', root).addEventListener('click', () => { state.reveal = !state.reveal; renderCounts(); });
+  if (peekDetails) peekDetails.addEventListener('toggle', () => { if (peekDetails.open) renderFileText(); });
+  for (const b of $$('[data-wm-export]', root)) {
+    b.addEventListener('click', () => {
+      const kind = b.dataset.wmExport;
+      const baseName = meshObjName();
+      const blob = kind === 'obj'
+        ? new Blob([meshToObjText(state.mesh)], { type: 'text/plain;charset=utf-8' })
+        : new Blob([writeBinaryStl(meshToTriangleSoup(state.mesh), `ClassroomOS ${baseName} (mm)`)], { type: 'model/stl' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${baseName}.${kind}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      status.textContent = `Downloaded ${baseName}.${kind} (${kind === 'obj' ? 'ASCII vertices & faces' : 'binary triangles'}).`;
+    });
+  }
   for (const b of $$('[data-wm-tool]', root)) b.addEventListener('click', () => tools[b.dataset.wmTool]());
   $('[data-wm-reset-view]', root).addEventListener('click', () => { fitCamera(); requestRender(); });
 

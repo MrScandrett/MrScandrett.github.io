@@ -15,6 +15,7 @@ if (root) {
   let brush = .8;
   let angle = 70;
   let controls;
+  let dirty = true;
 
   const canvas = q('canvas');
   const state = createScene(canvas, { THREE, fov: 32, near: .01, far: 60, clearColor: 0xbad1d8 });
@@ -29,6 +30,8 @@ if (root) {
   controls.maxDistance = 4;
   controls.minPolarAngle = Math.PI * .2;
   controls.maxPolarAngle = Math.PI * .72;
+  controls.addEventListener('change', () => { dirty = true; });
+  new ResizeObserver(() => { dirty = true; }).observe(canvas);
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x355060, 2.25));
   const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
@@ -106,10 +109,10 @@ if (root) {
   }
 
   function render() {
+    dirty = false;
     state.syncSize();
     controls.update();
     renderer.render(scene, camera);
-    updateMeter();
   }
 
   function paintNear(point, targetLower) {
@@ -122,6 +125,8 @@ if (root) {
       writeVertex(entry);
     });
     flushAttributes();
+    updateMeter();
+    dirty = true;
     render();
   }
 
@@ -155,11 +160,15 @@ if (root) {
     angle = +event.target.value;
     q(`output[for="${event.target.id}"]`).textContent = event.target.value;
     applyAngle();
+    updateMeter();
+    dirty = true;
     render();
   });
   q('[data-rig-auto]').addEventListener('click', () => {
     editable.forEach(entry => { entry.lower = idealLower(entry.t); writeVertex(entry); });
     flushAttributes();
+    updateMeter();
+    dirty = true;
     render();
   });
 
@@ -256,6 +265,8 @@ if (root) {
     applyAngle();
     q('[data-model-state]').textContent = `RIG READY · ${editable.length} EDITABLE VERTICES`;
     q('[data-model-state]').classList.add('is-ready');
+    updateMeter();
+    dirty = true;
     render();
   }, undefined, error => {
     q('[data-model-state]').textContent = 'RIG FAILED TO LOAD';
@@ -264,5 +275,6 @@ if (root) {
     console.error('Character rigging model failed to load.', error);
   });
 
-  window.SimKit.loop(() => render());
+  updateMeter();
+  window.SimKit.loop(() => { if (dirty) render(); }, { el: root });
 }

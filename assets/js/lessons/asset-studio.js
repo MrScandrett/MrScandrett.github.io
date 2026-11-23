@@ -39,9 +39,9 @@
   const lesson = LESSONS.find(item => item.file === here);
   const pathway = 'game-asset-studio-pathway.html';
 
-  // Course route: shown under every lesson hero so students always see the whole line.
+  // Course route: shown right below the studio route bar so students always see the whole line.
   if (lesson) {
-    const hero = document.querySelector('.asset-lesson-hero');
+    const anchor = document.querySelector('[data-design3d-route]') || document.querySelector('.asset-lesson-hero');
     const route = document.createElement('nav');
     route.className = 'asset-route';
     route.setAttribute('aria-label', 'Game Asset Studio lessons');
@@ -50,7 +50,7 @@
     handoff.className = 'asset-handoff';
     handoff.setAttribute('aria-label', 'What this lesson needs and produces');
     handoff.innerHTML = `<div><span>Bring in</span><p>${esc(lesson.bring)}</p></div><div><span>Ship out</span><p>${esc(lesson.ship)}${document.getElementById('bench') ? ' <a href="#bench">Check it on the Bench ↓</a>' : ''}</p></div><div class="asset-brief-strip" data-asset-brief-strip></div>`;
-    hero?.after(route, handoff);
+    anchor?.after(route, handoff);
     const strip = handoff.querySelector('[data-asset-brief-strip]');
     const stored = read(briefKey, null);
     if (stored && (stored.project || stored.style)) {

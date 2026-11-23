@@ -505,6 +505,12 @@ function tabState() {
 }
 
 document.querySelectorAll('[data-pf-lab="clearance"]').forEach(clearanceLab);
-document.querySelectorAll('[data-pf-lab="spiral"]').forEach(spiralLab);
+document.querySelectorAll('[data-pf-lab="spiral"]').forEach(el => {
+  const details = el.closest('details');
+  if (!details || details.open) spiralLab(el);
+  else details.addEventListener('toggle', () => {
+    if (details.open) spiralLab(el);
+  }, { once: true });
+});
 tabState();
 completion();

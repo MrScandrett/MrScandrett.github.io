@@ -27,6 +27,7 @@ if (root) {
   let time = 0;
   let speed = 1;
   let silhouette = false;
+  let dirty = true;
   const silhouetteMaterial = new THREE.MeshBasicMaterial({ color: 0x142632 });
   let showRig = true;
   let exporting = false;
@@ -54,6 +55,8 @@ if (root) {
   controls.enablePan = false;
   controls.minPolarAngle = Math.PI * .25;
   controls.maxPolarAngle = Math.PI * .68;
+  controls.addEventListener('change', () => { dirty = true; });
+  new ResizeObserver(() => { dirty = true; }).observe(canvas);
 
   // Fit a 3 x 3 unit box around the character in whichever direction is tighter,
   // so a tall, narrow stage (phones, stacked layout) still shows the whole body.
@@ -442,6 +445,7 @@ if (root) {
   });
 
   function render() {
+    dirty = false;
     if (state.syncSize()) frameCamera();
     puppet.visible = mode === 'student';
     puppet.traverse(child => { if (child.isMesh) child.material = silhouette ? silhouetteMaterial : puppetMaterial; });
@@ -725,7 +729,11 @@ if (root) {
   selectPose(0);
 
   window.SimKit.loop(delta => {
-    if (playing) time = (time + delta * 1.6 * speed) % 4;
-    render();
-  });
+    if (playing) {
+      time = (time + delta * 1.6 * speed) % 4;
+      render();
+    } else if (dirty) {
+      render();
+    }
+  }, { el: root });
 }

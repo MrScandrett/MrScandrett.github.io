@@ -7,6 +7,8 @@
 (function () {
   'use strict';
 
+  var scriptSrc = (document.currentScript && document.currentScript.src) || '';
+
   var cards = Array.prototype.slice.call(document.querySelectorAll('figure[data-pt-id]'));
   if (!cards.length) return;
 
@@ -163,9 +165,38 @@
         var row = el('div', { class: 'pt-btn-row' });
         var show = el('button', { type: 'button' }, 'Show the gallery card');
         show.addEventListener('click', function () { f.card.hidden = false; flash(f.card); });
+        var copy = el('button', { type: 'button' }, 'Copy diagnosis to my card ↓');
+        copy.addEventListener('click', function () {
+          var dx = document.getElementById('pt-dx-card');
+          if (!dx) return;
+          var setField = function (name, val) {
+            var inp = dx.querySelector('[name="' + name + '"]');
+            if (!inp) return;
+            inp.value = val;
+            inp.dispatchEvent(new Event('input', { bubbles: true }));
+          };
+          var setCheck = function (name, on) {
+            var cb = dx.querySelector('[name="' + name + '"]');
+            if (!cb) return;
+            cb.checked = !!on;
+            cb.dispatchEvent(new Event('change', { bubbles: true }));
+          };
+          setField('diagnosis', f.name);
+          setField('cause', f.cause);
+          setField('fix', f.fix);
+          setCheck('where-first', f.where === 'first');
+          setCheck('where-partway', f.where === 'partway');
+          setCheck('where-feature', f.where === 'feature');
+          setCheck('where-all', false);
+          setCheck('who-me', f.who === 'design' || f.who === 'both');
+          setCheck('who-teacher', f.who === 'machine' || f.who === 'both');
+          flash(dx);
+          var noteEl = dx.querySelector('[name="see"]');
+          if (noteEl && !noteEl.value) noteEl.focus();
+        });
         var again = el('button', { type: 'button' }, 'Start again');
         again.addEventListener('click', function () { path = []; renderTriage('start'); again.blur(); triage.querySelector('button').focus(); });
-        row.appendChild(show); row.appendChild(again);
+        row.appendChild(show); row.appendChild(copy); row.appendChild(again);
         box.appendChild(row);
         triage.appendChild(box);
         return;
@@ -241,6 +272,7 @@
       var svg = holder.querySelector('svg');
       if (svg) {
         svg.removeAttribute('width'); svg.removeAttribute('height');
+        svg.setAttribute('role', 'img');
         svg.setAttribute('aria-label', alt);
       }
     }
@@ -344,12 +376,15 @@
       var grid = el('div', { class: 'pt-quiz-grid' });
       var pic = el('div', { class: 'pt-quiz-pic' });
       var holder = el('div', { class: 'pt-quiz-img' });
-      pic.appendChild(holder);
       if (c.photo) {
+        var fig = el('figure', { class: 'pt-quiz-fig', 'data-zoomable': '', 'data-lightbox-group': 'pt-rounds' });
         var img = el('img', { src: imgBase + c.photo.src, alt: c.photo.alt });
         holder.appendChild(img);
-        pic.appendChild(el('p', { class: 'pt-quiz-credit', 'data-no-glossary': '' }, c.photo.credit));
+        fig.appendChild(holder);
+        fig.appendChild(el('figcaption', { class: 'pt-quiz-credit', 'data-no-glossary': '' }, c.photo.credit));
+        pic.appendChild(fig);
       } else {
+        pic.appendChild(holder);
         unlabeledDrawing(FAIL[c.id].img.split('/').pop(), holder, 'Drawing of the failed print, without labels. ' + FAIL[c.id].card.querySelector('img').alt);
         pic.appendChild(el('p', { class: 'pt-quiz-credit' }, 'Original ClassroomOS teaching diagram, labels hidden'));
       }
@@ -387,31 +422,142 @@
     renderCase();
   }
 
-  /* ---------- Blank diagnosis cards ---------- */
+  /* ---------- Diagnosis cards (blank 2-up + filled single) ---------- */
   var printBtn = document.querySelector('[data-pt-print-cards]');
+  var printFilledBtn = document.querySelector('[data-pt-print-filled]');
   var sheet = document.querySelector('[data-pt-print-sheet]');
   var card = document.getElementById('pt-dx-card');
-  if (printBtn && sheet && card) {
-    printBtn.addEventListener('click', function () {
+  function printDiagnosisCards(copies, clearFields) {
+    if (!sheet || !card) return;
+    var srcFields = card.querySelectorAll('input, textarea');
+    sheet.textContent = '';
+    for (var i = 0; i < copies; i++) {
+      var copy = card.cloneNode(true);
+      copy.removeAttribute('id');
+      copy.querySelectorAll('input, textarea').forEach(function (inp, idx) {
+        var src = srcFields[idx];
+        if (clearFields) {
+          if (inp.type === 'checkbox') {
+            inp.checked = false;
+            inp.removeAttribute('checked');
+          } else {
+            inp.value = '';
+            inp.textContent = '';
+          }
+        } else if (src) {
+          if (inp.type === 'checkbox') {
+            inp.checked = src.checked;
+            if (src.checked) inp.setAttribute('checked', '');
+            else inp.removeAttribute('checked');
+          } else {
+            inp.value = src.value;
+            if (inp.tagName === 'TEXTAREA') inp.textContent = src.value;
+            else inp.setAttribute('value', src.value);
+          }
+        }
+        inp.removeAttribute('name');
+        inp.tabIndex = -1;
+      });
+      sheet.appendChild(copy);
+    }
+    document.documentElement.classList.add('pt-printing-cards');
+    var done = function () {
+      document.documentElement.classList.remove('pt-printing-cards');
       sheet.textContent = '';
-      for (var i = 0; i < 2; i++) {
-        var copy = card.cloneNode(true);
-        copy.removeAttribute('id');
-        copy.querySelectorAll('input, textarea').forEach(function (inp) {
-          if (inp.type === 'checkbox') inp.checked = false; else inp.value = '';
-          inp.removeAttribute('name');
-          inp.tabIndex = -1;
+      window.removeEventListener('afterprint', done);
+    };
+    window.addEventListener('afterprint', done);
+    window.print();
+  }
+  if (printBtn && sheet && card) {
+    printBtn.addEventListener('click', function () { printDiagnosisCards(2, true); });
+  }
+  if (printFilledBtn && sheet && card) {
+    printFilledBtn.addEventListener('click', function () { printDiagnosisCards(1, false); });
+  }
+
+  /* ---------- Calibration test STLs ---------- */
+  function pushTri(arr, a, b, c) {
+    arr.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+  }
+  function pushQuad(arr, a, b, c, d) {
+    pushTri(arr, a, b, c);
+    pushTri(arr, a, c, d);
+  }
+  function extrudePerimeter(arr, pts, depth) {
+    for (var i = 0; i < pts.length; i++) {
+      var p = pts[i];
+      var q = pts[(i + 1) % pts.length];
+      pushQuad(arr, [p[0], 0, p[1]], [p[0], depth, p[1]], [q[0], depth, q[1]], [q[0], 0, q[1]]);
+    }
+  }
+  function buildTowersMesh() {
+    var arr = [];
+    var depth = 12;
+    var quads = [
+      [0, 5, 0, 2], [5, 15, 0, 2], [15, 35, 0, 2], [35, 45, 0, 2], [45, 50, 0, 2],
+      [5, 15, 2, 27], [35, 45, 2, 27]
+    ];
+    quads.forEach(function (q) {
+      var x0 = q[0], x1 = q[1], z0 = q[2], z1 = q[3];
+      pushQuad(arr, [x0, 0, z0], [x1, 0, z0], [x1, 0, z1], [x0, 0, z1]);
+      pushQuad(arr, [x0, depth, z0], [x0, depth, z1], [x1, depth, z1], [x1, depth, z0]);
+    });
+    var perim = [
+      [0, 0], [5, 0], [15, 0], [35, 0], [45, 0], [50, 0], [50, 2], [45, 2],
+      [45, 27], [35, 27], [35, 2], [15, 2], [15, 27], [5, 27], [5, 2], [0, 2]
+    ];
+    extrudePerimeter(arr, perim, depth);
+    return new Float32Array(arr);
+  }
+  function buildOverhangMesh() {
+    var arr = [];
+    var depth = 14;
+    var tan = function (deg) { return Math.tan(deg * Math.PI / 180); };
+    var p4x = 10, p4z = 2;
+    var p5x = p4x + 7 * tan(30), p5z = p4z + 7;
+    var p6x = p5x + 7 * tan(45), p6z = p5z + 7;
+    var p7x = p6x + 7 * tan(60), p7z = p6z + 7;
+    var p8x = p7x + 6 * tan(70), p8z = p7z + 6;
+    var perim = [
+      [0, 0], [50, 0], [50, 2], [p4x, p4z],
+      [p5x, p5z], [p6x, p6z], [p7x, p7z], [p8x, p8z],
+      [p8x, 33], [0, 33]
+    ];
+    var cx = 5, cz = 16;
+    for (var i = 0; i < perim.length; i++) {
+      var p = perim[i];
+      var q = perim[(i + 1) % perim.length];
+      pushTri(arr, [cx, 0, cz], [p[0], 0, p[1]], [q[0], 0, q[1]]);
+      pushTri(arr, [cx, depth, cz], [q[0], depth, q[1]], [p[0], depth, p[1]]);
+    }
+    extrudePerimeter(arr, perim, depth);
+    return new Float32Array(arr);
+  }
+  window.__ptCalibration = { towers: buildTowersMesh, overhang: buildOverhangMesh };
+
+  var calButtons = document.querySelectorAll('[data-pt-stl]');
+  if (calButtons.length) {
+    calButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var kind = btn.getAttribute('data-pt-stl');
+        var raw = kind === 'overhang' ? buildOverhangMesh() : buildTowersMesh();
+        var fabUrl = scriptSrc ? new URL('../fab-io.mjs', scriptSrc).href : '../../../assets/js/fab-io.mjs';
+        import(fabUrl).then(function (fab) {
+          var prepared = fab.prepareForPrint(raw, { yUp: false });
+          var label = kind === 'overhang' ? 'ClassroomOS 30-70 deg overhang ramp' : 'ClassroomOS 2-tower stringing test';
+          var filename = kind === 'overhang' ? 'overhang-ramp-30-70-deg.stl' : 'two-tower-stringing-test.stl';
+          var bytes = fab.writeBinaryStl(prepared, label);
+          var url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
         });
-        sheet.appendChild(copy);
-      }
-      document.documentElement.classList.add('pt-printing-cards');
-      var done = function () {
-        document.documentElement.classList.remove('pt-printing-cards');
-        sheet.textContent = '';
-        window.removeEventListener('afterprint', done);
-      };
-      window.addEventListener('afterprint', done);
-      window.print();
+      });
     });
   }
 })();

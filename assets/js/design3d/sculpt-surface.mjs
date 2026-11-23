@@ -42,6 +42,36 @@ function elevation(base, x, z) {
   }
 }
 
+function applyBrush(pos, side, prop, stroke, cx, cz) {
+  const smooth = stroke.type === 'smooth';
+  const previous = smooth ? pos.array.slice() : null;
+  for (let i = 0; i < pos.count; i++) {
+    const distance = Math.hypot(pos.getX(i) - cx, pos.getZ(i) - cz);
+    if (distance >= stroke.radius) continue;
+    const u = distance / stroke.radius;
+    const weight = (1 - u) ** 2;
+    const y = pos.getY(i);
+    let delta = stroke.strength;
+    if (stroke.type === 'lower') delta = -delta;
+    if (stroke.type === 'level') delta = (stroke.target - y) * stroke.strength / .3;
+    if (stroke.type === 'crease') {
+      const furrow = (1 - u) ** 3;
+      const lip = u > 0.45 ? Math.sin(u * Math.PI) * 0.22 : 0;
+      const next = y + (-1.15 * furrow + lip) * stroke.strength;
+      pos.setY(i, prop ? Math.max(.04, next) : next);
+      continue;
+    }
+    if (smooth) {
+      const row = Math.floor(i / side), col = i % side;
+      const neighbors = [col ? i-1 : i, col < segments ? i+1 : i,
+        row ? i-side : i, row < segments ? i+side : i];
+      const average = neighbors.reduce((sum, j) => sum + previous[3*j+1], 0) / 4;
+      delta = (average - y) * .8 * stroke.strength / .3;
+    }
+    pos.setY(i, prop ? Math.max(.04, y + delta * weight) : y + delta * weight);
+  }
+}
+
 export function sculptGeometry(THREE, state) {
   const side = segments + 1;
   const geo = new THREE.PlaneGeometry(4, 4, segments, segments);
@@ -58,24 +88,9 @@ export function sculptGeometry(THREE, state) {
     pos.setXYZ(i, x, elevation(state.sculptBase, x, z), z);
   }
   for (const stroke of state.strokes) {
-    const smooth = stroke.type === 'smooth';
-    const previous = smooth ? pos.array.slice() : null;
-    for (let i = 0; i < pos.count; i++) {
-      const distance = Math.hypot(pos.getX(i) - stroke.x, pos.getZ(i) - stroke.z);
-      if (distance >= stroke.radius) continue;
-      const weight = (1 - distance / stroke.radius) ** 2;
-      const y = pos.getY(i);
-      let delta = stroke.strength;
-      if (stroke.type === 'lower') delta = -delta;
-      if (stroke.type === 'level') delta = (stroke.target - y) * stroke.strength / .3;
-      if (smooth) {
-        const row = Math.floor(i / side), col = i % side;
-        const neighbors = [col ? i-1 : i, col < segments ? i+1 : i,
-          row ? i-side : i, row < segments ? i+side : i];
-        const average = neighbors.reduce((sum, j) => sum + previous[3*j+1], 0) / 4;
-        delta = (average - y) * .8 * stroke.strength / .3;
-      }
-      pos.setY(i, prop ? Math.max(.04, y + delta * weight) : y + delta * weight);
+    applyBrush(pos, side, prop, stroke, stroke.x, stroke.z);
+    if (stroke.sym && Math.abs(stroke.x) > 0.02) {
+      applyBrush(pos, side, prop, stroke, -stroke.x, stroke.z);
     }
   }
   if (prop) closeProp(THREE, geo);

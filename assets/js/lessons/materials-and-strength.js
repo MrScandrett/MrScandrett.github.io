@@ -18,6 +18,74 @@
 (function () {
   'use strict';
 
+  var scriptUrl = (document.currentScript && document.currentScript.src) || '';
+
+  function buildTestHookSoup(orient, fillet) {
+    // 2D CCW profile in mm: back plate 5×40, arm 30×5, tip lip 5×8 above arm.
+    var r = Math.max(0, Math.min(4, Number(fillet) || 0));
+    var poly = [[0, 0], [35, 0], [35, 13], [30, 13], [30, 5]];
+    if (r > 0.1) {
+      poly.push([5 + r, 5]);
+      for (var i = 1; i < 6; i++) {
+        var a = -Math.PI / 2 - (i / 6) * (Math.PI / 2);
+        poly.push([5 + r + r * Math.cos(a), 5 + r + r * Math.sin(a)]);
+      }
+      poly.push([5, 5 + r]);
+    } else {
+      poly.push([5, 5]);
+    }
+    poly.push([5, 40], [0, 40]);
+    // Ear clipping triangulation of monotone/L polygon using simple fan/ears since all vertices are convex or single concave corner:
+    function triPoly(pts) {
+      var verts = pts.map(function (p, idx) { return { x: p[0], y: p[1], i: idx }; });
+      var out = [];
+      function area2(a, b, c) { return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x); }
+      function inside(p, a, b, c) {
+        return area2(a, b, p) >= -1e-9 && area2(b, c, p) >= -1e-9 && area2(c, a, p) >= -1e-9;
+      }
+      var guard = 0;
+      while (verts.length > 3 && guard++ < 500) {
+        var clipped = false;
+        for (var k = 0; k < verts.length; k++) {
+          var prev = verts[(k - 1 + verts.length) % verts.length];
+          var cur = verts[k];
+          var next = verts[(k + 1) % verts.length];
+          if (area2(prev, cur, next) <= 1e-9) continue;
+          var anyInside = verts.some(function (v) { return v !== prev && v !== cur && v !== next && inside(v, prev, cur, next); });
+          if (anyInside) continue;
+          out.push([prev.i, cur.i, next.i]);
+          verts.splice(k, 1);
+          clipped = true;
+          break;
+        }
+        if (!clipped) break;
+      }
+      if (verts.length === 3) out.push([verts[0].i, verts[1].i, verts[2].i]);
+      return out;
+    }
+    var faces = triPoly(poly);
+    var width = B;
+    var soup = [];
+    function pushTri(ax, ay, az, bx, by, bz, cx, cy, cz) {
+      if (orient === 'upright') {
+        soup.push(ax, az, ay, cx, cz, cy, bx, bz, by);
+      } else {
+        soup.push(ax, ay, az, bx, by, bz, cx, cy, cz);
+      }
+    }
+    faces.forEach(function (t) {
+      var a = poly[t[0]], b = poly[t[1]], c = poly[t[2]];
+      pushTri(a[0], a[1], width, b[0], b[1], width, c[0], c[1], width);
+      pushTri(a[0], a[1], 0, c[0], c[1], 0, b[0], b[1], 0);
+    });
+    for (var j = 0; j < poly.length; j++) {
+      var p1 = poly[j], p2 = poly[(j + 1) % poly.length];
+      pushTri(p1[0], p1[1], 0, p2[0], p2[1], 0, p2[0], p2[1], width);
+      pushTri(p1[0], p1[1], 0, p2[0], p2[1], width, p1[0], p1[1], width);
+    }
+    return new Float32Array(soup);
+  }
+
   var LINE = 0.45, B = 8, H = 5, REACH = 30;
   var MATERIALS = {
     pla:  { name: 'PLA',  strength: 1.0,  across: 0.5, stiff: 1.0,   flexible: false },
@@ -123,7 +191,7 @@
   }
 
   // ---------- drawing ----------
-  var kit = window.SimKit ? window.SimKit.canvas2d(canvas, { onResize: function () { draw(); } }) : null;
+  var kit = window.SimKit ? window.SimKit.canvas2d(canvas, { onResize: function () { if (ctx && pal) draw(); } }) : null;
   var ctx = kit ? kit.ctx : canvas.getContext('2d');
   var VW = 820, VH = 440;
   var pal;
@@ -279,8 +347,14 @@
   var loop = null;
 
   function draw() {
-    if (!kit) return;
-    var W = kit.width, Hh = kit.height;
+    if (!ctx || !pal) return;
+    var rect = canvas.getBoundingClientRect();
+    var W = kit ? kit.width : (rect.width || VW);
+    var Hh = kit ? kit.height : (rect.height || VH);
+    if (!kit) {
+      if (canvas.width !== Math.round(W)) canvas.width = Math.round(W);
+      if (canvas.height !== Math.round(Hh)) canvas.height = Math.round(Hh);
+    }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     var dpr = canvas.width / Math.max(1, W);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -554,6 +628,27 @@
     compareBody.innerHTML = ''; compared = 0;
     var empty = root.querySelector('[data-ms-compare-empty]');
     if (empty) empty.hidden = false;
+  });
+  root.querySelectorAll('[data-ms-stl]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      var mode = btn.getAttribute('data-ms-stl') === 'upright' ? 'upright' : 'side';
+      try {
+        var fab = await import(scriptUrl ? new URL('../fab-io.mjs', scriptUrl).href : '../../../assets/js/fab-io.mjs');
+        var cfg = readCfg();
+        var raw = buildTestHookSoup(mode, cfg.fillet);
+        var prepped = fab.prepareForPrint(raw, { yUp: false });
+        var stl = fab.writeBinaryStl(prepped, 'ClassroomOS Test Hook (' + mode + ', mm)');
+        var url = URL.createObjectURL(new Blob([stl], { type: 'model/stl' }));
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'test-hook-' + mode + '.stl';
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+        status.textContent = 'Downloaded test-hook-' + mode + '.stl (8 mm wide, ' + cfg.fillet + ' mm fillet). Slice two copies to test.';
+      } catch (err) {
+        status.textContent = 'STL export unavailable: ' + err.message;
+      }
+    });
   });
 
   update();

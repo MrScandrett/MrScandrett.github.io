@@ -41,6 +41,35 @@
       fused: 'Revision: compare the model and sliced preview. If the air vanished in preview, widen that gap; if it survived, inspect the print for spread or sag.'
     }[observation]) + setupReminder;
   }
+  const dlBtn = document.createElement('button');
+  dlBtn.type = 'button';
+  dlBtn.className = 'pf-evidence-download';
+  dlBtn.textContent = 'Download fit log (.txt)';
+  dlBtn.addEventListener('click', () => {
+    const label = fields.result.selectedOptions?.[0]?.textContent || fields.result.value;
+    const lines = [
+      'Print Fidgets — Fit Decision Log',
+      `Date: ${new Date().toISOString().slice(0, 10)}`,
+      `Printer / profile: ${fields.printer.value.trim() || '(not entered)'}`,
+      `Filament: ${fields.filament.value.trim() || '(not entered)'}`,
+      `Nozzle diameter: ${fields.nozzle.value} mm`,
+      `Print layer height: ${fields.layerHeight.value} mm`,
+      `Open comb slot: ${fields.comb.value} mm`,
+      `Spinner radial side gap: ${fields.side.value} mm`,
+      `Spinner layer gap: ${fields.layer.value} mm`,
+      `Observed motion: ${label}`,
+      '',
+      `Check: ${status.textContent}`,
+      `Next step: ${next.textContent}`,
+    ];
+    const url = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'fidget-fit-log.txt';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  next.after(dlBtn);
   card.addEventListener('input', render);
   card.addEventListener('change', render);
   render();

@@ -42,16 +42,3 @@ switcher.addEventListener('keydown', event => {
   switcher.open = false;
   summary.focus();
 });
-
-const shortcuts = { z: 'undo', y: 'redo', s: 'save' };
-studio.addEventListener('keydown', event => {
-  if (event.defaultPrevented || event.isComposing || event.altKey || !(event.ctrlKey || event.metaKey)) return;
-  if (event.target.closest('input, select, textarea, [contenteditable="true"]')) return;
-  const key = event.key.toLowerCase();
-  const action = event.shiftKey ? (key === 'z' ? 'redo' : null) : shortcuts[key];
-  if (!action) return;
-  const button = studio.querySelector('[data-action="' + action + '"]');
-  if (!button) return;
-  event.preventDefault();
-  if (!event.repeat && !button.disabled) button.click();
-});

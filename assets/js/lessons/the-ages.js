@@ -47,19 +47,14 @@
 
   function positionTooltip(node) {
     var rect = node.getBoundingClientRect();
-    var tw = Math.min(360, window.innerWidth - 20);
     var margin = 10;
-    var left = rect.left + rect.width / 2 - tw / 2;
-    left = Math.max(margin, Math.min(left, window.innerWidth - tw - margin));
-    var top = rect.top - 8;
-    tooltip.style.left = left + "px";
-    if (top - tooltip.offsetHeight - 12 < margin) {
-      tooltip.style.top = (rect.bottom + 10) + "px";
-      tooltip.style.bottom = "auto";
-    } else {
-      tooltip.style.top = "auto";
-      tooltip.style.bottom = (window.innerHeight - rect.top + 10) + "px";
-    }
+    var width = tooltip.offsetWidth;
+    var height = tooltip.offsetHeight;
+    var left = rect.left + (rect.width - width) / 2;
+    var above = rect.top - height - margin;
+    var top = above >= margin ? above : rect.bottom + margin;
+    tooltip.style.left = Math.max(margin, Math.min(left, window.innerWidth - width - margin)) + "px";
+    tooltip.style.top = Math.max(margin, Math.min(top, window.innerHeight - height - margin)) + "px";
   }
 
   function openArtifact(artifact, node) {
@@ -111,7 +106,7 @@
   });
   document.getElementById("att-close").addEventListener("click", closeTooltip);
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeTooltip();
+    if (e.key === "Escape" && openNode) closeTooltip();
   });
   window.addEventListener("resize", function () {
     if (openNode && tooltip.classList.contains("is-visible")) positionTooltip(openNode);
@@ -135,18 +130,36 @@
     var list = document.createElement("div");
     list.className = "ages-evidence-list";
     var label = document.createElement("strong");
-    label.textContent = related.length ? "Evidence to inspect" : "Evidence note";
-    list.appendChild(label);
-    if (!related.length) {
-      var empty = document.createElement("span");
-      empty.textContent = "No 3D artifact is dated to this chapter yet; use the Era Atlas below.";
-      empty.style.fontSize = "0.7rem";
-      list.appendChild(empty);
-      return list;
-    }
+    label.textContent = "Inspect in 3D";
+
+    var featured = artifactByKey(ageByKey(key).featuredArtifact);
+    var figure = document.createElement("figure");
+    figure.className = "ages-featured-evidence";
+    figure.dataset.zoomable = "";
+    var image = document.createElement("img");
+    image.src = featured.figure.src;
+    image.alt = featured.label;
+    image.loading = "lazy";
+    var caption = document.createElement("figcaption");
+    var title = document.createElement("strong");
+    title.textContent = featured.label;
+    var context = document.createElement("span");
+    context.textContent = featured.date + " · " + featured.figure.place;
+    var credit = document.createElement("a");
+    credit.href = featured.figure.credit.url;
+    credit.textContent = featured.figure.credit.text;
+    caption.append(title, context, featured.figure.caption, credit);
+    figure.append(image, caption);
+    list.append(figure, label);
+    var first = document.createElement("button");
+    first.type = "button";
+    first.className = "ages-evidence-chip";
+    first.dataset.agesArtifact = featured.key;
+    first.textContent = featured.label;
+    list.appendChild(first);
     related.forEach(function (it) {
       var artifact = artifactByKey(it.li.dataset.artifact);
-      if (!artifact) return;
+      if (!artifact || artifact.key === featured.key) return;
       var chip = document.createElement("button");
       chip.type = "button";
       chip.className = "ages-evidence-chip";
@@ -192,6 +205,7 @@
     });
     document.querySelectorAll(".ages-atlas-tab").forEach(function (tab) {
       var isTabActive = tab.dataset.eraTab === chapter.key;
+      tab.tabIndex = isTabActive ? 0 : -1;
       tab.classList.toggle("is-active", isTabActive);
       tab.setAttribute("aria-selected", isTabActive ? "true" : "false");
     });
@@ -241,7 +255,21 @@
       setEra(eras[(currIdx + 1) % eras.length].key);
     });
   }
-  document.querySelectorAll(".ages-atlas-tab").forEach(function (tab) {
+  var atlasTabs = Array.from(document.querySelectorAll(".ages-atlas-tab"));
+  atlasTabs.forEach(function (tab, index) {
+    tab.addEventListener("keydown", function (event) {
+      var target;
+      switch (event.key) {
+        case "ArrowRight": target = (index + 1) % atlasTabs.length; break;
+        case "ArrowLeft": target = (index + atlasTabs.length - 1) % atlasTabs.length; break;
+        case "Home": target = 0; break;
+        case "End": target = atlasTabs.length - 1; break;
+        default: return;
+      }
+      event.preventDefault();
+      setEra(atlasTabs[target].dataset.eraTab);
+      atlasTabs[target].focus();
+    });
     tab.addEventListener("click", function () {
       setEra(tab.dataset.eraTab);
     });
@@ -497,7 +525,7 @@
   initQuizV2();
 
   function scrollToLessonSection(hash, updateHistory) {
-    var target = hash && document.querySelector(hash);
+    var target = hash && document.getElementById(hash.slice(1));
     if (!target) return;
     var details = target.closest("details");
     while (details) {
@@ -529,6 +557,40 @@
     target.classList.add("ages-flash");
     return true;
   }
+
+  // Search across chapters, including those currently hidden by the atlas tabs.
+  var finder = document.getElementById("ages-find-evidence");
+  var results = document.getElementById("ages-find-results");
+  var resultCount = document.getElementById("ages-find-count");
+  function normalizeSearch(value) {
+    return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  }
+  var atlasEntries = Array.from(document.querySelectorAll(".ages-era-chapter article[id]")).map(function (article) {
+    var title = article.querySelector("h2, h3").textContent.trim();
+    var chapter = ageByKey(article.closest(".ages-era-chapter").dataset.eraChapter).name;
+    return { id: article.id, title: title, chapter: chapter, text: normalizeSearch(chapter + " " + article.textContent) };
+  });
+  finder.parentElement.hidden = false;
+  finder.addEventListener("input", function () {
+    var query = normalizeSearch(finder.value.trim());
+    results.replaceChildren();
+    var matches = query ? atlasEntries.filter(function (entry) {
+      return query.split(/\s+/).every(function (word) { return entry.text.includes(word); });
+    }) : [];
+    matches.forEach(function (entry) {
+      var link = document.createElement("a");
+      link.href = "#" + entry.id;
+      link.dataset.agesOpen = "";
+      link.textContent = entry.title;
+      var era = document.createElement("small");
+      era.textContent = entry.chapter;
+      var row = document.createElement("li");
+      row.append(link, era);
+      results.append(row);
+    });
+    results.hidden = !matches.length;
+    resultCount.textContent = query ? (matches.length ? matches.length + (matches.length === 1 ? " entry" : " entries") : "No entries found. Try a different word.") : "";
+  });
 
   // Lesson -> timeline: select the card's item (or zoom to an age) and bring the timeline into view.
   function showOnTimeline(id) {

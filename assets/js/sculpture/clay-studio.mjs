@@ -23,6 +23,46 @@ const SCULPT_TOOLS = {
   rib: ['Smooth rib', 'Draw the rib across seams and tool marks to smooth them.'],
 };
 const MAX_IMPORT_BYTES = 24 * 1024 * 1024;
+const DRAFT_DB = 'classroomos-clay-drafts';
+const DRAFT_STORE = 'drafts';
+
+function openDraftDb() {
+  return new Promise((resolve, reject) => {
+    if (!globalThis.indexedDB) { reject(new Error('no-idb')); return; }
+    const req = indexedDB.open(DRAFT_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(DRAFT_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function writeDraft(mode, json) {
+  try {
+    const db = await openDraftDb();
+    try {
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(DRAFT_STORE, 'readwrite');
+        tx.objectStore(DRAFT_STORE).put(json, mode);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } finally { db.close(); }
+  } catch {}
+}
+
+async function readDraft(mode) {
+  try {
+    const db = await openDraftDb();
+    try {
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(DRAFT_STORE, 'readonly');
+        const req = tx.objectStore(DRAFT_STORE).get(mode);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    } finally { db.close(); }
+  } catch { return null; }
+}
 
 function saveFile(data, name, type) {
   const url = URL.createObjectURL(new Blob([data], { type }));
@@ -36,12 +76,17 @@ function saveFile(data, name, type) {
 class ClayStudio {
   constructor(root) {
     this.root = root;
-    this.isPottery = root.dataset.clayStudio === 'pottery';
+    this.mode = root.dataset.clayStudio === 'pottery' ? 'pottery' : 'sculpture';
+    this.isPottery = this.mode === 'pottery';
     this.ui = Object.fromEntries([...root.querySelectorAll('[data-control]')].map(element => [element.dataset.control, element]));
     this.history = [];
+    this.redoHistory = [];
     this.tool = this.isPottery ? 'pull' : 'join';
     this.project = this.isPottery ? newPot('greek') : newSculpture('bust');
     this.rotating = false;
+    this.symmetry = false;
+    this.silhouette = false;
+    this.raking = false;
     this.request = 0;
 
     const view = createScene(this.ui.canvas, { THREE, clearColor: 0x211d1a, maxDpr: 1.65 });
@@ -52,12 +97,12 @@ class ClayStudio {
     this.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.84 });
     this.model = new THREE.Mesh(new THREE.BufferGeometry(), this.material);
     this.part.add(this.model);
-    this.scene.add(new THREE.HemisphereLight(0xffead4, 0x554339, 2.15));
-    const light = new THREE.DirectionalLight(0xffdfbe, 2.45);
-    light.position.set(3, 6, 4);
-    const rim = new THREE.DirectionalLight(0xc3d8e8, 1.5);
-    rim.position.set(-3, 3, -4);
-    this.scene.add(light, rim);
+    this.hemiLight = new THREE.HemisphereLight(0xffead4, 0x554339, 2.15);
+    this.keyLight = new THREE.DirectionalLight(0xffdfbe, 2.45);
+    this.keyLight.position.set(3, 6, 4);
+    this.rimLight = new THREE.DirectionalLight(0xc3d8e8, 1.5);
+    this.rimLight.position.set(-3, 3, -4);
+    this.scene.add(this.hemiLight, this.keyLight, this.rimLight);
     const wheel = new THREE.Mesh(new THREE.CylinderGeometry(2.16, 2.08, 0.14, 96), new THREE.MeshStandardMaterial({ color: 0x575053, roughness: 0.8 }));
     wheel.position.y = -0.072;
     this.part.add(wheel);
@@ -68,7 +113,9 @@ class ClayStudio {
     }
     this.cursor = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 48), new THREE.MeshBasicMaterial({ color: 0xffdeab, side: THREE.DoubleSide, depthWrite: false }));
     this.cursor.visible = false;
-    this.scene.add(this.cursor);
+    this.mirrorCursor = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 48), new THREE.MeshBasicMaterial({ color: 0x99d6ff, side: THREE.DoubleSide, depthWrite: false }));
+    this.mirrorCursor.visible = false;
+    this.scene.add(this.cursor, this.mirrorCursor);
 
     this.orbit = new OrbitControls(this.camera, this.ui.canvas);
     this.orbit.target.set(0, 1.15, 0);
@@ -82,6 +129,7 @@ class ClayStudio {
     this.bind();
     this.refresh();
     this.rebuild();
+    this.restoreDraft();
     let last = 0;
     this.renderer.setAnimationLoop(now => {
       if (document.hidden || !this.ui.canvas.clientWidth) return;
@@ -115,6 +163,8 @@ class ClayStudio {
       if (!this.history.length) return;
       this.request++;
       const kind = this.project.kind;
+      this.redoHistory.push(structuredClone(this.project));
+      if (this.redoHistory.length > 14) this.redoHistory.shift();
       this.project = this.history.pop();
       if (kind !== this.project.kind) {
         this.tool = this.project.kind === 'pot' ? 'pull' : 'join';
@@ -123,12 +173,53 @@ class ClayStudio {
       }
       if (!this.canUse(this.tool)) this.tool = 'look';
       this.dirty = true;
+      this.scheduleSave();
       this.announce('Undid the last change.');
       this.refresh();
     });
+    ui.redo?.addEventListener('click', () => {
+      if (!this.redoHistory.length) return;
+      this.request++;
+      const kind = this.project.kind;
+      this.history.push(structuredClone(this.project));
+      if (this.history.length > 14) this.history.shift();
+      this.project = this.redoHistory.pop();
+      if (kind !== this.project.kind) {
+        this.tool = this.project.kind === 'pot' ? 'pull' : 'join';
+        this.rotating = false;
+        this.part.rotation.y = 0;
+      }
+      if (!this.canUse(this.tool)) this.tool = 'look';
+      this.dirty = true;
+      this.scheduleSave();
+      this.announce('Restored the undone change.');
+      this.refresh();
+    });
+    ui.symmetry?.addEventListener('click', () => {
+      this.symmetry = !this.symmetry;
+      this.mirrorCursor.visible = false;
+      this.refresh();
+      this.announce(this.symmetry ? 'X-axis mirror symmetry on.' : 'X-axis mirror symmetry off.');
+    });
+    ui.silhouette?.addEventListener('click', () => {
+      this.silhouette = !this.silhouette;
+      this.applyInspection();
+      this.refresh();
+      this.announce(this.silhouette ? 'Silhouette view: read the outline from multiple angles.' : 'Clay surface view restored.');
+    });
+    ui.raking?.addEventListener('click', () => {
+      this.raking = !this.raking;
+      this.applyInspection();
+      this.refresh();
+      this.announce(this.raking ? 'Raking light: low angle exaggerates form and texture.' : 'Studio lighting restored.');
+    });
+    for (const button of this.root.querySelectorAll('[data-view]')) {
+      button.addEventListener('click', () => this.setView(button.dataset.view));
+    }
     ui.spin.addEventListener('click', () => {
       this.rotating = !this.rotating;
       this.cursor.visible = false;
+      this.mirrorCursor.visible = false;
       this.refresh();
     });
     ui.coil.addEventListener('click', () => {
@@ -169,11 +260,29 @@ class ClayStudio {
     });
     ui.save.addEventListener('click', () => saveFile(saveClay(this.project), this.filename() + '.clay', 'application/json'));
     ui.export.addEventListener('click', () => this.exportModel());
-    this.root.addEventListener('keydown', event => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && !event.shiftKey && !/INPUT|SELECT/.test(event.target.tagName)) {
-        event.preventDefault();
-        ui.undo.click();
-      }
+    document.addEventListener('keydown', event => {
+      if (event.defaultPrevented || event.isComposing || event.altKey || !(event.metaKey || event.ctrlKey)) return;
+      if (this.root.offsetParent === null) return;
+      if (event.target.closest('input, select, textarea, [contenteditable="true"]')) return;
+      const key = event.key.toLowerCase();
+      if (key === 'z' && !event.shiftKey && !ui.undo.disabled) { event.preventDefault(); ui.undo.click(); }
+      else if (((key === 'z' && event.shiftKey) || key === 'y') && ui.redo && !ui.redo.disabled) { event.preventDefault(); ui.redo.click(); }
+      else if (key === 's') { event.preventDefault(); ui.save.click(); }
+    });
+    ui.canvas.addEventListener('keydown', event => {
+      const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '+', '=', '-'];
+      if (!keys.includes(event.key)) return;
+      event.preventDefault();
+      const offset = this.camera.position.clone().sub(this.orbit.target);
+      const spherical = new THREE.Spherical().setFromVector3(offset);
+      if (event.key === 'ArrowLeft') spherical.theta -= 0.14;
+      if (event.key === 'ArrowRight') spherical.theta += 0.14;
+      if (event.key === 'ArrowUp') spherical.phi = Math.max(0.08, spherical.phi - 0.12);
+      if (event.key === 'ArrowDown') spherical.phi = Math.min(this.orbit.maxPolarAngle, spherical.phi + 0.12);
+      if (event.key === '+' || event.key === '=') spherical.radius = Math.max(this.orbit.minDistance, spherical.radius * 0.9);
+      if (event.key === '-') spherical.radius = Math.min(this.orbit.maxDistance, spherical.radius * 1.1);
+      this.camera.position.setFromSpherical(spherical).add(this.orbit.target);
+      this.orbit.update();
     });
 
     ui.canvas.addEventListener('contextmenu', event => event.preventDefault());
@@ -183,10 +292,58 @@ class ClayStudio {
       ui.canvas.addEventListener(name, event => {
         if (this.stroke?.id !== event.pointerId) return;
         this.stroke = null;
+        this.scheduleSave();
         this.refresh();
       }, { capture: true });
     }
-    ui.canvas.addEventListener('pointerleave', () => { this.cursor.visible = false; });
+    ui.canvas.addEventListener('pointerleave', () => { this.cursor.visible = false; this.mirrorCursor.visible = false; });
+  }
+
+  async restoreDraft() {
+    const startRequest = this.request;
+    const saved = await readDraft(this.mode);
+    if (!saved || this.request !== startRequest) return;
+    try {
+      const loaded = openClay(saved);
+      this.project = loaded;
+      this.tool = loaded.kind === 'pot' ? 'pull' : 'join';
+      if (!this.canUse(this.tool)) this.tool = 'look';
+      this.dirty = true;
+      this.refresh();
+      this.announce('Restored your saved browser draft.');
+    } catch {}
+  }
+
+  scheduleSave() {
+    clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => writeDraft(this.mode, saveClay(this.project)), 450);
+  }
+
+  setView(name) {
+    const views = { front: [0, 1.8, 6.6], side: [6.6, 1.8, 0], top: [0, 8.2, 0.25], reset: [3.7, 3.3, 5.5] };
+    const pos = views[name] || views.reset;
+    this.orbit.target.set(0, 1.15, 0);
+    this.camera.position.set(...pos);
+    this.orbit.update();
+    this.announce(name === 'reset' ? 'Default camera view restored.' : `${name[0].toUpperCase() + name.slice(1)} view.`);
+  }
+
+  applyInspection() {
+    this.keyLight.position.set(...(this.raking ? [7, 1.8, 1.5] : [3, 6, 4]));
+    this.keyLight.intensity = this.raking ? 3.1 : 2.45;
+    this.hemiLight.intensity = this.raking ? 0.65 : 2.15;
+    this.rimLight.intensity = this.raking ? 0.5 : 1.5;
+    if (this.silhouette) {
+      this.material.color.setHex(0x000000);
+      this.material.vertexColors = false;
+      this.material.roughness = 1;
+    } else {
+      this.material.color.setHex(0xffffff);
+      this.material.vertexColors = true;
+      const { project } = this;
+      this.material.roughness = project.stage === 3 ? FINISHES[project.finish].roughness : project.stage === 0 ? 0.57 : 0.85;
+    }
+    this.material.needsUpdate = true;
   }
 
   filename() {
@@ -200,7 +357,9 @@ class ClayStudio {
   checkpoint() {
     this.history.push(structuredClone(this.project));
     if (this.history.length > 14) this.history.shift();
+    this.redoHistory.length = 0;
     this.request++;
+    this.scheduleSave();
   }
 
   replace(project, status) {
@@ -244,9 +403,16 @@ class ClayStudio {
     ui.spin.setAttribute('aria-pressed', String(this.rotating));
     ui.coil.hidden = !pottery;
     ui.coil.disabled = project.stage !== 0 || !project.pot?.open || project.pot.height >= 3.3;
+    if (ui.symmetry) {
+      ui.symmetry.hidden = pottery;
+      ui.symmetry.setAttribute('aria-pressed', String(this.symmetry));
+    }
+    ui.silhouette?.setAttribute('aria-pressed', String(this.silhouette));
+    ui.raking?.setAttribute('aria-pressed', String(this.raking));
     ui.advance.textContent = ['Firm to leather-hard', 'Dry completely', 'Fire clay', 'Fired'][project.stage];
     ui.advance.disabled = project.stage >= 3;
     ui.undo.disabled = !this.history.length;
+    if (ui.redo) ui.redo.disabled = !this.redoHistory.length;
     ui.size.disabled = this.tool === 'look';
     ui.body.value = project.body;
     ui.body.disabled = project.stage >= 3;
@@ -316,7 +482,7 @@ class ClayStudio {
     }
     this.model.visible = !!geometry;
     this.model.scale.setScalar(this.scale());
-    this.material.roughness = project.stage === 3 ? FINISHES[project.finish].roughness : project.stage === 0 ? 0.57 : 0.85;
+    this.applyInspection();
     this.dirty = false;
     this.metrics();
   }
@@ -380,11 +546,23 @@ class ClayStudio {
     const hit = this.tool !== 'look' && this.canUse(this.tool) ? this.hit(event) : null;
     const size = Number(this.ui.size.value) / 100;
     this.cursor.visible = !!hit && this.project.kind === 'volume' && event.pointerType !== 'touch';
+    this.mirrorCursor.visible = this.cursor.visible && this.symmetry;
     if (this.cursor.visible) {
       const normal = hit.face.normal.clone().transformDirection(this.model.matrixWorld);
       this.cursor.position.copy(hit.point).addScaledVector(normal, 0.014);
       this.cursor.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
       this.cursor.scale.setScalar(0.11 + size * 0.59);
+      if (this.mirrorCursor.visible) {
+        const localPoint = this.model.worldToLocal(hit.point.clone());
+        localPoint.x = -localPoint.x;
+        const worldMirror = this.model.localToWorld(localPoint);
+        const mirrorNormal = hit.face.normal.clone();
+        mirrorNormal.x = -mirrorNormal.x;
+        mirrorNormal.transformDirection(this.model.matrixWorld);
+        this.mirrorCursor.position.copy(worldMirror).addScaledVector(mirrorNormal, 0.014);
+        this.mirrorCursor.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), mirrorNormal);
+        this.mirrorCursor.scale.setScalar(0.11 + size * 0.59);
+      }
     }
     if (!stroke || !hit || Math.hypot(event.clientX - stroke.x, event.clientY - stroke.y) < 5) return;
     this.mark(hit, event.clientX - stroke.x, stroke.y - event.clientY);
@@ -398,8 +576,13 @@ class ClayStudio {
       shapePot(this.project.pot, this.tool, hit.point.y, dx, dy, size, this.stroke.angle);
     } else {
       const point = this.model.worldToLocal(hit.point.clone());
+      const normal = hit.face.normal;
+      const radius = 0.11 + size * 0.59;
       const strength = this.tool === 'thumb' ? 0.5 : this.tool === 'loop' ? 0.78 : 0.82;
-      brushClay(this.project.field, this.tool, point.toArray(), hit.face.normal.toArray(), 0.11 + size * 0.59, strength);
+      brushClay(this.project.field, this.tool, point.toArray(), normal.toArray(), radius, strength);
+      if (this.symmetry && Math.abs(point.x) > 0.02) {
+        brushClay(this.project.field, this.tool, [-point.x, point.y, point.z], [-normal.x, normal.y, normal.z], radius, strength);
+      }
     }
     this.dirty = true;
   }
@@ -436,9 +619,11 @@ class ClayStudio {
   async exportModel() {
     const { ui } = this;
     let precise;
+    const wasSilhouette = this.silhouette;
     try {
       if (this.dirty) this.rebuild();
       if (!this.model.visible) throw new Error('Shape some clay before exporting.');
+      if (wasSilhouette) { this.silhouette = false; this.applyInspection(); }
       const format = ui.format.value;
       const height = this.project.heightMm * this.scale();
       const { printable, edges, refined } = prepareClayExport(this.model.geometry, height, this.project.field);
@@ -457,6 +642,7 @@ class ClayStudio {
     } catch (error) {
       this.announce(error.message || 'The model could not be exported.');
     } finally {
+      if (wasSilhouette) { this.silhouette = true; this.applyInspection(); }
       precise?.dispose();
     }
   }

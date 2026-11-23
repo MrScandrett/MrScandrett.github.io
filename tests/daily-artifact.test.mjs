@@ -29,10 +29,17 @@ test('bank: every lesson link and image exists, and both view types are in play'
   assert.ok(artifacts.filter((a) => a.image).length >= 8, 'needs plenty of 2D');
 });
 
-test('bank: 3D models come from the ones The Ages lesson already credits', () => {
-  const ages = JSON.parse(read('data/ages-lesson.json'));
-  const known = new Set([...ages.artifacts, ...ages.faithArtifacts].map((a) => a.sketchfabId));
-  for (const a of artifacts.filter((x) => x.sketchfab)) assert.ok(known.has(a.sketchfab), `${a.id} uses an unvetted model`);
+test('all ten eras share a credited model and photograph with the daily bank', () => {
+  const page = read('lessons/humanities/the-ages.html');
+  const runtime = JSON.parse(page.match(/id="ages-data">([^<]+)<\/script>/)[1]);
+  const known = new Set(runtime.artifacts.map((a) => a.sketchfabId));
+  for (const a of artifacts.filter((a) => a.sketchfab)) assert.ok(known.has(a.sketchfab), a.id);
+  for (const age of runtime.ages) {
+    const a = artifacts.find((entry) => entry.id === age.featuredArtifact);
+    assert.ok(a?.image && a.sketchfab, age.key);
+    assert.equal(runtime.artifacts.find((item) => item.key === a.id)?.sketchfabId, a.sketchfab);
+    assert.ok(page.includes(`data-ages-artifact="${a.id}">Explore`), age.key);
+  }
 });
 
 test('bank: the day rotation walks the whole bank and never repeats a neighbour', () => {

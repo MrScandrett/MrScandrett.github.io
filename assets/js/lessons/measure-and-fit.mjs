@@ -63,12 +63,14 @@ export const COUPON_SETS = {
   short: [0.1, 0.3, 0.5, 0.7, 1.0],
 };
 
-export function couponSizes(item, set = 'full') {
-  return (COUPON_SETS[set] || COUPON_SETS.full).map((d) => round(item + d, 0.01));
+export function couponSizes(item, set = 'full', shape = 'round') {
+  const offs = COUPON_SETS[set] || COUPON_SETS.full;
+  if (shape === 'peg') return [...offs].reverse().map((d) => Math.max(0.8, round(item - d, 0.01)));
+  return offs.map((d) => round(item + d, 0.01));
 }
 
 export function couponLayout({ item, shape = 'round', set = 'full', wall = 3, thickness = 5, slotLength = 20 }) {
-  const sizes = couponSizes(item, set);
+  const sizes = couponSizes(item, set, shape);
   const max = sizes[sizes.length - 1];
   const cellW = round(max + 2 * wall, 0.01);
   const cellH = shape === 'slot' ? round(slotLength + 2 * wall, 0.01) : cellW;
@@ -79,14 +81,68 @@ export function couponLayout({ item, shape = 'round', set = 'full', wall = 3, th
   };
 }
 
-const SEG = 64; // segments per round hole: 64 sides is within 0.12% of a true circle
+const SEG = 64; // segments per round hole/peg: 64 sides is within 0.12% of a true circle
 
-// A watertight plate with one hole per cell. Each cell's top face is the ring between its
-// hole outline and its own rectangle outline, sampled at matching angles so neighbouring
-// cells share vertices exactly; the walls come from the top face's boundary edges.
-// Cell 0 gets a notched corner so students can tell which end holds the smallest hole.
+// A watertight plate with one hole/slot or standing peg per cell.
+// Cell 0 gets a notched corner so students can tell which end holds the smallest size.
 export function buildCouponMesh(opts) {
   const L = couponLayout(opts);
+  if (L.shape === 'peg') {
+    const pts = [];
+    const index = new Map();
+    const id3 = (x, y, z) => {
+      const k = [Math.round(x * 1e4), Math.round(y * 1e4), Math.round(z * 1e4)].join(',');
+      let i = index.get(k);
+      if (i === undefined) { i = pts.length; pts.push([x, y, z]); index.set(k, i); }
+      return i;
+    };
+    const T = L.thickness;
+    const pegTop = T + Math.max(6, Math.min(12, Math.round(L.thickness * 1.4)));
+    const tris = [];
+    const topEdges = new Map();
+    L.cells.forEach((cell, ci) => {
+      const ax = L.cellW / 2, ay = L.cellH / 2, r = cell.size / 2;
+      const bound = [];
+      const baseRing = [], pegRing = [];
+      for (let k = 0; k < SEG; k++) {
+        const t = (2 * Math.PI * k) / SEG;
+        const c = Math.cos(t), s = Math.sin(t);
+        const hx = cell.cx + r * c, hy = cell.cy + r * s;
+        baseRing.push(id3(hx, hy, T));
+        pegRing.push(id3(hx, hy, pegTop));
+        const d = Math.min(Math.abs(c) > 1e-12 ? ax / Math.abs(c) : Infinity, Math.abs(s) > 1e-12 ? ay / Math.abs(s) : Infinity);
+        bound.push([cell.cx + d * c, cell.cy + d * s]);
+      }
+      if (ci === 0) {
+        const kc = (SEG * 5) / 8;
+        const c = Math.max(0, Math.min(0.35 * ax, ax - (r + 1) / Math.SQRT2));
+        bound[kc] = [cell.cx - ax + c, cell.cy - ay + c];
+      }
+      const botB = bound.map(([x, y]) => id3(x, y, 0));
+      const topB = bound.map(([x, y]) => id3(x, y, T));
+      const botC = id3(cell.cx, cell.cy, 0);
+      const topC = id3(cell.cx, cell.cy, pegTop);
+      for (let k = 0; k < SEG; k++) {
+        const k1 = (k + 1) % SEG;
+        // bottom plate face (outward -Z)
+        tris.push([botC, botB[k1], botB[k]]);
+        // top plate annulus (outward +Z)
+        tris.push([baseRing[k], topB[k], topB[k1]], [baseRing[k], topB[k1], baseRing[k1]]);
+        // peg cylinder wall (outward radially)
+        tris.push([baseRing[k], baseRing[k1], pegRing[k1]], [baseRing[k], pegRing[k1], pegRing[k]]);
+        // peg top cap (outward +Z)
+        tris.push([topC, pegRing[k], pegRing[k1]]);
+        const edgeKey = topB[k] + '>' + topB[k1];
+        topEdges.set(edgeKey, [topB[k], topB[k1], botB[k], botB[k1]]);
+      }
+    });
+    topEdges.forEach(([tb0, tb1, bb0, bb1], e) => {
+      const [u, v] = e.split('>');
+      if (topEdges.has(v + '>' + u)) return;
+      tris.push([tb1, tb0, bb0], [tb1, bb0, bb1]);
+    });
+    return { layout: L, positions: pts, triangles: tris };
+  }
   const pts = [];
   const index = new Map();
   const id = (x, y) => {
@@ -655,11 +711,13 @@ function mountCoupon(root, events) {
   function svgPreview(L) {
     const pad = 6, w = L.width, h = L.height;
     const parts = [];
-    parts.push(`<svg viewBox="${-pad} ${-pad - 9} ${w + 2 * pad} ${h + 2 * pad + 18}" role="img" aria-label="Top view of the fit test coupon: ${L.sizes.length} ${L.shape === 'slot' ? 'slots' : 'holes'} from ${fmt(L.sizes[0])} to ${fmt(L.sizes[L.sizes.length - 1])} mm, notched corner at the smallest.">`);
+    const noun = L.shape === 'slot' ? 'slots' : L.shape === 'peg' ? 'pegs' : 'holes';
+    parts.push(`<svg viewBox="${-pad} ${-pad - 9} ${w + 2 * pad} ${h + 2 * pad + 18}" role="img" aria-label="Top view of the fit test coupon: ${L.sizes.length} ${noun} from ${fmt(L.sizes[0])} to ${fmt(L.sizes[L.sizes.length - 1])} mm, notched corner at the smallest.">`);
     const c0 = Math.min(0.35 * L.cellW / 2, L.shape === 'slot' ? 0.7 * L.wall : L.cellW / 2 - (L.sizes[0] / 2 + 1) / Math.SQRT2);
     parts.push(`<path d="M${c0} ${h} L0 ${h - c0} V0 H${w} V${h} Z" transform="scale(1,-1) translate(0 ${-h})" fill="#d7e6f3" stroke="#2f5d86" stroke-width="0.4"/>`);
     L.cells.forEach((cell, i) => {
       if (L.shape === 'slot') parts.push(`<rect x="${cell.cx - cell.size / 2}" y="${cell.cy - L.slotLength / 2}" width="${cell.size}" height="${L.slotLength}" fill="#fbfaf6" stroke="#2f5d86" stroke-width="0.3"/>`);
+      else if (L.shape === 'peg') parts.push(`<circle cx="${cell.cx}" cy="${cell.cy}" r="${cell.size / 2}" fill="#7ea8cc" stroke="#1e3d5a" stroke-width="0.35"/>`);
       else parts.push(`<circle cx="${cell.cx}" cy="${cell.cy}" r="${cell.size / 2}" fill="#fbfaf6" stroke="#2f5d86" stroke-width="0.3"/>`);
       parts.push(`<text x="${cell.cx}" y="${h + 6}" font-size="${Math.min(4, L.cellW / 4)}" text-anchor="middle" fill="currentColor">${fmt(cell.size)}</text>`);
       parts.push(`<text x="${cell.cx}" y="-2.5" font-size="${Math.min(3.4, L.cellW / 4.5)}" text-anchor="middle" fill="currentColor">${String.fromCharCode(65 + i)}</text>`);
@@ -668,9 +726,30 @@ function mountCoupon(root, events) {
     return parts.join('');
   }
 
+  const SHEET_KEY = 'classroomos.measure-and-fit.coupon-sheet.v1';
+  let savedRows = {};
+  try { savedRows = JSON.parse(localStorage.getItem(SHEET_KEY) || '{}') || {}; } catch (_) { savedRows = {}; }
+  function captureSheet() {
+    const out = {};
+    sheet.querySelectorAll('tr').forEach((tr) => {
+      const letter = tr.querySelector('th')?.textContent?.trim();
+      if (!letter) return;
+      const val = tr.querySelector('input')?.value || '';
+      const fit = tr.querySelector('select')?.value || '';
+      if (val || fit) out[letter] = { val, fit };
+    });
+    return out;
+  }
+  function persistSheet() {
+    savedRows = { ...savedRows, ...captureSheet() };
+    try { localStorage.setItem(SHEET_KEY, JSON.stringify(savedRows)); } catch (_) {}
+  }
+
   function update() {
     const o = opts();
     slotRow.hidden = o.shape !== 'slot';
+    const currentEntries = captureSheet();
+    if (Object.keys(currentEntries).length) savedRows = { ...savedRows, ...currentEntries };
     if (!Number.isFinite(o.item) || o.item < 1 || o.item > 80) {
       current = null;
       preview.innerHTML = '';
@@ -683,15 +762,29 @@ function mountCoupon(root, events) {
     current = { o, L };
     preview.innerHTML = svgPreview(L);
     const big = L.width > 200;
-    const word = o.shape === 'slot' ? 'slot' : 'hole';
+    const word = o.shape === 'slot' ? 'slot' : o.shape === 'peg' ? 'peg' : 'hole';
     info.innerHTML = `Plate ${fmt(L.width, 1)} × ${fmt(L.height, 1)} × ${fmt(o.thickness, 1)} mm · ${L.sizes.length} ${word}s from ${fmt(L.sizes[0])} to ${fmt(L.sizes[L.sizes.length - 1])} mm · the notched corner marks ${word} A, the smallest.${big ? ' <strong>Over 200 mm long:</strong> choose “5 sizes” or check it fits your printer bed.' : ''}`;
     const fitName = (d) => (d < 0.05 ? 'no gap: line-to-line' : d <= 0.3 + 1e-9 ? 'press range' : d <= 0.6 + 1e-9 ? 'slip range' : 'loose range');
     sheet.innerHTML = L.sizes.map((s, i) => {
+      const letter = String.fromCharCode(65 + i);
       const extra = round(s - o.item, 0.01);
-      return `<tr><th scope="row">${String.fromCharCode(65 + i)}</th><td>${fmt(s)}</td><td>+${fmt(extra)} (${fmt(extra / 2)} per side, ${fitName(extra)})</td><td><input type="text" inputmode="decimal" aria-label="Printed size of ${word} ${String.fromCharCode(65 + i)}" placeholder="mm"></td><td><select aria-label="How ${word} ${String.fromCharCode(65 + i)} fits"><option value="">—</option><option>Won't go in</option><option>Press: push, stays</option><option>Slip: slides, no wobble</option><option>Loose: drops, turns</option><option>Too loose</option></select></td></tr>`;
+      const mag = Math.abs(extra);
+      const sign = extra < 0 ? '−' : '+';
+      return `<tr data-row="${letter}"><th scope="row">${letter}</th><td>${fmt(s)}</td><td>${sign}${fmt(mag)} (${fmt(mag / 2)} per side, ${fitName(mag)})</td><td><input type="text" inputmode="decimal" aria-label="Printed size of ${word} ${letter}" placeholder="mm"></td><td><select aria-label="How ${word} ${letter} fits"><option value="">—</option><option>Won't go in</option><option>Press: push, stays</option><option>Slip: slides, no wobble</option><option>Loose: drops, turns</option><option>Too loose</option></select></td></tr>`;
     }).join('');
+    sheet.querySelectorAll('tr[data-row]').forEach((tr) => {
+      const entry = savedRows[tr.dataset.row];
+      if (!entry) return;
+      const inp = tr.querySelector('input');
+      const sel = tr.querySelector('select');
+      if (inp && entry.val) inp.value = entry.val;
+      if (sel && entry.fit) sel.value = entry.fit;
+    });
     dlNote.textContent = '';
   }
+
+  sheet.addEventListener('input', persistSheet);
+  sheet.addEventListener('change', persistSheet);
 
   dl.addEventListener('click', () => {
     if (!current) return;
@@ -711,10 +804,19 @@ function mountCoupon(root, events) {
   root.addEventListener('input', (e) => { if (!e.target.closest('[data-mf-c-sheet]')) update(); });
   root.addEventListener('change', (e) => { if (!e.target.closest('[data-mf-c-sheet]')) update(); });
   events.on('measured', ({ size: s, kind }) => {
-    if (kind === 'outside') { item.value = fmt(s); update(); }
+    if ((kind === 'outside' || kind === 'inside') && Number.isFinite(s)) {
+      item.value = fmt(s);
+      shape.value = kind === 'inside' ? 'peg' : (shape.value === 'peg' ? 'round' : shape.value);
+      update();
+    }
   });
   events.on('fit', ({ item: it, kind }) => {
-    if (kind === 'hole' && Number.isFinite(it) && document.activeElement !== item) { item.value = fmt(it); update(); }
+    if (Number.isFinite(it) && document.activeElement !== item) {
+      item.value = fmt(it);
+      if (kind === 'peg' && shape.value !== 'peg') shape.value = 'peg';
+      else if (kind === 'hole' && shape.value === 'peg') shape.value = 'round';
+      update();
+    }
   });
   update();
 }

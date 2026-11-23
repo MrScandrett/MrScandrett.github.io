@@ -12,11 +12,24 @@ export function buildRigExport(THREE,state) {
  return {rig,clip};
 }
 export function setupRigStudio({host,edit,getState,say,THREE}) {
- const panel=document.createElement('section');panel.className='d3w-studio-tools';
- panel.innerHTML=`<h2>Test the bend · build a reusable asset</h2><p>Blue vertices follow LimbRoot; red vertices follow BendJoint. Intermediate colors show blended influence. Weight colors are a diagnostic overlay and are excluded from GLB.</p><div class="d3w-presets"><button type="button" data-rig-pose="0">Rest pose · 0°</button><button type="button" data-rig-pose="45">Bend · 45°</button><button type="button" data-rig-pose="70">Stress test · 70°</button><button type="button" data-rig-pose="-45">Reverse · −45°</button><button type="button" data-rig-glb>Export rig + motion GLB</button></div><p>GLB includes a rest-pose mesh, two named bones, skin weights, surface color and a looping BendTest clip. Coordinates use meters and Y up; the starter is 3 meters tall. Scale the whole rig in the destination app. Save project keeps your editable recipe; OBJ is a static pose.</p><p>Reuse as a flexible tentacle segment, robot hose or stylized limb. In Blender import glTF 2.0, or drag the GLB into Godot. Play BendTest and rotate BendJoint independently. A full character needs additional bones and carefully painted weights.</p>`;
- host.querySelector('.d3w-layout').before(panel);
- for(const b of panel.querySelectorAll('[data-rig-pose]'))b.addEventListener('click',()=>edit(()=>{getState().params.angle=Number(b.dataset.rigPose);}));
- const button=panel.querySelector('[data-rig-glb]');
+ const fitted=host.classList.contains('d3w-fit')&&host.querySelector('[data-creation-primary]');
+ const bar=document.createElement(fitted?'div':'section');
+ if(fitted){
+  bar.className='d3w-toolbar d3w-starting-tools';
+  bar.setAttribute('role','group');
+  bar.setAttribute('aria-label','Bend stress tests and rig export');
+  bar.innerHTML=`<span>Bend poses</span><button type="button" data-rig-pose="0">Rest · 0°</button><button type="button" data-rig-pose="45">Bend · 45°</button><button type="button" data-rig-pose="70">Stress · 70°</button><button type="button" data-rig-pose="-45">Reverse · −45°</button><button type="button" data-rig-glb>Export rig + motion GLB</button>`;
+  host.querySelector('.d3w-layout').before(bar);
+  const notes=document.createElement('details');notes.className='d3w-transfer';
+  notes.innerHTML=`<summary>Weight colors &amp; rig GLB export guide</summary><p>Blue vertices follow LimbRoot; red vertices follow BendJoint. Intermediate colors show blended influence. Weight colors are a diagnostic overlay and are excluded from GLB.</p><p>GLB includes a rest-pose mesh, two named bones, skin weights, surface color and a looping BendTest clip. Coordinates use meters and Y up; the starter is 3 meters tall. Scale the whole rig in the destination app. Save project keeps your editable recipe; OBJ is a static pose.</p><p>Reuse as a flexible tentacle segment, robot hose or stylized limb. In Blender import glTF 2.0, or drag the GLB into Godot. Play BendTest and rotate BendJoint independently. A full character needs additional bones and carefully painted weights.</p>`;
+  host.querySelector('[data-creation-primary]').after(notes);
+ }else{
+  bar.className='d3w-studio-tools';
+  bar.innerHTML=`<h2>Test the bend · build a reusable asset</h2><p>Blue vertices follow LimbRoot; red vertices follow BendJoint. Intermediate colors show blended influence. Weight colors are a diagnostic overlay and are excluded from GLB.</p><div class="d3w-presets"><button type="button" data-rig-pose="0">Rest pose · 0°</button><button type="button" data-rig-pose="45">Bend · 45°</button><button type="button" data-rig-pose="70">Stress test · 70°</button><button type="button" data-rig-pose="-45">Reverse · −45°</button><button type="button" data-rig-glb>Export rig + motion GLB</button></div><p>GLB includes a rest-pose mesh, two named bones, skin weights, surface color and a looping BendTest clip. Coordinates use meters and Y up; the starter is 3 meters tall. Scale the whole rig in the destination app. Save project keeps your editable recipe; OBJ is a static pose.</p><p>Reuse as a flexible tentacle segment, robot hose or stylized limb. In Blender import glTF 2.0, or drag the GLB into Godot. Play BendTest and rotate BendJoint independently. A full character needs additional bones and carefully painted weights.</p>`;
+  host.querySelector('.d3w-layout').before(bar);
+ }
+ for(const b of bar.querySelectorAll('[data-rig-pose]'))b.addEventListener('click',()=>edit(()=>{getState().params.angle=Number(b.dataset.rigPose);}));
+ const button=bar.querySelector('[data-rig-glb]');
  button.addEventListener('click',async()=>{
   button.disabled=true;let rig;
   try{

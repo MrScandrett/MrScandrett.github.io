@@ -14,7 +14,7 @@ const NS = 'http://www.w3.org/2000/svg';
 const storageKey = 'classroomos-blueprint-v1';
 const views = ['front', 'top', 'right'];
 const coordinates = ['x1', 'y1', 'x2', 'y2'];
-const shapeKinds = { rect: 'Rectangle', line: 'Line', dimension: 'Dimension' };
+const shapeKinds = { rect: 'Rectangle', line: 'Line', circle: 'Circle', dimension: 'Dimension' };
 const projectTitle = app.querySelector('[data-project-title]');
 const projectGuide = app.querySelector('[data-project-guide]');
 const projectStatus = app.querySelector('[data-project-status]');
@@ -86,8 +86,24 @@ const hints = {
   select: 'Select or drag an edge to move a shape. Use Edit shape for precise changes.',
   line: 'Drag between two points. Hold Shift for a horizontal or vertical edge.',
   rect: 'Drag opposite corners. Each small grid square represents 10 mm.',
+  circle: 'Drag from center outward to set the radius. Hold Shift to lock axis.',
   dimension: 'Drag between endpoints to measure. Place dimensions beside the object.'
 };
+
+function shapeRadius(s) {
+  return Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+}
+
+function shapeBounds(s) {
+  if (s.kind === 'circle') {
+    const r = shapeRadius(s);
+    return { minX: s.x1 - r, minY: s.y1 - r, maxX: s.x1 + r, maxY: s.y1 + r };
+  }
+  return {
+    minX: Math.min(s.x1, s.x2), minY: Math.min(s.y1, s.y2),
+    maxX: Math.max(s.x1, s.x2), maxY: Math.max(s.y1, s.y2)
+  };
+}
 
 function point(event, constrain = false) {
   const p = svg.createSVGPoint();
@@ -112,7 +128,33 @@ function save() {
     app.querySelector('.bp-save-note').textContent = 'Browser autosave is unavailable. Save a project file to keep editing later.';
   }
 }
-function shapeNode(s,i){let n;if(s.kind==='rect')n=el('rect',{x:Math.min(s.x1,s.x2),y:Math.min(s.y1,s.y2),width:Math.abs(s.x2-s.x1),height:Math.abs(s.y2-s.y1)});else n=el('line',{x1:s.x1,y1:s.y1,x2:s.x2,y2:s.y2});n.classList.add(s.kind==='dimension'?'draft-dimension':'draft-object');if(s.type==='hidden')n.classList.add('draft-hidden');if(s.type==='center')n.classList.add('draft-center');n.dataset.index=i;if(s.kind==='dimension'){const dx=s.x2-s.x1,dy=s.y2-s.y1,mm=Math.round(Math.hypot(dx,dy)/2);const t=el('text',{x:(s.x1+s.x2)/2,y:(s.y1+s.y2)/2-8,'text-anchor':'middle',class:'draft-dimension-text'});t.textContent=mm+' mm';const g=el('g',{'data-index':i});g.append(n,t);return g}return n}
+function shapeNode(s,i){
+  const g=el('g',{'data-index':i});
+  let n,hit;
+  if(s.kind==='rect'){
+    const attrs={x:Math.min(s.x1,s.x2),y:Math.min(s.y1,s.y2),width:Math.abs(s.x2-s.x1),height:Math.abs(s.y2-s.y1)};
+    n=el('rect',attrs);hit=el('rect',attrs);
+  }else if(s.kind==='circle'){
+    const attrs={cx:s.x1,cy:s.y1,r:shapeRadius(s)};
+    n=el('circle',attrs);hit=el('circle',attrs);
+  }else{
+    const attrs={x1:s.x1,y1:s.y1,x2:s.x2,y2:s.y2};
+    n=el('line',attrs);hit=el('line',attrs);
+  }
+  n.classList.add(s.kind==='dimension'?'draft-dimension':'draft-object');
+  if(s.type==='hidden')n.classList.add('draft-hidden');
+  if(s.type==='center')n.classList.add('draft-center');
+  if(s.kind==='dimension'){
+    const dx=s.x2-s.x1,dy=s.y2-s.y1,mm=Math.round(Math.hypot(dx,dy)/2);
+    const t=el('text',{x:(s.x1+s.x2)/2,y:(s.y1+s.y2)/2-8,'text-anchor':'middle',class:'draft-dimension-text'});
+    t.textContent=mm+' mm';
+    g.append(n,hit,t);
+  }else{
+    g.append(n,hit);
+  }
+  hit.classList.add('draft-hit');
+  return g;
+}
 function selectShape(index) {
   selected = index;
   const shape = project.views[view][index];
@@ -121,8 +163,18 @@ function selectShape(index) {
   shapeChoice.value = shape ? String(index) : '';
   shapeEdit.hidden = deleteButton.disabled = !shape;
   shapeStatus.textContent = '';
+  const radiusLabel = shapeEdit.querySelector('[data-circle-radius]');
+  const typeLabel = shapeEdit.querySelector('[data-shape-line-type]');
   if (shape) {
     for (const axis of coordinates) shapeEdit.elements[axis].value = shape[axis] / 2;
+    if (radiusLabel) {
+      radiusLabel.hidden = shape.kind !== 'circle';
+      if (shape.kind === 'circle') shapeEdit.elements.r.value = +(shapeRadius(shape) / 2).toFixed(2);
+    }
+    if (typeLabel) {
+      typeLabel.hidden = shape.kind === 'dimension';
+      shapeEdit.elements.type.value = shape.type;
+    }
   }
 }
 
@@ -157,7 +209,7 @@ function review(){
  setCheck('views',viewsReady);
  setCheck('dimensions',all.every(a=>a.some(x=>x.kind==='dimension')));
  setCheck('line',geometry.some(x=>x.type==='hidden'||x.type==='center'));
- setCheck('fit',geometry.length>0&&flat.every(x=>Math.min(x.x1,x.x2)>=20&&Math.max(x.x1,x.x2)<=780&&Math.min(x.y1,x.y2)>=60&&Math.max(x.y1,x.y2)<=480&&!(Math.max(x.x1,x.x2)>495&&Math.max(x.y1,x.y2)>400)));
+ setCheck('fit',geometry.length>0&&flat.every(x=>{const b=shapeBounds(x);return b.minX>=20&&b.maxX<=780&&b.minY>=60&&b.maxY<=480&&!(b.maxX>495&&b.maxY>400);}));
  app.querySelector('[data-progress]').textContent=app.querySelectorAll('.bp-checks .is-done').length+' / 4';
  const hasOutline=project.views[view].some(x=>x.kind!=='dimension'),hasDim=project.views[view].some(x=>x.kind==='dimension');
  const guides={front:'Front = width × height. Limit: 120 × 80 mm. Match width in the top view and height in the right view.',top:'Top = width × depth. Limit: 120 × 90 mm. Locate the phone slot and pencil compartment here.',right:'Right = depth × height. Limit: 90 × 80 mm. Use hidden lines for features behind a visible face.'};
@@ -181,10 +233,9 @@ function shapeAt(p) {
   const { start, original } = gesture;
   if (!original) return { kind: tool, type: lineType.value, x1: start.x, y1: start.y, x2: p.x, y2: p.y };
 
-  const dx = Math.max(-Math.min(original.x1, original.x2),
-    Math.min(800 - Math.max(original.x1, original.x2), p.x - start.x));
-  const dy = Math.max(-Math.min(original.y1, original.y2),
-    Math.min(500 - Math.max(original.y1, original.y2), p.y - start.y));
+  const b = shapeBounds(original);
+  const dx = Math.max(-b.minX, Math.min(800 - b.maxX, p.x - start.x));
+  const dy = Math.max(-b.minY, Math.min(500 - b.maxY, p.y - start.y));
   return { ...original, x1: original.x1 + dx, x2: original.x2 + dx, y1: original.y1 + dy, y2: original.y2 + dy };
 }
 
@@ -218,6 +269,7 @@ svg.addEventListener('pointermove', event => {
     const dx = shape.x2 - shape.x1;
     const dy = shape.y2 - shape.y1;
     status.textContent = tool === 'rect' ? 'Width ' + Math.abs(dx) / 2 + ' mm × height ' + Math.abs(dy) / 2 + ' mm' :
+      tool === 'circle' ? 'Radius ' + +(Math.hypot(dx, dy) / 2).toFixed(1) + ' mm (Ø ' + +(Math.hypot(dx, dy)).toFixed(1) + ' mm) · release to place' :
       Math.round(Math.hypot(dx, dy) / 2) + ' mm · release to place';
   }
 });
@@ -265,17 +317,30 @@ shapeEdit.addEventListener('submit', event => {
   const original = project.views[view][selected];
   const shape = { ...original };
   for (const axis of coordinates) shape[axis] = shapeEdit.elements[axis].valueAsNumber * 2;
+  if (shape.kind === 'circle' && shapeEdit.elements.r) {
+    const prevR = +(shapeRadius(original) / 2).toFixed(2);
+    const nextR = shapeEdit.elements.r.valueAsNumber;
+    if (Number.isFinite(nextR) && nextR > 0 && Math.abs(nextR - prevR) > 1e-4) {
+      const ang = Math.atan2(shape.y2 - shape.y1, shape.x2 - shape.x1);
+      shape.x2 = Math.max(0, Math.min(800, Math.round(shape.x1 + Math.cos(ang) * nextR * 2)));
+      shape.y2 = Math.max(0, Math.min(500, Math.round(shape.y1 + Math.sin(ang) * nextR * 2)));
+    }
+  }
+  if (shape.kind !== 'dimension' && shapeEdit.elements.type) {
+    const nextType = shapeEdit.elements.type.value;
+    if (['object', 'hidden', 'center'].includes(nextType)) shape.type = nextType;
+  }
   if (!hasSize(shape)) {
     shapeStatus.textContent = 'Enter coordinates that give the shape a length' + (shape.kind === 'rect' ? ' and width.' : '.');
     return;
   }
-  if (coordinates.some(axis => shape[axis] !== original[axis])) {
+  if (coordinates.some(axis => shape[axis] !== original[axis]) || shape.type !== original.type) {
     checkpoint();
     project.views[view][selected] = shape;
     save();
     render(selected);
   }
-  shapeStatus.textContent = 'Coordinates updated.';
+  shapeStatus.textContent = 'Shape updated.';
 });
 
 function removeSelected() {
@@ -287,22 +352,13 @@ function removeSelected() {
   render();
   status.textContent = 'Selected shape removed.';
 }
-app.addEventListener('keydown',e=>{if(/input|select|textarea/i.test(e.target.tagName))return;if(e.key==='Escape'){cancel();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();history(e.shiftKey);return}if(e.ctrlKey||e.metaKey||e.altKey)return;const map={v:'select',l:'line',r:'rect',d:'dimension'};if(map[e.key.toLowerCase()])setTool(map[e.key.toLowerCase()]);if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();removeSelected()}});
+app.addEventListener('keydown',e=>{if(/input|select|textarea/i.test(e.target.tagName))return;if(e.key==='Escape'){cancel();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();history(e.shiftKey);return}if(e.ctrlKey||e.metaKey||e.altKey)return;const map={v:'select',l:'line',r:'rect',c:'circle',d:'dimension'};if(map[e.key.toLowerCase()])setTool(map[e.key.toLowerCase()]);if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();removeSelected()}});
 function history(redo=false){const from=redo?redoStack:undoStack,to=redo?undoStack:redoStack;if(!from.length)return;cancel();to.push(JSON.stringify(project));project=JSON.parse(from.pop());save();render();status.textContent=redo?'Change restored.':'Change undone.'}
 app.querySelector('[data-action="undo"]').addEventListener('click',()=>history());
 app.querySelector('[data-action="redo"]').addEventListener('click',()=>history(true));
 app.querySelector('[data-action="delete"]').addEventListener('click',removeSelected);
 app.querySelector('[data-action="clear"]').addEventListener('click',()=>{if(!project.views[view].length)return;cancel();checkpoint();project.views[view]=[];save();render();status.textContent=view+' view cleared. Undo restores it.'});
 app.querySelector('[data-zoom]').addEventListener('change',e=>{svg.style.width=(Number(e.target.value)*100)+'%'});
-const fullscreenButton=app.querySelector('[data-action="fullscreen"]');
-function syncFullscreen(){fullscreenButton.textContent=document.fullscreenElement===app||app.classList.contains('is-immersive')?'↙ Exit fullscreen':'⛶ Enter fullscreen'}
-fullscreenButton.addEventListener('click',async()=>{
- if(document.fullscreenElement===app){await document.exitFullscreen();return}
- if(app.classList.contains('is-immersive')){app.classList.remove('is-immersive');document.body.classList.remove('bp-immersed');syncFullscreen();return}
- try{if(!app.requestFullscreen)throw new Error('unsupported');await app.requestFullscreen()}catch(e){app.classList.add('is-immersive');document.body.classList.add('bp-immersed');syncFullscreen()}
-});
-document.addEventListener('fullscreenchange',syncFullscreen);
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&app.classList.contains('is-immersive')){app.classList.remove('is-immersive');document.body.classList.remove('bp-immersed');syncFullscreen();fullscreenButton.focus()}});
 function replaceProject(next, message) {
   cancel();
   checkpoint();

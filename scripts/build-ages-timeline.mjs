@@ -60,7 +60,22 @@ const problems = [];
 const ages = lesson.ages;
 const chapters = ages.filter((a) => a.tablets);
 const lenses = lesson.lenses;
+const bank = JSON.parse(read('data/daily-artifact-bank.json')).artifacts;
+const featured = new Map();
 const allArtifacts = lesson.artifacts.concat(lesson.faithArtifacts);
+for (const age of ages) {
+  const a = bank.find((entry) => entry.id === age.featuredArtifact);
+  if (!a?.sketchfab || !a.image || !a.credit2d || !a.credit3d || !fs.existsSync(path.join(ROOT, a.image))) {
+    throw new Error(age.key + ': featured artifact needs a credited model and local image');
+  }
+  featured.set(age.key, a);
+  const prior = allArtifacts.find((item) => item.key === a.id);
+  const record = prior || { key: a.id, label: a.name, date: a.dateLabel, note: a.blurb };
+  record.figure = { src: rel(a.image), caption: a.blurb, credit: a.credit2d, place: a.place };
+  record.sketchfabId = a.sketchfab;
+  record.credit = `<a href="${esc(a.credit3d.url)}" target="_blank" rel="noopener">${esc(a.credit3d.text)}</a>`;
+  if (!prior) allArtifacts.push(record);
+}
 for (const a of ages) if (a.chapter && !chapters.some((c) => c.key === a.chapter)) problems.push(`age ${a.key}: unknown chapter ${a.chapter}`);
 const imageFiles = [];
 const checkImage = (fig, where) => { if (fig) { imageFiles.push(fig.src); if (!fs.existsSync(path.join(ROOT, fig.src))) problems.push(`${where}: missing image ${fig.src}`); } };
@@ -72,6 +87,9 @@ function add(ev) {
   const parsed = T.parseWhen(ev.when);
   if (!parsed) problems.push(`unreadable date "${ev.when}" (${ev.label})`);
   if (ev.lesson && !fs.existsSync(path.join(ROOT, ev.lesson))) problems.push(`missing lesson ${ev.lesson} (${ev.label})`);
+  if (ev.lessonSection && (!ev.lesson || !fs.existsSync(path.join(ROOT, ev.lesson)) || !read(ev.lesson).includes(`id="${ev.lessonSection}"`))) {
+    problems.push(`missing lesson section ${ev.lesson}#${ev.lessonSection} (${ev.label})`);
+  }
   if (!ev.era && !config.colors[ev.strand]) problems.push(`unknown strand "${ev.strand}" (${ev.label})`);
   const item = { ...ev, parsed, facets: [] };
   if (parsed) items.push(item);
@@ -87,7 +105,7 @@ for (const age of ages.filter((a) => a.when)) {
   });
 }
 for (const ev of config.events) add(ev);
-for (const a of lesson.artifacts) add({ id: a.key, when: a.date, label: a.label, text: a.note, strand: 'Civilization', artifact: a.key, major: (config.majorArtifacts || []).includes(a.key) });
+for (const a of lesson.artifacts) add({ id: a.key, when: a.date, label: a.label, text: a.note, lesson: a.lesson, lessonSection: a.lessonSection, source: a.source, strand: 'Civilization', artifact: a.key, major: (config.majorArtifacts || []).includes(a.key) });
 for (const a of lesson.faithArtifacts) add({ id: a.key, when: a.date, label: a.label, text: a.note, strand: 'Faith & Bible', artifact: a.key });
 for (const ev of Object.values(config.christianEvents)) add({ ...ev, strand: 'Faith & Bible' });
 
@@ -149,8 +167,9 @@ function li(ev) {
   if (ev.ages.length) attrs.push(`data-ages-eras="${ev.ages.join(' ')}"`);
   if (ev.era || ev.artifact || ev.facets.length) attrs.push('data-ages-lesson');
   const link = ev.lesson
-    ? ` <a class="ages-gt-link" href="${esc(rel(ev.lesson))}">${esc(lessonTitle(ev.lesson))} →</a>`
-    : ev.artifact ? ` <button type="button" class="ages-gt-3d" data-ages-artifact="${esc(ev.artifact)}">View the 3D model</button>`
+    ? ` <a class="ages-gt-link" href="${esc(rel(ev.lesson) + (ev.lessonSection ? "#" + ev.lessonSection : ""))}">${esc(lessonTitle(ev.lesson))} →</a>`
+    : '';
+  const action = ev.artifact ? ` <button type="button" class="ages-gt-3d" data-ages-artifact="${esc(ev.artifact)}">View the 3D model</button>`
     : ev.anchor ? ` <a class="ages-gt-link" href="${ev.anchor}" data-ages-open>${esc(ev.anchorText)} ↓</a>` : '';
   const source = ev.source ? ` <a class="ages-gt-source" href="${esc(ev.source)}" target="_blank" rel="noopener">Historical source ↗</a>` : '';
   const text = ev.text ? ` — ${esc(trimText(ev.text, ev.era ? 320 : 260))}` : '';
@@ -161,7 +180,11 @@ function li(ev) {
     const links = ev.facets.map((c) => `<a href="#${c.id}" data-ages-open>${esc(c.facet)}</a>`).join(' ');
     more = `<span class="ages-gt-in-lesson">${thumb}<span class="ages-gt-facets"><span>In this lesson:</span> ${links}</span></span>`;
   }
-  return `<li ${attrs.join(' ')}><strong>${esc(ev.label)}</strong>${text}${link}${source}${more}</li>`;
+  const feature = featured.get(ev.key) || (ev.id === slug(ages.find((a) => a.key === 'future').timeline.label) && featured.get('future'));
+  if (feature) {
+    more += `<figure data-zoomable data-lightbox-group="ages-artifacts" class="ages-gt-thumb"><img src="${esc(rel(feature.image))}" alt="${esc(feature.name)}" loading="lazy"><figcaption>${esc(feature.name)}. ${esc(feature.blurb)} <a href="${esc(feature.credit2d.url)}">${esc(feature.credit2d.text)}</a></figcaption></figure> <button type="button" class="ages-gt-3d" data-ages-artifact="${esc(feature.id)}">Explore ${esc(feature.name)} in 3D</button>`;
+  }
+  return `<li ${attrs.join(' ')}><strong>${esc(ev.label)}</strong>${text}${link}${action}${source}${more}</li>`;
 }
 
 // ------------------------------------------------------------- page regions
@@ -250,13 +273,13 @@ const atlas = [
   '    <button type="button" class="ages-stepper-btn" id="ages-next-era" aria-label="Next era">Next Era &#8594;</button>',
   '  </div>',
   '  <div class="ages-era-tabs" id="ages-atlas-tabs" role="tablist" aria-label="Era chapters">',
-  ...chapters.map((a, i) => `    <button type="button" class="ages-atlas-tab${i ? '' : ' is-active'}" data-era-tab="${a.key}" role="tab" aria-selected="${!i}"><span>${pad(i + 1)}</span> ${esc(a.tab)}</button>`),
+  ...chapters.map((a, i) => `    <button type="button" class="ages-atlas-tab${i ? '' : ' is-active'}" data-era-tab="${a.key}" id="atlas-tab-${a.key}" aria-controls="atlas-chapter-${a.key}" tabindex="${i ? -1 : 0}" role="tab" aria-selected="${!i}"><span>${pad(i + 1)}</span> ${esc(a.tab)}</button>`),
   '  </div>',
   '</div>'
 ];
 chapters.forEach((a, i) => {
   atlas.push('', `<!-- CHAPTER ${pad(i + 1)}: ${a.name.toUpperCase()} -->`,
-    `<div class="ages-era-chapter${i ? '' : ' is-active'}" data-era-chapter="${a.key}" role="tabpanel" aria-label="Chapter ${pad(i + 1)}: ${esc(a.name)}">`);
+    `<div class="ages-era-chapter${i ? '' : ' is-active'}" data-era-chapter="${a.key}" role="tabpanel" id="atlas-chapter-${a.key}" aria-labelledby="atlas-tab-${a.key}">`);
   for (const t of a.tablets) atlas.push(indent(tabletHtml(t, a), 2));
   if (a.turningPoints) atlas.push(indent(turningHtml(a.turningPoints), 2));
   if (a.breakthroughs) {
@@ -322,7 +345,7 @@ regions.daniel = [
 // The page script's data: everything it needs, nothing it has to copy by hand.
 const runtime = {
   ages: ages.map((a) => ({
-    key: a.key, name: a.name, when: a.when || 'Hypothesized', chapter: a.chapter || a.key, card: a.chapter ? a.card : `tablet-${a.key}`,
+    key: a.key, featuredArtifact: a.featuredArtifact, name: a.name, when: a.when || 'Hypothesized', chapter: a.chapter || a.key, card: a.chapter ? a.card : `tablet-${a.key}`,
     system: a.system, shift: a.shift, christian: a.christian, text: a.text, question: a.question,
     profile: a.tablets && (a.tablets.find((t) => t.profile) || {}).profile,
     lens: a.lens, bridge: !!a.chapter

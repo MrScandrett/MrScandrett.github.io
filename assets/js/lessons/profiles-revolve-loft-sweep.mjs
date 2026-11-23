@@ -14,7 +14,7 @@
 
 import { shapeById, smoothPoints } from '../workbench/shapes.mjs';
 import { resolveParams, defaultParams, nice } from '../workbench/model.mjs';
-import { DEFAULT_PRINTER, printerFit } from '../fab-io.mjs';
+import { DEFAULT_PRINTER, printerFit, prepareForPrint, writeBinaryStl } from '../fab-io.mjs';
 
 export const MODES = {
   extrude: { shape: 'sketch-extrude', label: 'Extrude', help: 'One closed outline, pushed straight up. Twist it or shrink the top to taper it.' },
@@ -262,6 +262,15 @@ async function mountLab(root) {
       });
     } catch (error) {
       built = null;
+      viewer?.clear();
+      framed = false;
+      const stlBtn = $('[data-pr-stl]');
+      if (stlBtn) stlBtn.disabled = true;
+      const openLink = $('[data-pr-open]');
+      if (openLink) {
+        openLink.setAttribute('aria-disabled', 'true');
+        openLink.removeAttribute('href');
+      }
       root.dataset.prState = JSON.stringify({ mode: m, error: error.message });
       status.replaceChildren(h('p', { class: 'pr-bad', text: error.message }));
       return;
@@ -270,8 +279,14 @@ async function mountLab(root) {
     viewer?.show(out.mesh, !framed);
     framed = true;
     report(m, params, out);
+    const stlBtn = $('[data-pr-stl]');
+    if (stlBtn) stlBtn.disabled = false;
     const href = workbenchHref(root.dataset.prBase || '../../../', m, params, `my-${m}`);
-    $('[data-pr-open]').href = href;
+    const openLink = $('[data-pr-open]');
+    if (openLink) {
+      openLink.removeAttribute('aria-disabled');
+      openLink.href = href;
+    }
     root.dataset.prState = JSON.stringify({ mode: m, volume: +out.volume.toFixed(1), size: out.size.map((v) => +v.toFixed(1)), triangles: out.mesh.triVerts.length / 3 });
   }
 
@@ -311,6 +326,25 @@ async function mountLab(root) {
     setMode(state.mode); save();
   });
   $('[data-pr-snap]').addEventListener('change', () => pads.forEach((p) => p?.draw()));
+  $('[data-pr-stl]')?.addEventListener('click', () => {
+    if (!built?.mesh) return;
+    const { vertProperties, triVerts, numProp } = built.mesh;
+    const tris = triVerts.length;
+    const raw = new Float32Array(tris * 3);
+    for (let i = 0; i < tris; i++) {
+      const base = triVerts[i] * numProp;
+      raw[i * 3] = vertProperties[base];
+      raw[i * 3 + 1] = vertProperties[base + 1];
+      raw[i * 3 + 2] = vertProperties[base + 2];
+    }
+    const stl = writeBinaryStl(prepareForPrint(raw, { yUp: false }), `ClassroomOS Profile Lab (${state.mode}, mm)`);
+    const url = URL.createObjectURL(new Blob([stl], { type: 'model/stl' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `profile-${state.mode}.stl`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  });
   new ResizeObserver(() => pads.forEach((p) => p?.draw())).observe(canvases[0].closest('[data-pr-pads]'));
 
   // the cup designer hands its silhouette over here
