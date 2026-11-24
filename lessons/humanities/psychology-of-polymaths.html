@@ -39,6 +39,23 @@
       /* Night: polymath names use a day-only ink on dark cards. */
     :where(html[data-lighting="night"]) .pop-poly-name { color: #ece8f6; }
     @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .pop-poly-name { color: #ece8f6; } }
+    .pop-filter-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; margin: 0.7rem 0 0.35rem; }
+    .pop-gallery-count { font-size: 0.78rem; font-weight: 700; color: var(--text-muted, #64748b); }
+    .fl-lab-buttons button[aria-pressed="true"] { background: var(--fl-accent, #7c3aed); border-color: var(--fl-accent, #7c3aed); color: #fff; }
+    .pop-planner { border: 1px solid var(--line, #d2d2d7); border-radius: 14px; padding: 1rem; margin-top: 0.9rem; background: color-mix(in srgb, var(--fl-accent-2, #0891b2) 5%, transparent); display: grid; gap: 0.75rem; }
+    .pop-planner-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+    .pop-planner label { display: grid; gap: 0.28rem; font-size: 0.82rem; font-weight: 700; color: var(--text, #1d1d1f); }
+    .pop-planner select, .pop-planner input[type="text"], .pop-planner textarea { width: 100%; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; padding: 0.45rem 0.65rem; font: inherit; background: var(--white, #fff); color: var(--text, #1d1d1f); }
+    .pop-collision-box { border-left: 3.5px solid var(--fl-accent, #7c3aed); padding: 0.75rem 0.95rem; border-radius: 0 10px 10px 0; background: var(--white, #fff); }
+    .pop-collision-box strong { display: block; margin-bottom: 0.3rem; color: var(--fl-accent, #7c3aed); font-size: 0.92rem; }
+    .pop-collision-box p { margin: 0.25rem 0; font-size: 0.82rem; }
+    :where(html[data-lighting="night"]) .pop-collision-box,
+    :where(html[data-lighting="night"]) .pop-planner select,
+    :where(html[data-lighting="night"]) .pop-planner input[type="text"],
+    :where(html[data-lighting="night"]) .pop-planner textarea { background: #2c2c2e; color: #f5f5f7; border-color: rgba(255,255,255,0.16); }
+    :where(html[data-lighting="night"]) .pop-planner label { color: #f5f5f7; }
+    @media (max-width: 600px) { .pop-planner-grid { grid-template-columns: 1fr; } }
+    @media print { .pop-filter-row, #pop-generate-collision { display: none; } }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -144,6 +161,30 @@
               <div class="ll-accordion-body">No. Every laureate in the Root-Bernstein data still won the prize in one field — they didn't spread evenly across three. Every world-class athlete in the Güllich analysis still specialized eventually. Range didn't replace depth; it preceded and fed it. That distinction is the whole point of the principles later in this lesson.</div>
             </details>
           </div>
+
+          <div class="fl-lab" id="pop-trajectory-lab" data-present data-memory-ignore style="margin-top:1.1rem;">
+            <h3>Sampling vs. Specialization Lab (Conceptual Model)</h3>
+            <p style="font-size:0.82rem;margin-bottom:0.6rem;">Adjust early breadth, anchor depth, and active transfer to see why Güllich’s sampling pattern starts slower yet overtakes early specialization when problems shift.</p>
+            <div class="fl-lab-stage">
+              <canvas id="pop-traj-canvas" aria-label="Trajectory graph comparing Anchored Polymath, Early Specialist, and Unanchored Dabbler over 12 years"></canvas>
+            </div>
+            <div class="fl-lab-controls">
+              <label for="pop-breadth">Early sampling breadth: <output id="pop-breadth-out" for="pop-breadth">3 fields</output>
+                <input type="range" id="pop-breadth" min="1" max="5" step="1" value="3" />
+              </label>
+              <label for="pop-depth">Anchor field depth: <output id="pop-depth-out" for="pop-depth">80%</output>
+                <input type="range" id="pop-depth" min="20" max="100" step="5" value="80" />
+              </label>
+              <label for="pop-transfer">Active transfer practice: <output id="pop-transfer-out" for="pop-transfer">75%</output>
+                <input type="range" id="pop-transfer" min="0" max="100" step="5" value="75" />
+              </label>
+              <label class="fl-lab-check" for="pop-shift">
+                <input type="checkbox" id="pop-shift" checked />
+                <span>Field shifts at Year 6 (new rules/tools)</span>
+              </label>
+            </div>
+            <p class="fl-lab-readout" id="pop-traj-readout" aria-live="polite"></p>
+          </div>
         </section>
 
         <!-- Three Unfair Advantages -->
@@ -182,13 +223,17 @@
         <section class="fl-card" id="pop-sec-gallery" style="--card-accent:#db2777;">
           <h2>Polymaths Across Time</h2>
           <p>The pattern isn't confined to one era or one field. Here are fifteen people, spanning nearly five centuries, best known for one thing — who were each quietly serious about something completely different. Several ran the pattern in reverse: a scientist whose hidden depth was theology, or a theologian whose hidden depth was science.</p>
+          <div class="pop-filter-row" data-memory-ignore>
+            <div class="fl-lab-buttons" id="pop-gallery-filters" role="group" aria-label="Filter polymaths by cross-field combination"></div>
+            <span class="pop-gallery-count" id="pop-gallery-count" aria-live="polite">Showing 15 of 15 polymaths</span>
+          </div>
           <div class="pop-gallery">
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="science-art art-tech">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/images/biomimicry/davinci-portrait.webp" alt="Red chalk presumed self-portrait of Leonardo da Vinci, c. 1512" loading="lazy" decoding="async" />
-  <figcaption>Red chalk presumed self-portrait of Leonardo da Vinci, c. 1512</figcaption>
+  <figcaption>Leonardo da Vinci (c. 1512): used anatomical dissection and optical geometry to unify figure painting with mechanical design.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#9881;&#65039;</span>
               </div>
@@ -196,16 +241,17 @@
                 <span class="pop-poly-name">Leonardo da Vinci</span>
                 <span class="pop-poly-dates">1452–1519 · Renaissance painter</span>
                 <p class="pop-poly-known">Known for: The Mona Lisa</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Anatomy + geometry → machines</span></p>
                 <p class="pop-poly-talent">Hidden talent: dissected more than 30 cadavers to master anatomy, then used that knowledge to design flying machines, canals, and war engines centuries ahead of their time.</p>
               </div>
               <p class="pop-poly-credit">Presumed self-portrait, c. 1512. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="science-faith science-art">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/images/lessons/psychology-of-polymaths/johannes-kepler.jpg" alt="Portrait of Johannes Kepler" loading="lazy" decoding="async" />
-  <figcaption>Portrait of Johannes Kepler</figcaption>
+  <figcaption>Johannes Kepler: bridged Lutheran theology, musical ratios, and observational astronomy to discover elliptical planetary orbits.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#128214;</span>
               </div>
@@ -213,16 +259,17 @@
                 <span class="pop-poly-name">Johannes Kepler</span>
                 <span class="pop-poly-dates">1571–1630 · Astronomer &amp; mathematician</span>
                 <p class="pop-poly-known">Known for: the laws of planetary motion</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Theology + harmony → orbits</span></p>
                 <p class="pop-poly-talent">Hidden talent: trained as a Lutheran theologian and treated astronomy itself as an act of worship, blending math, music theory, and biblical cosmology in <em>Harmony of the World</em>.</p>
               </div>
               <p class="pop-poly-credit">Portrait of Johannes Kepler, 1910 reproduction. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="science-faith">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/images/lessons/psychology-of-polymaths/blaise-pascal.jpg" alt="Portrait of Blaise Pascal, c. 1690" loading="lazy" decoding="async" />
-  <figcaption>Portrait of Blaise Pascal, c. 1690</figcaption>
+  <figcaption>Blaise Pascal (c. 1690): applied probability and mechanical reasoning to both early computing and Christian philosophy.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#10013;&#65039;</span>
               </div>
@@ -230,16 +277,17 @@
                 <span class="pop-poly-name">Blaise Pascal</span>
                 <span class="pop-poly-dates">1623–1662 · Mathematician &amp; physicist</span>
                 <p class="pop-poly-known">Known for: Pascal's triangle and an early mechanical calculator</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Probability + logic → apologetics</span></p>
                 <p class="pop-poly-talent">Hidden talent: after a profound religious experience in 1654, became one of history's sharpest Christian apologists, writing the <em>Pensées</em> in defense of the faith.</p>
               </div>
               <p class="pop-poly-credit">Portrait of Blaise Pascal, c. 1690, Palace of Versailles. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="science-faith cross-science">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/thumbs/isaacnewton.jpg" alt="Portrait of Isaac Newton" loading="lazy" decoding="async" />
-  <figcaption>Portrait of Isaac Newton</figcaption>
+  <figcaption>Isaac Newton: combined optics, calculus, and experimental alchemy alongside decades of historical chronology study.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#9879;</span>
               </div>
@@ -247,16 +295,17 @@
                 <span class="pop-poly-name">Isaac Newton</span>
                 <span class="pop-poly-dates">1642–1727 · Physicist &amp; mathematician</span>
                 <p class="pop-poly-known">Known for: the laws of motion and gravity</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Alchemy + math → physics</span></p>
                 <p class="pop-poly-talent">Hidden talent: spent decades on alchemy and biblical chronology, filling roughly a million private words on the two subjects — more than he ever wrote on physics.</p>
               </div>
               <p class="pop-poly-credit">Portrait of Isaac Newton. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="science-faith cross-science">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/images/lessons/psychology-of-polymaths/john-wesley.jpg" alt="Portrait of John Wesley, after George Romney" loading="lazy" decoding="async" />
-  <figcaption>Portrait of John Wesley, after George Romney</figcaption>
+  <figcaption>John Wesley: paired itinerant preaching with accessible medical guides and free neighborhood electrotherapy clinics.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#128138;</span>
               </div>
@@ -264,16 +313,17 @@
                 <span class="pop-poly-name">John Wesley</span>
                 <span class="pop-poly-dates">1703–1791 · Founder of Methodism</span>
                 <p class="pop-poly-known">Known for: preaching revival across 18th-century Britain</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Ministry + empirical notes → public health</span></p>
                 <p class="pop-poly-talent">Hidden talent: wrote and personally distributed a bestselling home medical guide, <em>Primitive Physic</em>, and ran early electrotherapy clinics to treat the poor for free.</p>
               </div>
               <p class="pop-poly-credit">Portrait of John Wesley, after George Romney, National Portrait Gallery, London. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="art-tech cross-science">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/images/lessons/psychology-of-polymaths/benjamin-franklin.jpg" alt="Portrait of Benjamin Franklin, 1767, by David Martin" loading="lazy" decoding="async" />
-  <figcaption>Portrait of Benjamin Franklin, 1767, by David Martin</figcaption>
+  <figcaption>Benjamin Franklin (1767): moved fluidly from printing presses and civic institutions to oceanography, optics, and electrostatics.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#9889;</span>
               </div>
@@ -281,16 +331,17 @@
                 <span class="pop-poly-name"><a href="../physics/pioneers/benjamin-franklin.html">Benjamin Franklin</a></span>
                 <span class="pop-poly-dates">1706–1790 · Founding Father &amp; printer</span>
                 <p class="pop-poly-known">Known for: the kite-and-key experiment</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Printing + experimentation → civic tech</span></p>
                 <p class="pop-poly-talent">Hidden talent: self-taught scientist who charted the Gulf Stream, invented bifocals and the lightning rod, and refused to patent any of it.</p>
               </div>
               <p class="pop-poly-credit">Benjamin Franklin, 1767, by David Martin. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="science-faith cross-science">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/images/lessons/psychology-of-polymaths/gregor-mendel.jpg" alt="Portrait photograph of Gregor Mendel, c. 1862" loading="lazy" decoding="async" />
-  <figcaption>Portrait photograph of Gregor Mendel, c. 1862</figcaption>
+  <figcaption>Gregor Mendel (c. 1862): used combinatorial probability inside his monastery garden to uncover the laws of genetic inheritance.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#9962;</span>
               </div>
@@ -298,16 +349,17 @@
                 <span class="pop-poly-name">Gregor Mendel</span>
                 <span class="pop-poly-dates">1822–1884 · Father of modern genetics</span>
                 <p class="pop-poly-known">Known for: discovering the laws of inheritance with pea plants</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Physics + horticulture → genetics</span></p>
                 <p class="pop-poly-talent">Hidden talent: an Augustinian friar who ran the experiments that founded genetics as a side project inside his monastery, never leaving religious life to do it.</p>
               </div>
               <p class="pop-poly-credit">Gregor Mendel, c. 1862. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="art-tech cross-science">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/thumbs/tesla.jpg" alt="Photograph of Nikola Tesla, c. 1890" loading="lazy" decoding="async" />
-  <figcaption>Photograph of Nikola Tesla, c. 1890</figcaption>
+  <figcaption>Nikola Tesla (c. 1890): combined multilingual reading, poetry, and vivid mental visualization to design alternating-current machinery.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#127760;</span>
               </div>
@@ -315,16 +367,17 @@
                 <span class="pop-poly-name"><a href="../physics/pioneers/nikola-tesla.html">Nikola Tesla</a></span>
                 <span class="pop-poly-dates">1856–1943 · Inventor &amp; electrical engineer</span>
                 <p class="pop-poly-known">Known for: alternating current and wireless power</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Mental imagery + physics → AC power</span></p>
                 <p class="pop-poly-talent">Hidden talent: fluent in at least eight languages, with a claimed eidetic memory he used to visualize and refine entire machines before ever sketching them.</p>
               </div>
               <p class="pop-poly-credit">Nikola Tesla, photographed by Napoleon Sarony, c. 1890. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="cross-science">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/thumbs/curie.jpg" alt="Photograph of Marie Curie, c. 1900" loading="lazy" decoding="async" />
-  <figcaption>Photograph of Marie Curie, c. 1900</figcaption>
+  <figcaption>Marie Curie (c. 1900): translated laboratory radioactivity and X-ray physics into mobile battlefield medical clinics.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#128657;</span>
               </div>
@@ -332,16 +385,17 @@
                 <span class="pop-poly-name">Marie Curie</span>
                 <span class="pop-poly-dates">1867–1934 · Physicist &amp; chemist</span>
                 <p class="pop-poly-known">Known for: two Nobel Prizes, in Physics and Chemistry</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Physics + chemistry → field medicine</span></p>
                 <p class="pop-poly-talent">Hidden talent: designed mobile X-ray units — nicknamed "petites Curies" — and personally drove them to WWI battlefields to help surgeons locate shrapnel.</p>
               </div>
               <p class="pop-poly-credit">Marie Curie, c. 1900. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card" style="--card-accent:#db2777;">
+            <div class="pop-poly-card" style="--card-accent:#db2777;" data-domains="science-art">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/images/lessons/psychology-of-polymaths/gustav-holst.jpg" alt="Black-and-white portrait photograph of Gustav Holst in 1901" loading="lazy" decoding="async" />
-  <figcaption>Black-and-white portrait photograph of Gustav Holst in 1901</figcaption>
+  <figcaption>Gustav Holst (1901): translated Sanskrit poetry and planetary symbolism into the orchestral soundscapes of The Planets.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#128260;</span>
               </div>
@@ -355,11 +409,11 @@
               <p class="pop-poly-credit">Gustav Holst, 1901. Unknown photographer. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="science-art">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/thumbs/albert-einstein-1921.jpg" alt="Black-and-white portrait of Albert Einstein in 1921" loading="lazy" decoding="async" />
-  <figcaption>Black-and-white portrait of Albert Einstein in 1921</figcaption>
+  <figcaption>Albert Einstein (1921): credited musical intuition on the violin with shaping how he thought through theoretical physics.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#127931;</span>
               </div>
@@ -367,16 +421,17 @@
                 <span class="pop-poly-name"><a href="../physics/pioneers/albert-einstein.html">Albert Einstein</a></span>
                 <span class="pop-poly-dates">1879–1955 · Theoretical physicist</span>
                 <p class="pop-poly-known">Known for: the theory of relativity</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Violin intuition → thought experiments</span></p>
                 <p class="pop-poly-talent">Hidden talent: a serious amateur violinist who performed publicly throughout his life and once said that if he hadn't become a physicist, he'd probably have been a musician.</p>
               </div>
               <p class="pop-poly-credit">Albert Einstein, 1921. Harris &amp; Ewing Studio. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="science-faith">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/images/lessons/psychology-of-polymaths/cs-lewis.jpg" alt="Photograph of C. S. Lewis, c. 1957" loading="lazy" decoding="async" />
-  <figcaption>Photograph of C. S. Lewis, c. 1957</figcaption>
+  <figcaption>C. S. Lewis (1957): brought medieval literary scholarship into modern allegory, children’s fiction, and theological essays.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#128330;</span>
               </div>
@@ -384,16 +439,17 @@
                 <span class="pop-poly-name">C. S. Lewis</span>
                 <span class="pop-poly-dates">1898–1963 · Author of <em>The Chronicles of Narnia</em></span>
                 <p class="pop-poly-known">Known for: Narnia and other popular fiction</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Medieval scholarship → fiction</span></p>
                 <p class="pop-poly-talent">Hidden talent: an Oxford and Cambridge professor of medieval and Renaissance literature who became one of the 20th century's most influential lay theologians and Christian apologists.</p>
               </div>
               <p class="pop-poly-credit">C. S. Lewis, dust-jacket photograph, 1957, by John S. Murray. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="art-tech science-art">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/images/lessons/psychology-of-polymaths/hedy-lamarr.jpg" alt="Hedy Lamarr publicity photo, 1944" loading="lazy" decoding="async" />
-  <figcaption>Hedy Lamarr publicity photo, 1944</figcaption>
+  <figcaption>Hedy Lamarr (1944): teamed with composer George Antheil to adapt player-piano synchronization into frequency-hopping radio security.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#128225;</span>
               </div>
@@ -401,16 +457,17 @@
                 <span class="pop-poly-name">Hedy Lamarr</span>
                 <span class="pop-poly-dates">1914–2000 · Hollywood film star</span>
                 <p class="pop-poly-known">Known for: leading roles in 1930s–40s Hollywood cinema</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Player-piano rolls → spread-spectrum radio</span></p>
                 <p class="pop-poly-talent">Hidden talent: co-invented a frequency-hopping radio guidance system during WWII — the same principle underlying today's Wi-Fi, GPS, and Bluetooth.</p>
               </div>
               <p class="pop-poly-credit">Hedy Lamarr, publicity photo, 1944. Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="science-art">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/thumbs/feynman.jpg" alt="Portrait of physicist Richard Feynman" loading="lazy" decoding="async" />
-  <figcaption>Portrait of physicist Richard Feynman</figcaption>
+  <figcaption>Richard Feynman: paired visual sketching and bongo drumming with diagram-driven quantum electrodynamics.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#129345;</span>
               </div>
@@ -418,16 +475,17 @@
                 <span class="pop-poly-name">Richard Feynman</span>
                 <span class="pop-poly-dates">1918–1988 · Theoretical physicist</span>
                 <p class="pop-poly-known">Known for: a Nobel Prize in Physics and Feynman diagrams</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Sketching + rhythm → quantum diagrams</span></p>
                 <p class="pop-poly-talent">Hidden talent: a genuinely skilled bongo player and self-taught visual artist who sold drawings under the pseudonym "Ofey."</p>
               </div>
               <p class="pop-poly-credit">Public domain.</p>
             </div>
 
-            <div class="pop-poly-card">
+            <div class="pop-poly-card" data-domains="science-art">
               <div class="pop-poly-photo">
                 <figure data-zoomable>
   <img data-lightbox-group="psychology-of-polymaths" src="../../assets/images/lessons/psychology-of-polymaths/brian-may.jpg" alt="Photograph of Brian May in 2025" loading="lazy" decoding="async" />
-  <figcaption>Photograph of Brian May in 2025</figcaption>
+  <figcaption>Brian May (2025): built his own electric guitar with his father and returned decades later to earn a PhD in astrophysics.</figcaption>
 </figure>
                 <span class="pop-poly-badge" aria-hidden="true">&#128301;</span>
               </div>
@@ -435,6 +493,7 @@
                 <span class="pop-poly-name">Brian May</span>
                 <span class="pop-poly-dates">b. 1947 · Lead guitarist, Queen</span>
                 <p class="pop-poly-known">Known for: co-writing "We Will Rock You" and "Bohemian Rhapsody"</p>
+                <p class="pop-poly-transfer"><strong>Transfer</strong><span>Music craft + optics → astrophysics</span></p>
                 <p class="pop-poly-talent">Hidden talent: paused his music career to finish a PhD in astrophysics decades later, and has since co-authored research on interplanetary dust.</p>
               </div>
               <p class="pop-poly-credit">Brian May, 2025, by Gage Skidmore. <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</p>
@@ -492,6 +551,30 @@
           <h2>Now It's Up to You</h2>
           <p>Long ago, the quadrivium built cross-field thinking right into the curriculum — math, music, and the stars, taught as one subject. Later, STEAM tried to rebuild that bridge inside modern classrooms. But no school hands you a polymath's education today. That part is now entirely up to you.</p>
           <div class="fl-callout a1">Pick a second field — something outside your favorite subject — and give it real, serious time this month. That's the whole assignment.</div>
+          <div class="pop-planner" id="pop-collision-planner">
+            <h3>Design Your Anchor + Orbit Collision</h3>
+            <div class="pop-planner-grid">
+              <label for="pop-anchor-select">Your anchor field (where you go deepest)
+                <select id="pop-anchor-select"></select>
+              </label>
+              <label for="pop-orbit-select">Your orbiting field (outside your main lane)
+                <select id="pop-orbit-select"></select>
+              </label>
+              <label for="pop-anchor-custom">Or name your own anchor
+                <input type="text" id="pop-anchor-custom" placeholder="e.g., Robotics, Ceramics, Soccer" />
+              </label>
+              <label for="pop-orbit-custom">Or name your own orbit
+                <input type="text" id="pop-orbit-custom" placeholder="e.g., Jazz rhythm, Botany, Debate" />
+              </label>
+            </div>
+            <div class="fl-lab-buttons">
+              <button type="button" id="pop-generate-collision">Generate Collision Ideas</button>
+            </div>
+            <div class="pop-collision-box" id="pop-collision-output" aria-live="polite"></div>
+            <label for="pop-commitment">Your one-month collision project note (saved automatically in My Stuff)
+              <textarea id="pop-commitment" rows="3" placeholder="What concrete project will force your anchor and orbiting field to collide this month?"></textarea>
+            </label>
+          </div>
         </section>
 
         <!-- Practice Problems -->
@@ -622,6 +705,9 @@
 
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>
+<script src="../../assets/js/sim-kit.js"></script>
+<script src="../../assets/js/lessons/polymaths-core.js"></script>
+<script src="../../assets/js/lessons/polymaths-lab.js"></script>
 <script src="../../assets/js/lesson-content.js"></script>
 <script src="../../assets/js/figure-lesson.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
