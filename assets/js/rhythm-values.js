@@ -20,7 +20,7 @@
     $('pad').disabled = true;
     $('stop').hidden = true;
     dots.forEach(dot => dot.classList.remove('on'));
-    document.querySelector('.lit')?.classList.remove('lit');
+    document.querySelectorAll('.lit').forEach(cell => cell.classList.remove('lit'));
   }
   function selectRow(index) {
     stop();
@@ -31,13 +31,13 @@
       value:pieces, span, count:i*span % 1 === 0 ? Math.floor(i*span)+1 : ['','e','&','a'][(i*span%1)*4]
     }));
     const shapes = ['An open head with no stem.', 'An open head with a stem.', 'A filled head with a stem.', 'One flag on the stem.', 'Two flags on the stem.'];
-    drawRhythm('slice-staff','4/4',[{notes}],names[row]+' note · '+shapes[row]+' Each cookie slice lasts '+span+' '+(span === 1 ? 'beat.' : 'beats.'));
+    drawRhythm('slice-staff','4/4',[{notes}],names[row]+' note · '+shapes[row]+' Each cookie slice lasts '+({4:'4 beats.',2:'2 beats.',1:'1 beat.',.5:'½ beat.',.25:'¼ beat.'})[span]);
     [...$('rows').children].forEach((button,i) => button.setAttribute('aria-pressed', i === row));
     $('cookie').style.setProperty('--cuts', pieces === 1 ? 'linear-gradient(transparent,transparent)' :
       'repeating-conic-gradient(#80522c 0deg 1.6deg, transparent 1.6deg '+360/pieces+'deg)');
     $('cookie').disabled = $('cut').disabled = row === 4;
     $('join').disabled = row === 0;
-    $('fraction').textContent = pieces+' equal '+(pieces === 1 ? 'piece' : 'pieces')+' · '+(4/pieces)+' '+(pieces === 4 ? 'beat' : 'beats')+' per piece';
+    $('fraction').textContent = pieces+' equal '+(pieces === 1 ? 'piece' : 'pieces')+' · '+({1:'4 beats',2:'2 beats',4:'1 beat',8:'½ beat',16:'¼ beat'})[pieces]+' per piece';
   }
   names.forEach((name,i) => {
     const button = document.createElement('button');
