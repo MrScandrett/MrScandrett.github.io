@@ -44,27 +44,14 @@
     [data-theme="vaporwave"] .sml-lab,
     [data-theme="bark"] .sml-lab { background: #1c1c1e; }
 
-    .sml-stage { position: relative; height: 160px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 1rem; }
-    .sml-beam { position: relative; width: 260px; height: 10px; background: #94a3b8; border-radius: 6px; transform-origin: center; transition: transform 0.25s ease; }
-    .sml-beam-load, .sml-beam-effort { position: absolute; top: -34px; font-size: 1.8rem; }
-    .sml-beam-load { left: -4px; }
-    .sml-beam-effort { right: -4px; }
-    .sml-fulcrum { position: absolute; bottom: -22px; width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 22px solid #f59e0b; transition: left 0.2s ease; }
-
-    .sml-ramp-shape { position: relative; width: 260px; height: 120px; }
-    .sml-ramp-triangle { position: absolute; bottom: 0; left: 0; width: 0; height: 0; border-left: 260px solid transparent; border-bottom: 20px solid #94a3b8; transition: border-bottom-width 0.25s ease; }
-    .sml-ramp-box { position: absolute; font-size: 1.8rem; transition: all 0.25s ease; }
-    .sml-ramp-arrow { position: absolute; right: 4px; top: 10px; font-size: 1.4rem; }
-
-    .sml-pulley-row { display: flex; align-items: flex-end; justify-content: center; gap: 0.6rem; height: 140px; }
-    .sml-pulley-wheel { font-size: 2.2rem; }
-    .sml-pulley-weight { font-size: 1.8rem; align-self: flex-end; }
-
-    .sml-effort-gauge { margin-top: 0.6rem; }
-    .sml-effort-label { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem; }
-    .sml-bar-track { height: 14px; border-radius: 999px; background: rgba(0,0,0,0.08); overflow: hidden; }
-    .sml-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #34c759, #f59e0b, #ff3b30); transition: width 0.25s ease; }
-
+    .sml-stage { display:flex; justify-content:center; margin-bottom:1rem; border-radius:12px; overflow:hidden; background-color:#152c39; background-image:linear-gradient(#ffffff0b 1px,transparent 1px),linear-gradient(90deg,#ffffff0b 1px,transparent 1px); background-size:20px 20px; }
+    .machine-yard { position:relative; background:#94b2bd; overflow:hidden; border-radius:12px; margin-bottom:1rem; }
+    .machine-yard canvas { display:block; width:100%; height:clamp(250px,42vh,440px); touch-action:none; }
+    .machine-yard:not([hidden]) ~ .sml-stage { display:none !important; }
+    .yard-tools { display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.35rem .65rem; background:#20333d; color:white; font:600 .78rem system-ui; }
+    .yard-tools button { color:white; background:#344e5d; border:1px solid #829ba5; padding:.5rem; border-radius:5px; cursor:pointer; }
+    .sml-stage svg { width:100%; max-width:560px; height:auto; display:block; }
+    .sml-stage text { font:600 12px system-ui,sans-serif; fill:#fff; }
     .sml-slider-row { margin: 0.8rem 0; }
     .sml-slider-row label { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem; }
     .sml-slider-row input[type="range"] { width: 100%; }
@@ -125,8 +112,8 @@
         </section>
 
         <section class="cl-card" style="--card-accent:#2563eb;">
-          <h2>Interactive: Feel the Trade-Off</h2>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Pick a machine, then use the slider to change it. Watch the Effort Gauge — green is easy, red is hard.</p>
+          <h2>Move the same crate three ways</h2>
+          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Lifting this crate straight up takes 60 newtons (N) of force. Can you lift it with a gentler push or pull? Assume frictionless machines.</p>
 
           <div class="sml-machine-btns">
             <button class="sml-machine-btn selected" data-machine="lever" onclick="smlSetMachine('lever')">⚖️ Lever</button>
@@ -135,38 +122,44 @@
           </div>
 
           <div class="sml-lab">
-            <!-- Lever stage -->
-            <div id="sml-stage-lever" class="sml-stage">
-              <div class="sml-beam" id="sml-beam">
-                <span class="sml-beam-load">🧱</span>
-                <span class="sml-beam-effort">✋</span>
-                <span class="sml-fulcrum" id="sml-fulcrum"></span>
-              </div>
+            <div class="machine-yard" hidden>
+              <canvas aria-label="Three-dimensional machine yard. Use the sliders below to operate the selected machine."></canvas>
+              <div class="yard-tools"><span>Drag crate to move · Drag ground to orbit</span><button type="button" id="yard-view">Reset view</button></div>
             </div>
-            <!-- Ramp stage -->
-            <div id="sml-stage-ramp" class="sml-stage" style="display:none;">
-              <div class="sml-ramp-shape">
-                <div class="sml-ramp-triangle" id="sml-ramp-triangle"></div>
-                <span class="sml-ramp-box" id="sml-ramp-box">📦</span>
-                <span class="sml-ramp-arrow">✋</span>
-              </div>
+            <div id="sml-stage-lever" class="sml-stage">
+              <svg viewBox="0 0 380 170" role="img" aria-label="A crate on the left end of a lever rises as the right end moves down.">
+                <path d="M12 139H368" stroke="#78949b" stroke-dasharray="3 4"/>
+                <g id="sml-beam"><rect x="32" y="88" width="316" height="8" rx="4" fill="#8bc3c7"/><g transform="translate(40 88)"><rect x="-16" y="-29" width="32" height="28" rx="2" fill="#d99b59" stroke="#ffe2ad"/><path d="m-14 -27 28 24m0 -24 -28 24" stroke="#80532e" stroke-width="3"/></g><path d="M340 62v23m-6 -8 6 8 6 -8" stroke="#ffd775" stroke-width="3" fill="none"/></g>
+                <g id="sml-fulcrum"><path d="m0 96 -16 42h32z" fill="#e4ad52"/><circle cy="96" r="4" fill="#fff2b4"/></g>
+                <text x="20" y="22">Load</text><text x="300" y="22">Push ↓</text><text id="sml-pivot-label" y="157" text-anchor="middle">Pivot</text>
+              </svg>
+            </div>
+            <div id="sml-stage-ramp" class="sml-stage" style="display:none">
+              <svg viewBox="0 0 380 170" role="img" aria-label="An adjustable ramp leads up to a loading dock of fixed height.">
+                <path d="M10 138H370" stroke="#78949b"/><path d="M310 64h60v73h-60z" fill="#385563"/><path id="sml-ramp-surface" fill="#486e78" stroke="#a6d7d4" stroke-width="3"/>
+                <g id="sml-ramp-box"><rect x="-16" y="-29" width="32" height="28" rx="2" fill="#d99b59" stroke="#ffe2ad"/><path d="m-14 -27 28 24m0 -24 -28 24" stroke="#80532e" stroke-width="3"/></g><text x="278" y="27">Loading dock</text><text x="320" y="94">1 m</text>
+              </svg>
             </div>
             <!-- Pulley stage -->
             <div id="sml-stage-pulley" class="sml-stage" style="display:none;">
-              <div class="sml-pulley-row" id="sml-pulley-row"></div>
+              <svg viewBox="0 0 340 150" width="100%" height="150" role="img" aria-label="Schematic of supporting strands and marked rope pulled"><rect width="340" height="150" rx="10" fill="#152c39"/><path d="M35 18h90" stroke="#91a8b4" stroke-width="8"/><g id="sml-strands"></g><g id="sml-crate"><rect x="47" y="0" width="66" height="30" rx="3" fill="#d29251"/><path d="m49 2 62 26m0-26L49 28" stroke="#815732" stroke-width="3"/></g><text x="150" y="40" fill="white">Rope pulled</text><g id="sml-marks"></g><text x="150" y="99" fill="white">Each mark = 0.25 m</text></svg>
             </div>
 
             <div id="sml-slider-lever" class="sml-slider-row">
-              <label><span>Fulcrum Position</span><span id="sml-lever-val">Close to the load</span></label>
+              <label for="sml-lever-slider"><span>Fulcrum Position</span><span id="sml-lever-val">Close to the load</span></label>
               <input type="range" min="1" max="9" value="2" id="sml-lever-slider" oninput="smlUpdateLever(this.value)" />
+              <label for="sml-lever-travel">Push the handle</label>
+              <input id="sml-lever-travel" type="range" min="0" max="100" value="0" oninput="smlSetMachine('lever')">
             </div>
             <div id="sml-slider-ramp" class="sml-slider-row" style="display:none;">
-              <label><span>Ramp Length</span><span id="sml-ramp-val">Short &amp; steep</span></label>
+              <label for="sml-ramp-slider"><span>Ramp Length</span><span id="sml-ramp-val">Short &amp; steep</span></label>
               <input type="range" min="1" max="9" value="2" id="sml-ramp-slider" oninput="smlUpdateRamp(this.value)" />
+              <label for="sml-ramp-travel">Move the crate</label>
+              <input id="sml-ramp-travel" type="range" min="0" max="100" value="0" oninput="smlSetMachine('ramp')">
             </div>
             <div id="sml-slider-pulley" class="sml-slider-row" style="display:none;">
-              <label><span>Number of Pulleys</span><span id="sml-pulley-val">1 pulley</span></label>
-              <input type="range" min="1" max="3" value="1" id="sml-pulley-slider" oninput="smlUpdatePulley(this.value)" />
+              <label for="sml-pulley-slider"><span>Supporting rope strands</span><span id="sml-pulley-val">1 strand</span></label>
+              <input type="range" min="1" max="3" value="1" id="sml-pulley-slider" oninput="smlUpdatePulley(this.value)" /><label for="sml-lift">Lift the crate <output id="sml-height"></output></label><input id="sml-lift" type="range" min="0" max="1" step=".05" value="1" oninput="smlUpdatePulley(document.getElementById('sml-pulley-slider').value)">
             </div>
 
             <div class="sml-effort-gauge">
@@ -279,7 +272,7 @@
 
         <div class="ll-pane ll-active" id="sml-pane-sim">
           <div class="ll-info"><strong>Try this</strong> On the Lever tab, slide all the way to one end, then the other — watch the effort gauge swing from green to red.</div>
-          <div class="ll-info"><strong>Try this too</strong> On the Pulley tab, compare 1 pulley to 3 — same weight, very different effort.</div>
+          <div class="ll-info"><strong>Try this too</strong> On the Pulley tab, compare 1 supporting strand to 3 — same weight, very different effort.</div>
         </div>
 
         <div class="ll-pane" id="sml-pane-guide">
@@ -308,6 +301,7 @@
     smlCurrentMachine = id;
     document.querySelectorAll('.sml-machine-btn').forEach(function (b) {
       b.classList.toggle('selected', b.dataset.machine === id);
+      b.setAttribute('aria-pressed', String(b.dataset.machine === id));
     });
     ['lever', 'ramp', 'pulley'].forEach(function (m) {
       document.getElementById('sml-stage-' + m).style.display = (m === id) ? 'flex' : 'none';
@@ -318,57 +312,57 @@
     if (id === 'pulley') smlUpdatePulley(document.getElementById('sml-pulley-slider').value);
   }
 
-  function smlSetEffort(pct, note) {
-    document.getElementById('sml-effort-fill').style.width = pct + '%';
-    var label = pct <= 30 ? 'Very Easy' : pct <= 50 ? 'Easy' : pct <= 70 ? 'Medium' : pct <= 85 ? 'Hard' : 'Very Hard';
-    document.getElementById('sml-effort-text').textContent = label + ' (' + pct + '%)';
+  function smlSetEffort(force, note) {
+    const maximum = smlCurrentMachine === 'lever' ? 540 : 60;
+    document.getElementById('sml-effort-fill').style.width = (100 * force / maximum) + '%';
+    document.getElementById('sml-effort-text').textContent = Math.round(force) + ' N';
     document.getElementById('sml-note').textContent = note;
   }
 
   function smlUpdateLever(val) {
     val = Number(val);
-    // val 1 (fulcrum near load, easy) .. 9 (fulcrum near effort, hard)
-    var pct = Math.round(10 + (val - 1) * (90 / 8));
-    var leftPercent = 8 + (val - 1) * (84 / 8);
-    document.getElementById('sml-fulcrum').style.left = leftPercent + '%';
-    var label = val <= 3 ? 'Close to the load' : val <= 6 ? 'Near the middle' : 'Close to your hand';
-    document.getElementById('sml-lever-val').textContent = label;
-    smlSetEffort(pct, 'The fulcrum is ' + label.toLowerCase() + ' — the closer it sits to the load, the less force your hand needs, but the farther your hand has to push down.');
+    const pivot = 40 + val * 30;
+    const travel = Number(document.getElementById('sml-lever-travel').value) / 100;
+    document.getElementById('sml-fulcrum').setAttribute('transform', 'translate(' + pivot + ' 0)');
+    document.getElementById('sml-pivot-label').setAttribute('x', pivot);
+    document.getElementById('sml-beam').setAttribute('transform', 'rotate(' + travel * 8 + ' ' + pivot + ' 96)');
+    document.getElementById('sml-lever-val').textContent = val < 5 ? 'Near the load' : val === 5 ? 'Centered' : 'Near your hand';
+    const force = 60 * val / (10 - val);
+    smlSetEffort(force, 'Push the handle. Which end travels farther? Move the pivot to the middle and try again.');
   }
 
   function smlUpdateRamp(val) {
-    val = Number(val);
-    // val 1 (short/steep, hard) .. 9 (long/shallow, easy)
-    var pct = Math.round(100 - (val - 1) * (90 / 8));
-    var borderHeight = Math.round(120 - (val - 1) * (100 / 8));
-    document.getElementById('sml-ramp-triangle').style.borderBottomWidth = borderHeight + 'px';
-    var boxBottom = borderHeight - 10;
-    var boxLeft = 230 - (val - 1) * 20;
-    document.getElementById('sml-ramp-box').style.left = Math.max(boxLeft, 10) + 'px';
-    document.getElementById('sml-ramp-box').style.bottom = Math.max(boxBottom, 5) + 'px';
-    var label = val <= 3 ? 'Short &amp; steep' : val <= 6 ? 'Medium slope' : 'Long &amp; shallow';
-    document.getElementById('sml-ramp-val').innerHTML = label;
-    smlSetEffort(pct, 'A ' + label.replace('&amp;', 'and').toLowerCase() + ' ramp needs ' + (pct < 50 ? 'less' : 'more') + ' push force, but a ' + (val <= 3 ? 'shorter' : 'longer') + ' ramp means walking a ' + (val <= 3 ? 'shorter' : 'longer') + ' distance.');
+    const run = 32 + Number(val) * 28;
+    const start = 310 - run;
+    const travel = Number(document.getElementById('sml-ramp-travel').value) / 100;
+    const angle = Math.atan2(74, run) * 180 / Math.PI;
+    const length = Math.hypot(run, 74) / 74;
+    document.getElementById('sml-ramp-surface').setAttribute('d', 'M' + start + ' 138L310 64V138Z');
+    document.getElementById('sml-ramp-box').setAttribute('transform', 'translate(' + (start + run * travel) + ' ' + (138 - 74 * travel) + ') rotate(' + -angle + ')');
+    document.getElementById('sml-ramp-val').textContent = length.toFixed(1) + ' m';
+    smlSetEffort(60 / length, 'Deliver the crate to the dock. Lengthen the ramp and compare the push needed to reach the same height.');
   }
 
   function smlUpdatePulley(val) {
     val = Number(val);
-    var pctMap = { 1: 90, 2: 55, 3: 25 };
-    var pct = pctMap[val];
-    var row = document.getElementById('sml-pulley-row');
-    row.innerHTML = '';
-    for (var i = 0; i < val; i++) {
-      var wheel = document.createElement('span');
-      wheel.className = 'sml-pulley-wheel';
-      wheel.textContent = '🪢';
-      row.appendChild(wheel);
+    const lift = Number(document.getElementById('sml-lift').value);
+    const y = 115 - 70 * lift;
+    const distance = val * lift;
+    let strands = '';
+    for (let i = 0; i < val; i++) {
+      const x = 80 + (i - (val - 1) / 2) * 17;
+      strands += `<path d="M${x} 20V${y}" stroke="#ffe387" stroke-width="3"/>`;
     }
-    var weight = document.createElement('span');
-    weight.className = 'sml-pulley-weight';
-    weight.textContent = '🏋️';
-    row.appendChild(weight);
-    document.getElementById('sml-pulley-val').textContent = val + (val === 1 ? ' pulley' : ' pulleys');
-    smlSetEffort(pct, val + (val === 1 ? ' pulley shares' : ' pulleys share') + ' the lifting force among ' + val + ' rope segment' + (val === 1 ? '' : 's') + ' — but you pull ' + val + 'x more rope to lift the weight the same height.');
+    document.getElementById('sml-strands').innerHTML = strands;
+    document.getElementById('sml-crate').setAttribute('transform', 'translate(0 ' + y + ')');
+    let marks = '';
+    for (let i = 0; i < Math.ceil(distance * 4); i++) {
+      marks += `<rect x="${150 + i * 13}" y="54" width="${12 * Math.min(1, distance * 4 - i)}" height="12" fill="${i % 2 ? '#eb936a' : '#ffe387'}"/>`;
+    }
+    document.getElementById('sml-marks').innerHTML = marks;
+    document.getElementById('sml-height').textContent = lift.toFixed(2) + ' m';
+    document.getElementById('sml-pulley-val').textContent = val + (val === 1 ? ' strand' : ' strands');
+    smlSetEffort(60 / val, 'Ideal system: lifting a 60 N load takes ' + (60 / val) + ' N of pull. Rope pulled: ' + distance.toFixed(2) + ' m.');
   }
 
   function smlCheckText(n, correct) {
@@ -384,13 +378,13 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    smlUpdateLever(2);
-    smlUpdateRamp(2);
-    smlUpdatePulley(1);
+    smlSetMachine('lever');
   });
 </script>
 <script src="../../../assets/js/classroom-animations.js"></script>
 <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script type="module" src="../../../assets/js/simple-machines-yard.mjs"></script>
 </body>
 </html>

@@ -14,6 +14,8 @@
 
     <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
     <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+    <link rel="stylesheet" href="../../assets/css/components/photo-gallery.css" />
+    <link rel="stylesheet" href="../../assets/css/lessons/vr-museum-inspector.css" />
 
     <style>
       :root {
@@ -267,6 +269,77 @@
         </p>
       </section>
 
+      <section class="card vrm-inspector-card" id="vrm-inspector">
+        <h2>Interactive 3D Exhibition Prep Inspector</h2>
+        <p>Inspect real ClassroomOS <code>.glb</code> artifacts on a 1-meter VR gallery pedestal — or preview a local <code>.glb</code>/<code>.gltf</code> file straight in your browser — before writing a museum proposal.</p>
+
+        <div class="vrm-presets" role="group" aria-label="Sample 3D museum artifacts">
+          <button type="button" class="vrm-preset-btn" aria-pressed="true"
+            data-model-url="../../assets/models/trilobite_proetida.glb"
+            data-model-title="Devonian Trilobite (Museum Fossil)"
+            data-model-note="Fossil specimen packed as a single self-contained .glb file — orbit underneath to check whether dorsal and ventral geometry stay clean in 360° VR.">Devonian Trilobite</button>
+          <button type="button" class="vrm-preset-btn" aria-pressed="false"
+            data-model-url="../../assets/models/anomalocaris_3d_model.glb"
+            data-model-title="Cambrian Anomalocaris (Reconstruction)"
+            data-model-note="Notice the higher triangle budget required for organic fins and appendages — compare Wireframe View against geometric models to see why polygon budgets matter on mobile VR headsets.">Anomalocaris</button>
+          <button type="button" class="vrm-preset-btn" aria-pressed="false"
+            data-model-url="../../assets/models/allegory_of_the_cave.glb"
+            data-model-title="Allegory of the Cave (Environment)"
+            data-model-note="Architectural scene assembly with baked shadow geometry — inspect how real-world scale and camera target clearance keep a visitor grounded inside a walkable scene.">Cave Environment</button>
+          <button type="button" class="vrm-preset-btn" aria-pressed="false"
+            data-model-url="../../assets/models/breadboard-cutaway.glb"
+            data-model-title="Breadboard Cutaway (Engineering Prop)"
+            data-model-note="Compact mechanical/electronics cutaway under 100 KB — an example of crisp hard-surface silhouettes that load fast and read cleanly at arm's length.">Breadboard Cutaway</button>
+          <label class="vrm-upload-label" for="vrm-file-input">Inspect Your Own .GLB
+            <input type="file" id="vrm-file-input" class="vrm-upload-input" accept=".glb,.gltf" />
+          </label>
+        </div>
+
+        <div class="vrm-stage">
+          <div class="vrm-canvas-wrap" id="vrm-canvas-wrap">
+            <canvas id="vrm-canvas" aria-label="Interactive 3D WebGL museum artifact preview canvas"></canvas>
+            <div class="vrm-hud-overlay">
+              <span class="vrm-hud-pill" id="vrm-hud-title">Devonian Trilobite (Museum Fossil)</span>
+              <span class="vrm-hud-pill" id="vrm-hud-hint">Drag to orbit · Scroll to zoom</span>
+            </div>
+            <div class="vrm-loading" id="vrm-loading">Loading 3D specimen…</div>
+            <div class="vrm-fallback" id="vrm-fallback" hidden></div>
+          </div>
+
+          <div class="vrm-controls-bar">
+            <div class="vrm-ctrl-group">
+              <button type="button" class="vrm-ctrl-btn" id="vrm-toggle-orbit" aria-pressed="true">Auto-Orbit</button>
+              <button type="button" class="vrm-ctrl-btn" id="vrm-toggle-wire" aria-pressed="false">Wireframe</button>
+              <button type="button" class="vrm-ctrl-btn" id="vrm-toggle-grid" aria-pressed="true">1m Scale Grid + BBox</button>
+            </div>
+            <div class="vrm-ctrl-group">
+              <button type="button" class="vrm-ctrl-btn" id="vrm-toggle-light" aria-pressed="false">Lighting: Museum Spotlight</button>
+              <button type="button" class="vrm-ctrl-btn" id="vrm-reset-cam">Reset View</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="vrm-metrics" aria-live="polite">
+          <div class="vrm-metric-box">
+            <span class="vrm-metric-k">Meshes &amp; Materials</span>
+            <span class="vrm-metric-v" id="vrm-stat-meshes">—</span>
+          </div>
+          <div class="vrm-metric-box">
+            <span class="vrm-metric-k">Triangle Budget</span>
+            <span class="vrm-metric-v" id="vrm-stat-tris">—</span>
+          </div>
+          <div class="vrm-metric-box">
+            <span class="vrm-metric-k">Authored Dimensions</span>
+            <span class="vrm-metric-v" id="vrm-stat-dims">—</span>
+          </div>
+          <div class="vrm-metric-box">
+            <span class="vrm-metric-k">VR Readiness Check</span>
+            <span class="vrm-metric-v" id="vrm-stat-status">—</span>
+          </div>
+        </div>
+        <p class="vrm-note" id="vrm-specimen-note"></p>
+      </section>
+
       <section class="card">
         <h2>Your Assignment</h2>
         <p>
@@ -336,6 +409,32 @@
             <li>Your contribution may be edited, credited, resized, compressed, or adapted before it appears on the website</li>
           </ul>
         </div>
+        <div class="pg-grid" style="margin-top:1rem;">
+          <figure data-zoomable data-lightbox-group="vr-museum">
+            <img src="../../assets/images/lessons/vr-museum-upload/curation-to-vr-pipeline.svg" alt="Four-stage flow diagram showing Source Curation, Blender Optimization, WebXR GLB Export, and Classroom VR Museum Gallery Inspection" loading="lazy" />
+            <figcaption>
+              <strong>From Archive Source to Walkable Exhibit</strong>
+              <span>A great VR museum piece starts with verified historical or scientific context, passes through mesh and texture optimization in Blender, and enters the gallery as one clean binary <code>.glb</code> bundle.</span>
+              <span class="pg-credit" data-no-glossary>ClassroomOS diagram · CC BY 4.0</span>
+            </figcaption>
+          </figure>
+          <figure data-zoomable data-lightbox-group="vr-museum">
+            <img src="../../assets/images/lessons/vr-museum-upload/glb-vr-readiness-checklist.svg" alt="Technical checklist showing target triangle budget under 100k, packed binary GLB format under 50 MB, real-world meters scale, and CC/public-domain attribution" loading="lazy" />
+            <figcaption>
+              <strong>VR-Ready .GLB Technical Checklist</strong>
+              <span>Before submitting a 3D artifact, check all four engineering gates: packed textures inside <code>.glb</code>, applied real-world meter scale, bounded triangle count, and clear source licensing.</span>
+              <span class="pg-credit" data-no-glossary>ClassroomOS diagram · CC BY 4.0</span>
+            </figcaption>
+          </figure>
+          <figure data-zoomable data-lightbox-group="vr-museum">
+            <img src="../../assets/images/lessons/design3d-visuals/polyhaven-camera-model.png" alt="Rendered 3D studio camera asset showing clean geometry and physically based materials" loading="lazy" />
+            <figcaption>
+              <strong>Sample Clean CC0 3D Exhibit Asset</strong>
+              <span>A compact, properly scaled camera model with embedded PBR textures reads crisply under museum spotlights without straining standalone headset frame rates.</span>
+              <span class="pg-credit" data-no-glossary>Rajil Jose Macatangay / Poly Haven · CC0 · <a href="https://polyhaven.com/a/Camera_01" target="_blank" rel="noopener noreferrer">source</a></span>
+            </figcaption>
+          </figure>
+        </div>
       </section>
 
       <section class="card">
@@ -349,5 +448,7 @@
     <script src="../../assets/js/theme-registry.js"></script>
     <script src="../../assets/js/nav-mobile.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
+<script type="module" src="../../assets/js/lessons/vr-museum-inspector.mjs"></script>
+<script src="../../assets/js/photo-lightbox.js"></script>
   </body>
 </html>

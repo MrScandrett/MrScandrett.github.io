@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 400" role="img" aria-labelledby="ag-arch-title ag-arch-desc">
+  <title id="ag-arch-title">The AlphaGo Architecture: Neural Priors, Value Evaluation, and MCTS</title>
+  <desc id="ag-arch-desc">Diagram showing how a 19x19 Go position passes through AlphaGo's Policy Network (move priors) and Value Network (win probability) inside a four-step Monte Carlo Tree Search loop, followed by AlphaGo Zero's self-play evolution.</desc>
+  <defs>
+    <marker id="ag-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="880" height="400" rx="18" fill="#f8fafc"/>
+  <text x="28" y="34" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="800" fill="#0f172a">Inside AlphaGo: Combining Learned Intuition With Focused Search</text>
+  <text x="28" y="54" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#475569">Neural networks shrink BOTH the width (Policy) and depth (Value) of Monte Carlo Tree Search</text>
+
+  <!-- Input state -->
+  <rect x="28" y="84" width="176" height="196" rx="14" fill="#0f172a"/>
+  <text x="116" y="112" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#f59e0b">BOARD STATE S</text>
+  <rect x="56" y="128" width="120" height="96" rx="8" fill="#e6c88a"/>
+  <g stroke="#78592b" stroke-width="1">
+    <line x1="72" y1="146" x2="160" y2="146"/><line x1="72" y1="168" x2="160" y2="168"/>
+    <line x1="72" y1="190" x2="160" y2="190"/><line x1="72" y1="210" x2="160" y2="210"/>
+    <line x1="72" y1="146" x2="72" y2="210"/><line x1="94" y1="146" x2="94" y2="210"/>
+    <line x1="116" y1="146" x2="116" y2="210"/><line x1="138" y1="146" x2="138" y2="210"/>
+    <line x1="160" y1="146" x2="160" y2="210"/>
+  </g>
+  <circle cx="94" cy="168" r="7" fill="#111"/>
+  <circle cx="138" cy="168" r="7" fill="#fff"/>
+  <circle cx="116" cy="190" r="7" fill="#111"/>
+  <text x="116" y="246" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#e2e8f0">19 × 19 Feature Planes</text>
+  <text x="116" y="264" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#94a3b8">Stones, liberties, last moves</text>
+
+  <!-- Arrows to Policy and Value -->
+  <path d="M 204 142 L 242 126" stroke="#475569" stroke-width="2" marker-end="url(#ag-arr)"/>
+  <path d="M 204 222 L 242 238" stroke="#475569" stroke-width="2" marker-end="url(#ag-arr)"/>
+
+  <!-- Policy Network -->
+  <rect x="248" y="84" width="234" height="92" rx="12" fill="#eef2ff" stroke="#6366f1" stroke-width="2"/>
+  <text x="264" y="108" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="800" fill="#312e81">Policy Network  π(a | s)</text>
+  <text x="264" y="128" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#3730a3">Scores move plausibility across the board.</text>
+  <text x="264" y="146" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#3730a3">Prunes ~250 moves down to a handful</text>
+  <text x="264" y="162" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#4338ca">→ Shrinks search WIDTH</text>
+
+  <!-- Value Network -->
+  <rect x="248" y="188" width="234" height="92" rx="12" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+  <text x="264" y="212" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="800" fill="#064e3b">Value Network  v(s)</text>
+  <text x="264" y="232" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#065f46">Estimates win probability directly from s,</text>
+  <text x="264" y="250" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#065f46">cutting off tree depth without full play.</text>
+  <text x="264" y="266" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#047857">→ Shrinks search DEPTH</text>
+
+  <!-- Arrows into MCTS -->
+  <path d="M 482 130 L 520 148" stroke="#475569" stroke-width="2" marker-end="url(#ag-arr)"/>
+  <path d="M 482 234 L 520 216" stroke="#475569" stroke-width="2" marker-end="url(#ag-arr)"/>
+
+  <!-- MCTS Loop -->
+  <rect x="524" y="84" width="328" height="196" rx="14" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+  <text x="544" y="110" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="800" fill="#78350f">Monte Carlo Tree Search Loop</text>
+  <text x="544" y="128" font-family="Inter, system-ui, sans-serif" font-size="11.5" fill="#92400e">Repeats ~1,600 simulations per move before choosing</text>
+
+  <rect x="544" y="142" width="138" height="54" rx="9" fill="#ffffff" stroke="#fcd34d"/>
+  <text x="556" y="162" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="800" fill="#92400e">1 · Select</text>
+  <text x="556" y="180" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#78350f">Explore vs. high-win paths</text>
+
+  <rect x="696" y="142" width="138" height="54" rx="9" fill="#ffffff" stroke="#fcd34d"/>
+  <text x="708" y="162" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="800" fill="#92400e">2 · Expand</text>
+  <text x="708" y="180" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#78350f">Add Policy prior children</text>
+
+  <rect x="544" y="208" width="138" height="54" rx="9" fill="#ffffff" stroke="#fcd34d"/>
+  <text x="556" y="228" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="800" fill="#92400e">3 · Evaluate</text>
+  <text x="556" y="246" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#78350f">Blend Value Net + rollout</text>
+
+  <rect x="696" y="208" width="138" height="54" rx="9" fill="#ffffff" stroke="#fcd34d"/>
+  <text x="708" y="228" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="800" fill="#92400e">4 · Backup</text>
+  <text x="708" y="246" font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#78350f">Update visit + win totals</text>
+
+  <!-- AlphaGo Zero banner -->
+  <rect x="28" y="300" width="824" height="72" rx="14" fill="#1e293b"/>
+  <rect x="46" y="316" width="144" height="22" rx="11" fill="#0ea5e9"/>
+  <text x="118" y="331" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#082f49">ALPHAGO ZERO (2017)</text>
+  <text x="206" y="332" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="800" fill="#f8fafc">From Human Imitation to Pure Self-Play</text>
+  <text x="46" y="356" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#cbd5e1">Removed human training games completely: a unified two-headed neural network trained against its own MCTS lookahead surpassed earlier versions in days.</text>
+</svg>

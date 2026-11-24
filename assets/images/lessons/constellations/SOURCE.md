@@ -29,3 +29,5 @@ and shown under each picture in the lesson.
   by Eckhard Slawik (NOIRLab/NSF/AURA/M. Zamani), CC BY 4.0.
 - `*-myth.webp`: Sidney Hall, *Urania's Mirror* (1824) star-cards, public domain
   (Commons restorations by Adam Cuerden where noted).
+- `zodiac-ecliptic-plane.svg`, `apparent-magnitude-scale.svg`, `obafgkm-stellar-spectra.svg`:
+  Original ClassroomOS astronomy reference diagrams (CC BY 4.0).

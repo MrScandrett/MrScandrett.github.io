@@ -401,6 +401,12 @@
     #ec-canvas { max-height:none; }
     .ec-page :focus-visible { outline:3px solid var(--accent,#0071e3); outline-offset:4px; }
     @media(max-width:680px) { .ec-paths,.ec-gallery { grid-template-columns:1fr; } }
+    .ec-jumps { display:grid; gap:.85rem }
+    .ec-bench { display:grid; grid-template-columns:minmax(0,1fr) minmax(210px,.55fr); gap:1rem; align-items:start }
+    .ec-instruments { padding:1rem; border:1px solid var(--border,#8897a6); border-radius:14px; background:var(--bg); }
+    .ec-instruments .ll-presets { display:grid; grid-template-columns:1fr 1fr; gap:.4rem }
+    .ec-instruments button { min-height:44px }
+    @media(max-width:800px){ .ec-bench {grid-template-columns:minmax(0,1fr)} }
   </style>
   <style>
     /* Night: lighten inline accent colours that were darkened for day-mode contrast. */
@@ -460,7 +466,64 @@
         <span class="dot"></span>
         <span>K–12</span>
       </div>
-      <p class="ec-lede">Over 2,200 years ago, a librarian in Egypt measured the size of the entire Earth using nothing but a stick, a shadow, and brilliant geometry — and produced a remarkably close estimate. We can repeat the idea with a simple classroom model. Here's how he did it, and how scientists refined the measurement ever since.</p>
+      <p class="ec-lede">In the summer solstice model, at local noon in Syene, a stick casts no shadow. In Alexandria, another stick casts one. How can that difference tell us the distance around Earth?</p>
+    </section>
+    <section class="ec-sim" id="shadow-workbench">
+      <h2>Measure a planet with two sticks</h2>
+      <p class="ec-sim-sub"><strong>Predict:</strong> keep distance fixed and double the angle. Will the estimated planet become larger or smaller? Try Double angle and use the yellow arc to explain your result.</p>
+
+      <div class="ec-bench"><div class="ec-diagram-box"><canvas id="ec-canvas" height="540" role="img" aria-label="Earth cross-section and enlarged stick-shadow geometry" aria-describedby="ec-diagram-description"></canvas></div><div class="ec-instruments">        <span class="ll-label">Experiment Presets</span>
+        <div class="ll-presets" id="ec-presets">
+          <button class="ll-preset ll-active ec-preset-btn" data-angle="7.2" data-dist="800">Classic example</button>
+          <button class="ll-preset ec-preset-btn" data-angle="14.4" data-dist="800">Double angle</button>
+          <button class="ll-preset ec-preset-btn" data-angle="3.6" data-dist="800">Half angle</button>
+          <button class="ll-preset ec-preset-btn" data-angle="7.2" data-dist="1600">Double distance</button>
+        </div>
+        <hr class="ll-hr">
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <label for="ec-angle-slider">Shadow angle</label>
+            <span class="ll-val" id="ec-angle-val">7.2°</span>
+          </div>
+          <input type="range" class="ec-slider" id="ec-angle-slider" min="0.3" max="20" step="0.1" value="7.2" style="width:100%;accent-color:#34c759;" />
+          <div class="ll-param-ends"><span>0.3°</span><span>20°</span></div>
+        </div>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <label for="ec-dist-slider">City distance</label>
+            <span class="ll-val" id="ec-dist-val">800 km</span>
+          </div>
+          <input type="range" class="ec-slider" id="ec-dist-slider" min="50" max="3000" step="10" value="800" style="width:100%;accent-color:#34c759;" />
+          <div class="ll-param-ends"><span>50 km</span><span>3,000 km</span></div>
+        </div>
+        <hr class="ll-hr">
+        <span class="ll-label">Live Readout</span>
+        <div class="ll-readouts">
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Circumference (km)</span>
+            <span class="ll-readout-val" id="ec-r-circ">40,000</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Share of a full turn</span>
+            <span class="ll-readout-val" id="ec-r-frac">2.00%</span>
+          </div>
+        </div></div></div>
+      <p id="ec-diagram-description">Parallel sunlight reaches two sticks pointing away from Earth's center. One has no shadow; the other makes the same angle with sunlight as the angle between the cities at the center. The lower view magnifies a 1 m stick and its shadow.</p>
+      <p id="ec-geometry-summary" role="status"></p>
+      <details><summary>Model assumptions and a real-world test</summary><p>We assume a spherical Earth, parallel rays, cities on one meridian, and the Sun overhead at the southern city. Sticks are enlarged; the globe shows angle, not a map. Changing distance or angle independently represents a new hypothetical planet estimate. Real Earth is slightly flattened. For a class measurement, record a vertical stick's height and shadow on level ground at local solar noon; partner with another school and compare zenith angles and meridian distance. Do not look at the Sun.</p></details>
+
+      <div class="ec-readout" style="margin-top:0.8rem;">
+        <div class="ec-readout-cell">
+          <span class="ec-readout-label">Shadow Angle</span>
+          <span class="ec-readout-val" id="ec-r-angle">7.2</span>
+          <span class="ec-readout-unit">degrees</span>
+        </div>
+        <div class="ec-readout-cell">
+          <span class="ec-readout-label">Arc Distance</span>
+          <span class="ec-readout-val" id="ec-r-dist">800</span>
+          <span class="ec-readout-unit">km</span>
+        </div>
+      </div>
     </section>
 
 
@@ -541,28 +604,7 @@
       </div>
     </section>
     <!-- ── Interactive Simulator ── -->
-    <section class="ec-sim">
-      <h2>Replicate Eratosthenes' Experiment</h2>
-      <p class="ec-sim-sub"><strong>Predict:</strong> keep distance fixed and double the angle. Will the estimated planet become larger or smaller? Open Controls, test your prediction, then explain it using the yellow arc.</p>
 
-      <div class="ec-diagram-box"><canvas id="ec-canvas" height="540" role="img" aria-label="Earth cross-section and enlarged stick-shadow geometry" aria-describedby="ec-diagram-description"></canvas></div>
-      <p id="ec-diagram-description">Parallel sunlight reaches two sticks pointing away from Earth's center. One has no shadow; the other makes the same angle with sunlight as the angle between the cities at the center. The lower view magnifies a 1 m stick and its shadow.</p>
-      <p id="ec-geometry-summary" role="status"></p>
-      <details><summary>Model assumptions and a real-world test</summary><p>We assume a spherical Earth, parallel rays, cities on one meridian, and the Sun overhead at the southern city. Sticks are enlarged; the globe shows angle, not a map. Changing distance or angle independently represents a new hypothetical planet estimate. Real Earth is slightly flattened. For a class measurement, record a vertical stick's height and shadow on level ground at local solar noon; partner with another school and compare zenith angles and meridian distance. Do not look at the Sun.</p></details>
-
-      <div class="ec-readout" style="margin-top:0.8rem;">
-        <div class="ec-readout-cell">
-          <span class="ec-readout-label">Shadow Angle</span>
-          <span class="ec-readout-val" id="ec-r-angle">7.2</span>
-          <span class="ec-readout-unit">degrees</span>
-        </div>
-        <div class="ec-readout-cell">
-          <span class="ec-readout-label">Arc Distance</span>
-          <span class="ec-readout-val" id="ec-r-dist">800</span>
-          <span class="ec-readout-unit">km</span>
-        </div>
-      </div>
-    </section>
 
     <!-- ── Model Showdown Evidence Lab ── -->
     <section class="evidence-lab" aria-labelledby="evidence-lab-title">
@@ -680,11 +722,12 @@
       <h2>Others Who Measured the Earth</h2>
       <p>Eratosthenes wasn't the last to tackle this problem. Over the next 2,000 years, scientists across the world refined the measurement using better instruments, higher mountains, and eventually satellites.</p>
 
-      <ul class="ec-timeline">
+      <ol class="ec-timeline" data-timeline data-timeline-title="Measuring Earth’s Circumference" data-timeline-gaps data-timeline-tour>
+        <li data-when="240 BC–100 BC" data-era>Classical Greek Geometry</li>
+        <li data-when="827–1030" data-era>Islamic Golden Age Surveys</li>
+        <li data-when="1669–present" data-era>Telescopes, Meridian Arcs &amp; Satellites</li>
 
-        <li>
-          <div class="ec-tl-year-col">240 BC</div>
-          <div class="ec-tl-dot" style="background:#ff9500;"></div>
+        <li data-when="240 BC" data-label="Eratosthenes of Cyrene">
           <div class="ec-tl-body">
             <p class="ec-tl-name">Eratosthenes of Cyrene</p>
             <span class="ec-tl-result" style="background:rgba(52,199,89,0.12);color:#1a7a2e;">~40,000 km · rounded example</span>
@@ -692,9 +735,7 @@
           </div>
         </li>
 
-        <li>
-          <div class="ec-tl-year-col">100 BC</div>
-          <div class="ec-tl-dot" style="background:#5856d6;"></div>
+        <li data-when="100 BC" data-label="Poseidonius of Apamea">
           <div class="ec-tl-body">
             <p class="ec-tl-name">Poseidonius of Apamea</p>
             <span class="ec-tl-result" style="background:rgba(88,86,214,0.1);color:#3a38c4;">~38,600 km · 3.7% off</span>
@@ -702,9 +743,7 @@
           </div>
         </li>
 
-        <li>
-          <div class="ec-tl-year-col">827 AD</div>
-          <div class="ec-tl-dot" style="background:#34c759;"></div>
+        <li data-when="827" data-label="Al-Ma'mun's Expedition">
           <div class="ec-tl-body">
             <p class="ec-tl-name">Al-Ma'mun's Expedition (Baghdad)</p>
             <span class="ec-tl-result" style="background:rgba(52,199,89,0.12);color:#1a7a2e;">~40,250 km · 0.4% off</span>
@@ -712,9 +751,7 @@
           </div>
         </li>
 
-        <li>
-          <div class="ec-tl-year-col">1030 AD</div>
-          <div class="ec-tl-dot" style="background:#5ac8fa;"></div>
+        <li data-when="1030" data-label="Al-Biruni of Khwarezm">
           <div class="ec-tl-body">
             <p class="ec-tl-name">Al-Biruni of Khwarezm</p>
             <span class="ec-tl-result" style="background:rgba(90,200,250,0.12);color:#0071a4;">~40,248 km · 0.4% off</span>
@@ -722,9 +759,7 @@
           </div>
         </li>
 
-        <li>
-          <div class="ec-tl-year-col">1669</div>
-          <div class="ec-tl-dot" style="background:#007aff;"></div>
+        <li data-when="1669" data-label="Jean Picard">
           <div class="ec-tl-body">
             <p class="ec-tl-name">Jean Picard (France)</p>
             <span class="ec-tl-result" style="background:rgba(0,122,255,0.1);color:#0055cc;">~40,062 km · 0.03% off</span>
@@ -732,9 +767,7 @@
           </div>
         </li>
 
-        <li>
-          <div class="ec-tl-year-col">1799</div>
-          <div class="ec-tl-dot" style="background:#ff3b30;"></div>
+        <li data-when="1799" data-label="Méchain &amp; Delambre">
           <div class="ec-tl-body">
             <p class="ec-tl-name">Méchain &amp; Delambre (France)</p>
             <span class="ec-tl-result" style="background:rgba(255,59,48,0.1);color:#c0392b;">~40,009 km · 0.02% off</span>
@@ -742,9 +775,7 @@
           </div>
         </li>
 
-        <li>
-          <div class="ec-tl-year-col">Today</div>
-          <div class="ec-tl-dot" style="background:#34c759;border-color:#34c759;"></div>
+        <li data-when="present" data-label="GPS Satellites &amp; Laser Ranging">
           <div class="ec-tl-body">
             <p class="ec-tl-name">GPS Satellites &amp; Laser Ranging</p>
             <span class="ec-tl-result" style="background:rgba(52,199,89,0.12);color:#1a7a2e;">40,075.017 km · exact</span>
@@ -752,7 +783,7 @@
           </div>
         </li>
 
-      </ul>
+      </ol>
 
       <h3>How Accurate Were They?</h3>
       <table class="ec-acc-table" aria-label="Accuracy comparison of Earth circumference measurements">
@@ -829,7 +860,7 @@
 
     <!-- ── Practice Problems ── -->
     <section class="ec-card" style="--card-accent:#34c759;">
-      <h2>Practice Problems</h2>
+      <h2 id="ec-practice">Practice Problems</h2>
       <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Use the formula: Circumference = 360° ÷ angle × distance. Round to the nearest whole number unless stated.</p>
       <div class="ec-practice">
 
@@ -902,49 +933,19 @@
   <aside class="ll-panel" aria-hidden="false">
     <div class="ll-panel-head">
       <div class="ll-tabs">
-        <button class="ll-tab" aria-selected="true" data-pane="ec-params">Controls</button>
+        <button class="ll-tab" aria-selected="true" data-pane="ec-params">Explore</button>
         <button class="ll-tab" aria-selected="false" data-pane="ec-guide">Guide</button>
       </div>
       <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
     </div>
     <div class="ll-panel-body">
       <div class="ll-pane ll-active" id="ec-params">
-        <span class="ll-label">Experiment Presets</span>
-        <div class="ll-presets" id="ec-presets">
-          <button class="ll-preset ll-active ec-preset-btn" data-angle="7.2" data-dist="800">Classic example</button>
-          <button class="ll-preset ec-preset-btn" data-angle="14.4" data-dist="800">Double angle</button>
-          <button class="ll-preset ec-preset-btn" data-angle="3.6" data-dist="800">Half angle</button>
-          <button class="ll-preset ec-preset-btn" data-angle="7.2" data-dist="1600">Double distance</button>
-        </div>
-        <hr class="ll-hr">
-        <div class="ll-param">
-          <div class="ll-param-label">
-            <label for="ec-angle-slider">Shadow angle</label>
-            <span class="ll-val" id="ec-angle-val">7.2°</span>
-          </div>
-          <input type="range" class="ec-slider" id="ec-angle-slider" min="0.3" max="20" step="0.1" value="7.2" style="width:100%;accent-color:#34c759;" />
-          <div class="ll-param-ends"><span>0.3°</span><span>20°</span></div>
-        </div>
-        <div class="ll-param">
-          <div class="ll-param-label">
-            <label for="ec-dist-slider">City distance</label>
-            <span class="ll-val" id="ec-dist-val">800 km</span>
-          </div>
-          <input type="range" class="ec-slider" id="ec-dist-slider" min="50" max="3000" step="10" value="800" style="width:100%;accent-color:#34c759;" />
-          <div class="ll-param-ends"><span>50 km</span><span>3,000 km</span></div>
-        </div>
-        <hr class="ll-hr">
-        <span class="ll-label">Live Readout</span>
-        <div class="ll-readouts">
-          <div class="ll-readout">
-            <span class="ll-readout-lbl">Circumference</span>
-            <span class="ll-readout-val" id="ec-r-circ">40,000</span>
-          </div>
-          <div class="ll-readout">
-            <span class="ll-readout-lbl">Full turn</span>
-            <span class="ll-readout-val" id="ec-r-frac">1/50</span>
-          </div>
-        </div>
+        <nav class="ec-jumps" aria-label="Lesson sections">
+          <a href="#shadow-workbench">Shadow experiment</a>
+          <a href="#ec-images-title">Photo gallery</a>
+          <a href="#evidence-lab-title">Evidence lab</a>
+          <a href="#ec-practice">Practice problems</a>
+        </nav>
       </div>
       <div class="ll-pane" id="ec-guide">
         <div class="ll-info">
@@ -1078,26 +1079,21 @@
     SimKit.theme.onChange(()=>drawDiagram());
 
     function update() {
+      document.querySelectorAll('.ec-preset-btn').forEach(button => {
+        const selected = Number(button.dataset.angle) === getAngle() && Number(button.dataset.dist) === getDist();
+        button.classList.toggle('ll-active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      });
       updateReadout();
       drawDiagram();
     }
 
-    angleSlider.addEventListener('input', () => {
-      // deactivate presets
-      document.querySelectorAll('.ec-preset-btn').forEach(b => b.classList.remove('active'));
-      update();
-    });
-    distSlider.addEventListener('input', () => {
-      document.querySelectorAll('.ec-preset-btn').forEach(b => b.classList.remove('active'));
-      update();
-    });
+    angleSlider.addEventListener('input', update);
+    distSlider.addEventListener('input', update);
 
-    // Presets
     document.getElementById('ec-presets').addEventListener('click', e => {
       const btn = e.target.closest('.ec-preset-btn');
       if (!btn) return;
-      document.querySelectorAll('.ec-preset-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
       angleSlider.value = btn.dataset.angle;
       distSlider.value  = btn.dataset.dist;
       update();

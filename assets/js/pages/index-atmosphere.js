@@ -53,7 +53,7 @@
     const width = backdrop.clientWidth;
     const height = backdrop.clientHeight;
     if (!width || !height) return;
-    const scale = Math.min(window.devicePixelRatio || 1, 1.5, 1050 / width, 360 / height);
+    const scale = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(2400000 / (width * height)));
     backdrop.width = Math.max(1, Math.round(width * scale));
     backdrop.height = Math.max(1, Math.round(height * scale));
     const ctx = backdrop.getContext("2d");
@@ -88,42 +88,37 @@
     const colors = [palette.s, palette.m, palette.star];
     for (let arm = 0; arm < colors.length; arm += 1) {
       const offset = arm * TAU / colors.length;
-      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-      gradient.addColorStop(0, palette.ink);
-      gradient.addColorStop(0.35, colors[arm]);
-      gradient.addColorStop(1, "transparent");
-      ctx.strokeStyle = gradient;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      for (let i = 0; i <= 80; i += 1) {
-        const progress = i / 80;
-        const reach = radius * (0.055 + 0.945 * progress ** 1.55);
-        const angle = offset + progress * TAU * 0.85;
+      // Sample a cloudy arm with a narrow dust lane along its inner edge.
+      let seed = 1289 + arm * 8191;
+      const random = () => {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        return seed / 4294967296;
+      };
+      // Reuse one soft cloud per arm. Scaling this small stamp avoids
+      // constructing a radial gradient for every knot in the spiral.
+      const cloud = document.createElement("canvas");
+      cloud.width = cloud.height = 48;
+      glow(cloud.getContext("2d"), 24, 24, 24, colors[arm], 0.7);
+      const samples = width < 580 ? 450 : 800;
+      for (let i = 0; i < samples; i++) {
+        const u = random();
+        const spread = random() + random() - 1;
+        const reach = radius * (0.025 + 0.975 * u ** 1.45);
+        const angle = offset + u * TAU * 0.87 + spread * 0.78 + 0.12 * Math.sin(11 * u + arm);
         const x = Math.cos(angle) * reach;
         const y = Math.sin(angle) * reach;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.globalAlpha = 0.12;
-      ctx.lineWidth = radius * 0.14;
-      ctx.stroke();
-      ctx.globalAlpha = 0.21;
-      ctx.lineWidth = radius * 0.045;
-      ctx.stroke();
-      ctx.globalAlpha = 0.52;
-      ctx.lineWidth = 1.25;
-      ctx.stroke();
-
-      for (let i = 1; i < 150; i += 1) {
-        const progress = (i * 0.61803398875) % 1;
-        const scatter = ((i * 0.41421356237) % 1) - 0.5;
-        const reach = radius * (0.055 + 0.945 * progress ** 1.55 + scatter * progress * 0.22);
-        const angle = offset + progress * TAU * 0.85 + scatter * 0.85;
-        ctx.fillStyle = i % 5 === 0 ? palette.ink : colors[arm];
-        ctx.globalAlpha = (1 - progress * 0.84) * (0.32 + (i % 7) * 0.095);
-        dot(ctx, Math.cos(angle) * reach, Math.sin(angle) * reach, i % 9 === 0 ? 1.9 : 0.85);
+        ctx.globalAlpha = (1 - u * 0.72) * (0.25 + random() * 0.6);
+        if (i % 12 === 0) {
+          const extent = radius * (0.04 + random() * 0.07);
+          ctx.drawImage(cloud, x - extent, y - extent, extent * 2, extent * 2);
+        } else {
+          ctx.fillStyle = spread < -0.25 ? palette.shade : i % 4 ? colors[arm] : palette.ink;
+          dot(ctx, x, y, 0.3 + random() ** 3 * 1.4);
+        }
       }
     }
+    ctx.globalAlpha = 1;
+    glow(ctx, 0, 0, radius * 0.14, "#ffdfab", 0.82);
     ctx.restore();
   }
 
@@ -131,22 +126,22 @@
     const rings = (front) => {
       ctx.save();
       ctx.globalAlpha *= front ? 0.9 : 0.45;
-      ctx.lineWidth = 2.6;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 50, 12, -0.3, front ? 0 : Math.PI, front ? Math.PI : TAU);
-      ctx.stroke();
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 58, 14, -0.3, front ? 0 : Math.PI, front ? Math.PI : TAU);
-      ctx.stroke();
+      for (let band = 0; band < 14; band++) {
+        const radius = 37 + band * 1.6;
+        ctx.strokeStyle = band === 9 ? p.shade : band % 3 ? "#c8ae88" : "#f3dfba";
+        ctx.lineWidth = band === 9 ? 1.5 : 0.95;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius, radius * 0.24, -0.3, front ? 0 : Math.PI, front ? Math.PI : TAU);
+        ctx.stroke();
+      }
       ctx.restore();
     };
     rings(false);
     const ball = ctx.createRadialGradient(-9, -10, 2, 0, 0, 30);
     ball.addColorStop(0, p.ink);
-    ball.addColorStop(0.36, p.s);
+    ball.addColorStop(0.36, "#e3c991");
     ball.addColorStop(0.82, p.shade);
-    ball.addColorStop(1, p.m);
+    ball.addColorStop(1, "#494256");
     ctx.fillStyle = ball;
     dot(ctx, 0, 0, 27);
     ctx.save();
@@ -163,6 +158,13 @@
       ctx.bezierCurveTo(-12 + shift, y + 7, 10 + shift, y - 2, 40 + shift, y - 5);
       ctx.stroke();
     }
+    // The rings cast a thin arc across the sunlit hemisphere.
+    ctx.globalAlpha = 0.32;
+    ctx.strokeStyle = "#302e42";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, 4, 42, 9, -0.3, 0, Math.PI);
+    ctx.stroke();
     ctx.restore();
     rings(true);
   }
@@ -298,6 +300,14 @@
     ctx.bezierCurveTo(12, 5, 12, 22, 20, 28);
     ctx.bezierCurveTo(4, 42, -44, 36, -46, 4);
     ctx.closePath();
+    const wood = ctx.createLinearGradient(-35, -28, 25, 32);
+    wood.addColorStop(0, "#ddad74");
+    wood.addColorStop(0.55, "#a66e43");
+    wood.addColorStop(1, "#64422e");
+    ctx.moveTo(13, 14);
+    ctx.ellipse(6, 14, 7, 5, 0.3, 0, TAU);
+    ctx.fillStyle = wood;
+    ctx.fill("evenodd");
     ctx.stroke();
     ctx.beginPath();
     ctx.ellipse(6, 14, 7, 5, 0.3, 0, TAU);
@@ -319,6 +329,14 @@
 
   function chip(ctx, t, p) {
     ctx.lineWidth = 2;
+    const ceramic = ctx.createLinearGradient(-26, -26, 26, 26);
+    ceramic.addColorStop(0, "#627485");
+    ceramic.addColorStop(0.45, "#263647");
+    ceramic.addColorStop(1, "#111924");
+    ctx.fillStyle = ceramic;
+    ctx.fillRect(-26, -26, 52, 52);
+    ctx.fillStyle = "#a3afbc";
+    dot(ctx, -20, -20, 2);
     ctx.strokeRect(-26, -26, 52, 52);
     ctx.lineWidth = 1.2;
     ctx.beginPath();
@@ -376,7 +394,7 @@
     const canvas = document.createElement("canvas");
     const [x, y] = HEADINGS[i];
     canvas.className = "home-atmosphere-subject";
-    canvas.width = canvas.height = 160;
+
     canvas.style.setProperty("--heading-x", x);
     canvas.style.setProperty("--heading-y", y);
     canvas.style.setProperty("--flight-delay", `-${(i * 4 + 7) % 36}s`);
@@ -385,8 +403,8 @@
   stage.append(...subjects);
 
   function drawSubject(canvas, draw, hue, time) {
-    const size = canvas.width;
-    canvas.width = size;
+    const size = Math.min(448, Math.ceil(canvas.clientWidth * 1.28 * Math.min(window.devicePixelRatio || 1, 2)));
+    canvas.width = canvas.height = Math.max(1, size);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.translate(size / 2, size / 2);
@@ -437,7 +455,7 @@
     const height = memory && !memory.hidden && memory.offsetParent === bar
       ? `${memory.offsetTop}px` : "";
     if (height !== stage.style.height) stage.style.height = height;
-    backdropDirty = true;
+    backdropDirty = subjectsDirty = true;
     update();
   }
 

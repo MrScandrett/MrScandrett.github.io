@@ -623,7 +623,7 @@
       text: 'Filmed a young snailfish at 8,336 m — the deepest fish ever recorded, right near the depth limit predicted for fish.' },
   ];
   const tl = $('ex-timeline');
-  if (tl) tl.innerHTML = DIVES.map(d => '<li class="oz-tl-item"><span class="oz-tl-year">' + d.year + '</span><div class="oz-tl-body"><h3>' + d.who + ' <small>· ' + d.craft + '</small></h3><p class="oz-tl-depth">' + (d.depth > 10000 ? '≈ ' : '') + fmt(d.depth) + ' m</p><p>' + d.text + '</p>' + diveButton(d.depth, 'Dive to ' + fmt(d.depth) + ' m') + '</div></li>').join('');
+  if (tl && !tl.children.length) tl.innerHTML = DIVES.map(d => '<li class="oz-tl-item" data-when="' + d.year + '" data-label="' + d.who + '"><div class="oz-tl-body"><h3>' + d.who + ' <small>· ' + d.craft + '</small></h3><p class="oz-tl-depth">' + (d.depth > 10000 ? '≈ ' : '') + fmt(d.depth) + ' m</p><p>' + d.text + '</p>' + diveButton(d.depth, 'Dive to ' + fmt(d.depth) + ' m') + '</div></li>').join('');
 
   /* ══════════ Quiz ══════════ */
   const QUIZ = [

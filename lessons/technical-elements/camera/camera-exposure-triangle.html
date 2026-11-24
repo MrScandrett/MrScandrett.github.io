@@ -140,7 +140,13 @@
           <h2>Interactive: Balance the Triangle</h2>
           <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Move any slider and watch the exposure meter and preview shift. Try to land the marker in the center — then notice what changed with it.</p>
           <div class="cet-lab">
-            <div class="cet-preview" id="cet-preview">Preview</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem"><div><strong>Reference shot</strong><svg viewBox="0 0 240 138" role="img" aria-label="Stage photograph simulation with drummer and background lights" style="display:block;width:100%;border-radius:8px;background:#101528">
+<defs><pattern id="curtain-ref" width="18" height="60" patternUnits="userSpaceOnUse"><rect width="18" height="60" fill="#602751"/><path d="M4 0v60" stroke="#ab5480" stroke-width="5"/></pattern><filter id="noise-ref"><feTurbulence baseFrequency=".76" numOctaves="2" stitchTiles="stitch"/></filter></defs>
+<g class="backdrop"><rect width="240" height="138" fill="url(#curtain-ref)"/><path d="M24 5L50 122H170L34 5M204 5l-90 117h90l10-117" fill="#ffdc93" opacity=".28"/></g>
+<ellipse cx="119" cy="132" rx="83" ry="5" fill="#19162c"/><circle cx="119" cy="54" r="11" fill="#e9b78e"/><path d="M97 98q1-35 20-32 20-3 25 32" fill="#314766"/><g class="sticks" stroke="#ffe3ad" stroke-width="3"><path d="M99 83L76 48m62 35 22-36"/></g><g fill="#b35440" stroke="#e9bf90" stroke-width="2"><rect x="66" y="94" width="37" height="20" rx="3"/><rect x="139" y="92" width="36" height="23" rx="3"/><circle cx="119" cy="109" r="23"/></g><circle cx="119" cy="109" r="16" fill="#27354e"/><rect class="grain" width="240" height="138" filter="url(#noise-ref)" opacity=".05"/></svg></div><div><strong>Your shot</strong><svg viewBox="0 0 240 138" role="img" aria-label="Stage photograph simulation with drummer and background lights" style="display:block;width:100%;border-radius:8px;background:#101528">
+<defs><pattern id="curtain-live" width="18" height="60" patternUnits="userSpaceOnUse"><rect width="18" height="60" fill="#602751"/><path d="M4 0v60" stroke="#ab5480" stroke-width="5"/></pattern><filter id="noise-live"><feTurbulence baseFrequency=".76" numOctaves="2" stitchTiles="stitch"/></filter></defs>
+<g class="backdrop"><rect width="240" height="138" fill="url(#curtain-live)"/><path d="M24 5L50 122H170L34 5M204 5l-90 117h90l10-117" fill="#ffdc93" opacity=".28"/></g>
+<ellipse cx="119" cy="132" rx="83" ry="5" fill="#19162c"/><circle cx="119" cy="54" r="11" fill="#e9b78e"/><path d="M97 98q1-35 20-32 20-3 25 32" fill="#314766"/><g class="sticks" stroke="#ffe3ad" stroke-width="3"><path d="M99 83L76 48m62 35 22-36"/></g><g fill="#b35440" stroke="#e9bf90" stroke-width="2"><rect x="66" y="94" width="37" height="20" rx="3"/><rect x="139" y="92" width="36" height="23" rx="3"/><circle cx="119" cy="109" r="23"/></g><circle cx="119" cy="109" r="16" fill="#27354e"/><rect class="grain" width="240" height="138" filter="url(#noise-live)" opacity=".05"/></svg></div></div><small>Reference: f/5.6 · 1/125 s · ISO 400. Match its brightness with a different shutter speed.</small>
 
             <div class="cet-slider-row">
               <label><span>Aperture</span><span id="cet-aperture-val">f/5.6</span></label>
@@ -336,21 +342,35 @@
     document.getElementById('cet-shutter-val').textContent = CET_SHUTTERS[sIdx];
     document.getElementById('cet-iso-val').textContent = CET_ISOS[iIdx];
 
-    // Each index step is roughly one stop of light. Balanced point: a=3, s=4, i=2.
-    var ev = (aIdx - 3) * -1 + (sIdx - 4) * -1 + (iIdx - 2);
-    // Wider aperture (lower index) = more light, so invert aperture's contribution.
-    ev = (3 - aIdx) + (sIdx - 4) + (iIdx - 2);
+    var aperture = Number(CET_APERTURES[aIdx].slice(2));
+    var denominator = Number(CET_SHUTTERS[sIdx].slice(2, -1));
+    var ev = Math.log2((5.6 / aperture) ** 2 * 125 / denominator * CET_ISOS[iIdx] / 400);
     ev = Math.max(-3, Math.min(3, ev));
 
     var pct = ((ev + 3) / 6) * 100;
     document.getElementById('cet-meter-marker').style.left = pct + '%';
 
     var verdict = document.getElementById('cet-verdict');
-    var preview = document.getElementById('cet-preview');
-    var brightness = 30 + ((ev + 3) / 6) * 55;
-    preview.style.background = 'hsl(260, 25%, ' + brightness + '%)';
-    readableInk(preview, preview.style.background);
-    preview.textContent = ev <= -1 ? 'Underexposed' : ev >= 1 ? 'Overexposed' : 'Correctly Exposed';
+    for (const [id, apertureStep, shutterStep, isoStep, stops] of [
+      ['ref', 3, 4, 2, 0], ['live', aIdx, sIdx, iIdx, ev]
+    ]) {
+      const frame = document.getElementById('curtain-' + id).closest('svg');
+      frame.style.filter = 'brightness(' + 2 ** (stops * 0.65) + ')';
+      frame.querySelector('.backdrop').style.filter = 'blur(' + (6 - apertureStep) * 0.7 + 'px)';
+      const sticks = frame.querySelector('.sticks');
+      const sweep = [0, 1, 2, 4, 7, 12, 20, 33, 52][shutterStep];
+      sticks.innerHTML = '';
+      for (let sample = 0; sample < 8; sample++) {
+        const stick = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const angle = sample * sweep / 7 * Math.PI / 180;
+        const dx = 23 * Math.cos(angle) + 35 * Math.sin(angle);
+        const dy = 23 * Math.sin(angle) - 35 * Math.cos(angle);
+        stick.setAttribute('d', 'M99 83l' + -dx + ' ' + dy + 'M138 83l' + dx + ' ' + dy);
+        stick.setAttribute('opacity', '.28');
+        sticks.appendChild(stick);
+      }
+      frame.querySelector('.grain').setAttribute('opacity', isoStep ** 2 / 100);
+    }
 
     if (ev <= -1) { verdict.textContent = 'Underexposed — too dark. Open the aperture, slow the shutter, or raise ISO.'; verdict.className = 'cet-verdict under'; }
     else if (ev >= 1) { verdict.textContent = 'Overexposed — too bright. Close the aperture, speed up the shutter, or lower ISO.'; verdict.className = 'cet-verdict over'; }
@@ -393,5 +413,6 @@
 <script src="../../../assets/js/classroom-animations.js"></script>
 <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

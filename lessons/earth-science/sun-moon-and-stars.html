@@ -395,7 +395,22 @@
         grid-template-columns: repeat(2, 1fr);
       }
     }
-  </style>
+  .shadow-model {min-width:0;margin:1rem 0 1.5rem;padding:1rem;border:1px solid #405774;border-radius:1rem;background:#101d31;color:#f1f5f9}
+.shadow-model legend {background:#1c304b;padding:.3rem .8rem;border-radius:.5rem;font-weight:700}
+.shadow-model label {display:inline-flex;align-items:center;gap:.4rem;min-height:44px;padding:0 .65rem;cursor:pointer}
+.shadow-stage {position:relative;height:135px;isolation:isolate;background:linear-gradient(100deg,#473621,#182b44 47%,#0b1423);border-radius:.6rem}
+.shadow-body {position:absolute;top:50%;transform:translate(-50%,-50%);border-radius:50%}
+.shadow-body b {position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);font-size:.85rem}
+.shadow-sun {left:10%;width:54px;height:54px;background:radial-gradient(circle at 32% 38%,#fff4a3,#ffb323 65%,#e57e13);box-shadow:0 0 22px #ffb32366}
+.shadow-earth {left:82%;width:38px;height:38px;background:radial-gradient(circle at 22% 38%,#8edfd8,#2771ad 53%,#10253d 82%)}
+.shadow-moon {left:53%;width:16px;height:16px;background:linear-gradient(90deg,#e5e7eb,#8b96a7 53%,#334155)}
+.shadow-cone {position:absolute;left:53%;right:10%;height:16px;top:50%;transform:translateY(-50%);background:#050910;clip-path:polygon(0 0,100% 50%,0 100%)}
+.shadow-model:has([value="lunar"]:checked) .shadow-earth {left:53%}
+.shadow-model:has([value="lunar"]:checked) .shadow-moon {left:82%;background:#9c5140}
+.shadow-model:has([value="lunar"]:checked) .shadow-cone {height:38px;right:0;clip-path:polygon(0 0,100% 35%,100% 65%,0 100%)}
+.shadow-model p {margin:.7rem 0 .2rem;color:#f1f5f9}
+.shadow-model small {color:#b9c8dc}
+</style>
   <script src="../../assets/js/vr-mode.js" defer></script>
 </head>
 <body>
@@ -570,7 +585,7 @@
             <div class="sms-section-header">
               <span class="sms-badge">Orbital Geometry</span>
               <h2 id="moonphases-title">3 · Moon Phases Orbital Laboratory</h2>
-              <p>The most common misconception in astronomy is that Moon phases are caused by Earth's shadow. They are NOT! <b>Exactly half of the Moon is always illuminated by the Sun at all times.</b> The phase we see changes simply because we view that illuminated half from different orbital angles as the Moon circles Earth every 29.5 days.</p>
+              <p>Move the Moon around Earth. Sunlight normally lights half its surface. <b>How much of that bright half can you see from Earth?</b> The pattern repeats about every 29.5 days.</p>
             </div>
 
             <div class="lab-box">
@@ -642,11 +657,25 @@
               <p>Why don't we have eclipses every single month? Because the Moon's orbit is tilted <b>5.14 degrees</b> relative to Earth's orbital plane (the ecliptic). Eclipses can only occur when the Moon crosses the plane of Earth's orbit at points called <i>nodes</i>.</p>
             </div>
 
+            <fieldset class="shadow-model">
+              <legend>Trace the shadow</legend>
+              <label><input type="radio" name="alignment" value="solar" checked> New Moon</label>
+              <label><input type="radio" name="alignment" value="lunar"> Full Moon</label>
+              <div class="shadow-stage" aria-hidden="true">
+                <span class="shadow-cone"></span>
+                <span class="shadow-body shadow-sun"><b>Sun</b></span>
+                <span class="shadow-body shadow-earth"><b>Earth</b></span>
+                <span class="shadow-body shadow-moon"><b>Moon</b></span>
+              </div>
+              <p aria-live="polite" id="shadow-reading">Solar eclipse · The Moon casts a small shadow onto Earth.</p>
+              <small>Side view during alignment. Sizes and distances are exaggerated.</small>
+            </fieldset>
+
             <div class="sms-grid-2">
               <div class="eclipse-card" style="border-left:4px solid #ea580c;">
                 <h3 style="margin:0 0 0.5rem; font-size:1.25rem; color:#c2410c;">Solar Eclipse (New Moon Alignment)</h3>
                 <p style="font-size:0.9rem; line-height:1.55; color:var(--text-muted); margin:0 0 1rem;">
-                  The Moon passes directly between the Sun and Earth ($Sun \rightarrow Moon \rightarrow Earth$). By a breathtaking cosmic coincidence, the Sun is 400 times wider than the Moon, but also 400 times farther away! They appear almost identical in angular size (0.5°).
+                  The Moon passes directly between the Sun and Earth. By a breathtaking cosmic coincidence, the Sun is 400 times wider than the Moon, but also 400 times farther away! They appear almost identical in angular size (0.5°).
                 </p>
                 <ul style="font-size:0.88rem; line-height:1.5; color:var(--text); margin:0; padding-left:1.2rem;">
                   <li><b>Umbra:</b> The dark inner shadow cone where totality occurs, revealing the ghostly white solar corona.</li>
@@ -658,7 +687,7 @@
               <div class="eclipse-card" style="border-left:4px solid #dc2626;">
                 <h3 style="margin:0 0 0.5rem; font-size:1.25rem; color:#b91c1c;">Lunar Eclipse (Full Moon Alignment)</h3>
                 <p style="font-size:0.9rem; line-height:1.55; color:var(--text-muted); margin:0 0 1rem;">
-                  Earth passes directly between the Sun and the Moon ($Sun \rightarrow Earth \rightarrow Moon$), casting Earth's massive shadow across the full lunar disc. Visible from the entire night hemisphere of Earth!
+                  Earth passes directly between the Sun and the Moon, casting Earth's massive shadow across the full lunar disc. Visible from the entire night hemisphere of Earth!
                 </p>
                 <ul style="font-size:0.88rem; line-height:1.5; color:var(--text); margin:0; padding-left:1.2rem;">
                   <li><b>Blood Moon Color:</b> During totality, the Moon doesn't turn black—it glows deep copper-red.</li>
@@ -1459,16 +1488,7 @@
       mvCtx.arc(cx, cy, r, 0, Math.PI * 2);
       mvCtx.stroke();
 
-      // Find closest named phase
-      let closest = moonPhasesData[0];
-      let minDiff = 999;
-      moonPhasesData.forEach(p => {
-        const diff = Math.abs(p.angle - normAngle);
-        if (diff < minDiff) {
-          minDiff = diff;
-          closest = p;
-        }
-      });
+      const closest = moonPhasesData[Math.round(normAngle / 45) % 8];
 
       document.getElementById('phaseName').textContent = closest.name;
       document.getElementById('phaseIllum').textContent = Math.round(phaseFrac * 100) + '%';
@@ -1496,7 +1516,9 @@
       const norm = ((currentMoonAngle % 360) + 360) % 360;
       document.querySelectorAll('.phase-chip').forEach(btn => {
         const ba = parseFloat(btn.dataset.angle);
-        btn.classList.toggle('is-active', Math.abs(ba - norm) < 22.5 || (ba === 0 && norm > 337.5));
+        const selected = ba === (Math.round(norm / 45) % 8) * 45;
+        btn.classList.toggle('is-active', selected);
+        btn.setAttribute('aria-pressed', String(selected));
       });
     }
 
@@ -1823,6 +1845,13 @@
   })();
   </script>
 
+<script>
+document.querySelector('.shadow-model').addEventListener('change', event => {
+  document.getElementById('shadow-reading').textContent = event.target.value === 'lunar'
+    ? 'Lunar eclipse · Earth casts its shadow onto the full Moon.'
+    : 'Solar eclipse · The Moon casts a small shadow onto Earth.';
+});
+</script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>

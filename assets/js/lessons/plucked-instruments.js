@@ -38,11 +38,23 @@
     return control;
   }
 
+  function pulseKey(el) {
+    if (!el) return;
+    el.classList.remove('is-plucked');
+    void el.offsetWidth;
+    el.classList.add('is-plucked');
+    clearTimeout(el._pluckTimer);
+    el._pluckTimer = setTimeout(() => el.classList.remove('is-plucked'), 180);
+  }
+
   function playNote(midi) {
     AudioKit.note({ midi, instrument: ukulele ? 'pluck' : 'ePiano', duration: .55, velocity: .55 });
   }
 
   function playStrum() {
+    for (let string = 0; string < tuning.length; string++) {
+      pulseKey(board.querySelector(`[data-string="${string}"][data-fret="${frets[string]}"]`));
+    }
     AudioKit.chord({
       midi: tuning.map((midi, string) => midi + frets[string]),
       instrument: 'pluck', spread: .032, duration: .65, velocity: .42
@@ -130,6 +142,7 @@
           stopDemo();
           frets[string] = fret;
           showFrets();
+          pulseKey(key);
           playNote(midi + fret);
           if (practice.hidden) status.textContent = `${noteName(midi + fret)} · ${fret === 0 ? 'Open string' : 'Fret ' + fret}`;
         });
@@ -158,6 +171,7 @@
     for (const degree of [7, 5, 3, 1, 0, 2, 4, 6]) {
       const key = button(label(degree), `Tine ${label(degree)}`, () => {
         stopDemo();
+        pulseKey(key);
         playNote(scale[degree]);
         checkStep(target => target === degree);
         if (practice.hidden) status.textContent = `${noteName(scale[degree])} · Tine ${noteLabel(degree)}`;

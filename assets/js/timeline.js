@@ -2323,7 +2323,7 @@
   function adaptLegacyTimelines(scope) {
     LEGACY_TIMELINES.forEach(function (spec) {
       Array.prototype.forEach.call(scope.querySelectorAll(spec[0]), function (container) {
-        if (container.hasAttribute('data-timeline-legacy') || container.closest('.tl')) return;
+        if (container.hasAttribute('data-timeline') || container.hasAttribute('data-timeline-legacy') || container.closest('.tl')) return;
         var items = legacyItems(container, spec[1]);
         if (items.length < 2) return;
         var hasDates = items.some(function (item) {

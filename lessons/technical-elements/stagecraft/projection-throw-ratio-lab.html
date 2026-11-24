@@ -8,6 +8,8 @@
   <meta name="description" content="Pick a projector lens and throw distance to fit a real venue screen without shadows, spill, or an image too small or too large for the wall." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/projection-throw-lab.css" />
   <style>
     .cl-page { padding-bottom: 0; }
     .ll-viewport { --ll-panel-w: 300px; }
@@ -127,11 +129,8 @@
           <div class="ptr-lens-btns" id="ptr-lens-btns"></div>
 
           <div class="ptr-lab">
-            <div class="ptr-stage">
-              <div class="ptr-screen"></div>
-              <span class="ptr-screen-label">Screen</span>
-              <div class="ptr-image-bar" id="ptr-image-bar"></div>
-              <div class="ptr-projector" id="ptr-projector">📽️</div>
+            <div class="ptr-plan-wrap">
+              <svg id="ptr-plan-svg" viewBox="0 0 760 270" role="img" aria-label="Scaled plan-view projector throw diagram showing throw distance and screen width"></svg>
             </div>
 
             <div class="ptr-slider-row">
@@ -166,6 +165,14 @@
 
           <div class="ptr-lab" style="margin-top:0.85rem;">
             <h3 style="margin:0 0 0.5rem;font-size:0.96rem;">Interactive Pre-Production Tool: Upstage Shadow Buffer Calculator</h3>
+            <div class="ptr-shadow-wrap">
+              <svg id="ptr-shadow-svg" viewBox="0 0 760 275" role="img" aria-label="Scaled side-elevation stage diagram showing overhead projector cone and actor shadow dead-zone"></svg>
+              <p class="ptr-drag-hint">Drag the performer left/right across the stage deck or move the slider below to see when head shadows reach the screen.</p>
+            </div>
+            <div class="ptr-slider-row">
+              <label><span>Performer Position Downstage of Screen</span><span id="ptr-sh-actor-x-val">3.5 ft DS</span></label>
+              <input type="range" min="1" max="18" step="0.5" value="3.5" id="ptr-sh-actor-x" oninput="ptrShadowUpdate()" />
+            </div>
             <div class="ptr-slider-row">
               <label><span>Projector Pipe Height (<em>H<sub>proj</sub></em>)</span><span id="ptr-sh-hproj-val">16 ft</span></label>
               <input type="range" min="10" max="26" step="1" value="16" id="ptr-sh-hproj" oninput="ptrShadowUpdate()" />
@@ -184,6 +191,16 @@
               <div class="ptr-readout"><span class="ptr-readout-label">Stage Depth Left for Cast</span><span class="ptr-readout-val" id="ptr-sh-usable">15.5 / 20 ft</span></div>
             </div>
             <div class="ptr-verdict pass" id="ptr-sh-verdict">✓ Spike a keep-clear buffer 5.0 ft downstage of the backdrop so performers never cast head shadows on the projection.</div>
+          </div>
+          <div class="pg-grid" style="margin-top:1rem;">
+            <figure class="pg-card pg-contain" data-zoomable data-lightbox-group="projection-throw">
+              <img src="../../../assets/images/lessons/projection-throw/front-vs-rear-projection-diagram.svg" alt="Architectural cross-section comparing long house front throw, overhead short-throw 0.8:1 rigging, and rear projection zero-shadow stage geometry." loading="lazy" />
+              <figcaption><strong>Front, Overhead Short-Throw &amp; Rear Projection</strong> Raising an overhead short-throw projector shrinks the actor dead-zone; rear projection removes shadows altogether when backstage depth allows.</figcaption>
+            </figure>
+            <figure class="pg-card" data-zoomable data-lightbox-group="projection-throw">
+              <img src="../../../assets/images/lessons/stage-plotting/royal-alexandra-stage.jpg" alt="Royal Alexandra Theatre stage in Toronto viewed from a high balcony showing proscenium depth, scenic wings, and overhead lighting positions." loading="lazy" />
+              <figcaption><strong>Real Venue Sightlines &amp; Depth</strong> Reading stage depth, trim height, and overhead battens lets crew pick a throw lens before load-in day. <small class="photo-credit">Photo: Mack Male · <a href="https://creativecommons.org/licenses/by-sa/2.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 2.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Royal_Alexandra_Stage.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></small></figcaption>
+            </figure>
           </div>
         </section>
 
@@ -297,145 +314,10 @@
 
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
-<script>
-  var PTR_LENSES = {
-    short: { label: 'Short-Throw', ratio: 0.8 },
-    standard: { label: 'Standard', ratio: 1.5 },
-    long: { label: 'Long-Throw', ratio: 2.5 }
-  };
-  var ptrCurrentLens = 'standard';
-  var PTR_SCREEN_WIDTH = 10;
-  var PTR_MAX_DISTANCE = 24;
-  var PTR_STAGE_PX = 320;
-
-  function ptrRenderLensButtons() {
-    var wrap = document.getElementById('ptr-lens-btns');
-    wrap.innerHTML = '';
-    Object.keys(PTR_LENSES).forEach(function (key) {
-      var lens = PTR_LENSES[key];
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'ptr-lens-btn' + (key === ptrCurrentLens ? ' selected' : '');
-      btn.innerHTML = lens.label + '<small>' + lens.ratio + ':1</small>';
-      btn.addEventListener('click', function () { ptrCurrentLens = key; ptrRenderLensButtons(); ptrUpdate(); });
-      wrap.appendChild(btn);
-    });
-  }
-
-  function ptrUpdate() {
-    var lens = PTR_LENSES[ptrCurrentLens];
-    var distance = Number(document.getElementById('ptr-distance-slider').value);
-    document.getElementById('ptr-distance-val').textContent = distance + ' ft';
-
-    var width = distance / lens.ratio;
-    document.getElementById('ptr-r-ratio').textContent = lens.ratio + ':1';
-    document.getElementById('ptr-r-width').textContent = width.toFixed(1) + ' ft';
-    document.getElementById('ptr-r-distance').textContent = distance + ' / ' + PTR_MAX_DISTANCE + ' ft';
-
-    // Visual stage: map distance (0..PTR_MAX_DISTANCE) to px from left edge of the projector track.
-    var projX = 10 + (distance / PTR_MAX_DISTANCE) * (PTR_STAGE_PX - 60);
-    document.getElementById('ptr-projector').style.left = projX + 'px';
-
-    var imgHeightPx = Math.max(6, Math.min(100, (width / PTR_SCREEN_WIDTH) * 100));
-    var bar = document.getElementById('ptr-image-bar');
-    bar.style.height = imgHeightPx + '%';
-    bar.style.top = ((100 - imgHeightPx) / 2) + '%';
-    bar.style.width = '10px';
-
-    var withinScreenTol = Math.abs(width - PTR_SCREEN_WIDTH) <= 0.5;
-    var withinDistance = distance <= PTR_MAX_DISTANCE;
-
-    var constraints = [
-      { label: 'Image width fills the 10 ft screen (currently ' + width.toFixed(1) + ' ft)', pass: withinScreenTol },
-      { label: 'Fits within 24 ft of stage depth (currently ' + distance + ' ft)', pass: withinDistance }
-    ];
-    var wrap = document.getElementById('ptr-constraints');
-    wrap.innerHTML = '';
-    var allPass = true;
-    constraints.forEach(function (c) {
-      if (!c.pass) allPass = false;
-      var row = document.createElement('div');
-      row.className = 'ptr-constraint';
-      row.innerHTML =
-        '<div class="ptr-constraint-label"><span>' + c.label + '</span><span>' + (c.pass ? '✓' : '✗') + '</span></div>' +
-        '<div class="ptr-bar-track"><div class="ptr-bar-fill ' + (c.pass ? 'pass' : 'fail') + '" style="width:' + (c.pass ? 100 : 35) + '%;"></div></div>';
-      wrap.appendChild(row);
-    });
-
-    var verdict = document.getElementById('ptr-verdict');
-    if (allPass) {
-      verdict.textContent = '✓ This lens and distance fill the screen correctly within the venue.';
-      verdict.className = 'ptr-verdict pass';
-    } else if (!withinDistance) {
-      verdict.textContent = '✗ This distance exceeds the venue’s 24 ft of stage depth.';
-      verdict.className = 'ptr-verdict fail';
-    } else if (width < PTR_SCREEN_WIDTH - 0.5) {
-      verdict.textContent = '✗ Image is too small for the screen — move the projector back or pick a shorter-throw lens.';
-      verdict.className = 'ptr-verdict fail';
-    } else {
-      verdict.textContent = '✗ Image overshoots the screen — move the projector closer or pick a longer-throw lens.';
-      verdict.className = 'ptr-verdict fail';
-    }
-  }
-
-  function ptrCheckText(n, correct) {
-    var sel = document.getElementById('ptrans-' + n);
-    var fb = document.getElementById('ptrfb-' + n);
-    var hint = document.getElementById('ptrhint-' + n);
-    if (!sel.value) { fb.textContent = 'Pick an answer first.'; fb.className = 'cl-feedback err'; return; }
-    if (sel.value === correct) {
-      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
-    } else {
-      fb.textContent = '✗ Not quite — check the hint below.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
-    }
-  }
-
-  function ptrCheck(n, correct, tolerance) {
-    var input = document.getElementById('ptrans-' + n);
-    var fb = document.getElementById('ptrfb-' + n);
-    var hint = document.getElementById('ptrhint-' + n);
-    var val = parseFloat(input.value);
-    if (isNaN(val)) { fb.textContent = 'Enter a number first.'; fb.className = 'cl-feedback err'; return; }
-    if (Math.abs(val - correct) <= tolerance) {
-      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
-    } else {
-      fb.textContent = '✗ Not quite — check the hint below.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
-    }
-  }
-
-  function ptrShadowUpdate() {
-    var hProj = Number(document.getElementById('ptr-sh-hproj').value);
-    var dist = Number(document.getElementById('ptr-sh-dist').value);
-    var hActor = Number(document.getElementById('ptr-sh-hactor').value);
-    document.getElementById('ptr-sh-hproj-val').textContent = hProj + ' ft';
-    document.getElementById('ptr-sh-dist-val').textContent = dist + ' ft';
-    document.getElementById('ptr-sh-hactor-val').textContent = hActor.toFixed(1) + ' ft';
-
-    var shadow = dist * (hActor / hProj);
-    var spike = Math.ceil((shadow + 0.5) * 2) / 2;
-    var usable = Math.max(0, 20 - shadow);
-    document.getElementById('ptr-sh-zone').textContent = shadow.toFixed(1) + ' ft';
-    document.getElementById('ptr-sh-spike').textContent = spike.toFixed(1) + ' ft DS';
-    document.getElementById('ptr-sh-usable').textContent = usable.toFixed(1) + ' / 20 ft';
-
-    var v = document.getElementById('ptr-sh-verdict');
-    if (shadow <= 5.5) {
-      v.className = 'ptr-verdict pass';
-      v.textContent = '✓ Compact shadow zone (' + shadow.toFixed(1) + ' ft). Spike a keep-clear buffer ' + spike.toFixed(1) + ' ft downstage of the backdrop.';
-    } else {
-      v.className = 'ptr-verdict fail';
-      v.textContent = '✗ Wide shadow dead-zone (' + shadow.toFixed(1) + ' ft eats into acting space). Hang the projector higher or switch to a shorter-throw lens closer to the screen.';
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    ptrRenderLensButtons();
-    ptrUpdate();
-    ptrShadowUpdate();
-  });
-</script>
+<script src="../../../assets/js/lessons/projection-throw-lab.js"></script>
 <script src="../../../assets/js/classroom-animations.js"></script>
 <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

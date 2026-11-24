@@ -369,6 +369,59 @@
     document.getElementById("bw-parse-feedback").textContent = parsed.error
       ? "Syntax: no match. Nothing will execute. Check word order, missing words, and punctuation."
       : "Syntax: matched. The instruction is ready. Run command to check block names and world rules.";
+    renderParseTree(words, parsed);
+  }
+
+  function renderParseTree(words, parsed) {
+    const svg = document.getElementById("bw-parse-tree");
+    if (!svg) return;
+    const ns = "http://www.w3.org/2000/svg";
+    const mk = (tag, attrs, text) => {
+      const n = document.createElementNS(ns, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+      if (text != null) n.textContent = text;
+      return n;
+    };
+    const rolePalette = {
+      action: ["#e1ecff", "#365d99", "#1e3a8a"],
+      source: ["#fff1c2", "#927021", "#713f12"],
+      target: ["#fff1c2", "#927021", "#713f12"],
+      destination: ["#dfefe8", "#356d56", "#065f46"],
+      support: ["#dfefe8", "#356d56", "#065f46"],
+      relation: ["#f1f5f9", "#64748b", "#334155"],
+      query: ["#f1f5f9", "#64748b", "#334155"],
+      unmatched: ["#fee2e2", "#dc2626", "#991b1b"]
+    };
+    const matched = !parsed.error && Boolean(parsed.rule);
+    const rootBg = matched ? "#dcfce7" : words.length ? "#fee2e2" : "#f1f5f9";
+    const rootStroke = matched ? "#15803d" : words.length ? "#dc2626" : "#64748b";
+    const rootText = matched ? parsed.intent.toUpperCase() : words.length ? "NO MATCH" : "EMPTY";
+
+    const items = [
+      mk("rect", { x: 170, y: 10, width: 180, height: 26, rx: 13, fill: rootBg, stroke: rootStroke, "stroke-width": 1.8 }),
+      mk("text", { x: 260, y: 27, "text-anchor": "middle", "font-family": "ui-monospace, monospace", "font-size": 11.5, "font-weight": 700, fill: rootStroke }, `COMMAND: ${rootText}`)
+    ];
+
+    const slice = words.slice(0, 6);
+    if (slice.length) {
+      const span = 496;
+      const step = span / slice.length;
+      const boxW = Math.min(96, Math.max(60, step - 10));
+      slice.forEach((word, i) => {
+        const cx = 12 + step * (i + 0.5);
+        const role = parsed.rule?.roles[i] || "unmatched";
+        const [bg, stroke, ink] = rolePalette[role] || rolePalette.relation;
+        items.push(mk("line", { x1: 260, y1: 36, x2: cx, y2: 58, stroke: matched ? "#64748b" : "#dc2626", "stroke-width": 1.5, "stroke-dasharray": matched ? "none" : "4 3" }));
+        items.push(mk("rect", { x: cx - boxW / 2, y: 58, width: boxW, height: 24, rx: 6, fill: bg, stroke, "stroke-width": 1.4 }));
+        items.push(mk("text", { x: cx, y: 74, "text-anchor": "middle", "font-family": "system-ui, sans-serif", "font-size": 10.5, "font-weight": 700, fill: ink }, role));
+        items.push(mk("line", { x1: cx, y1: 82, x2: cx, y2: 104, stroke: "#94a3b8", "stroke-width": 1.4 }));
+        items.push(mk("rect", { x: cx - boxW / 2, y: 104, width: boxW, height: 28, rx: 6, fill: "#ffffff", stroke: "#94a3b8", "stroke-width": 1.4 }));
+        items.push(mk("text", { x: cx, y: 122, "text-anchor": "middle", "font-family": "ui-monospace, monospace", "font-size": 11.5, "font-weight": 700, fill: "#0f172a" }, word.slice(0, 9)));
+      });
+    } else {
+      items.push(mk("text", { x: 260, y: 88, "text-anchor": "middle", "font-family": "system-ui, sans-serif", "font-size": 12, fill: "#64748b" }, "Type a command above to grow the live parse tree."));
+    }
+    svg.replaceChildren(...items);
   }
 
   function fail(steps, message) {

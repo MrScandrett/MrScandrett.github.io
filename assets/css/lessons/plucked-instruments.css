@@ -56,20 +56,82 @@
   padding: .5rem;
   background: color-mix(in srgb, var(--text) 8%, var(--bg));
 }
+[data-plucked-studio="ukulele"] .plucked-board {
+  background: linear-gradient(180deg, #4b2d1b 0%, #3a2214 100%);
+  border: 2px solid #78472a;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, .35);
+}
 .plucked-string {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(1.8rem, .48fr) repeat(5, minmax(0, 1fr));
   align-items: center;
   gap: .25rem;
 }
+.plucked-string::before {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 1.5%;
+  top: 50%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 245, 224, .55), rgba(226, 232, 240, .4));
+  pointer-events: none;
+  z-index: 0;
+}
 .plucked-string + .plucked-string { margin-top: .25rem; }
-.plucked-string span { text-align: center; font-weight: 700; }
-.plucked-string button { padding-inline: 0; }
+.plucked-string span {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  font-weight: 800;
+  color: #fef3c7;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .55);
+}
+.plucked-string button {
+  position: relative;
+  z-index: 1;
+  padding-inline: 0;
+  background: rgba(255, 250, 240, .92);
+  color: #1f1712;
+  border-color: rgba(254, 243, 199, .45);
+}
+.plucked-string button[data-fret="0"] {
+  background: #fef3c7;
+  color: #451a03;
+  border-right: 4px solid #e7dcc8;
+  font-weight: 700;
+}
+.plucked-string button[data-fret="3"]::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(180, 83, 9, .38);
+  bottom: 4px;
+  right: 5px;
+  pointer-events: none;
+}
+.plucked-string button[aria-pressed="true"] {
+  background: #f59e0b;
+  color: #1f1307;
+  border-color: #fde68a;
+  box-shadow: 0 0 0 2px rgba(253, 230, 138, .55);
+  font-weight: 800;
+}
 .plucked-tines {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(8, minmax(44px, 1fr));
   align-items: start;
-  gap: 2px;
+  gap: 3px;
+  padding: .85rem .55rem .65rem;
+  background:
+    radial-gradient(circle at 50% 78%, #29150b 0 18%, #472613 18.5% 21%, transparent 21.5%),
+    linear-gradient(180deg, #9a5b25 0%, #783f12 100%);
+  border: 2px solid #5c2d0c;
+  box-shadow: inset 0 14px 0 #334155, inset 0 17px 0 #e2e8f0;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   max-width: 100%;
@@ -81,8 +143,31 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  border-radius: .3rem .3rem .7rem .7rem;
+  border-radius: .2rem .2rem .75rem .75rem;
   font-size: .85rem;
+  font-weight: 750;
+  background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 65%, #f8fafc 100%);
+  color: #0f172a;
+  border: 1px solid #475569;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, .28);
+}
+.plucked-tines button[data-tine="0"] {
+  background: linear-gradient(180deg, #fef3c7 0%, #fde68a 70%, #fffbeb 100%);
+  border-color: #92400e;
+}
+.plucked-tines button[data-demo],
+.plucked-tines button.is-plucked {
+  background: linear-gradient(180deg, #fde68a 0%, #f59e0b 100%);
+  color: #1f1307;
+  border-color: #78350f;
+}
+.plucked-string button.is-plucked {
+  outline: 2px solid #fde68a;
+  outline-offset: 1px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .plucked-tines button.is-plucked { transform: translateY(2px); transition: transform .1s ease; }
+  .plucked-string button.is-plucked { transform: scale(.96); transition: transform .1s ease; }
 }
 .plucked-sequence {
   display: flex;

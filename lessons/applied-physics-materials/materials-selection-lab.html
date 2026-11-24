@@ -11,6 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/components/photo-gallery.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/materials-selection-viz.css" />
   <style>
     .cl-page { padding-bottom: 0; }
     .ll-viewport { --ll-panel-w: 300px; }
@@ -127,7 +129,13 @@
         </section>
 
         <section class="cl-card" style="--card-accent:#f97316;">
-          <h2>Interactive: Pick a Material for the Job</h2>
+          <h2>Which beam bends most?</h2>
+<p>Three beams span 50 cm. Each is 3 cm wide and 1 cm thick. Predict which will bend most, then load their centers.</p>
+<label for="beam-load">Center load <output id="beam-force">0 N</output></label>
+<input type="range" style="width:100%" id="beam-load" min="0" max="10" step="0.5" value="0" oninput="drawBeams()">
+<svg viewBox="0 0 460 245" style="width:100%;display:block" role="img" aria-label="Steel, aluminum and nylon beam deflections on identical scales"><rect width="460" height="245" rx="10" fill="#172b39"/><g id="beam-rows"></g></svg>
+<p><small>Ideal elastic beams on two supports. Vertical bending is magnified. Each ruler tick marks 1 mm.</small></p>
+</section><section class="cl-card"><h2>Interactive: Pick a Material for the Job</h2>
           <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Choose a design brief, then test materials against it. Green bars mean that constraint is satisfied.</p>
 
           <div class="msl-scenario-btns">
@@ -138,6 +146,15 @@
 
           <div class="msl-lab">
             <div class="msl-brief" id="msl-brief"></div>
+
+            <div class="msl-viz-grid">
+              <div class="msl-viz-card">
+                <svg id="msl-scatter-svg" viewBox="0 0 420 260" role="img" aria-label="Interactive Ashby constraint chart comparing material candidates on two axes"></svg>
+              </div>
+              <div class="msl-viz-card">
+                <svg id="msl-radar-svg" viewBox="0 0 300 260" role="img" aria-label="Five-property radar chart for the selected material against project constraints"></svg>
+              </div>
+            </div>
 
             <div class="msl-mat-btns" id="msl-mat-btns"></div>
 
@@ -152,6 +169,32 @@
             <tbody id="msl-table-body"></tbody>
           </table>
           <p style="font-size:0.74rem;color:var(--text-muted,#64748b);">Scores are 1–5. Weight: higher = lighter. Heat Safe: higher = stays cooler/safer to touch. Cost: higher = more expensive.</p>
+          <div class="pg-grid" style="margin-top:0.9rem;">
+            <figure data-zoomable data-lightbox-group="materials-selection">
+              <img src="../../assets/images/lessons/materials-selection-lab/ashby-tradeoff-guide.svg" alt="Ashby selection map plotting density against strength with CFRP composites, wood, aluminum, steel, and polymers" loading="lazy" />
+              <figcaption>
+                <strong>How Engineers Read an Ashby Tradeoff Chart</strong>
+                <span>Real engineering design plots competing traits against each other so weak options fall out before machining even begins.</span>
+                <span class="pg-credit" data-no-glossary>ClassroomOS diagram · CC BY 4.0</span>
+              </figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="materials-selection">
+              <img src="../../assets/images/lessons/eames/molded-plywood-chair-lcw.webp" alt="Eames Molded Plywood Lounge Chair Wood curved into compound ergonomic contours" loading="lazy" />
+              <figcaption>
+                <strong>Wood Lamination: Eames LCW Chair (1945)</strong>
+                <span>Layering thin crossed wood veneers under heat and pressure overcame solid lumber's stiffness limits — strong support at low weight.</span>
+                <span class="pg-credit" data-no-glossary>MAAT Lisbon exhibit · Photo: Jules Verne Times Two · CC BY-SA 2.0</span>
+              </figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="materials-selection">
+              <img src="../../assets/images/lessons/design3d-visuals/printed-dual-use-holder.jpg" alt="Rigid 3D-printed dual-use desk holder organizing pens and workshop tools" loading="lazy" />
+              <figcaption>
+                <strong>Low-Cost Polymer Selection: 3D-Printed Organizer</strong>
+                <span>When light weight and low manufacturing cost beat high heat resistance, molded or printed ABS/PLA plastic is the right choice.</span>
+                <span class="pg-credit" data-no-glossary>Photo: Rollis Igel · CC BY-SA 4.0 · <a href="https://commons.wikimedia.org/wiki/File:3D_dual_use.jpg" target="_blank" rel="noopener noreferrer">source</a></span>
+              </figcaption>
+            </figure>
+          </div>
         </section>
 
         <!-- Practice Problems -->
@@ -422,5 +465,32 @@
 <script src="../../assets/js/classroom-animations.js"></script>
 <script src="../../assets/js/lesson-layout.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
+<script>
+function drawBeams() {
+  const force = Number(document.getElementById('beam-load').value);
+  document.getElementById('beam-force').textContent = force + ' N';
+  const inertia = 0.03 * 0.01 ** 3 / 12;
+  const materials = [['Steel', 200, '#a9c9dc'], ['Aluminum', 69, '#8de1db'], ['Nylon', 2.5, '#f4ba74']];
+  let rows = '';
+  materials.forEach(([label, modulus, color], index) => {
+    const deflection = 1000 * force * 0.5 ** 3 / (48 * modulus * 1e9 * inertia);
+    const y = 32 + 78 * index;
+    const pixels = 8 * deflection;
+    let ticks = '';
+    for (let mm = 0; mm <= 5; mm++) ticks += `M340 ${y + mm * 8}h8`;
+    rows += `<text x="12" y="${y}" fill="white" font-size="15">${label}</text>
+      <path d="M82 ${y}h236" stroke="#718795" stroke-dasharray="3 4"/>
+      <path d="M82 ${y}c39.33 ${pixels / 2} 78.67 ${pixels} 118 ${pixels}s78.67 ${-pixels / 2} 118 ${-pixels}" fill="none" stroke="${color}" stroke-width="5"/>
+      <path d="M82 ${y + 3}l-7 11h14zM318 ${y + 3}l-7 11h14z" fill="#8fa2aa"/>
+      <path d="M340 ${y}v40${ticks}" stroke="#b9c6ce" fill="none"/>
+      <path d="M338 ${y + pixels}h14" stroke="${color}" stroke-width="3"/>
+      <text x="359" y="${y + 5}" fill="white" font-size="15">${deflection.toFixed(2)} mm</text>`;
+  });
+  document.getElementById('beam-rows').innerHTML = rows;
+}
+drawBeams();
+</script>
+<script src="../../assets/js/lessons/materials-selection-viz.js"></script>
+<script src="../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

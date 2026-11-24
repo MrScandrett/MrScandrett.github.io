@@ -148,7 +148,7 @@
     return `${bar + 1}.${b + 1}.${sixteenth + 1}`;
   }
   function formatTime(sec) {
-    sec = Math.max(0, sec);
+    sec = Math.round(Math.max(0, sec) * 10) / 10;
     const m = Math.floor(sec / 60);
     return `${m}:${(sec - m * 60).toFixed(1).padStart(4, '0')}`;
   }
@@ -1697,7 +1697,8 @@
         <button type="button" class="daw-btn daw-toggle daw-studio-btn" data-act="studio" aria-pressed="false" aria-label="Full-screen studio" title="Full-screen studio: fill the screen with the tracks and panels">⛶ <span>Expand</span></button>
       </div>
       <div class="daw-lcd" aria-live="off">
-        <span class="daw-lcd-pos" data-ref="pos">1.1.1</span>
+        <span class="daw-lcd-state" data-ref="transport-state">Stopped</span>
+        <span class="daw-lcd-pos" title="Bar · beat · sixteenth" data-ref="pos">1.1.1</span>
         <span class="daw-lcd-time" data-ref="time">0:00.0</span>
       </div>
       <div class="daw-group">
@@ -2976,17 +2977,18 @@
   const vstState = { connected: false, busy: false, open: false, message: 'Companion not connected', plugins: [], readiness: null };
   function vstPanel(track) {
     const linked = (track.pluginChain || []).filter(plugin => plugin.format === 'native');
-    const rows = vstState.plugins.map(plugin => `<li><span><strong>${esc(plugin.name)}</strong> <span class="daw-plugin-badge">${esc(plugin.format)} · ${esc(plugin.source)}</span></span><span class="daw-group"><button type="button" class="daw-btn" data-vst-link="${esc(plugin.id)}">Link to channel</button><button type="button" class="daw-btn" data-vst-launch="${esc(plugin.id)}">Open in Carla</button></span></li>`).join('');
+    const savedIds = new Set(linked.map(plugin => plugin.pluginId));
+    const rows = vstState.plugins.map(plugin => `<li><span><strong>${esc(plugin.name)}</strong> <span class="daw-plugin-badge">${esc(plugin.format)} · ${esc(plugin.source)}</span></span><span class="daw-group"><button type="button" class="daw-btn" data-vst-launch="${esc(plugin.id)}">Open in Carla</button><button type="button" class="daw-btn" data-vst-link="${esc(plugin.id)}" ${savedIds.has(plugin.id) ? 'disabled' : ''}>${savedIds.has(plugin.id) ? 'Shortcut saved' : 'Save shortcut'}</button></span></li>`).join('');
     const assignments = linked.map((plugin, index) => {
       const available = vstState.plugins.some(item => item.id === plugin.pluginId), condition = !vstState.connected ? 'Not checked' : available ? 'Available' : 'Missing';
-      return `<li data-native-index="${index}"><span><strong>${esc(plugin.name)}</strong> <span class="daw-plugin-badge">${plugin.state?.bypass ? 'Bypassed' : condition} · routing pending</span></span><span class="daw-group"><button type="button" class="daw-btn" data-vst-assignment="bypass" aria-pressed="${!!plugin.state?.bypass}">Bypass</button><button type="button" class="daw-btn" data-vst-launch="${esc(plugin.pluginId)}" ${vstState.connected && !available ? 'disabled' : ''}>Open</button><button type="button" class="daw-btn" data-vst-assignment="remove">Remove</button></span></li>`;
+      return `<li data-native-index="${index}"><span><strong>${esc(plugin.name)}</strong> <span class="daw-plugin-badge">${condition}</span></span><span class="daw-group"><button type="button" class="daw-btn" data-vst-launch="${esc(plugin.pluginId)}" ${!vstState.connected || !available ? 'disabled' : ''}>Open in Carla</button><button type="button" class="daw-btn" data-vst-assignment="remove">Remove</button></span></li>`;
     }).join('');
     return `<details class="daw-vst-companion" ${vstState.open ? 'open' : ''}><summary>Desktop VST companion <span class="daw-plugin-badge">${vstState.connected ? 'Connected' : 'Optional'}</span></summary>
-      <p class="daw-note">Runs installed VST3 plugins in Carla beside Music Lab. The browser cannot execute native plugin binaries, so this first bridge opens the real plugin safely; routing its audio into the browser rack is not yet supported.</p>
+      <p class="daw-note">Open desktop plugins in Carla. Music Lab playback and exports use the browser effects rack.</p>
       <div class="daw-group"><label class="daw-field"><span>Pairing code</span><input type="password" data-vst-token autocomplete="off" aria-label="VST companion pairing code"></label><button type="button" class="daw-btn" data-vst-connect ${vstState.busy ? 'disabled' : ''}>${vstState.busy ? 'Connecting…' : 'Connect and scan'}</button></div>
       <p class="daw-note" role="status">${esc(vstState.message)}</p>
       ${vstState.readiness ? `<p class="daw-note"><strong>Preflight:</strong> ${vstState.readiness.ready ? 'ready' : 'needs attention'} · Carla ${vstState.readiness.carlaAvailable ? 'found' : 'missing'} · ${vstState.readiness.scanRoots} scan folder${vstState.readiness.scanRoots === 1 ? '' : 's'} · ${vstState.readiness.safeMode ? 'safe mode on' : 'launching enabled'}</p>` : ''}
-      ${assignments ? `<h4>Linked to ${esc(track.name)}</h4><ul class="daw-vst-list">${assignments}</ul>` : '<p class="daw-note">No native plugins are linked to this channel.</p>'}
+      ${assignments ? `<h4>Desktop shortcuts for ${esc(track.name)}</h4><ul class="daw-vst-list">${assignments}</ul>` : '<p class="daw-note">Save a plugin shortcut with this track to reopen it in Carla.</p>'}
       ${rows ? `<ul class="daw-vst-list">${rows}</ul>` : ''}
       <p class="daw-note"><code>npm run music:vst-bridge</code> starts the loopback companion and prints a new pairing code.</p>
     </details>`;
@@ -3066,16 +3068,15 @@
       if (plugin) {
         track.pluginChain ||= [];
         track.pluginChain.push({ id: uid(), format: 'native', pluginId: plugin.id, name: plugin.name, vendor: plugin.source, state: { bypass: false, wet: 1, parameters: {} }, latencySamples: 0, compatibility: 'launcher-only' });
-        vstState.message = `Linked ${plugin.name} to ${track.name}. It will stay silent until native audio routing is available.`;
+        vstState.message = `Saved a shortcut to ${plugin.name} for ${track.name}.`;
         commit();
       }
       return;
     }
-    if (b.dataset.vstAssignment) {
+    if (b.dataset.vstAssignment === 'remove') {
       const plugins = (track.pluginChain || []).filter(plugin => plugin.format === 'native'), plugin = plugins[Number(b.closest('[data-native-index]').dataset.nativeIndex)];
       if (!plugin) return;
-      if (b.dataset.vstAssignment === 'remove') track.pluginChain.splice(track.pluginChain.indexOf(plugin), 1);
-      else { plugin.state ||= {}; plugin.state.bypass = !plugin.state.bypass; }
+      track.pluginChain.splice(track.pluginChain.indexOf(plugin), 1);
       commit(); return;
     }
     const picked = b.hasAttribute('data-fx-add-picked') ? b.closest('[data-fx-picker]').querySelector('select').value : null;
@@ -3283,6 +3284,10 @@
 
   function updateTransportUi() {
     const play = root.querySelector('[data-act="play"]');
+    const mode = transport.recording ? 'Recording' : transport.playing ? 'Playing' : 'Stopped';
+    const state = $('transport-state');
+    state.textContent = mode;
+    state.dataset.mode = mode.toLowerCase();
     play.textContent = transport.playing ? '⏸' : '▶';
     play.setAttribute('aria-label', transport.playing ? 'Pause' : 'Play');
     play.classList.toggle('is-on', transport.playing);
@@ -3809,6 +3814,45 @@
   // only a selected clip drags (CSS gives it touch-action: none). Taps on a lane
   // move the playhead, and a double-tap adds a clip there.
   let clipDrag = null, laneTap = null, lastLaneTap = null, lastTlType = 'mouse';
+  const clipActions = document.createElement('div');
+  clipActions.className = 'daw-clip-actions';
+  clipActions.setAttribute('popover', 'auto');
+  clipActions.setAttribute('role', 'group');
+  clipActions.setAttribute('aria-label', 'Clip actions');
+  clipActions.innerHTML = `
+    <button type="button" data-act="duplicate">Duplicate</button>
+    <button type="button" data-act="split">Split at playhead</button>
+    <button type="button" data-act="loop-clip">Loop clip</button>
+    <button type="button" data-act="delete-clip">Delete clip</button>`;
+  if (typeof clipActions.showPopover === 'function') {
+    root.append(clipActions);
+    R.tracks.addEventListener('contextmenu', event => {
+      const item = event.target.closest('.daw-clip');
+      const target = item && findClip(item.dataset.clip);
+      if (!target || transport.recording) return;
+      event.preventDefault();
+      select(target.track.id, target.clip.id);
+      markTrack(target.track.id);
+      const cut = snapTo(ui.playhead, snapGrid() || 0.25);
+      clipActions.querySelector('[data-act="split"]').disabled =
+        cut <= target.clip.start + 1e-6 || cut >= clipEnd(target.clip) - 1e-6;
+      clipActions.showPopover();
+      clipActions.style.left = Math.max(0, Math.min(event.clientX, innerWidth - clipActions.offsetWidth)) + 'px';
+      clipActions.style.top = Math.max(0, Math.min(event.clientY, innerHeight - clipActions.offsetHeight)) + 'px';
+      clipActions.querySelector('button').focus({ preventScroll: true });
+    });
+    clipActions.addEventListener('click', event => {
+      if (event.target.closest('button')) clipActions.hidePopover();
+    });
+    clipActions.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        clipActions.hidePopover();
+        R.scroll.focus({ preventScroll: true });
+      }
+    });
+  }
+
   R.tracks.addEventListener('pointerdown', (e) => {
     if (transport.recording || finishingTake) return;
     const ruler = e.target.closest('[data-ruler]');
@@ -4754,7 +4798,7 @@
   // letter keys, which stay free for the QWERTY piano.
   root.addEventListener('keydown', (e) => {
     const t = e.target;
-    const typing = t.matches('input:not([type]), input[type="text"], input[type="number"], textarea, select, [contenteditable="true"]');
+    const typing = t.isContentEditable || t.closest('input, textarea, select, [role="slider"]');
     const mod = e.ctrlKey || e.metaKey;
     if (e.key === 'Escape') {
       const disclosure = t.closest('.daw-command-strip > details[open]');
@@ -4770,13 +4814,13 @@
     }
     if (typing) return;
     if (e.code === 'Space' && !t.closest('button, input, summary, a, [role="slider"]')) {
-      e.preventDefault(); e.stopPropagation(); togglePlay(); return;
+      e.preventDefault(); e.stopPropagation(); if (!e.repeat) togglePlay(); return;
     }
     if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.stopPropagation(); e.shiftKey ? redo() : undo(); return; }
     if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); e.stopPropagation(); redo(); return; }
     if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); e.stopPropagation(); duplicateClip(); return; }
     if (mod && e.key.toLowerCase() === 'e') { e.preventDefault(); e.stopPropagation(); splitClip(); return; }
-    if (e.key === 'Home') { e.preventDefault(); setPlayhead(0); return; }
+    if (e.key === 'Home') { e.preventDefault(); if (!transport.recording) setPlayhead(0); return; }
     const inRoll = roll && t === roll.scroll;
     if (inRoll && mod && e.key.toLowerCase() === 'a') {
       e.preventDefault(); e.stopPropagation();

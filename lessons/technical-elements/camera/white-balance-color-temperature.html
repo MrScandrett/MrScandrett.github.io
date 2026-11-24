@@ -8,6 +8,8 @@
   <meta name="description" content="Match a camera's white balance to daylight, tungsten, and candlelight color temperatures, and see exactly what happens to skin tone when the two don't agree." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/white-balance-lab.css" />
   <style>
     .cl-page { padding-bottom: 0; }
     .ll-viewport { --ll-panel-w: 300px; }
@@ -118,9 +120,25 @@
           <div class="wbc-source-btns" id="wbc-source-btns"></div>
 
           <div class="wbc-lab">
-            <div class="wbc-preview" id="wbc-preview">
-              <span class="wbc-preview-face">🙂</span>
-              <span class="wbc-preview-label" id="wbc-preview-label">Neutral</span>
+            <div class="wbc-monitor">
+              <div class="wbc-monitor-hud">
+                <div class="wbc-hud-left">
+                  <span class="wbc-rec-dot" aria-hidden="true"></span>
+                  <span>CAMERA MONITOR · WB SENSOR PREVIEW</span>
+                </div>
+                <span class="wbc-preview-badge" id="wbc-preview-label">Neutral Match</span>
+              </div>
+              <canvas id="wbc-canvas" width="720" height="405" data-ref-src="../../../assets/images/lessons/white-balance/studio-reference-scene.jpg" aria-label="Live camera monitor preview of a daylight calibration still life showing skin tones, a white cloth, an 18 percent grey card, and a six-patch color checker shifted by white balance and CRI"></canvas>
+              <div class="wbc-tools-row">
+                <div class="wbc-toggle-group">
+                  <button type="button" class="wbc-mini-btn" id="wbc-split-toggle" aria-pressed="false">Split Reference Compare</button>
+                  <label class="wbc-split-control" id="wbc-split-control" hidden>
+                    <span>Wipe</span>
+                    <input type="range" id="wbc-split-slider" min="15" max="85" value="50" aria-label="Split-screen wipe position between 5600K reference and camera output" />
+                  </label>
+                </div>
+                <button type="button" class="wbc-mini-btn" id="wbc-cri-toggle" aria-pressed="false">Simulate Low CRI (70)</button>
+              </div>
             </div>
 
             <div class="wbc-slider-row">
@@ -133,6 +151,7 @@
               <div class="wbc-readout"><span class="wbc-readout-label">Difference</span><span class="wbc-readout-val" id="wbc-r-diff">0K</span></div>
             </div>
 
+            <div class="wbc-rgb-bars" id="wbc-rgb-bars" aria-live="polite"></div>
             <div class="wbc-verdict" id="wbc-verdict">Neutral — well matched.</div>
           </div>
         </section>
@@ -140,6 +159,24 @@
         <section class="cl-card" style="--card-accent:#34c759;">
           <h2>Go Deeper: The Kelvin Scale &amp; CRI</h2>
           <p><strong>Color temperature</strong> runs from warm/orange at low Kelvin (candlelight ≈ 1900K) to cool/blue at high Kelvin (open shade ≈ 8000K) — the opposite of how "warm" and "cool" sound, since higher-temperature stars really do glow bluer. <strong>CRI (Color Rendering Index)</strong> is a separate number: it measures how accurately a light source reveals true colors, on a scale to 100. A light can be perfectly white-balanced and still have poor CRI — meaning skin and fabric colors look slightly wrong no matter how you correct the tint, because the light itself is missing parts of the color spectrum. That's why productions care about high-CRI bulbs, not just correct Kelvin.</p>
+          <div class="pg-grid" style="margin-top:0.85rem;">
+            <figure data-zoomable data-lightbox-group="white-balance">
+              <img src="../../../assets/images/lessons/white-balance/kelvin-color-temperature-scale.svg" alt="Scaled reference bar showing correlated color temperatures from 1900K candlelight through 3200K tungsten and 5600K daylight up to 8000K open shade" loading="lazy" />
+              <figcaption>
+                <strong>The Kelvin Color Temperature Scale (1900K–8000K)</strong>
+                <span>Warm amber sources sit at lower Kelvin numbers (1900K–3200K) while skylight and shade sit higher (6500K–8000K). Matching the camera setting keeps white towels and 18% grey cards neutral.</span>
+                <span class="pg-credit" data-no-glossary>ClassroomOS diagram · CC BY 4.0</span>
+              </figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="white-balance">
+              <img src="../../../assets/images/lessons/white-balance/cri-spectrum-comparison.svg" alt="Spectral comparison between continuous CRI 98 sunlight and discontinuous spiky CRI 70 LED output across violet to red wavelengths" loading="lazy" />
+              <figcaption>
+                <strong>Color Temperature vs. CRI Spectrum</strong>
+                <span>Two lamps can share the exact same 5600K rating while rendering skin and red objects very differently: continuous spectra fill every wavelength, whereas low-CRI LEDs drop deep-red wavelengths around 650 nm.</span>
+                <span class="pg-credit" data-no-glossary>ClassroomOS diagram · CC BY 4.0</span>
+              </figcaption>
+            </figure>
+          </div>
         </section>
 
         <section class="cl-card" style="--card-accent:#f59e0b;">
@@ -281,111 +318,8 @@
 
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
-<script>
-  function readableInk(el, color) {
-    // Black or white, whichever contrasts more with `color` (the target background,
-    // not the computed one, which may still be mid-transition).
-    var ctx = readableInk.ctx || (readableInk.ctx = document.createElement('canvas').getContext('2d'));
-    ctx.fillStyle = '#000'; ctx.fillStyle = color;
-    var hex = ctx.fillStyle, m = /^#([0-9a-f]{6})$/i.exec(hex);
-    if (!m) return;
-    var lum = [0, 2, 4].map(function (i) { var v = parseInt(m[1].slice(i, i + 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
-    var L = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
-    el.style.color = (1.05 / (L + 0.05)) >= ((L + 0.05) / 0.05) ? '#fff' : '#111';
-  }
-
-  var WBC_SOURCES = {
-    candle: { label: 'Candlelight', temp: 1900 },
-    tungsten: { label: 'Tungsten Bulb', temp: 3200 },
-    daylight: { label: 'Daylight', temp: 5600 },
-    cloudy: { label: 'Overcast Sky', temp: 6500 },
-    shade: { label: 'Open Shade', temp: 8000 }
-  };
-  var wbcCurrentSource = 'daylight';
-
-  function wbcRenderSourceButtons() {
-    var wrap = document.getElementById('wbc-source-btns');
-    wrap.innerHTML = '';
-    Object.keys(WBC_SOURCES).forEach(function (key) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'wbc-source-btn' + (key === wbcCurrentSource ? ' selected' : '');
-      btn.textContent = WBC_SOURCES[key].label;
-      btn.addEventListener('click', function () { wbcSetSource(key); });
-      wrap.appendChild(btn);
-    });
-  }
-
-  function wbcSetSource(key) {
-    wbcCurrentSource = key;
-    wbcRenderSourceButtons();
-    wbcUpdate();
-  }
-
-  function wbcUpdate() {
-    var source = WBC_SOURCES[wbcCurrentSource];
-    var wb = Number(document.getElementById('wbc-wb-slider').value);
-    document.getElementById('wbc-wb-val').textContent = wb + 'K';
-    document.getElementById('wbc-r-source').textContent = source.label + ', ' + source.temp + 'K';
-
-    var diff = wb - source.temp;
-    document.getElementById('wbc-r-diff').textContent = (diff > 0 ? '+' : '') + diff + 'K';
-
-    var preview = document.getElementById('wbc-preview');
-    var label = document.getElementById('wbc-preview-label');
-    var verdict = document.getElementById('wbc-verdict');
-    var tolerance = 300;
-
-    // Positive diff (WB set higher than actual light) => uncorrected warm cast => orange.
-    // Negative diff (WB set lower than actual light) => over-corrected => blue.
-    var hue, sat, light, tint;
-    if (Math.abs(diff) <= tolerance) {
-      hue = 220; sat = 8; light = 55; tint = 'Neutral — well matched.'; verdict.className = 'wbc-verdict good'; label.textContent = 'Neutral';
-    } else if (diff > 0) {
-      var strength = Math.min(1, diff / 4000);
-      hue = 30; sat = 40 + strength * 40; light = 55;
-      tint = 'Too warm/orange — lower the White Balance to match the light.';
-      verdict.className = 'wbc-verdict warm';
-      label.textContent = 'Too Warm';
-    } else {
-      var strength2 = Math.min(1, -diff / 4000);
-      hue = 210; sat = 40 + strength2 * 40; light = 50;
-      tint = 'Too cool/blue — raise the White Balance to match the light.';
-      verdict.className = 'wbc-verdict cool';
-      label.textContent = 'Too Cool';
-    }
-    preview.style.background = 'hsl(' + hue + ', ' + sat + '%, ' + light + '%)';
-    readableInk(label, preview.style.background);
-    verdict.textContent = tint;
-  }
-
-  function wbcCheckText(n, correct) {
-    var sel = document.getElementById('wbcans-' + n);
-    var fb = document.getElementById('wbcfb-' + n);
-    var hint = document.getElementById('wbchint-' + n);
-    if (!sel.value) { fb.textContent = 'Pick an answer first.'; fb.className = 'cl-feedback err'; return; }
-    if (sel.value === correct) {
-      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
-    } else {
-      fb.textContent = '✗ Not quite — check the hint below.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
-    }
-  }
-
-  function wbcStagePreset(srcKey, wbVal, msg) {
-    wbcCurrentSource = srcKey;
-    document.getElementById('wbc-wb-slider').value = wbVal;
-    wbcRenderSourceButtons();
-    wbcUpdate();
-    if (msg) {
-      document.getElementById('wbc-verdict').textContent = msg;
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    wbcRenderSourceButtons();
-    wbcUpdate();
-  });
-</script>
+<script src="../../../assets/js/lessons/white-balance-lab.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 <script src="../../../assets/js/classroom-animations.js"></script>
 <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>

@@ -298,9 +298,20 @@ function initSimulation() {
         if (el.explanation) {
             el.explanation.textContent = buildExplanation(atmo);
         }
+        document.getElementById('wc-current-meter').value = atmo.tendency;
+        document.getElementById('wc-current-score').textContent = atmo.tendency + '/100';
+        const baselineMeter = document.getElementById('wc-baseline-meter');
+        baselineMeter.hidden = !saved;
+        baselineMeter.value = saved?.index ?? 0;
+        document.getElementById('wc-baseline-score').textContent = saved ? saved.index + '/100' : 'Unsaved';
         if (saved && el.comparison) {
+            const variables = { sun: 'sunlight', temperature: 'temperature', humidity: 'humidity', season: 'season' };
+            const changed = Object.keys(variables).filter(key => state[key] !== saved[key]);
+            let guidance = 'Change one condition to test its effect.';
+            if (changed.length === 1) guidance = 'You isolated ' + variables[changed[0]] + '.';
+            if (changed.length > 1) guidance = 'You changed ' + changed.map(key => variables[key]).join(', ') + '. Restore all but one to isolate its effect.';
             const change = atmo.tendency - saved.index;
-            el.comparison.textContent = `Saved: ${saved.sun}% sun, ${saved.temperature}°C, ${saved.humidity}% humidity → ${saved.index}/100. Current tendency is ${change === 0 ? 'unchanged' : `${Math.abs(change)} points ${change > 0 ? 'higher' : 'lower'}`}.`;
+            el.comparison.textContent = `Baseline: ${saved.season}, ${saved.sun}% sun, ${saved.temperature}°C, ${saved.humidity}% humidity → ${saved.index}/100. Current tendency is ${change === 0 ? 'unchanged' : `${Math.abs(change)} points ${change > 0 ? 'higher' : 'lower'}`}. ${guidance}`;
         }
         syncPresetHighlight();
     }

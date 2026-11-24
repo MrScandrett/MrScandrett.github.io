@@ -77,7 +77,7 @@
                 </dl>
             </div>
             <figure data-zoomable data-lightbox-group="water-cycle" class="hero-visual">
-              <figcaption><span>USGS field map</span><strong>Water moving through a connected landscape</strong></figcaption>
+              <figcaption><span>USGS field map</span><strong>Water moving through a connected landscape</strong> · USGS, public domain</figcaption>
               <img class="hero-svg" src="../../assets/images/lessons/water-cycle/usgs-water-cycle-thumbnail.png"
                    alt="USGS water cycle landscape showing clouds, precipitation, rivers, groundwater, oceans, cities, farms, and industry."
                    width="895" height="895">
@@ -90,7 +90,7 @@
         <!-- INTERACTIVE SIMULATION -->
         <section id="simulation" class="wc-card">
             <h2>Water-cycle weather lab</h2>
-            <p>Predict, test, compare: does water evaporate faster into dry air or humid air? Keep sunlight and temperature the same, change humidity, and compare the results — or test freezing winter air and mountain rainstorms.</p>
+            <p>Which dries a puddle faster, humid air or dry air? Choose a day, then change one condition.</p>
             <div class="wc-scenarios" role="group" aria-label="Weather experiments">
                 <button type="button" class="sim-button" data-weather="dry">Warm, dry day</button>
                 <button type="button" class="sim-button" data-weather="humid">Warm, humid day</button>
@@ -98,6 +98,24 @@
                 <button type="button" class="sim-button" data-weather="cold">Cold winter day</button>
             </div>
             <div class="simulation-container">
+                <div class="simulation-stage">
+                    <div class="wc-stage-toggle-bar" role="group" aria-label="Simulation display mode">
+                        <button type="button" class="sim-button wc-mode-btn is-active" id="wc-mode-diagram" aria-pressed="true">Landscape</button>
+                        <button type="button" class="sim-button wc-mode-btn" id="wc-mode-particle" aria-pressed="false">Cloud particles</button>
+                    </div>
+                    <div class="wc-diagram-stage" id="wc-diagram-stage">
+                        <canvas id="simulation-canvas" class="simulation-canvas" role="img" aria-label="Interactive cross-section landscape of the water cycle showing solar heating, ocean waves, evaporation, cloud formation, precipitation, runoff, groundwater, and transpiration"></canvas>
+                    </div>
+                    <div id="wc-particle-stage" class="wc-particle-stage" hidden>
+                        <canvas id="wc-particle-canvas" class="wc-particle-canvas" role="img" aria-label="Particle physics simulation of ocean evaporation rising and condensing into clouds at the Lifting Condensation Level"></canvas>
+                        <div class="wc-particle-badge">Watch rising vapor cool and form cloud droplets.</div>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" id="animate-btn" class="sim-button" aria-pressed="true">Pause Cycle</button>
+                        <button type="button" id="wc-track-drop" class="sim-button is-active" aria-pressed="true">Follow 1 drop: On</button>
+                        <button type="button" id="reset-btn" class="sim-button reset">Reset</button>
+                    </div>
+                </div>
                 <div class="controls-panel">
                     <div class="control-group">
                         <label for="sun-strength-slider"><span>Sun Strength</span><span class="wc-slider-val"><span id="sun-strength-value">65</span>%</span></label>
@@ -120,37 +138,27 @@
                             <option>Winter</option>
                         </select>
                     </div>
-                    <div class="button-group">
-                        <button type="button" id="animate-btn" class="sim-button" aria-pressed="true">Pause Cycle</button>
-                        <button type="button" id="wc-track-drop" class="sim-button is-active" aria-pressed="true">Follow 1 drop: On</button>
-                        <button type="button" id="reset-btn" class="sim-button reset">Reset</button>
-                    </div>
+                </div>
                     <div class="simulation-metrics">
                         <div class="metric-card"><strong>Evaporation tendency</strong><span id="metric-atmosphere"></span></div>
                         <div class="metric-card"><strong>Dew point &amp; cloud base</strong><span id="metric-dewpoint"></span></div>
                         <div class="metric-card"><strong>Air's drying potential</strong><span id="metric-oceans"></span></div>
                         <div class="metric-card"><strong>Precipitation &amp; sky</strong><span id="metric-underground"></span></div>
                     </div>
-                </div>
-                <div class="simulation-stage">
-                    <div class="wc-stage-toggle-bar" role="group" aria-label="Simulation display mode">
-                        <button type="button" class="sim-button wc-mode-btn is-active" id="wc-mode-diagram" aria-pressed="true">Diagram View</button>
-                        <button type="button" class="sim-button wc-mode-btn" id="wc-mode-particle" aria-pressed="false">Cloud &amp; Vapor Physics</button>
-                    </div>
-                    <div class="wc-diagram-stage" id="wc-diagram-stage">
-                        <canvas id="simulation-canvas" class="simulation-canvas" role="img" aria-label="Interactive cross-section landscape of the water cycle showing solar heating, ocean waves, evaporation, cloud formation, precipitation, runoff, groundwater, and transpiration"></canvas>
-                    </div>
-                    <div id="wc-particle-stage" class="wc-particle-stage" hidden>
-                        <canvas id="wc-particle-canvas" class="wc-particle-canvas" role="img" aria-label="Particle physics simulation of ocean evaporation rising and condensing into clouds at the Lifting Condensation Level"></canvas>
-                        <div class="wc-particle-badge">💧 Physics Engine: Ocean evaporation → adiabatic cooling → condensation at LCL ceiling → precipitation</div>
-                    </div>
-                </div>
             </div>
             <div class="wc-lab-notes">
                 <p id="weather-explanation" class="stage-toolbar-note" aria-live="polite"></p>
-                <button type="button" class="sim-button" id="weather-save">Save for comparison</button>
+                <div class="wc-trial">
+                    <h3>Compare evaporation</h3>
+                    <p>Set a baseline, then change the humidity. Predict which bar will be longer.</p>
+                    <button type="button" class="sim-button" id="weather-save">Save current baseline</button>
+                    <div class="wc-trial-bars" role="group" aria-label="Evaporation tendency on a scale of 0 to 100">
+                        <label>Baseline <meter id="wc-baseline-meter" min="0" max="100" value="0" hidden></meter><span id="wc-baseline-score">Unsaved</span></label>
+                        <label>Current <meter id="wc-current-meter" min="0" max="100" value="0"></meter><span id="wc-current-score"></span></label>
+                    </div>
                 <p id="weather-comparison" class="wc-comparison" aria-live="polite">Save a result, change one variable, and compare.</p>
-                <p class="stage-toolbar-note">A qualitative teaching model, not a numerical weather forecast. <a href="https://www.usgs.gov/special-topics/water-science-school/water-cycle" target="_blank" rel="noopener">Science reference: USGS Water Cycle</a>. The evaporation tendency index has no physical units. It models relative surface drying potential, dew point, Lifting Condensation Level (LCL) cloud base height, freezing/snowfall below 0°C, seasonal foliage/sun altitude, and branching runoff, groundwater, and transpiration pathways. Wind speed and soil type are held simplified.</p>
+                </div>
+                <details class="wc-model-note"><summary>How the model works</summary><p class="stage-toolbar-note">A qualitative teaching model, not a numerical weather forecast. <a href="https://www.usgs.gov/special-topics/water-science-school/water-cycle" target="_blank" rel="noopener">Science reference: USGS Water Cycle</a>. The evaporation tendency index has no physical units. It models relative surface drying potential, dew point, Lifting Condensation Level (LCL) cloud base height, freezing/snowfall below 0°C, seasonal foliage/sun altitude, and branching runoff, groundwater, and transpiration pathways. Wind speed and soil type are held simplified.</p></details>
             </div>
         </section>
 

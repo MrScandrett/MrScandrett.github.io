@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/electricity-path.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/iot-packet-viz.css" />
   <style>
     :root {
       color-scheme: dark;
@@ -374,6 +376,46 @@
       /* The refreshed light panel stays light at night; keep its tab ink dark. */
     :where(html[data-lighting="night"]) .ll-panel { --ll-tab-color: #526d6c; }
     @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .ll-panel { --ll-tab-color: #526d6c; } }
+    @media screen {
+      html[data-lighting="night"]:root {
+        color-scheme: dark;
+        --iot-bg: #0c191c;
+        --iot-panel: #122428;
+        --iot-card: #152b30;
+        --iot-line: rgba(148, 210, 206, .22);
+        --iot-ink: #e8f3f1;
+        --iot-muted: #a6c4c2;
+        --iot-cyan: #5ce1e6;
+        --iot-blue: #7ab8ff;
+        --iot-amber: #ffb454;
+        --iot-purple: #c59eff;
+        --iot-red: #ff8f99;
+        --iot-green: #69efb5;
+        --ll-panel-bg: #112226;
+        --ll-panel-border: rgba(148, 210, 206, .22);
+        --ll-tab-active-bg: #1f393c;
+        --ll-tab-active: #7ee3de;
+      }
+      html[data-lighting="night"] .iot-topbar { background: rgba(12, 25, 28, .94); border-bottom-color: rgba(148, 210, 206, .22); box-shadow: none; }
+      html[data-lighting="night"] .iot-topbar a { color: #7ee3de; }
+      html[data-lighting="night"] .iot-main {
+        background-image: linear-gradient(rgba(92, 225, 230, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(92, 225, 230, .06) 1px, transparent 1px);
+      }
+      html[data-lighting="night"] :is(.hero, .time-card, .mission, .closing-panel, .pipeline-stage, .device-card, .protocol-card, .scenario, .related-card, .xthing-card, .automation-box, .history-note, .history-files, .botnet-box, .big-rule, .panel-card) {
+        background: var(--iot-card);
+        border-color: var(--iot-line);
+      }
+      html[data-lighting="night"] :is(.feedback, .latency-log, .network-log, .reflection-box) {
+        background: #102024;
+        border-color: var(--iot-line);
+      }
+      html[data-lighting="night"] .latency-log { color: #7ee3de; }
+      html[data-lighting="night"] .promise { background: #14362c; color: #b7f7de; border-color: rgba(105, 239, 181, .32); }
+      html[data-lighting="night"] .network-node { background: #152b30; border-color: rgba(148, 210, 206, .3); box-shadow: none; }
+      html[data-lighting="night"] .btn.secondary { background: #183439; color: #7ee3de; border-color: rgba(126, 227, 222, .35); }
+      html[data-lighting="night"] .reflection-box textarea { background: #0f1e22; border-color: var(--iot-line); }
+      html[data-lighting="night"] .ll-panel { --ll-tab-color: #a6c4c2; }
+    }
   </style>
 </head>
 <body>
@@ -453,22 +495,70 @@
             <span class="pipeline-arrow" aria-hidden="true">→</span>
             <button class="pipeline-stage" type="button" data-stage="app" role="listitem"><span class="stage-icon">📱</span><strong>App / User</strong></button>
           </div>
+          <div class="iot-viz-card">
+            <svg id="iot-live-svg" viewBox="0 0 760 140" role="img" aria-label="Live hardware telemetry pipeline diagram showing sensor reading traveling through UNO R4, Wi-Fi, cloud broker, and phone app"></svg>
+          </div>
           <p class="pipeline-progress" id="pipeline-progress">0 of 5 stages explored</p>
           <div class="feedback" id="pipeline-feedback" aria-live="polite">Click a stage to learn what it does — then use the button below to watch a reading travel the whole loop.</div>
           <p class="log-actions" style="margin-top:.8rem;"><button class="btn secondary" type="button" id="run-loop">▶ Run the loop: send one temperature reading</button></p>
           <div class="latency-log" id="latency-log" aria-live="polite">Ready.</div>
+          <div class="pg-grid" style="margin-top:.95rem;">
+            <figure data-zoomable data-lightbox-group="iot-diagrams">
+              <img src="../../../assets/images/lessons/internet-of-things/iot-five-stage-telemetry.svg" alt="Five-stage IoT telemetry loop diagram linking physical sensors, microcontrollers, radio networks, cloud MQTT/HTTPS brokers, and feedback alerts" loading="lazy" />
+              <figcaption>
+                <strong>The 5-Stage IoT Telemetry Pipeline</strong>
+                <span>Every connected sensor follows the same data journey — physical voltage in, JSON telemetry up through the network, rule check in the cloud, and action back at the edge.</span>
+                <span class="pg-credit" data-no-glossary>ClassroomOS diagram · CC BY 4.0</span>
+              </figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="iot-hardware">
+              <img src="../../../assets/images/lessons/arduino-board-anatomy/uno-r4-wifi.webp" alt="Arduino UNO R4 WiFi development board with onboard ESP32-S3 Wi-Fi module and LED matrix" loading="lazy" />
+              <figcaption>
+                <strong>Microcontroller + Radio: Arduino UNO R4 WiFi</strong>
+                <span>Combines an ARM microcontroller with a built-in Wi-Fi and Bluetooth radio chip so edge code can publish live readings online.</span>
+                <span class="pg-credit" data-no-glossary>Photo: Lomrjyo · CC BY-SA 4.0 · <a href="https://commons.wikimedia.org/wiki/File:Arduino_UNO_R4_WiFi.jpg" target="_blank" rel="noopener noreferrer">source</a></span>
+              </figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="iot-hardware">
+              <img src="../../../assets/images/lessons/sensor-modules/digitaltempmodule.webp" alt="Digital temperature sensor module PCB with three-pin telemetry header" loading="lazy" />
+              <figcaption>
+                <strong>Edge Input: Digital Temperature Module</strong>
+                <span>Converts thermal shifts into clean digital bits the UNO R4 can serialize into MQTT or JSON readings.</span>
+                <span class="pg-credit" data-no-glossary>ClassroomOS hardware plate · CC BY 4.0</span>
+              </figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="iot-hardware">
+              <img src="../../../assets/images/lessons/sensor-modules/pirsensor.webp" alt="Passive infrared PIR motion sensor dome module mounted on a breakout board" loading="lazy" />
+              <figcaption>
+                <strong>Presence Trigger: PIR Motion Sensor</strong>
+                <span>Detects sudden infrared changes across rooms — powering automated porch-light and entryway rules.</span>
+                <span class="pg-credit" data-no-glossary>ClassroomOS hardware plate · CC BY 4.0</span>
+              </figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="iot-hardware">
+              <img src="../../../assets/images/lessons/sensor-modules/relaymodule.webp" alt="Solid-state/electromechanical relay module allowing low-voltage MCU pins to switch room loads" loading="lazy" />
+              <figcaption>
+                <strong>Edge Output: Relay Actuator Module</strong>
+                <span>Lets a 3.3V/5V microcontroller safely switch lamps, fans, or door locks when an automation rule fires.</span>
+                <span class="pg-credit" data-no-glossary>ClassroomOS hardware plate · CC BY 4.0</span>
+              </figcaption>
+            </figure>
+          </div>
           <details class="history-files">
             <summary>📜 History Files: from vending machines to 50 billion devices</summary>
-            <div class="history-entries">
-              <div class="history-entry"><b>1982 · The internet-connected Coke machine</b><span>Grad students at Carnegie Mellon wired a vending machine to the early internet so they could check from their desks whether a soda was cold before walking over — often cited as the first "smart" internet-connected object.</span></div>
-              <div class="history-entry"><b>1999 · The term "Internet of Things"</b><span>Technologist Kevin Ashton coined the phrase while pitching RFID tags to Procter &amp; Gamble, arguing computers should gather their own data from the physical world instead of waiting for humans to type it in.</span></div>
-              <div class="history-entry"><b>Today · Tens of billions of devices</b><span>Sensors now sit in shipping containers, cow collars, running shoes, streetlights, and hospital beds — most of them running the exact same five-stage pipeline you just explored.</span></div>
-            </div>
+            <ol class="history-entries" data-timeline style="list-style:none;margin:0;">
+              <li class="history-entry" data-when="1982"><b>1982 · The internet-connected Coke machine</b><span>Grad students at Carnegie Mellon wired a vending machine to the early internet so they could check from their desks whether a soda was cold before walking over — often cited as the first "smart" internet-connected object.</span></li>
+              <li class="history-entry" data-when="1999"><b>1999 · The term "Internet of Things"</b><span>Technologist Kevin Ashton coined the phrase while pitching RFID tags to Procter &amp; Gamble, arguing computers should gather their own data from the physical world instead of waiting for humans to type it in.</span></li>
+              <li class="history-entry" data-when="present"><b>Today · Tens of billions of devices</b><span>Sensors now sit in shipping containers, cow collars, running shoes, streetlights, and hospital beds — most of them running the exact same five-stage pipeline you just explored.</span></li>
+            </ol>
           </details>
         </section>
 
         <section class="mission" data-accent="purple" aria-labelledby="mission-2-title">
           <div class="mission-head"><span class="mission-num">2</span><div><h2 id="mission-2-title">Build a Smart Home</h2><p>Flip switches on four devices and watch the network log. Then turn on an automation rule to see what makes a device "smart" instead of just "connected."</p></div></div>
+          <div class="iot-viz-card">
+            <svg id="iot-home-svg" viewBox="0 0 760 155" role="img" aria-label="Interactive smart home floor status responding to device switches and motion automation"></svg>
+          </div>
           <div class="device-grid" id="device-grid">
             <div class="device-card" data-device="thermostat">
               <div class="device-head"><span class="dv-icon">🌡️</span><label class="switch"><input type="checkbox" data-device-toggle="thermostat" /><span class="switch-track"></span></label></div>
@@ -542,6 +632,16 @@
             <button class="scenario" data-protocol="Wi-Fi" data-reason="Streaming live 1080p video needs real bandwidth, and a plugged-in doorbell camera doesn't need to worry about battery life — a job for fast, power-hungry Wi-Fi."><b>📹 Video doorbell</b><p>Streams live HD video and is plugged into power.</p></button>
           </div>
           <div class="feedback" id="protocol-feedback" aria-live="polite">Choose a scenario to see the engineering trade-off in action.</div>
+          <div class="pg-grid" style="margin-top:.95rem;">
+            <figure data-zoomable data-lightbox-group="iot-diagrams">
+              <img src="../../../assets/images/lessons/internet-of-things/iot-protocol-tradeoff-map.svg" alt="Two-dimensional IoT wireless protocol tradeoff chart plotting range vs data throughput for Bluetooth, Wi-Fi, Zigbee/Thread, and LoRaWAN/LTE-M" loading="lazy" />
+              <figcaption>
+                <strong>Wireless Range vs. Throughput Tradeoff Map</strong>
+                <span>High-bandwidth video stays near a power outlet on Wi-Fi, while low-power field telemetry stretches across miles on LoRaWAN or mesh Zigbee.</span>
+                <span class="pg-credit" data-no-glossary>ClassroomOS diagram · CC BY 4.0</span>
+              </figcaption>
+            </figure>
+          </div>
         </section>
 
         <section class="mission" data-accent="red" aria-labelledby="mission-4-title">
@@ -819,5 +919,7 @@
   <script src="../../../assets/js/electricity-path.js"></script>
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lessons/iot-packet-viz.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

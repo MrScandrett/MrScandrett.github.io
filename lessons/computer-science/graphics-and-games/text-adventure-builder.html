@@ -7,6 +7,8 @@
   <meta name="description" content="Build a type-your-commands text adventure in about 100 lines of JavaScript: rooms as a graph, a parser that turns words into a verb and a noun, an inventory, flags and locks. Then check your map with breadth-first search and design a spin-off." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/text-adventure-map.css" />
   <style>
     .cl-page { padding-bottom: 0; }
     .ll-viewport { --ll-panel-w: 300px; }
@@ -197,6 +199,7 @@
             </div>
             <div id="lab-game" data-night-keep data-memory-ignore aria-label="Text adventure game"></div>
           </div>
+          <div id="tab-live-map-wrap" class="tab-map-card" data-night-keep aria-label="Live room graph map"></div>
           <div class="callout">
             <strong>Reading the config.</strong> It is JSON: names in quotes, numbers without, lists in <code>[ ]</code>, objects in <code>{ }</code>. If something is wrong, the message under the config says what and where. Things to try:
             <ul>
@@ -296,6 +299,12 @@
 }</pre></div>
           <h3>The bigger trick: search over situations, not rooms</h3>
           <p>A room list alone can't tell whether the game can be won. The principal's office in the Haunted School is "reachable" on the map, but only once you carry the keys, and the keys are in a basement you can only search with a working flashlight. So the checker runs BFS over <strong>situations</strong>: where you are, what you carry, which flags are set. Every command you could type (go somewhere, take something, do an action) is a line from one situation to another. If BFS can reach a situation that counts as a win, the game can be won, and the path it followed is the shortest walkthrough. The checker also runs the search backwards from every win to find <strong>dead ends</strong>: situations where the player can no longer win, however well they play.</p>
+          <div class="pg-grid" style="margin:0.85rem 0;--pg-card-bg:transparent;--pg-line:var(--line,#d2d2d7);--pg-paper:#f8fafc;--pg-heading:inherit;--pg-text:inherit;">
+            <figure class="pg-card pg-contain" data-zoomable data-lightbox-group="text-adventure">
+              <img src="../../../assets/images/lessons/text-adventure-builder/state-graph-architecture.svg" alt="Directed state-graph diagram showing rooms as nodes, exits as directed edges, locked doors as conditional edges, and an unreachable orphan vault caught by breadth-first search." loading="lazy" />
+              <figcaption><strong>Worlds as Directed State Graphs</strong> Exits link room nodes; keys and flags act as conditional gates; breadth-first search catches orphaned rooms before players get trapped.</figcaption>
+            </figure>
+          </div>
           <div class="row">
             <button class="btn" id="map-check" type="button">🔍 Check the Lab's map</button>
             <button class="btn ghost" id="map-broken" type="button">🧪 Check a broken example</button>
@@ -1555,5 +1564,7 @@ var ADV_BROKEN = {
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/game-dev-route.js"></script>
 <script src="../../../assets/js/tool-rosetta.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/lessons/text-adventure-map.js"></script>
 </body>
 </html>
