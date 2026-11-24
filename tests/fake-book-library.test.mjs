@@ -68,5 +68,5 @@ test('seasonal melodies retain the source phrases and distinct cadences', () => 
   assert.equal(byId['o-christmas-tree'].bars, 12);
   assert.equal(bars(byId['o-christmas-tree'].melody)[1].join(' '), 'F4e. F4s F4q. G4e');
   assert.equal(bars(byId['we-wish-you-a-merry-christmas'].melody)[13].join(' '), 'E4q D4e D4e C4e C4e');
-  assert.equal(bars(byId['up-on-the-housetop'].melody)[8].join(' '), 'G4q G4q B4h');
+  assert.equal(bars(byId['up-on-the-housetop'].melody)[8].join(' '), 'F4q F4q A4h', 'chorus "Ho, ho, ho" is Bb Bb D in Hanby’s F major, so F F A in C');
 });
