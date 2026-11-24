@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 514 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 515 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -610,7 +610,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 146 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 147 lessons
 
 ## Visual Art & Design (DES)
 
@@ -643,47 +643,48 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **MUS-06** — The Piano: History, Keys & Chords
 - **MUS-07** — The Violin: Hold It, Tune It, Think in Fifths
 - **MUS-08** — Drum Lab: Kit, Notation, Rudiments & Fills
-- **MUS-09** — The Saxophone: Reed, Breath & Melody
-- **MUS-10** — Fake Book: Lead Sheets, Variations & Play-Along
-- **MUS-11** — Chord Progressions & Arranging
-- **MUS-12** — Drop Voicings: Open Up the Chord
+- **MUS-09** — Rhythm Values
+- **MUS-10** — The Saxophone: Reed, Breath & Melody
+- **MUS-11** — Fake Book: Lead Sheets, Variations & Play-Along
+- **MUS-12** — Chord Progressions & Arranging
+- **MUS-13** — Drop Voicings: Open Up the Chord
 
 ### Composers & Music History
 
-- **MUS-13** — Composers Pathway
-- **MUS-14** — Modes: From Greece to Today
-- **MUS-15** — Antonio Vivaldi
-- **MUS-16** — Johann Sebastian Bach
-- **MUS-17** — Wolfgang Amadeus Mozart
-- **MUS-18** — Ludwig van Beethoven
-- **MUS-19** — Frédéric Chopin
-- **MUS-20** — Pyotr Ilyich Tchaikovsky
-- **MUS-21** — Francisco Tárrega
-- **MUS-22** — Franz Liszt
-- **MUS-23** — Sergei Rachmaninoff
-- **MUS-24** — Robert Schumann
-- **MUS-25** — Franz Schubert
-- **MUS-26** — Johannes Brahms
-- **MUS-27** — Claude Debussy
-- **MUS-28** — Erik Satie
-- **MUS-29** — Maurice Ravel
-- **MUS-30** — Alexander Scriabin
-- **MUS-31** — Johann Pachelbel
-- **MUS-32** — George Frideric Handel
-- **MUS-33** — Camille Saint-Saëns
-- **MUS-34** — Jules Massenet
-- **MUS-35** — Edvard Grieg
-- **MUS-36** — Gabriel Fauré
-- **MUS-37** — Edward Elgar
-- **MUS-38** — Pietro Mascagni
-- **MUS-39** — Samuel Barber
-- **MUS-40** — Scott Joplin
-- **MUS-41** — Jelly Roll Morton
-- **MUS-42** — George Gershwin
-- **MUS-43** — Duke Ellington
-- **MUS-44** — Louis Armstrong
-- **MUS-45** — Django Reinhardt
-- **MUS-46** — Charlie Parker
+- **MUS-14** — Composers Pathway
+- **MUS-15** — Modes: From Greece to Today
+- **MUS-16** — Antonio Vivaldi
+- **MUS-17** — Johann Sebastian Bach
+- **MUS-18** — Wolfgang Amadeus Mozart
+- **MUS-19** — Ludwig van Beethoven
+- **MUS-20** — Frédéric Chopin
+- **MUS-21** — Pyotr Ilyich Tchaikovsky
+- **MUS-22** — Francisco Tárrega
+- **MUS-23** — Franz Liszt
+- **MUS-24** — Sergei Rachmaninoff
+- **MUS-25** — Robert Schumann
+- **MUS-26** — Franz Schubert
+- **MUS-27** — Johannes Brahms
+- **MUS-28** — Claude Debussy
+- **MUS-29** — Erik Satie
+- **MUS-30** — Maurice Ravel
+- **MUS-31** — Alexander Scriabin
+- **MUS-32** — Johann Pachelbel
+- **MUS-33** — George Frideric Handel
+- **MUS-34** — Camille Saint-Saëns
+- **MUS-35** — Jules Massenet
+- **MUS-36** — Edvard Grieg
+- **MUS-37** — Gabriel Fauré
+- **MUS-38** — Edward Elgar
+- **MUS-39** — Pietro Mascagni
+- **MUS-40** — Samuel Barber
+- **MUS-41** — Scott Joplin
+- **MUS-42** — Jelly Roll Morton
+- **MUS-43** — George Gershwin
+- **MUS-44** — Duke Ellington
+- **MUS-45** — Louis Armstrong
+- **MUS-46** — Django Reinhardt
+- **MUS-47** — Charlie Parker
 
 ## Language, Media & Critical Thinking (LAN)
 
