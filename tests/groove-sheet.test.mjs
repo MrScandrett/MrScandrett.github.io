@@ -190,3 +190,13 @@ test('QR: version, structure and capacity for a real groove link', () => {
   assert.throws(() => QR.encode('x'.repeat(500), 'M'), /will not fit/);
   assert.match(QR.toSvg(qr), /^<svg[^>]+viewBox="0 0 \d+ \d+"/);
 });
+
+test('homework and shared grooves preserve meter and the last hit of each bar', () => {
+  for (const [meter, steps] of [['2/4', 8], ['3/4', 12], ['5/4', 20], ['6/8', 12], ['12/8', 24]]) {
+    const tracks = { kick: '-'.repeat(steps - 1) + 'X' };
+    const pattern = G.makePattern({ meter, tracks, tempo: 74 });
+    assert.deepEqual(G.parseHash(G.hashFor(pattern)), { meter, tracks, tempo: 74 });
+  }
+  const counts = G.countLabels('eighth', {}, { steps: 12, compound: true, beats: 2 });
+  assert.equal(counts.labels.filter(Boolean).join(' '), '1 & a 2 & a');
+});

@@ -2418,7 +2418,7 @@
           </div>
           ${quConsole ? consoleFader(t) : `<label class="daw-strip-fader daw-console-volume"><span>Vol</span><input type="range" data-mx="volume" data-focus="${t.id}-vol" min="0" max="1.2" step="0.01" value="${t.volume}" aria-label="${esc(t.name)} volume"><output>${toDb(t.volume)} dB</output></label>`}
           <label class="daw-strip-fader"><span>Pan</span><input type="range" data-mx="pan" data-focus="${t.id}-pan" min="-1" max="1" step="0.05" value="${t.pan}" aria-label="${esc(t.name)} pan"><output>${panLabel(t.pan)}</output></label>
-          ${(project.returns || []).map((r, i) => `<label class="daw-strip-fader"><span>${esc(r.id)}</span><input type="range" data-mx="send" data-send="${i}" data-focus="${t.id}-send${i}" min="0" max="1" step="0.01" value="${t.sends?.[i] || 0}" aria-label="${esc(t.name)} send to ${esc(r.name)}"><output>${Math.round((t.sends?.[i] || 0) * 100)}%</output></label>`).join('')}
+          ${quConsole ? '' : (project.returns || []).map((r, i) => `<label class="daw-strip-fader"><span>${esc(r.id)}</span><input type="range" data-mx="send" data-send="${i}" data-focus="${t.id}-send${i}" min="0" max="1" step="0.01" value="${t.sends?.[i] || 0}" aria-label="${esc(t.name)} send to ${esc(r.name)}"><output>${Math.round((t.sends?.[i] || 0) * 100)}%</output></label>`).join('')}
           <span class="daw-meter daw-strip-meter" aria-hidden="true"><i data-strip-meter="${t.id}"></i></span>
         </div>`).join('')}
         ${(project.returns || []).map((r, i) => `<div class="daw-strip daw-strip-return" data-return="${i}">
@@ -5099,7 +5099,7 @@
     render();
     refreshAudioHealth();
     if (shared) { status(`Opened the shared song “${project.name}”. It is now saved in this browser; Undo returns to your previous song.`); scheduleSave(); requestAnimationFrame(frame); return; }
-    status(restored ? `Welcome back — “${project.name}” was restored from this browser.` : 'Choose Add & play to start an instrument, or Connect MIDI keyboard for your USB keyboard. Press Record when you are ready to keep a take.');
+    status(restored ? `Welcome back — “${project.name}” was restored from this browser.` : (quConsole ? 'Click ＋ Soundcheck band in the fader bank or press Play to audition tracks, use SEL for EQ/compression, and switch FADERS between Main LR and FX sends.' : 'Choose Add & play to start an instrument, or Connect MIDI keyboard for your USB keyboard. Press Record when you are ready to keep a take.'));
     requestAnimationFrame(frame);
   })();
 })();

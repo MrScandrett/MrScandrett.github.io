@@ -22,6 +22,12 @@ body.te-page {
     radial-gradient(circle at 92% 18%, rgba(89, 200, 216, 0.08), transparent 28rem),
     var(--te-bg);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --pg-card-bg: rgba(12, 17, 25, 0.88);
+  --pg-line: rgba(240, 180, 72, 0.22);
+  --pg-text: #b7c2d0;
+  --pg-heading: #f4efe4;
+  --pg-muted: #93a0b2;
+  --pg-paper: #111722;
 }
 
 .te-topbar {
@@ -571,7 +577,212 @@ body.te-page {
 /* Theatre tools at the top of their lessons are full-screen workspaces (creation-app.js).
    In the page the Full screen bar just sits on top of the tool; the lesson's sticky topbar stays in charge. */
 .te-page [data-creation-app]:not(:fullscreen):not(.creation-app-expanded) > .creation-app-toolbar { position: relative; z-index: 2; float: right; margin: 0 0 .4rem .8rem; padding: 0; background: transparent; color: inherit; }
-.te-page [data-creation-app]:is(:fullscreen, .creation-app-expanded) { display: flex; flex-direction: column; gap: .4rem; margin: 0; }
-.te-page [data-creation-app]:is(:fullscreen, .creation-app-expanded) > .creation-app-toolbar { order: -10; position: sticky; top: 0; padding: .35rem clamp(.5rem, 2vw, 1rem); }
+.te-page [data-creation-app][data-creation-fit]:not(:fullscreen):not(.creation-app-expanded) > .creation-app-toolbar { position: absolute; inset: 0.55rem 0.7rem auto auto; float: none; margin: 0; }
+.te-page [data-creation-app][data-creation-fit]:not(:fullscreen):not(.creation-app-expanded) > .creation-app-toolbar .creation-app-fullscreen {
+  background: rgba(23, 31, 45, 0.92);
+  color: var(--te-accent);
+  border-color: rgba(240, 180, 72, 0.45);
+}
+.te-page [data-creation-app]:is(:fullscreen, .creation-app-expanded) { display: flex; flex-direction: column; gap: .4rem; margin: 0; background: var(--te-bg); color: var(--te-text); }
+.te-page [data-creation-app]:is(:fullscreen, .creation-app-expanded) > .creation-app-toolbar { order: -10; position: sticky; top: 0; padding: .35rem clamp(.5rem, 2vw, 1rem); background: rgba(8, 11, 16, 0.95); color: var(--te-text); }
 @media print { .te-page [data-creation-app] > .creation-app-toolbar { display: none; } }
 .te-page [data-creation-app]:is(:fullscreen, .creation-app-expanded) > * { flex-shrink: 0; }
+
+/* First-view Creation-App Studio Workbench for Audio Engineering & Stagecraft lessons */
+.te-shell:has(> [data-creation-app][data-creation-fit]) { padding-top: 0.45rem; }
+.te-topbar.te-topbar-compact { min-height: 36px; padding-block: 0.22rem; }
+.te-workbench {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--te-line);
+  border-radius: 16px;
+  padding: 0.58rem 0.8rem;
+  margin-bottom: 1.25rem;
+  background: linear-gradient(155deg, rgba(23, 31, 45, 0.96), rgba(12, 17, 25, 0.98));
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.28);
+}
+.te-wb-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem 0.75rem;
+  padding-right: 7rem;
+  margin-bottom: 0.42rem;
+}
+.te-wb-title-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.7rem;
+  min-width: 0;
+}
+.te-wb-header h1 {
+  margin: 0;
+  font-size: clamp(1.02rem, 1.75vw, 1.32rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--te-text);
+}
+.te-wb-sub {
+  color: var(--te-muted);
+  font-size: 0.73rem;
+  font-weight: 600;
+}
+.te-wb-jump {
+  color: var(--te-accent-2);
+  font-size: 0.73rem;
+  font-weight: 750;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.te-wb-jump:hover { text-decoration: underline; }
+.te-wb-primary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.48rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.te-wb-primary > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.te-wb-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  gap: 0.38rem;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+.te-wb-tab {
+  appearance: none;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 0.32rem 0.76rem;
+  min-height: 32px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--te-muted);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 740;
+  cursor: pointer;
+}
+.te-wb-tab:hover { border-color: var(--te-accent); color: var(--te-text); }
+.te-wb-tab[aria-selected="true"] {
+  border-color: var(--te-accent);
+  background: rgba(240, 180, 72, 0.2);
+  color: #fff6e4;
+}
+.te-wb-panel { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.te-wb-panel[hidden] { display: none !important; }
+.te-workbench input[type="range"] { box-sizing: border-box; max-width: 100%; margin: 0; }
+.te-wb-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.38fr) minmax(265px, 0.62fr);
+  gap: 0.7rem;
+  align-items: start;
+  min-width: 0;
+  max-width: 100%;
+}
+.te-wb-stage, .te-wb-controls { min-width: 0; max-width: 100%; }
+.te-wb-controls {
+  display: grid;
+  gap: 0.44rem;
+  padding: 0.56rem 0.68rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  background: rgba(7, 11, 16, 0.52);
+}
+@media (min-width: 861px) {
+  .te-workbench:not(:fullscreen):not(.creation-app-expanded) .te-wb-controls {
+    max-height: 465px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+.te-wb-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+}
+.te-wb-controls .te-control label { margin-bottom: 0.14rem; font-size: 0.73rem; }
+.te-wb-controls .te-control select { min-height: 34px; padding: 0.26rem 0.5rem; font-size: 0.76rem; }
+.te-wb-controls .te-readout { min-height: 42px; margin-top: 0.18rem; padding: 0.45rem 0.62rem; font-size: 0.76rem; }
+.te-audio-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.te-button.audio-on,
+.te-button[aria-pressed="true"].audio-toggle {
+  border-color: var(--te-good);
+  background: rgba(102, 210, 138, 0.18);
+  color: #e9fbef;
+}
+@media (max-width: 860px) {
+  .te-wb-split { grid-template-columns: 1fr; }
+  .te-wb-header { padding-right: 0; }
+  .te-page [data-creation-app][data-creation-fit]:not(:fullscreen):not(.creation-app-expanded) > .creation-app-toolbar {
+    position: static;
+    margin-bottom: 0.35rem;
+  }
+}
+
+/* Shield Technical Elements dark studio buttons, tabs & quizzes against theme-surfaces.css overrides */
+html[data-theme] body.te-page .te-button:not([disabled]):not([aria-disabled="true"]) {
+  background: rgba(240, 180, 72, 0.08);
+  color: #f3e5c8;
+  border-color: var(--te-line);
+}
+html[data-theme] body.te-page .te-button[aria-pressed="true"]:not([disabled]):not([aria-disabled="true"]),
+html[data-theme] body.te-page .te-button:hover:not([disabled]):not([aria-disabled="true"]) {
+  border-color: var(--te-accent);
+  background: rgba(240, 180, 72, 0.2);
+  color: #fff6e4;
+}
+html[data-theme] body.te-page .te-button.primary:not([disabled]):not([aria-disabled="true"]) {
+  color: #17120a;
+  background: var(--te-accent);
+  border-color: var(--te-accent);
+}
+html[data-theme] body.te-page .te-button.audio-on:not([disabled]):not([aria-disabled="true"]),
+html[data-theme] body.te-page .te-button.audio-toggle[aria-pressed="true"]:not([disabled]):not([aria-disabled="true"]) {
+  border-color: var(--te-good);
+  background: rgba(102, 210, 138, 0.2);
+  color: #e9fbef;
+}
+html[data-theme] body.te-page .te-wb-tab[aria-selected="true"] {
+  border-color: var(--te-accent);
+  background: rgba(240, 180, 72, 0.22);
+  color: #fff6e4;
+  outline: none;
+}
+html[data-theme] body.te-page :is(.te-check, .rs-q, .ls-q, .quiz-q) button:is(.right, .correct):is([disabled], [aria-disabled="true"], :not([disabled])) {
+  border: 1px solid var(--te-good);
+  background: rgba(102, 210, 138, 0.18);
+  color: #e6faed;
+  opacity: 1;
+}
+html[data-theme] body.te-page :is(.te-check, .rs-q, .ls-q, .quiz-q) button.wrong:is([disabled], [aria-disabled="true"], :not([disabled])) {
+  border: 1px solid var(--te-bad);
+  background: rgba(255, 118, 108, 0.18);
+  color: #ffe8e6;
+  opacity: 1;
+}
+html[data-classroom-presentation] body.te-page {
+  background: var(--te-bg) !important;
+  color: var(--te-text);
+}
+html[data-classroom-presentation] body.te-page .te-card,
+html[data-classroom-presentation] body.te-page .te-workbench {
+  background: var(--te-panel);
+  color: var(--te-text);
+}

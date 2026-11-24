@@ -1,3 +1,4 @@
+import { studioSky } from './studio-sky.mjs';
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
 import { writeBinaryStl, writeObj } from '../fab-io.mjs';
@@ -92,6 +93,7 @@ class ClayStudio {
     const view = createScene(this.ui.canvas, { THREE, clearColor: 0x211d1a, maxDpr: 1.65 });
     Object.assign(this, view);
     this.camera.position.set(3.7, 3.3, 5.5);
+    if (!this.isPottery) this.scene.background = studioSky(THREE);
     this.part = new THREE.Group();
     this.scene.add(this.part);
     this.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.84 });
@@ -119,7 +121,12 @@ class ClayStudio {
 
     this.orbit = new OrbitControls(this.camera, this.ui.canvas);
     this.orbit.target.set(0, 1.15, 0);
-    this.orbit.minDistance = 2.4;
+    this.orbit.minDistance = this.isPottery ? 2.4 : 0.65;
+    if (!this.isPottery) {
+      this.orbit.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
+      this.orbit.rotateSpeed = 0.65;
+      this.orbit.zoomSpeed = 0.75;
+    }
     this.orbit.maxDistance = 13;
     this.orbit.maxPolarAngle = Math.PI * 0.52;
     this.orbit.update();
@@ -129,6 +136,7 @@ class ClayStudio {
     this.bind();
     this.refresh();
     this.rebuild();
+    if (!this.isPottery) this.setView('reset');
     this.restoreDraft();
     let last = 0;
     this.renderer.setAnimationLoop(now => {
@@ -291,6 +299,7 @@ class ClayStudio {
     for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) {
       ui.canvas.addEventListener(name, event => {
         if (this.stroke?.id !== event.pointerId) return;
+        this.stroke.surface?.geometry.dispose();
         this.stroke = null;
         this.scheduleSave();
         this.refresh();
@@ -324,6 +333,16 @@ class ClayStudio {
     const pos = views[name] || views.reset;
     this.orbit.target.set(0, 1.15, 0);
     this.camera.position.set(...pos);
+    if (!this.isPottery && this.model.geometry.attributes.position) {
+      this.syncSize();
+      this.model.geometry.computeBoundingSphere();
+      const sphere = this.model.geometry.boundingSphere;
+      const direction = this.camera.position.clone().sub(this.orbit.target).normalize();
+      const halfFov = THREE.MathUtils.degToRad(this.camera.fov / 2);
+      const angle = Math.min(halfFov, Math.atan(Math.tan(halfFov) * this.camera.aspect));
+      this.orbit.target.copy(this.model.localToWorld(sphere.center.clone()));
+      this.camera.position.copy(this.orbit.target).addScaledVector(direction, 1.22 * sphere.radius / Math.sin(angle));
+    }
     this.orbit.update();
     this.announce(name === 'reset' ? 'Default camera view restored.' : `${name[0].toUpperCase() + name.slice(1)} view.`);
   }
@@ -493,7 +512,7 @@ class ClayStudio {
     this.pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
     this.model.updateWorldMatrix(true, false);
     this.ray.setFromCamera(this.pointer, this.camera);
-    return this.ray.intersectObject(this.model)[0] ?? null;
+    return this.ray.intersectObject(this.stroke?.surface ?? this.model)[0] ?? null;
   }
 
   pointerDown(event) {
@@ -524,6 +543,13 @@ class ClayStudio {
       id: event.pointerId, x: event.clientX, y: event.clientY, targetY: hit.point.y,
       angle: Math.atan2(point.x, point.z),
     };
+    // Sample the original surface throughout a stroke so fresh clay cannot climb toward the camera.
+    if (!this.isPottery && this.project.kind === 'volume') {
+      const surface = new THREE.Mesh(this.model.geometry.clone(), this.material);
+      surface.matrixAutoUpdate = false;
+      surface.matrixWorld.copy(this.model.matrixWorld);
+      this.stroke.surface = surface;
+    }
     this.ui.canvas.setPointerCapture(event.pointerId);
     this.mark(hit, 0, 0);
     this.announce(pottery && this.tool === 'open' ? 'Opened the lump. Use Pull wall to lift the clay.' : '');

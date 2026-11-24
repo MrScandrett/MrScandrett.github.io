@@ -127,7 +127,8 @@
 
   /* --------------------------------------------------------- pattern model */
   function norm(p) {
-    var beats = p.beats || 4, barSteps = beats * 4, len = 0, tracks = {};
+    var compound = /\/8$/.test(p.meter), unit = compound ? 6 : 4;
+    var beats = p.meter ? window.GrooveSheetCore.stepsFor(p.meter) / unit : p.beats || 4, barSteps = beats * unit, len = 0, tracks = {};
     ORDER.forEach(function (k) { if (p.tracks[k]) len = Math.max(len, p.tracks[k].length); });
     var bars = Math.max(1, Math.ceil(len / barSteps)), total = bars * barSteps;
     ORDER.forEach(function (k) {
@@ -135,7 +136,7 @@
       while (s.length < total) s += '-';
       tracks[k] = s;
     });
-    return { beats: beats, barSteps: barSteps, bars: bars, total: total, tracks: tracks };
+    return { unit: unit, signature: p.meter || beats + '/4', beats: beats, barSteps: barSteps, bars: bars, total: total, tracks: tracks };
   }
 
   var SWING_OFF = [0, 1 / 3, 2 / 3, 5 / 6, 1];
@@ -152,7 +153,7 @@
     var left = 78, barW = N.barSteps * STEP + 30;
     var width = left - 4 + barsPerRow * barW + 10;
     var svg = svgEl('svg', { viewBox: '0 0 ' + width + ' ' + (rows * ROWH), 'class': 'dr-staff', role: 'img',
-      'aria-label': 'Drum notation: ' + (p.name || 'pattern') + ', ' + N.bars + (N.bars === 1 ? ' bar' : ' bars') + ' of ' + N.beats + '/4' });
+      'aria-label': 'Drum notation: ' + (p.name || 'pattern') + ', ' + N.bars + (N.bars === 1 ? ' bar' : ' bars') + ' of ' + N.signature });
     var g = svgEl('g', { fill: INK, stroke: 'none' }, svg);
     var rowSteps = barsPerRow * N.barSteps;
 
@@ -184,7 +185,7 @@
       }
     }
     // time signature
-    [['' + N.beats, 22], ['4', 46]].forEach(function (t) {
+    [[N.signature.split('/')[0], 22], [N.signature.split('/')[1], 46]].forEach(function (t) {
       svgEl('text', { x: 52, y: yb(0) - 48 + t[1], 'font-size': 26, 'font-weight': 700, 'font-family': 'Georgia, serif', 'text-anchor': 'middle', fill: INK }, g).textContent = t[0];
     });
     if (p.swing) {
@@ -205,18 +206,19 @@
 
     function drawEvents(voice) {
       var up = voice === 1;
-      for (var b = 0; b < N.total / 4; b++) {
-        var start = b * 4, evs = [], q;
-        for (q = start; q < start + 4; q++) if (steps[q][voice].length) evs.push({ k: q, heads: steps[q][voice] });
+      var group = N.unit === 6 ? 2 : 4;
+      for (var b = 0; b < N.total / group; b++) {
+        var start = b * group, evs = [], q;
+        for (q = start; q < start + group; q++) if (steps[q][voice].length) evs.push({ k: q, heads: steps[q][voice] });
         var p0 = pos(start), row = p0.row;
-        if (!evs.length) { if (up) restGlyph(g, 'q', p0.x + 8, yb(row) - 24); continue; }
+        if (!evs.length) { if (up) restGlyph(g, group === 2 ? 'e' : 'q', p0.x + 8, yb(row) - 24); continue; }
         if (up && evs[0].k > start) {
           var gap = evs[0].k - start;
           if (gap === 1) restGlyph(g, 's', pos(start).x, yb(row) - 24);
           else if (gap === 2) restGlyph(g, 'e', pos(start).x, yb(row) - 24);
           else { restGlyph(g, 'e', pos(start).x, yb(row) - 24); restGlyph(g, 's', pos(start + 2).x, yb(row) - 24); }
         }
-        evs.forEach(function (e, i) { e.dur = (i + 1 < evs.length ? evs[i + 1].k : start + 4) - e.k; });
+        evs.forEach(function (e, i) { e.dur = (i + 1 < evs.length ? evs[i + 1].k : start + group) - e.k; });
 
         var grouped = evs.length >= 2;
         var ext = up ? Infinity : -Infinity;
@@ -304,7 +306,7 @@
 
     // counting row ("1 e & a"): one shared decision (GrooveSheetCore.countLabels), drawn from the same
     // step data as the notes above, so the count line cannot drift from the staff.
-    var counts = window.GrooveSheetCore.countLabels(p.count, N.tracks, { steps: N.total, beats: N.beats }), countEls = [];
+    var counts = window.GrooveSheetCore.countLabels(p.count, N.tracks, { steps: N.total, beats: N.beats, compound: N.unit === 6 }), countEls = [];
     for (var cs = 0; cs < N.total; cs++) {
       countEls.push(null);
       var lab = counts.labels[cs];
@@ -497,7 +499,7 @@
       });
     }
 
-    function tempoText() { tempoOut.textContent = tempo + ' BPM'; }
+    function tempoText() { tempoOut.textContent = tempo + (/\/8$/.test(P.meter) ? ' BPM (dotted quarter)' : ' BPM'); }
 
     function buildChips() {
       chips.innerHTML = '';
@@ -531,6 +533,7 @@
 
     function beatPos(k) {
       var N = view.N, loop = Math.floor(k / N.total), kk = k - loop * N.total;
+      if (N.unit === 6) return k / 6;
       return loop * (N.total / 4) + Math.floor(kk / 4) + view.off[kk % 4];
     }
     function timeOf(beat) { return anchorTime + (beat - anchorBeat) * beatDur; }
@@ -569,10 +572,11 @@
         status.textContent = 'Count-in: ' + (Math.floor(A) + 1 + N.beats);
       } else {
         status.textContent = 'Playing';
-        var totalBeats = N.total / 4, lb = A - Math.floor(A / totalBeats) * totalBeats;
+        var totalBeats = N.total / N.unit, lb = A - Math.floor(A / totalBeats) * totalBeats;
         var b = Math.floor(lb), fr = lb - b, r = 0;
         while (r < 3 && fr >= view.off[r + 1]) r++;
         var sf = b * 4 + r + (fr - view.off[r]) / (view.off[r + 1] - view.off[r]);
+        if (N.unit === 6) sf = lb * 6;
         view.setPlayhead(sf);
         var cur = Math.floor(sf);
         if (cur !== view.lastStep) {
@@ -642,14 +646,22 @@
       var studioHost = htmlEl('div', '', null, root);
       builderStudio = window.DrumStudio.mount(studioHost, LANES, function (inst, opts) { hitNow(inst, .85, opts); });
       gridState = {};
-      LANES.forEach(function (inst) { gridState[inst] = P.tracks[inst] ? P.tracks[inst].split('') : '----------------'.split(''); });
+      LANES.forEach(function (inst) { gridState[inst] = Array.from({ length: 24 }, function (_, i) { return (P.tracks[inst] || '')[i] || '-'; }); });
       grid = htmlEl('div', 'dr-grid', null, root);
       var tools = htmlEl('div', 'dr-grid-tools', null, grid);
+      var meterLabelEl = htmlEl('label', 'dr-check', 'Time signature ', bar);
+      var meterSel = htmlEl('select', '', null, meterLabelEl);
+      METERS.filter(function (m) { return m.bottom === 4 || m.label === '6/8' || m.label === '12/8'; }).forEach(function (m) {
+        htmlEl('option', '', m.label, meterSel).value = m.label;
+      });
+      meterSel.value = P.meter || '4/4';
+      function barLength() { return window.GrooveSheetCore.stepsFor(meterSel.value); }
+      function beatStart(step) { return step % (/\/8$/.test(meterSel.value) ? 6 : 4) === 0; }
       var presetSel = document.createElement('select');
       presetSel.setAttribute('aria-label', 'Load a starter groove');
       var opt0 = document.createElement('option'); opt0.textContent = 'Load a starter groove…'; opt0.value = ''; presetSel.appendChild(opt0);
       SETS.beats.filter(function (b) { return !b.beats && !b.swing; }).forEach(function (b, i) {
-        var o = document.createElement('option'); o.value = i; o.textContent = b.name; presetSel.appendChild(o);
+        var o = document.createElement('option'); o.value = i; o.textContent = b.name + ' (4/4)'; presetSel.appendChild(o);
       });
       var presets = SETS.beats.filter(function (b) { return !b.beats && !b.swing; });
       tools.appendChild(presetSel);
@@ -674,20 +686,23 @@
       var hdr = htmlEl('div', 'dr-grid-row dr-grid-head', null, table);
       htmlEl('span', 'dr-lane-name', '', hdr);
       var cntEls = [];
-      for (var s = 0; s < 16; s++) cntEls.push(htmlEl('span', 'dr-grid-cnt' + (s % 4 === 0 ? ' is-beat' : ''), '', hdr));
+      for (var s = 0; s < 24; s++) cntEls.push(htmlEl('span', 'dr-grid-cnt' + (beatStart(s) ? ' is-beat' : ''), '', hdr));
       // The header over the grid uses the same labels as the staff, so what you click is what you count.
       var paintCounts = function () {
-        var c = GC.countLabels(P.count, P.tracks);
-        cntEls.forEach(function (el, k) { el.textContent = c.labels[k] === null ? '·' : c.labels[k]; el.classList.toggle('is-skipped', c.labels[k] === null); });
+        var n = norm(P);
+        table.style.setProperty('--dr-steps', barLength());
+        table.setAttribute('aria-label', meterSel.value + ' drum grid, ' + barLength() + ' sixteenth notes');
+        var c = GC.countLabels(P.count, P.tracks, { beats: n.beats, steps: barLength(), compound: n.unit === 6 });
+        cntEls.forEach(function (el, k) { el.hidden = k >= barLength(); el.classList.toggle('is-beat', beatStart(k)); el.textContent = c.labels[k] === null ? '·' : c.labels[k]; el.classList.toggle('is-skipped', c.labels[k] === null); });
         countSel.options[0].textContent = 'Count: Auto (' + GC.MODE_NAMES[c.mode].toLowerCase() + ')';
       };
       LANES.forEach(function (inst) {
         var row = htmlEl('div', 'dr-grid-row', null, table);
         htmlEl('span', 'dr-lane-name', INST[inst].short, row);
         cellEls[inst] = [];
-        for (var s2 = 0; s2 < 16; s2++) {
+        for (var s2 = 0; s2 < 24; s2++) {
           (function (step) {
-            var cell = htmlEl('button', 'dr-cell' + (step % 4 === 0 ? ' is-beat' : ''), '', row);
+            var cell = htmlEl('button', 'dr-cell' + (beatStart(step) ? ' is-beat' : ''), '', row);
             cell.type = 'button';
             cellEls[inst][step] = cell;
             cell.addEventListener('click', function () {
@@ -703,14 +718,15 @@
       });
       var paintCell = function (inst, step) {
         var ch = gridState[inst][step], c = cellEls[inst][step];
-        c.className = 'dr-cell' + (step % 4 === 0 ? ' is-beat' : '') + (ch === '-' ? '' : ' on-' + ch);
+        c.hidden = step >= barLength();
+        c.className = 'dr-cell' + (beatStart(step) ? ' is-beat' : '') + (ch === '-' ? '' : ' on-' + ch);
         c.textContent = ch === 'X' ? '>' : ch === 'g' ? '·' : '';
         c.setAttribute('aria-label', INST[inst].short + ', step ' + (step + 1) + ', ' + (ch === '-' ? 'off' : ch === 'x' ? 'on' : ch === 'X' ? 'accent' : 'ghost'));
       };
-      var paintAll = function () { LANES.forEach(function (inst) { for (var s3 = 0; s3 < 16; s3++) paintCell(inst, s3); }); paintCounts(); };
+      var paintAll = function () { LANES.forEach(function (inst) { for (var s3 = 0; s3 < 24; s3++) paintCell(inst, s3); }); paintCounts(); };
       var commit = function () {
         var tr = {};
-        LANES.forEach(function (inst) { var str = gridState[inst].join(''); if (/[^-]/.test(str)) tr[inst] = str; });
+        LANES.forEach(function (inst) { var str = gridState[inst].slice(0, barLength()).join(''); if (/[^-]/.test(str)) tr[inst] = str; });
         P.tracks = tr;
         P.count = countSel.value;
         paintCounts();
@@ -722,11 +738,14 @@
         if (!Object.keys(tr).length) { view.svg.setAttribute('aria-label', 'Empty bar of drum notation'); }
         tip.textContent = Object.keys(tr).length ? 'Watch the notation change as you add hits. Kick sits in the bottom space, snare in the middle space, hi-hat above the staff.' : 'The bar is empty, so every beat shows a rest. Add some hits!';
       };
+      meterSel.addEventListener('change', function () {
+        stop(); P.meter = meterSel.value; loadedName = ''; commit(); paintAll(); tempoText();
+      });
       countSel.addEventListener('change', commit);
       sheetBtn.addEventListener('click', function () {
         var store = GC.createStore(window.localStorage);
         if (!Object.keys(P.tracks).length) { flashButton(sheetBtn, 'Add some hits first'); return; }
-        store.addPattern({ tracks: P.tracks, tempo: +tempoIn.value, count: countSel.value, title: sheetTitle(store) });
+        store.addPattern({ meter: meterSel.value, tracks: P.tracks, tempo: +tempoIn.value, count: countSel.value, title: sheetTitle(store) });
         var sh = store.sheet();
         flashButton(sheetBtn, store.persistent ? '✓ Added (' + sh.patterns.length + ' on ' + (sh.student ? sh.student + '’s' : 'the') + ' sheet)' : 'Could not save: this browser blocks storage');
         sheetLink.hidden = false;
@@ -736,22 +755,24 @@
       // "Load in builder" on a sheet card sends the groove back up here to edit.
       window.addEventListener('groove-sheet-load', function (e) {
         var d = e.detail || {};
-        LANES.forEach(function (inst) { var str = (d.tracks && d.tracks[inst]) || ''; for (var s6 = 0; s6 < 16; s6++) gridState[inst][s6] = str[s6] || '-'; });
+        stop(); P.meter = meterSel.value = d.meter || '4/4';
+        LANES.forEach(function (inst) { var str = (d.tracks && d.tracks[inst]) || ''; for (var s6 = 0; s6 < 24; s6++) gridState[inst][s6] = str[s6] || '-'; });
         tempo = Math.min(+tempoIn.max, Math.max(+tempoIn.min, d.tempo || tempo)); tempoIn.value = tempo; tempoText();
         countSel.value = d.count || 'auto'; loadedName = d.title || '';
         paintAll(); commit();
         root.scrollIntoView({ block: 'start', behavior: 'smooth' });
       });
       clearBtn.addEventListener('click', function () {
-        LANES.forEach(function (inst) { for (var s4 = 0; s4 < 16; s4++) gridState[inst][s4] = '-'; });
+        LANES.forEach(function (inst) { for (var s4 = 0; s4 < 24; s4++) gridState[inst][s4] = '-'; });
         paintAll(); commit();
       });
       presetSel.addEventListener('change', function () {
         if (presetSel.value === '') return;
         var pr = presets[+presetSel.value];
+        stop(); P.meter = meterSel.value = '4/4';
         LANES.forEach(function (inst) {
           var str = pr.tracks[inst] || '';
-          for (var s5 = 0; s5 < 16; s5++) gridState[inst][s5] = str[s5] || '-';
+          for (var s5 = 0; s5 < 24; s5++) gridState[inst][s5] = str[s5] || '-';
         });
         tempo = pr.tempo; tempoIn.value = tempo; tempoText();
         loadedName = pr.name;
@@ -1756,7 +1777,8 @@
         var start = SETS.beats[0], linked = window.GrooveSheetCore.parseHash(window.location.hash);
         createPlayer(root, { editable: true, patterns: [{
           name: linked ? 'Groove from your homework sheet' : 'Your groove',
-          desc: linked ? 'Press Play, slow the tempo down, and practice along. Change a square if you want to experiment.' : 'Build a one-bar groove in 16 steps. Hear it, and watch the notation write itself.',
+          desc: linked ? 'Press Play, slow the tempo down, and practice along. Change a square if you want to experiment.' : 'Choose a time signature and build one bar. Hear it, and watch the notation write itself.',
+          meter: linked && linked.meter || '4/4',
           tempo: linked ? linked.tempo : 100,
           tracks: linked ? linked.tracks : { hat: start.tracks.hat, snare: start.tracks.snare, kick: start.tracks.kick }
         }] });

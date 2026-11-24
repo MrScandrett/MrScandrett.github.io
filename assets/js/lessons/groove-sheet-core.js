@@ -54,7 +54,16 @@
     opts = opts || {};
     var steps = opts.steps || STEPS, beats = opts.beats || 4;
     var resolved = resolveMode(mode, tracks, steps), labels = [], isBeat = [];
+    if (opts.compound && mode === 'auto' && resolved === 'quarter') resolved = 'eighth';
     for (var k = 0; k < steps; k++) {
+      if (opts.compound) {
+        var sub = k % 6;
+        isBeat.push(sub === 0);
+        var syllable = [null, '+', '&', '+', 'a', '+'][sub];
+        if (resolved === 'quarter' || (resolved === 'eighth' && sub % 2)) syllable = null;
+        labels.push(sub === 0 ? String(Math.floor(k / 6) % beats + 1) : syllable);
+        continue;
+      }
       var rem = k % 4, show = resolved === 'sixteenth' || (resolved === 'eighth' && rem % 2 === 0) || rem === 0;
       isBeat.push(rem === 0);
       labels.push(!show ? null : rem === 0 ? String((Math.floor(k / 4) % beats) + 1) : SYLLABLES[rem]);
@@ -74,11 +83,14 @@
   var MODE_SAMPLE = { quarter: '1 2 3 4', eighth: '1 & 2 & 3 & 4 &', sixteenth: '1 e & a 2 e & a …' };
 
   /* -------------------------------------------------------------------- tracks */
-  function cleanTracks(tracks) {
+  var meterSteps = { '2/4': 8, '3/4': 12, '4/4': 16, '5/4': 20, '6/8': 12, '12/8': 24 };
+  function stepsFor(meter) { return Object.prototype.hasOwnProperty.call(meterSteps, meter) ? meterSteps[meter] : STEPS; }
+
+  function cleanTracks(tracks, meter) {
     var out = {};
     LANES.forEach(function (lane) {
       var s = String((tracks && tracks[lane]) || ''), t = '';
-      for (var k = 0; k < STEPS; k++) { var ch = s.charAt(k); t += STATES.indexOf(ch) > 0 ? ch : '-'; }
+      for (var k = 0; k < stepsFor(meter); k++) { var ch = s.charAt(k); t += STATES.indexOf(ch) > 0 ? ch : '-'; }
       if (/[^-]/.test(t)) out[lane] = t;
     });
     return out;
@@ -114,10 +126,10 @@
   function clampTempo(t) { t = Math.round(+t); return isFinite(t) ? Math.max(40, Math.min(240, t)) : 100; }
 
   /** tracks + tempo -> 50 URL-safe characters. */
-  function encodeGroove(tracks, tempo) {
-    var t = cleanTracks(tracks), bytes = [], cur = 0, n = 0;
+  function encodeGroove(tracks, tempo, meter) {
+    var t = cleanTracks(tracks, meter), bytes = [], cur = 0, n = 0;
     LANES.forEach(function (lane) {
-      for (var k = 0; k < STEPS; k++) {
+      for (var k = 0; k < stepsFor(meter); k++) {
         var st = Math.max(0, STATES.indexOf((t[lane] || '').charAt(k)));
         cur = (cur << 2) | st;
         if (++n === 4) { bytes.push(cur); cur = 0; n = 0; }
@@ -127,24 +139,28 @@
     return b64encode(bytes);
   }
 
-  function decodeGroove(code) {
+  function decodeGroove(code, meter) {
     var bytes = b64decode(String(code || ''));
-    var need = LANES.length * STEPS / 4 + 1;
+    var need = LANES.length * stepsFor(meter) / 4 + 1;
     if (!bytes || bytes.length !== need) return null;
     var tracks = {}, i = 0;
     LANES.forEach(function (lane) {
       var s = '';
-      for (var k = 0; k < STEPS; k++, i++) s += STATES.charAt((bytes[i >> 2] >> (6 - 2 * (i & 3))) & 3);
+      for (var k = 0; k < stepsFor(meter); k++, i++) s += STATES.charAt((bytes[i >> 2] >> (6 - 2 * (i & 3))) & 3);
       if (/[^-]/.test(s)) tracks[lane] = s;
     });
     return { tracks: tracks, tempo: clampTempo(bytes[need - 1]) };
   }
 
   var HASH_KEY = 'g1';
-  function hashFor(pattern) { return '#' + HASH_KEY + '=' + encodeGroove(pattern.tracks, pattern.tempo); }
+  function hashFor(pattern) { return '#' + HASH_KEY + '=' + encodeGroove(pattern.tracks, pattern.tempo, pattern.meter) + (pattern.meter && pattern.meter !== '4/4' ? '&meter=' + pattern.meter : ''); }
   function parseHash(hash) {
     var m = /[#&]g1=([A-Za-z0-9_-]+)/.exec(String(hash || ''));
-    return m ? decodeGroove(m[1]) : null;
+    var match = /[&]meter=(\d+\/\d+)(?:&|$)/.exec(hash);
+    var meter = match && match[1];
+    var result = m && decodeGroove(m[1], meter);
+    if (result && meterSteps[meter]) result.meter = meter;
+    return result;
   }
 
   /* --------------------------------------------------------------------- ladder */
@@ -167,7 +183,8 @@
       title: str(src.title, 60) || 'Groove',
       note: str(src.note, 130),
       tempo: clampTempo(src.tempo == null ? 100 : src.tempo),
-      tracks: cleanTracks(src.tracks),
+      meter: meterSteps[src.meter] ? src.meter : '4/4',
+      tracks: cleanTracks(src.tracks, src.meter),
       count: COUNT_MODES.indexOf(src.count) >= 0 ? src.count : 'auto',
       ladder: Array.isArray(src.ladder) ? parseLadder(src.ladder.join(' ')) : DEFAULT_LADDER.slice()
     };
@@ -273,7 +290,7 @@
   }
 
   return {
-    STEPS: STEPS, LANES: LANES, STATES: STATES, SYLLABLES: SYLLABLES, COUNT_MODES: COUNT_MODES, MODE_NAMES: MODE_NAMES, MODE_SAMPLE: MODE_SAMPLE,
+    stepsFor: stepsFor, STEPS: STEPS, LANES: LANES, STATES: STATES, SYLLABLES: SYLLABLES, COUNT_MODES: COUNT_MODES, MODE_NAMES: MODE_NAMES, MODE_SAMPLE: MODE_SAMPLE,
     resolutionFor: resolutionFor, resolveMode: resolveMode, countLabels: countLabels, gridPositions: gridPositions,
     cleanTracks: cleanTracks, sameTracks: sameTracks,
     encodeGroove: encodeGroove, decodeGroove: decodeGroove, hashFor: hashFor, parseHash: parseHash,

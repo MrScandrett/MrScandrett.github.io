@@ -51,7 +51,7 @@
 
   /* ------------------------------------------------------------ print card */
   function staffFor(p) {
-    var view = window.DrumLab.renderStaff({ name: p.title, tempo: p.tempo, tracks: p.tracks, count: p.count }, { crop: true });
+    var view = window.DrumLab.renderStaff({ name: p.title, tempo: p.tempo, meter: p.meter, tracks: p.tracks, count: p.count }, { crop: true });
     view.svg.setAttribute('aria-label', 'Drum notation for ' + p.title + ', counted ' + G.MODE_NAMES[view.countMode].toLowerCase());
     return view;
   }
@@ -147,7 +147,7 @@
     up.disabled = i === 0; down.disabled = i === total - 1;
     act('Duplicate', 'Duplicate ' + p.title, function () { var c = store.duplicatePattern(p.id); render(c && c.id); say('Duplicated “' + p.title + '”.'); });
     act('Load in builder ↑', 'Load ' + p.title + ' into the groove builder', function () {
-      window.dispatchEvent(new CustomEvent('groove-sheet-load', { detail: { tracks: p.tracks, tempo: p.tempo, count: p.count, title: p.title } }));
+      window.dispatchEvent(new CustomEvent('groove-sheet-load', { detail: { meter: p.meter, tracks: p.tracks, tempo: p.tempo, count: p.count, title: p.title } }));
     });
     act('Remove', 'Remove ' + p.title + ' from the sheet', function () {
       var pats = store.sheet().patterns, at = pats.map(function (x) { return x.id; }).indexOf(p.id), copy = JSON.parse(JSON.stringify(pats[at]));

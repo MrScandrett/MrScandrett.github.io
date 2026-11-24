@@ -22,6 +22,55 @@ let plate = null, amps = [], forces = null, forcesKey = '';
 let field = null, mask = null, bed = null, slime = [];
 let peakA = 0, peakGamma = 0, airborne = 0, phase = 0;
 let frfDirty = true, solving = false;
+let frozenEx = 0, drivenPeakRef = 0;
+let lastFrfRenderKey = '';
+
+/* ── Optional Web Audio tone + ring-down ──────────────────────── */
+let toneCtx = null, toneOsc = null, toneFilter = null, toneGain = null, toneOn = false;
+
+function ensureTone() {
+  if (toneCtx) return toneCtx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  toneCtx = new AC();
+  toneOsc = toneCtx.createOscillator();
+  toneOsc.type = 'sine';
+  toneOsc.frequency.value = S.f || 440;
+  toneFilter = toneCtx.createBiquadFilter();
+  toneFilter.type = 'lowpass';
+  toneFilter.frequency.value = 3200;
+  toneFilter.Q.value = 0.7;
+  const limiter = toneCtx.createDynamicsCompressor();
+  limiter.threshold.value = -4;
+  limiter.ratio.value = 12;
+  toneGain = toneCtx.createGain();
+  toneGain.gain.value = 0;
+  toneOsc.connect(toneFilter);
+  toneFilter.connect(toneGain);
+  toneGain.connect(limiter);
+  limiter.connect(toneCtx.destination);
+  toneOsc.start();
+  return toneCtx;
+}
+
+function updateTone() {
+  if (!toneCtx || !toneOsc || !toneGain) return;
+  const now = toneCtx.currentTime;
+  toneOsc.frequency.setTargetAtTime(Math.max(20, Math.min(18000, S.f)), now, 0.02);
+  let targetGain = 0;
+  if (toneOn && !document.hidden) {
+    // Gentle high-frequency comfort roll-off above 2.5 kHz
+    const comfort = S.f > 2500 ? Math.max(0.25, 2500 / S.f) : 1;
+    const driveLevel = S.drive === 'bow' ? Math.min(1, S.bowForce / 1.5) : Math.min(1, Math.sqrt(S.driverG / 2));
+    if (!S.muted) {
+      targetGain = (0.045 + 0.085 * driveLevel) * comfort;
+    } else if (drivenPeakRef > 0 && peakA > 0) {
+      const ratio = Math.min(1, peakA / drivenPeakRef);
+      targetGain = (0.045 + 0.085 * driveLevel) * comfort * ratio;
+    }
+  }
+  toneGain.gain.setTargetAtTime(targetGain, now, 0.025);
+}
 
 /* ── Plate setup ──────────────────────────────────────────────── */
 
@@ -64,6 +113,13 @@ function snapBow() {
   else { y = Math.sign(y || 1); x = Math.max(-1, Math.min(1, x)); }
   S.bow = { x: x * 0.985, y: y * 0.985 };
   forcesKey = '';
+  const bowSlider = $('cy-bow-slider');
+  if (bowSlider) {
+    let deg = Math.round((Math.atan2(S.bow.y, S.bow.x) * 180 / Math.PI + 360) % 360);
+    bowSlider.value = deg;
+    const bowOut = $('cy-bow-val');
+    if (bowOut) bowOut.textContent = deg + '°';
+  }
 }
 
 /* A moving-coil wave driver at a fixed volume runs above its own resonance, where
@@ -1055,10 +1111,32 @@ async function init3D() {
   geom.setAttribute('color', new THREE.BufferAttribute(col, 3));
   geom.setIndex(idx);
   const plateMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, color: 0xffffff, metalness: 0.6, roughness: 0.35, vertexColors: true });
-  const waterMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, color: 0x247ba0, metalness: 0.18, roughness: 0.06 });
-  const baseCol = new THREE.Color(), quietCol = new THREE.Color(0x22d3ee);
+  const waterMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, color: 0xffffff, metalness: 0.18, roughness: 0.08, vertexColors: true });
+  const baseCol = new THREE.Color(), waterCol = new THREE.Color(0x247ba0), quietCol = new THREE.Color(0x22d3ee);
   const mesh = new THREE.Mesh(geom, plateMat);
   scene.add(mesh);
+  const raycaster = new THREE.Raycaster();
+  const pointerNdc = new THREE.Vector2();
+  let downPos = null;
+  renderer.domElement.addEventListener('pointerdown', e => {
+    controls.autoRotate = false;
+    downPos = { x: e.clientX, y: e.clientY };
+  });
+  renderer.domElement.addEventListener('pointerup', e => {
+    if (S.drive !== 'bow' || !downPos) return;
+    const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+    downPos = null;
+    if (moved > 6) return;
+    const r = canvas.getBoundingClientRect();
+    pointerNdc.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    pointerNdc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+    raycaster.setFromCamera(pointerNdc, camera);
+    const hits = raycaster.intersectObject(mesh);
+    if (hits.length) {
+      S.bow = { x: hits[0].point.x, y: hits[0].point.z };
+      snapBow(); renderModeList(); updateStatus();
+    }
+  });
 
   const boltGroup = new THREE.Group();
   const metalDark = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.28 });
@@ -1144,7 +1222,15 @@ async function init3D() {
   }
 
   function frame() {
-    const ex = peakA > 0 ? 0.1 / peakA : 0; // world units per metre of displacement (half-size = 1 unit)
+    let ex = 0;
+    if (peakA > 0) {
+      if (S.muted) {
+        ex = frozenEx > 0 ? Math.min(frozenEx, 0.1 / peakA) : (0.1 / peakA);
+      } else {
+        ex = 0.1 / peakA;
+        frozenEx = ex;
+      }
+    }
     const cp = Math.cos(phase), sp = Math.sin(phase), cpHalf = Math.cos(phase * 0.5), N = plate.N;
     const omega = 2 * Math.PI * S.f;
     const isWater = S.medium === 'water';
@@ -1174,14 +1260,15 @@ async function init3D() {
     };
     const heightAt = (x, y) => sampleHeightAndAmp(x, y).h;
 
+    const srcCol = isWater ? waterCol : baseCol;
     for (let k = 0; k < xz.length / 2; k++) {
       const sHA = sampleHeightAndAmp(xz[k * 2], xz[k * 2 + 1]);
       pos[k * 3 + 1] = sHA.h;
       const quiet = showOverlay && omega * omega * sHA.amp < G;
       const t = quiet ? 0.55 : 0;
-      col[k * 3]     = baseCol.r * (1 - t) + quietCol.r * t;
-      col[k * 3 + 1] = baseCol.g * (1 - t) + quietCol.g * t;
-      col[k * 3 + 2] = baseCol.b * (1 - t) + quietCol.b * t;
+      col[k * 3]     = srcCol.r * (1 - t) + quietCol.r * t;
+      col[k * 3 + 1] = srcCol.g * (1 - t) + quietCol.g * t;
+      col[k * 3 + 2] = srcCol.b * (1 - t) + quietCol.b * t;
     }
     geom.attributes.position.needsUpdate = true;
     geom.attributes.color.needsUpdate = true;
@@ -1218,13 +1305,17 @@ async function init3D() {
     renderer.render(scene, camera);
     const label = $('cy-3d-scale');
     label.hidden = false;
-    label.textContent = peakA > 0 ? 'Heights ×' + Math.round(ex * plate.s).toLocaleString() + ' (real peak ' + fmtLen(peakA) + ') · slow-motion strobe' : 'Plate at rest';
+    const settling = S.muted && peakA < drivenPeakRef * 0.005;
+    label.textContent = peakA > 0 && !settling
+      ? 'Heights ×' + Math.round(ex * plate.s).toLocaleString() + ' (real peak ' + fmtLen(peakA) + ') · slow-motion strobe'
+      : 'Plate at rest';
   }
 
   three = { frame, resize, rebuild };
   rebuild();
   frame();
   window.addEventListener('resize', resize);
+  document.addEventListener('creation-app-resize', resize);
 }
 
 /* ── Main loop ────────────────────────────────────────────────── */
@@ -1240,12 +1331,20 @@ function tick(realDt) {
     }
     stepModes(dt);
     computeField();
+    if (!S.muted && peakA > 0) drivenPeakRef = peakA;
     if (bed) { airborne = bed.step(dt, { field, omega: 2 * Math.PI * S.f, air: S.air }); separateGrains(); }
     else if (slime.length) stepSlime(dt);
     phase = (phase + 2 * Math.PI * realDt / STROBE_PERIOD) % (2 * Math.PI);
     if (S.view === '2d') draw2D(); else if (three) three.frame();
-    if (frfDirty) computeFRF();
-    drawFRF();
+    let frfUpdated = false;
+    if (frfDirty) { computeFRF(); frfUpdated = true; }
+    const frfCanvas = $('cy-frf');
+    const frfKey = S.f.toFixed(2) + ':' + frfCanvas.clientWidth + ':' + frfCanvas.clientHeight + ':' + (document.documentElement.dataset.lighting || '');
+    if (frfUpdated || frfKey !== lastFrfRenderKey) {
+      lastFrfRenderKey = frfKey;
+      drawFRF();
+    }
+    updateTone();
     updateReadouts();
   }
 }
@@ -1294,18 +1393,60 @@ function wire() {
   });
   $('cy-pitch-row').addEventListener('click', e => { const c = e.target.closest('.cy-pitch-chip'); if (c) { stopSweep(); setFrequency(+c.dataset.freq); } });
   $('cy-tune-btn').addEventListener('click', () => {
-    const m = nearestMode();
-    const h = Math.max(0.0003, Math.min(0.004, S.thickness * S.f / m.f));
+    const list = excitableModes();
+    const pool = list.length ? list : plate.modes;
+    let best = pool[0], bestDist = Infinity;
+    for (const m of pool) {
+      const d = Math.abs(m.f - S.f);
+      if (d < bestDist) { bestDist = d; best = m; }
+    }
+    if (!best) return;
+    const rawH = S.thickness * S.f / best.f;
+    const h = Math.max(0.0003, Math.min(0.004, rawH));
     S.thickness = h;
     $('cy-thick-slider').value = Math.round(h * 1e5);
     $('cy-thick-val').textContent = (h * 1000).toFixed(2) + ' mm';
     rebuildPlate();
+    if (Math.abs(rawH - h) > 1e-6) {
+      setTimeout(() => {
+        const pn = $('cy-plate-note');
+        if (pn) pn.textContent += ' (Thickness hit the 0.30–4.00 mm limit; change plate size to reach this pitch.)';
+      }, 45);
+    }
   });
+
+  const audioBtn = $('cy-audio-btn');
+  if (audioBtn) {
+    audioBtn.addEventListener('click', () => {
+      toneOn = !toneOn;
+      if (toneOn) {
+        const ctx = ensureTone();
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+      }
+      audioBtn.classList.toggle('audio-on', toneOn);
+      audioBtn.setAttribute('aria-pressed', toneOn ? 'true' : 'false');
+      audioBtn.textContent = toneOn ? '🔊 Sound: On' : '🔇 Sound: Off';
+      updateTone();
+    });
+  }
+
+  const bowPosWrap = $('cy-bow-pos-wrap');
+  const bowSlider = $('cy-bow-slider');
+  if (bowSlider) {
+    bowSlider.addEventListener('input', e => {
+      const rad = (+e.target.value * Math.PI) / 180;
+      S.bow = { x: Math.cos(rad), y: Math.sin(rad) };
+      snapBow();
+      renderModeList();
+      updateStatus();
+    });
+  }
 
   const driveIds = ['cy-drive-driver', 'cy-drive-bow'];
   for (const [id, kind] of [['cy-drive-driver', 'driver'], ['cy-drive-bow', 'bow']]) {
     $(id).addEventListener('click', () => {
       S.drive = kind; pressGroup(driveIds, id); forcesKey = '';
+      if (bowPosWrap) bowPosWrap.hidden = kind !== 'bow';
       syncAmpSlider(); updateDriveNote(); renderModeList(); updateStatus();
     });
   }
@@ -1375,16 +1516,19 @@ function wire() {
     else if (e.key === 'PageUp' || e.key === 'PageDown') { jumpMode(e.key === 'PageUp' ? 1 : -1); e.preventDefault(); }
   });
 
-  const openDesktopControls = () => {
-    if (window.innerWidth > 900) {
-      const panel = document.querySelector('.ll-panel');
-      if (panel && panel.dataset.llCollapsed === 'true') {
-        document.querySelector('.ll-open-btn')?.click();
-      }
-    }
-  };
-  if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', openDesktopControls);
-  else setTimeout(openDesktopControls, 0);
+  // Controls | Modes | Guide tab switching inside #cy-lab
+  const tabBtns = document.querySelectorAll('.cy-tab-btn[data-pane]');
+  const panes = document.querySelectorAll('.cy-pane');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.pane;
+      tabBtns.forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
+      panes.forEach(p => { p.hidden = p.id !== targetId; });
+    });
+  });
+
+  document.addEventListener('visibilitychange', updateTone);
+  document.addEventListener('creation-app-resize', () => { lastFrfRenderKey = ''; });
 }
 
 wire();

@@ -965,7 +965,8 @@
         const stateLabel = getStateLabel(state);
         cell.setAttribute('aria-label', element.name + ', element ' + element.number + ', ' + stateLabel + ' at ' + currentTemp + ' Kelvin');
 
-        phaseEl.textContent = stateLabel === 'predicted' ? 'Pred.' : stateLabel;
+        const shortPhase = { predicted: 'Pred.', liquid: 'Liq.' };
+        phaseEl.textContent = shortPhase[stateLabel] || stateLabel;
         phaseEl.title = stateLabel;
 
         let bottomText = formatCellMass(element.mass);
@@ -1409,6 +1410,24 @@
       document.getElementById('ep-supply').innerHTML = '<h3 class="ep-earth-title">Supply and sustainability</h3>' + bodyHtml;
     }
 
+    function renderPortrait(element) {
+      const host = document.getElementById('ep-portrait');
+      const rows = element.shells.map((count, index) =>
+        '<div class="ep-shell-row"><span>Shell ' + (index + 1) + '</span>'
+        + '<i aria-hidden="true" style="width:' + (100 * count / 32) + '%"></i>'
+        + '<strong>' + count + '</strong></div>'
+      ).join('');
+      host.innerHTML = '<h3>Electrons by shell</h3>' + rows;
+      const items = (window.ELEMENT_IMAGES || {})[element.symbol] || [];
+      const index = items.findIndex(item => item.k === 'real');
+      const photo = document.querySelectorAll('#ep-gallery figure')[index];
+      if (photo) {
+        const preview = photo.cloneNode(true);
+        preview.dataset.lightboxGroup = 'ep-portrait';
+        host.prepend(preview);
+      }
+    }
+
     function renderGallery(element) {
       const host = document.getElementById('ep-gallery');
       const items = (window.ELEMENT_IMAGES || {})[element.symbol] || [];
@@ -1429,7 +1448,7 @@
           + '<p>' + reason + '</p></div>';
         return;
       }
-      const kinds = { real: 'What it looks like', name: 'Behind the name' };
+      const kinds = { real: 'Element in context', name: 'Behind the name' };
       const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
       host.hidden = false;
       host.innerHTML = '<h3 class="ep-gallery-title">Photos and pictures</h3><div class="ep-gallery-grid">' + items.map((it) => {
@@ -1655,6 +1674,7 @@
       renderEarthProfile(element);
       renderSupply(element);
       renderGallery(element);
+      renderPortrait(element);
       if (!detailPanel.classList.contains('ep-open')) {
         detailPanel.classList.add('ep-open');
       }

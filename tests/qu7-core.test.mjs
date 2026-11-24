@@ -36,6 +36,9 @@ test('phantom power verdicts', () => {
   assert.equal(phantomVerdict('avoid', true).ok, false);
   assert.equal(phantomVerdict('avoid', false).ok, true);
   assert.equal(phantomVerdict(SOURCES.find((s) => s.id === 'vocal'), false).ok, true);
+  assert.equal(SOURCES.find((s) => s.id === 'keys')?.phantom, 'required');
+  assert.equal(SOURCES.find((s) => s.id === 'laptop')?.phantom, 'avoid');
+  assert.equal(SOURCES.find((s) => s.id === 'ribbon')?.phantom, 'avoid');
   assert.equal(phantomPop(true, false), true);
   assert.equal(phantomPop(true, true), false);
   assert.equal(phantomPop(false, false), false);

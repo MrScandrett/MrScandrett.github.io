@@ -37,8 +37,9 @@ export const SOURCES = [
   { id: 'guitar', label: 'Guitar amp, dynamic mic',     dbu: -38, phantom: 'never-needed' },
   { id: 'piano',  label: 'Condenser mic on a piano',    dbu: -42, phantom: 'required' },
   { id: 'lav',    label: 'Wireless lav receiver output', dbu: -28, phantom: 'never-needed' },
-  { id: 'keys',   label: 'Keyboard through a DI box',   dbu: -10, phantom: 'avoid' },
-  { id: 'laptop', label: 'Laptop playback, line level', dbu: -8,  phantom: 'avoid' },
+  { id: 'keys',   label: 'Keyboard through an active DI box', dbu: -20, phantom: 'required' },
+  { id: 'laptop', label: 'Laptop/phone via unbalanced 3.5mm-to-XLR (no DI)', dbu: -8, phantom: 'avoid' },
+  { id: 'ribbon', label: 'Vintage passive ribbon mic',  dbu: -52, phantom: 'avoid' },
 ];
 
 /**

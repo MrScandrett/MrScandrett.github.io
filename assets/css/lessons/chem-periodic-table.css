@@ -750,7 +750,7 @@
       display: grid;
       --pt-cell-height: clamp(44px, 5.8dvh, 54px);
       grid-template-columns: 16px repeat(18, minmax(34px, 1fr));
-      grid-template-rows: 18px repeat(7, var(--pt-cell-height)) 16px repeat(2, var(--pt-cell-height));
+      grid-template-rows: 18px repeat(7, minmax(var(--pt-cell-height), 1fr)) auto repeat(2, minmax(var(--pt-cell-height), 1fr));
       gap: 3px;
       min-width: 682px;
     }
@@ -1550,6 +1550,29 @@
     /* ── Gallery & Earth/Supply ───────────────────────── */
     .ep-gallery { display: grid; gap: 0.6rem; }
     .ep-gallery-title { margin: 0; font-size: 0.88rem; font-weight: 800; color: var(--text, #1d1d1f); }
+    .ep-portrait {
+      padding: 0.65rem;
+      background: var(--pt-surface-soft);
+      border: 1px solid var(--pt-card-border);
+      border-radius: 12px;
+    }
+    .ep-portrait h3 { margin: 0 0 0.35rem; font-size: 0.85rem; }
+    .ep-portrait figure { margin: 0 0 0.75rem; }
+    .ep-portrait .ep-gallery-item img { max-height: 10rem; object-fit: contain; }
+    .ep-shell-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) 2ch;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.75rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .ep-shell-row i {
+      height: 0.42rem;
+      background: currentColor;
+      opacity: 0.65;
+      border-radius: 1rem;
+    }
     .ep-gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; }
     .ep-gallery-item { margin: 0; display: grid; gap: 0.3rem; align-content: start; }
     .ep-gallery-item img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; border: 1px solid var(--pt-card-border); background: rgba(0,0,0,0.04); }
@@ -2181,7 +2204,7 @@
     @container ptpage (max-width: 540px) {
       .pt-quick-search-wrap { flex-basis: 110px; max-width: none; }
       input.pt-quick-search { padding-inline: 6px; }
-      select.pt-quick-lens { max-width: 8.5rem; }
+      select.pt-quick-lens { max-width: 100%; }
       .pt-quick-temp-group { flex-basis: 195px; }
       .pt-quick-controls-btn { margin-left: 0; }
       .ep-stat-grid,
@@ -2200,11 +2223,44 @@
       .pt-command-head { grid-template-columns: 1fr; }
     }
 
+    /* The inspector can be narrow even on a wide desktop. */
+    .el-panel {
+      container: inspector / inline-size;
+      overflow-wrap: anywhere;
+    }
+    .ep-identity { flex: 1 1 15rem; min-width: 0; }
+    .el-panel .bohr-svg { max-width: 100%; height: auto; }
+
+    @container inspector (max-width: 30rem) {
+      .ep-identity { flex-basis: 100%; }
+      .ep-source-grid,
+      .ep-usage-grid,
+      .ep-history-facts {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+      }
+    }
+
+    @container ptboard (max-width: 32rem) {
+      .pt-quickbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+      .pt-quick-search-wrap { grid-column: 1 / -1; max-width: none; }
+      .pt-quick-temp-group {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        flex-wrap: wrap;
+      }
+      .pt-quick-temp-slider { max-width: none; }
+      .pt-state-counts { white-space: normal; }
+      .pt-quick-controls-btn { margin: 0; }
+    }
+
     @media (pointer: coarse) {
       .pt-quickbar :is(button, select, input) { min-height: 36px; }
       .pt-grid {
         grid-template-columns: 24px repeat(18, minmax(40px, 1fr));
-        grid-template-rows: 24px repeat(7, var(--pt-cell-height)) 16px repeat(2, var(--pt-cell-height));
+        grid-template-rows: 24px repeat(7, minmax(var(--pt-cell-height), 1fr)) auto repeat(2, minmax(var(--pt-cell-height), 1fr));
         min-width: 798px;
       }
       @container ptboard (width < 804px) {
@@ -2216,11 +2272,43 @@
     html[data-vr-mode="on"] .pt-grid {
       --pt-cell-height: clamp(48px, 5.8dvh, 54px);
       grid-template-columns: 48px repeat(18, minmax(48px, 1fr));
-      grid-template-rows: 48px repeat(7, var(--pt-cell-height)) 16px repeat(2, var(--pt-cell-height));
+      grid-template-rows: 48px repeat(7, minmax(var(--pt-cell-height), 1fr)) auto repeat(2, minmax(var(--pt-cell-height), 1fr));
       min-width: 966px;
     }
     @container ptboard (width < 972px) {
       html[data-vr-mode="on"] .pt-table-note { display: block; }
+    }
+
+    /* Size rows from the rendered theme font, including enlarged text. */
+    .pt-grid .el {
+      min-height: max-content;
+      padding-block: 0.12em;
+    }
+    .pt-grid .el > span { white-space: normal; overflow-wrap: anywhere; }
+    .pt-frow { min-height: 16px; }
+
+    @media screen and (min-width: 1281px) {
+      html body .ll-viewport:has(.pt-page) > .site-header .nav-wrap {
+        width: calc(100% - 2rem);
+        max-width: 1760px;
+        box-sizing: border-box;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        row-gap: 0.25rem;
+      }
+    }
+
+    @media screen and (min-width: 1281px) and (max-width: 1760px) {
+      html body .ll-viewport:has(.pt-page) .site-header .nav-wrap {
+        column-gap: 0.4rem;
+        justify-content: center;
+      }
+      .ll-viewport:has(.pt-page) .site-header .site-nav a {
+        padding-inline: 0.45rem;
+      }
+      .ll-viewport:has(.pt-page) .site-header :is(.nav-search-text, .nav-whiteboard-text, .nav-search-kbd) {
+        display: none;
+      }
     }
 
     /* Print layout: 19 columns (1 axis + 18 groups), 11 rows */

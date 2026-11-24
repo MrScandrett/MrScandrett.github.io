@@ -10,220 +10,13 @@
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
   <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
-
-  <style>
-    .cy-page { padding-bottom: 0; }
-    .ll-viewport { --ll-panel-w: 320px; }
-    .cy-hero { padding: 0.4rem 0 1.3rem; }
-    .cy-hero h1 { max-width: 32ch; margin-left: 0; font-size: clamp(1.55rem,3.5vw,2.3rem); }
-    .cy-meta { display:flex;flex-wrap:wrap;gap:0.4rem 0.7rem;margin:0.5rem 0 0;font-size:0.82rem;color: var(--text-muted, #64748b); }
-    .cy-meta .dot { width:3px;height:3px;border-radius:50%;background:currentColor;opacity:0.4;display:inline-block;vertical-align:middle; }
-    .cy-lede { margin:0.65rem 0 0;max-width:70ch;color: var(--text-secondary, #3f4f65);font-size:0.96rem;line-height:1.62; }
-    [data-lighting="night"] .cy-lede,
-    [data-theme="vaporwave"] .cy-lede,
-    [data-theme="bark"] .cy-lede { color:rgba(245,245,247,0.7); }
-
-    .cy-card { background:var(--white,#fff);border:1px solid var(--line,#d2d2d7);border-left:3.5px solid var(--card-accent,#22d3ee);border-radius:var(--radius,18px);box-shadow:var(--shadow,0 12px 34px rgba(0,0,0,0.08));padding:1.2rem 1.4rem;margin-bottom:1rem; }
-    .cy-card h2 { margin:0 0 0.55rem;font-size:1.2rem; }
-    .cy-card h3 { margin:0.9rem 0 0.35rem;font-size:1rem; }
-    .cy-card p  { margin:0 0 0.6rem;color: var(--text-secondary, #3f4f65);font-size:0.88rem;line-height:1.65; }
-    .cy-card p:last-child { margin-bottom:0; }
-    [data-lighting="night"] .cy-card,
-    [data-theme="vaporwave"] .cy-card,
-    [data-theme="bark"] .cy-card { background:#2c2c2e; }
-    [data-lighting="night"] .cy-card p,
-    [data-theme="vaporwave"] .cy-card p,
-    [data-theme="bark"] .cy-card p { color:rgba(245,245,247,0.72); }
-
-    .cy-callout { border-radius:12px;padding:0.85rem 1rem;margin:0.8rem 0;font-size:0.84rem;line-height:1.6; }
-    .cy-callout.blue   { background:rgba(56,189,248,0.1);border-left:3px solid #38bdf8; }
-    .cy-callout.violet { background:rgba(167,139,250,0.12);border-left:3px solid #a78bfa; }
-    .cy-callout.amber  { background:rgba(245,180,0,0.12);border-left:3px solid #f5b400; }
-
-    .cy-history { list-style:none;margin:0.4rem 0 0;padding:0;display:grid;gap:0.55rem; }
-    .cy-history li { display:grid;grid-template-columns:66px 1fr;gap:0.7rem;font-size:0.85rem;line-height:1.55;color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .cy-history li,
-    [data-theme="vaporwave"] .cy-history li,
-    [data-theme="bark"] .cy-history li { color:rgba(245,245,247,0.72); }
-    .cy-history li b { color:#0f172a;font-weight:800; }
-    [data-lighting="night"] .cy-history li b,
-    [data-theme="vaporwave"] .cy-history li b,
-    [data-theme="bark"] .cy-history li b { color:#f5f5f7; }
-    .cy-history .cy-yr { font-weight:800;color:#0e7490;white-space:nowrap; }
-    :where(html[data-lighting="night"]) .cy-history .cy-yr { color: #22d3ee; }
-    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .cy-history .cy-yr { color: #22d3ee; } }
-
-    .cy-mat-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0.7rem;margin:0.8rem 0; }
-    .cy-mat-card { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.85rem; }
-    .cy-mat-icon { font-size:1.4rem;margin-bottom:0.25rem; }
-    .cy-mat-card strong { display:block;font-size:0.86rem;margin-bottom:0.25rem; }
-    .cy-mat-card small { font-size:0.77rem;color: var(--text-muted, #64748b);line-height:1.55;display:block; }
-
-    .cy-view-toggle { display:flex;gap:0.5rem;margin:0.7rem 0 0.7rem;flex-wrap:wrap; }
-    .cy-view-btn {
-      border:1px solid var(--line,#d2d2d7);border-radius:9px;padding:0.4rem 0.9rem;
-      background:transparent;color:#52647c;font:700 0.82rem/1 inherit;cursor:pointer;
-      transition:background 0.14s,color 0.14s,border-color 0.14s;
-    }
-    .cy-view-btn.active { background:#077d9a;border-color:#0891b2;color:#fff; }
-    [data-lighting="night"] .cy-view-btn,
-    [data-theme="vaporwave"] .cy-view-btn,
-    [data-theme="bark"] .cy-view-btn { color:rgba(245,245,247,0.72); }
-
-    .cy-canvas-wrap { position:relative;border:1px solid var(--line,#d2d2d7);border-radius:14px;overflow:hidden;margin:0.4rem 0 0.8rem;background:#0b0e14; }
-    .cy-canvas-wrap { margin:0.4rem 0 0.8rem; }
-    #cy-canvas2d, #cy-canvas3d { width:100%;height:440px;display:block;touch-action:none; }
-    #cy-lab:not(:fullscreen):not(.creation-app-expanded) > .creation-app-toolbar {
-      float: right;
-      position: static;
-      background: transparent;
-      color: inherit;
-      padding: 0;
-      margin: -0.15rem 0 0.35rem 0.75rem;
-    }
-    #cy-lab:not(:fullscreen):not(.creation-app-expanded) .creation-app-fullscreen {
-      padding: 0.35rem 0.75rem;
-      font-size: 0.78rem;
-      font-weight: 700;
-      min-height: 32px;
-      border-color: var(--line, #d2d2d7);
-      border-radius: 9px;
-    }
-    #cy-lab .cy-view-toggle { clear: both; }
-    .cy-sim-card:fullscreen #cy-canvas2d,
-    .cy-sim-card:fullscreen #cy-canvas3d,
-    .cy-sim-card.creation-app-expanded #cy-canvas2d,
-    .cy-sim-card.creation-app-expanded #cy-canvas3d { height: min(66vh, 680px); }
-    #cy-canvas2d { cursor:crosshair; }
-    .cy-canvas-wrap [hidden] { display:none !important; }
-    .cy-solving, .cy-3d-scale { position:absolute;left:10px;top:10px;padding:0.25rem 0.55rem;border-radius:8px;background:rgba(11,14,20,0.78);color:#e2e8f0;font-size:0.72rem;font-weight:600;pointer-events:none; }
-    .cy-eq { font-family:'IBM Plex Mono',ui-monospace,monospace;overflow-x:auto; }
-    .cy-check { display:inline-flex;align-items:center;gap:0.35rem;font-size:0.8rem;font-weight:600;color: var(--text-secondary, #3f4f65);margin-left:auto; }
-    .cy-readouts { grid-template-columns:repeat(3,minmax(0,1fr)); }
-    .cy-frf { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.55rem 0.7rem 0.4rem;margin:0.6rem 0; }
-    .cy-frf-head { display:flex;flex-wrap:wrap;gap:0.2rem 0.6rem;align-items:baseline;font-size:0.8rem; }
-    .cy-frf-head span { font-size:0.72rem;color: var(--text-muted, #64748b); }
-    #cy-frf { display:block;width:100%;height:150px;cursor:pointer;color: var(--text-secondary, #3f4f65); }
-    .cy-exp { margin:0.4rem 0 0;padding-left:1.2rem;font-size:0.86rem;line-height:1.6;color: var(--text-secondary, #3f4f65); }
-    .cy-exp li { margin-bottom:0.65rem; }
-    .cy-exp textarea { display:block;width:100%;box-sizing:border-box;margin-top:0.3rem;border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.4rem 0.55rem;font:inherit;font-size:0.84rem;background:var(--white,#fff);color:var(--text,#1d1d1f);resize:vertical; }
-    .cy-webgl-fallback { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;color: var(--text-muted, #64748b);font-size:0.86rem;background:#0b0e14; }
-
-    .cy-readouts { display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.6rem 0; }
-    .cy-readout { background:rgba(0,0,0,0.04);border:1px solid var(--line,#d2d2d7);border-radius:10px;padding:0.55rem 0.7rem;text-align:center; }
-    [data-lighting="night"] .cy-readout,
-    [data-theme="vaporwave"] .cy-readout,
-    [data-theme="bark"] .cy-readout { background:rgba(255,255,255,0.06); }
-    .cy-readout-label { font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color: var(--text-muted, #64748b);display:block;margin-bottom:0.2rem; }
-    .cy-readout-val { font-size:0.98rem;font-weight:700;color:#22d3ee; }
-    .cy-hint { font-size:0.78rem;color: var(--text-muted, #64748b);margin:0; }
-
-    .cy-apps { display:grid;grid-template-columns:repeat(2,1fr);gap:0.7rem;margin:0.8rem 0; }
-    .cy-app  { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.8rem; }
-    .cy-app-icon { font-size:1.5rem;margin-bottom:0.3rem; }
-    .cy-app strong { display:block;font-size:0.84rem;margin-bottom:0.2rem; }
-    .cy-app small  { font-size:0.77rem;color: var(--text-muted, #64748b);line-height:1.5;display:block; }
-
-    .cy-home-steps { margin:0.4rem 0 0.8rem;padding-left:1.2rem;font-size:0.87rem;line-height:1.7;color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .cy-home-steps,
-    [data-theme="vaporwave"] .cy-home-steps,
-    [data-theme="bark"] .cy-home-steps { color:rgba(245,245,247,0.72); }
-    .cy-home-table { width:100%;border-collapse:collapse;font-size:0.82rem;margin-top:0.4rem; }
-    .cy-home-table th, .cy-home-table td { text-align:left;padding:0.45rem 0.55rem;border-bottom:1px solid var(--line,#d2d2d7);vertical-align:top; }
-    .cy-home-table th { font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color: var(--text-muted, #64748b); }
-
-    .cy-practice .cy-problem { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.7rem; }
-    .cy-problem p { margin-bottom:0.5rem;font-size:0.88rem;color: var(--text-secondary, #3f4f65);line-height:1.6; }
-    [data-lighting="night"] .cy-problem p,
-    [data-theme="vaporwave"] .cy-problem p,
-    [data-theme="bark"] .cy-problem p { color:rgba(245,245,247,0.72); }
-    .cy-problem-row { display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap; }
-    .cy-ans-input { border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.35rem 0.6rem;font-size:0.88rem;width:120px;background:var(--white,#fff);color:var(--text,#1d1d1f); }
-    .cy-check-btn { background:#077d9a;color:#fff;border:none;border-radius:8px;padding:0.35rem 0.8rem;font-size:0.84rem;font-weight:600;cursor:pointer; }
-    .cy-check-btn:hover { background:#067388; }
-    .cy-feedback { font-size:0.82rem;font-weight:600; }
-    .cy-feedback.ok { color:#34c759; }
-    .cy-feedback.err { color:#ff3b30; }
-    .cy-fb-hint { font-size:0.78rem;color: var(--text-muted, #64748b);margin-top:0.4rem;display:none; }
-    .diff-easy { background:rgba(52,199,89,0.15);color:#248a3d;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
-    .diff-mid  { background:rgba(255,149,0,0.15);color:#c07000;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
-    .diff-hard { background:rgba(255,59,48,0.12);color:#c0392b;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
-
-    /* ── Panel controls ── */
-    .cy-btn-row { display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.9rem; }
-    .cy-opt-btn {
-      flex:1 1 auto;border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.4rem 0.5rem;
-      background:transparent;color:#52647c;font:700 0.76rem/1 inherit;cursor:pointer;text-align:center;
-      transition:background 0.14s,color 0.14s,border-color 0.14s;
-    }
-    .cy-opt-btn.active { background:#077d9a;border-color:#0891b2;color:#fff; }
-    [data-lighting="night"] .cy-opt-btn,
-    [data-theme="vaporwave"] .cy-opt-btn,
-    [data-theme="bark"] .cy-opt-btn { color:rgba(245,245,247,0.72); }
-    .cy-slider-block { margin-bottom:0.9rem; }
-    .cy-slider-block label { font-size:0.8rem;display:flex;justify-content:space-between;margin-bottom:0.15rem; }
-
-    .cy-freqgen { margin-bottom:1.1rem;padding-bottom:1rem;border-bottom:1px solid var(--line,#d2d2d7); }
-    .cy-freq-readout-row { display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.35rem;gap:0.5rem; }
-    .cy-freq-big { font-size:1.35rem;font-weight:800;color:#22d3ee;font-family:monospace;white-space:nowrap; }
-    .cy-freq-status { font-size:0.68rem;font-weight:700;padding:0.18rem 0.5rem;border-radius:999px;white-space:nowrap;transition:background 0.15s,color 0.15s; }
-    .cy-freq-status.locked { background:rgba(52,199,89,0.18);color:#248a3d; }
-    .cy-freq-status.near { background:rgba(245,158,11,0.18);color:#b45309; }
-    .cy-freq-status.unlocked { background:rgba(148,163,184,0.18);color: var(--text-muted, #64748b); }
-    .cy-freq-scale { display:flex;justify-content:space-between;font-size:0.66rem;color: var(--text-muted, #64748b);margin-top:0.15rem; }
-    .cy-freq-note { font-size:0.74rem;color: var(--text-muted, #64748b);line-height:1.5;margin:0.5rem 0 0; }
-    .cy-pitch-row { display:grid;grid-template-columns:repeat(2,1fr);gap:0.4rem;margin-top:0.35rem; }
-    .cy-pitch-chip {
-      border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.35rem 0.4rem;
-      background:transparent;color:#52647c;font:700 0.74rem/1.3 inherit;cursor:pointer;text-align:center;
-    }
-    .cy-pitch-chip:hover { border-color:#ec4899;color:#ec4899; }
-    .cy-pitch-chip small { display:block;font-weight:600;font-size:0.63rem;color: var(--text-muted, #64748b);margin-top:0.05rem; }
-    [data-lighting="night"] .cy-pitch-chip,
-    [data-theme="vaporwave"] .cy-pitch-chip,
-    [data-theme="bark"] .cy-pitch-chip { color:rgba(245,245,247,0.72); }
-    .cy-freq-note.cy-warn { color:#b45309;font-weight:600; }
-    .cy-fine-row { display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0.25rem;margin:0.45rem 0; }
-    .cy-fine-row button { border:1px solid var(--line,#d2d2d7);border-radius:7px;padding:0.3rem 0;background:transparent;color:inherit;font:700 0.72rem/1 inherit;cursor:pointer; }
-    .cy-fine-row button:hover { border-color:#0891b2;color:#0891b2; }
-    .cy-btn-row--tight { margin-bottom:0.4rem; }
-    .cy-wide { width:100%;margin-top:0.4rem; }
-    .cy-field-row { display:flex;align-items:center;justify-content:space-between;gap:0.6rem;margin-bottom:0.6rem;font-size:0.8rem; }
-    .cy-select { flex:1;max-width:62%;border:1px solid var(--line,#d2d2d7);border-radius:8px;padding:0.3rem 0.4rem;font:inherit;font-size:0.8rem;background:var(--white,#fff);color:var(--text,#1d1d1f); }
-    .cy-mode-list { display:grid;gap:0.35rem; }
-    .cy-mode-row { display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:0.55rem;border:1px solid var(--line,#d2d2d7);border-radius:9px;padding:0.3rem 0.45rem;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer; }
-    .cy-mode-row:hover { border-color:#0891b2; }
-    .cy-mode-row canvas { width:44px;height:44px;border-radius:6px;background:#0b0e14; }
-    .cy-mode-row b { display:block;font-size:0.78rem; }
-    .cy-mode-row small { display:block;font-size:0.68rem;color: var(--text-muted, #64748b);line-height:1.3; }
-    .cy-mode-badge { font-size:0.75rem;font-weight:800;color: var(--text-muted, #64748b); }
-    .cy-mode-badge.on { color:#16a34a; }
-    .cy-resprinkle {
-      width:100%;background:#077d9a;color:#fff;border:none;border-radius:9px;padding:0.55rem;
-      font:700 0.82rem/1 inherit;cursor:pointer;margin-top:0.3rem;
-    }
-    .cy-resprinkle:hover { background:#067388; }
-
-    @media (max-width: 720px) {
-      .cy-mat-grid, .cy-apps { grid-template-columns:1fr; }
-      .cy-readouts { grid-template-columns:repeat(2,minmax(0,1fr)); }
-      #cy-canvas2d, #cy-canvas3d { height:340px; }
-      .cy-check { margin-left:0; }
-    }
-    @media print {
-      .cy-frf, .cy-view-toggle { display:none; }
-      #cy-canvas2d { height:320px; }
-    }
-      /* Night: plain links in paragraphs on dark cards. */
-    :where(html[data-lighting="night"]) p a:not([class]), :where(html[data-lighting="night"]) li a:not([class]) { color: #8ec0ff; }
-    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) p a:not([class]), :where(html:not([data-lighting])) li a:not([class]) { color: #8ec0ff; } }
-  </style>
   <link rel="stylesheet" href="../../../assets/css/music-notation.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/cymatics.css" />
   <script src="../../../assets/js/music-notation.js"></script>
 </head>
 <body class="theme-liquid-woodland theme-steam">
-  <a class="skip-link" href="#main-content">Skip to content</a>
-<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to lesson</a>
+
   <header class="site-header">
     <div class="nav-wrap">
       <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
@@ -240,19 +33,33 @@
       </nav>
     </div>
   </header>
-  <div class="ll-stage">
-    <div class="ll-sim">
-      <main id="main-content" class="cy-page">
 
-        <section class="cy-card cy-sim-card" id="cy-lab" style="--card-accent:#22d3ee;" data-creation-app data-memory-ignore aria-label="Interactive 3D Chladni plate simulator">
-          <h2>Interactive 3D Chladni Plate</h2>
+  <nav class="cy-topbar" aria-label="Technical Elements sequence">
+    <a href="../technical-elements.html">← Technical Elements Hub</a>
+    <span>Unit III · Sound Physics &amp; Standing Waves</span>
+    <a href="live-audio-signal-chain.html">Next: 1. Live Audio Signal Chain →</a>
+  </nav>
+
+  <main id="main-content" class="cy-page">
+    <section class="cy-card cy-sim-card" id="cy-lab" style="--card-accent:#22d3ee;" data-creation-app data-creation-fit data-memory-ignore aria-labelledby="cy-title">
+      <div class="cy-wb-header">
+        <div class="cy-wb-title-wrap">
+          <h1 id="cy-title">Cymatics: The Geometry of Sound</h1>
+          <span class="cy-wb-sub">Kirchhoff–Love Chladni Plate Lab · 20 Hz – 20 kHz</span>
+        </div>
+        <a class="cy-wb-jump" href="#cy-overview">Read the lesson ↓</a>
+      </div>
+
+      <div class="cy-primary" data-creation-primary>
+        <div class="cy-stage-col">
           <div class="cy-view-toggle">
             <button class="cy-view-btn active" id="cy-view-3d-btn" type="button" aria-pressed="true">🧊 3D plate</button>
             <button class="cy-view-btn" id="cy-view-2d-btn" type="button" aria-pressed="false">⬜ Top-down</button>
+            <button class="cy-view-btn" id="cy-audio-btn" type="button" aria-pressed="false" title="Hear the drive oscillator and plate ring-down">🔇 Sound: Off</button>
             <label class="cy-check"><input type="checkbox" id="cy-overlay" /> Predict: where Γ &lt; 1 (sand can rest)</label>
           </div>
           <figure class="cy-canvas-wrap" data-present>
-            <canvas id="cy-canvas3d" aria-label="3D view of the vibrating plate, drag to orbit"></canvas>
+            <canvas id="cy-canvas3d" aria-label="3D view of the vibrating plate, drag to orbit. With the violin bow selected, click near the edge to move the bow."></canvas>
             <canvas id="cy-canvas2d" aria-label="Top-down view of the vibrating plate and the material on it. With the violin bow selected, click near the edge to move the bow." hidden></canvas>
             <div class="cy-solving" id="cy-solving" hidden>Solving the plate equation…</div>
             <div class="cy-3d-scale" id="cy-3d-scale" hidden></div>
@@ -261,411 +68,398 @@
           <div class="cy-readouts">
             <div class="cy-readout"><span class="cy-readout-label">Drive</span><span class="cy-readout-val" id="cy-r-freq">—</span></div>
             <div class="cy-readout"><span class="cy-readout-label">Nearest mode</span><span class="cy-readout-val" id="cy-r-mode">—</span></div>
-            <div class="cy-readout"><span class="cy-readout-label">Peak displacement</span><span class="cy-readout-val" id="cy-r-disp">—</span></div>
-            <div class="cy-readout"><span class="cy-readout-label">Peak acceleration Γ</span><span class="cy-readout-val" id="cy-r-accel">—</span></div>
-            <div class="cy-readout"><span class="cy-readout-label">Bending wavelength</span><span class="cy-readout-val" id="cy-r-lambda">—</span></div>
-            <div class="cy-readout"><span class="cy-readout-label">Grains in the air</span><span class="cy-readout-val" id="cy-r-air">—</span></div>
+            <div class="cy-readout"><span class="cy-readout-label">Peak disp.</span><span class="cy-readout-val" id="cy-r-disp">—</span></div>
+            <div class="cy-readout"><span class="cy-readout-label">Peak Γ</span><span class="cy-readout-val" id="cy-r-accel">—</span></div>
+            <div class="cy-readout"><span class="cy-readout-label">Wavelength</span><span class="cy-readout-val" id="cy-r-lambda">—</span></div>
+            <div class="cy-readout"><span class="cy-readout-label">Airborne</span><span class="cy-readout-val" id="cy-r-air">—</span></div>
           </div>
           <div class="cy-frf" data-present="off">
-            <div class="cy-frf-head"><strong>Response curve</strong><span id="cy-frf-caption">how hard the plate shakes (RMS acceleration) at each frequency, for this plate and this drive · dashed line = 1 g · click to tune</span></div>
+            <div class="cy-frf-head"><strong>Response curve</strong><span id="cy-frf-caption">RMS acceleration across frequency · dashed = 1 g · click to tune</span></div>
             <canvas id="cy-frf" aria-label="Frequency response of the plate from 20 Hz to 20 kHz. Peaks are resonances. Click to set the drive frequency."></canvas>
           </div>
-          <p class="cy-hint">The centre disc is the bolt (it moves with the driver). The bar at the bottom left is a real-size scale. Drag in 3D to orbit. With the bow selected, click near the edge to move it. Keyboard: ← → nudge the frequency by 1 Hz (Shift: 0.1 Hz), PageUp / PageDown jump between modes.</p>
-          <p style="margin-top:0.75rem;">This is a real plate with real numbers. Choose the metal, the size and the thickness, bolt it to a wave driver or pick up a bow, and dial the signal generator anywhere from 20&nbsp;Hz to 20,000&nbsp;Hz. Everything you see comes from the Kirchhoff–Love plate equation explained below, in SI units: frequencies in hertz, displacement in micrometres, acceleration in multiples of <em>g</em>, sand that hops for as long as real sand would. It makes no sound; it shows what the plate does.</p>
-          <div class="cy-callout blue">
-            <strong>Why most frequencies do nothing:</strong> each push from the driver sends a bending wave across the plate. It reflects off the free edges and comes back. At almost any frequency the reflection returns out of step with the next push, partly cancels it, and the plate barely moves. At a natural frequency the reflection comes back exactly in step, so every push adds to the wave that's already there. The amplitude climbs until damping removes energy as fast as the driver adds it: about <strong>Q</strong> times larger than the push alone could make it. Stop the drive and watch it ring down: that takes about Q/(πf) seconds.
-          </div>
-        </section>
-
-        <section class="hero cy-hero">
-          <p class="eyebrow">Wave Physics · Standing Waves &amp; Resonance</p>
-          <h1>Cymatics: The Geometry of Sound</h1>
-          <div class="cy-meta">
-            <span>Standing Waves</span><span class="dot"></span>
-            <span>Resonant Modes</span><span class="dot"></span>
-            <span>Bessel Functions</span><span class="dot"></span>
-            <span>Nodes &amp; Antinodes</span>
-          </div>
-          <p class="cy-lede">Sprinkle sand on a metal plate, bow the edge, and the chaos-looking grains suddenly leap into a perfect geometric pattern — a mandala drawn by pure vibration. This is <strong>cymatics</strong>: making the invisible shape of a sound wave visible. The simulator above is a physics engine, not a canned animation: it solves the equation for a real bending plate, in real units, for the metal, size and thickness you choose, and the sand obeys the same rule real sand does: it can only leave the plate where the plate accelerates faster than gravity.</p>
-        </section>
-
-        <section class="cy-card" style="--card-accent:#38bdf8;">
-          <h2>What Is Cymatics?</h2>
-          <p>When you vibrate a rigid surface at one of its natural <strong>resonant frequencies</strong>, most of it doesn't just shake randomly — the whole surface locks into a stationary interference pattern called a <strong>standing wave</strong>. Some regions barely move at all (<strong>nodes</strong>); others swing through the largest possible displacement (<strong>antinodes</strong>). Loose material on top gets thrown away from the antinodes and collects along the still, quiet nodal lines — tracing the invisible wave pattern in visible grains.</p>
-          <div class="cy-callout blue">
-            <strong>The key idea:</strong> a Chladni pattern is not drawn by anything — it is the <em>literal shape</em> of the plate's vibration, frozen in place by wherever the material happens to be undisturbed. Change the frequency and you excite a different resonant mode — a different standing-wave "shape" — and the whole picture reorganizes itself.
-          </div>
-          <h3>A short history</h3>
-          <ol class="cy-history">
-            <li><span class="cy-yr">1680</span><span><b>Robert Hooke</b> ran a violin bow along the edge of a flour-dusted glass plate and watched the flour leap into geometric patterns — the first recorded observation of the effect.</span></li>
-            <li><span class="cy-yr">1787</span><span><b>Ernst Chladni</b>, a German physicist and musician, systematized the technique with sand on bowed brass plates and published the patterns — still called <em>Chladni figures</em> today. He demonstrated them to Napoleon.</span></li>
-            <li><span class="cy-yr">1816</span><span><b>Sophie Germain</b>, inspired by Chladni's demonstration to Napoleon, won the Paris Academy of Sciences prize by deriving the fourth-order differential equation for a vibrating elastic plate.</span></li>
-            <li><span class="cy-yr">1831</span><span><b>Michael Faraday</b> observed a related standing-wave effect on the surface of a vibrating fluid — now called <em>Faraday waves</em> — and showed why fine powder gathers at antinodes in air.</span></li>
-            <li><span class="cy-yr">1850</span><span><b>Gustav Kirchhoff</b> completed the thin-plate bending theory and derived the exact free-edge boundary conditions (<strong>Kirchhoff–Love plate theory</strong>).</span></li>
-            <li><span class="cy-yr">1877</span><span><b>Lord Rayleigh</b> published <em>The Theory of Sound</em>, introducing the variational energy method (<strong>Rayleigh–Ritz</strong>) used by this simulator to solve plates with no closed-form formula.</span></li>
-            <li><span class="cy-yr">1967</span><span><b>Hans Jenny</b>, a Swiss physician, coined the word <em>cymatics</em> (from Greek <em>kyma</em>, "wave") and extended the experiments to fluids, pastes, and powders using electronic oscillators — the direct ancestor of the simulator above.</span></li>
-          </ol>
-          <p>Click a picture to enlarge it.</p>
-          <div class="pg-grid">
-            <figure class="pg-card" data-zoomable data-lightbox-group="cymatics">
-              <img src="../../../assets/images/lessons/cymatics/chladni-portrait.jpg" alt="Engraved portrait of Ernst Chladni, a man with short curly hair in an early-1800s coat" loading="lazy" />
-              <figcaption><strong>Ernst Chladni (1756–1827)</strong><span>A physicist and musician. He bowed sand-covered plates, drew every pattern he saw, and invented new instruments along the way.</span>
-                <span class="pg-credit" data-no-glossary>Public domain · from W. Flight, 1887 · <a href="https://commons.wikimedia.org/wiki/File:Ernst_Florens_Friedrich_Chladni.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
-            </figure>
-            <figure class="pg-card pg-contain" data-zoomable data-lightbox-group="cymatics">
-              <img src="../../../assets/images/lessons/cymatics/chladni-1787-title-page.jpg" alt="The title page of Chladni’s 1787 book Entdeckungen über die Theorie des Klanges, printed in German blackletter" loading="lazy" />
-              <figcaption><strong><cite>Discoveries in the Theory of Sound</cite> (1787)</strong><span>The book in which Chladni first published his figures. This copy is in the Niels Bohr Library &amp; Archives, American Institute of Physics.</span>
-                <span class="pg-credit" data-no-glossary>Ernst Chladni · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Chladni-1.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
-            </figure>
-            <figure class="pg-card pg-contain" data-zoomable data-lightbox-group="cymatics">
-              <img src="../../../assets/images/lessons/cymatics/chladni-figures-plate.png" alt="A printed plate of many small squares, each showing a different pattern of black nodal lines" loading="lazy" />
-              <figcaption><strong>Chladni’s figures</strong><span>Each square is one way a square plate can vibrate. The lines are where the sand collected: the nodal lines that barely move. Compare them with the square-plate modes in the simulator.</span>
-                <span class="pg-credit" data-no-glossary>Ernst Chladni · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Ernst_Chladni_tab_II.gif" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
-            </figure>
-            <figure class="pg-card" data-zoomable data-lightbox-group="cymatics">
-              <img src="../../../assets/images/lessons/cymatics/chladni-plate-exhibit.jpg" alt="Four brass plates of different shapes mounted on a wooden stand, each covered in a sand pattern" loading="lazy" />
-              <figcaption><strong>Plates you can still bow</strong><span>Brass Chladni plates of different shapes at the Matemateca math collection in São Paulo. A new shape gives a new set of modes.</span>
-                <span class="pg-credit" data-no-glossary>Rodrigo Tetsuo Argenton, Matemateca IME-USP · CC BY-SA 4.0 · <a href="https://commons.wikimedia.org/wiki/File:Chladni_plate_10.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
-            </figure>
-          </div>
-        </section>
-
-        <section class="cy-card" style="--card-accent:#a78bfa;">
-          <h2>The Physics: Modes, Nodes &amp; Resonance</h2>
-          <p>A thin plate bends instead of stretching. Its motion obeys the <strong>Kirchhoff–Love plate equation</strong>, where <em>w</em> is how far the plate has moved up or down, <em>ρ</em> is the material's density, <em>h</em> its thickness, and <em>p</em> the push from the driver or bow:</p>
-          <div class="cy-callout violet cy-eq">D ∇⁴w + ρh ∂²w/∂t² = p(x, y, t) &nbsp;&nbsp; with &nbsp;&nbsp; D = E h³ / 12(1 − ν²)</div>
-          <p><em>D</em> is the plate's bending stiffness. It grows with the material's stiffness <em>E</em> (Young's modulus) and with the <em>cube</em> of the thickness, so a plate twice as thick is eight times stiffer. <em>ν</em> (Poisson's ratio) says how much the material bulges sideways when you squeeze it.</p>
-          <h3>Natural frequencies</h3>
-          <p>Only certain shapes, the <strong>eigenmodes</strong>, can vibrate on their own. Each one has a fixed frequency:</p>
-          <div class="cy-callout violet cy-eq">f = (λ / 2π) · (h / s²) · √( E / 12ρ(1 − ν²) )</div>
-          <p>Here <em>s</em> is half the plate's width (or radius) and <em>λ</em> = ωs²√(ρh/D) is a pure number that depends only on the mode's shape and on <em>ν</em>. That one line explains the whole Plate panel: double the thickness and every pitch doubles; double the width and every pitch drops two octaves (<em>f</em> ∝ 1/<em>s</em>², a factor of 4) for an unbolted plate — though because a real classroom wave driver uses a fixed 12&nbsp;mm central mounting bolt, the bolt clamps a slightly larger fraction of a small plate than a large one, shifting bolt-coupled modes by a few extra percent when you change size. Swap steel for aluminium and almost nothing changes, because their stiffness-to-weight ratios <em>E/ρ</em> are nearly equal.</p>
-          <h3>Bending waves are dispersive</h3>
-          <p>Ripples on a plate are <strong>bending waves</strong>, and high pitches travel faster than low ones: speed = √(2πf) · (D/ρh)<sup>¼</sup>. Their wavelength shrinks only as 1/√f, so going up four times in frequency only halves the spacing between nodal lines. The simulator shows the bending wavelength live; nodal lines sit about half a wavelength apart.</p>
-          <h3>Who can ring which mode</h3>
-          <p>A wave driver bolted to the centre shakes the plate straight up and down, so it can only feed a mode that moves the plate's centre of mass. On a perfect square plate that's only the <em>fully symmetric</em> modes; on a circle, only the ring patterns with no diameters. A violin bow on the edge pushes at one point and can ring almost anything except the modes with a node right where you bow. This is a <strong>selection rule</strong>, and you can test it: switch the excitation and watch peaks appear and vanish on the response curve. Real plates are never perfectly symmetric, so in a classroom the "forbidden" modes still show up faintly.</p>
-          <div class="cy-callout blue">
-            <strong>How the simulator solves it:</strong> the circle's modes split exactly into rings × diameters, R(r)·cos nθ, and each R(r) is solved on the plate outside the bolt with the bolt clamped exactly. The square has no closed-form answer, so the engine solves it with the <em>Rayleigh–Ritz method</em>: it writes the shape as a sum of smooth functions around the bolt and finds the combinations with the least bending energy for their motion. It's checked in the site's test suite against the exact Bessel-function solution for a free circular plate (to 0.001%) and Arthur Leissa's published values for a free square plate. Note the convention: Leissa's dimensionless parameter uses the <strong>full width</strong> <em>a</em> = 2<em>s</em> (λ<sub>L</sub>² = ωa²√(ρh/D) = 13.468, 19.596, 24.270, 34.801 for ν = 0.3), which corresponds to λ = λ<sub>L</sub>² / 4 = 3.367, 4.899, 6.068, 8.700 in the half-width formula above. Every frequency it reports is converged to better than 0.05%.
-          </div>
-          <div class="cy-callout amber">
-            <strong>What's exact and what's modeled.</strong> Exact (within the thin-plate theory): every mode's frequency and shape, the physical units, how each mode responds to the drive, and how long it takes to ring up and die away. Modeled: material-dependent intrinsic quality factor <em>Q</em> (high <em>Q</em> for metals and glass, low viscoelastic <em>Q</em> ≈ 40 for acrylic, with manual slider override) applied uniformly across modes; the bow as a pure sine push (a real bow's stick-slip locks onto a mode by itself); a perfectly rigid bolt; and sand too light to change the plate's pitch. Kirchhoff theory holds while the plate is much thinner than the bending wavelength, which is true for every setting here.
-          </div>
-        </section>
-
-        <section class="cy-card" style="--card-accent:#f5b400;">
-          <h2>Why Sand, Powder, Water &amp; Oobleck Look So Different</h2>
-          <p>The plate's vibration is the same for all four. What changes is how each material responds to it.</p>
-          <div class="cy-mat-grid">
-            <div class="cy-mat-card">
-              <div class="cy-mat-icon">🏜️</div>
-              <strong>Sand → the nodes</strong>
-              <small>A grain resting on the plate leaves the surface only when the plate drops away faster than gravity can follow, when its acceleration ω²A beats <em>g</em>. The ratio Γ = ω²A/g is the key number. Where Γ &gt; 1 grains hop and land somewhere new; where Γ &lt; 1 nothing can launch them. So sand random-walks out of the loud regions and gets stuck in the quiet bands around the nodal lines. Turn the drive up and those bands get <em>thinner</em>.</small>
-            </div>
-            <div class="cy-mat-card">
-              <div class="cy-mat-icon">✨</div>
-              <strong>Fine powder → the antinodes</strong>
-              <small>In 1831 Michael Faraday noticed that very fine powder (lycopodium spores) gathers at the <em>loudest</em> spots instead. He showed why by pumping the air out: in a vacuum the powder went to the nodes like sand. The vibrating plate drives a steady breeze in the air next to it, from the nodes toward the antinodes, and a speck that light rides it. Flip the Air / Vacuum switch to repeat his experiment.</small>
-            </div>
-            <div class="cy-mat-card">
-              <div class="cy-mat-icon">💧</div>
-              <strong>Water film → standing waves &amp; Faraday ripples</strong>
-              <small>A thin liquid film can't settle anywhere, so it rises and falls with the plate to reveal the whole standing wave, nodes and antinodes together. Where local acceleration exceeds the Faraday instability threshold (Γ &gt; 1.8), the film also breaks into subharmonic <strong>Faraday capillary-gravity waves</strong> oscillating at <em>f</em>/2 with a wavelength set by gravity and surface tension, viewed here under a slow-motion strobe.</small>
-            </div>
-            <div class="cy-mat-card">
-              <div class="cy-mat-icon">🧪</div>
-              <strong>Oobleck → shear-thickening fingers</strong>
-              <small>Cornstarch in water forms a creamy non-Newtonian suspension that <em>shear-thickens</em>: in quiet regions it flows slowly as a fluid, while where acceleration exceeds the discontinuous shear-thickening (DST) threshold it jams into rising, solid-like finger protrusions. The real multiphase instability is chaotic, so the eruption geometry is driven by the solved acceleration field rather than a full Navier–Stokes solve.</small>
-            </div>
-          </div>
-        </section>
-
-        <section class="cy-card" style="--card-accent:#ec4899;">
-          <h2>440 Hz vs. 432 Hz: Who Actually Decided Concert Pitch?</h2>
-          <p><strong>Concert pitch</strong> — the frequency assigned to the note A above middle C, the reference every instrument in an orchestra tunes to — has never been a law of nature. It's a human agreement, and for most of musical history there wasn't one: it drifted for centuries and was fought over for just as long.</p>
-          <h3>The pitch-inflation problem</h3>
-          <p>Before any standard existed, orchestral pitch tended to creep <em>upward</em> — a brighter, sharper-tuned ensemble was often judged more brilliant and impressive than its rivals, so pitch kept rising, hall by hall, decade by decade. By the early 1800s "A" could mean anywhere from about 415 Hz (a Baroque-era pitch still used today in historically-informed performance) to well past 450 Hz, depending on the country, the concert hall, and the year. The same piece could sit nearly a semitone higher in one city than another.</p>
-          <h3>Two real, practical fixes</h3>
-          <p>In <strong>1859</strong>, the French government legally fixed a national standard — the <em>diapason normal</em> — at <strong>A = 435 Hz</strong>, likely the first government-mandated tuning pitch in history, motivated partly by singers whose voices were being strained by the constant upward creep. In <strong>1884</strong>, composer <strong>Giuseppe Verdi</strong> independently proposed his own <em>diapason scientifico</em> to the Italian government at <strong>A = 432 Hz</strong> — again for singers' vocal health, not for any mystical reason.</p>
-          <h3>How 440 Hz became the international standard</h3>
-          <p>In 1834, physicist Johann Scheibler had already proposed 440 Hz at a conference in Stuttgart, based on precise tuning-fork beat measurements. Pitch still stayed inconsistent across countries for another century. In <strong>1939</strong>, an international conference in London — driven mainly by British and American standards bodies and broadcasters like the BBC, who needed one consistent pitch for radio, recordings, and touring orchestras with interchangeable instruments — recommended <strong>A = 440 Hz</strong>. It was formally ratified as international standard <strong>ISO 16</strong> in 1955 and reaffirmed in 1975.</p>
-          <p>So nobody "decided" 440 Hz in the sense of a single choice. It's the settled output of a century-long, multi-country standardization fight, resolved by committee for practical reasons: interchangeable instruments, consistent broadcasts, and orchestras that could tour without retuning.</p>
-          <div class="cy-callout amber">
-            <strong>A popular myth, debunked:</strong> you may have encountered the claim that A = 440 Hz was imposed by Nazi propaganda minister Joseph Goebbels to induce anxiety in listeners. There is no primary documentation for this anywhere in the historical record, and the timeline contradicts it outright: France legally mandated 435 Hz in 1859, Scheibler proposed 440 Hz in 1834, and pitch had been drifting upward for purely acoustic and commercial reasons for a century before the Nazi party existed. The 1939 conference that recommended 440 Hz was led by British and American standards organizations. This is internet folklore, not history.
-          </div>
-          <h3>What about 432 Hz today?</h3>
-          <p>Some musicians and audio engineers still tune to A432, often citing a subjectively "warmer" or "rounder" sound — a legitimate aesthetic preference, echoing Verdi's original practical proposal. The difference from 440 Hz is small (about 31.8 cents, roughly a third of a semitone) but audible, especially in direct comparison.</p>
-          <p>Claims that go further — that 432 Hz is mathematically "the frequency of the universe," aligns with the Schumann resonance or sacred geometry, or produces measurable healing or DNA effects — are <strong>not supported by any peer-reviewed acoustic or physiological research</strong>. Treat those as folklore layered on top of a real, practical 19th-century tuning debate, not as established science.</p>
-          <div class="cy-callout violet">
-            <strong>Try it in the simulator:</strong> the Signal Generator panel has quick-jump buttons for A415 (Baroque), A432 (Verdi), A440 (ISO standard), and A444 (many modern European orchestras tune slightly sharp). Most plates won't have a mode on any of them: whether one lands there is a matter of thickness and size, not significance. Then press <strong>Tune the plate to this pitch</strong>: it changes the thickness until the nearest mode sits exactly on the note, the same job a luthier does with a scraper on a violin top. Real instruments are deliberately built to resonate where their maker wants, which is exactly why an orchestra needs one shared reference pitch.
-          </div>
-        </section>
-
-        <section class="cy-card" style="--card-accent:#14b8a6;">
-          <h2>Experiments to Run</h2>
-          <p>Each of these is a real lab you can do with the simulator, then check against a real plate if your class has one. Write your prediction <em>before</em> you try it.</p>
-          <ol class="cy-exp">
-            <li><strong>Count the modes.</strong> Square steel plate, 24&nbsp;cm, 0.8&nbsp;mm, wave driver. Use "Mode ▶" to step through the first five resonances. Write down each frequency. Do the patterns get more complicated as the pitch rises? <textarea aria-label="Experiment 1 notes" rows="2"></textarea></li>
-            <li><strong>Thicker plate, higher pitch.</strong> Note the frequency of one mode, then double the thickness. Predict the new frequency first. Then double the plate's width instead. What does the formula say? (Notice the slight extra shift from the fixed 12&nbsp;mm central bolt occupying a smaller fraction of a wider plate.) <textarea aria-label="Experiment 2 notes" rows="2"></textarea></li>
-            <li><strong>Steel vs. aluminium vs. glass.</strong> Aluminium is about a third as stiff as steel, and about a third as heavy. Predict whether its modes will be higher, lower or the same, then test it. Try acrylic too. <textarea aria-label="Experiment 3 notes" rows="2"></textarea></li>
-            <li><strong>Turn it up.</strong> Find a strong resonance with sand, then raise the driver amplitude in steps. Turn on the Γ &lt; 1 overlay. What happens to the width of the sand lines, and why? <textarea aria-label="Experiment 4 notes" rows="2"></textarea></li>
-            <li><strong>The forbidden modes.</strong> With the wave driver, look at the response curve. Switch to the bow. Which new peaks appear? Move the bow along the edge until one of them vanishes: what is special about that spot? <textarea aria-label="Experiment 5 notes" rows="2"></textarea></li>
-            <li><strong>Faraday's vacuum.</strong> Choose fine powder and drive a strong mode. Where does it gather? Now switch to Vacuum and re-sprinkle. Explain the difference in one sentence. <textarea aria-label="Experiment 6 notes" rows="2"></textarea></li>
-            <li><strong>Q and the ring-down.</strong> At a resonance, press "Stop drive" and time how long the displacement takes to fall to about a third. Repeat with Q halved. Compare with Q/(πf). <textarea aria-label="Experiment 7 notes" rows="2"></textarea></li>
-          </ol>
-        </section>
-
-        <section class="cy-card" style="--card-accent:#34c759;">
-          <h2>Real-World Applications</h2>
-          <div class="cy-apps">
-            <div class="cy-app"><div class="cy-app-icon">🎻</div><strong>Instrument Making</strong><small>Luthiers sand and carve violin and guitar soundboards while checking their Chladni figures, tuning the plate's modes to match a target sound before final assembly.</small></div>
-            <div class="cy-app"><div class="cy-app-icon">🔊</div><strong>Loudspeaker Design</strong><small>Engineers use the same figures to find unwanted "breakup modes" in speaker cones — resonances that distort sound — and reshape the cone to push them out of the audible range.</small></div>
-            <div class="cy-app"><div class="cy-app-icon">🧲</div><strong>Acoustic Levitation</strong><small>Ultrasonic standing waves create stable nodes in mid-air strong enough to trap and hold small droplets or particles — used in contactless materials handling and microgravity research.</small></div>
-            <div class="cy-app"><div class="cy-app-icon">🌍</div><strong>Seismology</strong><small>After a huge earthquake, the entire Earth rings like a bell in its own normal modes for days — the same node/antinode mathematics, just planet-sized and far too low-pitched to hear.</small></div>
-            <div class="cy-app"><div class="cy-app-icon">🥣</div><strong>Singing Bowls</strong><small>A struck or rubbed metal bowl vibrates in circular Chladni modes; water or rice placed inside dances along the very node/antinode pattern this simulator computes for circular plates.</small></div>
-            <div class="cy-app"><div class="cy-app-icon">🔬</div><strong>Bioacoustics Research</strong><small>Researchers use cymatic imaging (e.g. the CymaScope) to visualize recorded animal sounds, such as dolphin vocalizations, as an exploratory tool for studying whether they carry structured patterns.</small></div>
-          </div>
-        </section>
-
-        <section class="cy-card" style="--card-accent:#5856d6;">
-          <h2>Go Deeper: Simulating Waves with Machine Learning</h2>
-          <p>This simulator solves the plate equation directly, with numerical methods developed in the 1900s. A newer approach in physics research trains machine learning models to predict how waves scatter and propagate, using huge libraries of real simulation data instead of hand-written equations. <a href="https://polymathic-ai.org/the_well/" target="_blank" rel="noopener noreferrer" style="color:var(--card-accent,#5856d6);font-weight:600;">The Well</a> is a free, 15TB collection of physics simulation datasets — including acoustic scattering off obstacles and maze-like geometries — released by Polymathic AI for exactly this kind of research.</p>
-        </section>
-
-        <section class="cy-card" style="--card-accent:#ff9500;">
-          <h2>Try It At Home (Or In Class)</h2>
-          <p>The simulator follows real physics, but nothing beats watching it happen. A plastic-wrap drum on a speaker is a stretched <em>membrane</em>, not a stiff plate, so its frequencies follow a different rule; the sand mechanism is the same. If your class has a wave driver and a metal Chladni plate, check the simulator's predictions against it.</p>
-          <ol class="cy-home-steps">
-            <li>Stretch plastic wrap tightly over a large bowl, or use a thin metal baking sheet, and place it flat on top of a speaker or subwoofer (a phone speaker works for small-scale tests).</li>
-            <li>Open a free tone-generator app or website and start around 40–60 Hz.</li>
-            <li>Sprinkle a thin, even layer of table salt or fine sand on the surface.</li>
-            <li>Slowly sweep the frequency upward. Patterns will snap into focus at specific frequencies and dissolve into chaos in between: those focused moments are the resonant modes. Turn the volume up on one and the sand lines get thinner, exactly as Γ predicts.</li>
-            <li>Swap materials between sweeps and compare what each one reveals.</li>
-          </ol>
-          <table class="cy-home-table">
-            <tr><th>Material</th><th>What you'll see</th><th>Notes</th></tr>
-            <tr><td>Table salt / fine sand</td><td>Crisp, thin nodal lines</td><td>Best all-around choice — classic Chladni figures</td></tr>
-            <tr><td>Flour</td><td>Similar lines, softer edges</td><td>Fluffier, easily disturbed by air currents</td></tr>
-            <tr><td>Thin water film</td><td>Shimmering ripples over the whole surface</td><td>Keep the film shallow and away from electronics</td></tr>
-            <tr><td>Cornstarch + water (oobleck)</td><td>Chaotic jumping fingers/spikes</td><td>The viral "oobleck on a speaker" effect — non-Newtonian jamming, not a clean mode shape</td></tr>
-          </table>
-        </section>
-
-        <section class="cy-card" style="--card-accent:#007aff;">
-          <h2>Practice Problems</h2>
-          <div class="cy-practice">
-
-            <div class="cy-problem">
-              <p><span class="diff-easy">Easy</span>1. A standing wave has adjacent nodes spaced 0.25 m apart. Nodes on a standing wave are spaced λ/2 apart — what is the wavelength λ (in m)?</p>
-              <div class="cy-problem-row">
-                <input type="number" class="cy-ans-input" id="cyans-1" step="0.01" placeholder="m" />
-                <button class="cy-check-btn" type="button" onclick="cyCheck(1,0.5,0.02)">Check</button>
-                <span class="cy-feedback" id="cyfb-1"></span>
-              </div>
-              <div class="cy-fb-hint" id="cyhint-1">Hint: λ = 2 × 0.25 = 0.5 m</div>
-            </div>
-
-            <div class="cy-problem">
-              <p><span class="diff-easy">Easy</span>2. On a sand-covered Chladni plate, the grains collect where the plate's vertical displacement is…</p>
-              <div class="cy-problem-row">
-                <select class="cy-ans-input" id="cyans-2" style="width:160px;">
-                  <option value="">Choose…</option>
-                  <option value="zero">Zero (a node)</option>
-                  <option value="max">Maximum (an antinode)</option>
-                  <option value="edges">Only at the plate's edges</option>
-                </select>
-                <button class="cy-check-btn" type="button" onclick="cyCheckText(2,'zero')">Check</button>
-                <span class="cy-feedback" id="cyfb-2"></span>
-              </div>
-              <div class="cy-fb-hint" id="cyhint-2">Hint: material is thrown off the moving parts and collects where it's undisturbed.</div>
-            </div>
-
-            <div class="cy-problem">
-              <p><span class="diff-mid">Medium</span>3. Which material would you expect to reveal the <em>full</em> standing-wave height field — both crests and troughs — rather than only the nodal lines?</p>
-              <div class="cy-problem-row">
-                <select class="cy-ans-input" id="cyans-3" style="width:170px;">
-                  <option value="">Choose…</option>
-                  <option value="sand">Dry sand</option>
-                  <option value="water">A thin water film</option>
-                  <option value="slime">Non-Newtonian slime</option>
-                </select>
-                <button class="cy-check-btn" type="button" onclick="cyCheckText(3,'water')">Check</button>
-                <span class="cy-feedback" id="cyfb-3"></span>
-              </div>
-              <div class="cy-fb-hint" id="cyhint-3">Hint: a thin liquid film can't "settle" — it just follows the surface it's sitting on.</div>
-            </div>
-
-            <div class="cy-problem">
-              <p><span class="diff-mid">Medium</span>4. A 1.0&nbsp;mm steel plate has a mode at 440&nbsp;Hz. The plate is replaced by an identical one 1.5&nbsp;mm thick. Using f ∝ h, where does that mode move (in Hz)?</p>
-              <div class="cy-problem-row">
-                <input type="number" class="cy-ans-input" id="cyans-4" step="1" placeholder="Hz" />
-                <button class="cy-check-btn" type="button" onclick="cyCheck(4,660,3)">Check</button>
-                <span class="cy-feedback" id="cyfb-4"></span>
-              </div>
-              <div class="cy-fb-hint" id="cyhint-4">Hint: frequency is proportional to thickness, so 440 × 1.5 = 660 Hz.</div>
-            </div>
-
-            <div class="cy-problem">
-              <p><span class="diff-hard">Challenge</span>5. At a 500&nbsp;Hz resonance the antinodes move ±20&nbsp;µm. What is Γ = ω²A/g there (use g = 9.81&nbsp;m/s² and ω = 2πf)? Will sand hop?</p>
-              <div class="cy-problem-row">
-                <input type="number" class="cy-ans-input" id="cyans-5" step="0.1" placeholder="Γ" />
-                <button class="cy-check-btn" type="button" onclick="cyCheck(5,20.1,1)">Check</button>
-                <span class="cy-feedback" id="cyfb-5"></span>
-              </div>
-              <div class="cy-fb-hint" id="cyhint-5">Hint: ω = 2π × 500 ≈ 3142 rad/s, so ω²A = 9.87×10⁶ × 20×10⁻⁶ ≈ 197 m/s², and 197 / 9.81 ≈ 20. Far above 1: the sand leaps.</div>
-            </div>
-
-          </div>
-        </section>
-
-        <footer class="site-footer">
-          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
-        </footer>
-      </main>
-    </div>
-
-    <aside class="ll-panel" aria-hidden="false">
-      <div class="ll-panel-head">
-        <div class="ll-tabs">
-          <button class="ll-tab" aria-selected="true"  data-pane="cy-pane-controls">Controls</button>
-          <button class="ll-tab" aria-selected="false" data-pane="cy-pane-modes">Modes</button>
-          <button class="ll-tab" aria-selected="false" data-pane="cy-pane-guide">Guide</button>
         </div>
-        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+
+        <aside class="cy-controls-panel" aria-label="Cymatics plate controls and mode browser">
+          <div class="cy-panel-tabs" role="tablist" aria-label="Cymatics lab tabs">
+            <button class="cy-tab-btn" type="button" role="tab" aria-selected="true" data-pane="cy-pane-controls">Controls</button>
+            <button class="cy-tab-btn" type="button" role="tab" aria-selected="false" data-pane="cy-pane-modes">Modes</button>
+            <button class="cy-tab-btn" type="button" role="tab" aria-selected="false" data-pane="cy-pane-guide">Guide</button>
+          </div>
+          <div class="cy-panel-body">
+            <div class="cy-pane" id="cy-pane-controls">
+              <div class="cy-freqgen">
+                <span class="cy-section-label">Signal Generator</span>
+                <div class="cy-freq-readout-row">
+                  <span class="cy-freq-big" id="cy-freq-big">— Hz</span>
+                  <span class="cy-freq-status unlocked" id="cy-freq-status">…</span>
+                </div>
+                <input type="range" id="cy-freq-slider" min="0" max="3000" step="1" value="1500" style="width:100%;" aria-label="Drive frequency, logarithmic from 20 Hz to 20 kHz" />
+                <div class="cy-freq-scale"><span>20 Hz</span><span>200</span><span>2 k</span><span>20 kHz</span></div>
+                <div class="cy-fine-row" id="cy-fine-row" aria-label="Fine tuning">
+                  <button type="button" data-df="-10">−10</button><button type="button" data-df="-1">−1</button><button type="button" data-df="-0.1">−0.1</button>
+                  <button type="button" data-df="0.1">+0.1</button><button type="button" data-df="1">+1</button><button type="button" data-df="10">+10</button>
+                </div>
+                <div class="cy-btn-row cy-btn-row--tight">
+                  <button class="cy-opt-btn" id="cy-prev-mode" type="button" title="Previous mode this drive can excite">◀ Mode</button>
+                  <button class="cy-opt-btn" id="cy-sweep-btn" type="button" aria-pressed="false">▶ Sweep</button>
+                  <button class="cy-opt-btn" id="cy-next-mode" type="button" title="Next mode this drive can excite">Mode ▶</button>
+                </div>
+                <button class="cy-opt-btn cy-wide" id="cy-mute-btn" type="button" aria-pressed="false">⏹ Stop drive (watch it ring down)</button>
+                <span class="cy-section-label" style="margin-top:0.65rem;">Concert Pitch Reference</span>
+                <div class="cy-pitch-row" id="cy-pitch-row">
+                  <button class="cy-pitch-chip" data-freq="415" type="button">A415<small>Baroque</small></button>
+                  <button class="cy-pitch-chip" data-freq="432" type="button">A432<small>Verdi</small></button>
+                  <button class="cy-pitch-chip" data-freq="440" type="button">A440<small>ISO Standard</small></button>
+                  <button class="cy-pitch-chip" data-freq="444" type="button">A444<small>Modern Orch.</small></button>
+                </div>
+                <button class="cy-opt-btn cy-wide" id="cy-tune-btn" type="button" title="Change plate thickness so the nearest reachable mode lands on this pitch">♪ Tune the plate to this pitch</button>
+              </div>
+
+              <span class="cy-section-label">Excitation</span>
+              <div class="cy-btn-row">
+                <button class="cy-opt-btn active" id="cy-drive-driver" type="button" aria-pressed="true">🔊 Wave driver</button>
+                <button class="cy-opt-btn" id="cy-drive-bow" type="button" aria-pressed="false">🎻 Violin bow</button>
+              </div>
+              <div class="cy-slider-block" id="cy-bow-pos-wrap" hidden>
+                <label for="cy-bow-slider">Bow edge angle <span id="cy-bow-val">23°</span></label>
+                <input type="range" id="cy-bow-slider" min="0" max="359" value="23" style="width:100%;" />
+              </div>
+              <div class="cy-slider-block">
+                <label for="cy-amp-slider"><span id="cy-amp-label">Driver amplitude</span> <span id="cy-amp-val">—</span></label>
+                <input type="range" id="cy-amp-slider" min="0" max="1000" value="500" style="width:100%;" />
+                <p class="cy-freq-note" id="cy-drive-note"></p>
+              </div>
+
+              <span class="cy-section-label">Plate</span>
+              <div class="cy-btn-row">
+                <button class="cy-opt-btn active" id="cy-shape-square" type="button" aria-pressed="true">Square</button>
+                <button class="cy-opt-btn" id="cy-shape-circle" type="button" aria-pressed="false">Circle</button>
+              </div>
+              <div class="cy-field-row">
+                <label for="cy-material">Material</label>
+                <select id="cy-material" class="cy-select"></select>
+              </div>
+              <div class="cy-field-row">
+                <label for="cy-size">Size</label>
+                <select id="cy-size" class="cy-select">
+                  <option value="0.15">15 cm</option><option value="0.2">20 cm</option><option value="0.24" selected>24 cm</option><option value="0.3">30 cm</option><option value="0.4">40 cm</option>
+                </select>
+              </div>
+              <div class="cy-slider-block">
+                <label for="cy-thick-slider">Thickness <span id="cy-thick-val">0.80 mm</span></label>
+                <input type="range" id="cy-thick-slider" min="30" max="400" value="80" style="width:100%;" />
+              </div>
+              <div class="cy-slider-block">
+                <label for="cy-q-slider">Damping: Q factor <span id="cy-q-val">500</span></label>
+                <input type="range" id="cy-q-slider" min="0" max="1000" value="500" style="width:100%;" />
+              </div>
+              <p class="cy-freq-note" id="cy-plate-note"></p>
+
+              <span class="cy-section-label">On the Plate</span>
+              <div class="cy-btn-row">
+                <button class="cy-opt-btn active" id="cy-mat-sand" type="button" aria-pressed="true">🏜️ Sand</button>
+                <button class="cy-opt-btn" id="cy-mat-powder" type="button" aria-pressed="false">✨ Powder</button>
+                <button class="cy-opt-btn" id="cy-mat-water" type="button" aria-pressed="false">💧 Water</button>
+                <button class="cy-opt-btn" id="cy-mat-slime" type="button" aria-pressed="false">🧪 Oobleck</button>
+              </div>
+              <div class="cy-btn-row">
+                <button class="cy-opt-btn active" id="cy-air-on" type="button" aria-pressed="true">Air</button>
+                <button class="cy-opt-btn" id="cy-air-off" type="button" aria-pressed="false">Vacuum</button>
+                <button class="cy-opt-btn active" id="cy-speed-1" type="button" aria-pressed="true">1× time</button>
+                <button class="cy-opt-btn" id="cy-speed-4" type="button" aria-pressed="false">4× time</button>
+              </div>
+              <button class="cy-resprinkle" id="cy-resprinkle-btn" type="button">🔄 Re-sprinkle</button>
+            </div>
+
+            <div class="cy-pane" id="cy-pane-modes" hidden>
+              <p class="cy-freq-note" id="cy-modes-note" style="margin-top:0;"></p>
+              <div class="cy-mode-list" id="cy-mode-list"></div>
+            </div>
+
+            <div class="cy-pane" id="cy-pane-guide" hidden>
+              <div class="cy-guide-item"><strong>Node</strong>A place on the plate that stays (nearly) still. Sand collects in the quiet band around nodal lines.</div>
+              <div class="cy-guide-item"><strong>Antinode</strong>A place that swings through the largest displacement: the loudest, most energetic part of the pattern.</div>
+              <div class="cy-guide-item"><strong>Γ (gamma)</strong>Peak plate acceleration divided by g, Γ = ω²A/g. A resting grain can only leave the plate where Γ &gt; 1.</div>
+              <div class="cy-guide-item"><strong>Resonance</strong>Driving at a natural frequency, so every push adds to the wave already there. The plate's response grows about Q times bigger than off resonance.</div>
+              <div class="cy-guide-item"><strong>Q factor</strong>How sharp a resonance is: the peak is f/Q wide, and the plate takes about Q/(πf) seconds to ring up or die away. Metal plates with sand on them are roughly 50–500.</div>
+              <div class="cy-guide-item"><strong>Eigenmode</strong>A shape the plate can vibrate in all by itself, at one exact frequency set by its geometry, material and mounting.</div>
+              <div class="cy-guide-item"><strong>Bending wave</strong>The kind of wave a plate carries. It's dispersive: speed grows as √f, so wavelength shrinks only as 1/√f.</div>
+              <div class="cy-guide-item"><strong>Selection rule</strong>A drive can only feed modes it overlaps with. A centred driver can't ring a mode whose up-moving and down-moving halves cancel.</div>
+              <div class="cy-guide-item"><strong>Chladni's law</strong>Chladni's 1787 rule of thumb for circular plates: f ∝ (n + 2s)², with n nodal diameters and s nodal circles. Compare it with the Modes tab: it's close for big patterns, not exact.</div>
+            </div>
+          </div>
+        </aside>
       </div>
-      <div class="ll-panel-body">
 
-        <div class="ll-pane ll-active" id="cy-pane-controls">
-          <div class="cy-freqgen">
-            <span class="ll-label">Signal Generator</span>
-            <div class="cy-freq-readout-row">
-              <span class="cy-freq-big" id="cy-freq-big">— Hz</span>
-              <span class="cy-freq-status unlocked" id="cy-freq-status">…</span>
-            </div>
-            <input type="range" id="cy-freq-slider" min="0" max="3000" step="1" value="1500" style="width:100%;" aria-label="Drive frequency, logarithmic from 20 Hz to 20 kHz" />
-            <div class="cy-freq-scale"><span>20 Hz</span><span>200</span><span>2 k</span><span>20 kHz</span></div>
-            <div class="cy-fine-row" id="cy-fine-row" aria-label="Fine tuning">
-              <button type="button" data-df="-10">−10</button><button type="button" data-df="-1">−1</button><button type="button" data-df="-0.1">−0.1</button>
-              <button type="button" data-df="0.1">+0.1</button><button type="button" data-df="1">+1</button><button type="button" data-df="10">+10</button>
-            </div>
-            <div class="cy-btn-row cy-btn-row--tight">
-              <button class="cy-opt-btn" id="cy-prev-mode" type="button" title="Previous mode this drive can excite">◀ Mode</button>
-              <button class="cy-opt-btn" id="cy-sweep-btn" type="button" aria-pressed="false">▶ Sweep</button>
-              <button class="cy-opt-btn" id="cy-next-mode" type="button" title="Next mode this drive can excite">Mode ▶</button>
-            </div>
-            <button class="cy-opt-btn cy-wide" id="cy-mute-btn" type="button" aria-pressed="false">⏹ Stop drive (watch it ring down)</button>
-            <span class="ll-label" style="margin-top:0.7rem;display:block;">Concert Pitch Reference</span>
-            <div class="cy-pitch-row" id="cy-pitch-row">
-              <button class="cy-pitch-chip" data-freq="415" type="button">A415<small>Baroque</small></button>
-              <button class="cy-pitch-chip" data-freq="432" type="button">A432<small>Verdi</small></button>
-              <button class="cy-pitch-chip" data-freq="440" type="button">A440<small>ISO Standard</small></button>
-              <button class="cy-pitch-chip" data-freq="444" type="button">A444<small>Modern Orchestras</small></button>
-            </div>
-            <button class="cy-opt-btn cy-wide" id="cy-tune-btn" type="button" title="Change the thickness so the nearest mode lands exactly on this frequency">♪ Tune the plate to this pitch</button>
-          </div>
+      <div class="cy-lab-foot">
+        <p class="cy-hint">The centre disc is the bolt (it moves with the driver). Drag in 3D to orbit. With the bow selected, click near the edge (in 2D or 3D) or drag Bow Edge Angle to move it. Keyboard: ← → nudge frequency by 1 Hz (Shift: 0.1 Hz), PageUp / PageDown jump between modes.</p>
+        <p>This is a real plate with real numbers. Choose the metal, the size and the thickness, bolt it to a wave driver or pick up a bow, and dial the signal generator anywhere from 20&nbsp;Hz to 20,000&nbsp;Hz. Everything you see comes from the Kirchhoff–Love plate equation explained below, in SI units: frequencies in hertz, displacement in micrometres, acceleration in multiples of <em>g</em>, sand that hops for as long as real sand would. Toggle <strong>Sound</strong> above to hear the oscillator and Q-factor ring-down alongside the plate.</p>
+        <div class="cy-callout blue">
+          <strong>Why most frequencies do nothing:</strong> each push from the driver sends a bending wave across the plate. It reflects off the free edges and comes back. At almost any frequency the reflection returns out of step with the next push, partly cancels it, and the plate barely moves. At a natural frequency the reflection comes back exactly in step, so every push adds to the wave that's already there. The amplitude climbs until damping removes energy as fast as the driver adds it: about <strong>Q</strong> times larger than the push alone could make it. Stop the drive and watch it ring down: that takes about Q/(πf) seconds.
+        </div>
+      </div>
+    </section>
 
-          <span class="ll-label">Excitation</span>
-          <div class="cy-btn-row">
-            <button class="cy-opt-btn active" id="cy-drive-driver" type="button" aria-pressed="true">🔊 Wave driver</button>
-            <button class="cy-opt-btn" id="cy-drive-bow" type="button" aria-pressed="false">🎻 Violin bow</button>
-          </div>
-          <div class="cy-slider-block">
-            <label for="cy-amp-slider"><span id="cy-amp-label">Driver amplitude</span> <span id="cy-amp-val">—</span></label>
-            <input type="range" id="cy-amp-slider" min="0" max="1000" value="500" style="width:100%;" />
-            <p class="cy-freq-note" id="cy-drive-note"></p>
-          </div>
+    <section class="hero cy-hero" id="cy-overview">
+      <p class="eyebrow">Wave Physics · Standing Waves &amp; Resonance</p>
+      <h2>How Sound Draws Geometry on a Metal Plate</h2>
+      <div class="cy-meta">
+        <span>Standing Waves</span><span class="dot"></span>
+        <span>Resonant Modes</span><span class="dot"></span>
+        <span>Bessel Functions</span><span class="dot"></span>
+        <span>Nodes &amp; Antinodes</span>
+      </div>
+      <p class="cy-lede">Sprinkle sand on a metal plate, bow the edge, and the chaos-looking grains suddenly leap into a perfect geometric pattern — a mandala drawn by pure vibration. This is <strong>cymatics</strong>: making the invisible shape of a sound wave visible. The simulator above is a physics engine, not a canned animation: it solves the equation for a real bending plate, in real units, for the metal, size and thickness you choose, and the sand obeys the same rule real sand does: it can only leave the plate where the plate accelerates faster than gravity.</p>
+    </section>
 
-          <span class="ll-label">Plate</span>
-          <div class="cy-btn-row">
-            <button class="cy-opt-btn active" id="cy-shape-square" type="button" aria-pressed="true">Square</button>
-            <button class="cy-opt-btn" id="cy-shape-circle" type="button" aria-pressed="false">Circle</button>
+    <section class="cy-card" style="--card-accent:#38bdf8;">
+      <h2>What Is Cymatics?</h2>
+      <p>When you vibrate a rigid surface at one of its natural <strong>resonant frequencies</strong>, most of it doesn't just shake randomly — the whole surface locks into a stationary interference pattern called a <strong>standing wave</strong>. Some regions barely move at all (<strong>nodes</strong>); others swing through the largest possible displacement (<strong>antinodes</strong>). Loose material on top gets thrown away from the antinodes and collects along the still, quiet nodal lines — tracing the invisible wave pattern in visible grains.</p>
+      <div class="cy-callout blue">
+        <strong>The key idea:</strong> a Chladni pattern is not drawn by anything — it is the <em>literal shape</em> of the plate's vibration, frozen in place by wherever the material happens to be undisturbed. Change the frequency and you excite a different resonant mode — a different standing-wave "shape" — and the whole picture reorganizes itself.
+      </div>
+      <h3>A short history</h3>
+      <ol class="cy-history">
+        <li><span class="cy-yr">1680</span><span><b>Robert Hooke</b> ran a violin bow along the edge of a flour-dusted glass plate and watched the flour leap into geometric patterns — the first recorded observation of the effect.</span></li>
+        <li><span class="cy-yr">1787</span><span><b>Ernst Chladni</b>, a German physicist and musician, systematized the technique with sand on bowed brass plates and published the patterns — still called <em>Chladni figures</em> today. He demonstrated them to Napoleon.</span></li>
+        <li><span class="cy-yr">1816</span><span><b>Sophie Germain</b>, inspired by Chladni's demonstration to Napoleon, won the Paris Academy of Sciences prize by deriving the fourth-order differential equation for a vibrating elastic plate.</span></li>
+        <li><span class="cy-yr">1831</span><span><b>Michael Faraday</b> observed a related standing-wave effect on the surface of a vibrating fluid — now called <em>Faraday waves</em> — and showed why fine powder gathers at antinodes in air.</span></li>
+        <li><span class="cy-yr">1850</span><span><b>Gustav Kirchhoff</b> completed the thin-plate bending theory and derived the exact free-edge boundary conditions (<strong>Kirchhoff–Love plate theory</strong>).</span></li>
+        <li><span class="cy-yr">1877</span><span><b>Lord Rayleigh</b> published <em>The Theory of Sound</em>, introducing the variational energy method (<strong>Rayleigh–Ritz</strong>) used by this simulator to solve plates with no closed-form formula.</span></li>
+        <li><span class="cy-yr">1967</span><span><b>Hans Jenny</b>, a Swiss physician, coined the word <em>cymatics</em> (from Greek <em>kyma</em>, "wave") and extended the experiments to fluids, pastes, and powders using electronic oscillators — the direct ancestor of the simulator above.</span></li>
+      </ol>
+      <p>Click a picture to enlarge it.</p>
+      <div class="pg-grid">
+        <figure class="pg-card" data-zoomable data-lightbox-group="cymatics">
+          <img src="../../../assets/images/lessons/cymatics/chladni-portrait.jpg" alt="Engraved portrait of Ernst Chladni, a man with short curly hair in an early-1800s coat" loading="lazy" />
+          <figcaption><strong>Ernst Chladni (1756–1827)</strong><span>A physicist and musician. He bowed sand-covered plates, drew every pattern he saw, and invented new instruments along the way.</span>
+            <span class="pg-credit" data-no-glossary>Public domain · from W. Flight, 1887 · <a href="https://commons.wikimedia.org/wiki/File:Ernst_Florens_Friedrich_Chladni.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+        </figure>
+        <figure class="pg-card pg-contain" data-zoomable data-lightbox-group="cymatics">
+          <img src="../../../assets/images/lessons/cymatics/chladni-1787-title-page.jpg" alt="The title page of Chladni’s 1787 book Entdeckungen über die Theorie des Klanges, printed in German blackletter" loading="lazy" />
+          <figcaption><strong><cite>Discoveries in the Theory of Sound</cite> (1787)</strong><span>The book in which Chladni first published his figures. This copy is in the Niels Bohr Library &amp; Archives, American Institute of Physics.</span>
+            <span class="pg-credit" data-no-glossary>Ernst Chladni · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Chladni-1.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+        </figure>
+        <figure class="pg-card pg-contain" data-zoomable data-lightbox-group="cymatics">
+          <img src="../../../assets/images/lessons/cymatics/chladni-figures-plate.png" alt="A printed plate of many small squares, each showing a different pattern of black nodal lines" loading="lazy" />
+          <figcaption><strong>Chladni’s figures</strong><span>Each square is one way a square plate can vibrate. The lines are where the sand collected: the nodal lines that barely move. Compare them with the square-plate modes in the simulator.</span>
+            <span class="pg-credit" data-no-glossary>Ernst Chladni · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Ernst_Chladni_tab_II.gif" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+        </figure>
+        <figure class="pg-card" data-zoomable data-lightbox-group="cymatics">
+          <img src="../../../assets/images/lessons/cymatics/chladni-plate-exhibit.jpg" alt="Four brass plates of different shapes mounted on a wooden stand, each covered in a sand pattern" loading="lazy" />
+          <figcaption><strong>Plates you can still bow</strong><span>Brass Chladni plates of different shapes at the Matemateca math collection in São Paulo. A new shape gives a new set of modes.</span>
+            <span class="pg-credit" data-no-glossary>Rodrigo Tetsuo Argenton, Matemateca IME-USP · CC BY-SA 4.0 · <a href="https://commons.wikimedia.org/wiki/File:Chladni_plate_10.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="cy-card" style="--card-accent:#a78bfa;">
+      <h2>The Physics: Modes, Nodes &amp; Resonance</h2>
+      <p>A thin plate bends instead of stretching. Its motion obeys the <strong>Kirchhoff–Love plate equation</strong>, where <em>w</em> is how far the plate has moved up or down, <em>ρ</em> is the material's density, <em>h</em> its thickness, and <em>p</em> the push from the driver or bow:</p>
+      <div class="cy-callout violet cy-eq">D ∇⁴w + ρh ∂²w/∂t² = p(x, y, t) &nbsp;&nbsp; with &nbsp;&nbsp; D = E h³ / 12(1 − ν²)</div>
+      <p><em>D</em> is the plate's bending stiffness. It grows with the material's stiffness <em>E</em> (Young's modulus) and with the <em>cube</em> of the thickness, so a plate twice as thick is eight times stiffer. <em>ν</em> (Poisson's ratio) says how much the material bulges sideways when you squeeze it.</p>
+      <h3>Natural frequencies</h3>
+      <p>Only certain shapes, the <strong>eigenmodes</strong>, can vibrate on their own. Each one has a fixed frequency:</p>
+      <div class="cy-callout violet cy-eq">f = (λ / 2π) · (h / s²) · √( E / 12ρ(1 − ν²) )</div>
+      <p>Here <em>s</em> is half the plate's width (or radius) and <em>λ</em> = ωs²√(ρh/D) is a pure number that depends only on the mode's shape and on <em>ν</em>. That one line explains the whole Plate panel: double the thickness and every pitch doubles; double the width and every pitch drops two octaves (<em>f</em> ∝ 1/<em>s</em>², a factor of 4) for an unbolted plate — though because a real classroom wave driver uses a fixed 12&nbsp;mm central mounting bolt, the bolt clamps a slightly larger fraction of a small plate than a large one, shifting bolt-coupled modes by a few extra percent when you change size. Swap steel for aluminium and almost nothing changes, because their stiffness-to-weight ratios <em>E/ρ</em> are nearly equal.</p>
+      <h3>Bending waves are dispersive</h3>
+      <p>Ripples on a plate are <strong>bending waves</strong>, and high pitches travel faster than low ones: speed = √(2πf) · (D/ρh)<sup>¼</sup>. Their wavelength shrinks only as 1/√f, so going up four times in frequency only halves the spacing between nodal lines. The simulator shows the bending wavelength live; nodal lines sit about half a wavelength apart.</p>
+      <h3>Who can ring which mode</h3>
+      <p>A wave driver bolted to the centre shakes the plate straight up and down, so it can only feed a mode that moves the plate's centre of mass. On a perfect square plate that's only the <em>fully symmetric</em> modes; on a circle, only the ring patterns with no diameters. A violin bow on the edge pushes at one point and can ring almost anything except the modes with a node right where you bow. This is a <strong>selection rule</strong>, and you can test it: switch the excitation and watch peaks appear and vanish on the response curve. Real plates are never perfectly symmetric, so in a classroom the "forbidden" modes still show up faintly.</p>
+      <div class="cy-callout blue">
+        <strong>How the simulator solves it:</strong> the circle's modes split exactly into rings × diameters, R(r)·cos nθ, and each R(r) is solved on the plate outside the bolt with the bolt clamped exactly. The square has no closed-form answer, so the engine solves it with the <em>Rayleigh–Ritz method</em>: it writes the shape as a sum of smooth functions around the bolt and finds the combinations with the least bending energy for their motion. It's checked in the site's test suite against the exact Bessel-function solution for a free circular plate (to 0.001%) and Arthur Leissa's published values for a free square plate. Note the convention: Leissa's dimensionless parameter uses the <strong>full width</strong> <em>a</em> = 2<em>s</em> (λ<sub>L</sub>² = ωa²√(ρh/D) = 13.468, 19.596, 24.270, 34.801 for ν = 0.3), which corresponds to λ = λ<sub>L</sub>² / 4 = 3.367, 4.899, 6.068, 8.700 in the half-width formula above. Every frequency it reports is converged to better than 0.05%.
+      </div>
+      <div class="cy-callout amber">
+        <strong>What's exact and what's modeled.</strong> Exact (within the thin-plate theory): every mode's frequency and shape, the physical units, how each mode responds to the drive, and how long it takes to ring up and die away. Modeled: material-dependent intrinsic quality factor <em>Q</em> (high <em>Q</em> for metals and glass, low viscoelastic <em>Q</em> ≈ 40 for acrylic, with manual slider override) applied uniformly across modes; the bow as a pure sine push (a real bow's stick-slip locks onto a mode by itself); a perfectly rigid bolt; and sand too light to change the plate's pitch. Kirchhoff theory holds while the plate is much thinner than the bending wavelength, which is true for every setting here.
+      </div>
+    </section>
+
+    <section class="cy-card" style="--card-accent:#f5b400;">
+      <h2>Why Sand, Powder, Water &amp; Oobleck Look So Different</h2>
+      <p>The plate's vibration is the same for all four. What changes is how each material responds to it.</p>
+      <div class="cy-mat-grid">
+        <div class="cy-mat-card">
+          <div class="cy-mat-icon">🏜️</div>
+          <strong>Sand → the nodes</strong>
+          <small>A grain resting on the plate leaves the surface only when the plate drops away faster than gravity can follow, when its acceleration ω²A beats <em>g</em>. The ratio Γ = ω²A/g is the key number. Where Γ &gt; 1 grains hop and land somewhere new; where Γ &lt; 1 nothing can launch them. So sand random-walks out of the loud regions and gets stuck in the quiet bands around the nodal lines. Turn the drive up and those bands get <em>thinner</em>.</small>
+        </div>
+        <div class="cy-mat-card">
+          <div class="cy-mat-icon">✨</div>
+          <strong>Fine powder → the antinodes</strong>
+          <small>In 1831 Michael Faraday noticed that very fine powder (lycopodium spores) gathers at the <em>loudest</em> spots instead. He showed why by pumping the air out: in a vacuum the powder went to the nodes like sand. The vibrating plate drives a steady breeze in the air next to it, from the nodes toward the antinodes, and a speck that light rides it. Flip the Air / Vacuum switch to repeat his experiment.</small>
+        </div>
+        <div class="cy-mat-card">
+          <div class="cy-mat-icon">💧</div>
+          <strong>Water film → standing waves &amp; Faraday ripples</strong>
+          <small>A thin liquid film can't settle anywhere, so it rises and falls with the plate to reveal the whole standing wave, nodes and antinodes together. Where local acceleration exceeds the Faraday instability threshold (Γ &gt; 1.8), the film also breaks into subharmonic <strong>Faraday capillary-gravity waves</strong> oscillating at <em>f</em>/2 with a wavelength set by gravity and surface tension, viewed here under a slow-motion strobe.</small>
+        </div>
+        <div class="cy-mat-card">
+          <div class="cy-mat-icon">🧪</div>
+          <strong>Oobleck → shear-thickening fingers</strong>
+          <small>Cornstarch in water forms a creamy non-Newtonian suspension that <em>shear-thickens</em>: in quiet regions it flows slowly as a fluid, while where acceleration exceeds the discontinuous shear-thickening (DST) threshold it jams into rising, solid-like finger protrusions. The real multiphase instability is chaotic, so the eruption geometry is driven by the solved acceleration field rather than a full Navier–Stokes solve.</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="cy-card" style="--card-accent:#ec4899;">
+      <h2>440 Hz vs. 432 Hz: Who Actually Decided Concert Pitch?</h2>
+      <p><strong>Concert pitch</strong> — the frequency assigned to the note A above middle C, the reference every instrument in an orchestra tunes to — has never been a law of nature. It's a human agreement, and for most of musical history there wasn't one: it drifted for centuries and was fought over for just as long.</p>
+      <h3>The pitch-inflation problem</h3>
+      <p>Before any standard existed, orchestral pitch tended to creep <em>upward</em> — a brighter, sharper-tuned ensemble was often judged more brilliant and impressive than its rivals, so pitch kept rising, hall by hall, decade by decade. By the early 1800s "A" could mean anywhere from about 415 Hz (a Baroque-era pitch still used today in historically-informed performance) to well past 450 Hz, depending on the country, the concert hall, and the year. The same piece could sit nearly a semitone higher in one city than another.</p>
+      <h3>Two real, practical fixes</h3>
+      <p>In <strong>1859</strong>, the French government legally fixed a national standard — the <em>diapason normal</em> — at <strong>A = 435 Hz</strong>, likely the first government-mandated tuning pitch in history, motivated partly by singers whose voices were being strained by the constant upward creep. In <strong>1884</strong>, composer <strong>Giuseppe Verdi</strong> independently proposed his own <em>diapason scientifico</em> to the Italian government at <strong>A = 432 Hz</strong> — again for singers' vocal health, not for any mystical reason.</p>
+      <h3>How 440 Hz became the international standard</h3>
+      <p>In 1834, physicist Johann Scheibler had already proposed 440 Hz at a conference in Stuttgart, based on precise tuning-fork beat measurements. Pitch still stayed inconsistent across countries for another century. In <strong>1939</strong>, an international conference in London — driven mainly by British and American standards bodies and broadcasters like the BBC, who needed one consistent pitch for radio, recordings, and touring orchestras with interchangeable instruments — recommended <strong>A = 440 Hz</strong>. It was formally ratified as international standard <strong>ISO 16</strong> in 1955 and reaffirmed in 1975.</p>
+      <p>So nobody "decided" 440 Hz in the sense of a single choice. It's the settled output of a century-long, multi-country standardization fight, resolved by committee for practical reasons: interchangeable instruments, consistent broadcasts, and orchestras that could tour without retuning.</p>
+      <div class="cy-callout amber">
+        <strong>A popular myth, debunked:</strong> you may have encountered the claim that A = 440 Hz was imposed by Nazi propaganda minister Joseph Goebbels to induce anxiety in listeners. There is no primary documentation for this anywhere in the historical record, and the timeline contradicts it outright: France legally mandated 435 Hz in 1859, Scheibler proposed 440 Hz in 1834, and pitch had been drifting upward for purely acoustic and commercial reasons for a century before the Nazi party existed. The 1939 conference that recommended 440 Hz was led by British and American standards organizations. This is internet folklore, not history.
+      </div>
+      <h3>What about 432 Hz today?</h3>
+      <p>Some musicians and audio engineers still tune to A432, often citing a subjectively "warmer" or "rounder" sound — a legitimate aesthetic preference, echoing Verdi's original practical proposal. The difference from 440 Hz is small (about 31.8 cents, roughly a third of a semitone) but audible, especially in direct comparison.</p>
+      <p>Claims that go further — that 432 Hz is mathematically "the frequency of the universe," aligns with the Schumann resonance or sacred geometry, or produces measurable healing or DNA effects — are <strong>not supported by any peer-reviewed acoustic or physiological research</strong>. Treat those as folklore layered on top of a real, practical 19th-century tuning debate, not as established science.</p>
+      <div class="cy-callout violet">
+        <strong>Try it in the simulator:</strong> the Signal Generator panel has quick-jump buttons for A415 (Baroque), A432 (Verdi), A440 (ISO standard), and A444 (many modern European orchestras tune slightly sharp). Most plates won't have a mode on any of them: whether one lands there is a matter of thickness and size, not significance. Then press <strong>Tune the plate to this pitch</strong>: it changes the thickness until the nearest reachable mode sits exactly on the note, the same job a luthier does with a scraper on a violin top. Real instruments are deliberately built to resonate where their maker wants, which is exactly why an orchestra needs one shared reference pitch.
+      </div>
+    </section>
+
+    <section class="cy-card" style="--card-accent:#14b8a6;">
+      <h2>Experiments to Run</h2>
+      <p>Each of these is a real lab you can do with the simulator, then check against a real plate if your class has one. Write your prediction <em>before</em> you try it (notes save automatically in this browser).</p>
+      <ol class="cy-exp">
+        <li><strong>Count the modes.</strong> Square steel plate, 24&nbsp;cm, 0.8&nbsp;mm, wave driver. Use "Mode ▶" to step through the first five resonances. Write down each frequency. Do the patterns get more complicated as the pitch rises? <textarea aria-label="Experiment 1 notes" rows="2"></textarea></li>
+        <li><strong>Thicker plate, higher pitch.</strong> Note the frequency of one mode, then double the thickness. Predict the new frequency first. Then double the plate's width instead. What does the formula say? (Notice the slight extra shift from the fixed 12&nbsp;mm central bolt occupying a smaller fraction of a wider plate.) <textarea aria-label="Experiment 2 notes" rows="2"></textarea></li>
+        <li><strong>Steel vs. aluminium vs. glass.</strong> Aluminium is about a third as stiff as steel, and about a third as heavy. Predict whether its modes will be higher, lower or the same, then test it. Try acrylic too. <textarea aria-label="Experiment 3 notes" rows="2"></textarea></li>
+        <li><strong>Turn it up.</strong> Find a strong resonance with sand, then raise the driver amplitude in steps. Turn on the Γ &lt; 1 overlay. What happens to the width of the sand lines, and why? <textarea aria-label="Experiment 4 notes" rows="2"></textarea></li>
+        <li><strong>The forbidden modes.</strong> With the wave driver, look at the response curve. Switch to the bow. Which new peaks appear? Move the bow along the edge until one of them vanishes: what is special about that spot? <textarea aria-label="Experiment 5 notes" rows="2"></textarea></li>
+        <li><strong>Faraday's vacuum.</strong> Choose fine powder and drive a strong mode. Where does it gather? Now switch to Vacuum and re-sprinkle. Explain the difference in one sentence. <textarea aria-label="Experiment 6 notes" rows="2"></textarea></li>
+        <li><strong>Q and the ring-down.</strong> At a resonance, press "Stop drive" and time how long the displacement takes to fall to about a third. Repeat with Q halved. Compare with Q/(πf). <textarea aria-label="Experiment 7 notes" rows="2"></textarea></li>
+      </ol>
+    </section>
+
+    <section class="cy-card" style="--card-accent:#34c759;">
+      <h2>Real-World Applications</h2>
+      <div class="cy-apps">
+        <div class="cy-app"><div class="cy-app-icon">🎻</div><strong>Instrument Making</strong><small>Luthiers sand and carve violin and guitar soundboards while checking their Chladni figures, tuning the plate's modes to match a target sound before final assembly.</small></div>
+        <div class="cy-app"><div class="cy-app-icon">🔊</div><strong>Loudspeaker Design</strong><small>Engineers use the same figures to find unwanted "breakup modes" in speaker cones — resonances that distort sound — and reshape the cone to push them out of the audible range.</small></div>
+        <div class="cy-app"><div class="cy-app-icon">🧲</div><strong>Acoustic Levitation</strong><small>Ultrasonic standing waves create stable nodes in mid-air strong enough to trap and hold small droplets or particles — used in contactless materials handling and microgravity research.</small></div>
+        <div class="cy-app"><div class="cy-app-icon">🌍</div><strong>Seismology</strong><small>After a huge earthquake, the entire Earth rings like a bell in its own normal modes for days — the same node/antinode mathematics, just planet-sized and far too low-pitched to hear.</small></div>
+        <div class="cy-app"><div class="cy-app-icon">🥣</div><strong>Singing Bowls</strong><small>A struck or rubbed metal bowl vibrates in circular Chladni modes; water or rice placed inside dances along the very node/antinode pattern this simulator computes for circular plates.</small></div>
+        <div class="cy-app"><div class="cy-app-icon">🔬</div><strong>Bioacoustics Research</strong><small>Researchers use cymatic imaging (e.g. the CymaScope) to visualize recorded animal sounds, such as dolphin vocalizations, as an exploratory tool for studying whether they carry structured patterns.</small></div>
+      </div>
+    </section>
+
+    <section class="cy-card" style="--card-accent:#5856d6;">
+      <h2>Go Deeper: Simulating Waves with Machine Learning</h2>
+      <p>This simulator solves the plate equation directly, with numerical methods developed in the 1900s. A newer approach in physics research trains machine learning models to predict how waves scatter and propagate, using huge libraries of real simulation data instead of hand-written equations. <a href="https://polymathic-ai.org/the_well/" target="_blank" rel="noopener noreferrer">The Well</a> is a free, 15TB collection of physics simulation datasets — including acoustic scattering off obstacles and maze-like geometries — released by Polymathic AI for exactly this kind of research.</p>
+    </section>
+
+    <section class="cy-card" style="--card-accent:#ff9500;">
+      <h2>Try It At Home (Or In Class)</h2>
+      <p>The simulator follows real physics, but nothing beats watching it happen. A plastic-wrap drum on a speaker is a stretched <em>membrane</em>, not a stiff plate, so its frequencies follow a different rule; the sand mechanism is the same. If your class has a wave driver and a metal Chladni plate, check the simulator's predictions against it.</p>
+      <ol class="cy-home-steps">
+        <li>Stretch plastic wrap tightly over a large bowl, or use a thin metal baking sheet, and place it flat on top of a speaker or subwoofer (a phone speaker works for small-scale tests).</li>
+        <li>Open a free tone-generator app or website and start around 40–60 Hz.</li>
+        <li>Sprinkle a thin, even layer of table salt or fine sand on the surface.</li>
+        <li>Slowly sweep the frequency upward. Patterns will snap into focus at specific frequencies and dissolve into chaos in between: those focused moments are the resonant modes. Turn the volume up on one and the sand lines get thinner, exactly as Γ predicts.</li>
+        <li>Swap materials between sweeps and compare what each one reveals.</li>
+      </ol>
+      <table class="cy-home-table">
+        <thead>
+          <tr><th scope="col">Material</th><th scope="col">What you'll see</th><th scope="col">Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Table salt / fine sand</td><td>Crisp, thin nodal lines</td><td>Best all-around choice — classic Chladni figures</td></tr>
+          <tr><td>Flour</td><td>Similar lines, softer edges</td><td>Fluffier, easily disturbed by air currents</td></tr>
+          <tr><td>Thin water film</td><td>Shimmering ripples over the whole surface</td><td>Keep the film shallow and away from electronics</td></tr>
+          <tr><td>Cornstarch + water (oobleck)</td><td>Chaotic jumping fingers/spikes</td><td>The viral "oobleck on a speaker" effect — non-Newtonian jamming, not a clean mode shape</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="cy-card" style="--card-accent:#007aff;">
+      <h2>Practice Problems</h2>
+      <div class="cy-practice">
+        <div class="cy-problem">
+          <p><span class="diff-easy">Easy</span>1. A standing wave has adjacent nodes spaced 0.25 m apart. Nodes on a standing wave are spaced λ/2 apart — what is the wavelength λ (in m)?</p>
+          <div class="cy-problem-row">
+            <input type="number" class="cy-ans-input" id="cyans-1" step="0.01" placeholder="m" aria-label="Problem 1 answer in meters" />
+            <button class="cy-check-btn" type="button" data-cy-problem="1" data-cy-ans="0.5" data-cy-tol="0.02">Check</button>
+            <span class="cy-feedback" id="cyfb-1" aria-live="polite"></span>
           </div>
-          <div class="cy-field-row">
-            <label for="cy-material">Material</label>
-            <select id="cy-material" class="cy-select"></select>
-          </div>
-          <div class="cy-field-row">
-            <label for="cy-size">Size</label>
-            <select id="cy-size" class="cy-select">
-              <option value="0.15">15 cm</option><option value="0.2">20 cm</option><option value="0.24" selected>24 cm</option><option value="0.3">30 cm</option><option value="0.4">40 cm</option>
+          <div class="cy-fb-hint" id="cyhint-1">Hint: λ = 2 × 0.25 = 0.5 m</div>
+        </div>
+
+        <div class="cy-problem">
+          <p><span class="diff-easy">Easy</span>2. On a sand-covered Chladni plate, the grains collect where the plate's vertical displacement is…</p>
+          <div class="cy-problem-row">
+            <select class="cy-ans-input" id="cyans-2" style="width:160px;" aria-label="Problem 2 answer">
+              <option value="">Choose…</option>
+              <option value="zero">Zero (a node)</option>
+              <option value="max">Maximum (an antinode)</option>
+              <option value="edges">Only at the plate's edges</option>
             </select>
+            <button class="cy-check-btn" type="button" data-cy-problem="2" data-cy-text="zero">Check</button>
+            <span class="cy-feedback" id="cyfb-2" aria-live="polite"></span>
           </div>
-          <div class="cy-slider-block">
-            <label for="cy-thick-slider">Thickness <span id="cy-thick-val">0.80 mm</span></label>
-            <input type="range" id="cy-thick-slider" min="30" max="400" value="80" style="width:100%;" />
-          </div>
-          <div class="cy-slider-block">
-            <label for="cy-q-slider">Damping: Q factor <span id="cy-q-val">500</span></label>
-            <input type="range" id="cy-q-slider" min="0" max="1000" value="500" style="width:100%;" />
-          </div>
-          <p class="cy-freq-note" id="cy-plate-note"></p>
-
-          <span class="ll-label">On the Plate</span>
-          <div class="cy-btn-row">
-            <button class="cy-opt-btn active" id="cy-mat-sand" type="button" aria-pressed="true">🏜️ Sand</button>
-            <button class="cy-opt-btn" id="cy-mat-powder" type="button" aria-pressed="false">✨ Powder</button>
-            <button class="cy-opt-btn" id="cy-mat-water" type="button" aria-pressed="false">💧 Water</button>
-            <button class="cy-opt-btn" id="cy-mat-slime" type="button" aria-pressed="false">🧪 Oobleck</button>
-          </div>
-          <div class="cy-btn-row">
-            <button class="cy-opt-btn active" id="cy-air-on" type="button" aria-pressed="true">Air</button>
-            <button class="cy-opt-btn" id="cy-air-off" type="button" aria-pressed="false">Vacuum</button>
-            <button class="cy-opt-btn active" id="cy-speed-1" type="button" aria-pressed="true">1× time</button>
-            <button class="cy-opt-btn" id="cy-speed-4" type="button" aria-pressed="false">4× time</button>
-          </div>
-          <button class="cy-resprinkle" id="cy-resprinkle-btn" type="button">🔄 Re-sprinkle</button>
+          <div class="cy-fb-hint" id="cyhint-2">Hint: material is thrown off the moving parts and collects where it's undisturbed.</div>
         </div>
 
-        <div class="ll-pane" id="cy-pane-modes">
-          <p class="cy-freq-note" id="cy-modes-note" style="margin-top:0;"></p>
-          <div class="cy-mode-list" id="cy-mode-list"></div>
+        <div class="cy-problem">
+          <p><span class="diff-mid">Medium</span>3. Which material would you expect to reveal the <em>full</em> standing-wave height field — both crests and troughs — rather than only the nodal lines?</p>
+          <div class="cy-problem-row">
+            <select class="cy-ans-input" id="cyans-3" style="width:170px;" aria-label="Problem 3 answer">
+              <option value="">Choose…</option>
+              <option value="sand">Dry sand</option>
+              <option value="water">A thin water film</option>
+              <option value="slime">Non-Newtonian slime</option>
+            </select>
+            <button class="cy-check-btn" type="button" data-cy-problem="3" data-cy-text="water">Check</button>
+            <span class="cy-feedback" id="cyfb-3" aria-live="polite"></span>
+          </div>
+          <div class="cy-fb-hint" id="cyhint-3">Hint: a thin liquid film can't "settle" — it just follows the surface it's sitting on.</div>
         </div>
 
-        <div class="ll-pane" id="cy-pane-guide">
-          <div class="ll-info"><strong>Node</strong>A place on the plate that stays (nearly) still. Sand collects in the quiet band around nodal lines.</div>
-          <div class="ll-info"><strong>Antinode</strong>A place that swings through the largest displacement: the loudest, most energetic part of the pattern.</div>
-          <div class="ll-info"><strong>Γ (gamma)</strong>Peak plate acceleration divided by g, Γ = ω²A/g. A resting grain can only leave the plate where Γ &gt; 1.</div>
-          <div class="ll-info"><strong>Resonance</strong>Driving at a natural frequency, so every push adds to the wave already there. The plate's response grows about Q times bigger than off resonance.</div>
-          <div class="ll-info"><strong>Q factor</strong>How sharp a resonance is: the peak is f/Q wide, and the plate takes about Q/(πf) seconds to ring up or die away. Metal plates with sand on them are roughly 50–500.</div>
-          <div class="ll-info"><strong>Eigenmode</strong>A shape the plate can vibrate in all by itself, at one exact frequency set by its geometry, material and mounting.</div>
-          <div class="ll-info"><strong>Bending wave</strong>The kind of wave a plate carries. It's dispersive: speed grows as √f, so wavelength shrinks only as 1/√f.</div>
-          <div class="ll-info"><strong>Selection rule</strong>A drive can only feed modes it overlaps with. A centred driver can't ring a mode whose up-moving and down-moving halves cancel.</div>
-          <div class="ll-info"><strong>Chladni's law</strong>Chladni's 1787 rule of thumb for circular plates: f ∝ (n + 2s)², with n nodal diameters and s nodal circles. Compare it with the Modes tab: it's close for big patterns, not exact.</div>
+        <div class="cy-problem">
+          <p><span class="diff-mid">Medium</span>4. A 1.0&nbsp;mm steel plate has a mode at 440&nbsp;Hz. The plate is replaced by an identical one 1.5&nbsp;mm thick. Using f ∝ h, where does that mode move (in Hz)?</p>
+          <div class="cy-problem-row">
+            <input type="number" class="cy-ans-input" id="cyans-4" step="1" placeholder="Hz" aria-label="Problem 4 answer in Hz" />
+            <button class="cy-check-btn" type="button" data-cy-problem="4" data-cy-ans="660" data-cy-tol="3">Check</button>
+            <span class="cy-feedback" id="cyfb-4" aria-live="polite"></span>
+          </div>
+          <div class="cy-fb-hint" id="cyhint-4">Hint: frequency is proportional to thickness, so 440 × 1.5 = 660 Hz.</div>
         </div>
 
+        <div class="cy-problem">
+          <p><span class="diff-hard">Challenge</span>5. At a 500&nbsp;Hz resonance the antinodes move ±20&nbsp;µm. What is Γ = ω²A/g there (use g = 9.81&nbsp;m/s² and ω = 2πf)? Will sand hop?</p>
+          <div class="cy-problem-row">
+            <input type="number" class="cy-ans-input" id="cyans-5" step="0.1" placeholder="Γ" aria-label="Problem 5 answer in multiples of g" />
+            <button class="cy-check-btn" type="button" data-cy-problem="5" data-cy-ans="20.1" data-cy-tol="1">Check</button>
+            <span class="cy-feedback" id="cyfb-5" aria-live="polite"></span>
+          </div>
+          <div class="cy-fb-hint" id="cyhint-5">Hint: ω = 2π × 500 ≈ 3142 rad/s, so ω²A = 9.87×10⁶ × 20×10⁻⁶ ≈ 197 m/s², and 197 / 9.81 ≈ 20. Far above 1: the sand leaps.</div>
+        </div>
       </div>
-    </aside>
+    </section>
 
-    <button class="ll-open-btn" aria-label="Open panel">
-      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
-    </button>
-  </div>
-</div>
+    <nav class="cy-footer-nav" aria-label="Audio engineering lesson sequence">
+      <a href="../technical-elements.html">← Technical Elements Curriculum Hub</a>
+      <a href="live-audio-signal-chain.html">Next: 1. Live Audio Signal Chain →</a>
+    </nav>
 
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
-<script src="../../../assets/js/creation-app.js"></script>
-<script src="../../../assets/js/sim-kit.js"></script>
-<script type="module" src="../../../assets/js/cymatics/cymatics-lab.mjs"></script>
-<script>
-  /* practice-problem checkers */
-  window.cyCheck = function (n, ans, tol) {
-    var val = parseFloat(document.getElementById('cyans-' + n).value);
-    var fb = document.getElementById('cyfb-' + n), hint = document.getElementById('cyhint-' + n);
-    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'cy-feedback err'; return; }
-    if (Math.abs(val - ans) <= tol) { fb.textContent = '✓ Correct!'; fb.className = 'cy-feedback ok'; }
-    else { fb.textContent = '✗ Try again.'; fb.className = 'cy-feedback err'; hint.style.display = 'block'; }
-  };
-  window.cyCheckText = function (n, ans) {
-    var el = document.getElementById('cyans-' + n);
-    var fb = document.getElementById('cyfb-' + n), hint = document.getElementById('cyhint-' + n);
-    if (el.value === ans) { fb.textContent = '✓ Correct!'; fb.className = 'cy-feedback ok'; }
-    else { fb.textContent = '✗ Try again.'; fb.className = 'cy-feedback err'; hint.style.display = 'block'; }
-  };
-</script>
+    <footer class="site-footer">
+      <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+    </footer>
+  </main>
 
-<script src="../../../assets/js/classroom-animations.js"></script>
-  <script src="../../../assets/js/lesson-layout.js"></script>
-<script src="../../../assets/js/photo-lightbox.js"></script>
-<script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/creation-app.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script type="module" src="../../../assets/js/cymatics/cymatics-lab.mjs"></script>
+  <script src="../../../assets/js/lessons/cymatics-quiz.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
   <script src="../../../assets/js/music-family.js"></script>
 </body>
 </html>
