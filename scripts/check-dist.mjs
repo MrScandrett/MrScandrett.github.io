@@ -14,9 +14,11 @@ const FORBIDDEN = [
 ];
 // The November 2026 public bundle is 500.3 MiB after adding the complete
 // Beethoven, Chopin and Mozart scores and the VSCO string-section and timpani
-// samples. Keep roughly 12 MiB of headroom
-// for lesson updates while still catching unexpected growth.
-const MAX_BYTES = 512 * 1024 * 1024;
+// samples. By 24 Nov 2026 ordinary lesson photos (all under 1 MiB each) had
+// taken it to 516.3 MiB, so the budget moved from 512 to 544 MiB: roughly
+// 28 MiB of headroom for lesson updates while still catching unexpected growth
+// (GitHub Pages itself allows 1 GB).
+const MAX_BYTES = 544 * 1024 * 1024;
 // A single oversized thumbnail (a full-resolution photo dropped in instead of
 // a resized one) can silently eat most of the MAX_BYTES margin on its own —
 // see vla-telescope.jpg, once 9.1 MiB. Cap individual thumbnails well above
