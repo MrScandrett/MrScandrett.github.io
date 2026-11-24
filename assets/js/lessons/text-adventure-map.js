@@ -312,17 +312,19 @@
       }));
 
       var badges = [];
-      if (isActive) badges.push(['YOU', '#059669']);
+      if (isActive) badges.push(['YOU', '#047857']);
       else if (isStart) badges.push(['START', '#0f766e']);
-      if (isWin) badges.push(['WIN', '#d97706']);
+      if (isWin) badges.push(['WIN', '#b45309']);
       if (!isReachable) badges.push(['ORPHAN', '#dc2626']);
       else if (isDark) badges.push(['DARK', '#475569']);
 
       var bx = x + 8;
       badges.slice(0, 2).forEach(function (b) {
         var bw = b[0].length * 6.5 + 10;
-        g.appendChild(el('rect', { x: bx, y: y + 6, width: bw, height: 14, rx: 7, fill: b[1] }));
-        g.appendChild(el('text', { x: bx + bw / 2, y: y + 16, 'text-anchor': 'middle', 'font-family': 'system-ui, sans-serif', 'font-size': 8.5, 'font-weight': 700, fill: '#fff' }, b[0]));
+        var badge = el('g', { 'data-contrast-guard-skip': '', style: 'background-color:' + b[1] });
+        badge.appendChild(el('rect', { x: bx, y: y + 6, width: bw, height: 14, rx: 7, fill: b[1] }));
+        badge.appendChild(el('text', { x: bx + bw / 2, y: y + 16, 'text-anchor': 'middle', 'font-family': 'system-ui, sans-serif', 'font-size': 8.5, 'font-weight': 700, fill: '#fff', style: 'fill:#fff;color:#fff' }, b[0]));
+        g.appendChild(badge);
         bx += bw + 4;
       });
 

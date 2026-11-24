@@ -326,11 +326,19 @@ function ptrDrawShadowSvg(hProj, dist, hActor, shadowZone, actorX) {
     x: xActor - 6, y: yActorHead + 13, width: 12, height: Math.max(10, yDeck - (yActorHead + 13)),
     rx: 4, fill: actorColor
   }));
-  items.push(ptrSvgEl('text', {
+  // The distance label gets its own pill in the actor's colour: the body is narrower than the text.
+  var actorLabel = actorX.toFixed(1) + 'ft';
+  var labelW = actorLabel.length * 5.6 + 6;
+  var actorTag = ptrSvgEl('g', { 'data-contrast-guard-skip': '', style: 'background-color:' + actorColor });
+  actorTag.appendChild(ptrSvgEl('rect', {
+    x: xActor - labelW / 2, y: yDeck - 13, width: labelW, height: 12, rx: 3, fill: actorColor
+  }));
+  actorTag.appendChild(ptrSvgEl('text', {
     x: xActor, y: yDeck - 4, 'text-anchor': 'middle',
     'font-family': 'ui-monospace, monospace', 'font-size': 9, 'font-weight': 800,
-    fill: '#0f172a'
-  }, actorX.toFixed(1) + 'ft'));
+    fill: '#0f172a', style: 'fill:#0f172a;color:#0f172a'
+  }, actorLabel));
+  items.push(actorTag);
 
   svg.replaceChildren.apply(svg, items);
 }

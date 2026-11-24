@@ -140,16 +140,20 @@
         if (label.length > 10) label = label.slice(0, 9) + '…';
         var x = colX[s];
         var y = rowY[pos];
+        var cellFill = isSel ? COLORS[wNum - 1] : inCur ? '#ffffff' : '#f8f5ec';
+        var ink = isSel ? '#ffffff' : '#29251f';
+        // The cell's own colour is the text's backdrop; say so for the contrast guard and pa11y.
+        var cell = svgEl('g', { 'data-contrast-guard-skip': '', style: 'background-color:' + cellFill }, svg);
         svgEl('rect', {
           x: x - 41,
           y: y - 11,
           width: 82,
           height: 22,
           rx: 6,
-          fill: isSel ? COLORS[wNum - 1] : inCur ? '#ffffff' : '#f8f5ec',
+          fill: cellFill,
           stroke: isSel ? COLORS[wNum - 1] : inCur ? '#b99a5b' : '#d6c3aa',
           'stroke-width': isSel ? 1.8 : 1
-        }, svg);
+        }, cell);
         svgEl('text', {
           x: x,
           y: y + 4,
@@ -157,8 +161,9 @@
           'font-family': 'Georgia, serif',
           'font-size': 11,
           'font-weight': isSel || inCur ? 700 : 400,
-          fill: isSel ? '#ffffff' : '#29251f'
-        }, svg, label);
+          fill: ink,
+          style: 'fill:' + ink + ';color:' + ink
+        }, cell, label);
       }
     }
 
