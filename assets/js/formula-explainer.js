@@ -120,15 +120,19 @@
     neutral: '#60a5fa'
   };
 
-  var SUP_MAP = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', 'ⁿ': 'n' };
-  var SUB_MAP = { '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4', '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9', 'ₛ': 's', 'ᵢ': 'i', 'ₒ': 'o', 'ᵣ': 'r', 'ₜ': 't', 'ₓ': 'x', 'ᵧ': 'y', 'ₙ': 'n', 'ₐ': 'a', 'ₑ': 'e', 'ₖ': 'k', 'ₘ': 'm', 'ₚ': 'p', 'ₕ': 'h', 'ₗ': 'l' };
+  var SUP_MAP = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', 'ⁿ': 'n', 'ᵗ': 't', 'ˢ': 's', 'ᵖ': 'p', 'ᵡ': 'x', 'ᵃ': 'a', 'ᵇ': 'b', 'ᶜ': 'c', 'ᵐ': 'm', 'ⁱ': 'i', '⁻': '−' };
+  var SUB_MAP = { '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4', '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9', 'ₛ': 's', 'ᵢ': 'i', 'ₒ': 'o', 'ᵣ': 'r', 'ₜ': 't', 'ₓ': 'x', 'ᵧ': 'y', 'ₙ': 'n', 'ₐ': 'a', 'ₑ': 'e', 'ₖ': 'k', 'ₘ': 'm', 'ₚ': 'p', 'ₕ': 'h', 'ₗ': 'l', 'ⱼ': 'j', 'ᵤ': 'u', 'ᵥ': 'v' };
 
   function normalizeSymbolKey(raw) {
     if (!raw) return '';
-    var s = String(raw).trim();
-    s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ]/g, function (c) { return '^' + (SUP_MAP[c] || c); });
-    s = s.replace(/\^\^/g, '^');
-    s = s.replace(/[₀₁₂₃₄₅₆₇₈₉ₛᵢₒᵣₜₓᵧₙₐₑₖₘₚₕₗ]/g, function (c) { return '_' + (SUB_MAP[c] || c); });
+    var s = plainItalics(String(raw).trim());
+    s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹ⁿᵗˢᵖᵡᵃᵇᶜᵐⁱ⁻]+/g, function (run) {
+      return '^' + run.split('').map(function (c) { return SUP_MAP[c] || c; }).join('');
+    });
+    s = s.replace(/\^\^+/g, '^');
+    s = s.replace(/[₀₁₂₃₄₅₆₇₈₉ₛᵢₒᵣₜₓᵧₙₐₑₖₘₚₕₗⱼᵤᵥ]+/g, function (run) {
+      return '_' + run.split('').map(function (c) { return SUB_MAP[c] || c; }).join('');
+    });
     s = s.replace(/__+/g, '_');
     return s;
   }
@@ -154,10 +158,13 @@
   // "v_t" and "ρₛ" both become real subscripts, so students never see a raw underscore.
   function mathHtml(str) {
     var s = escapeHtml(str == null ? '' : str);
-    s = s.replace(/[₀₁₂₃₄₅₆₇₈₉ₛᵢₒᵣₜₓᵧₙₐₑₖₘₚₕₗ]+/g, function (run) {
+    s = s.replace(/([A-Za-zα-ωΑ-Ωℓ][\u0302\u0304\u0305\u0307]?)_([A-Za-z0-9α-ωΑ-Ω₀₁₂₃₄₅₆₇₈₉ₛᵢₒᵣₜₓᵧₙₐₑₖₘₚₕₗⱼᵤᵥ\uD835\uDC34-\uDC67→∞′'−\-]+(?:_[A-Za-z0-9]+)*)/g, function (_, base, sub) {
+      var cleanSub = sub.replace(/[₀₁₂₃₄₅₆₇₈₉ₛᵢₒᵣₜₓᵧₙₐₑₖₘₚₕₗⱼᵤᵥ]/g, function (c) { return SUB_MAP[c] || c; }).replace(/_/g, '');
+      return base + '<sub>' + cleanSub + '</sub>';
+    });
+    return s.replace(/[₀₁₂₃₄₅₆₇₈₉ₛᵢₒᵣₜₓᵧₙₐₑₖₘₚₕₗⱼᵤᵥ]+/g, function (run) {
       return '<sub>' + run.split('').map(function (c) { return SUB_MAP[c] || c; }).join('') + '</sub>';
     });
-    return s.replace(/([A-Za-zα-ωΑ-Ω])_([A-Za-z0-9]+)/g, '$1<sub>$2</sub>');
   }
 
   var CANVAS_SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
@@ -522,6 +529,8 @@
       tokens: {
         ρ: { symbol: 'ρ', title: 'Density', role: 'Mass of the fluid', colorRole: 'lhs', meaning: 'How much mass is in each cubic metre of the fluid. It plays the part of m in F = ma.', equationRole: 'It multiplies the whole acceleration bracket. A denser fluid is harder to speed up, slow down or turn.', visualType: 'fluid-ns-3d', caption: 'Each parcel of fluid carries momentum in proportion to its density.', whatIf: { param: 'rho', label: 'Change the density ρ', min: 400, max: 2000, step: 20, format: function (v) { return Math.round(v) + ' kg/m³'; }, summary: reLine } },
         '∂v': { symbol: '∂v', title: 'Change in velocity', role: 'Acceleration', colorRole: 'lhs', meaning: 'A small change in the velocity of the fluid at one fixed spot.', equationRole: 'Divided by ∂t, it gives how quickly the flow at that spot is speeding up or slowing down. In a steady flow it is zero.', visualType: 'fluid-ns-3d', caption: 'Watch one spot: is the flow there changing?' },
+        '∂u': { symbol: '∂u', title: 'Change in velocity', role: 'Acceleration', colorRole: 'lhs', meaning: 'A small change in fluid velocity u at one fixed spot, in m/s.', equationRole: 'Divided by ∂t, it gives how quickly flow at that pixel or cell speeds up or slows down.' },
+        u: { symbol: 'u', title: 'Flow velocity', role: 'Speed and direction of the flow', colorRole: 'geo', meaning: 'Fluid speed and direction at each point in the grid, in m/s.', equationRole: 'Carries itself forward in u·∇u to create swirls and eddies.' },
         '∂t': { symbol: '∂t', title: 'Change in time', role: 'Acceleration', colorRole: 'lhs', meaning: 'A tiny step forward in time.', equationRole: 'It divides the change in velocity, so ∂v/∂t is a rate: velocity change per second at one spot.', visualType: 'fluid-ns-3d', caption: 'Watch one spot: is the flow there changing?' },
         v: { symbol: 'v', title: 'Velocity', role: 'Speed and direction of the flow', colorRole: 'geo', meaning: 'How fast the fluid is moving, and in which direction, at every point. It is measured in metres per second.', equationRole: 'It appears in nearly every term. In v · ∇v it multiplies its own rate of change, which is what makes the equation so hard to solve and makes turbulence possible.', visualType: 'fluid-ns-3d', caption: 'Slow flow moves in smooth layers. Fast flow breaks into eddies.', whatIf: { param: 'v', label: 'Change the flow speed v', min: 0.1, max: 4.0, step: 0.1, format: function (v) { return v.toFixed(1) + ' m/s'; }, summary: reLine } },
         '∇v': { symbol: '∇v', title: 'Velocity gradient', role: 'How the flow differs from place to place', colorRole: 'geo', meaning: 'How much the velocity differs between neighbouring points.', equationRole: 'With v it makes v · ∇v: the acceleration a parcel feels just by moving to a place where the flow is different, like water speeding up in a narrowing pipe.', visualType: 'fluid-ns-3d', caption: 'The flow changes fastest near the walls and around bends.' },
@@ -647,13 +656,2101 @@
       calc: def.f && vars.length ? { vars: vars, f: def.f, out: def.out, line: def.line, scenes: def.scenes || [] } : null,
       tokens: tokens
     };
-    (def.match || []).forEach(function (m) { PHYSICS_MATCH[m] = def.id; });
+    (def.match || []).forEach(function (m) {
+      PHYSICS_MATCH[m] = def.id;
+      var normM = matchPhysicsKey(m);
+      if (normM) PHYSICS_MATCH[normM] = def.id;
+    });
   }
   function rad(deg) { return deg * Math.PI / 180; }
   var G_NOTE = 'On Earth it is about 9.8 m/s². On the Moon it is 1.6 and on Jupiter about 24.8.';
   var HALF = function (does) { return { t: 'One half', c: 'const', is: 'The fraction ½: multiply by it to cut something in half.', does: does }; };
   var SIN = function (does) { return { t: 'Sine', c: 'op', is: 'A function that turns an angle into a number: 0 at 0°, rising to 1 at 90°.', does: does }; };
   var COS = function (does) { return { t: 'Cosine', c: 'op', is: 'A function that turns an angle into a number: 1 at 0°, falling to 0 at 90°.', does: does }; };
+  var PI_TOKEN = function (does) { return { t: 'Pi', c: 'const', is: 'About 3.14159: the distance around any circle divided by the distance across it. Its digits never end and never repeat.', does: does }; };
+  var ROOT = function (does) { return { t: 'Square root', c: 'op', role: 'Operator', is: 'Finds the number that, multiplied by itself, gives what is inside.', does: does }; };
+
+  physics({
+    id: "sabine", title: "Reverberation time", y: "the decay time", match: ["RT60=0.161V/A"], first: "RT60",
+    tokens: {
+      "RT60": { t: "Reverberation time", c: "lhs", role: "Reverberation time", is: "Time in seconds for sound in the room to fade by 60 dB after the source stops.", does: "Clap in a hall and listen to the tail. A longer decay can make one syllable overlap the next." },
+      "V": { t: "Room volume", c: "drive", role: "Room volume", is: "The enclosed air space in cubic metres. Multiply length, width and height for a rectangular room.", does: "With the same total absorption, doubling the volume doubles the predicted decay time." },
+      "A": { t: "Equivalent absorption area", c: "resist", role: "Equivalent absorption area", is: "Add each surface area times the fraction of sound it absorbs at the frequency being studied.", does: "Ten square metres of panels absorbing half the incident energy contribute five square metres to A. Doubling total A halves the predicted decay time." }
+    }
+  });
+
+  physics({
+    id: "compressor-level", title: "Compression above threshold", match: ["output=threshold+(input−threshold)/ratio"], first: "output",
+    tokens: {
+      "output": { t: "Compressed output level", c: "lhs", role: "Compressed output level", is: "The predicted level in dB after steady compression, before makeup gain.", does: "Use it to predict how loud a sustained vocal peak will leave the compressor." },
+      "input": { t: "Incoming level", c: "neutral", role: "Incoming level", is: "The signal level in dB entering the compressor.", does: "At a 4-to-1 ratio, a sustained input 8 dB above threshold produces an output only 2 dB above threshold." },
+      "threshold": { t: "Threshold level", c: "neutral", role: "Threshold level", is: "The level in dB where this hard-knee compressor starts reducing gain.", does: "Subtract it from the input to isolate the excess. Only the part above this level is compressed." },
+      "ratio": { t: "Compression ratio", c: "neutral", role: "Compression ratio", is: "How many decibels the input must rise above threshold for each decibel of output rise.", does: "At 1-to-1 the level passes through. At 4-to-1, an input 8 dB above threshold receives 6 dB of gain reduction." }
+    }
+  });
+
+  physics({
+    id: "latent-heat", title: "Energy for a phase change", y: "the heat transferred", match: ["Q=mL"], first: "Q",
+    tokens: {
+      "Q": { t: "Heat transferred", c: "lhs", role: "Heat transferred", is: "Energy in joules absorbed or released while a substance changes phase.", does: "A boiler supplies this much heat to turn water already at its boiling point into steam." },
+      "m": { t: "Mass changing phase", c: "drive", role: "Mass changing phase", is: "Kilograms of the substance that actually melt, boil or condense.", does: "Turning twice as much boiling water into steam takes twice as much energy at the same pressure." },
+      "L": { t: "Specific latent heat", c: "neutral", role: "Specific latent heat", is: "Energy per kilogram for this substance and this particular phase change.", does: "Choose the value for vaporization when sizing a boiler. Melting ice uses a different value." }
+    }
+  });
+
+  physics({
+    id: "mesh-euler", title: "Counting a closed mesh", match: ["V−E+F=2"], first: "V",
+    tokens: {
+      "V": { t: "Vertices", c: "neutral", role: "Vertices", is: "Count each distinct corner of the mesh once.", does: "A cube has eight corners, even though three faces meet at each corner." },
+      "E": { t: "Edges", c: "neutral", role: "Edges", is: "Count each shared edge once across the whole surface.", does: "A cube has twelve edges. Splitting one square face diagonally adds one edge and one face, preserving the total." },
+      "F": { t: "Faces", c: "neutral", role: "Faces", is: "Count the polygon patches covering the closed surface.", does: "For a cube, eight vertices minus twelve edges plus six faces gives two. This check applies to a connected closed mesh shaped topologically like a sphere." }
+    }
+  });
+
+  physics({
+    id: "snap-fit-strain", title: "Bending a snap-fit arm", y: "the strain", match: ["ε=1.5ty/L^2"], first: "ε",
+    tokens: {
+      "ε": { t: "Strain at the root", c: "lhs", role: "Strain at the root", is: "The fractional stretch at the fixed end of the clip as its hook clears the lip.", does: "A result of 0.01 means one percent stretch. Compare it with the strain the printed material can tolerate." },
+      "t": { t: "Arm thickness", c: "drive", role: "Arm thickness", is: "The thickness through the bending direction of the flexible arm.", does: "At the same tip deflection, doubling the thickness doubles the predicted surface strain." },
+      "y": { t: "Tip deflection", c: "drive", role: "Tip deflection", is: "How far the hook must move sideways to clear the mating lip.", does: "A deeper catch needs more travel. Doubling the required travel doubles the strain." },
+      "L^2": { t: "Flexible arm length, squared", c: "resist", role: "Flexible arm length, squared", is: "Measure the free length from the fixed root to the hook, then square that length.", does: "Double the free length while keeping thickness and travel fixed. The predicted strain falls to one quarter." }
+    }
+  });
+
+  function orbitRadius(s) {
+    return s.a * (1 - s.e * s.e) / (1 + s.e * Math.cos(rad(s.theta)));
+  }
+
+  physics({
+    id: 'orbit-radius', title: 'Distance along an elliptical orbit',
+    match: ['r=a(1−e^2)/(1+ecos(θ))'], y: 'the orbital distance', first: 'e',
+    init: { a: 1, e: 0.5, theta: 0 }, out: ['r', 'AU'], f: orbitRadius,
+    line: function (s) { return 'At ' + s.theta + '°, the planet is ' + fmtNum(orbitRadius(s)) + ' AU from its star.'; },
+    tokens: {
+      r: { t: 'Planet–star distance', c: 'lhs', is: 'Measure from the star at one focus of the ellipse to the planet at its current position.', does: 'This distance changes as the planet travels. Finding its smallest value tells you how close the planet gets to its star.' },
+      a: { t: 'Semi-major axis', c: 'drive', is: 'Half the longest distance across the orbit. It sets the size of the whole path.', does: 'Keep the shape and angle fixed and double a. Every distance along the orbit doubles, including the closest approach.', s: ['a', 0.1, 10, 0.1, 'AU'] },
+      e: { t: 'Orbital eccentricity', c: 'neutral', role: 'Orbit shape', is: 'A unitless measure of how stretched the orbit is. Zero gives a circle. Values closer to one give a longer, narrower ellipse.', does: 'At a = 1 AU, changing e from 0 to 0.5 brings the closest approach from 1 to 0.5 AU and moves the farthest point out to 1.5 AU.', s: ['e', 0, 0.95, 0.01] },
+      'e^2': { t: 'Eccentricity squared', c: 'neutral', role: 'Orbit shape', is: 'The same eccentricity e multiplied by itself. For e = 0.5, this term is 0.25.', does: 'At 90° the denominator is one, so this term sets the distance directly. An orbit with a = 1 AU and e = 0.5 has r = 0.75 AU there.', s: ['e', 0, 0.95, 0.01] },
+      θ: { t: 'Position angle (true anomaly)', c: 'neutral', role: 'Position along the orbit', is: 'Imagine standing at the star. Measure the angle from the direction of closest approach to the direction of the planet.', does: 'Set the angle to 0° to find the closest distance, then to 180° to find the farthest. The orbit keeps the same size and shape.', s: ['theta', 0, 360, 1, '°'] },
+      cos: COS('At 0° cosine is 1, so the denominator is largest and the planet is closest. At 180° cosine is −1 and the planet is farthest away.')
+    }
+  });
+
+  physics({
+    id: 'kepler-period-ratio', title: 'Kepler’s third law', match: ['T^2/a^3=constant'], first: 'T^2',
+    tokens: {
+      'T^2': { t: 'Orbital period squared', c: 'neutral', role: 'Time for one orbit', is: 'T is the time from one closest approach to the next. Astronomers can also measure it by timing successive crossings in front of a star.', does: 'Square the period before comparing orbits. Around the Sun, a planet with a = 4 AU takes 8 years because 8² equals 4³.' },
+      'a^3': { t: 'Semi-major axis cubed', c: 'neutral', role: 'Size of the orbit', is: 'The semi-major axis a is half the longest diameter of the ellipse.', does: 'Double the orbit size around the same star and a³ grows eightfold. The period grows by the square root of eight, about 2.83 times.' },
+      constant: { t: 'Period-to-size ratio', c: 'const', is: 'Planets whose masses are small compared with their star share this ratio around that star.', does: 'For the Sun the ratio is about 1 in years² per AU³. A more massive star gives a smaller ratio and shorter periods at the same orbit size.' }
+    }
+  });
+
+  /* ---- Site-wide shared & lesson-context catalog entries ---- */
+  physics({
+    id: 'kepler-third-au', title: 'Kepler’s third law in Earth years and AU',
+    match: ['T^2=a^3(T^2/a^3=1)', 'T^2=a^3'], first: 'T^2',
+    tokens: {
+      'T^2': { t: 'Orbital period squared', c: 'neutral', role: 'Orbital period', is: 'T is the time for one complete trip around the Sun, measured in Earth years.', does: 'For Mars, a = 1.52 AU so a³ ≈ 3.51 and T ≈ 1.88 years. Keeping the central star the same, a larger orbit always takes longer.' },
+      'a^3': { t: 'Semi-major axis cubed', c: 'neutral', role: 'Orbit size', is: 'a is the average distance from the Sun (half the ellipse’s longest width), measured in AU.', does: 'Make the orbit 4 times as wide (a = 4 AU) and a³ is 64, so T = √64 = 8 Earth years.' },
+      '1': { t: 'Solar system ratio (1)', c: 'const', is: 'When you measure T in Earth years and a in AU around our Sun, T² ÷ a³ equals 1.', does: 'For planets orbiting a heavier star, this ratio would be smaller than 1.' }
+    }
+  });
+
+  physics({
+    id: 'kepler-third-solar', title: 'Orbital period around the Sun',
+    y: 'the period', first: 'a^3',
+    init: { a: 1.5 }, out: ['T', 'years'],
+    f: function (s) { return Math.sqrt(Math.pow(s.a, 3)); },
+    line: function (s) { return 'T = √(' + fmtNum(s.a) + '³) = ' + fmtNum(Math.sqrt(Math.pow(s.a, 3))) + ' Earth years'; },
+    tokens: {
+      'T^2': { t: 'Orbital period squared', c: 'neutral', role: 'Orbital period', is: 'T is how many Earth years one orbit takes.', does: 'Because T² matches a³, the period grows faster than the distance.' },
+      'a^3': { t: 'Semi-major axis cubed', c: 'drive', role: 'Orbit size', is: 'a is the average distance from the Sun in AU, cubed (a × a × a).', does: 'Double a around the Sun and a³ becomes 8 times bigger, so the orbit period becomes √8 ≈ 2.83 times longer.', s: ['a', 0.4, 30, 0.1, 'AU'], x: 'a' },
+      T: { t: 'Orbital period', c: 'lhs', role: 'Orbital period', is: 'Count how many Earth years the planet takes to complete one full orbit around the Sun.', does: 'At 1 AU (Earth) T is 1 year. At 4 AU, T is √(4³) = 8 years.' },
+      years: { t: 'Unit: Earth years', c: 'const', role: 'Unit of time', is: 'One Earth year is the time Earth takes to orbit the Sun once.', does: 'Measuring T in Earth years and a in AU keeps the Sun’s constant equal to 1.' }
+    }
+  });
+
+  physics({
+    id: 'scale-ratio', title: 'Scale models',
+    match: ['model=real/Nreal=modelN'], first: 'N',
+    tokens: {
+      model: { t: 'Model size', c: 'neutral', role: 'Model dimension', is: 'Measure the feature on the miniature or drawing, usually in millimetres (mm).', does: 'Keeping the real object fixed, a larger scale number N makes the model smaller: at 1:100 a 3000 mm wall shrinks to 30 mm.' },
+      real: { t: 'Real-world size', c: 'neutral', role: 'Full-scale dimension', is: 'Measure the actual building or object in the same unit (convert metres to mm: 1 m = 1000 mm).', does: 'Multiply the model size by N to recover the full-size dimension: 30 mm × 100 = 3000 mm (3 m).' },
+      N: { t: 'Scale denominator', c: 'neutral', role: 'Scale factor (1:N)', is: 'The second number in a 1:N ratio, telling how many real units fit into 1 model unit.', does: 'Switch from 1:50 to 1:100 (double N) for the same real wall and the printed model wall becomes half as big.' }
+    }
+  });
+
+  physics({
+    id: 'scale-min-wall', title: 'Minimum printable real-world wall',
+    y: 'the minimum real wall', first: 'N',
+    init: { N: 100 }, out: ['wall', 'mm'],
+    f: function (s) { return 1.2 * s.N; },
+    line: function (s) { return '1.2 mm × ' + fmtNum(s.N) + ' = ' + fmtNum(1.2 * s.N) + ' mm (' + fmtNum(1.2 * s.N / 1000) + ' m)'; },
+    tokens: {
+      'thinnest real wall that prints': { t: 'Minimum real wall thickness', c: 'lhs', role: 'Printable limit', is: 'The thinnest full-size wall that still prints at least 1.2 mm thick on the 3D printer.', does: 'Any real wall thinner than this would print too fragile or vanish in the slicer.' },
+      '1.2': { t: 'Printer minimum (1.2 mm)', c: 'const', role: 'Nozzle limit', is: 'A 1.2 mm wall is roughly three perimeter passes on a standard 0.4 mm printer nozzle.', does: 'Multiply this print limit by the scale number N to find the smallest real wall that survives scaling.' },
+      mm: { t: 'Unit: millimetres', c: 'const', role: 'Unit of length', is: 'Millimetres (1000 mm = 1 m).', does: 'Keep both the printer wall thickness and N consistent, then divide by 1000 to read in metres.' },
+      N: { t: 'Scale denominator', c: 'drive', role: 'Scale factor (1:N)', is: 'The scale number in 1:N.', does: 'Double N from 1:50 to 1:100 and the thinnest printable real wall doubles from 60 mm to 120 mm.', s: ['N', 10, 500, 10, ''] }
+    }
+  });
+
+  physics({
+    id: 'inches-mm', title: 'Converting inches and millimetres',
+    match: ['mm=inches25.4inches=mm/25.4'], first: 'inches',
+    tokens: {
+      mm: { t: 'Length in millimetres', c: 'neutral', role: 'Metric length', is: 'Measure the part with a metric ruler or calipers in millimetres (mm).', does: 'A 1-inch bolt is 25.4 mm long; a 6-inch ruler is 152.4 mm. Divide mm by 25.4 to get inches.' },
+      inches: { t: 'Length in inches', c: 'neutral', role: 'Imperial length', is: 'Measure the part in inches (in), such as 1/4 in or 0.5 in hardware.', does: 'Multiply inches by 25.4 once at the start so your CAD model and slicer agree. 1/4 in = 6.35 mm.' },
+      '25.4': { t: 'Exact conversion factor', c: 'const', role: 'mm per inch', is: 'By international agreement (1959), 1 inch equals exactly 25.4 millimetres.', does: 'Multiply by 25.4 to convert inches to mm; divide by 25.4 to go back.' }
+    }
+  });
+
+  physics({
+    id: 'pappus-volume', title: 'Volume of a revolved shape (Pappus)',
+    match: ['V=A2πx̄'], y: 'the volume', first: 'x̄',
+    init: { A: 12, xbar: 5 }, out: ['V', 'mm³'],
+    f: function (s) { return s.A * 2 * Math.PI * s.xbar; },
+    line: function (s) { return 'V = ' + fmtNum(s.A) + ' mm² × 2π × ' + fmtNum(s.xbar) + ' mm = ' + fmtNum(s.A * 2 * Math.PI * s.xbar) + ' mm³'; },
+    tokens: {
+      V: { t: 'Revolved volume', c: 'lhs', role: '3D solid volume', is: 'The total volume of the 3D ring or cup formed by spinning the 2D profile one full turn, in mm³.', does: 'A washer with a bigger cross-section or a larger spin radius sweeps out more material.' },
+      A: { t: 'Profile area', c: 'drive', role: '2D cross-section', is: 'Measure the area of the flat 2D sketch before revolving it, in mm².', does: 'Keeping the spin radius fixed, doubling the sketch area doubles the 3D volume.', s: ['A', 1, 100, 1, 'mm²'] },
+      '2': { t: 'Full-turn factor (2)', c: 'const', role: 'Circle factor', is: 'Together with π, 2π gives the full circumference of the circle traced by the center of the shape.', does: 'For a half-turn (180°) revolve, you would use π instead of 2π.' },
+      'π': PI_TOKEN('Multiplying 2π by the radius x̄ turns the radius into the full circular path length.'),
+      'x̄': { t: 'Centroid distance from axis', c: 'drive', role: 'Spin radius', is: 'Measure from the spin axis to the balance point (centroid) of the 2D profile, in mm.', does: 'Move the sketch twice as far from the spin axis with the same area A, and the ring’s path and volume both double.', s: ['xbar', 1, 30, 0.5, 'mm'] }
+    }
+  });
+
+  physics({
+    id: 'law-of-reflection', title: 'Law of reflection',
+    match: ['θ_i=θ_r'], first: 'θ_i',
+    tokens: {
+      'θ_i': { t: 'Angle of incidence', c: 'neutral', role: 'Incoming ray angle', is: 'Measure the angle in degrees between the incoming light ray and the normal (the line perpendicular to the mirror).', does: 'Shine a laser at 30° from the normal and the reflected beam leaves at 30° on the other side.' },
+      'θ_r': { t: 'Angle of reflection', c: 'neutral', role: 'Outgoing ray angle', is: 'Measure the angle in degrees between the bounced ray and the normal.', does: 'It always matches θ_i on a smooth flat mirror. Tilting the mirror by 10° shifts the normal by 10° and turns the reflected ray by 20°.' }
+    }
+  });
+
+  physics({
+    id: 'thin-lens', title: 'Thin lens equation',
+    match: ['1/f=1/d_o+1/d_i'], y: 'the focal length', first: 'd_o',
+    init: { do: 30, di: 60 }, out: ['f', 'cm'],
+    f: function (s) { return (s.do * s.di) / (s.do + s.di); },
+    line: function (s) {
+      var fVal = (s.do * s.di) / (s.do + s.di);
+      return '1/' + fmtNum(s.do) + ' + 1/' + fmtNum(s.di) + ' = 1/' + fmtNum(fVal) + ' → f = ' + fmtNum(fVal) + ' cm';
+    },
+    tokens: {
+      '1': { t: 'Reciprocal (1 over distance)', c: 'const', role: 'Lens power', is: 'Dividing 1 by a distance turns metres into diopters (how strongly a lens bends light).', does: 'Lens powers add directly: object power + image power = lens power.' },
+      f: { t: 'Focal length', c: 'lhs', role: 'Lens strength', is: 'Measure from the lens center to where parallel rays focus, in cm or m.', does: 'A shorter focal length bends light more sharply. For d_o = 30 cm and d_i = 60 cm, f = 20 cm.' },
+      'd_o': { t: 'Object distance', c: 'drive', role: 'Object position', is: 'Measure from the object (like a candle) to the lens center.', does: 'Move the object closer to the focal point (shrink d_o) and the focused image moves farther away (d_i grows).', s: ['do', 5, 120, 1, 'cm'] },
+      'd_i': { t: 'Image distance', c: 'drive', role: 'Screen position', is: 'Measure from the lens center to where a sharp image forms on a screen.', does: 'For an object very far away (1/d_o ≈ 0), the image forms right at d_i ≈ f.', s: ['di', 5, 120, 1, 'cm'] }
+    }
+  });
+
+  physics({
+    id: 'arrhenius', title: 'Arrhenius reaction rate equation',
+    match: ['k=Ae^−Ea/RT'], first: 'e^−Ea/RT',
+    tokens: {
+      k: { t: 'Rate constant', c: 'lhs', role: 'Reaction speed factor', is: 'A number (often in s⁻¹ or M⁻¹·s⁻¹) that sets how fast the reaction runs at a given temperature.', does: 'Raising temperature T or lowering activation energy Ea makes k climb steeply.' },
+      A: { t: 'Pre-exponential factor', c: 'drive', role: 'Collision frequency', is: 'Counts how often reactant molecules collide in the right orientation.', does: 'Double A at fixed temperature and activation energy, and the rate constant k doubles.' },
+      'e^−Ea/RT': { t: 'Fraction with enough energy', c: 'drive', role: 'Success fraction', is: 'The fraction of collisions with at least the activation energy Ea. R is 8.314 J/(mol·K) and T is temperature in kelvin.', does: 'A catalyst lowers Ea, making the negative exponent smaller and boosting this fraction sharply even without heating.' }
+    }
+  });
+
+  physics({
+    id: 'diff-drive', title: 'Differential-drive robot motion',
+    match: ['v=(v_R+v_L)/2ω=(v_R−v_L)/L'], first: 'v_R',
+    tokens: {
+      v: { t: 'Forward speed', c: 'neutral', role: 'Robot forward speed', is: 'How fast the center of the robot moves straight ahead, in m/s.', does: 'It is the average of the two wheel speeds. If both wheels turn at 0.4 m/s, v = 0.4 m/s and ω = 0.' },
+      'v_R': { t: 'Right wheel speed', c: 'neutral', role: 'Right wheel', is: 'How fast the right wheel rolls along the floor, in m/s.', does: 'Make the right wheel faster than the left and the robot curves left (positive ω). Spin them equally in opposite directions to turn in place.' },
+      'v_L': { t: 'Left wheel speed', c: 'neutral', role: 'Left wheel', is: 'How fast the left wheel rolls along the floor, in m/s.', does: 'Make the left wheel faster than the right and the robot curves right.' },
+      'ω': { t: 'Turning rate (omega)', c: 'neutral', role: 'Spin rate', is: 'How fast the robot rotates, in radians per second.', does: 'It depends on the difference between the two wheels divided by the wheelbase L.' },
+      L: { t: 'Wheelbase width', c: 'neutral', role: 'Axle spacing', is: 'Measure the distance between the left and right wheels, in metres.', does: 'For the same wheel speed difference, a wider wheelbase L gives a slower, gentler turn.' }
+    }
+  });
+
+  physics({
+    id: 'robot-ik-elbow', title: 'Two-link robot elbow angle (Law of cosines)',
+    match: ['cosθ_2=(x^2+y^2−L_1^2−L_2^2)/(2L_1L_2)'], first: 'θ_2',
+    tokens: {
+      cos: COS('Once you know cos θ_2, take arccos to get the elbow angle θ_2 (positive for elbow-down, negative for elbow-up).'),
+      'θ_2': { t: 'Elbow angle', c: 'lhs', role: 'Joint angle', is: 'Measure how sharply the second arm link bends relative to the first link.', does: 'If the right side is greater than 1 or less than −1, the target (x, y) is out of reach.' },
+      'x^2': { t: 'Target x squared', c: 'neutral', role: 'Target reach', is: 'Horizontal distance from the shoulder to the hand, squared.', does: 'Together x² + y² equals the squared straight-line reach distance from shoulder to hand.' },
+      'y^2': { t: 'Target y squared', c: 'neutral', role: 'Target reach', is: 'Vertical distance from the shoulder to the hand, squared.', does: 'Moving the target farther away raises x² + y², straightening the elbow toward θ_2 = 0.' },
+      'L_1^2': { t: 'Upper arm length squared', c: 'neutral', role: 'Link 1 length', is: 'Length of the first arm segment from shoulder to elbow, squared.', does: 'Fixed by the robot’s hardware; determines the max reach L_1 + L_2.' },
+      'L_2^2': { t: 'Forearm length squared', c: 'neutral', role: 'Link 2 length', is: 'Length of the second arm segment from elbow to hand, squared.', does: 'Fixed by the robot’s hardware; minimum reach is |L_1 − L_2|.' },
+      'L_1': { t: 'Upper arm length', c: 'neutral', role: 'Link 1 length', is: 'Measure from the shoulder joint to the elbow joint.', does: 'Appears in 2 L_1 L_2 on the bottom to normalize the triangle ratio.' },
+      'L_2': { t: 'Forearm length', c: 'neutral', role: 'Link 2 length', is: 'Measure from the elbow joint to the wrist/hand.', does: 'Shorter links require sharper elbow bends to reach the same point.' }
+    }
+  });
+
+  physics({
+    id: 'robot-ik-shoulder', title: 'Two-link robot shoulder angle',
+    match: ['θ_1=atan2(y,x)−atan2(L_2sinθ_2,L_1+L_2cosθ_2)'], first: 'θ_1',
+    tokens: {
+      'θ_1': { t: 'Shoulder angle', c: 'lhs', role: 'Base joint angle', is: 'Measure the angle of the first arm link from the horizontal x-axis.', does: 'Start with the direct angle to the target, then subtract the triangle offset created by the bent elbow.' },
+      atan2: { t: 'Two-argument arctangent', c: 'op', role: 'Angle finder', is: 'Finds the exact angle in all four quadrants from vertical and horizontal components.', does: 'Unlike plain tan⁻¹, atan2(y, x) keeps track of which side of the robot the target is on.' },
+      y: { t: 'Target height (y)', c: 'neutral', role: 'Target coordinate', is: 'Vertical distance from the shoulder pivot to the target.', does: 'Raising y aims the shoulder higher.' },
+      x: { t: 'Target reach (x)', c: 'neutral', role: 'Target coordinate', is: 'Horizontal distance from the shoulder pivot to the target.', does: 'Positive x is in front of the robot; negative x is behind.' },
+      'L_2': { t: 'Forearm length', c: 'neutral', role: 'Link 2 length', is: 'Length of the second link from elbow to hand.', does: 'If the forearm were zero length, the offset would vanish and the shoulder would point straight at (x, y).' },
+      sin: SIN('Finds the sideways offset of the forearm perpendicular to the upper arm.'),
+      'θ_2': { t: 'Elbow angle', c: 'neutral', role: 'Elbow bend', is: 'The bend angle at the elbow found from the law of cosines.', does: 'When θ_2 = 0 (arm straight), the second atan2 is 0 and θ_1 points directly at the target.' },
+      'L_1': { t: 'Upper arm length', c: 'neutral', role: 'Link 1 length', is: 'Length of the first link from shoulder to elbow.', does: 'Added to L_2 cos θ_2 to give the total length along the upper-arm direction.' },
+      cos: COS('Finds how much of the forearm points along the upper-arm direction.')
+    }
+  });
+
+  physics({
+    id: 'robot-jacobian-det', title: 'Robot arm singularity check (Jacobian)',
+    match: ['detJ=L_1L_2sinθ_2'], y: 'det J', first: 'θ_2',
+    labels: { drive: 'Arm lengths', geo: 'Elbow angle' },
+    init: { L1: 1, L2: 0.8, th2: 90 }, out: ['det J', 'm²'],
+    f: function (s) { return s.L1 * s.L2 * Math.sin(rad(s.th2)); },
+    line: function (s) {
+      var d = s.L1 * s.L2 * Math.sin(rad(s.th2));
+      if (Math.abs(d) < 1e-6) d = 0;
+      return 'det J = ' + fmtNum(s.L1) + ' × ' + fmtNum(s.L2) + ' × sin(' + fmtNum(s.th2) + '°) = ' + fmtNum(d) + (d === 0 ? ' (singularity!)' : '');
+    },
+    tokens: {
+      det: { t: 'Determinant', c: 'op', role: 'Matrix scale', is: 'A single number measuring whether a velocity matrix can be reversed (inverted).', does: 'When det J hits zero, the arm loses a direction of motion and cannot invert velocities.' },
+      J: { t: 'Jacobian matrix', c: 'lhs', role: 'Velocity map', is: 'The table of numbers linking joint spin speeds to hand velocity (vx, vy).', does: 'As det J shrinks toward 0, tiny hand moves demand huge joint speeds.' },
+      'L_1': { t: 'Upper arm length', c: 'drive', role: 'Link 1 length', is: 'Length of the first arm segment, in metres.', does: 'Longer links increase the swept workspace area.', s: ['L1', 0.2, 2, 0.1, 'm'] },
+      'L_2': { t: 'Forearm length', c: 'drive', role: 'Link 2 length', is: 'Length of the second arm segment, in metres.', does: 'Longer links scale det J linearly.', s: ['L2', 0.2, 2, 0.1, 'm'] },
+      sin: SIN('Equals 1 at a 90° elbow bend (best control) and drops to 0 at 0° or 180° (singularity).'),
+      'θ_2': { t: 'Elbow angle', c: 'geo', role: 'Elbow bend', is: 'The angle at the elbow joint, in degrees.', does: 'At 0° (fully straight) or 180° (folded flat), sin θ_2 = 0 so the hand cannot push radially.', s: ['th2', 0, 180, 5, '°'] }
+    }
+  });
+
+  physics({
+    id: 'newton-second-words', title: "Newton's second law (words)",
+    match: ['Force=MassAcceleration'], y: 'the force', first: 'Mass',
+    init: { m: 2, a: 3 }, out: ['Force', 'N'],
+    f: function (s) { return s.m * s.a; },
+    line: function (s) { return 'Force = ' + fmtNum(s.m) + ' kg × ' + fmtNum(s.a) + ' m/s² = ' + fmtNum(s.m * s.a) + ' N'; },
+    tokens: {
+      Force: { t: 'Net force', c: 'lhs', role: 'Push or pull', is: 'The total push or pull on an object, measured in newtons (N).', does: 'Zero net force keeps an object at constant velocity; adding force speeds it up or slows it down.' },
+      Mass: { t: 'Mass', c: 'drive', role: 'Matter / inertia', is: 'How much matter the object contains, in kilograms (kg).', does: 'For the same acceleration, a spacecraft with twice the mass needs twice the engine thrust.', s: ['m', 0.5, 10, 0.5, 'kg'] },
+      Acceleration: { t: 'Acceleration', c: 'drive', role: 'Speed change', is: 'How much the velocity changes every second, in m/s².', does: 'To accelerate twice as fast with the same mass, double the net force.', s: ['a', 0.5, 10, 0.5, 'm/s²'] }
+    }
+  });
+
+  physics({
+    id: 'rover-braking', title: 'Net braking deceleration',
+    match: ['braking=thrust−g'], y: 'the braking rate', first: 'thrust',
+    init: { thrust: 8, g: 3.7 }, out: ['braking', 'm/s²'],
+    f: function (s) { return s.thrust - s.g; },
+    line: function (s) {
+      var b = s.thrust - s.g;
+      return 'braking = ' + fmtNum(s.thrust) + ' − ' + fmtNum(s.g) + ' = ' + fmtNum(b) + ' m/s²' + (b <= 0 ? ' (too weak to slow down!)' : '');
+    },
+    tokens: {
+      braking: { t: 'Net braking acceleration', c: 'lhs', role: 'Upward deceleration', is: 'How fast the lander actually slows its downward fall, in m/s².', does: 'It is what is left after rocket thrust cancels gravity. On Mars (g = 3.7 m/s²), a 8 m/s² thruster gives 4.3 m/s² of braking.' },
+      thrust: { t: 'Engine thrust acceleration', c: 'drive', role: 'Upward push', is: 'The upward acceleration produced by the rocket engine alone, in m/s².', does: 'If thrust equals g, braking is zero and the lander hovers at constant speed; thrust must exceed g to slow down.', s: ['thrust', 1, 15, 0.5, 'm/s²'] },
+      g: { t: 'Local gravity', c: 'resist', role: 'Downward pull', is: 'How strongly the planet pulls downward: 3.7 m/s² on Mars, 1.6 on the Moon, 9.8 on Earth.', does: 'Stronger gravity eats away more of your thrust, leaving less net braking.', s: ['g', 1, 10, 0.1, 'm/s²'] }
+    }
+  });
+
+  physics({
+    id: 'rover-stopping-height', title: 'Lander stopping distance',
+    match: ['d=v^2/(2braking)'], y: 'the stopping distance', first: 'v^2',
+    init: { v: 20, braking: 5 }, out: ['d', 'm'],
+    f: function (s) { return (s.v * s.v) / (2 * s.braking); },
+    line: function (s) { return 'd = ' + fmtNum(s.v) + '² ÷ (2 × ' + fmtNum(s.braking) + ') = ' + fmtNum((s.v * s.v) / (2 * s.braking)) + ' m'; },
+    tokens: {
+      d: { t: 'Stopping distance', c: 'lhs', role: 'Height needed', is: 'The minimum height in metres needed to brake from speed v to zero before touchdown.', does: 'Start firing lower than d and the lander hits the ground before stopping.' },
+      'v^2': { t: 'Descent speed squared', c: 'drive', role: 'Downward speed', is: 'The lander’s downward speed in m/s, multiplied by itself.', does: 'Double your speed while keeping braking fixed, and you need four times the height to stop (2² = 4).', s: ['v', 2, 60, 1, 'm/s'], x: 'v' },
+      '2': { t: 'Factor of 2', c: 'const', role: 'Average speed factor', is: 'Comes from braking smoothly to a stop: average speed is half the starting speed.', does: 'Dividing by 2 cuts v²/braking in half.' },
+      braking: { t: 'Net braking rate', c: 'resist', role: 'Deceleration', is: 'Net upward deceleration (thrust − g) in m/s².', does: 'Doubling your net braking rate cuts the required stopping height in half.', s: ['braking', 1, 12, 0.5, 'm/s²'] }
+    }
+  });
+
+  physics({
+    id: 'rover-landing-speed', title: 'Maximum safe landing burn speed',
+    match: ['v=√(2brakingheight)'], y: 'the speed', first: 'height',
+    init: { braking: 5, height: 40 }, out: ['v', 'm/s'],
+    f: function (s) { return Math.sqrt(2 * s.braking * s.height); },
+    line: function (s) { return 'v = √(2 × ' + fmtNum(s.braking) + ' × ' + fmtNum(s.height) + ') = ' + fmtNum(Math.sqrt(2 * s.braking * s.height)) + ' m/s'; },
+    tokens: {
+      v: { t: 'Maximum survivable speed', c: 'lhs', role: 'Speed limit', is: 'The fastest downward speed in m/s from which the lander can still stop in the remaining height.', does: 'Wait until your speed matches this value for a "suicide burn" right to zero at the pad.' },
+      '√': ROOT('Speed grows with the square root of height: four times the height lets you handle twice the speed.'),
+      '2': { t: 'Factor of 2', c: 'const', role: 'Kinematics factor', is: 'Comes from v² = 2 a d when stopping from speed v.', does: 'Doubles the product inside the square root.' },
+      braking: { t: 'Net braking rate', c: 'drive', role: 'Deceleration', is: 'Net upward deceleration (thrust − g) in m/s².', does: 'Stronger braking lets the autopilot wait closer to the surface before firing.', s: ['braking', 1, 12, 0.5, 'm/s²'] },
+      height: { t: 'Height above pad', c: 'drive', role: 'Remaining altitude', is: 'Measure how many metres remain between the lander and the landing pad.', does: 'At 40 m with 5 m/s² braking, max speed is √400 = 20 m/s; at 10 m it drops to 10 m/s.', s: ['height', 2, 100, 2, 'm'] }
+    }
+  });
+
+  physics({
+    id: 'drake-equation', title: 'The Drake equation',
+    match: ['N=R★f_pn_ef_lf_if_cL'], y: 'N', first: 'L',
+    init: { Rs: 2, fp: 0.5, ne: 1, fl: 0.2, fi: 0.1, fc: 0.2, L: 1000 }, out: ['N', 'civilizations'],
+    f: function (s) { return s.Rs * s.fp * s.ne * s.fl * s.fi * s.fc * s.L; },
+    line: function (s) { return 'N = ' + fmtNum(s.Rs * s.fp * s.ne * s.fl * s.fi * s.fc * s.L) + ' detectable civilizations in our galaxy'; },
+    tokens: {
+      N: { t: 'Detectable civilizations', c: 'lhs', role: 'Communicating worlds', is: 'Estimated number of civilizations in the Milky Way sending signals we could detect right now.', does: 'Every factor multiplies together, so if any single factor is zero, N becomes zero.' },
+      'R★': { t: 'Star formation rate', c: 'drive', role: 'New stars per year', is: 'How many Sun-like stars form each year in our galaxy (roughly 1 to 3 stars/year).', does: 'Double the star birth rate with all other fractions fixed, and N doubles.', s: ['Rs', 0.5, 5, 0.5, 'stars/yr'] },
+      'f_p': { t: 'Fraction with planets', c: 'drive', role: 'Planet fraction', is: 'Share of stars that have planetary systems (astronomers now know this is near 1.0).', does: 'Raise f_p from 0.5 to 1.0 and N doubles.', s: ['fp', 0.1, 1, 0.1, ''] },
+      'n_e': { t: 'Habitable planets per star', c: 'drive', role: 'Habitable worlds', is: 'Average number of rocky planets per star system that can support liquid water.', does: 'Two habitable worlds per system doubles N compared with one.', s: ['ne', 0.1, 3, 0.1, 'planets'] },
+      'f_l': { t: 'Fraction developing life', c: 'drive', role: 'Life fraction', is: 'Share of habitable planets where life actually begins.', does: 'If life arises on 1 in 10 habitable worlds (0.1) instead of 1 in 100 (0.01), N is 10 times bigger.', s: ['fl', 0.01, 1, 0.05, ''] },
+      'f_i': { t: 'Fraction with intelligence', c: 'drive', role: 'Intelligence fraction', is: 'Share of life-bearing planets that evolve intelligent tool-makers.', does: 'Small changes here multiply straight into N.', s: ['fi', 0.01, 1, 0.05, ''] },
+      'f_c': { t: 'Fraction signaling into space', c: 'drive', role: 'Radio fraction', is: 'Share of intelligent species that broadcast radio or laser signals detectable across space.', does: 'Doubling f_c doubles N.', s: ['fc', 0.01, 1, 0.05, ''] },
+      L: { t: 'Communicating lifetime', c: 'drive', role: 'Signal lifespan', is: 'How many years a civilization keeps transmitting detectable signals before falling silent.', does: 'If civilizations last 10,000 years instead of 100 years, 100 times as many overlap in time.', s: ['L', 100, 10000, 100, 'years'] }
+    }
+  });
+
+  physics({
+    id: 'maekawa-origami', title: "Maekawa's theorem (flat-foldable crease pattern)",
+    match: ['|M−V|=2'], first: 'M',
+    tokens: {
+      '|': { t: 'Absolute value', c: 'op', role: 'Difference size', is: 'Takes the size of M − V without caring whether mountain or valley creases win.', does: 'Means either M = V + 2 or V = M + 2 at every flat-folded corner.' },
+      M: { t: 'Mountain creases', c: 'neutral', role: 'Mountain folds', is: 'Count the folds around a single vertex that ridge upward like mountain peaks.', does: 'For a flat vertex with 4 creases, you must have 3 mountains and 1 valley (|3 − 1| = 2), or 1 mountain and 3 valleys.' },
+      V: { t: 'Valley creases', c: 'neutral', role: 'Valley folds', is: 'Count the folds around the same vertex that dip downward like a V.', does: 'Because |M − V| = 2, the total M + V is always an even number.' },
+      '2': { t: 'Required fold difference (2)', c: 'const', role: 'Flat-fold rule', is: 'Each full 360° circle folded flat turns 180° left and 180° right with one extra 180° reversal twice.', does: 'If M and V differ by anything other than 2, the paper cannot lie flat without tearing.' }
+    }
+  });
+
+  physics({
+    id: 'kawasaki-origami', title: "Kawasaki's theorem (flat-foldable angles)",
+    match: ['θ_1+θ_3=θ_2+θ_4=180°'], first: 'θ_1',
+    tokens: {
+      'θ_1': { t: 'First sector angle', c: 'neutral', role: 'Wedge angle 1', is: 'Measure the first flat paper wedge around the vertex in degrees.', does: 'With the opposite wedge θ_3, it must add to 180° so the paper folds cleanly back and forth.' },
+      'θ_3': { t: 'Third sector angle', c: 'neutral', role: 'Wedge angle 3', is: 'Measure the wedge opposite θ_1 around the vertex in degrees.', does: 'If θ_1 = 60°, then θ_3 must be 120° for a flat fold.' },
+      'θ_2': { t: 'Second sector angle', c: 'neutral', role: 'Wedge angle 2', is: 'Measure the wedge between θ_1 and θ_3 in degrees.', does: 'Every other angle around the vertex adds to half a circle (180°).' },
+      'θ_4': { t: 'Fourth sector angle', c: 'neutral', role: 'Wedge angle 4', is: 'Measure the final wedge completing the 360° circle around the vertex.', does: 'Check your crease pattern before folding: odd wedges = 180° and even wedges = 180°.' },
+      '180': { t: 'Half-circle (180°)', c: 'const', role: 'Half turn', is: 'Half of a full 360° circle around the paper vertex.', does: 'Going around the vertex, forward turns (+180°) and backward turns (−180°) only close back at 0° when alternating sums equal 180°.' }
+    }
+  });
+
+  physics({
+    id: 'lithostatic-pressure', title: 'Lithostatic rock pressure with depth',
+    match: ['P_lith=ρ_crustgz', 'P_lith(z)=ρ_crustgz'], y: 'the rock pressure', first: 'z',
+    init: { rho: 2700, g: 9.8, z: 5 }, out: ['P_lith', 'MPa'],
+    f: function (s) { return (s.rho * s.g * s.z * 1000) / 1e6; },
+    line: function (s) { return 'P_lith = ' + fmtNum(s.rho) + ' × ' + fmtNum(s.g) + ' × ' + fmtNum(s.z) + ' km = ' + fmtNum((s.rho * s.g * s.z * 1000) / 1e6) + ' MPa'; },
+    tokens: {
+      'P_lith': { t: 'Lithostatic pressure', c: 'lhs', role: 'Overburden stress', is: 'The crushing weight of overlying rock at depth z, measured in megapascals (MPa).', does: 'At 5 km depth in 2700 kg/m³ crust, rock pressure is about 132 MPa (1,300 atmospheres).' },
+      'ρ_crust': { t: 'Crust rock density', c: 'drive', role: 'Rock density', is: 'Mass per cubic metre of surrounding rock (typically 2600–2900 kg/m³).', does: 'Denser overlying rock squeezes harder on a magma chamber at the same depth.', s: ['rho', 2200, 3200, 50, 'kg/m³'] },
+      g: { t: 'Gravity', c: 'drive', role: 'Gravitational pull', is: 'Gravitational acceleration: 9.8 m/s² on Earth.', does: 'On Mars (g = 3.7 m/s²), magma has to sit almost three times deeper to feel the same rock pressure.', s: ['g', 1.6, 15, 0.2, 'm/s²'] },
+      z: { t: 'Depth below surface', c: 'drive', role: 'Crustal depth', is: 'Measure straight down from the ground surface to the magma chamber, in kilometres.', does: 'Double the depth and the overburden pressure doubles.', s: ['z', 0.5, 25, 0.5, 'km'] }
+    }
+  });
+
+  physics({
+    id: 'magma-buoyancy', title: 'Magma buoyancy pressure',
+    match: ['ΔP_buoy=(ρ_crust−ρ_magma)gz'], y: 'the buoyancy pressure', first: 'ρ_magma',
+    init: { rhoc: 2700, rhom: 2450, g: 9.8, z: 5 }, out: ['ΔP_buoy', 'MPa'],
+    f: function (s) { return ((s.rhoc - s.rhom) * s.g * s.z * 1000) / 1e6; },
+    line: function (s) {
+      var dp = ((s.rhoc - s.rhom) * s.g * s.z * 1000) / 1e6;
+      return 'ΔP_buoy = ' + fmtNum(dp) + ' MPa' + (dp > 0 ? ' (magma pushes upward)' : dp < 0 ? ' (magma is denser and stalls)' : ' (neutrally buoyant)');
+    },
+    tokens: {
+      'ΔP_buoy': { t: 'Buoyancy overpressure', c: 'lhs', role: 'Upward magma push', is: 'Extra upward pressure pushing lighter magma toward the surface, in MPa.', does: 'Positive when magma is less dense than surrounding rock, driving dikes upward.' },
+      'ρ_crust': { t: 'Host rock density', c: 'drive', role: 'Crust density', is: 'Density of surrounding solid rock in kg/m³ (about 2700 kg/m³).', does: 'Denser surrounding rock squeezes harder from the sides, pushing magma up more strongly.', s: ['rhoc', 2300, 3100, 50, 'kg/m³'] },
+      'ρ_magma': { t: 'Magma density', c: 'resist', role: 'Melt + crystal density', is: 'Density of the molten magma in kg/m³ (bubbles lower it; heavy crystals raise it).', does: 'If gas bubbles lighten magma from 2650 to 2400 kg/m³, buoyancy jumps and eruption becomes more likely.', s: ['rhom', 1800, 3000, 50, 'kg/m³'] },
+      g: { t: 'Gravity', c: 'drive', role: 'Gravitational pull', is: 'Gravitational acceleration (9.8 m/s² on Earth).', does: 'Stronger gravity creates more buoyancy for the same density difference.', s: ['g', 1.6, 15, 0.2, 'm/s²'] },
+      z: { t: 'Magma column height', c: 'drive', role: 'Column depth', is: 'Vertical height of the connected magma column in km.', does: 'A taller connected magma column builds more upward pressure at its top.', s: ['z', 0.5, 20, 0.5, 'km'] }
+    }
+  });
+
+  physics({
+    id: 'einstein-roscoe', title: 'Crystal-rich magma viscosity (Einstein–Roscoe)',
+    match: ['η(φ)=η_0(1−φ/φ_max)^−2.5'], y: 'the viscosity', first: 'φ',
+    init: { eta0: 100, phi: 0.3, phimax: 0.6 }, out: ['η', 'Pa·s'],
+    f: function (s) { return s.eta0 * Math.pow(Math.max(0.05, 1 - s.phi / s.phimax), -2.5); },
+    line: function (s) {
+      var ratio = s.phi / s.phimax;
+      if (ratio >= 1) return 'φ reached φ_max: crystals lock up into a rigid mush!';
+      return 'η = ' + fmtNum(s.eta0 * Math.pow(1 - ratio, -2.5)) + ' Pa·s (' + fmtNum(Math.pow(1 - ratio, -2.5)) + '× thicker than pure melt)';
+    },
+    tokens: {
+      'η': { t: 'Suspension viscosity', c: 'lhs', role: 'Magma thickness', is: 'How thick and resistant to flow the crystal-filled magma is, in Pa·s.', does: 'As crystals pile up near φ_max, viscosity skyrockets and flow locks up.' },
+      'η_0': { t: 'Pure liquid melt viscosity', c: 'drive', role: 'Base melt thickness', is: 'Viscosity of the melted rock before crystals grow, in Pa·s.', does: 'Double the base melt viscosity and the suspension viscosity doubles too.', s: ['eta0', 10, 1000, 10, 'Pa·s'] },
+      'φ': { t: 'Crystal volume fraction', c: 'drive', role: 'Crystal share', is: 'Fraction of the magma volume occupied by solid crystals (0 = pure liquid, 0.5 = half crystals).', does: 'At φ = 0.3 with φ_max = 0.6, (1 − 0.5)^−2.5 ≈ 5.7× thicker. At φ = 0.54 it jumps to 316× thicker!', s: ['phi', 0, 0.54, 0.02, ''] },
+      'φ_max': { t: 'Maximum packing fraction', c: 'resist', role: 'Jamming limit', is: 'Fraction where crystals touch everywhere and jam (~0.60 for rough crystals).', does: 'Well-packed smooth crystals allow higher φ_max so magma keeps flowing longer.', s: ['phimax', 0.55, 0.7, 0.01, ''] },
+      '1': { t: 'Whole magma (1)', c: 'const', role: 'Reference total', is: 'Represents 100% of the space; 1 − φ/φ_max is the remaining room to squeeze past crystals.', does: 'As φ approaches φ_max, this bracket shrinks toward zero.' }
+    }
+  });
+
+  physics({
+    id: 'henrys-law-h2o', title: "Henry's law for dissolved water in magma",
+    match: ['C_H_2O=K_H√P_H_2O'], y: 'dissolved water', first: 'P_H_2O',
+    init: { KH: 0.4, PH2O: 100 }, out: ['C_H₂O', 'wt%'],
+    f: function (s) { return s.KH * Math.sqrt(s.PH2O); },
+    line: function (s) { return 'C_H₂O = ' + fmtNum(s.KH) + ' × √' + fmtNum(s.PH2O) + ' = ' + fmtNum(s.KH * Math.sqrt(s.PH2O)) + ' wt%'; },
+    tokens: {
+      'C_H_2O': { t: 'Dissolved water content', c: 'lhs', role: 'Water weight %', sym: 'C<sub>H2O</sub>', is: 'Percent by weight of water dissolved invisibly inside the liquid magma.', does: 'When magma rises and pressure falls, C_H₂O drops and extra water fizzes out into explosive gas bubbles.' },
+      'K_H': { t: 'Solubility constant', c: 'drive', role: 'Melt capacity', is: 'How easily water dissolves in that magma’s temperature and silica composition.', does: 'Double K_H at fixed water pressure and the magma can hold twice as much dissolved water.', s: ['KH', 0.1, 0.8, 0.05, ''] },
+      '√': ROOT('Because water pressure is inside the square root, pressure must quadruple to double dissolved water.'),
+      'P_H_2O': { t: 'Water vapor pressure', c: 'drive', role: 'Confining gas pressure', sym: 'P<sub>H2O</sub>', is: 'Partial pressure of water vapor pushing on the magma, in megapascals (MPa).', does: 'Drop pressure from 100 MPa to 25 MPa (one quarter) and dissolved water halves, releasing the rest as bubbles.', s: ['PH2O', 1, 300, 5, 'MPa'] }
+    }
+  });
+
+  physics({
+    id: 'plinian-column-height', title: 'Plinian eruption plume height',
+    match: ['H_t=1.67Ṁ^0.259≈8.2Q^0.25', 'H_t≈1.67Ṁ^0.259'], first: 'Ṁ',
+    tokens: {
+      'H_t': { t: 'Maximum plume height', c: 'lhs', role: 'Column height', is: 'Measure how high the volcanic ash column rises above the crater vent, in kilometres.', does: 'Big Plinian eruptions push ash 20–40 km up into the stratosphere.' },
+      '1.67': { t: 'Mass-rate scaling constant', c: 'const', role: 'Atmospheric factor', is: 'Empirical factor calibrated from observed volcanic plumes and atmospheric stratification.', does: 'Converts mass discharge rate raised to 0.259 into plume height in kilometres.' },
+      'Ṁ': { t: 'Mass eruption rate', c: 'drive', role: 'Magma output per second', is: 'Kilograms of magma and gas blasting out of the vent every second (kg/s).', does: 'Because the exponent ~0.25 is a fourth root, you need 16 times more magma per second just to double the plume height.' },
+      '8.2': { t: 'Heat-rate scaling constant', c: 'const', role: 'Thermal factor', is: 'Empirical factor converting thermal power Q (in gigawatts) into plume height.', does: 'Gives a second way to estimate height from heat output instead of mass rate.' },
+      Q: { t: 'Thermal energy release rate', c: 'drive', role: 'Heat power', is: 'Heat energy carried into the air by hot ash every second, in gigawatts (GW).', does: 'Rising hot gas heats ambient air so the plume buoys upward; 16× more heat power doubles plume height.' }
+    }
+  });
+
+  physics({
+    id: 'volcano-collapse-pdc', title: 'Column collapse and pyroclastic flow pressure',
+    match: ['H_c≈u_0^2/(2g)P_dyn=½ρv^2'], first: 'u_0^2',
+    tokens: {
+      'H_c': { t: 'Fountain collapse height', c: 'neutral', role: 'Jet height', is: 'How high the dense gas-and-ash jet shoots straight out of the vent before falling back, in metres.', does: 'If the jet fails to mix with enough air by height H_c, it collapses into ground-hugging pyroclastic flows.' },
+      'u_0^2': { t: 'Vent exit speed squared', c: 'neutral', role: 'Launch speed', is: 'Speed of the ash mixture leaving the crater in m/s, multiplied by itself.', does: 'Double the exit speed and the fountain height grows fourfold.' },
+      '2': { t: 'Kinematics factor (2)', c: 'const', role: 'Gravity factor', is: 'Same factor of 2 as in stopping height v² / (2g).', does: 'Divides u₀²/g in half.' },
+      g: { t: 'Gravity', c: 'neutral', role: 'Downward pull', is: 'Gravitational acceleration (9.8 m/s² on Earth).', does: 'Gravity pulls the dense ash jet downward; weaker gravity would let the same jet shoot higher.' },
+      'P_dyn': { t: 'Dynamic ram pressure', c: 'neutral', role: 'Impact pressure', is: 'The slamming pressure exerted by a rushing pyroclastic current on walls and trees, in Pa or kPa.', does: 'Just 5–10 kPa snaps mature trees; >30 kPa destroys concrete masonry.' },
+      '½': HALF('Dynamic pressure is the kinetic energy packed into each cubic metre of the moving ash current.'),
+      'ρ': { t: 'Current bulk density', c: 'neutral', role: 'Ash-gas density', is: 'Mass per cubic metre of the ash-and-gas mixture (kg/m³).', does: 'A denser particle-rich surge hits twice as hard at the same speed.' },
+      'v^2': { t: 'Flow front speed squared', c: 'neutral', role: 'Flow speed', is: 'Speed of the advancing pyroclastic surge in m/s, squared.', does: 'Doubling the flow speed makes its destructive ram pressure four times as strong.' }
+    }
+  });
+
+  physics({
+    id: 'volcano-dre', title: 'Dense Rock Equivalent (DRE) volume',
+    match: ['V_DRE=V_bulk(ρ_deposit/ρ_dense)'], y: 'the solid-rock volume', first: 'ρ_deposit',
+    init: { Vbulk: 10, rhoDep: 1000, rhoDense: 2500 }, out: ['V_DRE', 'km³'],
+    f: function (s) { return s.Vbulk * (s.rhoDep / s.rhoDense); },
+    line: function (s) { return 'V_DRE = ' + fmtNum(s.Vbulk) + ' × (' + fmtNum(s.rhoDep) + ' ÷ ' + fmtNum(s.rhoDense) + ') = ' + fmtNum(s.Vbulk * (s.rhoDep / s.rhoDense)) + ' km³'; },
+    tokens: {
+      'V_DRE': { t: 'Dense rock equivalent volume', c: 'lhs', role: 'Bubble-free volume', is: 'The volume the erupted magma had underground before gas bubbles puffed it into pumice and ash, in km³.', does: 'Lets geologists compare puffy ash eruptions fairly with dense lava eruptions.' },
+      'V_bulk': { t: 'Measured deposit volume', c: 'drive', role: 'Field tephra volume', is: 'Total volume of loose pumice and ash mapped across the ground, in km³.', does: 'Double the mapped ash blanket thickness everywhere and the true magma volume doubles.', s: ['Vbulk', 0.5, 50, 0.5, 'km³'] },
+      'ρ_deposit': { t: 'Deposit bulk density', c: 'drive', role: 'Pumice/ash density', is: 'Average density of the porous ash and pumice layer (about 800–1200 kg/m³).', does: 'Compacted, denser ash means more actual magma per cubic kilometre of deposit.', s: ['rhoDep', 500, 1800, 50, 'kg/m³'] },
+      'ρ_dense': { t: 'Solid rock density', c: 'resist', role: 'Bubble-free density', is: 'Density of solid, bubble-free magma rock (about 2400–2700 kg/m³).', does: 'Because it sits on the bottom, a higher solid rock density means the puffy deposit squeezes down to a smaller DRE volume.', s: ['rhoDense', 2200, 2900, 50, 'kg/m³'] }
+    }
+  });
+
+  physics({
+    id: 'chamber-overpressure', title: 'Magma chamber rupture condition',
+    match: ['ΔP_chamber=P_magma−P_lith≥σ_3+T_0'], first: 'ΔP_chamber',
+    tokens: {
+      'ΔP_chamber': { t: 'Chamber overpressure', c: 'lhs', role: 'Excess pressure', is: 'How much harder the magma pushes outward than the surrounding rock pushes inward, in MPa.', does: 'When ΔP_chamber grows past the rock’s squeeze plus strength (σ₃ + T₀), the chamber wall cracks and magma injects upward.' },
+      'P_magma': { t: 'Magma chamber pressure', c: 'drive', role: 'Internal push', is: 'Total fluid pressure inside the magma chamber, in MPa.', does: 'Fresh magma recharge or exsolving gas bubbles raise P_magma toward the rupture limit.' },
+      'P_lith': { t: 'Lithostatic rock pressure', c: 'resist', role: 'Confining weight', is: 'Weight of the overlying crust squeezing the chamber closed, in MPa.', does: 'Higher rock weight keeps the chamber sealed unless magma pressure rises even higher.' },
+      'σ_3': { t: 'Minimum tectonic stress', c: 'const', role: 'Sideways squeeze', is: 'The smallest sideways tectonic compression holding the rock shut, in MPa.', does: 'When the crust stretches (lower σ₃), magma cracks the chamber more easily.' },
+      'T_0': { t: 'Rock tensile strength', c: 'const', role: 'Wall strength', is: 'How much pulling stress solid wall rock can resist before snapping (typically 1–10 MPa).', does: 'Fractured rock has low T₀, making it easier for a dike to break out.' }
+    }
+  });
+
+  physics({
+    id: 'khayyam-cubic', title: "Omar Khayyam's cubic equation",
+    match: ['x^3+cx=d'], first: 'x^3',
+    tokens: {
+      'x^3': { t: 'Cube term (x³)', c: 'neutral', role: 'Volume of a cube', is: 'The unknown length x cubed — Khayyam pictured this literally as a cube of side x.', does: 'Grows fast as x increases; must balance with c·x to equal the target volume d.' },
+      c: { t: 'Area coefficient (c)', c: 'neutral', role: 'Base area', is: 'A given positive number, pictured by Khayyam as the area of a square.', does: 'Multiplying area c by side x turns it into the volume of a rectangular box.' },
+      x: { t: 'Unknown side length (x)', c: 'neutral', role: 'Solution length', is: 'The positive length x you want to solve for.', does: 'Khayyam found x geometrically as the intersection of a circle and a parabola.' },
+      d: { t: 'Target volume (d)', c: 'neutral', role: 'Total volume', is: 'A given positive number representing the combined volume of the cube plus the box.', does: 'Bigger d shifts the intersection farther out, requiring a larger x.' }
+    }
+  });
+
+  physics({
+    id: 'eulers-number-limit', title: "Euler's number from compound growth",
+    match: ['e=lim_n→∞(1+1/n)^n'], first: 'n',
+    tokens: {
+      e: { t: "Euler's number (e)", c: 'lhs', role: 'Growth limit', is: 'The number ≈ 2.71828 that (1 + 1/n)ⁿ climbs toward as compounding becomes continuous.', does: 'No matter how huge n gets, $1 growing at 100% per year never passes $2.718.' },
+      'lim_n→∞': { t: 'Limit as n grows forever', c: 'op', role: 'Limit operator', sym: 'lim<sub>n→∞</sub>', is: 'Says to watch what happens to the expression as n gets larger and larger without end.', does: 'Turns discrete yearly steps into smooth, continuous growth.' },
+      '1': { t: 'Starting unit (1)', c: 'const', role: 'Base / 100% rate', is: 'The 1 inside stands for your starting $1; the 1 on top stands for 100% yearly interest.', does: 'Splitting 100% into n tiny steps gives 1/n added each step.' },
+      n: { t: 'Compounding steps per year', c: 'drive', role: 'Step count', is: 'How many times per year the interest is calculated and added.', does: 'Try n = 1 → 2.00; n = 2 → 2.25; n = 12 → 2.613; n = 1000 → 2.717.' },
+      '^n': { t: 'Repeated n times', c: 'op', role: 'Exponent', sym: 'ⁿ', is: 'Multiplies the growth factor (1 + 1/n) by itself n times over the year.', does: 'Even though each step shrinks as n grows, doing more steps keeps pushing the product closer to e.' }
+    }
+  });
+
+  physics({
+    id: 'eulers-series', title: "Euler's infinite series for e",
+    match: ['e=1+1/1!+1/2!+1/3!+…'], first: 'e',
+    tokens: {
+      e: { t: "Euler's number (e)", c: 'lhs', role: 'Series sum', is: 'The constant ≈ 2.718281828…, built by adding smaller and smaller unit fractions.', does: 'Adding just the first seven terms already gets e right to three decimal places.' },
+      '1': { t: 'First term (1)', c: 'const', role: 'Starting term', is: 'The whole number 1 (0! = 1, so 1/0! = 1).', does: 'Starts the sum at 1 before the fractions are added.' },
+      '1!': { t: '1 factorial (1)', c: 'const', role: 'Factorial denominator', is: '1! = 1, so 1/1! = 1.', does: 'Adding 1 + 1 brings the running total to 2.' },
+      '2!': { t: '2 factorial (2)', c: 'const', role: 'Factorial denominator', is: '2! = 2 × 1 = 2, so 1/2! = 0.5.', does: 'Brings the running total to 2.5.' },
+      '3!': { t: '3 factorial (6)', c: 'const', role: 'Factorial denominator', is: '3! = 3 × 2 × 1 = 6, so 1/3! ≈ 0.1667.', does: 'Brings the running total to 2.6667; factorials grow so fast that later terms barely nudge the digits.' }
+    }
+  });
+
+  physics({
+    id: 'eulers-derivative', title: 'Self-derivative property of eˣ',
+    match: ['d/dx(e^x)=e^x'], first: 'e^x',
+    tokens: {
+      d: { t: 'Derivative operator (d/dx)', c: 'op', role: 'Rate of change', is: 'Asks for the steepness (slope) of the curve at every x.', does: 'Measures how fast the output climbs for a tiny step right in x.' },
+      dx: { t: 'Tiny step in x', c: 'op', role: 'Input step', is: 'Represents an infinitesimally small nudge along the x-axis.', does: 'Dividing the change in height by dx gives the instantaneous slope.' },
+      'e^x': { t: 'Natural exponential (eˣ)', c: 'lhs', role: 'Self-matching curve', is: 'The curve y = eˣ ≈ 2.718ˣ.', does: 'It is the unique function whose slope at every point equals its height right there: at x = 0 height is 1 and slope is 1; at x = 2 height is 7.39 and slope is 7.39.' }
+    }
+  });
+
+  physics({
+    id: 'eulers-integral', title: 'Area definition of e',
+    match: ['∫_1^e(1/x)dx=1'], first: 'e',
+    tokens: {
+      '1': { t: 'Left boundary (x = 1)', c: 'const', role: 'Start or unit area', is: 'The lower limit x = 1 starts the shaded region under the curve y = 1/x; the = 1 on the right is the target area.', does: 'Start shading at x = 1 and move rightward until the shaded area hits exactly 1 square unit.' },
+      e: { t: "Euler's number (e)", c: 'lhs', role: 'Upper boundary', is: 'The exact x-value (≈ 2.71828) where the area under 1/x from 1 to x equals 1.', does: 'Stop before e and the area is less than 1; go to e² and the area doubles to 2.' },
+      x: { t: 'Horizontal position (x)', c: 'drive', role: 'Axis coordinate', is: 'Position along the x-axis under the curve y = 1/x.', does: 'As x gets larger, 1/x gets shorter, so you have to travel farther to collect the same area.' },
+      dx: { t: 'Thin slice width', c: 'op', role: 'Slice width', is: 'The tiny width of each vertical strip added together by the integral.', does: 'Height (1/x) times width (dx) gives one strip’s area; the integral sums them all.' }
+    }
+  });
+
+  physics({
+    id: 'completing-square-example', title: 'Perfect square trinomial example',
+    match: ['x^2+6x+9=(x+3)^2'], first: 'x',
+    tokens: {
+      'x^2': { t: 'Square of x', c: 'neutral', role: 'Square tile', is: 'An x-by-x square whose area is x².', does: 'Forms the corner tile of the completed geometric square.' },
+      '6': { t: 'Linear coefficient (6)', c: 'const', role: 'Middle coefficient', is: 'The 6x strip split evenly into two 3x rectangles along two sides of the x² square.', does: 'Half of 6 is 3, which sets both the + 3 inside (x + 3)² and the missing corner 3² = 9.' },
+      x: { t: 'Unknown side length (x)', c: 'neutral', role: 'Square side piece', is: 'Length of the unknown square side; plug any number into x to test.', does: 'Try x = 2 on both sides to check the identity: 4 + 12 + 9 = 25, and (2 + 3)² = 5² = 25.' },
+      '9': { t: 'Completing constant (3² = 9)', c: 'const', role: 'Corner square', is: 'The 3-by-3 corner tile needed to turn x² + 6x into a complete square.', does: 'Without + 9, the shape has a missing corner; adding (6 ÷ 2)² = 9 completes (x + 3)².' },
+      '3': { t: 'Half of 6 (3)', c: 'const', role: 'Half-strip width', is: 'Half the coefficient of x: 6 ÷ 2 = 3.', does: 'Tells you the side length of the completed square is x + 3.' }
+    }
+  });
+
+  physics({
+    id: 'completing-the-square', title: 'Completing the square rule',
+    match: ['x^2+bx+(b/2)^2=(x+b/2)^2'], first: 'b',
+    tokens: {
+      'x^2': { t: 'Square of x', c: 'neutral', role: 'Square tile', is: 'An x-by-x square of area x².', does: 'Starts the square before adding the bx strips.' },
+      b: { t: 'Linear coefficient (b)', c: 'neutral', role: 'Strip width', is: 'The number multiplying x.', does: 'Split b in half to make two equal strips of width b/2, then square b/2 to fill the missing corner.' },
+      x: { t: 'Unknown number (x)', c: 'neutral', role: 'Base variable', is: 'Any number plugged in for x.', does: 'Plug in any x and b (like x = 3, b = 4) to check: 9 + 12 + 4 = 25 and (3 + 2)² = 25!' },
+      '2': { t: 'Half-split divisor (2)', c: 'const', role: 'Split in two', is: 'Divides the bx rectangle into two equal strips, one on the right and one on the bottom.', does: 'Always halve b before squaring it to complete the square.' }
+    }
+  });
+
+  physics({
+    id: 'crt-speed', title: 'Electron speed from accelerating voltage',
+    match: ['½mv^2=eV→v=√(2eV/m)'], y: 'electron speed', first: 'V',
+    init: { V: 2000 }, out: ['v', 'm/s'],
+    f: function (s) { return Math.sqrt((2 * 1.602e-19 * s.V) / 9.109e-31); },
+    line: function (s) {
+      var v = Math.sqrt((2 * 1.602e-19 * s.V) / 9.109e-31);
+      return 'At ' + fmtNum(s.V) + ' V, v = ' + fmtNum(v) + ' m/s (' + fmtNum((v / 2.998e8) * 100) + '% of light speed)';
+    },
+    tokens: {
+      '½': HALF('Kinetic energy gained equals ½mv² as the electron speeds up from rest.'),
+      m: { t: 'Electron mass', c: 'const', role: 'Particle mass', is: 'Mass of one electron: 9.11 × 10⁻³¹ kg.', does: 'Sits on the bottom under the square root; because electrons are so tiny, even modest voltages launch them at millions of m/s.' },
+      'v^2': { t: 'Electron speed squared', c: 'neutral', role: 'Kinetic speed', is: 'Electron speed in m/s, multiplied by itself.', does: 'Directly proportional to accelerating voltage V.' },
+      e: { t: 'Electron charge', c: 'const', role: 'Elementary charge', is: 'Electric charge of one electron: 1.60 × 10⁻¹⁹ C.', does: 'Multiplied by V, it gives the energy eV handed to each electron.' },
+      V: { t: 'Accelerating voltage', c: 'drive', role: 'Gun voltage', is: 'Voltage between the cathode and anode inside the electron gun, in volts.', does: 'Four times the accelerating voltage gives twice the electron speed (since V is inside the square root).', s: ['V', 100, 10000, 100, 'V'] },
+      v: { t: 'Final electron speed', c: 'lhs', role: 'Beam speed', is: 'How fast each electron shoots out of the anode hole, in m/s.', does: 'At 2000 V, electrons travel around 2.65 × 10⁷ m/s — nearly 9% the speed of light.' },
+      '2': { t: 'Factor of 2', c: 'const', role: 'From ½mv²', is: 'Comes from multiplying both sides of ½mv² = eV by 2.', does: 'Doubles eV/m inside the square root.' },
+      '√': ROOT('Speed is the square root of 2eV/m, so quadrupling voltage doubles speed.')
+    }
+  });
+
+  physics({
+    id: 'crt-deflection', title: 'Electric deflection in a cathode-ray tube',
+    match: ['y=eEL^2/(4mV)'], y: 'the deflection', first: 'E',
+    init: { E: 5000, L: 0.05, V: 2000 }, out: ['y', 'm'],
+    f: function (s) { return (1.602e-19 * s.E * s.L * s.L) / (4 * 9.109e-31 * s.V); },
+    line: function (s) {
+      var y = (1.602e-19 * s.E * s.L * s.L) / (4 * 9.109e-31 * s.V);
+      return 'y = ' + fmtNum(y * 1000) + ' mm deflection at the end of the plates';
+    },
+    tokens: {
+      y: { t: 'Vertical beam deflection', c: 'lhs', role: 'Beam shift', is: 'How far sideways the electron beam bends by the time it exits the plates, in metres.', does: 'Aiming the spot across a TV or oscilloscope screen works by changing E to steer y.' },
+      e: { t: 'Electron charge', c: 'const', role: 'Elementary charge', is: 'Charge of one electron (1.60 × 10⁻¹⁹ C).', does: 'Notice e cancels out when you plug v² = 2eV/m? Here E and V stay separate, so e appears once on top.' },
+      E: { t: 'Electric field between plates', c: 'drive', role: 'Steering field', is: 'Voltage across the steering plates divided by their gap, in V/m.', does: 'Double the steering field and the deflection doubles.', s: ['E', 500, 20000, 500, 'V/m'] },
+      'L^2': { t: 'Plate length squared', c: 'drive', role: 'Plate length', is: 'Length of the deflection plates in metres, squared.', does: 'Longer plates push the electron for more time AND let it drift sideways longer, so doubling L quadruples y.', s: ['L', 0.01, 0.1, 0.005, 'm'], x: 'L' },
+      '4': { t: 'Factor of 4', c: 'const', role: 'Kinematics factor', is: 'Combines the ½ from y = ½at² with the 2 from v² = 2eV/m.', does: 'Divides the whole deflection by 4.' },
+      m: { t: 'Electron mass', c: 'const', role: 'Particle mass', is: 'Mass of one electron (9.11 × 10⁻³¹ kg).', does: 'Wait — notice e/m appears together: if you know E, L, V, and y you can measure the charge-to-mass ratio e/m.' },
+      V: { t: 'Accelerating voltage', c: 'resist', role: 'Beam energy', is: 'Voltage that launched the electron forward, in volts.', does: 'Faster electrons spend less time between the steering plates, so doubling V cuts the deflection in half.', s: ['V', 500, 10000, 100, 'V'] }
+    }
+  });
+
+  physics({
+    id: 'lorentz-magnetic', title: 'Magnetic force on an electron',
+    match: ['F=evB'], y: 'the magnetic force', first: 'B',
+    init: { v: 2e7, B: 0.001 }, out: ['F', 'N'],
+    f: function (s) { return 1.602e-19 * s.v * s.B; },
+    line: function (s) { return 'F = ' + fmtNum(1.602e-19 * s.v * s.B) + ' N perpendicular to velocity'; },
+    tokens: {
+      F: { t: 'Magnetic force', c: 'lhs', role: 'Sideways force', is: 'The push bending the moving electron sideways, in newtons (N).', does: 'Because it always pushes perpendicular to the motion, it curves the beam into a circle without speeding it up.' },
+      e: { t: 'Electron charge', c: 'const', role: 'Elementary charge', is: 'Electric charge of one electron: 1.60 × 10⁻¹⁹ C.', does: 'Sets how strongly the electron responds to the magnetic field.' },
+      v: { t: 'Electron speed', c: 'drive', role: 'Beam speed', is: 'How fast the electron travels across the magnetic field, in m/s.', does: 'Double the electron speed and the magnetic force doubles. A parked electron (v = 0) feels zero magnetic force.', s: ['v', 1e6, 5e7, 1e6, 'm/s'] },
+      B: { t: 'Magnetic flux density', c: 'drive', role: 'Magnetic field strength', is: 'Strength of the magnetic field, measured in teslas (T).', does: 'Double the magnetic field strength and the sideways bending force doubles, curving the beam twice as tightly.', s: ['B', 0.0002, 0.005, 0.0002, 'T'] }
+    }
+  });
+
+  physics({
+    id: 'faraday-cage-field', title: 'Electric field inside a Faraday cage',
+    match: ['E_inside=0'], first: 'E_inside',
+    tokens: {
+      'E_inside': { t: 'Interior electric field', c: 'lhs', role: 'Field inside cage', is: 'Measure the electric field strength inside the hollow metal shell (in V/m).', does: 'Free electrons on the metal surface rearrange instantly to cancel external static fields, leaving E_inside = 0.' },
+      '0': { t: 'Zero field', c: 'const', role: 'Complete shielding', is: 'No net electric push acts on charges inside a closed conductor in equilibrium.', does: 'You can check this with an electroscope inside a wire mesh cage: charging the outside shell leaves the inside leaves unmoved.' }
+    }
+  });
+
+  physics({
+    id: 'vdg-potential-field', title: 'Van de Graaff dome voltage and electric field',
+    match: ['V=kQ/rE=V/r'], first: 'r',
+    tokens: {
+      V: { t: 'Dome voltage', c: 'neutral', role: 'Surface potential', is: 'Electrical potential on the metal dome relative to ground, in volts (V).', does: 'Raising charge Q doubles V, while making the dome radius r bigger cuts V in half for the same charge.' },
+      k: { t: "Coulomb's constant", c: 'const', role: 'Electric constant', is: 'Fixed constant ≈ 9 × 10⁹ N·m²/C².', does: 'Converts charge divided by radius directly into volts.' },
+      Q: { t: 'Stored dome charge', c: 'neutral', role: 'Total charge', is: 'Electric charge carried onto the dome by the moving belt, in coulombs (C).', does: 'Even a few microcoulombs (10⁻⁶ C) on a 0.15 m dome creates hundreds of thousands of volts.' },
+      r: { t: 'Dome radius', c: 'neutral', role: 'Sphere radius', is: 'Distance from the dome’s center to its outer metal surface, in metres.', does: 'Air breaks down into a spark at E ≈ 3 × 10⁶ V/m. Because E = V/r, a larger smooth dome reaches much higher voltage V before sparking.' },
+      E: { t: 'Surface electric field', c: 'neutral', role: 'Field strength', is: 'Strength of the electric push right at the dome surface, in volts per metre (V/m).', does: 'Sharp points have tiny effective radius r, making E huge so charge leaks off as a corona or spark.' }
+    }
+  });
+
+  physics({
+    id: 'projectile-height-h0', title: 'Projectile height from launch elevation h₀',
+    match: ['y(t)=h_0+v_0sin(θ)t−½gt^2'], y: 'the height', first: 'h_0',
+    labels: { drive: 'Lifts it up', resist: 'Pulls it down', geo: 'Launch angle' },
+    init: { h0: 2, v0: 15, th: 45, t: 1, g: 9.8 }, out: ['y', 'm'],
+    f: function (s) { return s.h0 + s.v0 * Math.sin(rad(s.th)) * s.t - 0.5 * s.g * s.t * s.t; },
+    line: function (s) {
+      var y = s.h0 + s.v0 * Math.sin(rad(s.th)) * s.t - 0.5 * s.g * s.t * s.t;
+      return 'y = ' + fmtNum(y) + ' m at t = ' + fmtNum(s.t) + ' s' + (y < 0 ? ' (below landing level)' : '');
+    },
+    tokens: {
+      y: { t: 'Height at time t', c: 'lhs', role: 'Vertical position', is: 'Height above the landing ground at time t, in metres.', does: 'Combines release height, upward launch climb, and downward gravity drop.' },
+      t: { t: 'Elapsed time', c: 'drive', role: 'Flight time', is: 'Seconds since release.', does: 'Early in flight the upward term wins; later, t² in the gravity term pulls the ball back down.', s: ['t', 0, 4, 0.1, 's'] },
+      'h_0': { t: 'Release height', c: 'drive', role: 'Starting height', is: 'How high above the ground the ball leaves your hand or foot, in metres.', does: 'Raise release height by 1 m and the whole curve shifts 1 m higher, giving extra hang time.', s: ['h0', 0, 5, 0.2, 'm'] },
+      'v_0': { t: 'Launch speed', c: 'drive', role: 'Initial speed', is: 'Speed right at release, in m/s.', does: 'Faster launch increases the upward climb v₀ sin(θ) t.', s: ['v0', 1, 35, 1, 'm/s'] },
+      sin: SIN('Picks out only the vertical part of the launch speed.'),
+      'θ': { t: 'Launch angle', c: 'geo', role: 'Release angle', is: 'Angle above level ground, in degrees.', does: 'At 90° (straight up) all speed goes into height; at 0° (horizontal) no speed pushes upward.', s: ['th', 0, 90, 5, '°'] },
+      '½': HALF('Average downward speed during steady acceleration is ½gt, giving ½gt² drop.'),
+      g: { t: 'Gravity', c: 'resist', role: 'Downward pull', is: 'Gravitational acceleration: 9.8 m/s² on Earth.', does: 'Stronger gravity bends the trajectory downward sooner.', s: ['g', 1.6, 20, 0.2, 'm/s²'] },
+      't^2': { t: 'Time squared', c: 'resist', role: 'Gravity drop growth', is: 'Flight time in seconds, multiplied by itself.', does: 'Makes the fall accelerate faster every second, turning the path into a downward parabola.', s: ['t', 0, 4, 0.1, 's'], x: 't' }
+    }
+  });
+
+  physics({
+    id: 'angular-momentum', title: 'Conservation of angular momentum',
+    match: ['L=Iω'], y: 'angular momentum', first: 'I',
+    init: { I: 2, w: 3 }, out: ['L', 'kg·m²/s'],
+    f: function (s) { return s.I * s.w; },
+    line: function (s) { return 'L = ' + fmtNum(s.I) + ' kg·m² × ' + fmtNum(s.w) + ' rad/s = ' + fmtNum(s.I * s.w) + ' kg·m²/s'; },
+    tokens: {
+      L: { t: 'Angular momentum', c: 'lhs', role: 'Rotational motion', is: 'Total spin momentum of a rotating skater, diver, or planet, in kg·m²/s.', does: 'Stays constant when no outside twist (torque) acts, so shrinking I forces ω to speed up.' },
+      I: { t: 'Moment of inertia', c: 'drive', role: 'Mass spread', is: 'Measures both mass and how far out from the spin axis it sits, in kg·m².', does: 'Pulling arms in tight cuts I in half; to keep L fixed, your spin rate ω automatically doubles!', s: ['I', 0.2, 5, 0.2, 'kg·m²'] },
+      'ω': { t: 'Angular velocity (omega)', c: 'drive', role: 'Spin rate', is: 'How fast the body spins, in radians per second (rad/s).', does: 'With I fixed, doubling spin speed doubles angular momentum.', s: ['w', 0.5, 12, 0.5, 'rad/s'] }
+    }
+  });
+
+  physics({
+    id: 'biomech-ke-elastic', title: 'Kinetic and elastic spring energy',
+    match: ['KE=½mv^2PE_elastic=½kx^2'], first: 'v^2',
+    tokens: {
+      KE: { t: 'Kinetic energy', c: 'neutral', role: 'Motion energy', is: 'Energy of a moving athlete or ball, in joules (J).', does: 'At landing, this motion energy transfers into stretched tendons or springboards as elastic energy.' },
+      '½': HALF('Because force grows linearly during acceleration or stretching, the average factor is ½.'),
+      m: { t: 'Mass', c: 'neutral', role: 'Body mass', is: 'Mass of the moving object in kilograms (kg).', does: 'Double the mass at the same speed and kinetic energy doubles.' },
+      'v^2': { t: 'Speed squared', c: 'neutral', role: 'Impact speed', is: 'Speed in m/s, multiplied by itself.', does: 'Double your takeoff speed and kinetic energy jumps fourfold.' },
+      'PE_elastic': { t: 'Elastic potential energy', c: 'neutral', role: 'Stored stretch energy', is: 'Energy stored in a stretched tendon, muscle, or diving board, in joules (J).', does: 'Released on rebound to launch the jumper back upward.' },
+      k: { t: 'Stiffness (spring constant)', c: 'neutral', role: 'Tendon stiffness', is: 'Force needed per metre of stretch, in N/m.', does: 'Stiffer tendons store more energy for the same stretch distance.' },
+      'x^2': { t: 'Stretch distance squared', c: 'neutral', role: 'Compression / stretch', is: 'How far the tendon or spring compresses from rest, in metres, squared.', does: 'Doubling the bend or stretch stores four times the elastic energy.' }
+    }
+  });
+
+  physics({
+    id: 'energy-conservation', title: 'Conservation of total energy',
+    match: ['E_total=constant'], first: 'E_total',
+    tokens: {
+      'E_total': { t: 'Total mechanical energy', c: 'lhs', role: 'Total energy', is: 'Add kinetic energy (KE) plus potential energy (PE) together, in joules (J).', does: 'In an isolated system without friction, energy trades back and forth between KE and PE while their sum never changes.' },
+      constant: { t: 'Unchanging total', c: 'const', role: 'Conserved value', is: 'Stays the exact same number of joules at the top, middle, and bottom of a roller coaster.', does: 'Check your calculations at any two points: KE₁ + PE₁ must equal KE₂ + PE₂.' }
+    }
+  });
+
+  physics({
+    id: 'conservative-work', title: 'Work and potential energy change',
+    match: ['W=−ΔPE'], y: 'the work done', first: 'ΔPE',
+    init: { dPE: 40 }, out: ['W', 'J'],
+    f: function (s) { return -s.dPE; },
+    line: function (s) {
+      return 'W = −(' + fmtNum(s.dPE) + ' J) = ' + fmtNum(-s.dPE) + ' J' + (s.dPE > 0 ? ' (gravity takes KE and stores PE)' : s.dPE < 0 ? ' (gravity releases PE into KE)' : '');
+    },
+    tokens: {
+      W: { t: 'Work by conservative force', c: 'lhs', role: 'Work done', is: 'Energy transferred by gravity or a spring during a move, in joules (J).', does: 'Positive when the force speeds you up (falling down); negative when it slows you down (rising up).' },
+      '−': { t: 'Opposite-sign minus', c: 'op', role: 'Energy trade', is: 'Shows that positive work by gravity lowers stored potential energy, and vice versa.', does: 'Going uphill, gravity does negative work while PE climbs.' },
+      'ΔPE': { t: 'Change in potential energy', c: 'resist', role: 'Stored change', is: 'Final potential energy minus starting potential energy, in joules (J).', does: 'Raise a ball so PE rises by +40 J, and gravity did −40 J of work on the way up.', s: ['dPE', -100, 100, 5, 'J'] }
+    }
+  });
+
+  physics({
+    id: 'impulse-momentum', title: 'Impulse–momentum theorem',
+    match: ['FΔt=Δp=mΔv'], y: 'the impulse', first: 'Δt',
+    init: { F: 200, dt: 0.2 }, out: ['Δp', 'N·s'],
+    f: function (s) { return s.F * s.dt; },
+    line: function (s) { return 'F × Δt = ' + fmtNum(s.F) + ' N × ' + fmtNum(s.dt) + ' s = ' + fmtNum(s.F * s.dt) + ' N·s (= kg·m/s)'; },
+    tokens: {
+      F: { t: 'Average net force', c: 'drive', role: 'Impact force', is: 'Average push or pull during the collision or catch, in newtons (N).', does: 'To stop the same momentum change Δp, doubling the impact time Δt cuts the peak force F in half!', s: ['F', 10, 500, 10, 'N'] },
+      'Δt': { t: 'Contact time', c: 'drive', role: 'Impact duration', is: 'How long the bat, pad, or airbag pushes on the object, in seconds.', does: 'Follow-through or bending knees stretches Δt, reducing the peak force on your joints.', s: ['dt', 0.05, 1, 0.05, 's'] },
+      'Δp': { t: 'Change in momentum', c: 'lhs', role: 'Impulse / momentum change', is: 'Final momentum minus starting momentum, in kg·m/s (same as N·s).', does: 'Equals the total impulse F × Δt delivered.' },
+      m: { t: 'Mass', c: 'neutral', role: 'Object mass', is: 'Mass of the object being accelerated or stopped, in kg.', does: 'A heavier ball needs a larger impulse for the same speed change.' },
+      'Δv': { t: 'Change in velocity', c: 'neutral', role: 'Velocity change', is: 'Final velocity minus starting velocity, in m/s.', does: 'Reversing a ball from +10 m/s to −10 m/s is a Δv of 20 m/s, twice the impulse of just stopping it.' }
+    }
+  });
+
+  physics({
+    id: 'mechanical-power', title: 'Mechanical power',
+    match: ['P=W/t=Fv'], y: 'the power', first: 'v',
+    init: { F: 50, v: 3 }, out: ['P', 'W'],
+    f: function (s) { return s.F * s.v; },
+    line: function (s) { return 'P = ' + fmtNum(s.F) + ' N × ' + fmtNum(s.v) + ' m/s = ' + fmtNum(s.F * s.v) + ' W'; },
+    tokens: {
+      P: { t: 'Mechanical power', c: 'lhs', role: 'Energy rate', is: 'How fast work is done, in watts (1 W = 1 joule per second).', does: 'Running up stairs uses the same work as walking, but in half the time — so it takes twice the power.' },
+      W: { t: 'Work done', c: 'neutral', role: 'Energy transferred', is: 'Total energy delivered by the force, in joules (J).', does: 'More work in the same time means higher power.' },
+      t: { t: 'Time taken', c: 'neutral', role: 'Duration', is: 'How many seconds the task takes.', does: 'Cut the time in half for the same work W and the power doubles.' },
+      F: { t: 'Force along motion', c: 'drive', role: 'Driving force', is: 'Push or pull in the direction of motion, in newtons (N).', does: 'Double the pulling force at the same speed and the power doubles.', s: ['F', 5, 200, 5, 'N'] },
+      v: { t: 'Speed', c: 'drive', role: 'Motion speed', is: 'How fast the object moves, in m/s.', does: 'Double the speed against the same resistive force and the engine must deliver twice the power.', s: ['v', 0.5, 20, 0.5, 'm/s'] }
+    }
+  });
+
+  physics({
+    id: 'free-fall-suite', title: 'Free fall equations (starting from rest)',
+    match: ['v=gt|y=½gt^2|v^2=2gy', 'v=gty=½gt^2v^2=2gy'], first: 't',
+    tokens: {
+      v: { t: 'Instantaneous speed', c: 'neutral', role: 'Fall speed', is: 'How fast the falling object moves after time t, in m/s.', does: 'Under Earth gravity (g ≈ 9.8 m/s²), speed adds 9.8 m/s every second: 9.8 m/s at 1 s, 19.6 m/s at 2 s.' },
+      g: { t: 'Gravitational field strength', c: 'neutral', role: 'Gravity', is: 'Acceleration due to gravity: 9.8 m/s² on Earth, 1.6 m/s² on the Moon.', does: 'Stronger gravity increases speed, drop distance, and impact speed together.' },
+      t: { t: 'Time elapsed', c: 'neutral', role: 'Fall time', is: 'Seconds since the object was dropped from rest.', does: 'Speed grows linearly with t, while distance y grows with t².' },
+      y: { t: 'Distance fallen', c: 'neutral', role: 'Drop height', is: 'Vertical distance fallen from the drop point, in metres.', does: 'In 1 second an object drops ~4.9 m; in 2 seconds it drops 4 times as far (~19.6 m).' },
+      '½': HALF('Average speed during free fall from rest is half the final speed, giving y = ½gt².'),
+      't^2': { t: 'Time squared', c: 'neutral', role: 'Squared fall time', is: 'Time in seconds multiplied by itself.', does: 'Doubling the fall time quadruples the distance fallen.' },
+      'v^2': { t: 'Final speed squared', c: 'neutral', role: 'Speed squared', is: 'Impact speed in m/s, multiplied by itself.', does: 'Take the square root of 2gy to find impact speed straight from drop height without timing the fall.' },
+      '2': { t: 'Factor of 2', c: 'const', role: 'Kinematics factor', is: 'Comes from eliminating time t between v = gt and y = ½gt².', does: 'To double your landing speed, you must drop from 4 times the height.' }
+    }
+  });
+
+  physics({
+    id: 'torque-words', title: 'Torque on a lever',
+    match: ['torque=forceperpendiculardistance'], y: 'the torque', first: 'force',
+    init: { F: 20, d: 0.5 }, out: ['torque', 'N·m'],
+    f: function (s) { return s.F * s.d; },
+    line: function (s) { return 'torque = ' + fmtNum(s.F) + ' N × ' + fmtNum(s.d) + ' m = ' + fmtNum(s.F * s.d) + ' N·m'; },
+    tokens: {
+      torque: { t: 'Torque (turning effect)', c: 'lhs', role: 'Turning effect', is: 'How strongly a force twists a lever around its fulcrum, in newton-metres (N·m).', does: 'To balance a seesaw or lever, clockwise torque must equal counterclockwise torque.' },
+      force: { t: 'Applied force', c: 'drive', role: 'Push or pull', is: 'How hard you push or pull perpendicular to the lever bar, in newtons (N).', does: 'Double the push at the same spot on the wrench and you double the torque.', s: ['F', 5, 100, 5, 'N'] },
+      'perpendicular distance': { t: 'Lever arm distance', c: 'drive', role: 'Distance to fulcrum', is: 'Measure at a right angle from the fulcrum (pivot) to where you push, in metres.', does: 'Push twice as far from the hinge or fulcrum and you get twice the turning effect with the same force.', s: ['d', 0.1, 2, 0.1, 'm'] }
+    }
+  });
+
+  physics({
+    id: 'lever-balance', title: 'Balanced lever law',
+    match: ['F_effortd_effort=F_loadd_load'], y: 'the effort force', first: 'd_effort',
+    init: { Fload: 60, dload: 0.5, deffort: 1.5 }, out: ['F_effort', 'N'],
+    f: function (s) { return (s.Fload * s.dload) / s.deffort; },
+    line: function (s) { return 'F_effort = (' + fmtNum(s.Fload) + ' N × ' + fmtNum(s.dload) + ' m) ÷ ' + fmtNum(s.deffort) + ' m = ' + fmtNum((s.Fload * s.dload) / s.deffort) + ' N'; },
+    tokens: {
+      'F_effort': { t: 'Effort force', c: 'lhs', role: 'Your push or pull', is: 'How hard you must push or pull on your end of the lever, in newtons (N).', does: 'Make your lever arm d_effort 3 times longer than d_load, and you lift the load with only one-third of its weight.' },
+      'd_effort': { t: 'Effort arm length', c: 'resist', role: 'Your distance to fulcrum', is: 'Distance from the fulcrum to your hand, in metres.', does: 'Double your distance from the pivot and the force you need to balance the same load drops in half.', s: ['deffort', 0.2, 3, 0.1, 'm'] },
+      'F_load': { t: 'Load force', c: 'drive', role: 'Object weight', is: 'Weight or force of the object you want to lift, in newtons (N).', does: 'A load twice as heavy needs twice the effort unless you lengthen your effort arm.', s: ['Fload', 10, 200, 5, 'N'] },
+      'd_load': { t: 'Load arm length', c: 'drive', role: 'Load distance to fulcrum', is: 'Distance from the fulcrum to the load, in metres.', does: 'Slide the heavy rock closer to the fulcrum (shrink d_load) and it becomes much easier to lift.', s: ['dload', 0.1, 2, 0.1, 'm'] }
+    }
+  });
+
+  physics({
+    id: 'wheel-axle-force', title: 'Force multiplied by a wheel and axle',
+    y: 'the load force', first: 'R',
+    init: { Feffort: 10, R: 20, r: 4 }, out: ['F_load', 'N'],
+    f: function (s) { return s.Feffort * (s.R / s.r); },
+    line: function (s) { return 'F_load = ' + fmtNum(s.Feffort) + ' N × (' + fmtNum(s.R) + ' ÷ ' + fmtNum(s.r) + ') = ' + fmtNum(s.Feffort * (s.R / s.r)) + ' N'; },
+    tokens: {
+      'F_load': { t: 'Load force lifted', c: 'lhs', role: 'Output force', is: 'The lifted force at the axle, in newtons (N).', does: 'A fat doorknob or screwdriver handle multiplies your hand force by the ratio R/r.' },
+      'F_effort': { t: 'Effort force', c: 'drive', role: 'Input hand force', is: 'How hard you push or turn the outer wheel rim, in newtons (N).', does: 'Double your push at the wheel rim and the output force at the axle doubles.', s: ['Feffort', 1, 50, 1, 'N'] },
+      R: { t: 'Wheel radius', c: 'drive', role: 'Outer wheel size', is: 'Measure from the center shaft to the outer rim where your hand turns, in cm.', does: 'Use a wheel twice as wide on the same axle and you get twice the lifting force.', s: ['R', 5, 50, 1, 'cm'] },
+      r: { t: 'Axle radius', c: 'resist', role: 'Inner shaft size', is: 'Measure from the center to the edge of the thin inner axle, in cm.', does: 'Halve the axle radius for the same wheel and the output force doubles (though the rope winds up slower).', s: ['r', 1, 20, 0.5, 'cm'] }
+    }
+  });
+
+  physics({
+    id: 'vector-components', title: 'Breaking a vector into x and y components',
+    match: ['v_x=|v|cos(θ)v_y=|v|sin(θ)'], first: 'θ',
+    tokens: {
+      'v_x': { t: 'Horizontal component (vx)', c: 'neutral', role: 'Sideways part', is: 'How much of the velocity points left or right, in m/s.', does: 'Equals |v| when θ = 0° (purely horizontal) and drops to 0 at θ = 90°.' },
+      v: { t: 'Vector magnitude (|v|)', c: 'neutral', role: 'Total speed', is: 'The total speed (length of the velocity arrow), in m/s.', does: 'Double the arrow’s length at the same angle θ and both v_x and v_y double.' },
+      cos: COS('Picks out the horizontal fraction of the arrow along the x-axis.'),
+      'θ': { t: 'Direction angle', c: 'neutral', role: 'Arrow angle', is: 'Measure counter-clockwise from the positive x-axis, in degrees.', does: 'At 45°, cos(45°) = sin(45°) ≈ 0.707, so sideways and upward parts are equal.' },
+      'v_y': { t: 'Vertical component (vy)', c: 'neutral', role: 'Up/down part', is: 'How much of the velocity points straight up or down, in m/s.', does: 'Equals |v| when θ = 90° (straight up) and drops to 0 when flying flat (0°).' },
+      sin: SIN('Picks out the vertical fraction of the arrow along the y-axis.')
+    }
+  });
+
+  physics({
+    id: 'vector-magnitude-angle', title: 'Vector length and direction from components',
+    match: ['|v|=√(v_x^2+v_y^2)θ=atan2(v_y,v_x)'], first: 'v_x^2',
+    tokens: {
+      v: { t: 'Vector magnitude (|v|)', c: 'neutral', role: 'Arrow length', is: 'The total speed (length of the hypotenuse), in m/s.', does: 'Found with Pythagoras: if v_x = 3 m/s and v_y = 4 m/s, then |v| = √(9 + 16) = 5 m/s.' },
+      '√': ROOT('Combines the squared horizontal and vertical parts back into total length.'),
+      'v_x^2': { t: 'Horizontal component squared', c: 'neutral', role: 'Sideways part squared', is: 'Horizontal speed v_x multiplied by itself.', does: 'Because it is squared, negative v_x (leftward) contributes positively to total speed.' },
+      'v_y^2': { t: 'Vertical component squared', c: 'neutral', role: 'Vertical part squared', is: 'Vertical speed v_y multiplied by itself.', does: 'Adds with v_x² inside the square root.' },
+      'θ': { t: 'Direction angle', c: 'neutral', role: 'Arrow angle', is: 'Angle the arrow points counter-clockwise from the +x axis.', does: 'atan2(v_y, v_x) finds the exact quadrant even when v_x is negative or zero.' },
+      atan2: { t: 'Two-argument arctangent', c: 'op', role: 'Quadrant angle', is: 'Turns (v_y, v_x) into an angle from −180° to +180°.', does: 'Gives 45° for (1, 1) and −135° for (−1, −1), which plain tan⁻¹(v_y/v_x) cannot tell apart.' },
+      'v_y': { t: 'Vertical component', c: 'neutral', role: 'Up/down speed', is: 'Vertical speed in m/s.', does: 'Sets whether the arrow points into the upper (+v_y) or lower (−v_y) half.' },
+      'v_x': { t: 'Horizontal component', c: 'neutral', role: 'Left/right speed', is: 'Horizontal speed in m/s.', does: 'Sets whether the arrow points right (+v_x) or left (−v_x).' }
+    }
+  });
+
+  physics({
+    id: 'cross-product-mag', title: 'Cross product magnitude',
+    match: ['|A×B|=|A||B|sin(θ)'], y: '|A × B|', first: 'θ',
+    labels: { drive: 'Vector lengths', geo: 'Angle between them' },
+    init: { A: 3, B: 4, th: 90 }, out: ['|A × B|', ''],
+    f: function (s) { return s.A * s.B * Math.sin(rad(s.th)); },
+    line: function (s) {
+      var res = s.A * s.B * Math.sin(rad(s.th));
+      if (Math.abs(res) < 1e-6) res = 0;
+      return '|A × B| = ' + fmtNum(s.A) + ' × ' + fmtNum(s.B) + ' × sin(' + fmtNum(s.th) + '°) = ' + fmtNum(res);
+    },
+    tokens: {
+      A: { t: 'First vector length (|A|)', c: 'drive', role: 'First arrow', is: 'Measure the length (magnitude) of vector A.', does: 'Double |A| and the cross product magnitude doubles.', s: ['A', 0.5, 10, 0.5, ''] },
+      B: { t: 'Second vector length (|B|)', c: 'drive', role: 'Second arrow', is: 'Measure the length (magnitude) of vector B.', does: 'Geometrically, |A × B| is the area of the parallelogram formed by arrows A and B.', s: ['B', 0.5, 10, 0.5, ''] },
+      sin: SIN('Equals 1 when A and B are perpendicular (90°) and 0 when they point along the same line (0° or 180°).'),
+      'θ': { t: 'Angle between A and B', c: 'geo', role: 'Separation angle', is: 'Measure the angle between the two arrows from 0° to 180°.', does: 'Perpendicular arrows (90°) maximize |A × B|; parallel arrows give 0.', s: ['th', 0, 180, 5, '°'] }
+    }
+  });
+
+  physics({
+    id: 'dot-product', title: 'Vector dot product',
+    match: ['A·B=|A||B|cos(θ)=A_xB_x+A_yB_y+A_zB_z'], first: 'θ',
+    tokens: {
+      A: { t: 'Vector A', c: 'neutral', role: 'First arrow', is: 'First vector arrow, with components (A_x, A_y, A_z).', does: 'Dot product checks how much A and B point in the same direction.' },
+      B: { t: 'Vector B', c: 'neutral', role: 'Second arrow', is: 'Second vector arrow, with components (B_x, B_y, B_z).', does: 'If A and B are perpendicular (90°), A · B = 0!' },
+      cos: COS('Equals +1 when parallel, 0 when perpendicular (90°), and −1 when pointing opposite ways (180°).'),
+      'θ': { t: 'Angle between A and B', c: 'neutral', role: 'Alignment angle', is: 'Angle between the two arrows in degrees.', does: 'Positive dot product means angle < 90°; negative means > 90°.' },
+      'A_x': { t: 'x-part of A', c: 'neutral', role: 'x component', is: 'Horizontal x coordinate of vector A.', does: 'Multiplies B_x; matching-axis products add up.' },
+      'B_x': { t: 'x-part of B', c: 'neutral', role: 'x component', is: 'Horizontal x coordinate of vector B.', does: 'Multiplies A_x in the component sum.' },
+      'A_y': { t: 'y-part of A', c: 'neutral', role: 'y component', is: 'y coordinate of vector A.', does: 'Multiplies B_y in the component sum.' },
+      'B_y': { t: 'y-part of B', c: 'neutral', role: 'y component', is: 'y coordinate of vector B.', does: 'Multiplies A_y in the component sum.' },
+      'A_z': { t: 'z-part of A', c: 'neutral', role: 'z component', is: 'Depth z coordinate of vector A.', does: 'Multiplies B_z in 3D; in 2D both z parts are 0.' },
+      'B_z': { t: 'z-part of B', c: 'neutral', role: 'z component', is: 'Depth z coordinate of vector B.', does: 'Multiplies A_z in the 3D dot product.' }
+    }
+  });
+
+  physics({
+    id: 'carnot-heat-ratio', title: 'Reversible engine heat–temperature balance',
+    match: ['Q_1/T_1=Q_2/T_2', 'Q_hot/T_hot=Q_cold/T_cold'], first: 'T_1',
+    tokens: {
+      'Q_1': { t: 'Heat from hot source', c: 'neutral', role: 'Heat in', is: 'Thermal energy entering from the hot reservoir, in joules (J).', does: 'For a reversible Carnot engine, Q₁ ÷ T₁ equals Q₂ ÷ T₂.' },
+      'T_1': { t: 'Hot temperature', c: 'neutral', role: 'Hot reservoir (K)', is: 'Temperature of the hot source in kelvin (K = °C + 273).', does: 'Must be in kelvin: a hotter source at 600 K vs 300 K cold sink limits maximum efficiency to 1 − 300/600 = 50%.' },
+      'Q_2': { t: 'Heat to cold sink', c: 'neutral', role: 'Exhaust heat', is: 'Thermal energy dumped into the cold surroundings, in joules (J).', does: 'The remaining heat Q₁ − Q₂ becomes useful mechanical work.' },
+      'T_2': { t: 'Cold temperature', c: 'neutral', role: 'Cold reservoir (K)', is: 'Temperature of the cold sink in kelvin (K).', does: 'Colder exhaust T₂ lets the engine convert a larger share of Q₁ into work.' },
+      'Q_hot': { t: 'Heat from hot reservoir', c: 'neutral', role: 'Heat in', is: 'Thermal energy absorbed from the hot boiler or combustion gas, in joules (J).', does: 'In an ideal reversible engine, Q_hot ÷ T_hot matches Q_cold ÷ T_cold.' },
+      'T_hot': { t: 'Hot reservoir temperature', c: 'neutral', role: 'Hot temperature (K)', is: 'Absolute temperature of the hot source in kelvin (K).', does: 'Raising T_hot lets a larger fraction of heat become work (max efficiency = 1 − T_cold/T_hot).' },
+      'Q_cold': { t: 'Heat dumped to cold sink', c: 'neutral', role: 'Waste heat', is: 'Thermal energy exhausted to the cold air or cooling water, in joules (J).', does: 'Cannot be zero unless T_cold reaches absolute zero (0 K).' },
+      'T_cold': { t: 'Cold reservoir temperature', c: 'neutral', role: 'Cold temperature (K)', is: 'Absolute temperature of the cold sink in kelvin (K).', does: 'Lower T_cold reduces the fraction of heat that must be thrown away.' }
+    }
+  });
+
+  physics({
+    id: 'radioactive-activity', title: 'Radioactive decay activity',
+    match: ['A=λN'], y: 'the activity', first: 'λ',
+    init: { lam: 0.05, N: 1000 }, out: ['A', 'decays/s'],
+    f: function (s) { return s.lam * s.N; },
+    line: function (s) { return 'A = ' + fmtNum(s.lam) + ' s⁻¹ × ' + fmtNum(s.N) + ' atoms = ' + fmtNum(s.lam * s.N) + ' Bq'; },
+    tokens: {
+      A: { t: 'Activity (decay rate)', c: 'lhs', role: 'Decays per second', is: 'How many nuclei decay each second, measured in becquerels (1 Bq = 1 decay/s; 1 curie = 3.7 × 10¹⁰ Bq).', does: 'A Geiger counter clicks faster when activity A is higher.' },
+      'λ': { t: 'Decay constant (lambda)', c: 'drive', role: 'Decay probability', is: 'Chance per second that any single unstable atom decays (in s⁻¹).', does: 'Elements with a short half-life have a large λ, so the same number of atoms clicks much faster.', s: ['lam', 0.005, 0.5, 0.005, 's⁻¹'] },
+      N: { t: 'Undecayed atoms remaining', c: 'drive', role: 'Atom count', is: 'Count how many radioactive nuclei are still left right now.', does: 'After one half-life, N drops in half, so activity A drops in half too.', s: ['N', 100, 5000, 100, 'atoms'] }
+    }
+  });
+
+  physics({
+    id: 'magnetic-flux-density', title: 'Magnetic flux density (Tesla)',
+    match: ['B=Φ/A'], y: 'the magnetic field', first: 'A',
+    init: { phi: 0.02, A: 0.04 }, out: ['B', 'T'],
+    f: function (s) { return s.phi / s.A; },
+    line: function (s) { return 'B = ' + fmtNum(s.phi) + ' Wb ÷ ' + fmtNum(s.A) + ' m² = ' + fmtNum(s.phi / s.A) + ' T'; },
+    tokens: {
+      B: { t: 'Magnetic flux density', c: 'lhs', role: 'Field strength', is: 'How tightly magnetic field lines are packed per square metre, measured in teslas (T).', does: 'A fridge magnet is ~0.005 T; an MRI scanner is 1.5–3 T.' },
+      'Φ': { t: 'Magnetic flux (Phi)', c: 'drive', role: 'Total field lines', is: 'Total magnetic field passing straight through the loop or surface, in webers (Wb).', does: 'Double the total flux through the same coil area and the field strength B doubles.', s: ['phi', 0.002, 0.1, 0.002, 'Wb'] },
+      A: { t: 'Surface area', c: 'resist', role: 'Coil / cross-section area', is: 'Measure the area the magnetic field passes through, in square metres (m²).', does: 'Focus the same magnetic flux into half the area and the field strength B doubles.', s: ['A', 0.01, 0.2, 0.005, 'm²'] }
+    }
+  });
+
+  physics({
+    id: 'string-harmonics', title: 'Vibrating string frequencies',
+    match: ['f_n=n/(2L)xsqrt(T/mu)'], y: 'the frequency', first: 'L',
+    init: { n: 1, L: 0.65, T: 70, mu: 0.001 }, out: ['f_n', 'Hz'],
+    f: function (s) { return (s.n / (2 * s.L)) * Math.sqrt(s.T / s.mu); },
+    line: function (s) { return 'f_' + fmtNum(s.n) + ' = ' + fmtNum((s.n / (2 * s.L)) * Math.sqrt(s.T / s.mu)) + ' Hz'; },
+    tokens: {
+      'f_n': { t: 'Harmonic frequency', c: 'lhs', role: 'String pitch', is: 'Pitch played by the string in hertz (Hz = vibrations per second).', does: 'At n = 1 you hear the fundamental note; n = 2 is an octave higher.' },
+      n: { t: 'Harmonic number', c: 'drive', role: 'Loop count', is: 'Whole number 1, 2, 3… counting how many vibrating loops fit on the string.', does: 'Touching the string lightly at its midpoint forces n = 2 and doubles the pitch to one octave up.', s: ['n', 1, 5, 1, ''] },
+      '2': { t: 'Half-wave factor (2)', c: 'const', role: 'Full wave factor', is: 'One full wavelength is twice the string length (2L) for the fundamental loop.', does: 'Stays fixed at 2 for any string fixed at both ends.' },
+      L: { t: 'Vibrating string length', c: 'resist', role: 'Scale length', is: 'Measure from nut to bridge (or fret to bridge), in metres.', does: 'Press a fret halfway down the string (halve L) and the frequency doubles, jumping one octave!', s: ['L', 0.2, 1.0, 0.05, 'm'] },
+      x: { t: 'Times', c: 'op', role: 'Operator', is: 'Multiplies the standing-wave factor n/(2L) by the wave speed √(T/μ).', does: 'Combines string length with wave speed to give frequency.' },
+      sqrt: ROOT('Frequency grows with the square root of tension: quadruple tension T to double pitch.'),
+      T: { t: 'String tension', c: 'drive', role: 'Tuning peg pull', is: 'How tightly the string is stretched, in newtons (N).', does: 'Tighten the tuning peg to 4× tension and the wave speed doubles, raising pitch one octave.', s: ['T', 20, 200, 5, 'N'] },
+      mu: { t: 'String mass per metre (μ)', c: 'resist', role: 'String thickness', is: 'Kilograms per metre of string length (heavy wound bass strings have large μ).', does: 'A string 4× heavier per metre vibrates at half the frequency (one octave lower) at the same tension.', s: ['mu', 0.0005, 0.01, 0.0005, 'kg/m'] }
+    }
+  });
+
+  physics({
+    id: 'rf-wavelength', title: 'Radio wavelength and speed of light',
+    match: ['λ=c/fc≈300,000,000m/s', 'λ=c/f'], y: 'the wavelength', first: 'f',
+    init: { f: 600 }, out: ['λ', 'm'],
+    f: function (s) { return 300 / s.f; },
+    line: function (s) { return 'At ' + fmtNum(s.f) + ' MHz, λ = ' + fmtNum(300 / s.f) + ' m (half-wave antenna ≈ ' + fmtNum(150 / s.f) + ' m)'; },
+    tokens: {
+      'λ': { t: 'Radio wavelength', c: 'lhs', role: 'Wave length', is: 'Distance between two radio wave crests in metres; sets the right size for an antenna.', does: 'At 600 MHz, a full wave is 0.50 m and a half-wave wireless mic antenna is 0.25 m.' },
+      c: { t: 'Speed of light', c: 'const', role: 'Wave speed', is: 'Speed of radio waves and light in air/space: about 300,000,000 metres per second.', does: 'Fixed by nature, so higher frequencies always have shorter wavelengths.' },
+      f: { t: 'Carrier frequency', c: 'resist', role: 'Radio frequency', is: 'How many wave cycles pass each second (slider is in megahertz, MHz = million Hz).', does: 'Double the channel frequency from 500 MHz to 1000 MHz and the wavelength cuts in half from 0.6 m to 0.3 m.', s: ['f', 100, 2400, 25, 'MHz'] },
+      '300,000,000': { t: '300,000,000', c: 'const', role: 'Speed value', is: 'Approximate speed of light in metres per second (exact value: 299,792,458 m/s).', does: 'Divided by frequency in Hz, it gives wavelength in metres.' },
+      m: { t: 'Metres', c: 'const', role: 'Unit of length', is: 'Distance unit in the metric system.', does: 'Part of m/s (metres per second), the unit for speed c.' },
+      s: { t: 'Seconds', c: 'const', role: 'Unit of time', is: 'Time unit.', does: 'In m/s, seconds cancel with Hz (1/s) to leave wavelength in metres.' }
+    }
+  });
+
+  physics({
+    id: 'rf-intermod', title: 'Third-order RF intermodulation products',
+    first: 'f_1',
+    tokens: {
+      '2': { t: 'Second-harmonic factor (2)', c: 'const', role: 'Two-tone mix', is: 'Strong signals inside a receiver mix nonlinearly, doubling one frequency and subtracting another.', does: 'Produces phantom interference at 2f₁ − f₂ and 2f₂ − f₁ right next to your real wireless channels.' },
+      'f_1': { t: 'First transmitter frequency', c: 'neutral', role: 'Mic channel 1', is: 'Frequency of wireless microphone 1 in MHz.', does: 'If mic 1 is at 500 MHz and mic 2 is at 502 MHz (2 MHz gap), watch out for phantom hits at 498 MHz and 504 MHz!' },
+      'f_2': { t: 'Second transmitter frequency', c: 'neutral', role: 'Mic channel 2', is: 'Frequency of wireless microphone 2 in MHz.', does: 'Equal spacing between mics guarantees their 2f₁ − f₂ phantom lands straight on a third mic!' },
+      'f_3': { t: 'Third transmitter frequency', c: 'neutral', role: 'Mic channel 3', is: 'Frequency of wireless microphone 3 in MHz.', does: 'Three transmitters also create f₁ + f₂ − f₃ triple-beat ghosts; uneven spacing avoids collisions.' }
+    }
+  });
+
+  physics({
+    id: 'proportion', title: 'Proportional ratios',
+    match: ['a/b=c/d'], first: 'a',
+    tokens: {
+      a: { t: 'First numerator (a)', c: 'neutral', role: 'First part', is: 'Top quantity of the first ratio (for example, 2 cups of flour).', does: 'Double a and b together, or double a and c together, and the two ratios stay equal.' },
+      b: { t: 'First denominator (b)', c: 'neutral', role: 'First base', is: 'Bottom quantity of the first ratio (for example, 12 cookies).', does: 'Cross-multiplying gives a × d = b × c, which lets you solve for any missing number.' },
+      c: { t: 'Second numerator (c)', c: 'neutral', role: 'Scaled part', is: 'Top quantity of the second ratio (cups of flour for the bigger batch).', does: 'Scale the batch size d by 3× and c scales by 3× too (6 cups for 36 cookies).' },
+      d: { t: 'Second denominator (d)', c: 'neutral', role: 'Scaled base', is: 'Bottom quantity of the second ratio (36 cookies).', does: 'Check any proportion by testing whether a ÷ b equals c ÷ d.' }
+    }
+  });
+
+  physics({
+    id: 'quadratic-formula', title: 'The quadratic formula',
+    match: ['x=(−b±√(b^2−4ac))/(2a)'], first: 'b',
+    tokens: {
+      x: { t: 'Roots (solutions x)', c: 'lhs', role: 'Curve zeros', is: 'The x-values where ax² + bx + c = 0 (where the parabola crosses the x-axis).', does: 'Because of ±, there can be 2 crossings, 1 touching point, or 0 real crossings.' },
+      b: { t: 'Linear coefficient (b)', c: 'neutral', role: 'Center shift', is: 'The number multiplying x in ax² + bx + c = 0.', does: 'Sets the parabola’s symmetry line at x = −b / (2a).' },
+      '±': { t: 'Plus or minus', c: 'op', role: 'Two branches', is: 'Says to work the formula out twice: once adding the square root, once subtracting it.', does: 'Gives the left and right roots symmetrically around −b/(2a).' },
+      '√': ROOT('Takes the square root of the discriminant b² − 4ac.'),
+      'b^2': { t: 'b squared', c: 'neutral', role: 'Discriminant part', is: 'The coefficient b multiplied by itself.', does: 'When b² > 4ac, the inside is positive so two real roots exist.' },
+      '4': { t: 'Factor of 4', c: 'const', role: 'Square factor', is: 'Comes from completing the square on ax² + bx + c = 0.', does: 'Compare b² with 4ac: if b² − 4ac = 0 there is just one double root.' },
+      a: { t: 'Quadratic coefficient (a)', c: 'neutral', role: 'Parabola curvature', is: 'The number multiplying x² (must not be zero).', does: 'Appears in 4ac and 2a; larger a makes a narrower parabola.' },
+      c: { t: 'Constant term (c)', c: 'neutral', role: 'y-intercept', is: 'The standalone number added in ax² + bx + c = 0 (height at x = 0).', does: 'Lifting c high enough can push the parabola completely above the x-axis so b² − 4ac turns negative.' },
+      '2': { t: 'Factor of 2', c: 'const', role: 'Average factor', is: 'Divides both −b and the root by 2a.', does: 'Keeps the symmetry axis centered at −b/(2a).' }
+    }
+  });
+
+  physics({
+    id: 'compound-interest', title: 'Compound interest',
+    match: ['A=P(1+r/n)^nt'], y: 'the final balance', first: 'r',
+    init: { P: 1000, r: 0.06, n: 12, t: 10 }, out: ['A', 'dollars'],
+    f: function (s) { return s.P * Math.pow(1 + s.r / s.n, s.n * s.t); },
+    line: function (s) { return 'A = $' + fmtNum(s.P * Math.pow(1 + s.r / s.n, s.n * s.t)) + ' after ' + fmtNum(s.t) + ' years'; },
+    tokens: {
+      A: { t: 'Final amount', c: 'lhs', role: 'Ending balance', is: 'Total money in the account after t years, including all interest earned on earlier interest.', does: 'At 10% compounded yearly for 10 years, $1,000 grows to $2,594 instead of $2,000 with simple interest.' },
+      P: { t: 'Principal', c: 'drive', role: 'Starting money', is: 'Starting deposit or loan amount in dollars.', does: 'Start with twice as much money and your ending balance doubles.', s: ['P', 100, 10000, 100, 'dollars'] },
+      '1': { t: 'Original 100% (1)', c: 'const', role: 'Keep principal', is: 'Keeps your existing money (100%) while adding the new fraction r/n each period.', does: 'Without 1+, you would only multiply by the tiny interest rate and shrink toward zero.' },
+      r: { t: 'Annual interest rate', c: 'drive', role: 'Yearly rate', is: 'Yearly interest rate as a decimal (6% = 0.06).', does: 'Higher rate makes the curve bend upward much faster over long periods.', s: ['r', 0.01, 0.2, 0.01, ''] },
+      n: { t: 'Compoundings per year', c: 'drive', role: 'Frequency per year', is: 'How many times per year interest is added (1 = yearly, 12 = monthly).', does: 'More frequent compounding earns slightly more because interest starts earning interest sooner.', s: ['n', 1, 12, 1, '/yr'] },
+      '^nt': { t: 'Total compounding periods', c: 'drive', role: 'Period count', sym: 'ⁿᵗ', is: 'n periods/year times t years (exponent is total number of growth steps).', does: 'At 7% per year, money roughly doubles every 10 years (slider changes years t).', s: ['t', 1, 40, 1, 'years'], x: 't' }
+    }
+  });
+
+  physics({
+    id: 'derivative-definition', title: 'Definition of the derivative',
+    match: ["f'(x)=lim(d→0)[f(x+d)−f(x)]/d", "f′(x)=lim(d→0)[f(x+d)−f(x)]/d"], first: 'd',
+    tokens: {
+      "f'": { t: 'Derivative (rate of change)', c: 'lhs', role: 'Instant slope', sym: 'f′', is: 'The exact steepness (slope) of curve f(x) at one point x.', does: 'For position vs. time, the derivative is your speedometer reading right now.' },
+      x: { t: 'Point of interest (x)', c: 'neutral', role: 'Input location', is: 'The x-value where you measure the curve’s slope.', does: 'A curved graph like x² has different slopes at different x values: at x = 1.5 the slope is 3.' },
+      lim: { t: 'Limit as step d → 0', c: 'op', role: 'Zoom in forever', is: 'Says to shrink step d closer and closer to 0 without dividing by zero.', does: 'Turns the average slope between two nearby points into the exact tangent slope.' },
+      d: { t: 'Shrinking step (d)', c: 'neutral', role: 'Step width', is: 'Small horizontal step between x and x + d.', does: 'Test f(x) = x² at x = 1.5: with d = 0.1 average slope is 3.1; with d = 0.001 it settles to 3.001.' },
+      '0': { t: 'Zero limit target', c: 'const', role: 'Zero gap', is: 'Step d approaches 0 so the two points merge into one tangent point.', does: 'Because d sits on the bottom, you simplify the top before setting d = 0.' },
+      f: { t: 'The function f', c: 'neutral', role: 'Curve height', is: 'Height of the curve at x + d minus height at x (the "rise").', does: 'Dividing rise [f(x+d) − f(x)] by run d gives average slope over the tiny interval.' }
+    }
+  });
+
+  physics({
+    id: 'definite-integral', title: 'The definite integral',
+    first: 'f',
+    tokens: {
+      '∫_a^b': { t: 'Integral from a to b', c: 'op', role: 'Sum from a to b', sym: '∫<sub>a</sub><sup>b</sup>', is: 'Adds up infinitely many thin strips under the curve starting at x = a and stopping at x = b.', does: 'For a positive curve, it gives the exact shaded area; curves dipping below the axis subtract area.' },
+      '∫': { t: 'Integral sign', c: 'op', role: 'Continuous sum', is: 'Stretched S for "sum", adding infinitely many thin slivers together.', does: 'Turns tiny strip areas f(x)·dx into one total area or accumulated amount.' },
+      f: { t: 'Height function f(x)', c: 'drive', role: 'Strip height', is: 'Height of the curve at each x.', does: 'Taller curves produce more area: for f(x) = x from 0 to 2, the triangle area is ½ × 2 × 2 = 2.' },
+      x: { t: 'Input variable (x)', c: 'neutral', role: 'Axis coordinate', is: 'Position along the horizontal axis between a and b.', does: 'Every strip at position x has height f(x).' },
+      dx: { t: 'Thin slice width (dx)', c: 'op', role: 'Slice width', is: 'An infinitesimally narrow horizontal slice width.', does: 'Multiplying height f(x) by slice width dx gives the area of one sliver.' }
+    }
+  });
+
+  physics({
+    id: 'normal-distribution', title: 'Normal (bell-curve) distribution',
+    match: ['f(x)=(1/(σ√(2π)))e^(−(x−μ)^2/(2σ^2))'], first: 'σ',
+    tokens: {
+      f: { t: 'Probability density f(x)', c: 'lhs', role: 'Bell-curve height', is: 'Height of the bell curve at value x.', does: 'Highest right at the center x = μ and drops symmetrically toward zero in both tails.' },
+      x: { t: 'Measured value (x)', c: 'neutral', role: 'Data value', is: 'One measurement, such as a test score or height.', does: 'About 68% of measurements land within ±1σ of μ, and 95% within ±2σ.' },
+      '1': { t: 'Total probability (1)', c: 'const', role: 'Area = 100%', is: 'Scales the curve so the total area underneath is exactly 1 (100%).', does: 'Dividing by σ√(2π) keeps total area at 1 when you widen or narrow the bell.' },
+      'σ': { t: 'Standard deviation (sigma)', c: 'resist', role: 'Curve spread', is: 'Measures how spread out values are around the average.', does: 'Double σ and the bell becomes twice as wide and half as tall, keeping total area equal to 1.' },
+      '√': ROOT('Square root of 2π scales the height so total probability equals 1.'),
+      '2': { t: 'Bell-width factor (2)', c: 'const', role: 'Scaling factor', is: 'Appears in √(2π) and in 2σ² to normalize the Gaussian bell.', does: 'Stays fixed for every normal distribution.' },
+      'π': PI_TOKEN('Circles and Gaussian bells share π because rotating a 2D bell curve sweeps a circle.'),
+      e: { t: "Euler's number (e)", c: 'const', role: 'Exponential base', is: 'Constant ≈ 2.71828.', does: 'Raising e to a negative squared distance creates the smooth, rapid bell-curve drop-off.' },
+      'μ': { t: 'Mean (mu)', c: 'neutral', role: 'Bell center', is: 'The average value where the peak of the bell sits.', does: 'Changing μ slides the whole bell curve left or right without changing its width or height.' },
+      'σ^2': { t: 'Variance (σ²)', c: 'neutral', role: 'Spread squared', is: 'Standard deviation multiplied by itself.', does: 'Divides (x − μ)² so distance from the mean is measured in standard deviations.' }
+    }
+  });
+
+  physics({
+    id: 'bayes-theorem', title: "Bayes' theorem",
+    match: ['P(A|B)=P(B|A)P(A)/P(B)'], y: 'updated probability', first: 'P(A)',
+    init: { pba: 0.9, pa: 0.01, pb: 0.1 }, out: ['P(A|B)', ''],
+    f: function (s) { return Math.min(1, (s.pba * s.pa) / s.pb); },
+    line: function (s) {
+      var res = (s.pba * s.pa) / s.pb;
+      return 'P(A|B) = (' + fmtNum(s.pba) + ' × ' + fmtNum(s.pa) + ') ÷ ' + fmtNum(s.pb) + ' = ' + fmtNum(res * 100) + '%';
+    },
+    tokens: {
+      P: { t: 'Probability', c: 'lhs', role: 'Chance (0 to 1)', is: 'Chance of an event from 0 (impossible) to 1 (certain).', does: 'Bayes updates your starting belief P(A) after seeing new evidence B.' },
+      A: { t: 'Hypothesis / condition (A)', c: 'drive', role: 'What we test for', is: 'The hidden condition you care about (such as having a rare flu or spam email).', does: 'If A is very rare (1%), even a 90%-accurate test can produce many false alarms!', s: ['pa', 0.01, 0.5, 0.01, ''] },
+      '|': { t: 'Given ("if we know…")', c: 'op', role: 'Condition bar', is: 'Reads as "given that": P(A|B) means the chance of A if B already happened.', does: 'Flips the direction of evidence between P(B|A) and P(A|B).' },
+      B: { t: 'Evidence / test result (B)', c: 'resist', role: 'Observed clue', is: 'The clue or positive test result you actually observed.', does: 'P(B) on the bottom is how often B happens overall (true positives plus false alarms).', s: ['pb', 0.05, 0.8, 0.05, ''] }
+    }
+  });
+
+  physics({
+    id: 'maxwell-gauss-e', title: "Gauss's law for electricity",
+    match: ['∇·E=ρ/ε_0', '∇E=ρ/ε_0'], first: 'ρ',
+    tokens: {
+      '∇': { t: 'Divergence (∇·)', c: 'op', role: 'Outward spread', is: 'Measures how much electric field lines spread outward from (or sink into) a tiny region.', does: 'Positive divergence means a positive charge source sits right there.' },
+      E: { t: 'Electric field', c: 'lhs', role: 'Electric push field', is: 'Force per unit charge pointing away from positive charges and toward negative ones, in N/C (or V/m).', does: 'Double the charge density inside a sphere and the outward electric flux doubles.' },
+      'ρ': { t: 'Electric charge density', c: 'drive', role: 'Charge per volume', is: 'How much electric charge is packed into each cubic metre, in C/m³.', does: 'No charge (ρ = 0) means every field line entering a box must leave it too.' },
+      'ε_0': { t: 'Permittivity of free space', c: 'const', role: 'Vacuum constant', is: 'Fixed constant ≈ 8.854 × 10⁻¹² C²/(N·m²).', does: 'Sets how strong an electric field a given amount of charge creates in empty space.' }
+    }
+  });
+
+  physics({
+    id: 'maxwell-gauss-b', title: "Gauss's law for magnetism",
+    match: ['∇·B=0', '∇B=0'], first: 'B',
+    tokens: {
+      '∇': { t: 'Divergence (∇·)', c: 'op', role: 'Outward spread', is: 'Measures whether magnetic field lines ever start or end at a point.', does: 'Always equals zero: magnetic field lines always form closed loops.' },
+      B: { t: 'Magnetic field', c: 'lhs', role: 'Magnetic field', is: 'Magnetic field strength and direction, in teslas (T).', does: 'Chop a bar magnet in half and you never isolate a lone north pole — you just get two smaller north-south magnets.' },
+      '0': { t: 'Zero magnetic monopoles', c: 'const', role: 'Closed-loop rule', is: 'Zero net magnetic flux ever leaves any closed surface.', does: 'Every magnetic field line that enters a closed box must exit it somewhere else.' }
+    }
+  });
+
+  physics({
+    id: 'maxwell-faraday', title: "Faraday's law of induction",
+    match: ['∇×E=−∂B/∂t'], first: '∂B',
+    tokens: {
+      '∇': { t: 'Curl (∇×)', c: 'op', role: 'Looping swirl', is: 'Measures how strongly the electric field loops around in circles.', does: 'Unlike static charges, a changing magnet makes electric fields curl in closed loops to drive current in a wire.' },
+      E: { t: 'Induced electric field', c: 'lhs', role: 'Looping field', is: 'Electric field created around a changing magnetic field, in V/m.', does: 'Drives current through generators, transformers, and induction cooktops.' },
+      '−': { t: 'Lenz’s law minus sign', c: 'op', role: 'Opposing direction', is: 'The induced loop always pushes back against the change in B.', does: 'If you shove a magnet toward a coil, the induced current makes a field that repels your magnet.' },
+      '∂B': { t: 'Change in magnetic field', c: 'drive', role: 'Magnetic change', is: 'Small change in magnetic field strength at a spot, in teslas (T).', does: 'A steady magnet (∂B = 0) induces no electric field; only changing B works.' },
+      '∂t': { t: 'Time step', c: 'resist', role: 'Time interval', is: 'Tiny step of time in seconds.', does: 'Plunge a magnet twice as fast (half ∂t) and the induced curling electric field doubles.' }
+    }
+  });
+
+  physics({
+    id: 'maxwell-ampere', title: 'Ampère–Maxwell law',
+    match: ['∇×B=μ_0J+μ_0ε_0∂E/∂t'], first: 'J',
+    tokens: {
+      '∇': { t: 'Curl (∇×)', c: 'op', role: 'Magnetic loop', is: 'Measures how strongly magnetic field lines wrap in circles around a wire or beam.', does: 'Point your right thumb along current J and your fingers curl the way B wraps.' },
+      B: { t: 'Magnetic field', c: 'lhs', role: 'Looping magnetic field', is: 'Magnetic field strength in teslas (T).', does: 'Produced by either moving electric charges (J) or changing electric fields (∂E/∂t).' },
+      'μ_0': { t: 'Permeability of free space', c: 'const', role: 'Magnetic constant', is: 'Fixed constant 4π × 10⁻⁷ T·m/A.', does: 'Sets how strong a magnetic field a given electric current creates.' },
+      J: { t: 'Electric current density', c: 'drive', role: 'Current per area', is: 'How much electric current flows through each square metre of wire, in A/m².', does: 'Double the current in a wire and the circling magnetic field doubles.' },
+      'ε_0': { t: 'Permittivity of free space', c: 'const', role: 'Electric constant', is: 'Fixed constant ≈ 8.854 × 10⁻¹² C²/(N·m²).', does: 'Together, μ₀ε₀ equals 1/c², locking in the speed of light!' },
+      '∂E': { t: 'Change in electric field', c: 'drive', role: 'Maxwell’s addition', is: 'Small change in electric field strength in empty space.', does: 'Because a changing E creates B and a changing B creates E, electromagnetic waves can fly across empty space.' },
+      '∂t': { t: 'Time step', c: 'resist', role: 'Time interval', is: 'Tiny step of time in seconds.', does: 'Faster oscillation (smaller ∂t) creates stronger coupled electric and magnetic waves.' }
+    }
+  });
+
+  physics({
+    id: 'maxwell-suite', title: "Maxwell's four equations",
+    first: 'E',
+    tokens: {
+      '∇': { t: 'Divergence / Curl (∇)', c: 'op', role: 'Field shape operator', is: '∇· measures outward spread from a point; ∇× measures how field lines swirl in loops.', does: 'Together they show how charges and changing fields weave electricity and magnetism into light.' },
+      E: { t: 'Electric field', c: 'neutral', role: 'Electric field', is: 'Push per unit charge at every point in space, in V/m.', does: 'Starts on positive charges (row 1) and curls around changing magnets (row 3).' },
+      'ρ': { t: 'Charge density', c: 'drive', role: 'Charge per volume', is: 'Amount of electric charge packed per cubic metre, in C/m³.', does: 'More charge inside a region produces more outward electric field lines.' },
+      'ε_0': { t: 'Permittivity of free space', c: 'const', role: 'Electric constant', is: 'Fixed constant ≈ 8.854 × 10⁻¹² C²/(N·m²).', does: 'Appears with μ₀ in row 4 to set wave speed c = 1/√(μ₀ε₀).' },
+      B: { t: 'Magnetic field', c: 'neutral', role: 'Magnetic field', is: 'Magnetic field strength and direction, in teslas (T).', does: 'Never starts or ends on a single pole (row 2), and curls around currents and changing E (row 4).' },
+      '0': { t: 'Zero magnetic monopoles', c: 'const', role: 'Closed loops only', is: 'Says there are no isolated north-only or south-only magnetic charges.', does: 'Every magnetic field line forms an unbroken loop.' },
+      '∂B': { t: 'Changing magnetic field', c: 'drive', role: 'Magnetic change', is: 'Change in magnetic field over time.', does: 'Drives a swirling electric field (Faraday’s law) inside every generator.' },
+      '∂t': { t: 'Time step', c: 'resist', role: 'Time interval', is: 'Tiny step of time in seconds.', does: 'Faster changes induce stronger swirling fields.' },
+      'μ_0': { t: 'Permeability of free space', c: 'const', role: 'Magnetic constant', is: 'Fixed magnetic constant 4π × 10⁻⁷ T·m/A.', does: 'Links current and changing electric fields to magnetic loops.' },
+      J: { t: 'Current density', c: 'drive', role: 'Current flow', is: 'Current per unit cross-sectional area, in A/m².', does: 'Carries charge through wires and coils to build electromagnets.' },
+      '∂E': { t: 'Changing electric field', c: 'drive', role: 'Maxwell’s wave term', is: 'Change in electric field over time.', does: 'Lets light waves keep propagating through empty space far from any wire.' }
+    }
+  });
+
+  physics({
+    id: 'schrodinger-equation', title: 'Time-dependent Schrödinger equation',
+    match: ['iℏ∂Ψ/∂t=ĤΨ'], first: 'Ψ',
+    tokens: {
+      i: { t: 'Imaginary unit (√−1)', c: 'const', role: 'Wave phase shifter', is: 'The imaginary number i (i² = −1) that rotates a quantum wave’s phase smoothly like a clock hand.', does: 'Makes quantum probabilities oscillate and interfere like waves instead of dying away.' },
+      'ℏ': { t: 'Reduced Planck constant', c: 'const', role: 'Quantum scale', is: 'Planck’s constant h divided by 2π: 1.055 × 10⁻³⁴ J·s.', does: 'Sets how fast wave phase rotates for a given energy: higher energy means faster oscillation.' },
+      '∂Ψ': { t: 'Change in wavefunction', c: 'lhs', role: 'Wave evolution', is: 'Small change in the quantum wave Ψ over a tiny time step.', does: 'Tells how the wave shifts from one instant to the next.' },
+      '∂t': { t: 'Time step', c: 'op', role: 'Time interval', is: 'Tiny step forward in time, in seconds.', does: 'Divides ∂Ψ to give the wave’s time rate of change.' },
+      'Ĥ': { t: 'Hamiltonian (total energy operator)', c: 'drive', role: 'Energy operator', is: 'Adds the particle’s kinetic energy and potential energy together.', does: 'Acts on Ψ to set both its shape and how rapidly its phase spins.' },
+      'Ψ': { t: 'Quantum wavefunction (Psi)', c: 'neutral', role: 'Probability wave', is: 'A wave describing a quantum particle; |Ψ|² gives the probability of finding the particle at each spot.', does: 'If Ψ is spread out, the particle has many possible positions; squishing it into a narrow spot raises its energy.' }
+    }
+  });
+
+  physics({
+    id: 'fourier-transform', title: 'Fourier transform',
+    first: 'ω',
+    tokens: {
+      F: { t: 'Frequency spectrum F(ω)', c: 'lhs', role: 'Frequency mix', is: 'Tells how much of frequency ω is hiding inside signal f(t).', does: 'Lets audio and image apps (like MP3 and JPEG) keep the important frequencies and drop tiny ones.' },
+      'ω': { t: 'Angular frequency (omega)', c: 'drive', role: 'Probe frequency', is: 'How fast the test wave spins, in radians per second (ω = 2πf).', does: 'Sweep ω across all values to test which frequencies resonate with your signal.' },
+      '∫': { t: 'Integral across all time', c: 'op', role: 'Time sum', sym: '∫<sub>−∞</sub><sup>∞</sup>', is: 'Adds up the product f(t)·e^(−iωt) from −∞ to +∞.', does: 'Matching frequencies add constructively to a large F(ω); non-matching waves cancel to zero.' },
+      '∫_−∞^∞': { t: 'Integral across all time', c: 'op', role: 'Time sum', sym: '∫<sub>−∞</sub><sup>∞</sup>', is: 'Adds up the product f(t)·e^(−iωt) from −∞ to +∞.', does: 'Matching frequencies add constructively to a large F(ω); non-matching waves cancel to zero.' },
+      f: { t: 'Time signal f(t)', c: 'drive', role: 'Input waveform', is: 'The sound wave, voltage, or brightness measured at time t.', does: 'A pure musical note produces one sharp spike in F(ω); noisy static spreads across many frequencies.' },
+      t: { t: 'Time', c: 'neutral', role: 'Time coordinate', is: 'Time in seconds along the recorded signal.', does: 'A shorter burst in time spreads out over a wider band of frequencies.' },
+      e: { t: "Euler's number (e)", c: 'const', role: 'Wave probe base', is: 'Constant ≈ 2.71828; e^(−iωt) equals cos(ωt) − i·sin(ωt).', does: 'Probes the signal with both cosine and sine waves at the same time.' },
+      i: { t: 'Imaginary unit', c: 'const', role: 'Phase tracker', is: '√−1, tracking both amplitude and phase shift.', does: 'Separates cosine (real) and sine (imaginary) parts of the wave.' },
+      dt: { t: 'Thin time slice', c: 'op', role: 'Time sliver', is: 'Tiny step along time t.', does: 'Pairs with ∫ to sum the continuous signal over time.' }
+    }
+  });
+
+  physics({
+    id: 'heat-equation', title: 'The heat equation',
+    match: ['∂u/∂t=α∇^2u'], first: 'α',
+    tokens: {
+      '∂u': { t: 'Temperature change', c: 'lhs', role: 'Change at a point', is: 'Small change in temperature u at one location, in °C or K.', does: 'Hot spots cool down (negative ∂u/∂t) and cold spots warm up until everything evens out.' },
+      '∂t': { t: 'Time step', c: 'op', role: 'Time interval', is: 'Tiny step forward in time, in seconds.', does: 'Divides ∂u to give degrees per second of warming or cooling.' },
+      'α': { t: 'Thermal diffusivity (alpha)', c: 'drive', role: 'Material speed', is: 'How quickly heat spreads through a material, in m²/s (copper ≈ 1.1×10⁻⁴, wood ≈ 8×10⁻⁸).', does: 'A copper pan has ~1,000× higher α than a wooden handle, so heat races across copper while wood stays cool.' },
+      '∇': { t: 'Laplacian curvature (∇²)', c: 'op', role: 'Neighbor comparison', is: 'Compares temperature at a spot with the average of its neighbors.', does: 'A sharp hot spike curves strongly downward (large negative ∇²u), so it cools fastest.' },
+      '∇^2u': { t: 'Laplacian of temperature (∇²u)', c: 'drive', role: 'Neighbor comparison', sym: '∇²u', is: 'Compares temperature u at one spot with the average temperature of its surrounding neighbors.', does: 'If a spot is hotter than its neighbors, ∇²u is negative so temperature drops quickly until it matches.' },
+      u: { t: 'Temperature u', c: 'neutral', role: 'Local temperature', is: 'Temperature at each point in the object, in °C or K.', does: 'Once every point matches its neighbors (∇²u = 0), heat flow stops and temperature holds steady.' }
+    }
+  });
+
+  physics({
+    id: 'einstein-field-equations', title: "Einstein's field equations",
+    match: ['G_μν+Λg_μν=(8πG/c^4)T_μν'], first: 'T_μν',
+    tokens: {
+      'G_μν': { t: 'Einstein curvature tensor', c: 'lhs', role: 'Spacetime curvature', is: 'Measures how strongly space and time curve at each spot.', does: 'Curved spacetime tells planets and light beams how to move (what we feel as gravity).' },
+      'Λ': { t: 'Cosmological constant (Lambda)', c: 'const', role: 'Dark energy term', is: 'Tiny energy density built into empty space itself.', does: 'Causes the expansion of the universe to speed up over billions of years.' },
+      'g_μν': { t: 'Spacetime metric tensor', c: 'neutral', role: 'Distance & clock ruler', is: 'Measures distances and clock tick rates in curved spacetime.', does: 'GPS satellites must correct for g_μν differences between Earth orbit and the ground.' },
+      '8': { t: 'Newtonian matching factor (8)', c: 'const', role: 'Relativity factor', is: 'Exact constant ensuring Einstein’s gravity matches Newton’s F = GMm/r² for weak gravity.', does: 'Stays fixed everywhere.' },
+      'π': PI_TOKEN('Enters from spherical geometry around a mass (4πG doubled to 8πG).'),
+      G: { t: 'Gravitational constant', c: 'const', role: 'Gravity strength', is: 'Newton’s constant 6.674 × 10⁻¹¹ N·m²/kg².', does: 'Divided by c⁴, it makes spacetime extremely stiff.' },
+      'c^4': { t: 'Speed of light to the 4th power', c: 'const', role: 'Spacetime stiffness', is: '(3 × 10⁸ m/s)⁴ ≈ 8.1 × 10³³.', does: 'Because c⁴ is enormous on the bottom, it takes planet- or star-sized mass T_μν to noticeably bend spacetime.' },
+      'T_μν': { t: 'Stress–energy tensor', c: 'drive', role: 'Mass & energy source', is: 'Counts all mass, energy, pressure, and momentum in a region.', does: 'Double the concentrated mass-energy and spacetime curves twice as strongly.' }
+    }
+  });
+
+  physics({
+    id: 'standard-model-lagrangian', title: 'Standard Model Lagrangian',
+    first: 'ℒ',
+    tokens: {
+      'ℒ': { t: 'Lagrangian density (ℒ)', c: 'lhs', role: 'Master rulebook', is: 'One compact expression summarizing every known particle and non-gravity force.', does: 'Plugging ℒ into the least-action rule predicts how particles scatter and decay.' },
+      '¼': { t: 'Quarter symmetry factor', c: 'const', role: 'Normalization', is: 'The fraction 1/4 that keeps electromagnetic, weak, and strong field energies properly scaled.', does: 'Ensures photon energy matches ½(E² + B²).' },
+      'F_μν': { t: 'Force-carrier field strength', c: 'neutral', role: 'Boson fields', is: 'Describes photons (light), W/Z bosons (weak force), and gluons (strong force).', does: 'Without F_μνF^μν, force-carrier particles could not travel or carry energy.' },
+      'F^μν': { t: 'Dual force-carrier tensor', c: 'neutral', role: 'Boson fields', is: 'Pairs with F_μν to pack electric-like and magnetic-like field parts into one frame-independent number.', does: 'Keeps the physics identical for observers moving at any speed.' },
+      i: { t: 'Imaginary unit', c: 'const', role: 'Quantum phase', is: '√−1, required by quantum waves.', does: 'Keeps matter-wave equations balanced and energy real.' },
+      'Ψ̄': { t: 'Conjugate matter field', c: 'neutral', role: 'Matter partner', is: 'Pairs with Ψ to measure matter-particle density.', does: 'Together Ψ̄Ψ counts particles minus antiparticles.' },
+      'γ^μ': { t: 'Dirac gamma matrices', c: 'const', role: 'Spin geometry', is: '4×4 matrices encoding electron/quark spin-½ and special relativity.', does: 'Connects particle motion direction with spin.' },
+      'D_μ': { t: 'Covariant derivative', c: 'op', role: 'Force coupling', is: 'Tracks how a matter wave changes while interacting with photons, gluons, and W/Z bosons.', does: 'Is where forces actually grab onto matter particles.' },
+      'Ψ': { t: 'Matter field (quarks & leptons)', c: 'neutral', role: 'Matter particles', is: 'Represents electrons, neutrinos, and quarks.', does: 'Excitations (ripples) in Ψ are the particles detected in colliders.' }
+    }
+  });
+
+  physics({
+    id: 'riemann-hypothesis-statement', title: 'The Riemann hypothesis',
+    first: 'ζ',
+    tokens: {
+      'ζ': { t: 'Riemann zeta function ζ(s)', c: 'lhs', role: 'Prime-counting wave', is: 'A complex function built from 1/1ˢ + 1/2ˢ + 1/3ˢ + … extended across the complex plane.', does: 'The locations where ζ(s) = 0 act like musical notes whose waves add up to the staircase of prime numbers.' },
+      s: { t: 'Complex number (s = a + bi)', c: 'neutral', role: 'Input point', is: 'A 2D number with a real part Re(s) and an imaginary part.', does: 'The hypothesis checks every nontrivial zero inside the critical strip 0 < Re(s) < 1.' },
+      '0': { t: 'Zero crossing', c: 'const', role: 'Zeta zero', is: 'Values of s where ζ(s) equals exactly 0.', does: 'Each zero controls a wave in the error of the prime-counting formula.' },
+      '1': { t: 'Critical strip edge (1)', c: 'const', role: 'Strip boundary', is: 'Upper edge of the critical strip 0 < Re(s) < 1.', does: 'All nontrivial zeros sit strictly between 0 and 1.' },
+      Re: { t: 'Real part Re(s)', c: 'op', role: 'Horizontal coordinate', is: 'Horizontal coordinate of complex number s on the complex plane.', does: 'Riemann conjectured that every single nontrivial zero sits right down the center line Re(s) = ½.' },
+      '½': { t: 'The critical line (½)', c: 'const', role: 'Center line', is: 'The vertical line halfway between 0 and 1 on the complex plane.', does: 'Over 10 trillion zeros have been checked — all lie on Re(s) = ½, yet no general proof exists.' }
+    }
+  });
+
+  physics({
+    id: 'cgi-navier-stokes', title: 'Navier–Stokes equation (for fluid velocity u)',
+    match: ['ρ(∂u/∂t+u∇u)=−∇p+μ∇^2u+f'], first: 'μ',
+    tokens: {
+      'ρ': { t: 'Fluid density', c: 'lhs', role: 'Parcel mass', is: 'Mass per cubic metre of the fluid (water ≈ 1000 kg/m³).', does: 'Denser fluid carries more inertia, needing stronger pressure pushes to turn or speed up.' },
+      '∂u': { t: 'Velocity change at a spot', c: 'lhs', role: 'Acceleration', is: 'Small change in flow velocity u at a fixed pixel or grid cell.', does: 'Divided by ∂t, it tells how quickly the water speed at that spot changes.' },
+      '∂t': { t: 'Time step', c: 'lhs', role: 'Frame step', is: 'Tiny step forward in time (such as one animation frame).', does: 'Smaller time steps keep CGI water simulations accurate and stable.' },
+      u: { t: 'Velocity field (u)', c: 'geo', role: 'Water speed & direction', is: 'Arrow showing speed and direction of water at every grid cell, in m/s.', does: 'Carries itself forward in u·∇u, creating swirls, splashes, and eddies.' },
+      '∇u': { t: 'Velocity gradient', c: 'geo', role: 'Flow variation', is: 'How quickly water speed changes from one cell to the next.', does: 'Where fast center flow meets slow boundary flow, u·∇u bends streamlines.' },
+      '∇p': { t: 'Pressure gradient', c: 'drive', role: 'Pressure push', is: 'How steeply water pressure changes from cell to cell.', does: 'The minus sign −∇p pushes water away from high pressure toward low pressure.' },
+      'μ': { t: 'Viscosity (mu)', c: 'resist', role: 'Fluid thickness', is: 'How thick or syrupy the fluid is, in Pa·s.', does: 'High viscosity makes thick honey smooth out ripples; low viscosity lets water splash freely.' },
+      '∇': { t: 'Laplacian (∇²)', c: 'resist', role: 'Smoothing curvature', is: 'Compares a cell’s velocity with its surrounding neighbors.', does: 'Viscosity uses ∇²u to blend fast and slow neighboring layers together.' },
+      '∇^2u': { t: 'Laplacian of velocity (∇²u)', c: 'resist', role: 'Smoothing curvature', sym: '∇²u', is: 'Compares water velocity u at each cell with the average velocity of its neighboring cells.', does: 'Multiplied by viscosity μ, it pulls fast-moving jets toward slower neighbors to smooth turbulence.' },
+      f: { t: 'External forces (f)', c: 'const', role: 'Gravity / wind', is: 'Outside forces pulling or pushing on the fluid, such as gravity and wind.', does: 'Added directly to pressure and friction forces every simulation step.' }
+    }
+  });
+
+  physics({
+    id: 'fluid-continuity', title: 'Incompressible fluid continuity',
+    match: ['∇·u=0', '∇u=0'], first: 'u',
+    tokens: {
+      '∇': { t: 'Divergence (∇·)', c: 'op', role: 'Net outflow', is: 'Measures net fluid flow leaving vs. entering each grid cell.', does: 'If more water entered than left, the cell would compress or pile up.' },
+      u: { t: 'Fluid velocity field', c: 'lhs', role: 'Water flow arrows', is: 'Speed and direction of water moving across each grid cell, in m/s.', does: 'When water squeezes into a narrower channel, u must speed up so outflow still equals inflow.' },
+      '0': { t: 'Zero compression', c: 'const', role: 'Constant volume', is: 'Zero net volume gain or loss in every fluid cell.', does: 'Check any box in the water: inflow per second equals outflow per second.' }
+    }
+  });
+
+  physics({
+    id: 'wave-grid-update', title: 'Discrete 2D water-height update',
+    match: ['h_new=(Σneighbors/2−h_old)d'], first: 'h_new',
+    tokens: {
+      'h_new': { t: 'Next frame wave height', c: 'lhs', role: 'Updated height', is: 'The water height at this grid cell on the next frame.', does: 'Replaces h_old after updating every cell across the grid.' },
+      'Σneighbors': { t: 'Sum of 4 neighbor heights', c: 'drive', role: 'Neighbor push', sym: 'Σneighbors', is: 'Add the heights of the up, down, left, and right neighbor cells.', does: 'Dividing by 2 compares twice the neighbor average against h_old, passing ripples outward!' },
+      '2': { t: 'Wave stencil divisor (2)', c: 'const', role: 'Stencil average', is: 'Half of the 4 neighbors.', does: 'In a flat calm pond where all 4 neighbors equal h_old, (4h/2 − h) = h so the water stays still.' },
+      'h_old': { t: 'Previous frame wave height', c: 'resist', role: 'Past height', is: 'Height at this cell one frame ago (encodes momentum).', does: 'Subtracting h_old lets a crest overshoot into a trough so waves keep oscillating.' },
+      d: { t: 'Damping factor (d)', c: 'drive', role: 'Energy retention', is: 'Number just below 1 (like 0.985) multiplying the new height.', does: 'At d = 1 ripples bounce forever; lowering d to 0.90 makes ripples fade out quickly.' }
+    }
+  });
+
+  physics({
+    id: 'gerstner-wave', title: 'Gerstner ocean wave motion',
+    first: 'A',
+    tokens: {
+      P: { t: 'Water particle position (x, y)', c: 'lhs', role: 'Particle path', is: '2D screen coordinates of a floating cork or surface vertex on the wave.', does: 'Traces a circle: moves forward at the crest and backward in the trough, making sharp crests and wide troughs.' },
+      x: { t: 'Rest horizontal coordinate', c: 'neutral', role: 'Rest position', is: 'Average horizontal position of the water particle.', does: 'Both the horizontal swirl and wave phase depend on x.' },
+      A: { t: 'Wave amplitude', c: 'drive', role: 'Wave height', is: 'Radius of the circular orbit (half the crest-to-trough wave height), in metres.', does: 'Double A and the wave rises twice as high and sweeps particles twice as far.' },
+      'k_x': { t: 'Horizontal wave number', c: 'neutral', role: 'Wave direction', is: 'Component of wave vector k pointing along x.', does: 'Divided by k, it tells how much of the circular motion points sideways.' },
+      k: { t: 'Wave number (2π / λ)', c: 'neutral', role: 'Spatial frequency', is: 'How tightly wave crests are packed (2π divided by wavelength).', does: 'Shorter waves have larger k and pack more crests into the same screen width.' },
+      sin: SIN('Shifts the water particle horizontally forward on crests and backward in troughs.'),
+      'ω': { t: 'Angular wave frequency (omega)', c: 'neutral', role: 'Wave speed rate', is: 'How fast crests travel past in radians per second.', does: 'Bigger ω makes waves march across the ocean faster as time t increases.' },
+      t: { t: 'Time', c: 'drive', role: 'Animation time', is: 'Elapsed time in seconds.', does: 'As t increases, k·x − ωt slides the crests steadily rightward.' },
+      cos: COS('Lifts the water particle upward to +A at the crest and drops it to −A in the trough.')
+    }
+  });
+
+  physics({
+    id: 'fbm-noise', title: 'Multi-octave Perlin / fBm terrain height',
+    first: 'amplitude_i',
+    tokens: {
+      height: { t: 'Terrain elevation', c: 'lhs', role: 'Ground height', is: 'Final height at ground coordinate x, built by stacking smooth hills and fine bumps.', does: 'Adding octaves turns a smooth rolling hill into craggy mountain terrain.' },
+      x: { t: 'Map coordinate (x)', c: 'neutral', role: 'Ground position', is: 'Horizontal location across the terrain map.', does: 'Evaluated at every pixel or vertex to sculpt the heightmap.' },
+      'Σ': { t: 'Sum over octaves (Σ)', c: 'op', role: 'Octave sum', is: 'Adds layers of noise together from broad rolling hills to fine details.', does: 'Each octave multiplies amplitude by persistence (< 1) and frequency by lacunarity (~2).' },
+      'amplitude_i': { t: 'Octave height scale', c: 'drive', role: 'Layer strength', is: 'How tall octave i’s bumps are (multiplied by persistence each step, e.g. 0.5).', does: 'Low persistence (0.3) makes smooth dunes; high persistence (0.7) adds rough rocky detail.' },
+      noise: { t: 'Smooth noise function', c: 'op', role: 'Random hill wave', is: 'Generates smooth pseudo-random hills between −1 and +1.', does: 'Repeats seamlessly across x × frequency_i.' },
+      'frequency_i': { t: 'Octave detail scale', c: 'drive', role: 'Bump tightness', is: 'How tightly packed octave i’s bumps are (multiplied by lacunarity, usually 2, each step).', does: 'Octave 1 shapes huge continents; octaves 4–6 add pebbles and ridges.' }
+    }
+  });
+
+  physics({
+    id: 'buoyant-force', title: 'Archimedes buoyant force',
+    match: ['F_b=ρ_fluidV_subg'], y: 'the buoyant force', first: 'V_sub',
+    init: { rho: 1.0, Vsub: 2.0, g: 9.81 }, out: ['F_b', 'N'],
+    f: function (s) { return s.rho * s.Vsub * s.g; },
+    line: function (s) { return 'F_b = ' + fmtNum(s.rho) + ' kg/L × ' + fmtNum(s.Vsub) + ' L × ' + fmtNum(s.g) + ' m/s² = ' + fmtNum(s.rho * s.Vsub * s.g) + ' N'; },
+    tokens: {
+      'F_b': { t: 'Buoyant force', c: 'lhs', role: 'Upward push', is: 'The upward push of the fluid, equal to the weight of the fluid pushed aside, in newtons (N).', does: 'If F_b beats the object’s weight, the object rises; if weight wins, it sinks.' },
+      'ρ_fluid': { t: 'Fluid density', c: 'drive', role: 'Liquid density', is: 'Mass per litre of fluid: fresh water is 1.0 kg/L, salty ocean water ~1.03 kg/L.', does: 'Denser fluids push up harder — that is why you float higher in the Dead Sea than in a pool.', s: ['rho', 0.7, 1.5, 0.05, 'kg/L'] },
+      'V_sub': { t: 'Submerged volume', c: 'drive', role: 'Displaced volume', is: 'Litres of the object actually below the water surface.', does: 'Push a beach ball twice as deep (double V_sub) and the upward buoyant push doubles.', s: ['Vsub', 0.2, 10, 0.2, 'L'] },
+      g: { t: 'Gravity', c: 'drive', role: 'Gravitational pull', is: 'Gravitational acceleration: 9.81 m/s² on Earth.', does: 'Without gravity, fluid has no weight and buoyancy disappears.', s: ['g', 1.6, 20, 0.2, 'm/s²'] }
+    }
+  });
+
+  physics({
+    id: 'apparent-weight', title: 'Apparent weight underwater',
+    match: ['W_app=W_air−F_b'], y: 'the apparent weight', first: 'F_b',
+    init: { Wair: 50, Fb: 20 }, out: ['W_app', 'N'],
+    f: function (s) { return s.Wair - s.Fb; },
+    line: function (s) {
+      var w = s.Wair - s.Fb;
+      return 'W_app = ' + fmtNum(s.Wair) + ' N − ' + fmtNum(s.Fb) + ' N = ' + fmtNum(w) + ' N' + (w <= 0 ? ' (floats!)' : '');
+    },
+    tokens: {
+      'W_app': { t: 'Apparent weight', c: 'lhs', role: 'Underwater scale reading', is: 'What a spring scale reads when the object hangs underwater, in newtons (N).', does: 'Always lighter than weight in air by the exact weight of displaced water.' },
+      'W_air': { t: 'True weight in air', c: 'drive', role: 'Actual weight', is: 'Downward pull of gravity on the object in air, in newtons (N).', does: 'Raising W_air by 10 N raises apparent underwater weight by 10 N if volume stays fixed.', s: ['Wair', 10, 100, 5, 'N'] },
+      'F_b': { t: 'Buoyant force', c: 'resist', role: 'Upward support', is: 'Upward push from displaced water, in newtons (N).', does: 'When F_b reaches W_air, apparent weight drops to 0 N and the object floats.', s: ['Fb', 0, 80, 2, 'N'] }
+    }
+  });
+
+  physics({
+    id: 'floating-depth', title: 'Percent submerged when floating',
+    match: ['%sub=(ρ_obj/ρ_fluid)100'], y: 'the submerged percent', first: 'ρ_obj',
+    init: { rhoObj: 0.6, rhoFluid: 1.0 }, out: ['submerged', '%'],
+    f: function (s) { return Math.min(100, (s.rhoObj / s.rhoFluid) * 100); },
+    line: function (s) {
+      var p = (s.rhoObj / s.rhoFluid) * 100;
+      return p >= 100 ? '100% submerged (density ≥ fluid, so it sinks!)' : fmtNum(p) + '% below the surface';
+    },
+    tokens: {
+      '%': { t: 'Percent sign (%)', c: 'lhs', role: 'Out of 100', is: 'Shows the submerged fraction written as a percent (0% to 100%).', does: 'Compare directly to 100%: anything over 100% sinks!' },
+      '% sub': { t: 'Percent submerged', c: 'lhs', role: 'Submerged share', is: 'Percentage of the floating object sitting below the waterline.', does: 'Ice (0.92 g/cm³) in seawater (1.03 g/cm³) sits ~89% underwater — only the tip shows!' },
+      sub: { t: 'Percent submerged', c: 'lhs', role: 'Submerged share', is: 'Percentage of the floating object sitting below the waterline.', does: 'Ice (0.92 g/cm³) in seawater (1.03 g/cm³) sits ~89% underwater — only the tip shows!' },
+      'ρ_obj': { t: 'Object average density', c: 'drive', role: 'Object density', is: 'Total mass divided by total outer volume (including hollow air inside a boat!), in kg/L.', does: 'Double the object’s density (say 0.3 to 0.6 in water) and it sinks twice as deep (30% to 60%).', s: ['rhoObj', 0.1, 1.2, 0.05, 'kg/L'] },
+      'ρ_fluid': { t: 'Fluid density', c: 'resist', role: 'Liquid density', is: 'Density of the liquid supporting the object, in kg/L (fresh water = 1.0).', does: 'A ship moving from fresh river water (1.0) into denser ocean water (1.03) floats slightly higher.', s: ['rhoFluid', 0.7, 1.5, 0.05, 'kg/L'] },
+      '100': { t: 'Percent factor (100)', c: 'const', role: 'Percent converter', is: 'Turns a decimal fraction like 0.60 into 60%.', does: 'If ρ_obj/ρ_fluid reaches 1 (100%), the object is completely submerged.' }
+    }
+  });
+
+  physics({
+    id: 'newton-second-momentum', title: "Newton's second law in momentum form",
+    y: 'the net force', first: 'Δt',
+    init: { dp: 20, dt: 4 }, out: ['F_net', 'N'],
+    f: function (s) { return s.dp / s.dt; },
+    line: function (s) { return 'F_net = ' + fmtNum(s.dp) + ' kg·m/s ÷ ' + fmtNum(s.dt) + ' s = ' + fmtNum(s.dp / s.dt) + ' N'; },
+    tokens: {
+      'F_net': { t: 'Net external force', c: 'lhs', role: 'Total push/pull', is: 'Combined outside force acting on the object, in newtons (N).', does: 'Works even when mass changes, like a rocket burning and exhausting fuel.' },
+      'Δp': { t: 'Change in momentum', c: 'drive', role: 'Momentum shift', is: 'Final momentum minus starting momentum, in kg·m/s.', does: 'Double the momentum change in the same time and you need twice the force.', s: ['dp', 2, 100, 2, 'kg·m/s'] },
+      'Δt': { t: 'Time interval', c: 'resist', role: 'Duration', is: 'How many seconds the force acts.', does: 'Make the same momentum change in half the time and the average force doubles (that is why crumple zones extend Δt).', s: ['dt', 0.5, 10, 0.5, 's'] }
+    }
+  });
+
+  physics({
+    id: 'momentum-conservation', title: 'Conservation of linear momentum',
+    first: 'v_1',
+    tokens: {
+      'm_1': { t: 'First object mass', c: 'neutral', role: 'Object 1 mass', is: 'Mass of the first cart or ball in kilograms (kg).', does: 'When a heavy cart hits a light cart, the light cart flies away much faster to balance total momentum.' },
+      'v_1': { t: 'First initial velocity', c: 'neutral', role: 'Before collision', is: 'Speed and direction (sign +/−) of object 1 before impact, in m/s.', does: 'Together m₁v₁ + m₂v₂ gives the total momentum locked in before the crash.' },
+      'm_2': { t: 'Second object mass', c: 'neutral', role: 'Object 2 mass', is: 'Mass of the second cart or ball in kilograms (kg).', does: 'Equal masses in a head-on elastic bounce swap velocities.' },
+      'v_2': { t: 'Second initial velocity', c: 'neutral', role: 'Before collision', is: 'Speed and direction of object 2 before impact, in m/s.', does: 'Opposite directions have opposite signs, so head-on collisions can cancel toward zero.' },
+      "v_1'": { t: 'First final velocity', c: 'neutral', role: 'After collision', sym: 'v<sub>1</sub>′', is: 'Velocity of object 1 after the interaction, in m/s.', does: 'Check total momentum after: m₁v₁′ + m₂v₂′ must equal m₁v₁ + m₂v₂ when external force is zero.' },
+      "v_2'": { t: 'Second final velocity', c: 'neutral', role: 'After collision', sym: 'v<sub>2</sub>′', is: 'Velocity of object 2 after the interaction, in m/s.', does: 'In a sticky collision where they lock together, v₁′ = v₂′.' }
+    }
+  });
+
+  physics({
+    id: 'energy-momentum', title: 'Relativistic energy–momentum relation',
+    y: 'total energy', first: 'p',
+    init: { p: 3, m: 4 }, out: ['E', 'GeV'],
+    f: function (s) { return Math.sqrt(s.p * s.p + s.m * s.m); },
+    line: function (s) { return 'E = √(' + fmtNum(s.p) + '² + ' + fmtNum(s.m) + '²) = ' + fmtNum(Math.sqrt(s.p * s.p + s.m * s.m)) + ' GeV (in natural units c = 1)'; },
+    tokens: {
+      'E^2': { t: 'Total energy squared', c: 'lhs', role: 'Relativistic energy', is: 'Total particle energy (rest energy + kinetic energy), squared.', does: 'Unifies light and matter in one Pythagorean triangle: rest mass mc² on one leg, momentum pc on the other!' },
+      p: { t: 'Relativistic momentum', c: 'drive', role: 'Motion leg', is: 'Particle momentum (slider uses GeV/c).', does: 'For a massless photon (m = 0), E² = (pc)² simplifies straight to E = pc.', s: ['p', 0, 10, 0.5, 'GeV/c'] },
+      c: { t: 'Speed of light', c: 'const', role: 'Unit converter', is: '299,792,458 m/s.', does: 'Converts momentum p into energy units pc and mass m into rest energy mc².' },
+      m: { t: 'Rest mass', c: 'drive', role: 'Mass leg', is: 'Invariant rest mass of the particle (slider uses GeV/c²).', does: 'When a particle sits still (p = 0), E² = (mc²)² simplifies right back to E = mc²!', s: ['m', 0, 10, 0.5, 'GeV/c²'] },
+      'c^2': { t: 'Speed of light squared', c: 'const', role: 'Rest-energy factor', is: 'c × c ≈ 9 × 10¹⁶ m²/s².', does: 'Stays fixed; scales mass m into rest energy mc².' },
+      '^2': { t: 'Squared', c: 'op', role: 'Pythagorean square', is: 'Squares the whole bracket (pc) or (mc²).', does: 'Like a² + b² = c², the energy legs add in quadrature.' }
+    }
+  });
+
+  physics({
+    id: 'kinematics-derivatives', title: 'Velocity and acceleration as derivatives',
+    first: 'v',
+    tokens: {
+      v: { t: 'Instantaneous velocity v(t)', c: 'neutral', role: 'Slope of position', is: 'Speed and direction right at instant t, in m/s.', does: 'Equals the steepness (slope) of the position-versus-time graph.' },
+      t: { t: 'Time', c: 'neutral', role: 'Time variable', is: 'Elapsed time in seconds.', does: 'As t moves forward, dx/dt tracks how fast position changes each moment.' },
+      dx: { t: 'Tiny change in position', c: 'neutral', role: 'Position step', is: 'Tiny shift in location in metres.', does: 'Divided by dt, it gives velocity at that instant.' },
+      dt: { t: 'Tiny change in time', c: 'neutral', role: 'Time sliver', is: 'Tiny step forward in time in seconds.', does: 'Sitting on the bottom turns position change into m/s and velocity change into m/s².' },
+      a: { t: 'Instantaneous acceleration a(t)', c: 'neutral', role: 'Slope of velocity', is: 'Rate at which velocity changes at instant t, in m/s².', does: 'Equals the steepness (slope) of the velocity-versus-time graph.' },
+      dv: { t: 'Tiny change in velocity', c: 'neutral', role: 'Velocity step', is: 'Tiny shift in velocity in m/s.', does: 'Zero dv means steady velocity and zero acceleration.' }
+    }
+  });
+
+  (function () {
+    function make3DKin(id, axis, coord, vSym, aSym) {
+      var initObj = { p0: 0, v0: 4, a: 2, t: 3 };
+      var toks = {};
+      toks[coord] = { t: axis + ' position', c: 'lhs', role: axis + ' coordinate', is: 'Location along the ' + axis + ' axis after time t, in metres.', does: 'Moves independently of the other two axes; combine x, y, and z at time t to find the 3D point.' };
+      toks[coord + '_0'] = { t: 'Starting ' + axis + ' position', c: 'drive', role: 'Start ' + coord, is: 'Where the object starts along the ' + axis + ' axis at t = 0, in metres.', does: 'Shifts the whole ' + axis + ' path without changing speed or curve.', s: ['p0', -10, 10, 1, 'm'] };
+      toks[vSym] = { t: 'Starting ' + axis + ' velocity', c: 'drive', role: 'Launch ' + axis + ' speed', is: 'Initial velocity component along ' + axis + ', in m/s.', does: 'Adds ' + vSym + ' × t metres along ' + axis + ' even with zero acceleration.', s: ['v0', -10, 15, 0.5, 'm/s'] };
+      toks.t = { t: 'Elapsed time', c: 'drive', role: 'Shared clock', is: 'Time since launch in seconds (the same t feeds x, y, and z!).', does: 'Double the time and the acceleration term grows 4× along this axis.', s: ['t', 0, 8, 0.2, 's'] };
+      toks['½'] = HALF('Average extra speed from steady acceleration is ½·' + aSym + 't, giving ½·' + aSym + 't².');
+      toks[aSym] = { t: axis + ' acceleration', c: 'drive', role: axis + ' acceleration', is: 'Steady acceleration along the ' + axis + ' axis, in m/s².', does: 'For a thrown ball, only the vertical axis feels gravity (−9.8 m/s²) while horizontal acceleration is 0.', s: ['a', -10, 10, 0.5, 'm/s²'] };
+      toks['t^2'] = { t: 'Time squared', c: 'drive', role: 'Curvature term', is: 'Elapsed time in seconds multiplied by itself.', does: 'Makes the ' + axis + ' path curve into a parabola whenever ' + aSym + ' ≠ 0.', s: ['t', 0, 8, 0.2, 's'], x: 't' };
+      physics({
+        id: id, title: '3D motion: ' + axis + ' component', y: 'the ' + axis + ' position', first: vSym,
+        init: initObj, out: [coord, 'm'],
+        f: function (s) { return s.p0 + s.v0 * s.t + 0.5 * s.a * s.t * s.t; },
+        line: function (s) { return coord + ' = ' + fmtNum(s.p0 + s.v0 * s.t + 0.5 * s.a * s.t * s.t) + ' m'; },
+        tokens: toks
+      });
+    }
+    make3DKin('kinematics-3d-x', 'X', 'x', 'v_x', 'a_x');
+    make3DKin('kinematics-3d-y', 'Y', 'y', 'v_y', 'a_y');
+    make3DKin('kinematics-3d-z', 'Z', 'z', 'v_z', 'a_z');
+  })();
+
+  physics({
+    id: 'cross-product-components', title: '3D vector cross product (components)',
+    first: 'A_x',
+    tokens: {
+      A: { t: 'First vector (A)', c: 'neutral', role: 'First arrow', is: '3D vector (Ax, Ay, Az).', does: 'Cross product A × B produces a new arrow perpendicular to both A and B.' },
+      B: { t: 'Second vector (B)', c: 'neutral', role: 'Second arrow', is: '3D vector (Bx, By, Bz).', does: 'Swapping the order flips the direction: B × A = −(A × B).' },
+      Ay: { t: 'y-part of A', c: 'neutral', role: 'A y-component', is: 'Vertical coordinate of arrow A.', does: 'Pairs with Bz to make the x-part of A × B.' },
+      Bz: { t: 'z-part of B', c: 'neutral', role: 'B z-component', is: 'Depth coordinate of arrow B.', does: 'Notice the x-output only uses y and z parts!' },
+      Az: { t: 'z-part of A', c: 'neutral', role: 'A z-component', is: 'Depth coordinate of arrow A.', does: 'Multiplies By and Bx in the cyclic pattern.' },
+      By: { t: 'y-part of B', c: 'neutral', role: 'B y-component', is: 'Vertical coordinate of arrow B.', does: 'Subtracted as Az·By in the x-component.' },
+      Ax: { t: 'x-part of A', c: 'neutral', role: 'A x-component', is: 'Horizontal coordinate of arrow A.', does: 'Pairs with Bz and By for the y and z outputs.' },
+      Bx: { t: 'x-part of B', c: 'neutral', role: 'B x-component', is: 'Horizontal coordinate of arrow B.', does: 'If A and B both lie flat in the xy-plane (Az = Bz = 0), only the z-part AxBy − AyBx survives!' },
+      AyBz: { t: 'Aᵧ · Bz (y–z cross pair)', c: 'neutral', role: 'Positive x-term', is: 'Multiply A’s y-part by B’s z-part.', does: 'Starts the x-component of A × B; notice x uses only y and z from the two vectors.' },
+      AzBy: { t: 'Az · Bᵧ (z–y cross pair)', c: 'neutral', role: 'Negative x-term', is: 'Multiply A’s z-part by B’s y-part.', does: 'Subtracted from AyBz so swapping A and B flips the sign of the cross product.' },
+      AzBx: { t: 'Az · Bx (z–x cross pair)', c: 'neutral', role: 'Positive y-term', is: 'Multiply A’s z-part by B’s x-part.', does: 'Follows cyclic order y = z×x − x×z so rotation stays right-handed.' },
+      AxBz: { t: 'Ax · Bz (x–z cross pair)', c: 'neutral', role: 'Negative y-term', is: 'Multiply A’s x-part by B’s z-part.', does: 'Subtracted from AzBx to build the y-component of A × B.' },
+      AxBy: { t: 'Ax · Bᵧ (x–y cross pair)', c: 'neutral', role: 'Positive z-term', is: 'Multiply A’s x-part by B’s y-part.', does: 'Measures the signed area of the parallelogram formed in the flat xy-plane.' },
+      AyBx: { t: 'Aᵧ · Bx (y–x cross pair)', c: 'neutral', role: 'Negative z-term', is: 'Multiply A’s y-part by B’s x-part.', does: 'Subtracted from AxBy; for example (1,0,0) × (0,1,0) gives (0, 0, 1×1 − 0×0) = (0, 0, 1).' }
+    }
+  });
+
+  physics({
+    id: 'eratosthenes-circumference', title: "Eratosthenes' Earth circumference formula",
+    y: 'Earth’s circumference', first: 'Shadow Angle',
+    init: { ang: 7.2, dist: 800 }, out: ['Circumference', 'km'],
+    f: function (s) { return (360 / s.ang) * s.dist; },
+    line: function (s) { return '360° ÷ ' + fmtNum(s.ang) + '° × ' + fmtNum(s.dist) + ' km = ' + fmtNum((360 / s.ang) * s.dist) + ' km'; },
+    tokens: {
+      Circumference: { t: 'Earth circumference', c: 'lhs', role: 'Full distance around Earth', is: 'Total distance all the way around Earth’s equator or meridian, in kilometres.', does: 'Eratosthenes got ~40,000 km using only a stick’s shadow and camel-pace distance between cities!' },
+      '360': { t: 'Full circle (360°)', c: 'const', role: 'Full globe angle', is: 'Degrees in one complete trip around a sphere.', does: 'Dividing 360° by the shadow angle tells how many slices of that size make the whole Earth.' },
+      'Shadow Angle': { t: 'Noon shadow angle difference', c: 'resist', role: 'Slice angle', is: 'Difference in noon sun angle between the two cities, in degrees (7.2° = 1/50 of a circle).', does: 'Half the shadow angle over the same city distance would mean an Earth twice as big.', s: ['ang', 1, 30, 0.2, '°'] },
+      'Distance between cities': { t: 'North–south city distance', c: 'drive', role: 'Arc distance', is: 'Measured ground distance between Alexandria and Syene (~800 km).', does: 'Multiply the arc distance by 360°/angle (50 × 800 km = 40,000 km).', s: ['dist', 100, 3000, 50, 'km'] }
+    }
+  });
+
+  physics({
+    id: 'stopping-distance', title: 'Car braking stopping distance',
+    match: ['d=v^2/(2μg)'], y: 'stopping distance', first: 'v^2',
+    init: { v: 20, mu: 0.7, g: 9.8 }, out: ['d', 'm'],
+    f: function (s) { return (s.v * s.v) / (2 * s.mu * s.g); },
+    line: function (s) { return 'd = ' + fmtNum(s.v) + '² ÷ (2 × ' + fmtNum(s.mu) + ' × ' + fmtNum(s.g) + ') = ' + fmtNum((s.v * s.v) / (2 * s.mu * s.g)) + ' m'; },
+    tokens: {
+      d: { t: 'Braking distance', c: 'lhs', role: 'Skid / stop length', is: 'Metres a car travels after hitting the brakes until coming to a complete stop.', does: 'Because speed is squared, driving too fast on wet or icy roads quickly outruns your headlights.' },
+      'v^2': { t: 'Speed squared', c: 'drive', role: 'Initial speed', is: 'Car speed in m/s, multiplied by itself (20 m/s ≈ 45 mph).', does: 'Double your driving speed and your stopping distance becomes four times longer!', s: ['v', 5, 40, 1, 'm/s'], x: 'v' },
+      '2': { t: 'Factor of 2', c: 'const', role: 'Average speed factor', is: 'Comes from braking steadily down to zero speed.', does: 'Stays fixed at 2.' },
+      'μ': { t: 'Tire–road friction (mu)', c: 'resist', role: 'Road grip', is: 'Grip number between tires and road: ~0.8 dry, ~0.4 wet rain, ~0.15 ice.', does: 'On black ice (μ drops from 0.8 to 0.16, one-fifth), your stopping distance becomes 5 times longer!', s: ['mu', 0.1, 1.0, 0.05, ''] },
+      g: { t: 'Gravity', c: 'resist', role: 'Downward pull', is: 'Gravitational acceleration: 9.8 m/s² on Earth.', does: 'Presses the tires onto the pavement so friction can grip.', s: ['g', 1.6, 15, 0.2, 'm/s²'] }
+    }
+  });
+
+  physics({
+    id: 'golden-ratio', title: 'The golden ratio (phi)',
+    match: ['φ=(1+√5)/2≈1.618'], first: 'φ',
+    tokens: {
+      'φ': { t: 'Golden ratio (phi)', c: 'lhs', role: 'Special proportion', is: 'The ratio ≈ 1.61803… where the whole (a+b) divided by the larger part (a) equals a divided by b.', does: 'Squaring φ gives φ + 1 (2.618…), and 1 ÷ φ gives φ − 1 (0.618…).' },
+      '1': { t: 'Unit part (1)', c: 'const', role: 'Exact term', is: 'The whole number 1 in (1 + √5) ÷ 2.', does: 'Added to √5 before halving.' },
+      '√': ROOT('Square root of 5 (≈ 2.236) makes φ irrational, so its decimals never repeat.'),
+      '5': { t: 'The number 5', c: 'const', role: 'Pentagon number', is: 'Appears from solving φ² − φ − 1 = 0, and links φ to pentagons and 5-fold symmetry.', does: 'Since √5 ≈ 2.236, (1 + 2.236) ÷ 2 = 1.618.' },
+      '2': { t: 'Halving divisor (2)', c: 'const', role: 'Halving step', is: 'Divides (1 + √5) in half.', does: 'Produces the famous value 1.618…' },
+      '1.618': { t: 'Decimal value (1.618)', c: 'const', role: 'Approximate value', is: 'The first four digits of φ (more precisely 1.6180339887…).', does: 'Fibonacci ratios (8÷5 = 1.6, 13÷8 = 1.625, 21÷13 = 1.615) home in on this exact number.' }
+    }
+  });
+
+  physics({
+    id: 'gear-ratio', title: 'Gear ratio',
+    y: 'the gear ratio', first: 'Teeth out',
+    init: { tout: 36, tin: 12 }, out: ['Gear ratio', ':1'],
+    f: function (s) { return s.tout / s.tin; },
+    line: function (s) { return 'Gear ratio = ' + fmtNum(s.tout) + ' ÷ ' + fmtNum(s.tin) + ' = ' + fmtNum(s.tout / s.tin) + ' : 1'; },
+    tokens: {
+      'Gear ratio': { t: 'Gear ratio', c: 'lhs', role: 'Speed/torque multiplier', is: 'How many turns the input gear must make for 1 turn of the output gear.', does: 'Ratio > 1 boosts pulling torque (hill-climbing gear); ratio < 1 boosts speed.' },
+      'Teeth out': { t: 'Output (driven) gear teeth', c: 'drive', role: 'Driven gear', is: 'Count the teeth on the gear connected to the wheels or arm.', does: 'Use an output gear with twice as many teeth (keeping input fixed) and the gear ratio doubles.', s: ['tout', 8, 60, 2, 'teeth'] },
+      'Teeth in': { t: 'Input (driver) gear teeth', c: 'resist', role: 'Motor gear', is: 'Count the teeth on the gear spun by the motor or crank.', does: 'A smaller motor gear driving a bigger wheel gear raises the ratio and multiplies torque.', s: ['tin', 8, 60, 2, 'teeth'] }
+    }
+  });
+
+  physics({
+    id: 'gear-output-torque', title: 'Output torque through gears',
+    y: 'output torque', first: 'ratio',
+    init: { tin: 5, ratio: 3, eff: 0.92 }, out: ['Output torque', 'N·m'],
+    f: function (s) { return s.tin * s.ratio * s.eff; },
+    line: function (s) { return 'Output torque = ' + fmtNum(s.tin) + ' × ' + fmtNum(s.ratio) + ' × ' + fmtNum(s.eff) + ' = ' + fmtNum(s.tin * s.ratio * s.eff) + ' N·m'; },
+    tokens: {
+      'Output torque': { t: 'Output shaft torque', c: 'lhs', role: 'Lifting twist', is: 'Turning force delivered at the output axle, in N·m.', does: 'Grows with gear ratio, minus small friction losses in the teeth.' },
+      'Input torque': { t: 'Motor input torque', c: 'drive', role: 'Motor twist', is: 'Turning force supplied by the motor or hand crank, in N·m.', does: 'Double the motor torque and the output torque doubles.', s: ['tin', 1, 20, 0.5, 'N·m'] },
+      ratio: { t: 'Gear ratio', c: 'drive', role: 'Torque multiplier', is: 'Teeth out divided by teeth in.', does: 'A 3:1 reduction multiplies torque nearly 3× (at 92% efficiency, 2.76×).', s: ['ratio', 0.5, 6, 0.25, ''] },
+      efficiency: { t: 'Gear efficiency', c: 'drive', role: 'Friction retention', is: 'Fraction of power that passes through without turning into heat (typically 0.90–0.98 per stage).', does: 'Each extra meshed gear pair loses a bit more energy to rubbing.', s: ['eff', 0.7, 1.0, 0.02, ''] }
+    }
+  });
+
+  physics({
+    id: 'gear-output-speed', title: 'Output speed through gears',
+    y: 'output speed', first: 'ratio',
+    init: { speed: 120, ratio: 3 }, out: ['Output speed', 'RPM'],
+    f: function (s) { return s.speed / s.ratio; },
+    line: function (s) { return 'Output speed = ' + fmtNum(s.speed) + ' RPM ÷ ' + fmtNum(s.ratio) + ' = ' + fmtNum(s.speed / s.ratio) + ' RPM'; },
+    tokens: {
+      'Output speed': { t: 'Output shaft speed', c: 'lhs', role: 'Output RPM', is: 'Revolutions per minute (RPM) of the driven gear.', does: 'You always trade speed for torque: a 3:1 torque boost cuts speed to one-third.' },
+      'Input speed': { t: 'Motor input speed', c: 'drive', role: 'Input RPM', is: 'Revolutions per minute of the driving motor.', does: 'Spin the motor twice as fast and the output spins twice as fast.', s: ['speed', 30, 600, 10, 'RPM'] },
+      ratio: { t: 'Gear ratio', c: 'resist', role: 'Speed divider', is: 'Teeth out divided by teeth in.', does: 'Double the gear ratio and the output speed cuts in half.', s: ['ratio', 0.5, 6, 0.25, ''] }
+    }
+  });
+
+  physics({
+    id: 'fluid-coupling-torque', title: 'Fluid coupling torque transfer',
+    first: 'ω_pump',
+    tokens: {
+      'Torque on the turbine': { t: 'Output turbine torque', c: 'lhs', role: 'Driven torque', is: 'Twisting force pushed onto the transmission shaft by splashing oil.', does: 'Needs a speed difference between pump and turbine; at identical speeds, torque drops to zero.' },
+      K: { t: 'Coupling size factor', c: 'const', role: 'Geometry constant', is: 'Depends on oil density and vane diameter.', does: 'Larger diameter housings transmit much more torque at the same slip.' },
+      'ω_pump^2': { t: 'Engine pump speed squared', c: 'drive', role: 'Input spin', is: 'Engine flywheel spin speed squared.', does: 'Revving the engine doubles ω_pump and quadruples ω_pump², launching the car smoothly from a stop.' },
+      'ω_turbine^2': { t: 'Transmission turbine speed squared', c: 'resist', role: 'Output spin', is: 'Transmission input shaft spin speed squared.', does: 'As the car speeds up and ω_turbine catches up to ω_pump, slip shrinks and efficiency rises.' }
+    }
+  });
+
+  physics({
+    id: 'planetary-gear-willis', title: 'Planetary gearset speed balance',
+    first: 'ω_sun',
+    tokens: {
+      S: { t: 'Sun gear teeth', c: 'neutral', role: 'Center gear teeth', is: 'Count the teeth on the central sun gear.', does: 'Fixes how strongly the sun gear’s speed weighs in the carrier’s motion.' },
+      'ω_sun': { t: 'Sun gear speed', c: 'neutral', role: 'Center spin', is: 'Spin rate of the sun gear (RPM, + or − for direction).', does: 'Locking the sun gear (ω_sun = 0) leaves only the ring driving the carrier at a slower reduction speed.' },
+      R: { t: 'Ring gear teeth', c: 'neutral', role: 'Outer gear teeth', is: 'Count the teeth around the inside of the outer ring gear.', does: 'Always larger than S; the ratio (S + R) ÷ R sets the reduction when the sun is held.' },
+      'ω_ring': { t: 'Ring gear speed', c: 'neutral', role: 'Outer spin', is: 'Spin rate of the outer ring gear (RPM).', does: 'Locking the ring (ω_ring = 0) makes the sun drive the carrier in a steeper low gear.' },
+      'ω_carrier': { t: 'Planet carrier speed', c: 'neutral', role: 'Spider arm spin', is: 'Spin rate of the carrier holding the little planet gears.', does: 'Equals the weighted average of the sun and ring speeds! Locking any two parts together gives direct 1:1 drive.' }
+    }
+  });
+
+  physics({
+    id: 'governor-upshift', title: 'Automatic transmission upshift speed',
+    first: 'mph^2',
+    tokens: {
+      'P_governor': { t: 'Governor oil pressure', c: 'lhs', role: 'Speed signal', is: 'Hydraulic pressure generated by a spinning valve tied to road speed, in psi.', does: 'Grows with speed squared until it overpowers the throttle valve and shifts up a gear.' },
+      '0.004': { t: 'Governor calibration constant', c: 'const', role: 'Pressure factor', is: 'Sets how many psi the governor builds per mph².', does: 'At 50 mph, 0.004 × 2500 = 10 psi.' },
+      'mph^2': { t: 'Vehicle speed squared', c: 'drive', role: 'Road speed', is: 'Car speed in miles per hour, squared.', does: 'Centrifugal force grows with speed squared, so doubling mph quadruples governor pressure.' },
+      'P_spring': { t: 'Return spring preload', c: 'drive', role: 'Minimum shift floor', is: 'Base spring pressure holding the shift valve in low gear, in psi.', does: 'Even with your foot completely off the gas, the car still waits until P_governor beats P_spring.' },
+      k: { t: 'Throttle lever ratio', c: 'const', role: 'Pedal sensitivity', is: 'How strongly pressing the gas pedal delays the upshift.', does: 'Multiplies P_throttle to hold low gear longer when accelerating hard.' },
+      'P_throttle': { t: 'Throttle pressure', c: 'drive', role: 'Gas pedal signal', is: 'Hydraulic pressure rising as you press the gas pedal down, in psi.', does: 'Flooring the pedal raises P_throttle so the transmission holds lower gear to higher mph for passing.' }
+    }
+  });
+
+  physics({
+    id: 'astar-priority', title: 'A* pathfinding priority score',
+    y: 'the priority score', first: 'Estimate left',
+    init: { g: 4, h: 6 }, out: ['Priority', 'steps'],
+    f: function (s) { return s.g + s.h; },
+    line: function (s) { return 'Priority = ' + fmtNum(s.g) + ' + ' + fmtNum(s.h) + ' = ' + fmtNum(s.g + s.h) + ' (lowest priority is explored next)'; },
+    tokens: {
+      'Cost so far': { t: 'Cost so far g(n)', c: 'drive', role: 'Steps taken', is: 'Exact distance or steps already traveled from Start to this tile.', does: 'Keeps A* from wandering in useless loops just to chase a tempting shortcut.', s: ['g', 0, 20, 1, 'steps'] },
+      'Estimate left': { t: 'Heuristic estimate h(n)', c: 'drive', role: 'Guessed distance left', is: 'Straight-line or grid guess of how many steps remain to reach the Goal.', does: 'If Estimate left is 0 everywhere, A* turns into Dijkstra’s algorithm; never overestimating guarantees the shortest path!', s: ['h', 0, 20, 1, 'steps'] },
+      Priority: { t: 'Total f-score priority', c: 'lhs', role: 'Search order score', is: 'Combined estimated total path length from Start to Goal through this tile.', does: 'A* always opens the waiting tile with the smallest Priority score next.' }
+    }
+  });
+
+  physics({
+    id: 'robot-fk-2link', title: 'Two-link robot forward kinematics',
+    first: 'θ_1',
+    tokens: {
+      x: { t: 'Hand x position', c: 'neutral', role: 'Horizontal reach', is: 'Horizontal distance from shoulder to gripper, in metres.', does: 'Equals the x-projection of link 1 plus the x-projection of link 2.' },
+      'L_1': { t: 'Upper arm length', c: 'neutral', role: 'Link 1 length', is: 'Length from shoulder to elbow, in metres.', does: 'Swings at angle θ_1.' },
+      cos: COS('Picks out the horizontal x-part of each arm link.'),
+      'θ_1': { t: 'Shoulder angle', c: 'neutral', role: 'Joint 1 angle', is: 'Angle of the upper arm from horizontal.', does: 'Turning the shoulder rotates BOTH links together, which is why θ_1 + θ_2 appears in the second term.' },
+      'L_2': { t: 'Forearm length', c: 'neutral', role: 'Link 2 length', is: 'Length from elbow to gripper, in metres.', does: 'Points at total world angle θ_1 + θ_2.' },
+      'θ_2': { t: 'Elbow angle', c: 'neutral', role: 'Joint 2 angle', is: 'Bend angle of the forearm relative to the upper arm.', does: 'At θ_2 = 0°, both links align straight out to full reach L_1 + L_2.' },
+      y: { t: 'Hand y position', c: 'neutral', role: 'Vertical height', is: 'Vertical height of the gripper above the shoulder, in metres.', does: 'Equals the y-projection of link 1 plus the y-projection of link 2.' },
+      sin: SIN('Picks out the vertical y-part of each arm link.')
+    }
+  });
+
+  physics({
+    id: 'robot-jacobian-vel', title: 'Jacobian velocity map',
+    first: 'J',
+    tokens: {
+      'ẋ': { t: 'Hand velocity vector (ẋ)', c: 'lhs', role: 'Tip speed', is: 'How fast the robot hand moves in x and y, in m/s.', does: 'Found by multiplying the Jacobian matrix J by the joint spin rates θ̇.' },
+      J: { t: 'Jacobian matrix (J)', c: 'neutral', role: 'Geometry matrix', is: '2×2 table of numbers showing how each joint angle nudges x and y.', does: 'Changes continuously as the arm bends; s₁ = sin θ₁, c₁₂ = cos(θ₁+θ₂).' },
+      'θ': { t: 'Joint angles (θ)', c: 'neutral', role: 'Current pose', is: 'Current shoulder and elbow angles (θ₁, θ₂).', does: 'Sets all the sines and cosines inside J.' },
+      'θ̇': { t: 'Joint angular speeds (θ̇)', c: 'drive', role: 'Motor speeds', is: 'How fast the shoulder and elbow motors are spinning, in rad/s.', does: 'Doubling both motor speeds doubles the hand’s speed in the exact same direction.' },
+      'L_1': { t: 'Upper arm length', c: 'neutral', role: 'Link 1 length', is: 'Length of link 1 in metres.', does: 'Scales the shoulder column of J.' },
+      's_1': { t: 'sin(θ₁)', c: 'neutral', role: 'Shoulder sine', is: 'Shorthand for sin(θ₁).', does: 'Appears in the x-velocity row with a minus sign because rotating upward pulls x back.' },
+      'L_2': { t: 'Forearm length', c: 'neutral', role: 'Link 2 length', is: 'Length of link 2 in metres.', does: 'Scales both columns because θ₁ moves link 2 as well.' },
+      's_12': { t: 'sin(θ₁ + θ₂)', c: 'neutral', role: 'Forearm sine', is: 'Shorthand for sin(θ₁ + θ₂).', does: 'Sets how elbow rotation nudges horizontal x-speed.' },
+      'c_1': { t: 'cos(θ₁)', c: 'neutral', role: 'Shoulder cosine', is: 'Shorthand for cos(θ₁).', does: 'Sets how shoulder rotation lifts vertical y-speed.' },
+      'c_12': { t: 'cos(θ₁ + θ₂)', c: 'neutral', role: 'Forearm cosine', is: 'Shorthand for cos(θ₁ + θ₂).', does: 'Sets how elbow rotation lifts vertical y-speed.' }
+    }
+  });
+
+  physics({
+    id: 'rrt-star-radius', title: 'RRT* optimal rewiring radius',
+    match: ['r(n)=γ(logn/n)^(1/d)'], first: 'n',
+    tokens: {
+      r: { t: 'Search neighborhood radius', c: 'lhs', role: 'Rewire reach', is: 'How far around each new sample RRT* looks for shorter paths to rewire.', does: 'Shrinks gradually as the map fills with samples so checks stay fast without losing optimality.' },
+      n: { t: 'Number of tree nodes (n)', c: 'resist', role: 'Sample count', is: 'Total sampled points added to the motion-planning tree so far.', does: 'As n grows huge, log(n)/n shrinks slowly toward 0 so the search circle tightens.' },
+      'γ': { t: 'Tuning constant (gamma)', c: 'drive', role: 'Scale factor', is: 'Constant larger than the minimum free-space threshold.', does: 'Larger γ checks more neighbors per sample, finding smoother paths slightly sooner.' },
+      log: { t: 'Logarithm of n', c: 'op', role: 'Slow growth factor', is: 'Grows very slowly with n.', does: 'Keeps the radius from shrinking too fast, guaranteeing every corner still connects.' },
+      d: { t: 'Space dimension (d)', c: 'neutral', role: 'DOF count', is: 'Number of degrees of freedom (2 for floor x,y; 6 for a 6-joint robot arm).', does: 'Higher dimension d makes the exponent 1/d smaller, so the radius shrinks much more slowly.' },
+      '1': { t: 'Unit numerator (1)', c: 'const', role: 'Root exponent', is: 'Forms the d-th root 1/d.', does: 'Matches the volume of a d-dimensional ball scaling as r^d.' }
+    }
+  });
+
+  physics({
+    id: 'potential-fields', title: 'Artificial potential field navigation',
+    first: 'q',
+    tokens: {
+      'U_att': { t: 'Attractive goal bowl', c: 'neutral', role: 'Goal pull energy', is: 'Virtual bowl pulling the robot toward the goal like a marble rolling downhill.', does: 'Grows with distance squared from q_goal.' },
+      '½': HALF('Cancels the 2 when taking the gradient slope −∇U to give a linear spring pull.'),
+      k: { t: 'Goal attraction gain', c: 'drive', role: 'Pull stiffness', is: 'Strength of the virtual spring pulling toward the goal.', does: 'Too small and obstacles block the robot; too large and it overshoots.' },
+      q: { t: 'Robot position (q)', c: 'neutral', role: 'Current state', is: 'Current (x, y) coordinates of the robot.', does: 'Moves downhill along total force F = −∇(U_att + U_rep).' },
+      'q_goal': { t: 'Goal position', c: 'neutral', role: 'Target state', is: 'Target (x, y) coordinates to reach.', does: 'When q = q_goal, attractive energy drops to zero.' },
+      'U_rep': { t: 'Repulsive obstacle wall', c: 'neutral', role: 'Obstacle push energy', is: 'Virtual hill around each obstacle that rises steeply up close.', does: 'Only turns on inside safety distance ρ₀; outside ρ₀, obstacles exert zero force.' },
+      'η': { t: 'Repulsion strength (eta)', c: 'drive', role: 'Push gain', is: 'How hard nearby obstacles push the robot away.', does: 'Higher η keeps a wider safety margin around walls.' },
+      'ρ': { t: 'Distance to nearest obstacle', c: 'resist', role: 'Clearance', is: 'Metres to the closest obstacle edge.', does: 'As ρ approaches 0, 1/ρ shoots up and pushes the robot hard away from collisions.' },
+      'ρ_0': { t: 'Sensor influence radius', c: 'neutral', role: 'Range limit', is: 'Maximum distance in metres where an obstacle affects the robot.', does: 'Obstacles farther away than ρ₀ are ignored.' },
+      F: { t: 'Steering force vector (F)', c: 'lhs', role: 'Net motion push', is: 'Downhill slope of combined attractive + repulsive hills.', does: 'Steers the robot toward the goal while curving around obstacles (watch out for flat local-minimum traps!).' },
+      '∇': { t: 'Gradient slope (−∇)', c: 'op', role: 'Downhill direction', is: 'Points steepest uphill; the minus sign −∇ points straight downhill.', does: 'Turns an energy landscape U into a steering force F.' }
+    }
+  });
+
+  physics({
+    id: 'dwa-objective', title: 'Dynamic Window Approach (DWA) score',
+    match: ['G(v,ω)=σ(αheading+βclearance+γvelocity)'], first: 'heading',
+    tokens: {
+      G: { t: 'Candidate path score G(v, ω)', c: 'lhs', role: 'Path rating', is: 'Score from 0 to 1 rating each reachable speed-and-turn pair (v, ω).', does: 'The robot picks the (v, ω) inside its safe braking window with the highest G score.' },
+      v: { t: 'Forward speed candidate', c: 'neutral', role: 'Test speed', is: 'Candidate linear speed in m/s.', does: 'Tested together with turning speed ω.' },
+      'ω': { t: 'Turn rate candidate', c: 'neutral', role: 'Test spin', is: 'Candidate rotation rate in rad/s.', does: 'Curved arcs trace circular paths for each (v, ω) pair.' },
+      'σ': { t: 'Smoothing normalizer (sigma)', c: 'op', role: 'Score normalizer', is: 'Scales the combined weighted terms cleanly.', does: 'Keeps the three competing goals comparable.' },
+      'α': { t: 'Heading weight (alpha)', c: 'drive', role: 'Goal-aim weight', is: 'Importance placed on pointing toward the goal.', does: 'High α makes the robot turn straight toward the target.' },
+      heading: { t: 'Goal alignment score', c: 'drive', role: 'Direction score', is: 'Measures how closely the arc points toward the goal.', does: 'Highest when heading directly at the target.' },
+      'β': { t: 'Clearance weight (beta)', c: 'drive', role: 'Safety weight', is: 'Importance placed on staying far from obstacles.', does: 'High β steers wide around furniture and walls.' },
+      clearance: { t: 'Obstacle clearance score', c: 'drive', role: 'Safety margin', is: 'Distance along the arc to the nearest obstacle.', does: 'Paths that cannot brake before hitting a wall are thrown out first.' },
+      'γ': { t: 'Speed weight (gamma)', c: 'drive', role: 'Speed preference', is: 'Importance placed on moving fast.', does: 'High γ favors brisk forward motion in open hallways.' },
+      velocity: { t: 'Forward speed score', c: 'drive', role: 'Speed reward', is: 'Magnitude of forward speed v.', does: 'Encourages progress instead of creeping slowly.' }
+    }
+  });
+
+  physics({
+    id: 'unicycle-kinematics', title: 'Wheeled robot nonholonomic motion',
+    first: 'θ',
+    tokens: {
+      'ẋ': { t: 'x velocity (ẋ)', c: 'neutral', role: 'World x speed', is: 'Rate of change of robot x-position, in m/s.', does: 'Equals forward wheel speed v times cos θ.' },
+      v: { t: 'Wheel forward speed', c: 'drive', role: 'Rolling speed', is: 'Forward rolling speed along the robot’s nose, in m/s.', does: 'Setting v = 0 lets the robot spin in place without moving.' },
+      cos: COS('Projects forward rolling speed onto the world x-axis.'),
+      'θ': { t: 'Heading angle (theta)', c: 'geo', role: 'Facing direction', is: 'Direction the robot’s front points, in radians or degrees.', does: 'Because wheels only roll forward/backward, heading θ locks the allowed motion direction.' },
+      'ẏ': { t: 'y velocity (ẏ)', c: 'neutral', role: 'World y speed', is: 'Rate of change of robot y-position, in m/s.', does: 'Equals forward wheel speed v times sin θ.' },
+      sin: SIN('Projects forward rolling speed onto the world y-axis.'),
+      'θ̇': { t: 'Turning rate (θ̇)', c: 'neutral', role: 'Heading change', is: 'Rate at which heading angle θ changes, in rad/s.', does: 'Equals the commanded steering rate ω.' },
+      'ω': { t: 'Commanded turn rate (omega)', c: 'drive', role: 'Spin rate', is: 'Angular velocity commanded to the wheels, in rad/s.', does: 'Positive ω turns left; negative ω turns right.' },
+      '0': { t: 'Zero sideways slip', c: 'const', role: 'No-skid constraint', is: 'Says the sideways velocity component ẋ sin θ − ẏ cos θ must equal zero.', does: 'Wheels roll forward instead of sliding sideways — that is why parallel parking takes curved maneuvers!' }
+    }
+  });
+
+  physics({
+    id: 'complementary-filter', title: 'Complementary sensor-fusion filters',
+    match: ['H_gyro(s)=τs/(τs+1)H_acc(s)=1/(τs+1)'], first: 'τ',
+    tokens: {
+      'H_gyro': { t: 'Gyro high-pass filter', c: 'neutral', role: 'Fast-tilt filter', is: 'Passes fast quick turns from the gyroscope while blocking slow long-term drift.', does: 'Near 0 at low frequencies (s → 0) and near 1 for sudden rapid twists.' },
+      'H_acc': { t: 'Accelerometer low-pass filter', c: 'neutral', role: 'Gravity-tilt filter', is: 'Passes steady long-term gravity direction while smoothing out shaky vibrations.', does: 'Notice H_gyro(s) + H_acc(s) = (τs + 1)/(τs + 1) = 1 at every frequency — nothing is lost!' },
+      s: { t: 'Frequency variable (s)', c: 'neutral', role: 'Signal frequency', is: 'Represents how fast the angle signal is changing (low s = slow drift, high s = fast wobble).', does: 'Splits slow changes to the accelerometer and fast changes to the gyro.' },
+      'τ': { t: 'Crossover time constant (tau)', c: 'drive', role: 'Filter balance time', is: 'Time constant in seconds (typically 0.2–1.0 s) setting where the two sensors hand off.', does: 'Larger τ trusts the smooth gyro longer; smaller τ relies more quickly on gravity from the accelerometer.' },
+      '1': { t: 'Unit gain sum (1)', c: 'const', role: 'Complementary sum', is: 'Ensures the two filter weights always add to exactly 100%.', does: 'That is why it is called a complementary filter!' }
+    }
+  });
+
+  physics({
+    id: 'kalman-filter', title: 'Kalman filter predict and update equations',
+    first: 'K',
+    tokens: {
+      'x̂': { t: 'Updated state estimate', c: 'lhs', role: 'Best guess', is: 'Best fused estimate of angle and gyro bias after seeing sensor measurement z.', does: 'Blends the prediction x̂⁻ with the sensor surprise (z − H x̂⁻) weighted by Kalman gain K.' },
+      'x̂⁻': { t: 'Predicted state', c: 'neutral', role: 'Model prediction', is: 'Predicted angle and bias stepped forward using the motion model F x̂ + B u.', does: 'Gives a clean estimate even between sensor readings.' },
+      F: { t: 'State transition matrix', c: 'neutral', role: 'Physics step', is: 'Steps the previous state forward by Δt (for example, angle += gyro × Δt).', does: 'Links old state to new state.' },
+      B: { t: 'Control input matrix', c: 'neutral', role: 'Command input', is: 'Maps motor/gyro input u into state change.', does: 'Applies known control actions during prediction.' },
+      u: { t: 'Control / gyro rate input', c: 'drive', role: 'Drive input', is: 'Measured turn rate or motor command.', does: 'Advances the predicted angle each time step.' },
+      'P⁻': { t: 'Predicted uncertainty', c: 'neutral', role: 'Prior spread', is: 'Covariance matrix tracking how uncertain the prediction is.', does: 'Grows each step by process noise Q before a measurement arrives.' },
+      P: { t: 'Updated uncertainty', c: 'neutral', role: 'Posterior spread', is: 'Remaining uncertainty after blending in the new sensor reading.', does: 'Shrinks by (I − K H) whenever a measurement updates the filter.' },
+      'Fᵀ': { t: 'Transpose of F', c: 'neutral', role: 'Matrix flip', is: 'F flipped across its diagonal to propagate 2D uncertainty symmetrically.', does: 'Spreads uncertainty properly across angle and bias.' },
+      Q: { t: 'Process noise covariance', c: 'drive', role: 'Model uncertainty', is: 'How noisy or imperfect the motion model is.', does: 'Larger Q tells the filter to trust new sensor measurements more.' },
+      K: { t: 'Kalman gain', c: 'drive', role: 'Sensor blend weight', is: 'Optimal weight (0 to 1) deciding how much to trust the new measurement vs. the prediction.', does: 'When sensor noise R is tiny compared with P⁻, K moves near 1; when the sensor is noisy, K drops near 0.' },
+      'H⁻': { t: 'Measurement matrix', c: 'neutral', role: 'Sensor map', is: 'Maps internal state x into what the sensor z actually measures.', does: 'Selects the angle part from [angle, bias].' },
+      H: { t: 'Measurement matrix', c: 'neutral', role: 'Sensor map', is: 'Maps internal state x into predicted sensor reading H x̂⁻.', does: 'Lets the filter compare predicted vs. real sensor reading z.' },
+      'Hᵀ': { t: 'Transpose of H', c: 'neutral', role: 'Matrix flip', is: 'H flipped across its diagonal.', does: 'Projects state uncertainty into sensor space.' },
+      R: { t: 'Measurement noise covariance', c: 'resist', role: 'Sensor noise', is: 'How noisy the accelerometer or GPS measurement is.', does: 'Higher sensor noise R lowers Kalman gain K so noisy spikes get smoothed out.' },
+      z: { t: 'Sensor measurement', c: 'drive', role: 'Observed reading', is: 'Fresh reading from the accelerometer or external sensor.', does: 'The difference (z − H x̂⁻) is the "innovation" — only the surprise updates x̂!' },
+      I: { t: 'Identity matrix', c: 'const', role: 'Matrix 1', is: 'Matrix version of the number 1.', does: '(I − K H) shows the fraction of uncertainty remaining after the update.' }
+    }
+  });
+
+  physics({
+    id: 'occupancy-log-odds', title: 'Log-odds occupancy grid update',
+    first: 'ℓ_t',
+    tokens: {
+      'ℓ_t': { t: 'Updated log-odds belief', c: 'lhs', role: 'Cell belief', is: 'Log-odds score for whether this map cell is blocked (positive) or open (negative).', does: 'Using log-odds turns Bayesian probability multiplication into simple addition!' },
+      'ℓ_t−1': { t: 'Previous log-odds belief', c: 'drive', role: 'Prior map score', is: 'Cell score from the previous scan.', does: 'Every new lidar hit adds evidence on top of what was already mapped.' },
+      log: { t: 'Log-odds ratio', c: 'op', role: 'Odds score', is: 'log(p(occ|z) ÷ p(free|z)) converts sensor hit/miss likelihood into an additive score.', does: 'A lidar ray hit adds positive log-odds; passing straight through empty air subtracts log-odds.' },
+      p: { t: 'Sensor hit probability', c: 'drive', role: 'Sensor model', is: 'How likely the sensor reports reading z if the cell is occupied vs. free.', does: 'Higher confidence in hits produces a bigger step per scan.' },
+      occ: { t: 'Cell occupied hypothesis', c: 'drive', role: 'Wall event', is: 'Hypothesis that this map cell contains a solid wall or obstacle.', does: 'Higher p(occ | z) raises the log-odds score into positive territory.' },
+      free: { t: 'Cell free-space hypothesis', c: 'resist', role: 'Open-air event', is: 'Hypothesis that this map cell is empty open space.', does: 'When p(free | z) is high because a laser beam flew straight through, log-odds shifts negative.' },
+      z: { t: 'Lidar scan reading (z)', c: 'drive', role: 'Observed beam', is: 'Whether the lidar beam bounced off this cell or passed through it.', does: 'Provides fresh evidence every time the robot scans this cell.' },
+      'ℓ_0': { t: 'Prior starting log-odds', c: 'const', role: 'Initial belief', is: 'Starting score before any scans (0 for 50/50 unknown space).', does: 'Subtracted once so initial uncertainty is not double-counted.' }
+    }
+  });
+
+  physics({
+    id: 'bayes-filter', title: 'Recursive Bayes localization filter',
+    first: 'bel',
+    tokens: {
+      'bel⁻': { t: 'Predicted belief', c: 'neutral', role: 'Motion update', is: 'Probability spread over robot poses right after moving by command uₜ.', does: 'Motion adds uncertainty, spreading the probability blob wider.' },
+      bel: { t: 'Updated belief', c: 'lhs', role: 'Final pose belief', is: 'Probability distribution of where the robot is after checking sensor reading zₜ.', does: 'Measurement sharpens the blurred prediction back onto likely landmarks.' },
+      'x_t': { t: 'Current robot pose', c: 'neutral', role: 'State now', is: 'Robot position and heading (x, y, θ) at step t.', does: 'What the filter is estimating.' },
+      '∫': { t: 'Sum over previous poses', c: 'op', role: 'Total probability', is: 'Adds up chances from every possible previous pose xₜ₋₁.', does: 'Combines motion model p(xₜ | uₜ, xₜ₋₁) with prior belief.' },
+      p: { t: 'Transition / sensor probability', c: 'drive', role: 'Motion & sensor model', is: 'Chance of reaching xₜ from xₜ₋₁, or seeing scan zₜ from pose xₜ.', does: 'Poses that match the lidar scan get boosted; non-matching poses fade away.' },
+      'u_t': { t: 'Wheel motion command', c: 'drive', role: 'Odometry step', is: 'Wheel encoder or motor command at step t.', does: 'Shifts the belief forward along the robot’s motion.' },
+      'x_t−1': { t: 'Previous robot pose', c: 'neutral', role: 'Prior state', is: 'Pose at the previous time step.', does: 'Summed over all possibilities in the prediction integral.' },
+      'dx_t−1': { t: 'Pose integration step', c: 'op', role: 'Integral slice', is: 'Infinitesimal step across previous poses.', does: 'Pairs with ∫.' },
+      dx: { t: 'Pose integration step', c: 'op', role: 'Integral slice', is: 'Infinitesimal step across previous poses.', does: 'Pairs with ∫.' },
+      'η': { t: 'Normalizer (eta)', c: 'const', role: 'Scale to 100%', is: 'Factor scaling the updated belief so all probabilities sum back to 1.', does: 'Keeps the result a valid probability distribution.' },
+      'z_t': { t: 'Sensor scan', c: 'drive', role: 'Lidar / camera reading', is: 'Measurement captured at step t.', does: 'Eliminates impossible poses on the map.' }
+    }
+  });
+
+  physics({
+    id: 'particle-weight', title: 'Particle filter beam likelihood weight',
+    first: 'w',
+    tokens: {
+      w: { t: 'Particle importance weight', c: 'lhs', role: 'Match score', is: 'How well this particle’s guessed pose matches the real lidar scan.', does: 'High-weight particles survive and multiply during resampling; bad guesses get dropped.' },
+      'Π_k': { t: 'Product across all lidar beams', c: 'op', role: 'Multiply all beams', is: 'Multiplies the match score of every laser beam k = 1, 2, … together.', does: 'Requires all beams to agree fairly well for a high total weight.' },
+      exp: { t: 'Exponential bell score', c: 'op', role: 'Gaussian likelihood', is: 'e^(−error² / 2σ²): equals 1 when error is 0 and drops rapidly as error grows.', does: 'Rewards close beam matches and penalizes big mismatches smoothly.' },
+      'r_k': { t: 'Measured beam distance', c: 'drive', role: 'Real lidar reading', is: 'Actual measured distance from the robot’s lidar on beam k, in metres.', does: 'Compared directly with the simulated map distance r̂ₖ.' },
+      'r̂_k': { t: 'Expected map distance', c: 'drive', role: 'Simulated beam', is: 'Distance ray-cast on the map from this particle’s guessed pose, in metres.', does: 'When rₖ ≈ r̂ₖ for every beam, the particle is likely at the true robot pose.' },
+      '2': { t: 'Gaussian factor (2)', c: 'const', role: 'Variance factor', is: 'Part of the Gaussian bell exponent 2σ².', does: 'Keeps the likelihood scaled to standard deviation σ.' },
+      'σ^2': { t: 'Sensor noise variance (σ²)', c: 'resist', role: 'Lidar tolerance', is: 'Expected sensor distance error squared.', does: 'Wider noise σ makes the filter more forgiving of small map mismatches.' }
+    }
+  });
+
+  physics({
+    id: 'bellman-q', title: 'Bellman optimality equation for Q-learning',
+    first: 'γ',
+    tokens: {
+      Q: { t: 'Optimal action value Q*(s, a)', c: 'lhs', role: 'Long-term score', is: 'Best total future reward expected after taking action a in state s.', does: 'Once an AI learns Q*, picking the best move is easy: just pick the action with highest Q*!' },
+      s: { t: 'Current state (s)', c: 'neutral', role: 'Current situation', is: 'Where the agent is right now (e.g., grid square or game board).', does: 'Together with action a, indexes the Q-table.' },
+      a: { t: 'Action taken (a)', c: 'neutral', role: 'Chosen move', is: 'Move tested from state s (up, down, left, right).', does: 'Leads to immediate reward r and next state s′.' },
+      E: { t: 'Expected average E[…]', c: 'op', role: 'Average outcome', is: 'Averages over randomness when outcomes are uncertain.', does: 'In deterministic mazes with fixed outcomes, E[…] is just the single value inside.' },
+      r: { t: 'Immediate reward (r)', c: 'drive', role: 'Instant points', is: 'Points gained (or penalty paid) right after taking action a.', does: 'Added straight onto discounted future rewards.' },
+      'γ': { t: 'Discount factor (gamma)', c: 'drive', role: 'Future patience', is: 'Number between 0 and 1 rating how much future rewards matter vs. instant points.', does: 'γ = 0 cares only about right now; γ = 0.95 values long-term strategy many steps ahead.' },
+      max: { t: 'Best next action (max)', c: 'op', role: 'Greedy lookahead', is: 'Picks the highest Q-value available among all moves a′ from the next state s′.', does: 'Assumes the agent will play optimally from step s′ onward.' },
+      "max_a'": { t: 'Best over all next actions (max a′)', c: 'op', role: 'Greedy lookahead', sym: 'max<sub>a′</sub>', is: 'Tests every allowed move a′ from next state s′ and picks the highest Q-score.', does: 'Assumes the agent chooses the smartest follow-up move next turn.' },
+      "a'": { t: 'Next possible action (a′)', c: 'neutral', role: 'Future move', sym: 'a′', is: 'Candidate move from the next state s′.', does: 'max_a′ tests every allowed move from s′.' },
+      "s'": { t: 'Next state (s′)', c: 'neutral', role: 'Resulting situation', sym: 's′', is: 'The new state the agent lands in after taking action a.', does: 'Links this step’s value to the best value achievable next.' }
+    }
+  });
+
+  physics({
+    id: 'room-modes', title: 'Rectangular room resonance frequencies',
+    y: 'mode frequency', first: 'L',
+    init: { c: 343, nx: 1, ny: 0, nz: 0, L: 5, W: 4, H: 2.8 }, out: ['f', 'Hz'],
+    f: function (s) { return (s.c / 2) * Math.sqrt(Math.pow(s.nx / s.L, 2) + Math.pow(s.ny / s.W, 2) + Math.pow(s.nz / s.H, 2)); },
+    line: function (s) {
+      var f = (s.c / 2) * Math.sqrt(Math.pow(s.nx / s.L, 2) + Math.pow(s.ny / s.W, 2) + Math.pow(s.nz / s.H, 2));
+      return 'f(' + s.nx + ',' + s.ny + ',' + s.nz + ') = ' + fmtNum(f) + ' Hz';
+    },
+    tokens: {
+      f: { t: 'Room mode frequency', c: 'lhs', role: 'Standing-wave pitch', is: 'Bass frequency in Hz that rings louder because standing waves fit neatly between walls.', does: 'When two modes land on the same Hz (say L = W), that bass note booms loudly.' },
+      'n_x': { t: 'Length mode number', c: 'drive', role: 'Half-waves along L', is: 'Whole number 0, 1, 2… counting half-waves between front and back walls.', does: 'n_x = 1 gives the lowest length resonance; n_x = 2 doubles it.', s: ['nx', 0, 4, 1, ''] },
+      'n_y': { t: 'Width mode number', c: 'drive', role: 'Half-waves along W', is: 'Whole number 0, 1, 2… counting half-waves between left and right walls.', does: 'Set n_y = 0 and n_z = 0 to find pure length (axial) modes.', s: ['ny', 0, 4, 1, ''] },
+      'n_z': { t: 'Height mode number', c: 'drive', role: 'Half-waves along H', is: 'Whole number 0, 1, 2… counting half-waves between floor and ceiling.', does: 'Low ceilings push vertical modes higher in pitch.', s: ['nz', 0, 4, 1, ''] },
+      c: { t: 'Speed of sound', c: 'const', role: 'Sound speed', is: 'How fast sound travels in room air: about 343 m/s at 20 °C.', does: 'Divided by 2, c/2 ≈ 171.5 m/s sets the room’s base frequency scale.' },
+      '2': { t: 'Half-wave factor (2)', c: 'const', role: 'Bounce factor', is: 'A standing wave bounces back and forth, fitting half-wavelengths between hard walls.', does: 'Gives f = c / (2L) for a single dimension.' },
+      '√': ROOT('Combines 3D length, width, and height standing-wave counts via 3D Pythagoras.'),
+      L: { t: 'Room length (L)', c: 'resist', role: 'Length dimension', is: 'Wall-to-wall length of the room in metres.', does: 'A longer room fits longer bass waves, lowering its mode frequencies.', s: ['L', 2, 12, 0.2, 'm'] },
+      W: { t: 'Room width (W)', c: 'resist', role: 'Width dimension', is: 'Wall-to-wall width of the room in metres.', does: 'Avoiding W = L keeps length and width modes from stacking on the same Hz.', s: ['W', 2, 10, 0.2, 'm'] },
+      H: { t: 'Ceiling height (H)', c: 'resist', role: 'Height dimension', is: 'Floor-to-ceiling height in metres.', does: 'Raising the ceiling lowers the vertical bass resonance frequency.', s: ['H', 2, 6, 0.2, 'm'] }
+    }
+  });
+
+  physics({
+    id: 'inverse-distance-sound', title: 'Inverse-distance sound pressure law',
+    first: 'distance',
+    tokens: {
+      'Sound pressure': { t: 'Sound pressure level', c: 'lhs', role: 'Wave loudness', is: 'Pressure swing of the sound wave hitting the microphone, in pascals (or dB).', does: 'Each time you double the distance from a free-field source, sound pressure drops to half (−6 dB).' },
+      '1': { t: 'Unit reference (1)', c: 'const', role: 'Inverse ratio', is: 'Forms 1 ÷ distance.', does: 'Says loudness shrinks inversely with distance.' },
+      distance: { t: 'Distance from sound source', c: 'resist', role: 'Mic-to-source gap', is: 'Metres between the talker or speaker and the microphone.', does: 'Move a mic from 30 cm to 60 cm (double distance) and voice pressure drops by 6 dB; at 3× distance it drops by 9.54 dB.' }
+    }
+  });
+
+  physics({
+    id: 'chladni-plate-pde', title: 'Kirchhoff–Love vibrating plate equation',
+    first: 'D',
+    tokens: {
+      D: { t: 'Flexural rigidity (D)', c: 'neutral', role: 'Bending stiffness', is: 'How strongly the metal plate resists bending, built from E h³ / 12(1 − ν²).', does: 'Thickness h is cubed, so making a plate twice as thick makes it 8× stiffer to bend!' },
+      '∇': { t: 'Biharmonic curvature (∇⁴)', c: 'op', role: 'Bending curvature', is: 'Measures how sharply the plate bends in two dimensions at once.', does: 'Multiplied by D, it gives the spring-like restoring force flattening bumps back out.' },
+      w: { t: 'Vertical plate deflection', c: 'neutral', role: 'Surface vibration', is: 'How far up or down each spot (x, y) on the plate vibrates, in metres.', does: 'Along Chladni nodal lines w = 0, so sand settles quietly there!' },
+      'ρ': { t: 'Plate material density', c: 'neutral', role: 'Plate mass', is: 'Mass per cubic metre of the plate (brass ≈ 8500, steel ≈ 7850 kg/m³).', does: 'Combined with thickness h, ρh is the mass per square metre that inertia resists.' },
+      h: { t: 'Plate thickness', c: 'neutral', role: 'Sheet thickness', is: 'Thickness of the metal plate in metres.', does: 'Raises stiffness by h³ while raising mass only by h, so thicker plates ring at higher pitches.' },
+      '∂^2w': { t: 'Vertical acceleration', c: 'neutral', role: 'Plate acceleration', sym: '∂²w', is: 'Second change in surface height w over time.', does: 'Multiplied by ρh, this is Newton’s ma per unit area.' },
+      '∂t^2': { t: 'Time step squared', c: 'op', role: 'Acceleration rate', sym: '∂t²', is: 'Tiny time interval squared.', does: 'Turns vertical shift into acceleration (m/s²).' },
+      p: { t: 'Driving sound/shaker pressure', c: 'drive', role: 'Speaker push', is: 'Oscillating pressure from the bow or speaker pushing the plate at (x, y, t).', does: 'When the driving pitch hits a natural mode of the plate, huge Chladni patterns leap out.' },
+      x: { t: 'x-coordinate on plate', c: 'neutral', role: 'Plate position', is: 'Horizontal location on the plate.', does: 'Sets where crests and quiet nodal lines sit.' },
+      y: { t: 'y-coordinate on plate', c: 'neutral', role: 'Plate position', is: 'Depth location on the plate.', does: 'Sets 2D symmetry of the sand pattern.' },
+      t: { t: 'Time', c: 'neutral', role: 'Oscillation clock', is: 'Elapsed time in seconds.', does: 'Drives the standing wave up and down every cycle.' },
+      E: { t: "Young's modulus (stiffness)", c: 'neutral', role: 'Material stiffness', is: 'Elastic stiffness of the metal in pascals (steel ≈ 200 GPa).', does: 'Stiffer metals snap back faster and raise flexural rigidity D.' },
+      'h^3': { t: 'Thickness cubed', c: 'neutral', role: 'Stiffness cube', is: 'Plate thickness multiplied by itself three times.', does: 'Doubling plate thickness multiplies bending stiffness 8-fold.' },
+      '12': { t: 'Plate bending factor (12)', c: 'const', role: 'Geometry factor', is: 'Comes from integrating bending stress across the thickness of a flat sheet.', does: 'Stays fixed at 12 for flat uniform plates.' },
+      '1': { t: 'Poisson baseline (1)', c: 'const', role: 'Stretch factor', is: 'Combines with ν² to account for sideways squeezing when a plate bends.', does: 'Keeps the denominator close to 11.' },
+      'ν^2': { t: "Poisson's ratio squared", c: 'neutral', role: 'Sideways stretch', is: 'Fraction measuring how much a metal widens sideways when squashed (~0.3 for steel).', does: 'Raises stiffness slightly compared with a narrow 1D beam.' }
+    }
+  });
+
+  physics({
+    id: 'chladni-plate-frequency', title: 'Chladni square-plate mode frequency',
+    match: ['f=(λ/2π)(h/s^2)√(E/12ρ(1−ν^2))'], first: 's^2',
+    tokens: {
+      f: { t: 'Resonant pattern frequency', c: 'lhs', role: 'Pattern pitch', is: 'Pitch in Hz where a crisp Chladni sand pattern forms on the plate.', does: 'Each distinct pattern (cross, rings, stars) appears at its own exact resonant frequency.' },
+      'λ': { t: 'Mode shape constant (lambda)', c: 'drive', role: 'Pattern number', is: 'Dimensionless number set by how many nodal lines cross the plate.', does: 'More nodal lines (higher mode) means a larger λ and higher pitch.' },
+      '2': { t: 'Circle factor (2)', c: 'const', role: 'Hz conversion', is: 'Part of 2π converting radians/second into hertz (cycles per second).', does: 'Stays fixed at 2.' },
+      'π': PI_TOKEN('Part of 2π converting angular vibration frequency into hertz.'),
+      h: { t: 'Plate thickness', c: 'drive', role: 'Sheet thickness', is: 'Thickness of the metal plate in metres.', does: 'Double the thickness on the same-size plate and every Chladni frequency doubles!' },
+      's^2': { t: 'Plate side length squared', c: 'resist', role: 'Plate width squared', is: 'Width of the square plate in metres, squared.', does: 'Make the plate twice as wide (2× s) and the resonant frequencies drop to a quarter (one-fourth as high)!' },
+      '√': ROOT('Wave speed through the metal grows with the square root of stiffness E divided by density ρ.'),
+      E: { t: "Young's modulus (stiffness)", c: 'drive', role: 'Metal stiffness', is: 'Material stiffness in pascals (steel ≈ 200 GPa, brass ≈ 100 GPa).', does: 'Four times the stiffness doubles the resonant frequency.' },
+      '12': { t: 'Plate bending factor (12)', c: 'const', role: 'Geometry factor', is: 'Comes from bending stress across the plate thickness.', does: 'Stays fixed inside the root.' },
+      'ρ': { t: 'Material density', c: 'resist', role: 'Metal heaviness', is: 'Mass per cubic metre in kg/m³.', does: 'Heavier metal vibrates more slowly, lowering the pitch.' },
+      '1': { t: 'Poisson baseline (1)', c: 'const', role: 'Poisson term', is: 'Part of (1 − ν²).', does: 'Small correction for 2D bending.' },
+      'ν^2': { t: "Poisson's ratio squared", c: 'neutral', role: 'Sideways stretch', is: 'Sideways stretch fraction squared (~0.09 for steel).', does: 'Slightly lowers the denominator, gently raising f.' }
+    }
+  });
+
+  physics({
+    id: 'slope-formula', title: 'Slope between two points',
+    match: ['m=(y_2−y_1)/(x_2−x_1)'], y: 'the slope', first: 'y_2',
+    init: { x1: 1, y1: 2, x2: 4, y2: 8 }, out: ['m', ''],
+    f: function (s) { return (s.y2 - s.y1) / (s.x2 - s.x1); },
+    line: function (s) {
+      var dx = s.x2 - s.x1;
+      if (Math.abs(dx) < 1e-9) return 'm = undefined (vertical line: run is 0)';
+      return 'm = (' + fmtNum(s.y2) + ' − ' + fmtNum(s.y1) + ') ÷ (' + fmtNum(s.x2) + ' − ' + fmtNum(s.x1) + ') = ' + fmtNum((s.y2 - s.y1) / dx);
+    },
+    tokens: {
+      m: { t: 'Slope (rise over run)', c: 'lhs', role: 'Line steepness', is: 'How much y changes for each 1-unit step right along x.', does: 'Positive slopes climb uphill left-to-right; negative slopes drop downhill; zero is flat.' },
+      'y_2': { t: 'Second point height (y₂)', c: 'drive', role: 'End y', is: 'Vertical coordinate of the second point.', does: 'Raising y₂ increases the rise (y₂ − y₁) and makes the line steeper.', s: ['y2', -10, 10, 1, ''] },
+      'y_1': { t: 'First point height (y₁)', c: 'resist', role: 'Start y', is: 'Vertical coordinate of the first point.', does: 'Subtracting y₁ from y₂ finds the vertical rise between the two points.', s: ['y1', -10, 10, 1, ''] },
+      'x_2': { t: 'Second point position (x₂)', c: 'resist', role: 'End x', is: 'Horizontal coordinate of the second point.', does: 'Moving x₂ farther right increases the run, making the slope gentler for the same rise.', s: ['x2', 2, 10, 1, ''] },
+      'x_1': { t: 'First point position (x₁)', c: 'drive', role: 'Start x', is: 'Horizontal coordinate of the first point.', does: 'Keep (x₁, y₁) and (x₂, y₂) in the same order top and bottom so the sign of m stays right!', s: ['x1', -10, 1, 1, ''] }
+    }
+  });
+
+  physics({
+    id: 'arithmetic-mean', title: 'Arithmetic mean (average)',
+    first: 'n',
+    tokens: {
+      Mean: { t: 'Arithmetic mean (average)', c: 'lhs', role: 'Fair-share center', is: 'The value every data point would have if the total sum were shared equally.', does: 'For 3, 4, 7, 7, 9: the sum is 30 and n = 5, so Mean = 30 ÷ 5 = 6.' },
+      'x_1': { t: 'First data value (x₁)', c: 'drive', role: 'Data item', is: 'First number in your list.', does: 'One huge outlier pulls the mean toward it, even if most values stay small.' },
+      'x_2': { t: 'Second data value (x₂)', c: 'drive', role: 'Data item', is: 'Second number in your list.', does: 'Added with all other values to get the total sum.' },
+      'x_n': { t: 'Last data value (xₙ)', c: 'drive', role: 'Final item', is: 'The n-th (last) number in your list.', does: 'Every single value in the list contributes equally to the sum.' },
+      n: { t: 'Count of values (n)', c: 'resist', role: 'List size', is: 'Count how many numbers are in the data set.', does: 'Adding a new value equal to the current mean leaves the mean unchanged.' }
+    }
+  });
+
+  physics({
+    id: 'fourier-series-sum', title: 'Fourier series synthesis',
+    first: 'n',
+    tokens: {
+      f: { t: 'Rebuilt wave f(x)', c: 'lhs', role: 'Combined waveform', is: 'Height of the total wave at position or time x.', does: 'Adding enough simple sine and cosine waves can match any repeating wave shape — even a square wave!' },
+      x: { t: 'Position / phase (x)', c: 'neutral', role: 'Wave coordinate', is: 'Input angle or position along one cycle.', does: 'Each harmonic n repeats n times inside that same cycle.' },
+      'a_0': { t: 'DC offset numerator (a₀)', c: 'drive', role: 'Average shift', is: 'Twice the average level of the wave.', does: 'a₀/2 shifts the entire wave straight up or down without changing its shape.' },
+      '2': { t: 'Average factor (2)', c: 'const', role: 'Offset divisor', is: 'Halves a₀ to give the wave’s true center height.', does: 'Keeps the same integral formula working for n = 0.' },
+      'Σ_n': { t: 'Sum over harmonics n = 1, 2, 3…', c: 'op', role: 'Harmonic stack', sym: 'Σ<sub>n</sub>', is: 'Adds harmonic waves 1×, 2×, 3×… the base frequency together.', does: 'More terms add sharper corners and finer detail.' },
+      'a_n': { t: 'Cosine harmonic weight (aₙ)', c: 'drive', role: 'Cosine amount', is: 'How much of frequency n enters as a cosine wave.', does: 'Symmetric waves that peak at x = 0 rely mostly on cosine weights aₙ.' },
+      cos: COS('Produces the symmetric cosine harmonic of frequency n.'),
+      n: { t: 'Harmonic number (n)', c: 'neutral', role: 'Frequency multiple', is: 'Whole number 1, 2, 3… multiplying the fundamental frequency.', does: 'Higher n gives faster wiggles that carve out sharp edges.' },
+      'b_n': { t: 'Sine harmonic weight (bₙ)', c: 'drive', role: 'Sine amount', is: 'How much of frequency n enters as a sine wave.', does: 'Waves that cross zero at x = 0 (like a square wave) use sine weights bₙ.' },
+      sin: SIN('Produces the antisymmetric sine harmonic of frequency n.')
+    }
+  });
+
+  physics({
+    id: 'fourier-square-wave', title: 'Fourier series for a square wave',
+    first: '3',
+    tokens: {
+      square: { t: 'Square wave', c: 'lhs', role: 'Target waveform', is: 'A flat-topped wave jumping between +1 and −1.', does: 'Builds sharp cliff edges by adding only odd sine harmonics (1, 3, 5, 7…).' },
+      x: { t: 'Phase angle (x)', c: 'neutral', role: 'Cycle angle', is: 'Angle along one full cycle (0 to 2π).', does: 'At x = π/2 all odd sines alternate +1, −1, +1… to build a flat plateau.' },
+      '4': { t: 'Amplitude numerator (4)', c: 'const', role: 'Scale factor', is: 'Part of 4/π ≈ 1.273.', does: 'Boosts the first sine wave slightly past 1 so the flatter sum lands right at 1.' },
+      'π': PI_TOKEN('Divides 4 to normalize the square wave height to ±1.'),
+      sin: SIN('Each sin(nx) term adds a gentler ripple at n times the fundamental frequency.'),
+      '3': { t: '3rd harmonic (1/3 amplitude)', c: 'const', role: 'Odd harmonic 3', is: '3× frequency at 1/3 strength.', does: 'Flattens the top of sin(x) and steepens the cliff walls.' },
+      '5': { t: '5th harmonic (1/5 amplitude)', c: 'const', role: 'Odd harmonic 5', is: '5× frequency at 1/5 strength.', does: 'Sharpens the square corners further.' },
+      '7': { t: '7th harmonic (1/7 amplitude)', c: 'const', role: 'Odd harmonic 7', is: '7× frequency at 1/7 strength.', does: 'Higher odd harmonics shrink as 1/n, tightening the vertical jump.' }
+    }
+  });
+
+  physics({
+    id: 'fourier-coefficient', title: 'Measuring one harmonic weight bₙ',
+    first: 'n',
+    tokens: {
+      'b_n': { t: 'Sine harmonic weight (bₙ)', c: 'lhs', role: 'Detected strength', is: 'How strongly frequency n appears inside signal f(x).', does: 'Multiply your signal by sin(nx) and average over one cycle — all other frequencies cancel to 0!' },
+      '1': { t: 'Cycle numerator (1)', c: 'const', role: 'Average factor', is: 'Part of 1/π averaging over a full 2π cycle.', does: 'Normalizes the integral so a pure sin(nx) input returns bₙ = 1.' },
+      'π': PI_TOKEN('Half the 2π period; since the average of sin²(nx) is ½, dividing by π recovers exact amplitude 1.'),
+      '∫_0': { t: 'Integral from 0 to 2π', c: 'op', role: 'Cycle average', sym: '∫<sub>0</sub><sup>2π</sup>', is: 'Adds up f(x)·sin(nx) across one full 2π period.', does: 'Frequencies that do not match n spend half the cycle positive and half negative, averaging to zero.' },
+      '^2': { t: 'Upper limit (2π)', c: 'const', role: 'One full cycle', sym: '2π', is: '2π radians = one full wave period.', does: 'Ends the averaging window after one complete cycle.' },
+      π_end: { t: 'Pi', c: 'const', role: 'Circle constant', is: '3.14159…', does: 'Completes 2π at the top of the integral.' },
+      f: { t: 'Input signal f(x)', c: 'drive', role: 'Mystery wave', is: 'The complex wave you are analyzing.', does: 'Tested against sin(nx) to extract its n-th sine ingredient.' },
+      x: { t: 'Cycle coordinate (x)', c: 'neutral', role: 'Angle variable', is: 'Position from 0 to 2π.', does: 'Swept through one full period.' },
+      sin: SIN('Acts like a tuning fork at frequency n, pulling out only matching vibrations.'),
+      n: { t: 'Target harmonic number', c: 'drive', role: 'Frequency probe', is: 'Which harmonic (1, 2, 3…) you are hunting for.', does: 'Change n to scan through each harmonic in the sound.' },
+      dx: { t: 'Thin slice width (dx)', c: 'op', role: 'Integration step', is: 'Infinitesimal step across the cycle.', does: 'Pairs with ∫ to sum the area over [0, 2π].' }
+    }
+  });
+
+  physics({
+    id: 'fourier-transform-xi', title: 'Continuous Fourier transform F̂(ξ)',
+    first: 'ξ',
+    tokens: {
+      'F̂': { t: 'Frequency spectrum F̂(ξ)', c: 'lhs', role: 'Spectrum amplitude', is: 'How much of frequency ξ (cycles per unit x) is present in signal f(x).', does: 'Works even for non-repeating bursts like a single clap or laser pulse!' },
+      'ξ': { t: 'Frequency (xi, cycles/unit)', c: 'drive', role: 'Probe frequency', is: 'How many full wave cycles occur per unit of x (or per second in Hz).', does: 'Using 2πξ lets ξ represent plain cycles-per-second frequency instead of radians.' },
+      '∫_−': { t: 'Integral over all space/time', c: 'op', role: 'Full sum', sym: '∫<sub>−∞</sub><sup>∞</sup>', is: 'Adds up f(x)·e^(−2πiξx) from −∞ to +∞.', does: 'Captures every non-repeating pulse across all x.' },
+      '∞': { t: 'Infinity limits', c: 'const', role: 'Unbounded range', is: 'Integrates over all negative and positive x.', does: 'Allows any single pulse to be decomposed into waves.' },
+      f: { t: 'Input signal f(x)', c: 'drive', role: 'Signal', is: 'Signal strength measured at x.', does: 'Narrower spikes in f(x) spread across wider frequencies in F̂(ξ).' },
+      x: { t: 'Position / time (x)', c: 'neutral', role: 'Input coordinate', is: 'Position or time coordinate of the signal.', does: 'Multiplies ξ inside the probe wave.' },
+      e: { t: "Euler's number (e)", c: 'const', role: 'Complex wave base', is: 'Constant ≈ 2.71828.', does: 'e^(−2πiξx) = cos(2πξx) − i·sin(2πξx) probes both phase and amplitude at once.' },
+      '2': { t: 'Full-cycle factor (2)', c: 'const', role: 'Radians per cycle', is: 'Part of 2π turning frequency ξ into radians.', does: 'Stays fixed at 2.' },
+      'π': PI_TOKEN('Part of 2π converting cycles ξ into radians.'),
+      i: { t: 'Imaginary unit', c: 'const', role: 'Sine/cosine tracker', is: '√−1.', does: 'Tracks wave phase shifts cleanly in one number.' },
+      dx: { t: 'Thin slice width (dx)', c: 'op', role: 'Integration step', is: 'Infinitesimal step in x.', does: 'Pairs with ∫.' }
+    }
+  });
+
+  physics({
+    id: 'riemann-zeta-series', title: 'Riemann zeta function (Dirichlet series)',
+    match: ['ζ(s)=Σ1/n^s'], first: 's',
+    tokens: {
+      'ζ': { t: 'Zeta function ζ(s)', c: 'lhs', role: 'Infinite sum', is: 'Adds 1 + 1/2ˢ + 1/3ˢ + 1/4ˢ + … over every whole number n.', does: 'Connects whole numbers to prime numbers because ζ(s) also equals a product over all primes!' },
+      s: { t: 'Exponent power (s)', c: 'resist', role: 'Decay exponent', is: 'Exponent on every denominator nˢ (converges as a plain sum whenever Re(s) > 1).', does: 'At s = 1 the sum 1 + ½ + ⅓ + … grows to infinity; at s = 2 it converges cleanly to π²/6 ≈ 1.645!' },
+      'Σ': { t: 'Infinite sum (n = 1, 2, 3…)', c: 'op', role: 'Sum over integers', is: 'Adds one term 1/nˢ for every positive whole number n = 1, 2, 3… forever.', does: 'Larger s shrinks each term faster so the infinite sum settles to a finite number.' },
+      '1': { t: 'Unit numerator (1)', c: 'const', role: 'Unit fraction top', is: 'Every term has 1 on top.', does: 'Forms unit reciprocals 1/nˢ.' },
+      'n^s': { t: 'Integer n to power s', c: 'resist', role: 'Shrinking denominator', is: 'Each whole number n = 1, 2, 3… raised to the power s.', does: 'Larger n makes 1/nˢ smaller whenever s > 0.' }
+    }
+  });
+
+  physics({
+    id: 'prime-error-zeros', title: 'How zeta zeros control the prime-number error',
+    match: ['Error~Σx^ρ/ρ'], first: 'ρ',
+    tokens: {
+      Error: { t: 'Prime-counting error', c: 'lhs', role: 'Prime wiggle', is: 'How far the actual count of primes π(x) drifts from the smooth estimate Li(x).', does: 'Every nontrivial zero ρ adds one oscillating wave to explain the exact bumpy staircase of primes.' },
+      '~': { t: 'Approximately proportional (~)', c: 'op', role: 'Leading behavior', is: 'Means the leading oscillatory part behaves like this sum.', does: 'Captures how big the prime fluctuations can grow.' },
+      'Σ': { t: 'Sum over zeta zeros', c: 'op', role: 'Wave sum', is: 'Adds one wave x^ρ / ρ for each nontrivial zero ρ of ζ(s).', does: 'More zeros sharpen the staircase of primes.' },
+      'x^ρ': { t: 'Scale x to complex power ρ', c: 'drive', role: 'Amplitude & wave', is: 'If ρ = a + bi, then |x^ρ| = x^a! Its real part a sets how big the error grows.', does: 'If the Riemann hypothesis holds (every a = ½), the error stays tiny: at most ~√x!' },
+      'ρ': { t: 'Nontrivial zeta zero (rho)', c: 'resist', role: 'Zeta zero', is: 'A complex root inside 0 < Re(s) < 1 where ζ(ρ) = 0.', does: 'Its real part sets error size (x^Re(ρ)) and its imaginary part sets the oscillation pitch of primes.' }
+    }
+  });
+
+  physics({
+    id: 'stoichiometry-mass', title: 'Stoichiometry mass-to-mass conversion',
+    first: 'coef B',
+    tokens: {
+      'mass of B': { t: 'Predicted mass of substance B', c: 'lhs', role: 'Target product/reactant', is: 'Grams of target substance B produced or needed (theoretical yield).', does: 'Converts grams of A → moles of A → moles of B → grams of B in one chain.' },
+      'mass of A': { t: 'Starting mass of substance A', c: 'drive', role: 'Given grams', is: 'Measure the starting mass of substance A on a balance, in grams (g).', does: 'Double the starting grams of A and you double the theoretical grams of B (when A is limiting).', },
+      '1': { t: '1 mole of A', c: 'const', role: 'Mole bridge', is: 'Represents 1 mol A weighing M_A grams.', does: 'Dividing grams of A by M_A converts mass into a mole count.' },
+      mol: { t: 'Moles (mol)', c: 'const', role: 'Counting unit', is: 'Chemists’ counting unit: 1 mole = 6.022 × 10²³ particles.', does: 'Balanced equations count moles/molecules, never grams directly!' },
+      A: { t: 'Starting substance A', c: 'neutral', role: 'Given chemical', is: 'The reactant or product whose mass you measured.', does: 'Its molar mass M_A turns grams into moles.' },
+      'M_A': { t: 'Molar mass of A', c: 'resist', role: 'Grams per mole (A)', is: 'Add atomic masses from the periodic table for formula A, in g/mol.', does: 'Heavier molecules mean fewer moles for the same weighed grams.' },
+      'coef B': { t: 'Balanced coefficient of B', c: 'drive', role: 'Recipe ratio (B)', is: 'Big number in front of B in the balanced chemical equation.', does: 'In 2 H₂ + O₂ → 2 H₂O, coef H₂O = 2 and coef O₂ = 1, giving 2 moles of water per mole of O₂.' },
+      'coef A': { t: 'Balanced coefficient of A', c: 'resist', role: 'Recipe ratio (A)', is: 'Big number in front of A in the balanced chemical equation.', does: 'Dividing by coef A scales the recipe to 1 reaction batch before multiplying by coef B.' },
+      'M_B': { t: 'Molar mass of B', c: 'drive', role: 'Grams per mole (B)', is: 'Molar mass of target substance B, in g/mol.', does: 'Converts moles of B back into grams you can weigh on a scale.' }
+    }
+  });
+
+  physics({
+    id: 'particle-in-box', title: 'Quantum particle-in-a-box energy levels',
+    match: ['E_n∝n^2/L^2'], first: 'n^2',
+    tokens: {
+      'E_n': { t: 'Allowed energy level (Eₙ)', c: 'lhs', role: 'Quantized energy', is: 'Energy of the trapped quantum wave at level n, in joules or eV.', does: 'Only discrete standing waves fit between the walls, so energy jumps in steps instead of smoothly.' },
+      'n^2': { t: 'Quantum number squared', c: 'drive', role: 'Harmonic level', is: 'Whole number n = 1, 2, 3… squared (1, 4, 9, 16…).', does: 'Jump from n = 1 to n = 2 and the energy jumps to 4× the ground-state energy!' },
+      'L^2': { t: 'Box width squared', c: 'resist', role: 'Trap width', is: 'Width of the confining box in metres or nanometres, squared.', does: 'Squeeze the box to half its width (like a smaller quantum dot) and every energy level jumps 4× higher, shifting emitted light toward blue!' }
+    }
+  });
+
+  physics({
+    id: 'maxwell-light-speed', title: 'Speed of light from Maxwell constants and waves',
+    first: 'λ',
+    tokens: {
+      c: { t: 'Speed of light in vacuum', c: 'lhs', role: 'Light speed', is: 'Exact speed of light and all electromagnetic waves: 299,792,458 m/s.', does: 'Maxwell discovered 1/√(μ₀ε₀) from electric and magnetic lab numbers alone — and it matched light speed!' },
+      '1': { t: 'Unit numerator (1)', c: 'const', role: 'Inverse root', is: 'Forms 1 ÷ √(μ₀ε₀).', does: 'Smaller electric/magnetic resistance in space means faster light.' },
+      '√': ROOT('Square root of μ₀ε₀ sits on the bottom, giving 299,792,458 m/s.'),
+      'μ_0': { t: 'Magnetic constant of vacuum', c: 'const', role: 'Magnetic response', is: 'Permeability of empty space: 4π × 10⁻⁷ N/A².', does: 'Sets how strongly empty space responds to currents and changing magnetic fields.' },
+      'ε_0': { t: 'Electric constant of vacuum', c: 'const', role: 'Electric response', is: 'Permittivity of empty space: 8.854 × 10⁻¹² F/m.', does: 'Sets how strongly empty space stores electric field energy.' },
+      'λ': { t: 'Wavelength (lambda)', c: 'neutral', role: 'Wave length', is: 'Distance from crest to crest, in metres.', does: 'Multiplied by frequency f, it always equals c in vacuum.' },
+      f: { t: 'Wave frequency', c: 'neutral', role: 'Wave cycles/sec', is: 'Vibrations per second, in hertz (Hz).', does: 'Higher frequency light (blue vs. red) has shorter wavelength λ so λf stays equal to c.' }
+    }
+  });
+
+  physics({
+    id: 'light-in-medium', title: 'Light speed and wavelength inside glass or water',
+    first: 'n',
+    tokens: {
+      'v_medium': { t: 'Light speed in material', c: 'lhs', role: 'Slowed speed', is: 'How fast light travels through glass, water, or diamond, in m/s.', does: 'In water (n = 1.33), light slows to c ÷ 1.33 ≈ 225,000,000 m/s.' },
+      c: { t: 'Vacuum speed of light', c: 'const', role: 'Top speed', is: 'Speed of light in empty space: 299,792,458 m/s.', does: 'Nothing pushes light faster than c in a vacuum.' },
+      n: { t: 'Refractive index', c: 'resist', role: 'Slowdown factor', is: 'Number ≥ 1 measuring how much a clear material slows light (air ≈ 1.00, water ≈ 1.33, glass ≈ 1.5, diamond ≈ 2.42).', does: 'Divides BOTH the speed AND the wavelength by n while keeping frequency (color) unchanged!' },
+      'λ': { t: 'Wavelength inside material', c: 'lhs', role: 'Squeezed wave', is: 'Distance between crests inside water or glass, in nanometres.', does: 'As light slows down on entering glass, crests bunch closer together to λ₀ ÷ n.' },
+      'λ_0': { t: 'Vacuum wavelength', c: 'drive', role: 'Original wavelength', is: 'Wavelength in empty space or air before entering the medium, in nanometres.', does: 'Green 532 nm laser light compresses to 532 ÷ 1.33 = 400 nm inside water.' }
+    }
+  });
+
+  physics({
+    id: 'spacetime-interval', title: 'Relativity time dilation and spacetime interval',
+    first: 'v^2',
+    tokens: {
+      'γ': { t: 'Lorentz factor (gamma)', c: 'lhs', role: 'Time-stretch factor', is: 'Number ≥ 1 showing how much slower a moving clock ticks compared with yours.', does: 'At 0.866c, γ = 2 so moving clocks tick at half speed.' },
+      '1': { t: 'Rest baseline (1)', c: 'const', role: 'Zero-speed value', is: 'Gives γ = 1 when speed v = 0.', does: 'Subtracted by v²/c² inside the square root.' },
+      '√': ROOT('Keeps γ gentle at everyday speeds and makes it shoot toward infinity near light speed c.'),
+      'v^2': { t: 'Speed squared', c: 'drive', role: 'Object speed', is: 'Travel speed squared.', does: 'At 60% of light speed (0.6c), v²/c² = 0.36, so √(1 − 0.36) = 0.8 and γ = 1.25.' },
+      'c^2': { t: 'Speed of light squared', c: 'const', role: 'Cosmic speed limit', is: 'c² ≈ 9 × 10¹⁶ m²/s².', does: 'Appears in both formulas because c converts time Δt into distance cΔt.' },
+      's^2': { t: 'Spacetime interval squared', c: 'lhs', role: 'Invariant separation', is: 'Combined space-and-time separation between two events.', does: 'Even when moving observers disagree on Δt and Δx separately, EVERY observer agrees on the exact value of s²!' },
+      c: { t: 'Speed of light', c: 'const', role: 'Time-to-space ruler', is: '299,792,458 m/s.', does: 'Turns seconds Δt into light-metres cΔt so time and space can subtract.' },
+      'Δt': { t: 'Time between events', c: 'drive', role: 'Clock gap', is: 'Seconds elapsed between two events in your frame.', does: 'Notice time and space have a MINUS sign between them — that minus sign is the geometry of spacetime!' },
+      'Δx': { t: 'Distance between events', c: 'resist', role: 'Space gap', is: 'Metres separating two events in your frame.', does: 'For a beam of light traveling Δx = cΔt, the spacetime interval is s² = 0!' }
+    }
+  });
+
+  physics({
+    id: 'equal-temperament-semitone', title: 'Equal-temperament semitone ratio',
+    match: ['semitoneratio=2^(1/12)≈1.05946', 'semitoneratio=2^(1/12)~=1.05946'], first: '12',
+    tokens: {
+      'semitone ratio': { t: 'Semitone pitch multiplier', c: 'lhs', role: 'Half-step ratio', is: 'Number (~1.05946, about +5.95%) multiplying frequency each piano key you step up.', does: 'Step up 12 keys in a row and multiplying by 2^(1/12) twelve times multiplies frequency by exactly 2 (one octave)!' },
+      '2': { t: 'Octave doubling (2)', c: 'const', role: 'Octave ratio', is: 'Going up one octave always doubles sound frequency (e.g. A4 = 440 Hz → A5 = 880 Hz).', does: 'Split into 12 equal multiplicative steps via the 12th root.' },
+      '1': { t: 'One semitone step (1)', c: 'const', role: 'Single key step', is: 'Numerator of 1/12 for a single half-step on a piano or guitar fret.', does: 'Stepping k semitones uses 2^(k/12): 7 semitones (a fifth) gives 2^(7/12) ≈ 1.498.' },
+      '12': { t: 'Twelve keys per octave', c: 'const', role: 'Chromatic steps', is: '7 white keys + 5 black keys = 12 semitones in an octave.', does: 'Divides the octave into 12 equal percentage steps so every musical key sounds equally in tune.' },
+      '1.05946': { t: '12th root of 2', c: 'const', role: 'Decimal multiplier', is: 'Approximate value of 2^(1/12).', does: 'Each fret on a guitar sits 1 ÷ 1.05946 ≈ 94.4% as far from the bridge as the previous fret.' }
+    }
+  });
+
+  physics({
+    id: 'beta-decay', title: 'Neutron beta-minus decay',
+    first: 'n',
+    tokens: {
+      n: { t: 'Neutron (n)', c: 'drive', role: 'Parent particle', is: 'Neutral baryon made of one up quark and two down quarks.', does: 'A free neutron decays in about 15 minutes when one down quark turns into an up quark via the weak force.' },
+      p: { t: 'Proton (p)', c: 'lhs', role: 'Daughter baryon', is: 'Positively charged (+1) baryon made of two up quarks and one down quark.', does: 'Balances baryon number (1 → 1) and contributes +1 electric charge.' },
+      'e^−': { t: 'Electron (beta particle, e⁻)', c: 'lhs', role: 'Emitted beta particle', sym: 'e⁻', is: 'Negatively charged (−1) lepton ejected at high speed.', does: 'Its −1 charge cancels the proton’s +1 charge so total charge stays 0 before and after!' },
+      e: { t: 'Electron (beta particle, e⁻)', c: 'lhs', role: 'Emitted beta particle', sym: 'e⁻', is: 'Negatively charged (−1) lepton ejected at high speed.', does: 'Its −1 charge cancels the proton’s +1 charge so total charge stays 0 before and after!' },
+      'ν̅_e': { t: 'Electron antineutrino', c: 'lhs', role: 'Missing energy carrier', sym: 'ν̅<sub>e</sub>', is: 'Nearly massless, neutral antimatter particle that carries away leftover energy and spin.', does: 'Discovered because beta electrons alone didn’t carry all the energy; keeps lepton count balanced (+1 electron, −1 antineutrino).' }
+    }
+  });
+
+  physics({
+    id: 'kawasaki-theorem', title: "Kawasaki's flat-foldability theorem",
+    match: ['θ_1+θ_3=θ_2+θ_4=180°'], first: 'θ_1',
+    tokens: {
+      'θ_1': { t: 'First sector angle', c: 'neutral', role: 'Odd corner 1', is: 'Measure the first corner angle between consecutive creases around the vertex, in degrees.', does: 'In any 4-crease flat fold, alternating corners θ₁ + θ₃ must total 180°!' },
+      'θ_3': { t: 'Third sector angle', c: 'neutral', role: 'Odd corner 3', is: 'Measure the third angle opposite θ₁ around the vertex, in degrees.', does: 'If θ₁ = 70°, θ₃ must equal 110° so 70° + 110° = 180°.' },
+      'θ_2': { t: 'Second sector angle', c: 'neutral', role: 'Even corner 2', is: 'Measure the second angle sitting between θ₁ and θ₃, in degrees.', does: 'Paired with θ₄ so θ₂ + θ₄ also equals 180°.' },
+      'θ_4': { t: 'Fourth sector angle', c: 'neutral', role: 'Even corner 4', is: 'Measure the fourth angle closing the full 360° circle, in degrees.', does: 'If all four angles don’t balance 180° and 180°, the paper ripples instead of lying flat.' },
+      '180': { t: 'Half-circle total (180°)', c: 'const', role: 'Flat-fold target', is: 'Exact alternating sum needed for opposite paper layers to line up cleanly when pressed flat.', does: 'Because a full circle is 360°, forcing odd angles = 180° automatically forces even angles = 180°.' }
+    }
+  });
+
+  physics({
+    id: 'wave-height-update', title: 'Discrete grid wave height update',
+    match: ['h_new=(Σneighbors/2−h_old)d'], y: 'the new cell height', first: 'd',
+    init: { nsum: 0.8, hold: 0.2, d: 0.96 }, out: ['h_new', 'units'],
+    f: function (s) { return (s.nsum / 2 - s.hold) * s.d; },
+    line: function (s) {
+      var v = (s.nsum / 2 - s.hold) * s.d;
+      return 'h_new = (' + fmtNum(s.nsum) + '/2 − ' + fmtNum(s.hold) + ') × ' + fmtNum(s.d) + ' = ' + fmtNum(v);
+    },
+    tokens: {
+      'h_new': { t: 'Next frame wave height', c: 'lhs', role: 'Updated height', is: 'Water height at this grid cell on the next simulation frame.', does: 'Alternates cleanly back and forth so ripples travel smoothly across the 2D water mesh.' },
+      'Σ': { t: 'Sum over 4 neighbors', c: 'op', role: 'Neighbor sum', is: 'Adds heights of the cells directly up, down, left, and right.', does: 'Shares height outward so a splash drops down while neighboring cells rise up.' },
+      neighbors: { t: 'Four neighboring cell heights', c: 'drive', role: 'Surrounding heights', is: 'Combined water height of the up, down, left, and right grid squares.', does: 'Divided by 2 and minus h_old, this approximates the curvature of the water surface.', s: ['nsum', -2, 2, 0.1, ''] },
+      '2': { t: 'Wave stencil divisor (2)', c: 'const', role: 'Average factor', is: 'Half of 4 neighbors: balances springiness in the classic 2D ripple trick.', does: 'Keeps total energy steady before damping d is applied.' },
+      'h_old': { t: 'Previous frame wave height', c: 'resist', role: 'Past height', is: 'What this cell’s height was one frame ago (lets the water keep momentum without storing velocity!).', does: 'Subtracting h_old flips height symmetrically so crests bounce cleanly through troughs.', s: ['hold', -1, 1, 0.05, ''] },
+      d: { t: 'Damping factor (d)', c: 'drive', role: 'Energy fade', is: 'Multiplier slightly under 1 (typically 0.95–0.99) shrinking waves slowly each frame.', does: 'At d = 0.99 ripples travel far across the pool; at d = 0.75 ripples die out right away.', s: ['d', 0.7, 1.0, 0.01, ''] }
+    }
+  });
+
+  physics({
+    id: 'q-learning-update', title: 'Q-learning incremental update rule',
+    first: 'α',
+    tokens: {
+      Q: { t: 'Action value guess Q(s, a)', c: 'lhs', role: 'Estimated score', is: 'Robot’s current estimate of total future points from state s taking action a.', does: 'Every experience nudges Q(s, a) closer to the true long-term reward.' },
+      s: { t: 'Current state (s)', c: 'neutral', role: 'Current tile', is: 'Current grid cell or game state.', does: 'Identifies which row of the Q-table is being updated.' },
+      a: { t: 'Action tried (a)', c: 'neutral', role: 'Move tried', is: 'Move the agent just tried (up, down, left, or right).', does: 'Identifies which column of the Q-table gets updated.' },
+      'α': { t: 'Learning rate (alpha)', c: 'drive', role: 'Step size', is: 'Fraction between 0 and 1 setting how big a nudge each new trial makes.', does: 'α = 0.1 blends slowly and steadily; α = 0.9 jumps fast toward the latest trial.' },
+      reward: { t: 'Immediate reward', c: 'drive', role: 'Step points', is: 'Points just received right after taking action a (+100 goal, −1 step cost, etc.).', does: 'Starts spreading back through the grid from the charger toward earlier squares.' },
+      'γ': { t: 'Discount factor (gamma)', c: 'drive', role: 'Future weight', is: 'Number between 0 and 1 weighing future rewards relative to right now.', does: 'Higher γ makes rewards near the goal propagate farther across the maze.' },
+      max: { t: 'Best next move value', c: 'op', role: 'Greedy lookahead', is: 'Highest Q-value available from the next state s′.', does: 'Ties today’s update to the smartest next move from where you landed.' },
+      "s'": { t: 'Next state (s′)', c: 'neutral', role: 'Landing state', sym: 's′', is: 'Where the agent just landed after move a.', does: 'Provides the next-step estimate max Q(s′, ·).' },
+      '·': { t: 'Any allowed next action', c: 'const', role: 'All next moves', is: 'Placeholder meaning "test every valid move from state s′ and take the maximum".', does: 'Makes Q-learning "off-policy": even while exploring randomly, it learns using the best next move!' }
+    }
+  });
+
+  physics({
+    id: 'proportional-suite', title: 'Unit rate, scaling, and percent change',
+    first: 'scale factor',
+    tokens: {
+      'unit rate': { t: 'Unit rate', c: 'neutral', role: 'Price or speed per 1', is: 'How much for 1 unit (e.g. dollars per item or miles per hour).', does: '$48 ÷ 12 items = $4 per item; lets you compare different package sizes fairly.' },
+      amount: { t: 'Total amount', c: 'neutral', role: 'Total cost / distance', is: 'Total quantity (such as $48 or 180 miles).', does: 'Double the total for the same number of units and the unit rate doubles.' },
+      units: { t: 'Number of units', c: 'neutral', role: 'Count / time', is: 'How many items, hours, or kilograms you have.', does: 'Dividing by units scales the ratio down to "per 1".' },
+      'scaled value': { t: 'Scaled size', c: 'neutral', role: 'New resized value', is: 'Size of a recipe, photo, or triangle after multiplying by the scale factor.', does: '8 cm × 1.5 = 12 cm.' },
+      original: { t: 'Original starting value', c: 'neutral', role: 'Baseline value', is: 'The starting size, price, or score before scaling or percent change.', does: 'Percent change always divides by the original value, never the new one!' },
+      'scale factor': { t: 'Scale multiplier', c: 'neutral', role: 'Zoom factor', is: 'Number multiplying every length (> 1 enlarges, between 0 and 1 shrinks).', does: 'A scale factor of 1.5 makes every side 50% longer while keeping angles identical.' },
+      '%': { t: 'Percent (%)', c: 'const', role: 'Out of 100', is: 'Stands for "per hundred".', does: 'With change, (new − original) ÷ original × 100 turns a fractional jump into a percent.' },
+      change: { t: 'Percent change', c: 'neutral', role: 'Relative jump', is: 'How much a value rose or fell relative to where it started, in percent.', does: 'From 50 to 60: (60 − 50) ÷ 50 × 100 = +20%.' },
+      'new': { t: 'New ending value', c: 'neutral', role: 'Final value', is: 'The value after the increase or decrease.', does: 'Subtract original from new: positive means increase, negative means decrease.' },
+      '100': { t: 'Percent factor (100)', c: 'const', role: 'Percent converter', is: 'Multiplies the decimal change by 100.', does: 'Turns 0.20 into 20%.' }
+    }
+  });
+
 
   physics({
     id: 'newton-second', title: "Newton's second law", match: ['F=ma'], y: 'the force', first: 'm',
@@ -1200,8 +3297,6 @@
   })();
 
   /* ---- Maths, chemistry and electronics pack (same builder as the physics pack) ---- */
-  var PI_TOKEN = function (does) { return { t: 'Pi', c: 'const', is: 'About 3.14159: the distance around any circle divided by the distance across it. Its digits never end and never repeat.', does: does }; };
-  var ROOT = function (does) { return { t: 'Square root', c: 'op', role: 'Operator', is: 'Finds the number that, multiplied by itself, gives what is inside.', does: does }; };
 
   physics({
     id: 'circle-area', title: 'Area of a circle', match: ['A=πr^2'], y: 'the area', first: 'r^2',
@@ -1558,9 +3653,13 @@
     }
   });
 
+  function matchPhysicsKey(norm) {
+    var clean = plainItalics(String(norm || '')).replace(/^[A-Za-z][A-Za-z ]{0,28}:\s*/, '');
+    return normalizeSymbolKey(clean).replace(/[·⋅×\*\s]/g, '').replace(/[÷⁄]/g, '/').replace(/-/g, '−');
+  }
+
   function matchPhysics(norm) {
-    var bare = norm.replace(/[·⋅×\*\s]/g, '').replace(/÷/g, '/').replace(/-/g, '−');
-    return PHYSICS_MATCH[bare] || null;
+    return PHYSICS_MATCH[matchPhysicsKey(norm)] || null;
   }
 
   // The graph for a physics-pack symbol: the formula itself, worked out across the slider's range.
@@ -1641,7 +3740,8 @@
   function matchCatalogId(container, exprText) {
     var explicit = container.getAttribute('data-formula');
     if (explicit && FORMULA_CATALOG[explicit]) return explicit;
-    var norm = normalizeSymbolKey(exprText).replace(/\s+/g, '');
+    var clean = plainItalics(String(exprText || '')).replace(/^[A-Za-z][A-Za-z ]{0,28}:\s*/, '');
+    var norm = normalizeSymbolKey(clean).replace(/\s+/g, '').replace(/⁄/g, '/');
     if (/v_t=2r\^2\(ρ_s[-−]ρ_f\)g\/9η/.test(norm)) return 'stokes-vt';
     if (/η=2r\^2\(ρ_s[-−]ρ_f\)g\/\(9v_t\)/.test(norm)) return 'stokes-eta';
     if (/F(_d)?=6πηrv/.test(norm)) return 'stokes-drag';
@@ -1657,8 +3757,8 @@
      Splits equation DOM nodes while keeping <sub>/<sup> inside each token!
      ------------------------------------------------------------------------ */
   var FUNCTION_RE = /^(?:det|atan2|atan|asin|acos|sqrt|cosh|sinh|tanh|sin|cos|tan|log|exp|lim|max|min|mod|ln)$/;
-  var MULTI_IDENT_RE = /^(?:(?:lambda|theta|omega|alpha|beta|gamma|delta|epsilon|sigma|rho|eta|tau|phi|mu)(?![a-z])|det(?![a-z])|atan2|atan|asin|acos|sqrt|cosh|sinh|tanh|sin|cos|tan|log|exp|lim|max|min|mod|ln|RT60|Re|MA|EMF|KE|PE|pOH|pH|dB|ΔΦ|Δt|ΔU|Δv|ΔP|ΔT|∂v|∂t|∇p|∇v)/;
-  var OP_CHARS = { '=': 1, '≈': 1, '∝': 1, '→': 1, '←': 1, '↔': 1, '+': 1, '−': 1, '-': 1, '×': 1, '·': 1, '⋅': 1, '*': 1, '/': 1, '÷': 1, '(': 1, ')': 1, '[': 1, ']': 1, '√': 1, '^': 1, '∑': 1, '∫': 1, '±': 1, '≤': 1, '≥': 1, '<': 1, '>': 1 };
+  var MULTI_IDENT_RE = /^(?:(?:lambda|theta|omega|alpha|beta|gamma|delta|epsilon|sigma|rho|eta|tau|phi|mu)(?![a-z])|det(?![a-z])|atan2|atan|asin|acos|sqrt|cosh|sinh|tanh|sin|cos|tan|log|exp|lim|max|min|mod|ln|RT60|Re|MA|EMF|KE|PE|pOH|pH|dB|ΔΦ|Δt|ΔU|Δv|ΔP|ΔT|∂²w|∂t²|∂u|∂v|∂t|∂B|∂E|∂Ψ|∇p|∇v|dx(?![A-Za-z])|dt(?![A-Za-z])|dv(?![A-Za-z]))/;
+  var OP_CHARS = { '=': 1, '≈': 1, '∝': 1, '→': 1, '←': 1, '↔': 1, '+': 1, '−': 1, '-': 1, '×': 1, '·': 1, '⋅': 1, '*': 1, '/': 1, '÷': 1, '⁄': 1, '(': 1, ')': 1, '[': 1, ']': 1, '√': 1, '^': 1, '∑': 1, 'Σ': 1, '∫': 1, 'Π': 1, '±': 1, '≤': 1, '≥': 1, '<': 1, '>': 1 };
 
   function isWordMode(plainText) {
     var words = plainText.match(/[A-Za-z]{4,}/g) || [];
@@ -1744,6 +3844,13 @@
         i += constMatch[0].length;
         continue;
       }
+      // "v_y", "A_y", or "ΔP_buoy" typed with a literal underscore: one symbol with a real subscript
+      var subMatch = rest.match(/^(ΔP|ΔT|Δv|KE|PE|[A-Za-zα-ωΑ-Ω])_([a-z]+|[0-9]+|[A-Z]+(?![a-z_]))/);
+      if (subMatch) {
+        out.push({ kind: 'atom', text: subMatch[0], html: escapeHtml(subMatch[1]) + '<sub>' + escapeHtml(subMatch[2]) + '</sub>', canAttach: true });
+        i += subMatch[0].length;
+        continue;
+      }
       var deltaMatch = rest.match(/^Δ(?:KE|PE|[A-Za-zα-ωΦ])/);
       if (deltaMatch) {
         out.push({ kind: 'atom', text: deltaMatch[0], html: escapeHtml(deltaMatch[0]), canAttach: true });
@@ -1755,18 +3862,20 @@
         i++;
         continue;
       }
-      // "v_y" or "F_load" typed with a literal underscore: one symbol with a real subscript
-      var subMatch = rest.match(/^(KE|PE|[A-Za-zα-ωΑ-Ω])_([a-z]+|[0-9]+|[A-Z])/);
-      if (subMatch) {
-        out.push({ kind: 'atom', text: subMatch[0], html: escapeHtml(subMatch[1]) + '<sub>' + escapeHtml(subMatch[2]) + '</sub>', canAttach: true });
-        i += subMatch[0].length;
-        continue;
-      }
       var wholeWord = wordMode && rest.match(/^[A-Za-z]{4,}[A-Za-z\-']*/);
       if (wholeWord && !FUNCTION_RE.test(wholeWord[0]) && !/^(?:atan2|RT60)/.test(rest)) {
         out.push({ kind: 'atom', text: wholeWord[0], html: escapeHtml(wholeWord[0]), canAttach: true });
         i += wholeWord[0].length;
         continue;
+      }
+      // Prose connectors like "with" or "and" between two equations stay plain text
+      if (!wordMode && (i === 0 || /\s/.test(txt[i - 1]))) {
+        var connMatch = rest.match(/^(?:and|with|where|when)(?=\s|$)/i);
+        if (connMatch) {
+          out.push({ kind: 'space', text: connMatch[0] });
+          i += connMatch[0].length;
+          continue;
+        }
       }
       var fnMatch = rest.match(MULTI_IDENT_RE);
       if (fnMatch) {
@@ -1775,8 +3884,20 @@
         i += fn.length;
         continue;
       }
-      // Numbers (digits + decimal point, keep trailing % or °)
-      var numMatch = rest.match(/^\d+(?:\.\d+)?/);
+      // Mixed symbol + plain English word variables (e.g. "braking", "thrust", "height")
+      var mixedWord = !wordMode && rest.match(/^[a-z]{5,}(?![A-Za-z])/);
+      if (
+        mixedWord &&
+        !FUNCTION_RE.test(mixedWord[0]) &&
+        !/^(?:lambda|theta|omega|alpha|beta|gamma|delta|epsilon|sigma|rho|eta|tau|phi|mu)/.test(mixedWord[0]) &&
+        !/(?:sin|cos|tan|log|sqrt|exp)$/.test(mixedWord[0])
+      ) {
+        out.push({ kind: 'atom', text: mixedWord[0], html: escapeHtml(mixedWord[0]), canAttach: true });
+        i += mixedWord[0].length;
+        continue;
+      }
+      // Numbers (digits + optional comma groups + decimal point)
+      var numMatch = rest.match(/^\d+(?:,\d{3})*(?:\.\d+)?/);
       if (numMatch) {
         var numStr = numMatch[0];
         out.push({ kind: 'atom', text: numStr, html: escapeHtml(numStr), isNum: true, canAttach: true });
@@ -1798,8 +3919,8 @@
           continue;
         }
       }
-      // Variable letter (Latin/Greek/Nabla) optionally followed by combining bar/tilde or Unicode sub/sup
-      var varMatch = rest.match(/^[A-Za-zα-ωΑ-Ω∇∂ΦΔλμρηπθρσφωεℏ][\u0304\u0305\u0307]?[₀₁₂₃₄₅₆₇₈₉ₛᵢₒᵣₜₓᵧₙₐₑₖₘₚₕₗ⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ]?(?:\d{1,2}(?![\d.]))?/);
+      // Variable letter (Latin/Greek/Nabla) optionally followed by combining bar/hat/tilde, star, Unicode sub/sup, or prime
+      var varMatch = rest.match(/^[A-Za-zα-ωΑ-Ω∇∂ΦΔλμρηπθρσφωεℏℓ][\u0302\u0304\u0305\u0307]?★?(?:[₀₁₂₃₄₅₆₇₈₉ₛᵢₒᵣₜₓᵧₙₐₑₖₘₚₕₗⱼᵤᵥ]+|[⁰¹²³⁴⁵⁶⁷⁸⁹ⁿᵗˢᵖᵡᵃᵇᶜᵐⁱ⁻]+)?(?:\d{1,2}(?![\d.]))?[′']?/);
       if (varMatch) {
         var tok = varMatch[0];
         out.push({ kind: 'atom', text: tok, html: escapeHtml(tok), canAttach: true });
@@ -1840,7 +3961,7 @@
         var atoms = scanTextAtoms(chunk.text, wordMode);
         for (var a = 0; a < atoms.length; a++) {
           var item = atoms[a];
-          if (item.kind === 'suffix' && segments.length && segments[segments.length - 1].canAttach) {
+          if (item.kind === 'suffix' && segments.length && (segments[segments.length - 1].canAttach || (item.kindTag === 'sup' && segments[segments.length - 1].isPower))) {
             var prevA = segments[segments.length - 1];
             prevA.text += item.text;
             prevA.html += item.html;
@@ -1863,20 +3984,22 @@
       }
     }
 
-    // Merge ∇² + v -> ∇²v when matching Navier-Stokes Laplacian pattern
+    // Merge ∇² + v -> ∇²v and ∂/∇ + variable separated across inline <span> tags
     var merged = [];
     for (var m = 0; m < segments.length; m++) {
       var cur = segments[m];
-      if (
-        cur.kind === 'atom' &&
-        (cur.text === '∇^2' || cur.text === '∇²') &&
-        m + 1 < segments.length &&
-        segments[m + 1].kind === 'atom' &&
-        segments[m + 1].text === 'v'
-      ) {
-        merged.push({ kind: 'atom', text: '∇^2v', html: cur.html + segments[m + 1].html, canAttach: true });
-        m++;
-        continue;
+      if (cur.kind === 'atom' && m + 1 < segments.length && segments[m + 1].kind === 'atom') {
+        var nxt = segments[m + 1];
+        if ((cur.text === '∇^2' || cur.text === '∇²') && (nxt.text === 'v' || nxt.text === 'u')) {
+          merged.push({ kind: 'atom', text: '∇^2' + nxt.text, html: cur.html + nxt.html, canAttach: true });
+          m++;
+          continue;
+        }
+        if ((cur.text === '∂' && /^(?:v|u|B|E|Ψ)$/.test(nxt.text)) || (cur.text === '∇' && /^(?:v|u|p)$/.test(nxt.text))) {
+          merged.push({ kind: 'atom', text: cur.text + nxt.text, html: cur.html + nxt.html, canAttach: true });
+          m++;
+          continue;
+        }
       }
       merged.push(cur);
     }
@@ -1937,6 +4060,7 @@
         for (var back = 0; back < lbl; back++) {
           if (merged[back].kind === 'atom') merged[back] = { kind: 'space', text: merged[back].text };
         }
+        merged[lbl].text = merged[lbl].text.replace(/:/g, ' ');
         break;
       }
     }
@@ -2025,8 +4149,10 @@
         } else {
           var topLevel = parenDepth === 0;
           var plusMinus = /^[+−\-±]$/.test(seg.text);
-          var isSlash = seg.text === '/' || seg.text === '÷';
+          var isSlash = seg.text === '/' || seg.text === '÷' || seg.text === '⁄';
+          var isTimes = /^[×·⋅*]$/.test(seg.text);
           if (topLevel && (plusMinus || /^[=≈]$/.test(seg.text))) slashSeenAfterEq = false;
+          else if (topLevel && slashSeenAfterEq && isTimes && k > from && (merged[k - 1].text === ')' || merged[k - 1].text === ']')) slashSeenAfterEq = false;
           seg.side = slashSeenAfterEq ? 'denom' : 'num';
           if (isSlash && topLevel) slashSeenAfterEq = true;
           if (isOpen) {
@@ -2075,7 +4201,7 @@
         }
         if (sq.text === '(' || sq.text === '[' || sq.absOpen) depth++;
         else if (sq.text === ')' || sq.text === ']' || sq.absClose) depth--;
-        else if (depth === 0 && sq.text === '/') {
+        else if (depth === 0 && (sq.text === '/' || sq.text === '⁄')) {
           if (slashAt !== -1) simple = false;
           slashAt = q;
           continue;
@@ -2185,7 +4311,7 @@
     return true;
   }
 
-  var SYM_SELECTOR = '.cl-formula-sym, .fl-formula-sym, .eq-math, .eqn, .formula-main, .math-line, .em-f-math, .en-f-math, .ohm-f-main, .iceq-expr';
+  var SYM_SELECTOR = '.cl-formula-sym, .fl-formula-sym, .eq-math, .eqn, .formula-main, .math-line, .em-f-math, .en-f-math, .ohm-f-main, .iceq-expr, .iceq-card-formula, .jcm-eq-sym, .cgi-formula, .ec-formula-sym, .ldv-formula-sym, .eq-formula, .ap-formula-math, .en-symbol, .rh-f-eq, .en-formula-box > .formula';
   var NOT_FORMULA_SELECTOR = '.cl-formula-vars, .fl-formula-vars, .formula-vars, .vars, [class*="note"], [class*="desc"], [class*="legend"], [class*="label"], [class*="caption"], [class*="title"], [class*="hint"], small, figcaption, h1, h2, h3, h4, h5, h6, pre';
 
   // Find the element that holds the equation itself, leaving titles, notes and legends alone.
@@ -2248,10 +4374,12 @@
     var marked = clone.querySelectorAll('.cos-fx-sym, .cos-fx-key, .cos-fx-hint, .cos-fx-panel, [data-fx-expr-mark]');
     for (var i = 0; i < marked.length; i++) marked[i].remove();
     var text = (clone.textContent || '').replace(/\s+/g, ' ').trim();
-    if (text.length < 12) {
-      var next = container.nextElementSibling;
-      if (next && /^(?:P|SMALL|FIGCAPTION)$/.test(next.tagName) && next.textContent.length < 420) text = next.textContent.replace(/\s+/g, ' ').trim();
-    }
+    var neighbors = [container.nextElementSibling, container.previousElementSibling];
+    neighbors.forEach(function (el) {
+      if (el && /^(?:P|SMALL|FIGCAPTION)$/.test(el.tagName) && el.textContent.length < 600) {
+        text += ' ' + el.textContent.replace(/\s+/g, ' ').trim();
+      }
+    });
     return text;
   }
 
@@ -2270,11 +4398,23 @@
     var sentences = prose.split(/(?<=[.!?])\s+/);
     atoms.forEach(function (seg) {
       if (seg.isOp || seg.isNum || FUNCTION_RE.test(seg.text)) return;
+      // Authors often introduce an unambiguous symbol in parentheses, even “a” or “I”.
+      var symbol = escapeRe(seg.key.replace(/\^[0-9n]+$/, ''));
+      var inParens = new RegExp('\\(' + symbol + '\\)');
+      var definition = sentences.find(function (sentence) {
+        return sentence.length <= 240 && inParens.test(sentence);
+      });
+      if (definition) {
+        seg.note = definition.trim();
+        var name = definition.split(inParens)[0].match(/([A-Za-z][A-Za-z-]*(?: [A-Za-z][A-Za-z-]*){0,2})\s*$/);
+        if (name) seg.noteTitle = name[1].replace(/^(?:the|its|an?) /i, '');
+        return;
+      }
       var forms = symbolForms(seg);
       for (var f = 0; f < forms.length && !seg.note; f++) {
         var sym = escapeRe(forms[f]);
         // "T = tension" / "T is the tension"
-        var def = prose.match(new RegExp('(?:^|[\\s,;(])' + sym + '\\s*(?:=|:)\\s*([^,;.()=]{2,60})'));
+        var def = prose.match(new RegExp('(?:^|[\\s,;(])' + sym + '\\s*(?:=|:)\\s*([^,;.()=·]{2,60})'));
         if (def) {
           seg.noteTitle = def[1].trim();
           seg.note = forms[f] + ' = ' + def[1].trim() + '.';
@@ -2347,6 +4487,7 @@
         '⋅': { t: 'Times', m: 'Multiplies the quantities on either side.', e: 'If either one is zero, the whole product is zero.', v: 'none' },
         '/': { t: 'Divided by', m: 'Divides what comes before it by what comes after.', e: 'Making the top bigger grows the answer. Making the bottom bigger shrinks it.', v: 'role-inverse' },
         '÷': { t: 'Divided by', m: 'Divides what comes before it by what comes after.', e: 'Making the top bigger grows the answer. Making the bottom bigger shrinks it.', v: 'role-inverse' },
+        '⁄': { t: 'Divided by', m: 'Divides what comes before it by what comes after.', e: 'Making the top bigger grows the answer. Making the bottom bigger shrinks it.', v: 'role-inverse' },
         '(': { t: 'Opening bracket', m: 'Brackets mean “work this out first”.', e: 'Whatever is outside the brackets applies to everything inside them.', v: 'none' },
         ')': { t: 'Closing bracket', m: 'Ends the group that began at the opening bracket.', e: 'Treat everything inside the brackets as one number.', v: 'none' },
         '|': { t: 'Absolute value', m: 'The pair of bars means “the size of what is inside”. A negative answer inside becomes positive.', e: 'Only how far apart the values are matters, not which one is bigger.', v: 'none' },
@@ -3240,7 +5381,8 @@
       pos++;
       if (tk.isNum) {
         var np = splitPower(tk);
-        var num = FRACTION_VALUES[np.base] !== undefined ? FRACTION_VALUES[np.base] : /^\d+(?:\.\d+)?$/.test(np.base) ? parseFloat(np.base) : NaN;
+        var cleanNum = np.base.replace(/,/g, '');
+        var num = FRACTION_VALUES[cleanNum] !== undefined ? FRACTION_VALUES[cleanNum] : /^\d+(?:\.\d+)?$/.test(cleanNum) ? parseFloat(cleanNum) : NaN;
         if (!isFinite(num)) fail();
         shown.push({ t: np.base + supText(np.pow), type: 'val' });
         return powered(function () { return num; }, np.pow);
@@ -3306,7 +5448,7 @@
           pos++;
           shown.push({ t: '×', type: 'bin' });
           a = (function (l, r) { return function (s) { return l(s) * r(s); }; })(a, juxtaposed());
-        } else if (tk && /^[\/÷]$/.test(tk.text)) {
+        } else if (tk && /^[\/÷⁄]$/.test(tk.text)) {
           if (divided) fail();
           divided = true;
           pos++;
@@ -3578,7 +5720,8 @@
   function attachExplorer(container) {
     if (!container || container.hasAttribute('data-fx-upgraded')) return;
     if (container.hasAttribute('data-formula-skip')) return;
-    if (!container.matches(EXPLICIT_QUERY)) {
+    var knownExpression = matchPhysics(container.textContent || '');
+    if (!knownExpression && !container.matches(EXPLICIT_QUERY)) {
       if (!isSafePatternMatch(container)) return;
       // Take apart only what was fully understood: no chains of steps ("a = b = c"), no
       // leftover symbols, no long sentences, and at least one variable to explain.
@@ -3586,13 +5729,13 @@
       var preAtoms = pre.segments.filter(function (sg) { return sg.kind === 'atom'; });
       var hasVariable = preAtoms.some(function (sg) { return !sg.isOp && !sg.isNum; });
       if (pre.chained || pre.unparsed || !hasVariable || preAtoms.length > 24) return;
-      if (pre.wordMode && preAtoms.length > 9) return;
+      if (pre.wordMode && preAtoms.length > 18) return;
     }
     // A formula inside a sentence keeps its place in the text; its panel opens below the paragraph.
     var inline = isInlineInText(container);
 
     var named = container.getAttribute('data-formula');
-    var trusted = !!(named && FORMULA_CATALOG[named]);
+    var trusted = !!(knownExpression || (named && FORMULA_CATALOG[named]));
     var exprEl = findFormulaExprElement(container, trusted);
     if (!exprEl) return;
 
@@ -3603,6 +5746,46 @@
     var catalogId = matchCatalogId(container, rawText);
     var catalog = catalogId ? FORMULA_CATALOG[catalogId] : null;
     var parsed = tokenizeExpression(exprEl);
+    if (catalog && catalog.tokens) {
+      var phraseKeys = Object.keys(catalog.tokens).filter(function (k) {
+        return /\s/.test(k) || /^[A-Za-z%ℓ∂][^_^\s]*[A-Za-z]/.test(k);
+      }).sort(function (a, b) { return b.length - a.length; });
+      if (phraseKeys.length) {
+        var phraseSet = {};
+        phraseKeys.forEach(function (k) { phraseSet[k] = 1; phraseSet[normalizeSymbolKey(k)] = 1; });
+        var segs = parsed.segments;
+        for (var si0 = 0; si0 < segs.length; si0++) {
+          if (segs[si0].kind !== 'atom' || segs[si0].isOp) continue;
+          var bestEnd = -1;
+          var bestText = '';
+          var bestHtml = '';
+          var runTextP = segs[si0].text;
+          var runHtmlP = segs[si0].html;
+          for (var sj0 = si0 + 1; sj0 < segs.length && sj0 <= si0 + 7; sj0++) {
+            var nxt = segs[sj0];
+            if (nxt.br) break;
+            runTextP += nxt.kind === 'atom' ? nxt.text : nxt.text;
+            runHtmlP += nxt.kind === 'atom' ? nxt.html : escapeHtml(nxt.text);
+            if (nxt.kind !== 'atom') continue;
+            var candText = runTextP.replace(/\s+/g, ' ').trim();
+            var candKey = normalizeSymbolKey(candText);
+            if (phraseSet[candText] || phraseSet[candKey]) {
+              bestEnd = sj0;
+              bestText = candText;
+              bestHtml = runHtmlP;
+            }
+          }
+          if (bestEnd > si0) {
+            var baseSeg = segs[si0];
+            baseSeg.text = bestText;
+            baseSeg.html = bestHtml;
+            baseSeg.key = normalizeSymbolKey(bestText);
+            baseSeg.isNum = false;
+            segs.splice(si0 + 1, bestEnd - si0);
+          }
+        }
+      }
+    }
     var atomTokens = parsed.segments.filter(function (s) { return s.kind === 'atom'; });
     // Second chance by token keys: these are the same however the lesson marked up sub- and superscripts.
     if (!catalog) {
@@ -3646,7 +5829,11 @@
     atomTokens.forEach(function (seg, idx) {
       var meta = null;
       if (catalog && catalog.tokens) {
-        meta = catalog.tokens[seg.key] || catalog.tokens[seg.text] || catalog.tokens[seg.key.replace(/\^[0-9]+$/, '')];
+        var keyPrime = seg.key.replace(/′/g, "'");
+        var keyNoExp = seg.key.replace(/\^[0-9]+(?:\.[0-9]+)?$/, '');
+        var keyNoExpPrime = keyPrime.replace(/\^[0-9]+(?:\.[0-9]+)?$/, '');
+        meta = catalog.tokens[seg.key] || catalog.tokens[seg.text] || catalog.tokens[keyPrime] ||
+          catalog.tokens[keyNoExp] || catalog.tokens[keyNoExpPrime];
       }
       if (!meta) meta = describeGenericToken(seg, atomTokens, legendMap);
       seg.index = idx;
@@ -3755,6 +5942,7 @@
 
     // Inspector panel
     var panel = document.createElement('div');
+    panel.id = 'cos-fx-panel-' + (++uid);
     panel.className = 'cos-fx-panel';
     panel.setAttribute('data-no-print', '');
     panel.setAttribute('data-no-glossary', '');
@@ -3762,6 +5950,7 @@
     panel.setAttribute('role', 'region');
     panel.setAttribute('aria-label', (catalog ? catalog.title : 'Formula') + ' explorer');
     panel.hidden = true;
+    container.setAttribute('data-fx-panel', panel.id);
 
     panel.innerHTML =
       '<div class="cos-fx-head">' +

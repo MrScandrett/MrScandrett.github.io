@@ -112,7 +112,7 @@
 
   function ensureAudio() {
     if (!actx) {
-      actx = Synth ? Synth.createContext() : new (window.AudioContext || window.webkitAudioContext)();
+      actx = Synth ? Synth.createContext().ctx : new (window.AudioContext || window.webkitAudioContext)();
     }
     if (actx.state === 'suspended') actx.resume();
     if (!stems && Synth) {
@@ -453,6 +453,61 @@
       });
     }
     render();
+  }());
+
+  (function cuePrint() {
+    var send = $('rs-room-send');
+    var record = $('rs-track');
+    var dry = $('rs-replay');
+    var cue = $('rs-cue-replay');
+    var status = $('rs-track-status');
+    var take, playing;
+    send.oninput = function () { $('rs-room-value').textContent = send.value + '%'; };
+    function play(channel) {
+      if (playing) playing.stop();
+      var ctx = ensureAudio();
+      var buffer = ctx.createBuffer(1, take.length, take.sampleRate);
+      buffer.copyToChannel(take.getChannelData(channel), 0);
+      playing = ctx.createBufferSource();
+      playing.buffer = buffer;
+      var volume = ctx.createGain();
+      volume.gain.value = 0.45;
+      playing.connect(volume).connect(ctx.destination);
+      playing.start();
+      var src = playing;
+      src.onended = function () { src.disconnect(); volume.disconnect(); if (playing === src) playing = null; };
+    }
+    record.onclick = async function () {
+      record.disabled = dry.disabled = cue.disabled = true;
+      try {
+        var ctx = ensureAudio();
+        await ctx.resume();
+        var phrase = stems.vocal;
+        var offline = new OfflineAudioContext(2, phrase.length + Math.ceil(1.8 * ctx.sampleRate), ctx.sampleRate);
+        var source = offline.createBufferSource();
+        source.buffer = phrase;
+        var room = offline.createConvolver();
+        room.buffer = Synth.createRoomIR(offline, { rt60: 1.5 });
+        var wet = offline.createGain();
+        wet.gain.value = Number(send.value) / 100;
+        var split = offline.createChannelMerger(2);
+        source.connect(split, 0, 0);
+        source.connect(split, 0, 1);
+        source.connect(room).connect(wet).connect(split, 0, 1);
+        split.connect(offline.destination);
+        source.start();
+        take = await offline.startRendering();
+        play(1);
+        status.textContent = 'Listening to the headphone mix. Play the take and compare the tail after the last note.';
+      } catch (error) {
+        status.textContent = 'Audio could not start. Try recording again.';
+      } finally {
+        record.disabled = false;
+        dry.disabled = cue.disabled = !take;
+      }
+    };
+    dry.onclick = function () { play(0); status.textContent = 'Recorder return · dry preamp feed'; };
+    cue.onclick = function () { play(1); status.textContent = 'Headphone solo · dry vocal plus cue reverb'; };
   }());
 
   /* ── 5. Bit depth / sample rate + Quantization Noise Audition ───────────── */

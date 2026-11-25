@@ -34,7 +34,7 @@
     audioSys = synth ? synth.createContext({ gain: 0.36 }) : null;
     if (!audioSys) return null;
     var ctx = audioSys.ctx;
-    var buf = synth.createVocalPhraseBuffer(ctx);
+    var buf = synth.createKeysPhraseBuffer(ctx);
     var src = ctx.createBufferSource();
     src.buffer = buf;
     src.loop = true;
@@ -44,11 +44,21 @@
     var bleedGain = ctx.createGain(); bleedGain.gain.value = 0;
     var outGate = ctx.createGain(); outGate.gain.value = 0;
 
-    src.connect(dryGain).connect(outGate);
-    src.connect(delayNode).connect(bleedGain).connect(outGate);
+    var noise = ctx.createBufferSource();
+    noise.buffer = synth.createNoiseBuffer(ctx, 2, 'pink', 197);
+    noise.loop = true;
+    var voiceLevel = ctx.createGain();
+    var noiseLevel = ctx.createGain();
+    noiseLevel.gain.value = 0;
+    var mix = ctx.createGain();
+    src.connect(voiceLevel).connect(mix);
+    noise.connect(noiseLevel).connect(mix);
+    noise.start();
+    mix.connect(dryGain).connect(outGate);
+    mix.connect(delayNode).connect(bleedGain).connect(outGate);
     outGate.connect(audioSys.input);
     src.start();
-    combNodes = { dryGain: dryGain, delayNode: delayNode, bleedGain: bleedGain, outGate: outGate };
+    combNodes = { voiceLevel: voiceLevel, noiseLevel: noiseLevel, dryGain: dryGain, delayNode: delayNode, bleedGain: bleedGain, outGate: outGate };
     return audioSys;
   }
 
@@ -56,6 +66,9 @@
     if (!combNodes || !audioSys) return;
     var ctx = audioSys.ctx;
     var sm = window.AudioLabSynth.smooth;
+    var noiseSelected = $('tto-source') && $('tto-source').value === 'noise';
+    sm(combNodes.voiceLevel.gain, noiseSelected ? 0 : 1, ctx, 0.018);
+    sm(combNodes.noiseLevel.gain, noiseSelected ? 1 : 0, ctx, 0.018);
     var near = Number(nearIn.value) / 100;
     var far = Math.max(near + 0.01, Number(farIn.value) / 100);
     var tau = Math.abs(far - near) / S.SPEED_OF_SOUND;
@@ -96,6 +109,7 @@
     updateCombAudio();
   }
 
+  if ($('tto-source')) $('tto-source').addEventListener('change', updateCombAudio);
   if (btnDry) btnDry.addEventListener('click', function () { toggleAudioMode('dry'); });
   if (btnBoth) btnBoth.addEventListener('click', function () { toggleAudioMode('both'); });
   if (btnInv) btnInv.addEventListener('click', function () { toggleAudioMode('invert'); });

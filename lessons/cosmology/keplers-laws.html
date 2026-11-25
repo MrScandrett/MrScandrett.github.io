@@ -26,8 +26,8 @@
       --k-line: rgba(190,205,235,0.13);
       --k-line-s: rgba(190,205,235,0.22);
       --k-text: #e2ebf8;
-      --k-muted: rgba(226,235,248,0.68);
-      --k-dim: rgba(226,235,248,0.44);
+      --k-muted: #c8d7ec;
+      --k-dim: #b0c3de;
       --k-gold: #f4c430;
       --k-blue: #60a5fa;
       --k-green: #34d399;
@@ -104,16 +104,20 @@
     .k-sim-head { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.55rem; padding:0.95rem 1.15rem 0.7rem; background:linear-gradient(180deg,rgba(255,255,255,0.036),transparent); }
     .k-sim-hl { display:flex; flex-direction:column; gap:0.18rem; }
     .k-sim-title { font-size:0.77rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; }
-    .k-sim-sub { font-size:0.77rem; color:rgba(208,220,248,0.46); }
+    .k-sim-sub { font-size:0.77rem; color:#b0c3de; }
     .k-sim canvas { display:block; width:100%; background:#010409; }
-    .k-sim-controls { display:flex; flex-wrap:wrap; gap:0.48rem 0.85rem; padding:0.75rem 1.15rem; background:rgba(0,0,0,0.3); border-top:1px solid rgba(255,255,255,0.06); }
-    .k-ctrl { display:flex; flex-direction:column; gap:0.2rem; min-width:110px; }
-    .k-ctrl label { font-size:0.65rem; font-weight:800; letter-spacing:0.09em; text-transform:uppercase; color:rgba(208,220,248,0.46); }
+    .k-sim-controls { display:flex; flex-wrap:wrap; align-items:flex-end; gap:0.55rem 0.9rem; padding:0.8rem 1.15rem; background:rgba(0,0,0,0.34); border-top:1px solid rgba(255,255,255,0.08); }
+    .k-ctrl { display:flex; flex-direction:column; gap:0.2rem; min-width:130px; }
+    .k-ctrl label { font-size:0.69rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#c8d7ec; }
     .k-ctrl input[type="range"] { accent-color:var(--k-gold); cursor:pointer; width:100%; }
-    .k-ctrl-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.72rem; font-weight:700; color:var(--k-gold); }
+    .k-ctrl-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.74rem; font-weight:700; color:var(--k-gold); }
+    .k-btn-group { display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center; }
+    .k-btn { background:#172744; color:#edf4ff; border:1px solid #526e9b; border-radius:6px; padding:0.42rem 0.72rem; font:inherit; font-size:0.78rem; font-weight:600; cursor:pointer; min-height:34px; }
+    .k-btn:hover { background:#22385f; }
+    .k-btn[aria-pressed="true"] { background:var(--k-gold); color:#080d1a; border-color:var(--k-gold); font-weight:700; }
     .k-readout { display:flex; flex-wrap:wrap; gap:0.42rem; padding:0.62rem 1.15rem; }
-    .k-chip { display:flex; flex-direction:column; gap:0.1rem; border-radius:var(--k-radius); padding:0.42rem 0.62rem; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.025); }
-    .k-chip-label { font-size:0.61rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(208,220,248,0.38); }
+    .k-chip { display:flex; flex-direction:column; gap:0.1rem; border-radius:var(--k-radius); padding:0.42rem 0.62rem; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.035); }
+    .k-chip-label { font-size:0.65rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#b0c3de; }
     .k-chip-val { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.83rem; font-weight:700; color:#dce8f6; }
     .k-footer { text-align:center; padding:2rem 1rem; color:var(--k-dim); font-size:0.78rem; border-top:1px solid var(--k-line); background:rgba(4,6,14,0.66); }
     .k-footer a { color:var(--k-gold); text-decoration:none; }
@@ -152,17 +156,17 @@
     </nav>
     <div class="k-pills">
       <span class="k-pill">Space · Physics</span>
-      <span class="k-pill blue">Space · Physics</span>
+      <span class="k-pill blue">Laws 1–3</span>
     </div>
   </div>
 </div>
 
-<div class="k-shell">
+<main id="main-content" class="k-shell">
 
   <div class="k-hero">
     <div class="k-hero-copy">
       <p class="k-eyebrow">Orbital Mechanics · The Laws of Planetary Motion</p>
-      <h1 id="main-content">Planets Trace <em>Ellipses</em></h1>
+      <h1>Planets Trace <em>Ellipses</em></h1>
       <p class="k-lede">
         Johannes Kepler spent a decade analyzing Tycho Brahe's precise astronomical observations
         to discover three mathematical laws governing planetary motion — without knowing why they
@@ -319,25 +323,32 @@
     </div>
     <canvas id="kepCanvas" height="380"></canvas>
     <div class="k-sim-controls">
-      <div class="k-ctrl">
-        <label>Eccentricity <span class="k-ctrl-val" id="eccLabel">0.50</span></label>
-        <input type="range" id="eccSl" min="0.01" max="0.92" step="0.01" value="0.5" />
+      <div class="k-btn-group" role="group" aria-label="Orbit eccentricity presets">
+        <button type="button" class="k-btn" data-kep-preset="earth" aria-pressed="false">Earth (e=0.017)</button>
+        <button type="button" class="k-btn" data-kep-preset="mars" aria-pressed="false">Mars (e=0.093)</button>
+        <button type="button" class="k-btn" data-kep-preset="mercury" aria-pressed="false">Mercury (e=0.206)</button>
+        <button type="button" class="k-btn" data-kep-preset="pluto" aria-pressed="false">Pluto (e=0.249)</button>
+        <button type="button" class="k-btn" data-kep-preset="comet" aria-pressed="false">Comet (e=0.78)</button>
       </div>
       <div class="k-ctrl">
-        <label>Show Equal Areas</label>
-        <input type="range" id="areaSl" min="0" max="1" step="1" value="1" style="accent-color:#34d399;" />
-        <span class="k-ctrl-val" id="areaLabel">On</span>
+        <label for="eccSl">Eccentricity <span class="k-ctrl-val" id="eccLabel">0.50</span></label>
+        <input type="range" id="eccSl" min="0.01" max="0.88" step="0.01" value="0.50" />
       </div>
       <div class="k-ctrl">
-        <label>Speed <span class="k-ctrl-val" id="spdLabel">1×</span></label>
+        <label for="spdSl">Speed <span class="k-ctrl-val" id="spdLabel">1.0×</span></label>
         <input type="range" id="spdSl" min="0.2" max="4" step="0.1" value="1" />
       </div>
+      <div class="k-btn-group">
+        <button type="button" class="k-btn" id="areaToggle" aria-pressed="true">Equal Areas: On</button>
+        <button type="button" class="k-btn" id="playPauseBtn" aria-pressed="true">Pause</button>
+      </div>
     </div>
-    <div class="k-readout">
-      <span class="k-chip"><span class="k-chip-label">Eccentricity</span><span class="k-chip-val" id="eccVal">—</span></span>
-      <span class="k-chip"><span class="k-chip-label">Speed (rel.)</span><span class="k-chip-val" id="speedVal">—</span></span>
-      <span class="k-chip"><span class="k-chip-label">Distance (rel.)</span><span class="k-chip-val" id="distVal">—</span></span>
-      <span class="k-chip"><span class="k-chip-label">At Perihelion</span><span class="k-chip-val" id="periVal">—</span></span>
+    <div class="k-readout" aria-live="polite">
+      <span class="k-chip"><span class="k-chip-label">Eccentricity (e)</span><span class="k-chip-val" id="eccVal">—</span></span>
+      <span class="k-chip"><span class="k-chip-label">Orbital Speed</span><span class="k-chip-val" id="speedVal">—</span></span>
+      <span class="k-chip"><span class="k-chip-label">Distance r</span><span class="k-chip-val" id="distVal">—</span></span>
+      <span class="k-chip"><span class="k-chip-label">Perihelion / Aphelion</span><span class="k-chip-val" id="periAphVal">—</span></span>
+      <span class="k-chip"><span class="k-chip-label">Wedge Area</span><span class="k-chip-val" id="wedgeAreaVal">—</span></span>
     </div>
   </div>
 
@@ -352,7 +363,7 @@
           the ratio T²/a³ was the same for every planet. He published this in 1619 — a decade after
           the first two laws — and it remains one of the most elegant relationships in all of astronomy.
         </p>
-        <div class="k-eq">T² ∝ a³ &nbsp;&nbsp;→&nbsp;&nbsp; T = √(a³) years (for Solar System)</div>
+        <div class="k-eq" data-formula="kepler-third-solar">T² ∝ a³ &nbsp;&nbsp;→&nbsp;&nbsp; T = √(a³) years (for Solar System)</div>
         <p>
           Newton later derived this algebraically from F = GMm/r²: the period comes out exactly as
           T = 2π√(a³/GM). This was the first prediction of a natural law derived from a more fundamental
@@ -374,6 +385,41 @@
           we could see the shapes of orbits but never know the masses of the objects at their centers.
           Every mass measurement in astronomy traces back to this relationship.</p>
         </div>
+      </div>
+    </div>
+
+    <div class="k-sim" id="harmonic-sim" style="margin-top:1rem;">
+      <div class="k-sim-head">
+        <div class="k-sim-hl">
+          <span class="k-sim-title greenk">⏱️ Harmonic Law Simulator (T² = a³ / M)</span>
+          <span class="k-sim-sub">Compare orbital period vs distance and see how central star mass shifts the log–log line</span>
+        </div>
+      </div>
+      <canvas id="harmonicCanvas" height="360"></canvas>
+      <div class="k-sim-controls">
+        <div class="k-btn-group" role="group" aria-label="Harmonic law planet presets">
+          <button type="button" class="k-btn" data-harm-preset="0.39" aria-pressed="false">Mercury</button>
+          <button type="button" class="k-btn" data-harm-preset="1.00" aria-pressed="false">Earth</button>
+          <button type="button" class="k-btn" data-harm-preset="1.52" aria-pressed="true">Mars</button>
+          <button type="button" class="k-btn" data-harm-preset="2.77" aria-pressed="false">Ceres</button>
+          <button type="button" class="k-btn" data-harm-preset="5.20" aria-pressed="false">Jupiter</button>
+          <button type="button" class="k-btn" data-harm-preset="9.54" aria-pressed="false">Saturn</button>
+        </div>
+        <div class="k-ctrl">
+          <label for="harmASl">Semi-major Axis a <span class="k-ctrl-val" id="harmALabel">1.52 AU</span></label>
+          <input type="range" id="harmASl" min="0.39" max="10.0" step="0.01" value="1.52" />
+        </div>
+        <div class="k-ctrl">
+          <label for="harmMSl">Star Mass M <span class="k-ctrl-val" id="harmMLabel">1.00 M☉</span></label>
+          <input type="range" id="harmMSl" min="0.25" max="2.50" step="0.05" value="1.00" />
+        </div>
+      </div>
+      <div class="k-readout" aria-live="polite">
+        <span class="k-chip"><span class="k-chip-label">a (AU)</span><span class="k-chip-val" id="harmAVal">—</span></span>
+        <span class="k-chip"><span class="k-chip-label">Period T (yr)</span><span class="k-chip-val" id="harmTVal">—</span></span>
+        <span class="k-chip"><span class="k-chip-label">T²</span><span class="k-chip-val" id="harmT2Val">—</span></span>
+        <span class="k-chip"><span class="k-chip-label">a³</span><span class="k-chip-val" id="harmA3Val">—</span></span>
+        <span class="k-chip"><span class="k-chip-label">T² / a³</span><span class="k-chip-val" id="harmRatioVal">—</span></span>
       </div>
     </div>
   </div>
@@ -414,7 +460,7 @@
     </div>
   </div>
 
-</div>
+</main>
 
 <footer class="k-footer site-footer">
   Mr. Scandrett's ClassroomOS · <a href="../../steam-lessons.html">All Lessons</a> ·
@@ -422,198 +468,7 @@
 </footer>
 
 <script src="../../assets/js/sim-kit.js"></script>
-<script>
-/* ── Kepler Orbit Simulator ──────────────────────── */
-(function () {
-  const cv = document.getElementById('kepCanvas');
-  const ctx = cv.getContext('2d');
-  const eccSl = document.getElementById('eccSl');
-  const areaSl = document.getElementById('areaSl');
-  const spdSl = document.getElementById('spdSl');
-  const eccLbl = document.getElementById('eccLabel');
-  const areaLbl = document.getElementById('areaLabel');
-  const spdLbl = document.getElementById('spdLabel');
-
-  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 380; }
-  resize(); window.addEventListener('resize', resize);
-
-  eccSl.oninput = () => { eccLbl.textContent = parseFloat(eccSl.value).toFixed(2); theta = 0; areas = []; };
-  areaSl.oninput = () => { areaLbl.textContent = +areaSl.value ? 'On' : 'Off'; };
-  spdSl.oninput = () => { spdLbl.textContent = parseFloat(spdSl.value).toFixed(1) + '×'; };
-
-  let theta = 0;
-  let areas = [];
-  let areaTimer = 0;
-  let planetRot = 0;
-  const AREA_INTERVAL = 120; // frames between area slices
-
-  function keplerR(e, a, theta) {
-    return a * (1 - e * e) / (1 + e * Math.cos(theta));
-  }
-
-  // Angular speed from conservation of angular momentum: dA/dt = constant → r²·dθ/dt = constant
-  // We solve numerically: dθ at each step is proportional to 1/r²
-  function draw() {
-    const W = cv.width, H = cv.height;
-    ctx.clearRect(0, 0, W, H);
-
-    const e = +eccSl.value;
-    const showAreas = +areaSl.value;
-    const spd = +spdSl.value;
-
-    const cx = W / 2, cy = H / 2;
-    const a = Math.min(W, H) * 0.38;
-    const b = a * Math.sqrt(1 - e * e);
-    const focalDist = a * e; // distance from center to focus
-
-    // Star position (at one focus)
-    const sx = cx + focalDist, sy = cy;
-
-    // Stars (background)
-    if (!draw.stars) {
-      draw.stars = [];
-      for (let i = 0; i < 80; i++) {
-        draw.stars.push({ x: Math.random() * 800, y: Math.random() * 400, s: Math.random() * 1.5 + 0.3 });
-      }
-    }
-    draw.stars.forEach(s => {
-      ctx.fillStyle = `rgba(255,255,255,${0.2 + Math.random() * 0.1})`;
-      ctx.beginPath(); ctx.arc(s.x % W, s.y % H, s.s, 0, Math.PI * 2); ctx.fill();
-    });
-
-    // Orbit ellipse
-    ctx.beginPath();
-    ctx.ellipse(cx - focalDist / 2 + focalDist / 2, cy, a, b, 0, 0, Math.PI * 2);
-    // Actually draw centered at offset
-    ctx.save(); ctx.translate(-focalDist / 2, 0);
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, a, b, 0, 0, Math.PI * 2);
-    ctx.restore();
-
-    // Draw orbit path
-    ctx.save();
-    ctx.beginPath();
-    for (let t = 0; t <= Math.PI * 2; t += 0.02) {
-      const r = keplerR(e, a, t);
-      const px = sx + r * Math.cos(t);
-      const py = sy - r * Math.sin(t);
-      if (t === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.strokeStyle = 'rgba(244,196,48,0.22)'; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.restore();
-
-    // Equal area wedges
-    if (showAreas && areas.length > 0) {
-      areas.forEach((area, i) => {
-        ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        area.forEach((pt, j) => {
-          if (j === 0) ctx.moveTo(sx, sy);
-          ctx.lineTo(pt.x, pt.y);
-        });
-        ctx.closePath();
-        ctx.fillStyle = `rgba(52,211,153,${0.08 + 0.08 * (i / areas.length)})`;
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(52,211,153,0.4)'; ctx.lineWidth = 1; ctx.stroke();
-      });
-    }
-
-    // Angular momentum conservation: L = r² dθ/dt → dθ = L dt / r²
-    const r = keplerR(e, a, theta);
-    const rMin = a * (1 - e); // perihelion
-    const L = rMin * Math.sqrt(1); // normalized: at perihelion, v_peri = L/r_min
-    const dTheta = (L / (r * r)) * 0.025 * spd;
-    theta += dTheta;
-    planetRot += 0.008;
-    if (theta > Math.PI * 2) { theta -= Math.PI * 2; areas = []; }
-
-    // Current planet position
-    const px = sx + r * Math.cos(theta);
-    const py = sy - r * Math.sin(theta);
-
-    // Build area slices for visualization
-    areaTimer++;
-    if (showAreas && areaTimer % AREA_INTERVAL === 0) {
-      // Store a sweep of points for the last AREA_INTERVAL frames
-      const sweepPoints = [];
-      const deltaT = dTheta * AREA_INTERVAL;
-      const startAngle = theta - deltaT;
-      for (let t = startAngle; t <= theta; t += 0.04) {
-        const tr = keplerR(e, a, t);
-        sweepPoints.push({ x: sx + tr * Math.cos(t), y: sy - tr * Math.sin(t) });
-      }
-      areas.push(sweepPoints);
-      if (areas.length > 5) areas.shift();
-    }
-
-    // Line from sun to planet
-    ctx.strokeStyle = 'rgba(244,196,48,0.5)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(px, py); ctx.stroke();
-
-    // Sun (star)
-    const sunGrd = ctx.createRadialGradient(sx, sy, 0, sx, sy, 18);
-    sunGrd.addColorStop(0, '#fff7c0'); sunGrd.addColorStop(0.4, '#f59e0b'); sunGrd.addColorStop(1, 'rgba(245,158,11,0)');
-    ctx.beginPath(); ctx.arc(sx, sy, 18, 0, Math.PI * 2); ctx.fillStyle = sunGrd; ctx.fill();
-    ctx.beginPath(); ctx.arc(sx, sy, 8, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
-
-    // Empty focus dot
-    ctx.beginPath(); ctx.arc(cx - focalDist, cy, 3, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fill();
-
-    // Planet atmosphere glow
-    const atmoGrd = ctx.createRadialGradient(px, py, 7, px, py, 20);
-    atmoGrd.addColorStop(0, 'rgba(96,165,250,0.28)');
-    atmoGrd.addColorStop(0.55, 'rgba(96,165,250,0.09)');
-    atmoGrd.addColorStop(1, 'rgba(96,165,250,0)');
-    ctx.beginPath(); ctx.arc(px, py, 20, 0, Math.PI * 2);
-    ctx.fillStyle = atmoGrd; ctx.fill();
-
-    // Planet body
-    const planetGrd = ctx.createRadialGradient(px - 3, py - 3, 1, px, py, 10);
-    planetGrd.addColorStop(0, '#c0e0ff'); planetGrd.addColorStop(0.5, '#60a5fa'); planetGrd.addColorStop(1, '#1e40af');
-    ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2); ctx.fillStyle = planetGrd; ctx.fill();
-
-    // Surface rotation bands (clipped to planet)
-    ctx.save();
-    ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2); ctx.clip();
-    ctx.strokeStyle = 'rgba(30,58,138,0.6)'; ctx.lineWidth = 2.8;
-    ctx.beginPath();
-    ctx.moveTo(px - 14 * Math.cos(planetRot), py - 14 * Math.sin(planetRot));
-    ctx.lineTo(px + 14 * Math.cos(planetRot), py + 14 * Math.sin(planetRot));
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(96,165,250,0.28)'; ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(px - 14 * Math.cos(planetRot + 1.1), py - 14 * Math.sin(planetRot + 1.1));
-    ctx.lineTo(px + 14 * Math.cos(planetRot + 1.1), py + 14 * Math.sin(planetRot + 1.1));
-    ctx.stroke();
-    ctx.restore();
-
-    // Specular highlight
-    const specGrd = ctx.createRadialGradient(px - 3.5, py - 3.5, 0, px - 3.5, py - 3.5, 5.5);
-    specGrd.addColorStop(0, 'rgba(255,255,255,0.7)');
-    specGrd.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2);
-    ctx.fillStyle = specGrd; ctx.fill();
-
-    // Labels
-    ctx.fillStyle = 'rgba(244,196,48,0.7)'; ctx.font = '10px Inter,sans-serif';
-    ctx.fillText('Perihelion →', sx + a * (1 - e) - 5, sy + 16);
-    ctx.fillText('← Aphelion', sx - a * (1 + e) - 40, sy - 12);
-
-    // Readouts
-    const speedRel = (rMin / r).toFixed(2);
-    const distRel = (r / a).toFixed(2);
-    document.getElementById('eccVal').textContent = e.toFixed(2);
-    document.getElementById('speedVal').textContent = speedRel + '×';
-    document.getElementById('distVal').textContent = distRel + ' a';
-    document.getElementById('periVal').textContent = rMin.toFixed(0) + ' px';
-
-    SimKit.frame('#kepCanvas', draw);
-  }
-  draw();
-})();
-</script>
+<script src="../../assets/js/lessons/keplers-laws.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>

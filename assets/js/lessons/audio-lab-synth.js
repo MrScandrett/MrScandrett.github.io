@@ -213,6 +213,31 @@
     return buf;
   }
 
+  // A dry electric-piano arpeggio leaves the mic simulation in charge of color and space.
+  function createKeysPhraseBuffer(ctx) {
+    var sr = ctx.sampleRate;
+    var beat = 0.48;
+    var buffer = ctx.createBuffer(1, Math.round(sr * beat * 8), sr);
+    var samples = buffer.getChannelData(0);
+    var notes = [60, 67, 71, 76, 74, 69, 67];
+    var strengths = [1, 0.76, 0.82, 0.91, 0.86, 0.72, 0.78];
+    notes.forEach(function (note, index) {
+      var start = Math.round(index * beat * sr);
+      var length = Math.min(Math.round(1.45 * sr), samples.length - start);
+      var frequency = 440 * Math.pow(2, (note - 69) / 12);
+      for (var i = 0; i < length; i++) {
+        var t = i / sr;
+        var phase = 2 * Math.PI * frequency * t;
+        var envelope = (1 - Math.exp(-t * 175)) * Math.exp(-t * 3.6);
+        var release = Math.min(1, (length - 1 - i) / (0.06 * sr));
+        var strike = 1.25 * Math.exp(-t * 11) * Math.sin(2 * phase);
+        samples[start + i] += 0.46 * strengths[index] * envelope * release *
+          (Math.sin(phase + strike) + 0.18 * Math.sin(2 * phase));
+      }
+    });
+    return buffer;
+  }
+
   function createBandStems(ctx, opts) {
     opts = opts || {};
     var sr = opts.sr || ctx.sampleRate || 44100;
@@ -270,6 +295,7 @@
     createRoomIR: createRoomIR,
     createDrumLoopBuffer: createDrumLoopBuffer,
     createVocalPhraseBuffer: createVocalPhraseBuffer,
+    createKeysPhraseBuffer: createKeysPhraseBuffer,
     createBandStems: createBandStems,
     createHardClipCurve: createHardClipCurve
   };

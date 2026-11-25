@@ -412,6 +412,7 @@ function initHarlemExplorer() {
     }
 
     grid.textContent = '';
+    document.getElementById('harlem-bio-panel').hidden = currentFiltered.length === 0;
 
     if (!currentFiltered.length) {
       const empty = document.createElement('p');
@@ -433,7 +434,7 @@ function initHarlemExplorer() {
       const nameEl = document.createElement('strong');
       nameEl.textContent = musician.name;
       const subEl = document.createElement('span');
-      subEl.textContent = `${musician.instrumentFamily} · ${musician.era}`;
+      subEl.textContent = musician.role;
       btn.append(nameEl, subEl);
 
       btn.addEventListener('click', () => selectMusician(musician.id, true));

@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 515 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 516 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -15,7 +15,7 @@ This metadata-only draft organizes 515 public lessons and classifies 17 supporti
 
 # Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 64 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 65 lessons
 
 ## Mathematics & Quantitative Reasoning (MAT)
 
@@ -94,17 +94,18 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 64 lesson
 - **COS-16** — How America Got to the Moon
 - **COS-17** — Mars Rover Landing
 - **COS-18** — The Kuiper Belt
+- **COS-19** — Exoplanets
 
 ### Cosmology & Humanity's Place in Space
 
-- **COS-19** — Event Horizon Telescope
-- **COS-20** — In the Beginning: Origins of the Universe
-- **COS-21** — Universe Expansion
-- **COS-22** — Cosmic Voids
-- **COS-23** — Nancy Grace Roman Space Telescope
-- **COS-24** — Searching for Extraterrestrial Intelligence
-- **COS-25** — Arecibo Message
-- **COS-26** — Pale Blue Dot — Scale of the Universe
+- **COS-20** — Event Horizon Telescope
+- **COS-21** — In the Beginning: Origins of the Universe
+- **COS-22** — Universe Expansion
+- **COS-23** — Cosmic Voids
+- **COS-24** — Nancy Grace Roman Space Telescope
+- **COS-25** — Searching for Extraterrestrial Intelligence
+- **COS-26** — Arecibo Message
+- **COS-27** — Pale Blue Dot — Scale of the Universe
 
 # Volume II — Physics, Chemistry, Matter & Energy
 

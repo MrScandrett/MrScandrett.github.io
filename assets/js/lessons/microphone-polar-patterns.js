@@ -250,7 +250,7 @@
     if (!audioSys) return null;
     var ctx = audioSys.ctx;
 
-    var vBuf = synth.createVocalPhraseBuffer(ctx);
+    var vBuf = synth.createKeysPhraseBuffer(ctx);
     var mBuf = synth.createNoiseBuffer(ctx, 2.0, 'pink', 5150);
 
     var vSrc = ctx.createBufferSource(); vSrc.buffer = vBuf; vSrc.loop = true;
@@ -290,16 +290,42 @@
     sm(polarNodes.outGate.gain, audioOn && !document.hidden ? 1 : 0, ctx, 0.025);
   }
 
+  var orbit = $('mp-orbit');
+  var orbitTimer = null;
+  function stopOrbit() {
+    clearInterval(orbitTimer);
+    orbitTimer = null;
+    orbit.setAttribute('aria-pressed', 'false');
+    orbit.textContent = '▶ Circle the mic';
+  }
+  orbit.addEventListener('click', function () {
+    if (orbitTimer !== null) return stopOrbit();
+    if (!audioOn) audioBtn.click();
+    if (!audioOn) return;
+    orbit.setAttribute('aria-pressed', 'true');
+    orbit.textContent = 'Pause movement';
+    orbitTimer = setInterval(function () {
+      var angle = $('voice-angle');
+      angle.value = (Number(angle.value) + 181) % 360 - 180;
+      update();
+    }, 40);
+  });
+  $('voice-angle').addEventListener('input', stopOrbit);
+  canvas.addEventListener('pointerdown', stopOrbit);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) stopOrbit(); });
+
   if (audioBtn) {
     audioBtn.addEventListener('click', function () {
       audioOn = !audioOn;
       if (audioOn) {
         ensurePolarAudio();
         if (audioSys) audioSys.resume();
+        else audioOn = false;
       }
+      if (!audioOn) stopOrbit();
       audioBtn.setAttribute('aria-pressed', audioOn ? 'true' : 'false');
       audioBtn.classList.toggle('audio-on', audioOn);
-      audioBtn.textContent = audioOn ? '🔇 Stop Audition' : '🔊 Audition Mic';
+      audioBtn.textContent = audioOn ? '🔇 Stop Audition' : '▶ Hear piano';
       update();
     });
   }
@@ -357,6 +383,13 @@
   var wbTabs = document.querySelectorAll('#polar-workbench .te-wb-tab[data-panel]');
   var wbPanels = document.querySelectorAll('#polar-workbench .te-wb-panel');
   function openTab(panelId) {
+    var cabPlay = $('cab-play');
+    if (panelId !== 'placement-studio' && cabPlay.getAttribute('aria-pressed') === 'true') cabPlay.click();
+    if (panelId !== 'mp-panel-polar' && audioOn) audioBtn.click();
+    if (panelId !== 'three-to-one') {
+      var playing = document.querySelector('#three-to-one .audio-toggle[aria-pressed="true"]');
+      if (playing) playing.click();
+    }
     wbTabs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.panel === panelId ? 'true' : 'false'); });
     wbPanels.forEach(function (p) { p.hidden = p.id !== panelId; });
     if (panelId === 'mp-panel-polar' && fit) {

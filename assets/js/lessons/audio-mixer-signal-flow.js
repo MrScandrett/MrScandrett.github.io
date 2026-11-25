@@ -752,6 +752,7 @@
 
   /* ── Quick-Patch & Soundcheck ── */
   document.getElementById('mx-quick-btn').addEventListener('click', function () {
+    calibration = false;
     PATCH_ITEMS.forEach(function (item) {
       applyPatchChoice(item.id, item.correct);
     });
@@ -795,6 +796,7 @@
   });
 
   /* ── Live 4-Stem Web Audio Console Graph ── */
+  var calibration = false;
   var actx = null, graph = null, toneOn = false;
   var toneBtn = document.getElementById('tone-btn');
 
@@ -806,7 +808,7 @@
   }
 
   function buildAudio() {
-    actx = Synth ? Synth.createContext() : new (window.AudioContext || window.webkitAudioContext)();
+    actx = Synth ? Synth.createContext().ctx : new (window.AudioContext || window.webkitAudioContext)();
     var stems = Synth ? Synth.createBandStems(actx, { seconds: 2.4 }) : null;
     var mediaBuf = Synth ? Synth.createDrumLoopBuffer(actx, { seconds: 2.4 }) : null;
 
@@ -854,6 +856,24 @@
 
     var stemMap = stems ? { ch1: stems.vocal, ch2: stems.guitar, ch3: stems.keys, ch4: mediaBuf } : {};
     var chNodes = {};
+    var oscillator = actx.createOscillator();
+    oscillator.frequency.value = 196;
+    var toneGain = actx.createGain();
+    toneGain.gain.value = 0;
+    oscillator.connect(toneGain);
+    oscillator.start();
+    function peakTap(node) {
+      var analyser = actx.createAnalyser();
+      analyser.fftSize = 1024;
+      node.connect(analyser);
+      var samples = new Float32Array(analyser.fftSize);
+      return function () {
+        analyser.getFloatTimeDomainData(samples);
+        var peak = 0;
+        for (var i = 0; i < samples.length; i++) peak = Math.max(peak, Math.abs(samples[i]));
+        return 20 * Math.log10(peak);
+      };
+    }
 
     CHANNELS.forEach(function (ch) {
       var src = actx.createBufferSource();
@@ -875,7 +895,9 @@
       var faderGain = actx.createGain();
       var aux2Send = actx.createGain();
 
-      src.connect(preampGain);
+      var stemGain = actx.createGain();
+      src.connect(stemGain).connect(preampGain);
+      if (ch.id === 'ch1') toneGain.connect(preampGain);
       preampGain.connect(clip);
       clip.connect(eqLoFilter);
       eqLoFilter.connect(eqHiFilter);
@@ -889,6 +911,7 @@
 
       src.start();
       chNodes[ch.id] = {
+        stemGain: stemGain, peak: peakTap(faderGain),
         preampGain: preampGain,
         eqLoFilter: eqLoFilter,
         eqHiFilter: eqHiFilter,
@@ -900,7 +923,8 @@
     });
 
     graph = {
-      chNodes: chNodes,
+      chNodes: chNodes, toneGain: toneGain,
+      mainPeak: peakTap(masterMixGain), auxPeak: peakTap(monBusGain), fxPeak: peakTap(fxReturnGain),
       reverbWetGain: reverbWetGain,
       delayWetGain: delayWetGain,
       fxReturnGain: fxReturnGain,
@@ -940,6 +964,7 @@
     CHANNELS.forEach(function (ch) {
       var e = chEls[ch.id];
       var n = graph.chNodes[ch.id];
+      smoothParam(n.stemGain.gain, calibration ? 0 : 1);
       var isReady = !!patchState[ch.patchId] && !(ch.needsPhantom && !phantomOn);
       // Scale source level + preamp trim cleanly into WaveShaper clip threshold (clipping at >0 dBFS)
       var preampLin = isReady ? dbToLin(ch.srcDb + e.gain.value) * 0.95 : 0;
@@ -958,16 +983,49 @@
     smoothParam(graph.fxReturnGain.gain, masterControls.fxRet.value <= -60 ? 0 : dbToLin(masterControls.fxRet.value));
     smoothParam(graph.masterMixGain.gain, masterControls.fader.value <= -60 ? 0 : dbToLin(masterControls.fader.value));
 
+    smoothParam(graph.toneGain.gain, calibration ? 1 : 0);
     var hearMain = listenMode === 'main' && !!patchState.out;
     var hearAux1 = listenMode === 'aux1';
     smoothParam(graph.outPatchGate.gain, hearMain ? 1 : 0);
     smoothParam(graph.monMasterGain.gain, hearAux1 ? (masterControls.mon.value <= -60 ? 0 : dbToLin(masterControls.mon.value)) : 0);
   }
 
-  toneBtn.addEventListener('click', function () {
+  document.getElementById('mx-tone-test').addEventListener('click', function () {
+    document.getElementById('mx-quick-btn').click();
+    calibration = true;
+    var strip = chEls.ch1;
+    strip.eqHi.set(0); strip.eqLo.set(0); strip.fader.set(0);
+    strip.aux1.set(100); strip.aux2.set(0);
+    masterControls.fader.set(0); masterControls.mon.set(0);
+    setFxType('off');
+    setListenMode('main');
+    onControlChange();
+  });
+
+  function displayPeak(id, value) {
+    document.getElementById('m-' + id).style.height = meterPct(value) + '%';
+    document.getElementById('db-' + id).textContent = fmtDb(value);
+  }
+  SimKit.loop(function () {
+    if (!toneOn || !graph) return;
+    CHANNELS.forEach(function (ch) {
+      var level = graph.chNodes[ch.id].peak();
+      chEls[ch.id].mm.style.height = meterPct(level) + '%';
+      if (ch.id === 'ch1') displayPeak('ch1', level);
+    });
+    var main = graph.mainPeak();
+    masterControls.mm.style.height = meterPct(main) + '%';
+    displayPeak('out', patchState.out ? main : -Infinity);
+    displayPeak('aux1', graph.auxPeak() + (masterControls.mon.value <= -60 ? -Infinity : masterControls.mon.value));
+    displayPeak('fx', graph.fxPeak());
+  }, { el: wb });
+
+  toneBtn.addEventListener('click' , function () {
     if (!actx) buildAudio();
     if (actx.state === 'suspended') actx.resume();
     toneOn = !toneOn;
+    document.getElementById('mx-meter-mode').textContent = toneOn ? 'Live' : 'Estimated';
+    if (!toneOn) updateLab();
     toneBtn.textContent = toneOn ? '🔇 Stop Mix' : '🔊 Listen to Desk';
     toneBtn.classList.toggle('on', toneOn);
     toneBtn.setAttribute('aria-pressed', toneOn ? 'true' : 'false');

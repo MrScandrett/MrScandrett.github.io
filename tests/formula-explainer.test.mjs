@@ -268,6 +268,7 @@ test('Stokes formula highlights every variable and element with synced legend, p
         powerSup: roles(make('div', 'sq-eq', 'k = (u + 3)<sup>2</sup> / h')),
         powerNeg: roles(make('div', 'cl-formula-box', '<span class="cl-formula-sym">k = c · (1 − u / w)<sup>−2.5</sup></span>')),
         rt60: roles(make('div', 'ac-eq', 'RT60 = 0.161 × V / A')),
+        q60: roles(make('div', 'ac-eq', 'Q60 = 0.161 × V / A')),
         words: roles(make('div', 'equation-box', 'model = real ÷ scale')),
         wordFn: roles(make('div', 'equation-box', 'height = distance × tan(angle)')),
         several: roles(make('div', 'equation-box', 'v = g · t | y = ½ · g · t²')),
@@ -350,9 +351,11 @@ test('Stokes formula highlights every variable and element with synced legend, p
     assert.equal(generic.powerSup['h'], 'On the bottom: lowers the result');
     assert.equal(generic.powerNeg['^−2.5'], 'Operator');
     assert.equal(generic.powerNeg['w'], 'Inside a bracket that is raised to a power');
-    // Names that merely start like a function or contain digits stay whole.
-    assert.equal(generic.rt60['RT60'], 'The result');
+    // Names that merely start like a function or contain digits stay whole (with and without catalog match).
+    assert.equal(generic.rt60['RT60'], 'Reverberation time');
     assert.equal(generic.rt60['R'], undefined);
+    assert.equal(generic.q60['Q60'], 'The result');
+    assert.equal(generic.q60['Q'], undefined);
     assert.ok('model' in generic.words && !('mod' in generic.words) && !('el' in generic.words));
     assert.equal(generic.wordFn['tan'], 'Function');
     assert.ok('angle' in generic.wordFn);
@@ -710,5 +713,250 @@ test('The lab: beat rate, absolute values, word names and plain arithmetic formu
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
+  }
+});
+
+test('Regression: preserved entries, ambiguous symbols, tricky syntax, and new interactive labs', async (t) => {
+  const browser = await launchBrowser(t);
+  if (!browser) return;
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.setContent(`<!doctype html><html><body></body></html>`);
+    await page.addStyleTag({ path: CSS_PATH });
+    await page.addScriptTag({ path: SCRIPT_PATH });
+
+    const out = await page.evaluate(() => {
+      const fx = window.ClassroomOSFormulaExplainer;
+      const runCase = (html, df) => {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = html.trim();
+        const box = wrap.firstElementChild;
+        if (df) box.setAttribute('data-formula', df);
+        document.body.appendChild(box);
+        fx.upgrade(box);
+        const panelId = box.getAttribute('data-fx-panel');
+        const panel = (panelId && document.getElementById(panelId)) || box.querySelector('.cos-fx-panel');
+        const map = {};
+        box.querySelectorAll('.cos-fx-token').forEach((btn) => {
+          btn.click();
+          const k = btn.getAttribute('data-fx-key');
+          map[k] = {
+            title: panel.querySelector('.cos-fx-title').textContent.trim(),
+            role: panel.querySelector('.cos-fx-role-badge').textContent.trim(),
+            meaning: panel.querySelector('.cos-fx-meaning').textContent.trim(),
+            effect: panel.querySelector('.cos-fx-eq-role').textContent.trim(),
+            sym: panel.querySelector('.cos-fx-symbol-pill').textContent.trim()
+          };
+        });
+        const labResult = () => panel ? ((panel.querySelector('.cos-fx-lab-result')?.textContent || '').trim() || (panel.querySelector('.cos-fx-whatif-readout')?.textContent || '').trim()) : '';
+        const setSlider = (idx, val) => {
+          const sliders = panel.querySelectorAll('.cos-fx-lab input[type="range"]');
+          if (!sliders[idx]) return '';
+          sliders[idx].value = String(val);
+          sliders[idx].dispatchEvent(new Event('input', { bubbles: true }));
+          return labResult();
+        };
+        return {
+          upgraded: box.classList.contains('cos-fx-box'),
+          panelLabel: panel ? panel.getAttribute('aria-label') : '',
+          keys: [...box.querySelectorAll('.cos-fx-token:not(.is-operator)')].map((b) => b.getAttribute('data-fx-key')),
+          map,
+          hasLab: !!(panel && panel.querySelector('.cos-fx-lab input[type="range"]')),
+          initialLab: labResult(),
+          setSlider
+        };
+      };
+
+      // 1. Preserved entries
+      const preserved = {
+        sabine: runCase('<div class="equation-box">RT60 = 0.161 × V / A</div>'),
+        compressor: runCase('<div class="equation-box" data-formula="compressor-level">output = threshold + (input − threshold) / ratio</div>'),
+        latent: runCase('<div class="equation-box" data-formula="latent-heat">Q = m · L</div>'),
+        euler: runCase('<div class="equation-box" data-formula="mesh-euler">V − E + F = 2</div>'),
+        snap: runCase('<div class="equation-box" data-formula="snap-fit-strain">ε = 1.5 · y · h / L²</div>'),
+        orbit: runCase('<div class="equation-box" data-formula="orbit-radius">r = a(1 − e²) / (1 + e·cos(θ))</div>'),
+        kepler: runCase('<div class="equation-box" data-formula="kepler-period-ratio">T² = a³</div>')
+      };
+
+      // 2. Ambiguous symbols (V, A, r)
+      const pv = runCase('<div class="equation-box">PV = nRT</div>');
+      const ohm = runCase('<div class="equation-box">V = I × R</div>');
+      const dens = runCase('<div class="equation-box">ρ = m / V</div>');
+      const area = runCase('<div class="equation-box">A = l × w</div>');
+      const ci = runCase('<div class="equation-box">A = P(1 + r ⁄ n)ⁿᵗ</div>', 'compound-interest');
+      const grav = runCase('<div class="equation-box">F = G·m₁·m₂ / r²</div>');
+
+      // 3. Tricky syntax & multi-word tokens
+      const syntax = {
+        robotJac: runCase('<div class="equation-box" data-formula="robot-jacobian-vel">ẋ = J(θ) θ̇ | J = [[−L₁s₁ − L₂s₁₂, −L₂s₁₂], [L₁c₁ + L₂c₁₂, L₂c₁₂]]</div>'),
+        beta: runCase('<div class="equation-box" data-formula="beta-decay">n → p + e⁻ + ν̅ₑ</div>'),
+        eulerLim: runCase('<div class="equation-box">𝑒 = lim<sub>𝑛→∞</sub> (1 + 1/𝑛)<sup>𝑛</sup></div>'),
+        heat: runCase('<div class="equation-box">∂u⁄∂t = α∇²u</div>'),
+        kin: runCase('<div class="equation-box" data-formula="kinematics-derivatives">v(t) = dx/dt | a(t) = dv/dt</div>'),
+        buoy: runCase('<div class="equation-box">ΔP_buoy = (ρ_crust − ρ_magma) · g · z</div>'),
+        plinian: runCase('<div class="equation-box">H<sub>t</sub> = 1.67 · Ṁ<sup>0.259</sup> ≈ 8.2 · Q<sup>0.25</sup></div>'),
+        dotProd: runCase('<div class="equation-box" data-formula="dot-product">A · B = |A||B|cos(θ) = AₓBₓ + A_yB_y + A_zB_z</div>'),
+        stoich: runCase('<div class="equation-box" data-formula="stoichiometry-mass">mass of B = mass of A × (1 mol A ÷ M<sub>A</sub>) × (coef B ÷ coef A) × M<sub>B</sub></div>'),
+        crossMag: runCase('<div class="equation-box">|A × B| = |A||B|sin(θ)</div>'),
+        zeta: runCase('<div class="equation-box" data-formula="riemann-zeta-series">ζ(s) = Σ 1/nˢ</div>')
+      };
+
+      // 4. Numerical lab checks
+      const gear = runCase('<div class="equation-box" data-formula="gear-ratio">Gear ratio = Teeth out / Teeth in</div>');
+      const flt = runCase('<div class="equation-box" data-formula="floating-depth">% sub = (ρ<sub>obj</sub> ÷ ρ<sub>fluid</sub>) × 100</div>');
+      const astar = runCase('<div class="equation-box" data-formula="astar-priority">Priority = Cost so far + Estimate left</div>');
+      const wave = runCase('<div class="equation-box" data-formula="wave-height-update">h<sub>new</sub> = (Σneighbors / 2 − h<sub>old</sub>) × d</div>');
+
+      return {
+        preserved,
+        ambiguous: { pv: pv.map, ohm: ohm.map, dens: dens.map, area: area.map, ci: ci.map, grav: grav.map },
+        syntax,
+        labs: {
+          ci: { init: ci.initialLab, doubledP: ci.setSlider(0, 2000) },
+          crossMag: crossMagLab(),
+          gear: { init: gear.initialLab, mod: gear.setSlider(0, 48) },
+          flt: { init: flt.initialLab, mod: flt.setSlider(0, 0.9) },
+          astar: { init: astar.initialLab, mod: astar.setSlider(1, 10) },
+          buoy: { init: syntax.buoy.initialLab, mod: syntax.buoy.setSlider(1, 2200) },
+          wave: { init: wave.initialLab, mod: wave.setSlider(0, 1.2) }
+        }
+      };
+
+      function crossMagLab() {
+        const cm = runCase('<div class="equation-box">|A × B| = |A||B|sin(θ)</div>');
+        return { init: cm.initialLab, zeroDeg: cm.setSlider(2, 0), ninetyDeg: cm.setSlider(2, 90) };
+      }
+    });
+
+    // Assert preserved entries
+    assert.equal(out.preserved.sabine.map['RT60'].title, 'Reverberation time');
+    assert.equal(out.preserved.compressor.map['ratio'].title, 'Compression ratio');
+    assert.equal(out.preserved.latent.map['L'].title, 'Specific latent heat');
+    assert.equal(out.preserved.euler.map['F'].title, 'Faces');
+    assert.equal(out.preserved.snap.map['ε'].title, 'Strain at the root');
+    assert.equal(out.preserved.orbit.map['e'].title, 'Orbital eccentricity');
+    assert.equal(out.preserved.kepler.map['a^3'].title, 'Semi-major axis cubed');
+
+    // Assert ambiguous symbol disambiguation
+    assert.match(out.ambiguous.pv['V'].title, /Volume/i);
+    assert.match(out.ambiguous.dens['V'].title, /Volume/i);
+    assert.match(out.ambiguous.ohm['V'].title, /Voltage/i);
+    assert.equal(out.ambiguous.area['A'].title, 'Area');
+    assert.equal(out.ambiguous.ci['A'].title, 'Final amount');
+    assert.equal(out.preserved.sabine.map['A'].title, 'Equivalent absorption area');
+    assert.equal(out.ambiguous.ci['r'].title, 'Annual interest rate');
+    assert.match(out.ambiguous.grav['r^2'].title, /Distance/i);
+
+    // Assert zero generic titles / meanings / raw underscores across all syntax cases
+    for (const [name, res] of Object.entries(out.syntax)) {
+      assert.equal(res.upgraded, true, `${name} upgraded`);
+      for (const [k, card] of Object.entries(res.map)) {
+        assert.doesNotMatch(card.title, /^Variable\s/i, `${name}[${k}] generic title: ${card.title}`);
+        assert.doesNotMatch(card.meaning, /stands for one of the quantities/i, `${name}[${k}] generic meaning`);
+        const combined = `${card.sym} ${card.title} ${card.role} ${card.meaning} ${card.effect}`;
+        assert.doesNotMatch(combined, /_/, `${name}[${k}] raw underscore in: ${combined}`);
+      }
+    }
+    assert.ok('s_12' in out.syntax.robotJac.map, 's₁₂ kept together as s_12');
+    assert.ok('e^−' in out.syntax.beta.map, 'e⁻ kept together as e^−');
+    assert.ok('lim_n→∞' in out.syntax.eulerLim.map, 'italic limit subscript normalized');
+    assert.ok('∇^2u' in out.syntax.heat.map, '∇²u merged');
+    assert.ok('dx' in out.syntax.kin.map && 'dt' in out.syntax.kin.map, 'dx/dt kept intact');
+    assert.ok('ΔP_buoy' in out.syntax.buoy.map, 'ΔP_buoy kept intact');
+    assert.ok('Ṁ^0.259' in out.syntax.plinian.map, 'decimal exponent matched Ṁ');
+    assert.ok('A_y' in out.syntax.dotProd.map && 'B_y' in out.syntax.dotProd.map, 'A_yB_y split cleanly');
+    assert.ok('mass of B' in out.syntax.stoich.map && 'coef B' in out.syntax.stoich.map, 'multi-word tokens merged');
+    assert.equal(out.syntax.crossMag.panelLabel, 'Cross product magnitude explorer');
+    assert.ok('n^s' in out.syntax.zeta.map, '1/nˢ normalized to n^s');
+
+    // Assert numerical lab calculations
+    assert.match(out.labs.gear.init, /36\s*÷\s*12\s*=\s*3/);
+    assert.match(out.labs.gear.mod, /48\s*÷\s*12\s*=\s*4/);
+    assert.match(out.labs.flt.init, /60%/);
+    assert.match(out.labs.flt.mod, /90%/);
+    assert.match(out.labs.astar.init, /10/);
+    assert.match(out.labs.astar.mod, /14/);
+    assert.match(out.labs.crossMag.zeroDeg, /=\s*0$/);
+    assert.match(out.labs.crossMag.ninetyDeg, /=\s*12$/);
+    assert.doesNotMatch(JSON.stringify(out.labs), /NaN|Infinity|undefined/);
+
+    assert.deepEqual(errors, []);
+    await page.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Real lesson pages: student clicks, keyboard navigation, and sliders work cleanly', async (t) => {
+  const browser = await launchBrowser(t);
+  if (!browser) return;
+  const { server, port } = await startStaticServer(ROOT);
+  try {
+    const pagesToCheck = [
+      'lessons/mathematics/algebra/equations-iceberg.html',
+      'lessons/physics/mechanics/vectors.html',
+      'lessons/cosmology/keplers-laws.html',
+      'lessons/earth-science/volcano-simulator.html',
+      'lessons/chemistry/stoichiometry.html',
+      'lessons/physics/pioneers/james-clerk-maxwell.html'
+    ];
+    for (const rel of pagesToCheck) {
+      const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      const errors = [];
+      page.on('pageerror', (e) => errors.push(e.message));
+      await page.route('**/*', (route) => {
+        const u = route.request().url();
+        if (u.startsWith(`http://127.0.0.1:${port}/`) || u.startsWith('data:') || u.startsWith('blob:')) {
+          return route.continue();
+        }
+        return route.abort();
+      });
+      await page.goto(`http://127.0.0.1:${port}/${rel}`, { waitUntil: 'domcontentloaded' });
+      const formulaTarget = page.locator('[data-formula], .iceq-card, .v-eq, .eq-formula, .equation, .jcm-eq-card').locator('visible=true').first();
+      await formulaTarget.scrollIntoViewIfNeeded();
+      await page.waitForSelector('.cos-fx-box[data-fx-upgraded]', { state: 'attached', timeout: 10000 });
+
+      const boxes = page.locator('.cos-fx-box[data-fx-upgraded]');
+      const boxCount = await boxes.count();
+      assert.ok(boxCount >= 1, `${rel} has upgraded equation boxes`);
+
+      // Keyboard navigation on the first visible upgraded box
+      const visibleBox = page.locator('.cos-fx-box[data-fx-upgraded]').locator('visible=true').first();
+      const firstToken = visibleBox.locator('.cos-fx-token').first();
+      await firstToken.scrollIntoViewIfNeeded();
+      await firstToken.focus();
+      await page.keyboard.press('Enter');
+
+      const panelId = await visibleBox.getAttribute('data-fx-panel');
+      const panel = page.locator(`#${panelId}`);
+      await panel.waitFor({ state: 'visible', timeout: 5000 });
+      const initialTitle = (await panel.locator('.cos-fx-title').textContent()).trim();
+      assert.ok(initialTitle.length > 0 && !/^Variable\s/i.test(initialTitle), `${rel} first card has real title`);
+
+      // Step forward with Next -> button and back with <- Prev
+      const nextBtn = panel.locator('.cos-fx-step-btn[data-dir="1"]');
+      if (await nextBtn.isVisible()) {
+        await nextBtn.focus();
+        await page.keyboard.press('Enter');
+        const nextTitle = (await panel.locator('.cos-fx-title').textContent()).trim();
+        assert.ok(nextTitle.length > 0 && !/^Variable\s/i.test(nextTitle), `${rel} next card has real title`);
+        await panel.locator('.cos-fx-step-btn[data-dir="-1"]').click();
+        assert.equal((await panel.locator('.cos-fx-title').textContent()).trim(), initialTitle);
+      }
+
+      // Close with keyboard
+      const closeBtn = panel.locator('.cos-fx-close-btn');
+      await closeBtn.focus();
+      await page.keyboard.press('Enter');
+      assert.equal(await panel.isHidden(), true, `${rel} panel closes on keyboard Enter`);
+
+      assert.deepEqual(errors.filter((m) => !m.includes('Failed to fetch')), [], `${rel} had page errors`);
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+    server.close();
   }
 });

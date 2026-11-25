@@ -49,10 +49,17 @@
   function layout(m) {
     var W = fit ? fit.width : canvas.width;
     var H = fit ? fit.height : canvas.height;
-    var maxW = Math.max(80, W - 96), maxH = Math.max(80, H - 72), aspect = m.l / m.w;
-    var w = maxW, h = w / aspect;
-    if (h > maxH) { h = maxH; w = h * aspect; }
-    return { x: (W - w) / 2, y: (H - h) / 2 + 4, w: w, h: h, scale: w / m.l, W: W, H: H };
+    // Oblique cutaway: length runs right, depth recedes right and up.
+    var scale = Math.min((W - 42) / (m.l + 0.56 * m.w), (H - 78) / (m.h + 0.52 * m.w));
+    var w = m.l * scale, h = m.w * scale, wall = m.h * scale;
+    var x = (W - w - 0.56 * h) / 2, y = (H + wall + 0.52 * h) / 2;
+    return { x: 0, y: 0, w: w, h: h, scale: scale, W: W, H: H, wall: wall,
+      project: function (u, v, z) { return { x: x + w*u + 0.56*h*v, y: y - 0.52*h*v - wall*z }; },
+      unproject: function (pt, z) {
+        var v = (y - wall*z - pt.y) / (0.52*h);
+        return { x: (pt.x - x - 0.56*h*v) / w, y: v };
+      }
+    };
   }
 
   function nearestHorizontalMode(m, target) {
@@ -107,49 +114,52 @@
     }
   }
 
-  function imageCoordinate(index, size, source) {
-    return index * size + (index % 2 === 0 ? source : size - source);
-  }
+  // Cross-sections of a spherical front, sampled in metres before projection.
+  var circle = Array.from({ length: 97 }, function (_, i) {
+    var angle = 2 * Math.PI * i / 96;
+    return [Math.cos(angle), Math.sin(angle)];
+  });
 
   function drawTravel(m, r) {
-    ctx.save();
-    ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
-    ctx.fillStyle = 'rgba(89, 200, 216, ' + (0.03 + m.soft / 1600) + ')';
-    ctx.fillRect(r.x, r.y, r.w, r.h);
-    drawAudience(m, r);
-    var sourceX = pos.sx * m.l, sourceY = pos.sy * m.w;
-    var maxDistance = Math.hypot(m.l, m.w) * 2.1;
-    var visualSpeed = Math.max(m.l, m.w) / 1.85;
-    var cycle = maxDistance / visualSpeed;
-    var reflection = Math.max(0.1, 0.9 - 0.72 * (m.soft / 100));
-    for (var pulse = 0; pulse < 4; pulse++) {
-      var age = ((simClock + pulse * cycle / 4) % cycle + cycle) % cycle;
-      var radiusM = age * visualSpeed;
-      var fade = Math.max(0, 1 - age / cycle);
-      for (var ix = -2; ix <= 2; ix++) {
-        for (var iy = -2; iy <= 2; iy++) {
-          var order = Math.abs(ix) + Math.abs(iy);
-          if (order > 2) continue;
-          var px = r.x + imageCoordinate(ix, m.l, sourceX) * r.scale;
-          var py = r.y + imageCoordinate(iy, m.w, sourceY) * r.scale;
-          var alpha = (order === 0 ? 0.68 : 0.42) * fade * Math.pow(reflection, order);
-          if (alpha < 0.025) continue;
-          ctx.beginPath();
-          ctx.arc(px, py, radiusM * r.scale, 0, Math.PI * 2);
-          ctx.strokeStyle = order === 0 ? 'rgba(89, 210, 225, ' + alpha + ')' : 'rgba(240, 180, 72, ' + alpha + ')';
-          ctx.lineWidth = order === 0 ? 3 : 1.9;
-          ctx.stroke();
+    var x = pos.sx * m.l, y = pos.sy * m.w, z = r.ear * m.h;
+    var reach = Math.hypot(m.l, m.w, m.h);
+    var radius = (simClock % 3.8) / 3.8 * reach;
+    // Each mirror source gives the first reflection from one rigid surface.
+    var centers = [[-x,y,z],[2*m.l-x,y,z],[x,-y,z],[x,2*m.w-y,z],
+                   [x,y,-z],[x,y,2*m.h-z],[x,y,z]];
+    centers.forEach(function (center, index) {
+      var cx = center[0], cy = center[1], cz = center[2];
+      var low = Math.max(0, cz-radius), high = Math.min(m.h, cz+radius);
+      if (high <= low || cx+radius < 0 || cx-radius > m.l ||
+          cy+radius < 0 || cy-radius > m.w) return;
+      var direct = index === centers.length-1;
+      ctx.strokeStyle = direct ? '#6be2f0' : '#ffc36c';
+      ctx.globalAlpha = (direct ? .85 : .47*(1-.007*m.soft)) * (1-.55*radius/reach);
+      ctx.lineWidth = direct ? 1.5 : 1;
+      ctx.beginPath();
+      function vertex(px, py, pz, connected) {
+        if (px < 0 || px > m.l || py < 0 || py > m.w || pz < 0 || pz > m.h) return false;
+        var point = r.project(px/m.l,py/m.w,pz/m.h);
+        if (connected) ctx.lineTo(point.x,point.y); else ctx.moveTo(point.x,point.y);
+        return true;
+      }
+      for (var layer = 0; layer < 7; layer++) {
+        var height = low + (high-low)*(layer+.5)/7;
+        var span = Math.sqrt(Math.max(0,radius*radius-(height-cz)*(height-cz)));
+        var connected = false;
+        for (var pair of circle) {
+          connected = vertex(cx+span*pair[0],cy+span*pair[1],height,connected);
         }
       }
-    }
-    ctx.restore();
-    ctx.fillStyle = 'rgba(7, 11, 16, 0.78)';
-    ctx.fillRect(r.x + 10, r.y + 10, 184, 38);
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#59c8d8'; ctx.font = '800 11px system-ui, sans-serif';
-    ctx.fillText('TRAVELING IMPULSE', r.x + 18, r.y + 26);
-    ctx.fillStyle = '#92a2b2'; ctx.font = '9px system-ui, sans-serif';
-    ctx.fillText('Drag S or L anywhere (incl. corners)', r.x + 18, r.y + 40);
+      for (var i = 0; i < 48; i += 12) {
+        var axis = circle[i], joined = false;
+        for (var arc of circle) {
+          joined = vertex(cx+radius*arc[0]*axis[0],cy+radius*arc[0]*axis[1],cz+radius*arc[1],joined);
+        }
+      }
+      ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
   }
 
   // Offscreen cached mode grid for zero per-frame DOM/fillRect thrashing
@@ -202,15 +212,7 @@
     ctx.setLineDash([]);
     ctx.restore();
 
-    ctx.fillStyle = 'rgba(7, 11, 16, 0.84)';
-    ctx.fillRect(r.x + 10, r.y + 10, 224, 48);
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#f0b448'; ctx.font = '800 11px system-ui, sans-serif';
-    ctx.fillText(mode.kind.toUpperCase() + ' MODE (' + mode.nx + ',' + mode.ny + ',0)', r.x + 18, r.y + 26);
-    ctx.fillStyle = '#d6e0e8'; ctx.font = '700 11px ui-monospace, monospace';
-    ctx.fillText(mode.frequency.toFixed(1) + ' Hz', r.x + 18, r.y + 44);
-    ctx.fillStyle = '#92a2b2'; ctx.font = '9px system-ui, sans-serif';
-    ctx.fillText('Resonance ' + Math.round(resGain * 100) + '% · Dashed = node', r.x + 84, r.y + 44);
+
   }
 
   function drawMarkers(m, r, mode) {
@@ -219,8 +221,8 @@
       { key: 'l', label: 'L', name: 'LISTENER', xf: pos.lx, yf: pos.ly, color: '#66d28a' }
     ];
     items.forEach(function (item) {
-      var x = r.x + r.w * item.xf;
-      var y = r.y + r.h * item.yf;
+      var point = r.project(item.xf, item.yf, r.ear);
+      var x = point.x, y = point.y;
       ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2);
       ctx.fillStyle = item.color; ctx.fill();
       ctx.strokeStyle = '#071018'; ctx.lineWidth = 2; ctx.stroke();
@@ -249,21 +251,52 @@
     background(r.W, r.H);
     var target = Number($('frequency').value);
     var mode = nearestHorizontalMode(m, target);
-    if ($('simulation-view').value === 'modes') drawModes(m, r, mode, target);
-    else drawTravel(m, r);
-
-    ctx.strokeStyle = 'rgba(240, 180, 72, ' + (0.45 + m.soft / 250) + ')';
-    ctx.lineWidth = 8;
-    ctx.strokeRect(r.x, r.y, r.w, r.h);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    r.ear = 1.2 / m.h;
+    var P = r.project;
+    function path(points, stroke, fill) {
+      ctx.beginPath();
+      points.forEach(function (p, i) { if (i) ctx.lineTo(p.x,p.y); else ctx.moveTo(p.x,p.y); });
+      if (fill) { ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); }
+      ctx.strokeStyle = stroke; ctx.stroke();
+    }
     ctx.lineWidth = 1;
-    ctx.strokeRect(r.x + 5, r.y + 5, r.w - 10, r.h - 10);
-
-    drawMarkers(m, r, mode);
-    ctx.fillStyle = '#a8b5c1'; ctx.font = '700 11px system-ui, sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(m.l + ' m', r.x + r.w / 2, r.y + r.h + 20);
-    ctx.save(); ctx.translate(r.x - 22, r.y + r.h / 2); ctx.rotate(-Math.PI / 2);
-    ctx.fillText(m.w + ' m', 0, 0); ctx.restore();
+    path([P(0,1,0),P(1,1,0),P(1,1,1),P(0,1,1)], '#648291','#243d4b');
+    path([P(0,0,0),P(0,1,0),P(0,1,1),P(0,0,1)], '#648291','#304e5c');
+    path([P(0,0,0),P(1,0,0),P(1,1,0),P(0,1,0)], '#648291','#152631');
+    for (var i = 0; i < Math.round(m.panels / 10); i++) {
+      var u = i / 10 + 0.015;
+      path([P(u,1,.25),P(u+.065,1,.25),P(u+.065,1,.78),P(u,1,.78)], '#6d9ca6','#40636e');
+    }
+    var origin = P(0,0,0), modes = $('simulation-view').value === 'modes';
+    ctx.save();
+    ctx.transform(1,0,.56,-.52,origin.x,origin.y);
+    if (modes) drawModes(m,r,mode,target); else drawAudience(m,r);
+    ctx.restore();
+    var source = P(pos.sx,pos.sy,r.ear), listener = P(pos.lx,pos.ly,r.ear);
+    if (modes) {
+      // Horizontal modes have no height dependence. Lift floor nodes into planes.
+      for (var n = 0; n < mode.nx; n++) {
+        var x = (n+.5)/mode.nx;
+        path([P(x,0,0),P(x,1,0),P(x,1,1),P(x,0,1)], '#a2d8e669','rgba(153,222,245,.08)');
+      }
+      for (var j = 0; j < mode.ny; j++) {
+        var v = (j+.5)/mode.ny;
+        path([P(0,v,0),P(1,v,0),P(1,v,1),P(0,v,1)], '#a2d8e669','rgba(153,222,245,.08)');
+      }
+    } else {
+      drawTravel(m,r);
+      var bounce = P((pos.sx+pos.lx)/2,(pos.sy+pos.ly)/2,1);
+      ctx.lineWidth = 2;
+      path([source,listener],'#59d2e1');
+      path([source,bounce,listener],'#f0b448');
+    }
+    drawMarkers(m,r,mode);
+    ctx.textAlign = 'left'; ctx.font = 'bold 12px system-ui'; ctx.fillStyle = '#e7eff4';
+    var distance = Math.hypot((pos.sx-pos.lx)*m.l,(pos.sy-pos.ly)*m.w);
+    var delay = (Math.hypot(distance,2*(m.h-1.2))-distance)*1000/C;
+    ctx.fillText(modes ? mode.frequency.toFixed(1)+' Hz · translucent planes = nodes' :
+      'Ceiling reflection arrives '+delay.toFixed(1)+' ms after direct sound',10,18);
+    ctx.fillText(m.l+' × '+m.w+' × '+m.h+' m',10,r.H-8);
   }
 
   // 2-D pointer dragging for Source & Listener (including corners!)
@@ -275,10 +308,10 @@
   canvas.addEventListener('pointerdown', function (e) {
     if (!lastLayout) return;
     var pt = canvasPt(e);
-    var sx = lastLayout.x + lastLayout.w * pos.sx, sy = lastLayout.y + lastLayout.h * pos.sy;
-    var lx = lastLayout.x + lastLayout.w * pos.lx, ly = lastLayout.y + lastLayout.h * pos.ly;
-    var ds = Math.hypot(pt.x - sx, pt.y - sy);
-    var dl = Math.hypot(pt.x - lx, pt.y - ly);
+    var source = lastLayout.project(pos.sx,pos.sy,lastLayout.ear);
+    var listener = lastLayout.project(pos.lx,pos.ly,lastLayout.ear);
+    var ds = Math.hypot(pt.x-source.x,pt.y-source.y);
+    var dl = Math.hypot(pt.x-listener.x,pt.y-listener.y);
     if (ds <= 26 || dl <= 26) {
       dragging = ds <= dl ? 's' : 'l';
       canvas.setPointerCapture(e.pointerId);
@@ -287,8 +320,9 @@
   canvas.addEventListener('pointermove', function (e) {
     if (!dragging || !lastLayout) return;
     var pt = canvasPt(e);
-    var xf = Math.max(0.03, Math.min(0.97, (pt.x - lastLayout.x) / lastLayout.w));
-    var yf = Math.max(0.03, Math.min(0.97, (pt.y - lastLayout.y) / lastLayout.h));
+    var local = lastLayout.unproject(pt,lastLayout.ear);
+    var xf = Math.max(0.03, Math.min(0.97, local.x));
+    var yf = Math.max(0.03, Math.min(0.97, local.y));
     if (dragging === 's') {
       pos.sx = xf; pos.sy = yf;
       $('source-position').value = Math.round(xf * 100);

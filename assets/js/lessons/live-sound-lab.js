@@ -143,18 +143,34 @@
       $('cov-back-out').textContent = back + ' m';
       var src = source();
 
+      var reference = L.spl({ sensitivity: sens, watts: watts, distance: 1, source: src });
+      function level(distance) {
+        var direct = L.spl({ sensitivity: sens, watts: watts, distance: distance, source: src });
+        if (!$('cov-room').checked) return direct;
+        // Fixed diffuse-field energy, equal to a point source's direct field at 8 m.
+        return 10 * Math.log10(Math.pow(10, direct / 10) + Math.pow(10, reference / 10) / 64);
+      }
+      var near = Math.sqrt(h * h + FRONT * FRONT);
+      var far = 2 * near;
+      var probeX = Math.sqrt(far * far - h * h);
+      $('cov-probes').textContent = 'B is twice as far from the speaker. Predict the change in dB.';
+      $('cov-probe').onclick = function () {
+        $('cov-probes').textContent = 'A · ' + near.toFixed(1) + ' m: ' + level(near).toFixed(1) +
+          ' dB SPL. B · ' + far.toFixed(1) + ' m: ' + level(far).toFixed(1) +
+          ' dB SPL. Change: ' + (level(far) - level(near)).toFixed(1) + ' dB (simulated).';
+      };
       var rows = [];
       for (var i = 0; i < ROWS; i++) {
         var x = FRONT + (back - FRONT) * i / (ROWS - 1);
         var d = Math.sqrt(h * h + x * x);
-        rows.push({ x: x, d: d, spl: L.spl({ sensitivity: sens, watts: watts, distance: d, source: src }) });
+        rows.push({ x: x, d: d, spl: level(d) });
       }
       var front = rows[0].spl, last = rows[ROWS - 1].spl, spread = front - last;
       var mean = rows.reduce(function (s, r) { return s + r.spl; }, 0) / ROWS;
 
       clear(svg);
       var x0 = 46, x1 = 616, earY = 186, vs = 16;
-      var hs = (x1 - x0) / (back + 1);
+      var hs = (x1 - x0) / (Math.max(back, probeX) + 1);
       svg.appendChild(el('line', { x1: 10, y1: earY + 20, x2: 632, y2: earY + 20, class: 'cov-floor' }));
       svg.appendChild(el('line', { x1: 10, y1: earY, x2: 632, y2: earY, class: 'cov-ear' }));
       svg.appendChild(el('text', { x: 12, y: earY + 34, class: 'cov-note' }, 'ears'));
@@ -175,7 +191,12 @@
         svg.appendChild(el('text', { x: rx, y: earY - 14, class: 'cov-spl', 'text-anchor': 'middle' }, Math.round(r.spl)));
         svg.appendChild(el('text', { x: rx, y: earY + 34, class: 'cov-note', 'text-anchor': 'middle' }, Math.round(r.x) + ' m'));
       });
-      svg.appendChild(el('text', { x: 14, y: 18, class: 'cov-note' }, 'dB SPL per row (inverse square: −6 dB per doubling of distance)'));
+      [FRONT, probeX].forEach(function (x, i) {
+        var px = x0 + x * hs;
+        svg.appendChild(el('line', { x1: px, y1: earY - 52, x2: px, y2: earY - 21, class: 'cov-ray' }));
+        svg.appendChild(el('text', { x: px, y: earY - 55, class: 'cov-spl', 'text-anchor': 'middle' }, i ? 'B' : 'A'));
+      });
+      svg.appendChild(el('text', { x: 14, y: 18, class: 'cov-note' }, $('cov-room').checked ? 'Direct sound + uniform reflected energy' : 'Direct sound only'));
 
       $('cov-front').textContent = fmt(front, 0) + ' dB';
       $('cov-backspl').textContent = fmt(last, 0) + ' dB';
@@ -200,6 +221,7 @@
       }
       setReadout($('cov-readout'), msgs.join(' '), tone);
     }
+    $('cov-room').addEventListener('change', render);
     onInput(['cov-sens', 'cov-watts', 'cov-height', 'cov-back'], render);
     render();
   }());

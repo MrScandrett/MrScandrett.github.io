@@ -139,7 +139,7 @@
 
           <section class="ra-card" data-ra-for="builder engineer" style="--ra-accent:var(--ra-copper);">
             <p class="ra-label">The update rule</p><h2>One line of learning</h2>
-            <p class="ra-eq">Q(s, a) ← Q(s, a) + α · [ reward + γ · max Q(s′, ·) − Q(s, a) ]</p>
+            <p class="ra-eq" data-formula="q-learning-update">Q(s, a) ← Q(s, a) + α · [ reward + γ · max Q(s′, ·) − Q(s, a) ]</p>
             <p>In words: "My old guess for this move, nudged toward what actually happened: the reward I just got, plus the best I think I can do from where I landed." α sets the size of the nudge. γ sets how much future reward matters. Good news slowly flows backward from the charger, one square at a time. That's why green spreads outward from the goal.</p>
             <div class="ra-cols">
               <article><h3>Explore vs. exploit</h3><p>With probability ε the robot tries a random move instead of its best one. Too little and it never finds better routes. Too much and it never uses what it knows.</p></article>
@@ -151,7 +151,7 @@
           <section class="ra-card ra-deep" data-ra-for="engineer" style="--ra-accent:var(--ra-blue);">
             <p class="ra-label">Engineer deep dive</p><h2>Bellman, discounting, and convergence<span class="ra-badge">Ages 15+</span></h2>
             <div class="ra-cols">
-              <article><h3>The Bellman optimality equation</h3><p class="ra-eq">Q*(s, a) = E[ r + γ · max<sub>a′</sub> Q*(s′, a′) ]</p><p>Q-learning is a stochastic approximation of this fixed point. It converges to Q* if every state–action pair is visited infinitely often and the learning rate decays so that Σα = ∞ and Σα² &lt; ∞ (Watkins & Dayan, 1992). The sim's fixed α trades guaranteed convergence for faster adaptation.</p></article>
+              <article><h3>The Bellman optimality equation</h3><p class="ra-eq" data-formula="bellman-q">Q*(s, a) = E[ r + γ · max<sub>a′</sub> Q*(s′, a′) ]</p><p>Q-learning is a stochastic approximation of this fixed point. It converges to Q* if every state–action pair is visited infinitely often and the learning rate decays so that Σα = ∞ and Σα² &lt; ∞ (Watkins & Dayan, 1992). The sim's fixed α trades guaranteed convergence for faster adaptation.</p></article>
               <article><h3>Effective horizon</h3><p>A reward k steps away is worth γ<sup>k</sup> now. The rough planning horizon is 1 / (1 − γ): at γ = 0.95 that is 20 steps; at 0.99, 100 steps. Set γ too low and the charger's reward fades before it reaches the start square.</p></article>
               <article><h3>Off-policy vs. on-policy</h3><p>Q-learning updates toward max Q(s′, ·), the <em>greedy</em> action, even while it explores. That is why it learns the risky edge-of-the-stairs route under slip. <strong>SARSA</strong> updates toward the action it actually takes next, so it learns a safer route that accounts for its own random moves. Try predicting SARSA's route on this map.</p></article>
               <article><h3>Deep Q-Networks</h3><p>DQN (Mnih et al., 2015) replaces the table with a neural network Q(s, a; θ) and adds two stabilizers: an <strong>experience replay</strong> buffer that breaks correlation between samples, and a slowly updated <strong>target network</strong> for the max Q term. Robot locomotion typically uses policy-gradient methods such as PPO instead.</p></article>

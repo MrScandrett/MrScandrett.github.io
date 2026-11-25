@@ -134,9 +134,18 @@
   var lastVerdictCls = '';
 
   function updateMetersAndVerdict() {
-    var w = Math.sin(wobble) * 1.4 + Math.sin(wobble * 2.7) * 0.7;
-    var L = computeStage(w);
     var nom = computeStage(0);
+    var L = nom;
+    if (toneOn && nodes) {
+      var peaks = nodes.taps.map(function (tap) {
+        tap.analyser.getFloatTimeDomainData(tap.samples);
+        var peak = 0;
+        for (var i = 0; i < tap.samples.length; i++) peak = Math.max(peak, Math.abs(tap.samples[i]));
+        return 20 * Math.log10(peak);
+      });
+      L = { pre: peaks[0], ch: peaks[1], out: peaks[2],
+        preClipped: peaks[0] > 0, chClipped: peaks[1] > 0, outClipped: peaks[2] > 0 };
+    }
     var now = performance.now();
     if (L.preClipped) clipHold.pre = now;
     if (L.chClipped) clipHold.ch = now;
@@ -164,16 +173,16 @@
       cls = 'bad';
     } else if (srcV <= 0) {
       msg = 'The singer is silent — bring up the source slider to stage gain.';
-    } else if (nom.preClipped) {
-      msg = '🔴 The PREAMP is clipping (' + fmtDb(nom.pre) + '). Pull GAIN down until peaks sit near −18 dBFS to −6 dBFS.';
+    } else if (L.preClipped) {
+      msg = '🔴 The PREAMP is clipping (' + fmtDb(L.pre) + '). Pull GAIN down until peaks sit near −18 dBFS to −6 dBFS.';
       cls = 'bad';
-    } else if (nom.chClipped || nom.outClipped) {
-      msg = '🔴 Post-fader clipping — pull the ' + (nom.chClipped ? 'channel fader' : 'master fader') + ' down toward unity (0 dB).';
+    } else if (L.chClipped || L.outClipped) {
+      msg = '🔴 Post-fader clipping — pull the ' + (L.chClipped ? 'channel fader' : 'master fader') + ' down toward unity (0 dB).';
       cls = 'bad';
-    } else if (nom.pre < -28) {
-      msg = 'Signal is buried near the preamp noise floor (' + fmtDb(nom.pre) + ') — raise GAIN toward −18 dBFS instead of cranking faders.';
-    } else if (nom.pre <= -4 && Math.abs(parseFloat(sFader.value)) <= 6 && Math.abs(parseFloat(sMaster.value)) <= 6 && nom.out > -22) {
-      msg = '🟢 Healthy gain staging! Preamp at ' + fmtDb(nom.pre) + ' with headroom, faders near unity, clean master.';
+    } else if (L.pre < -28) {
+      msg = 'Signal is buried near the preamp noise floor (' + fmtDb(L.pre) + ') — raise GAIN toward −18 dBFS instead of cranking faders.';
+    } else if (L.pre <= -4 && Math.abs(parseFloat(sFader.value)) <= 6 && Math.abs(parseFloat(sMaster.value)) <= 6 && L.out > -22) {
+      msg = '🟢 Clean peaks, headroom at the preamp, and faders near unity.';
       cls = 'good';
     } else {
       msg = 'Aim for preamp peaks between −18 dBFS and −6 dBFS with faders near unity (0 dB).';
@@ -206,6 +215,23 @@
     c.moveTo(0, H * 0.86); c.lineTo(W, H * 0.86);
     c.stroke();
 
+    if (toneOn && nodes) {
+      var trace = nodes.trace;
+      trace.analyser.getFloatTimeDomainData(trace.samples);
+      var start = 1;
+      while (start < trace.samples.length / 2 && !(trace.samples[start - 1] <= 0 && trace.samples[start] > 0)) start++;
+      var count = Math.min(trace.samples.length - start, Math.round(audioSys.ctx.sampleRate * 0.010));
+      c.strokeStyle = '#96f5a7';
+      c.lineWidth = 2;
+      c.beginPath();
+      for (var j = 0; j < count; j++) {
+        var yPos = H * (0.5 - 0.36 * trace.samples[start + j]);
+        if (j === 0) c.moveTo(0, yPos);
+        else c.lineTo(j * W / (count - 1), yPos);
+      }
+      c.stroke();
+      return;
+    }
     var nom = computeStage(0);
     var linOut = nom.out === -Infinity ? 0 : Math.pow(10, nom.out / 20);
     var preGain = nom.pre === -Infinity ? 0 : Math.pow(10, nom.pre / 20);
@@ -254,7 +280,7 @@
     pinkSrc.loop = true;
 
     var toneOsc = ctx.createOscillator();
-    toneOsc.type = 'triangle';
+    toneOsc.type = 'sine';
     toneOsc.frequency.value = 196;
 
     // Subtle self-noise injected right after mic capsule (so low preamp gain + cranked fader boosts hiss)
@@ -270,11 +296,11 @@
 
     var srcGain = ctx.createGain();
     var trimGain = ctx.createGain();
-    var preClip = ctx.createWaveShaper(); preClip.curve = synth.createHardClipCurve();
+    var preClip = ctx.createWaveShaper(); preClip.curve = new Float32Array([-1, 0, 1]);
     var faderGain = ctx.createGain();
-    var chClip = ctx.createWaveShaper(); chClip.curve = synth.createHardClipCurve();
+    var chClip = ctx.createWaveShaper(); chClip.curve = new Float32Array([-1, 0, 1]);
     var masterGain = ctx.createGain();
-    var outClip = ctx.createWaveShaper(); outClip.curve = synth.createHardClipCurve();
+    var outClip = ctx.createWaveShaper(); outClip.curve = new Float32Array([-1, 0, 1]);
     var muteGate = ctx.createGain(); muteGate.gain.value = 0;
 
     vocalSrc.connect(vocalBus).connect(srcGain);
@@ -286,7 +312,14 @@
     trimGain.connect(preClip).connect(faderGain).connect(chClip).connect(masterGain).connect(outClip).connect(muteGate).connect(audioSys.input);
 
     vocalSrc.start(); pinkSrc.start(); toneOsc.start(); hissSrc.start();
+    function tap(stage) {
+      var analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      stage.connect(analyser);
+      return { analyser: analyser, samples: new Float32Array(analyser.fftSize) };
+    }
     nodes = {
+      taps: [trimGain, faderGain, masterGain].map(tap), trace: tap(outClip),
       vocalBus: vocalBus, pinkBus: pinkBus, toneBus: toneBus,
       srcGain: srcGain, hissGain: hissGain, trimGain: trimGain,
       faderGain: faderGain, masterGain: masterGain, muteGate: muteGate
@@ -302,11 +335,11 @@
     var mode = sourceSel ? sourceSel.value : 'vocal';
     sm(nodes.vocalBus.gain, mode === 'vocal' ? 1 : 0, ctx, 0.02);
     sm(nodes.pinkBus.gain, mode === 'pink' ? 1 : 0, ctx, 0.02);
-    sm(nodes.toneBus.gain, mode === 'tone' ? 0.55 : 0, ctx, 0.02);
+    sm(nodes.toneBus.gain, mode === 'tone' ? 1 : 0, ctx, 0.02);
 
     var sdb = srcDb();
     sm(nodes.srcGain.gain, dbToLin(sdb), ctx, 0.02);
-    sm(nodes.hissGain.gain, micPowered() ? 0.0022 : 0.0001, ctx, 0.02);
+    sm(nodes.hissGain.gain, micPowered() && mode !== 'tone' ? 0.00022 : 0, ctx, 0.02);
     sm(nodes.trimGain.gain, dbToLin(parseFloat(sGain.value)), ctx, 0.02);
     var fv = parseFloat(sFader.value);
     sm(nodes.faderGain.gain, fv <= -60 ? 0 : dbToLin(fv), ctx, 0.02);
@@ -336,7 +369,7 @@
 
   presetIdealBtn.addEventListener('click', function () {
     sSrc.value = 50;
-    sGain.value = micType === 'condenser' ? 24 : 30;
+    sGain.value = micType === 'condenser' ? 22 : 28;
     sFader.value = 0;
     sMaster.value = 0;
     if (micType === 'condenser' && !phantomOn) phantomBtn.click();
@@ -364,7 +397,8 @@
   toneBtn.addEventListener('click', function () {
     if (!audioSys) buildAudio();
     if (audioSys) audioSys.resume();
-    toneOn = !toneOn;
+    toneOn = Boolean(audioSys) && !toneOn;
+    document.getElementById('sc-trace-label').textContent = toneOn ? 'Live · 1 ms/div' : 'Model preview';
     toneBtn.textContent = toneOn ? '🔇 Stop Audio' : '🔊 Listen to Chain';
     toneBtn.classList.toggle('audio-on', toneOn);
     toneBtn.setAttribute('aria-pressed', toneOn ? 'true' : 'false');

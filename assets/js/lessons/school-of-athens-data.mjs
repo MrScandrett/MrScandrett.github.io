@@ -1325,10 +1325,10 @@ export const PEPPER_CLUSTERS = [
     lessonTie: 'Compare directly with Einstein in the 1927 Solvay photo: same face, radically different media function.'
   },
   {
-    id: 'freud-jung',
+    id: 'carl-jung',
     domain: 'science',
     domainLabel: 'Psychology & Mind',
-    title: 'Sigmund Freud & Carl Jung',
+    title: 'Carl Jung',
     subtitle: 'Upper row · psychoanalysis & archetypes',
     summary: 'Including depth psychologists reminds students that 20th-century culture looked inward—treating dreams, symbols, and archetypes as engines of human behavior.',
     lessonTie: 'Connects directly to iconography itself: Jung argued symbols carry collective memory across generations.'
