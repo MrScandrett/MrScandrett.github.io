@@ -152,7 +152,7 @@
     if (!clean) return 0;
     const {
       x, y, width, maxHeight, size: startSize, weight, family, fill,
-      anchor = 'start', lineRatio = 1.18, tracking = 0
+      anchor = 'start', lineRatio = 1.18, tracking = 0, bg = null
     } = opts;
     let size = startSize;
     let lines = [];
@@ -173,6 +173,9 @@
       'text-anchor': anchor
     };
     if (tracking) attrs['letter-spacing'] = `${tracking}px`;
+    // SVG text never paints a CSS background, but HTML_CodeSniffer (pa11y) only reads CSS backgrounds,
+    // so text drawn on a filled shape names that fill here to be measured against what readers see.
+    if (bg) attrs.style = `background-color: ${bg}`;
     const textEl = addSvg('text', attrs);
     lines.forEach((line, i) => {
       addSvg('tspan', { x, y: y + size + i * leading }, line, textEl);
@@ -293,7 +296,7 @@
       });
       addSvg('rect', { x: margin, y: 492, width, height: 54, rx: 8, fill: accent });
       drawWrappedText(action, {
-        x: 240, y: 508, width: width - 28, maxHeight: 36, size: 18, weight: 700, family: pairing.body, fill: pickContrastOn(accent), anchor: 'middle'
+        x: 240, y: 508, width: width - 28, maxHeight: 36, size: 18, weight: 700, family: pairing.body, fill: pickContrastOn(accent), bg: accent, anchor: 'middle'
       });
     } else if (template === 'band') {
       const bandH = 262;
@@ -301,10 +304,10 @@
       const bandInk = pickContrastOn(accent);
       drawEmblem(480 - margin - 62, 34, 62, paper, accent, ink);
       drawWrappedText(kicker.toUpperCase(), {
-        x: margin, y: 42, width: width - 78, maxHeight: 34, size: 12, weight: 700, family: pairing.body, fill: bandInk, tracking: 1.4
+        x: margin, y: 42, width: width - 78, maxHeight: 34, size: 12, weight: 700, family: pairing.body, fill: bandInk, bg: accent, tracking: 1.4
       });
       drawWrappedText(title, {
-        x: margin, y: 92, width, maxHeight: 148, size: headlineSize, weight: 800, family: pairing.display, fill: bandInk, lineRatio: 1.12
+        x: margin, y: 92, width, maxHeight: 148, size: headlineSize, weight: 800, family: pairing.display, fill: bandInk, bg: accent, lineRatio: 1.12
       });
       const whenH = drawWrappedText(when, {
         x: margin, y: bandH + 34, width, maxHeight: 70, size: 20, weight: 700, family: pairing.body, fill: ink
@@ -338,7 +341,7 @@
       });
       addSvg('rect', { x: colX, y: 492, width: colW, height: 50, rx: 6, fill: accent });
       drawWrappedText(action, {
-        x: colX + colW / 2, y: 507, width: colW - 20, maxHeight: 34, size: 16, weight: 700, family: pairing.body, fill: pickContrastOn(accent), anchor: 'middle'
+        x: colX + colW / 2, y: 507, width: colW - 20, maxHeight: 34, size: 16, weight: 700, family: pairing.body, fill: pickContrastOn(accent), bg: accent, anchor: 'middle'
       });
     } else if (template === 'centered') {
       addSvg('rect', { x: 18, y: 18, width: 444, height: 564, fill: 'none', stroke: accent, 'stroke-width': 3 });
@@ -359,7 +362,7 @@
       });
       addSvg('rect', { x: margin + 20, y: 492, width: width - 40, height: 50, rx: 999, fill: accent });
       drawWrappedText(action, {
-        x: 240, y: 507, width: width - 64, maxHeight: 32, size: 17, weight: 700, family: pairing.body, fill: pickContrastOn(accent), anchor: 'middle'
+        x: 240, y: 507, width: width - 64, maxHeight: 32, size: 17, weight: 700, family: pairing.body, fill: pickContrastOn(accent), bg: accent, anchor: 'middle'
       });
     }
 
