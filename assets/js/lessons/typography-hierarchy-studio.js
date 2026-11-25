@@ -8,6 +8,8 @@
   const action = name => studio.querySelector('[data-action="' + name + '"]');
   const copyFields = [...studio.querySelectorAll('[data-copy]')];
   const settings = [...studio.querySelectorAll('[data-setting]')];
+  const tabs = [...studio.querySelectorAll('.th-tablist [role="tab"]')];
+  const panels = [...studio.querySelectorAll('.th-tabpanel[role="tabpanel"]')];
   const previewFields = Object.fromEntries(copyFields.map(field => [
     field.dataset.copy, document.getElementById('pv-' + field.dataset.copy)
   ]));
@@ -21,6 +23,27 @@
   ]));
   let previous = null;
   let revision = 0;
+
+  function activateTab(tab) {
+    const targetId = tab.getAttribute('aria-controls');
+    tabs.forEach(t => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+    });
+    panels.forEach(p => { p.hidden = p.id !== targetId; });
+  }
+
+  tabs.forEach((tab, idx) => {
+    tab.addEventListener('click', () => activateTab(tab));
+    tab.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      const next = tabs[(idx + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+      activateTab(next);
+      next.focus();
+    });
+  });
 
   function readControls() {
     return {
@@ -42,7 +65,9 @@
       }
     }
     for (const field of settings) {
-      const value = data.settings?.[field.dataset.setting];
+      const key = field.dataset.setting;
+      const value = data.settings?.[key];
+      if ((key === 'measure' || key === 'squint') && value === undefined) continue;
       if (field.type === 'checkbox') {
         if (typeof value !== 'boolean') throw new Error('Invalid guide setting');
       } else if (field.type === 'range') {
@@ -70,7 +95,7 @@
     preview.querySelector('.th-empty-preview').hidden = rank > 0;
     action('export').disabled = rank === 0;
 
-    const { pairing, scale, weight, leading, tracking, guide } = project.settings;
+    const { pairing, scale, weight, leading, tracking, measure = '60', guide, squint = false } = project.settings;
     const ratio = Number(scale);
     const base = 16;
     const h3 = base * ratio;
@@ -84,10 +109,18 @@
     preview.style.setProperty('--th-deck-leading', Number(leading) * 0.95);
     preview.style.setProperty('--th-body-leading', leading);
     preview.style.setProperty('--th-body-tracking', tracking + 'px');
-    preview.classList.toggle('show-heat', guide);
+    preview.style.setProperty('--th-measure', measure + 'ch');
+    preview.classList.toggle('show-heat', Boolean(guide));
+    preview.classList.toggle('is-squint', Boolean(squint));
 
     document.getElementById('leading-val').textContent = leading;
     document.getElementById('tracking-val').textContent = tracking + ' px';
+    const measureOut = document.getElementById('measure-val');
+    if (measureOut) {
+      const ch = Number(measure);
+      const hint = ch < 45 ? 'narrow' : ch <= 75 ? 'comfortable' : 'wide';
+      measureOut.textContent = `${ch} ch · ${hint}`;
+    }
     document.getElementById('scale-h1').textContent = h1.toFixed(2) + ' px';
     document.getElementById('scale-h2').textContent = h2.toFixed(2) + ' px';
     document.getElementById('scale-h3').textContent = h3.toFixed(2) + ' px';
@@ -97,7 +130,9 @@
   function apply(project) {
     for (const field of copyFields) field.value = project.copy[field.dataset.copy];
     for (const field of settings) {
-      const value = project.settings[field.dataset.setting];
+      const key = field.dataset.setting;
+      let value = project.settings[key];
+      if (value === undefined) value = defaultSettings[key];
       if (field.type === 'checkbox') field.checked = value;
       else field.value = value;
     }
@@ -137,11 +172,12 @@
 
   action('new').addEventListener('click', () => {
     const copy = Object.fromEntries(copyFields.map(field => [field.dataset.copy, '']));
-    replace({ copy, settings: defaultSettings }, 'Blank project ready. Restore previous draft brings back your last project.');
+    replace({ copy, settings: defaultSettings }, 'Blank project ready. Restore brings back your last project.');
+    activateTab(tabs[1]);
     document.getElementById('copy-title').focus();
   });
   action('sample').addEventListener('click', () => {
-    replace({ copy: sampleCopy, settings: defaultSettings }, 'Sample loaded. Restore previous draft brings back your last project.');
+    replace({ copy: sampleCopy, settings: defaultSettings }, 'Sample loaded. Restore brings back your last project.');
   });
   action('restore').addEventListener('click', () => replace(previous, 'Previous draft restored.'));
 
@@ -158,7 +194,7 @@
         status.textContent = 'The draft changed while the file was opening. Open it again to replace the draft.';
         return;
       }
-      replace(project, 'Project opened. Restore previous draft brings back your last project.');
+      replace(project, 'Project opened. Restore brings back your last project.');
     } catch {
       status.textContent = 'Could not open that file. Choose a valid Typography Hierarchy Studio project.';
     }

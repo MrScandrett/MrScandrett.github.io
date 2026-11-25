@@ -738,9 +738,12 @@
 
   physics({
     id: 'kepler-period-ratio', title: 'Kepler’s third law', match: ['T^2/a^3=constant'], first: 'T^2',
+    scenes: ['orbits'], y: 'the period', init: { a: 2 }, out: ['T', 'years'],
+    f: function (s) { return s.a ** 1.5; },
+    line: function (s) { return 'Around the Sun, T = ' + fmtNum(s.a ** 1.5) + ' years'; },
     tokens: {
       'T^2': { t: 'Orbital period squared', c: 'neutral', role: 'Time for one orbit', is: 'T is the time from one closest approach to the next. Astronomers can also measure it by timing successive crossings in front of a star.', does: 'Square the period before comparing orbits. Around the Sun, a planet with a = 4 AU takes 8 years because 8² equals 4³.' },
-      'a^3': { t: 'Semi-major axis cubed', c: 'neutral', role: 'Size of the orbit', is: 'The semi-major axis a is half the longest diameter of the ellipse.', does: 'Double the orbit size around the same star and a³ grows eightfold. The period grows by the square root of eight, about 2.83 times.' },
+      'a^3': { s: ['a', 0.5, 5, 0.1, 'AU'], x: 'a', t: 'Semi-major axis cubed', c: 'neutral', role: 'Size of the orbit', is: 'The semi-major axis a is half the longest diameter of the ellipse.', does: 'Double the orbit size around the same star and a³ grows eightfold. The period grows by the square root of eight, about 2.83 times.' },
       constant: { t: 'Period-to-size ratio', c: 'const', is: 'Planets whose masses are small compared with their star share this ratio around that star.', does: 'For the Sun the ratio is about 1 in years² per AU³. A more massive star gives a smaller ratio and shorter periods at the same orbit size.' }
     }
   });
@@ -749,15 +752,18 @@
   physics({
     id: 'kepler-third-au', title: 'Kepler’s third law in Earth years and AU',
     match: ['T^2=a^3(T^2/a^3=1)', 'T^2=a^3'], first: 'T^2',
+    scenes: ['orbits'], y: 'the period', init: { a: 2 }, out: ['T', 'years'],
+    f: function (s) { return s.a ** 1.5; },
+    line: function (s) { return 'Around the Sun, T = ' + fmtNum(s.a ** 1.5) + ' years'; },
     tokens: {
       'T^2': { t: 'Orbital period squared', c: 'neutral', role: 'Orbital period', is: 'T is the time for one complete trip around the Sun, measured in Earth years.', does: 'For Mars, a = 1.52 AU so a³ ≈ 3.51 and T ≈ 1.88 years. Keeping the central star the same, a larger orbit always takes longer.' },
-      'a^3': { t: 'Semi-major axis cubed', c: 'neutral', role: 'Orbit size', is: 'a is the average distance from the Sun (half the ellipse’s longest width), measured in AU.', does: 'Make the orbit 4 times as wide (a = 4 AU) and a³ is 64, so T = √64 = 8 Earth years.' },
+      'a^3': { s: ['a', 0.5, 5, 0.1, 'AU'], x: 'a', t: 'Semi-major axis cubed', c: 'neutral', role: 'Orbit size', is: 'a is the average distance from the Sun (half the ellipse’s longest width), measured in AU.', does: 'Make the orbit 4 times as wide (a = 4 AU) and a³ is 64, so T = √64 = 8 Earth years.' },
       '1': { t: 'Solar system ratio (1)', c: 'const', is: 'When you measure T in Earth years and a in AU around our Sun, T² ÷ a³ equals 1.', does: 'For planets orbiting a heavier star, this ratio would be smaller than 1.' }
     }
   });
 
   physics({
-    id: 'kepler-third-solar', title: 'Orbital period around the Sun',
+    id: 'kepler-third-solar', scenes: ['orbits'], title: 'Orbital period around the Sun',
     y: 'the period', first: 'a^3',
     init: { a: 1.5 }, out: ['T', 'years'],
     f: function (s) { return Math.sqrt(Math.pow(s.a, 3)); },
@@ -829,19 +835,19 @@
   });
 
   physics({
-    id: 'thin-lens', title: 'Thin lens equation',
-    match: ['1/f=1/d_o+1/d_i'], y: 'the focal length', first: 'd_o',
-    init: { do: 30, di: 60 }, out: ['f', 'cm'],
-    f: function (s) { return (s.do * s.di) / (s.do + s.di); },
+    id: 'thin-lens', scenes: ['rays'], title: 'Thin lens equation',
+    match: ['1/f=1/d_o+1/d_i'], y: 'the image distance', first: 'd_o',
+    init: { do: 30, f: 20 }, out: ['d_i', 'cm'],
+    f: function (s) { return s.f * s.do / (s.do - s.f); },
     line: function (s) {
-      var fVal = (s.do * s.di) / (s.do + s.di);
-      return '1/' + fmtNum(s.do) + ' + 1/' + fmtNum(s.di) + ' = 1/' + fmtNum(fVal) + ' → f = ' + fmtNum(fVal) + ' cm';
+      if (s.do === s.f) return 'Parallel outgoing rays · image at infinity';
+      return 'd_i = ' + fmtNum(s.f * s.do / (s.do - s.f)) + ' cm';
     },
     tokens: {
       '1': { t: 'Reciprocal (1 over distance)', c: 'const', role: 'Lens power', is: 'Dividing 1 by a distance turns metres into diopters (how strongly a lens bends light).', does: 'Lens powers add directly: object power + image power = lens power.' },
-      f: { t: 'Focal length', c: 'lhs', role: 'Lens strength', is: 'Measure from the lens center to where parallel rays focus, in cm or m.', does: 'A shorter focal length bends light more sharply. For d_o = 30 cm and d_i = 60 cm, f = 20 cm.' },
+      f: { t: 'Focal length', c: 'geo', s: ['f', 5, 60, 1, 'cm'], role: 'Lens strength', is: 'Measure from the lens center to where parallel rays focus, in cm or m.', does: 'A shorter focal length bends light more sharply. For d_o = 30 cm and d_i = 60 cm, f = 20 cm.' },
       'd_o': { t: 'Object distance', c: 'drive', role: 'Object position', is: 'Measure from the object (like a candle) to the lens center.', does: 'Move the object closer to the focal point (shrink d_o) and the focused image moves farther away (d_i grows).', s: ['do', 5, 120, 1, 'cm'] },
-      'd_i': { t: 'Image distance', c: 'drive', role: 'Screen position', is: 'Measure from the lens center to where a sharp image forms on a screen.', does: 'For an object very far away (1/d_o ≈ 0), the image forms right at d_i ≈ f.', s: ['di', 5, 120, 1, 'cm'] }
+      'd_i': { t: 'Image distance', c: 'lhs', role: 'Image position', is: 'A positive distance locates a real image beyond the lens. A negative distance locates a virtual image on the object side.', does: 'For an object very far away (1/d_o ≈ 0), the image forms right at d_i ≈ f.' }
     }
   });
 
@@ -1411,7 +1417,7 @@
   });
 
   physics({
-    id: 'torque-words', title: 'Torque on a lever',
+    id: 'torque-words', scenes: ['lever'], title: 'Torque on a lever',
     match: ['torque=forceperpendiculardistance'], y: 'the torque', first: 'force',
     init: { F: 20, d: 0.5 }, out: ['torque', 'N·m'],
     f: function (s) { return s.F * s.d; },
@@ -1575,7 +1581,7 @@
   });
 
   physics({
-    id: 'rf-wavelength', title: 'Radio wavelength and speed of light',
+    id: 'rf-wavelength', scenes: ['crests'], title: 'Radio wavelength and speed of light',
     match: ['λ=c/fc≈300,000,000m/s', 'λ=c/f'], y: 'the wavelength', first: 'f',
     init: { f: 600 }, out: ['λ', 'm'],
     f: function (s) { return 300 / s.f; },
@@ -1872,11 +1878,28 @@
   });
 
   physics({
+    id: 'pipe-continuity', title: 'Steady flow through a pipe', scenes: ['pipe'],
+    match: ['A_1v_1=A_2v_2','A1v1=A2v2'], y: 'outlet speed', first: 'A_2',
+    init: { area: 2, u: 1 }, out: ['v_2', 'm/s'],
+    f: function (s) { return 4 * s.u / s.area; },
+    line: function (s) { return 'v_2 = ' + fmtNum(4 * s.u / s.area) + ' m/s'; },
+    tokens: {
+      A_1: { t: 'Inlet area', c: 'const', is: 'The inlet opening covers 4 cm² in this model.', does: 'Area times speed gives volume per second.' },
+      A_2: { t: 'Outlet area', c: 'resist', s: ['area', 1, 4, 0.25, 'cm²'], is: 'The outlet cross section seen end-on.', does: 'Halving this area doubles outlet speed at fixed inflow.' },
+      v_1: { t: 'Inlet speed', c: 'drive', s: ['u', 0.5, 2, 0.1, 'm/s'], is: 'Average speed entering the pipe.', does: 'A faster inlet supplies more water per second.' },
+      v_2: { t: 'Outlet speed', c: 'lhs', is: 'Average speed leaving the pipe.', does: 'The outlet carries the same volume per second as the inlet.' }
+    }
+  });
+
+  physics({
     id: 'fluid-continuity', title: 'Incompressible fluid continuity',
-    match: ['∇·u=0', '∇u=0'], first: 'u',
+    match: ['∇·u=0', '∇u=0'], first: 'u', scenes: ['pipe'], y: 'outlet speed',
+    init: { area: 2, u: 1 }, out: ['outlet speed', 'm/s'],
+    f: function (s) { return 4 * s.u / s.area; },
+    line: function (s) { return '4 cm² inlet → 2 cm² outlet: ' + fmtNum(s.u) + ' → ' + fmtNum(2 * s.u) + ' m/s'; },
     tokens: {
       '∇': { t: 'Divergence (∇·)', c: 'op', role: 'Net outflow', is: 'Measures net fluid flow leaving vs. entering each grid cell.', does: 'If more water entered than left, the cell would compress or pile up.' },
-      u: { t: 'Fluid velocity field', c: 'lhs', role: 'Water flow arrows', is: 'Speed and direction of water moving across each grid cell, in m/s.', does: 'When water squeezes into a narrower channel, u must speed up so outflow still equals inflow.' },
+      u: { s: ['u', 0.5, 2, 0.1, 'm/s'], t: 'Fluid velocity field', c: 'lhs', role: 'Water flow arrows', is: 'Speed and direction of water moving across each grid cell, in m/s.', does: 'When water squeezes into a narrower channel, u must speed up so outflow still equals inflow.' },
       '0': { t: 'Zero compression', c: 'const', role: 'Constant volume', is: 'Zero net volume gain or loss in every fluid cell.', does: 'Check any box in the water: inflow per second equals outflow per second.' }
     }
   });
@@ -2850,7 +2873,7 @@
   });
 
   physics({
-    id: 'pendulum-period', title: 'Period of a pendulum', match: ['T=2π√(L/g)'], y: 'the period', first: 'L',
+    id: 'pendulum-period', scenes: ['swings'], title: 'Period of a pendulum', match: ['T=2π√(L/g)'], y: 'the period', first: 'L',
     init: { L: 1, g: 9.8 }, out: ['T', 's'],
     f: function (s) { return 2 * Math.PI * Math.sqrt(s.L / s.g); },
     line: function (s) { return 'T = ' + fmtNum(2 * Math.PI * Math.sqrt(s.L / s.g)) + ' s for one full swing there and back'; },
@@ -3047,7 +3070,7 @@
   (function () {
     var lam = { t: 'Wavelength', c: 'resist', is: 'The length of one complete wave, from one crest to the next, in metres.', does: 'It is on the bottom: at the same wave speed, shorter waves arrive more often, so the frequency is higher. Halve a guitar string and the note rises an octave.', s: ['lam', 0.05, 5, 0.05, 'm'], x: 'λ' };
     physics({
-      id: 'wave-frequency', title: 'Wave frequency', match: ['f=v/lambda', 'f=v/λ'], y: 'the frequency', first: 'v',
+      id: 'wave-frequency', scenes: ['crests'], title: 'Wave frequency', match: ['f=v/lambda', 'f=v/λ', 'v=fλ', 'v=λf'], y: 'the frequency', first: 'v',
       init: { v: 343, lam: 0.8 }, out: ['f', 'Hz'],
       f: function (s) { return s.v / s.lam; },
       line: function (s) { return 'f = ' + fmtNum(s.v) + ' m/s ÷ ' + fmtNum(s.lam) + ' m = ' + fmtNum(s.v / s.lam) + ' Hz'; },
@@ -3079,7 +3102,7 @@
   });
 
   physics({
-    id: 'torque', title: 'Torque', match: ['τ=Frsin(θ)', 'τ=rFsin(θ)', 'τ=Frsinθ'], y: 'the torque', first: 'r', labels: { drive: 'Raises the torque', geo: 'Angle' },
+    id: 'torque', scenes: ['lever'], title: 'Torque', match: ['τ=Frsin(θ)', 'τ=rFsin(θ)', 'τ=Frsinθ'], y: 'the torque', first: 'r', labels: { drive: 'Raises the torque', geo: 'Angle' },
     init: { F: 10, r: 0.3, th: 90 }, out: ['τ', 'N·m'],
     f: function (s) { return s.F * s.r * Math.sin(rad(s.th)); },
     line: function (s) { return 'τ = ' + fmtNum(s.F) + ' N × ' + fmtNum(s.r) + ' m × sin ' + fmtNum(s.th) + '° = ' + fmtNum(s.F * s.r * Math.sin(rad(s.th))) + ' N·m'; },
@@ -3233,7 +3256,7 @@
   (function () {
     var lam = { t: 'Wavelength', c: 'drive', role: 'Trades off with f', is: 'The length of one complete wave, from one crest to the next, in metres.', does: 'Its product with the frequency must always equal c. If the frequency goes up, the wavelength has to shrink by the same factor.' };
     physics({
-      id: 'light-wave-speed', title: 'Speed, wavelength and frequency of light', match: ['c=λf', 'c=fλ', 'c=lambdaf', 'c=flambda'], y: 'the wavelength', first: 'f',
+      id: 'light-wave-speed', scenes: ['crests'], title: 'Speed, wavelength and frequency of light', match: ['c=λf', 'c=fλ', 'c=lambdaf', 'c=flambda'], y: 'the wavelength', first: 'f',
       labels: { drive: 'Trade off: one up, the other down' },
       init: { f: 100 }, out: ['λ', 'm'],
       f: function (s) { return 299.792458 / s.f; },
@@ -3298,9 +3321,33 @@
 
   /* ---- Maths, chemistry and electronics pack (same builder as the physics pack) ---- */
 
+  ['sphere-area', 'sphere-volume'].forEach(function (id) {
+    var volume = id === 'sphere-volume';
+    var symbol = volume ? 'V' : 'A';
+    var power = volume ? 'r^3' : 'r^2';
+    var unit = volume ? 'm³' : 'm²';
+    function measure(s) {
+      return volume ? 4 * Math.PI * s.r ** 3 / 3 : 4 * Math.PI * s.r ** 2;
+    }
+    var tokens = { 'π': PI_TOKEN('Every circular slice through a sphere has area π times its radius squared.') };
+    tokens[symbol] = { t: volume ? 'Enclosed volume' : 'Surface area', c: 'lhs',
+      is: volume ? 'The space inside the spherical shell, measured in cubic metres.' : 'The curved area available to cover with material, measured in square metres.',
+      does: volume ? 'Add the volumes of thin circular slices to approximate the whole interior.' : 'The shell has the same area as four disks of radius r.' };
+    tokens[power] = { t: volume ? 'Radius cubed' : 'Radius squared', c: 'drive',
+      is: 'Measure from the centre to the shell in metres.',
+      does: volume ? 'Doubling the radius makes room for eight times the volume.' : 'Doubling the radius gives four times the surface to cover.',
+      s: ['r', 1, 120, 1, 'm'] };
+    physics({ id: id, title: volume ? 'Volume of a sphere' : 'Surface area of a sphere',
+      match: volume ? ['V=(4/3)πr^3', 'V=4πr^3/3', 'V=4/3πr^3'] : ['A=4πr^2', 'S=4πr^2'],
+      y: volume ? 'volume' : 'area', first: power, init: { r: 60 }, out: [symbol, unit],
+      scenes: [id], tokens: tokens, f: measure,
+      line: function (s) { return symbol + ' = ' + fmtNum(measure(s)) + ' ' + unit; }
+    });
+  });
+
   physics({
     id: 'circle-area', title: 'Area of a circle', match: ['A=πr^2'], y: 'the area', first: 'r^2',
-    init: { r: 3 }, out: ['A', 'cm²'],
+    scenes: ['circle-area'], init: { r: 3 }, out: ['A', 'cm²'],
     f: function (s) { return Math.PI * s.r * s.r; },
     line: function (s) { return 'A = π × (' + fmtNum(s.r) + ' cm)² = ' + fmtNum(Math.PI * s.r * s.r) + ' cm²'; },
     tokens: {
@@ -3312,7 +3359,7 @@
 
   physics({
     id: 'circumference', title: 'Circumference of a circle', match: ['C=2πr'], y: 'the circumference', first: 'r',
-    init: { r: 3 }, out: ['C', 'cm'],
+    scenes: ['circumference'], init: { r: 3 }, out: ['C', 'cm'],
     f: function (s) { return 2 * Math.PI * s.r; },
     line: function (s) { return 'C = 2 × π × ' + fmtNum(s.r) + ' cm = ' + fmtNum(2 * Math.PI * s.r) + ' cm'; },
     tokens: {
@@ -3324,7 +3371,7 @@
   });
 
   physics({
-    id: 'pythagoras', title: 'The Pythagorean theorem', match: ['a^2+b^2=c^2'], y: 'c', first: 'c^2',
+    id: 'pythagoras', scenes: ['squares'], title: 'The Pythagorean theorem', match: ['a^2+b^2=c^2'], y: 'c', first: 'c^2',
     labels: { lhs: 'The longest side', drive: 'The two shorter sides' },
     init: { a: 3, b: 4 }, out: ['c', ''],
     f: function (s) { return Math.sqrt(s.a * s.a + s.b * s.b); },
@@ -5530,6 +5577,251 @@
     if (name && scene && typeof scene.draw === 'function') SCENES[name] = scene;
   }
 
+  ['sphere-area', 'sphere-volume', 'circle-area', 'circumference'].forEach(function (id) {
+    var sphere = id.indexOf('sphere') === 0;
+    var volume = id === 'sphere-volume';
+    var formula = { 'sphere-area': '4πr²', 'sphere-volume': '⁴⁄₃πr³', 'circle-area': 'πr²', circumference: '2πr' }[id];
+    registerScene(id, {
+      label: sphere ? (volume ? 'Slices' : 'Shell') : 'Circle',
+      caption: function () {
+        if (volume) return 'Slice radii shrink toward the poles. Adding disk area × slice thickness approaches the enclosed volume.';
+        if (sphere) return 'The symbols follow the curved outer skin. Doubling the radius quadruples the area to cover.';
+        return id === 'circle-area' ? 'The filled disk shows the area inside the rim.' : 'One trip along the bright rim measures the circumference.';
+      },
+      draw: function (ctx, w, h, env) {
+        var radius = Math.min(w * 0.42, h * 0.43) * env.st.r / env.focus.max;
+        ctx.save();
+        ctx.translate(w / 2, h / 2);
+        ctx.strokeStyle = '#aadbdc';
+        ctx.fillStyle = '#214552';
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+        if (id !== 'circumference') ctx.fill();
+        ctx.stroke();
+        if (sphere) {
+          ctx.font = '9px monospace';
+          ctx.textAlign = 'center';
+          for (var band = -5; band <= 5; band++) {
+            var angle = band * Math.PI / 12;
+            var ring = radius * Math.cos(angle);
+            var y = radius * Math.sin(angle);
+            if (volume) {
+              // Orthographic view tilted 0.25 radians above the equator.
+              ctx.beginPath();
+              ctx.ellipse(0, y * Math.cos(0.25), ring, ring * Math.sin(0.25), 0, 0, Math.PI * 2);
+              ctx.fill(); ctx.stroke();
+            } else {
+              var count = Math.floor(Math.PI * ring / 26);
+              for (var j = 0; j < count; j++) {
+                var lon = (j + 0.5) * Math.PI / count - Math.PI / 2;
+                ctx.save();
+                ctx.translate(ring * Math.sin(lon), y);
+                ctx.scale(Math.cos(lon), Math.cos(angle));
+                ctx.fillStyle = '#e1f3f3';
+                ctx.fillText(formula, 0, 0);
+                ctx.restore();
+              }
+            }
+          }
+        }
+        ctx.strokeStyle = '#ffd485';
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(radius, 0); ctx.stroke();
+        ctx.restore();
+        plotNote(ctx, 'r = ' + fmtNum(env.st.r) + ' ' + env.focus.unit, 12, h - 8, '#ffd485');
+      }
+    });
+  });
+
+  // Sample the actual slider lattice. Isolated symbols preserve gaps and discrete domains.
+  registerScene('samples', {
+    label: 'Equation map',
+    caption: function (env) {
+      return 'Each ' + env.calc.out[0] + ' marks one calculated result. Read left to right as ' + env.focus.sym + ' increases. The bright point uses your settings.';
+    },
+    draw: function (ctx, w, h, env) {
+      var v = env.focus, calc = env.calc, probe = Object.assign({}, env.st);
+      var steps = Math.round((v.max - v.min) / v.step);
+      var count = Math.min(steps, Math.max(8, Math.floor((w - 70) / 13)));
+      var points = [], current = calc.f(probe);
+      function sample(input) {
+        probe[v.param] = input;
+        var output = calc.f(probe);
+        if (Number.isFinite(output)) points.push({ input: input, output: output });
+      }
+      for (var i = 0; i <= count; i++) sample(Math.min(v.max, v.min + Math.round(i * steps / count) * v.step));
+      sample(env.st[v.param]);
+      var values = points.map(function (p) { return p.output; });
+      var low = Math.min.apply(null, values), high = Math.max.apply(null, values);
+      plotTitle(ctx, calc.out.join(' ').trim() + ' versus ' + v.sym, 12);
+      plotAxes(ctx, 52, 33, w - 76, h - 64, v.sym + ' ' + v.unit, calc.out[0]);
+      ctx.font = canvasFont(10);
+      ctx.textAlign = 'center';
+      points.forEach(function (p) {
+        var x = 57 + (w - 90) * (p.input - v.min) / (v.max - v.min);
+        var y = h - 40 - (h - 83) * (high === low ? 0.5 : (p.output - low) / (high - low));
+        ctx.fillStyle = env.color(v.param);
+        ctx.fillText(calc.out[0], x, y, 22);
+        if (p.input === env.st[v.param] && Number.isFinite(current)) plotDot(ctx, x, y - 3);
+      });
+      ctx.textAlign = 'left';
+      if (points.length) {
+        plotNote(ctx, fmtNum(high), 3, high === low ? (h + 3) / 2 : 44, '#dbeafe');
+        if (high !== low) plotNote(ctx, fmtNum(low), 3, h - 40, '#dbeafe');
+      }
+    }
+  });
+
+  // Draw in CSS pixels so labels retain their size as the lesson card reflows.
+  function modelScene(id, label, caption, moving, paint) {
+    registerScene(id, { label: label, moving: moving, caption: function () { return caption; },
+      draw: function (ctx, w, h, e) {
+        var ink = '#95e3ef', gold = '#ffd291';
+        function line(x, y, X, Y, color, width) {
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(X, Y);
+          ctx.lineWidth = width || 2; ctx.strokeStyle = color; ctx.stroke();
+        }
+        function disk(x, y, r, color) {
+          ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fill();
+        }
+        function note(text, x, y) { plotNote(ctx, text, x, y, '#eaf3ff'); }
+        paint(ctx, w, h, e, { line: line, disk: disk, note: note, ink: ink, gold: gold });
+      }
+    });
+  }
+
+  modelScene('orbits', 'Orbits', 'Two circular orbits around one Sun share a clock. The blue planet takes one Earth year. The gold radius is its companion’s semi-major axis.', true,
+    function (ctx, w, h, e, p) {
+      var a = e.st.a, cx = w / 2, cy = h / 2;
+      var scale = Math.min(w * 0.40, h * 0.35) / Math.max(1, a);
+      [1, a].forEach(function (size, i) {
+        var r = size * scale, color = i ? p.gold : p.ink;
+        var angle = e.time * Math.PI / (2 * size ** 1.5) + i * Math.PI / 2;
+        ctx.strokeStyle = color; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.stroke();
+        var x = cx + r * Math.cos(angle), y = cy - r * Math.sin(angle);
+        if (i) p.line(cx, cy, x, y, color, 1);
+        p.disk(x, y, 4, color);
+      });
+      p.disk(cx, cy, 3, '#fff');
+      p.note('a = ' + fmtNum(a) + ' AU    T = ' + fmtNum(a ** 1.5) + ' yr', 10, h - 10);
+    });
+
+  modelScene('lever', 'Lever', 'The dashed line follows the force. The blue segment is the shortest distance from the bolt to that line.', false,
+    function (ctx, w, h, e, p) {
+      var s = e.st, arm = s.r || s.d, angle = rad(s.th === undefined ? 90 : s.th);
+      var x = w * 0.20, y = h * 0.59, length = w * 0.46 * arm / (arm + 0.35);
+      var tip = x + length, ux = Math.cos(angle), uy = -Math.sin(angle);
+      var reach = Math.min(h * 0.4, w * 0.23) * Math.sqrt(s.F / (s.F + 5));
+      ctx.setLineDash([4, 4]); p.line(tip - w * ux, y - w * uy, tip + w * ux, y + w * uy, '#687a91', 1); ctx.setLineDash([]);
+      p.line(x, y, tip, y, '#78899a', 9);
+      p.line(x, y, tip - length * ux * ux, y - length * ux * uy, p.ink, 3);
+      p.disk(x, y, 5, '#fff');
+      drawArrow2D(ctx, tip, y, tip + reach * ux, y + reach * uy, p.gold, 3, 'F');
+      p.note('Perpendicular arm = ' + fmtNum(arm * Math.sin(angle)) + ' m', 10, h - 10);
+    });
+
+  modelScene('rays', 'Light rays', 'The gold ray enters parallel to the axis. The blue ray crosses the lens centre. Dashed extensions meet at a virtual image when the object moves inside the focal point.', false,
+    function (ctx, w, h, e, p) {
+      var s = e.st, di = e.calc.f(s), cx = w / 2, cy = h / 2;
+      var scale = w * 0.42 / Math.max(s.do, s.f, Number.isFinite(di) ? Math.abs(di) : 0);
+      var object = s.do * scale, focal = s.f * scale;
+      var height = h * 0.30 / Math.max(1, Number.isFinite(di) ? Math.abs(di / s.do) : 1);
+      var end = w * 0.47;
+      p.line(4, cy, w - 4, cy, '#6b788b', 1); p.line(cx, 10, cx, h - 22, '#8298b1', 4);
+      p.disk(cx + focal, cy, 3, '#fff'); p.disk(cx - focal, cy, 3, '#fff');
+      p.note('F', cx + focal - 4, cy + 16);
+      p.line(cx - object, cy, cx - object, cy - height, '#fff', 4);
+      p.line(cx - object, cy - height, cx, cy - height, p.gold);
+      p.line(cx, cy - height, cx + end, cy - height + end * height / focal, p.gold);
+      p.line(cx - object, cy - height, cx + end, cy + end * height / object, p.ink);
+      if (Number.isFinite(di)) {
+        var ix = cx + di * scale, iy = cy + di * height / s.do;
+        if (di < 0) {
+          ctx.setLineDash([4, 4]);
+          p.line(cx, cy - height, ix, iy, p.gold); p.line(cx, cy, ix, iy, p.ink); ctx.setLineDash([]);
+        }
+        p.line(ix, cy, ix, iy, '#edacdd', 3); p.disk(ix, iy, 3, '#fff');
+      }
+      p.note(di < 0 ? 'Virtual · upright' : Number.isFinite(di) ? 'Real · inverted' : 'Parallel rays · image at infinity', 10, h - 8);
+    });
+
+  modelScene('pipe', 'Flow', 'Side view of a constant-depth duct. Tracers speed up at the contraction. Each gate passes the same volume per second.', true,
+    function (ctx, w, h, e, p) {
+      var s = e.st, ratio = s.area / 4, mid = h * 0.46, half = h * 0.25;
+      var left = w * 0.37, right = w * 0.57;
+      function widthAt(x) { return 1 - (1 - ratio) * Math.min(1, Math.max(0, (x - left) / (right - left))); }
+      [-1, 1].forEach(function (sign) {
+        [0, left, right].forEach(function (x, i) {
+          var next = [left, right, w][i];
+          p.line(x, mid + sign * half * widthAt(x), next, mid + sign * half * widthAt(next), p.ink);
+        });
+      });
+      // Integrated cross section is proportional to travel time at fixed flow.
+      var throat = (right - left) * (1 + ratio) / 2, total = left + throat + (w - right) * ratio;
+      for (var i = 0; i < 18; i++) {
+        var q = (i * total / 18 + e.time * s.u * w / 5) % total, x = q;
+        if (q > left + throat) x = right + (q - left - throat) / ratio;
+        else if (q > left) x = left + 2 * (q - left) / (1 + Math.sqrt(1 - 2 * (1 - ratio) * (q - left) / (right - left)));
+        p.disk(x, mid + (i % 3 - 1) * half * 0.58 * widthAt(x), 2.8, p.gold);
+      }
+      [w * 0.18, w * 0.80].forEach(function (x) { p.line(x, mid - half * widthAt(x), x, mid + half * widthAt(x), '#d0dae9', 1); });
+      p.note('Both gates: ' + fmtNum(400 * s.u) + ' cm³/s', 10, h - 10);
+    });
+
+  modelScene('squares', 'Squares', 'Each side supports a square. At 3–4–5, count 9 and 16 unit squares on the legs and 25 on the hypotenuse.', false,
+    function (ctx, w, h, e, p) {
+      var a = e.st.a, b = e.st.b;
+      var k = Math.min((w - 24) / (a + 2 * b), (h - 38) / (2 * a + b));
+      ctx.save(); ctx.translate((w - (a + 2*b)*k)/2 + b*k, (h - 20 - (2*a+b)*k)/2 + (a+b)*k);
+      // Counterclockwise triangle in screen space; each outward normal spans its square.
+      var vertices = [[0,0],[a,0],[0,-b]];
+      vertices.forEach(function (v, i) {
+        var n = vertices[(i+1)%3], dx = n[0]-v[0], dy = n[1]-v[1], nx = -dy, ny = dx;
+        var len = Math.hypot(dx,dy);
+        ctx.save(); ctx.transform(k*dx,k*dy,k*nx,k*ny,k*v[0],k*v[1]);
+        ctx.fillStyle = ['#805a33','#38576c','#305e5d'][i]; ctx.fillRect(0,0,1,1);
+        ctx.strokeStyle = '#cedde5'; ctx.lineWidth = 1/(k*len); ctx.strokeRect(0,0,1,1);
+        for (var j=1;j<len-1e-8;j++) {
+          var t=j/len; ctx.beginPath(); ctx.moveTo(t,0); ctx.lineTo(t,1); ctx.moveTo(0,t); ctx.lineTo(1,t); ctx.stroke();
+        }
+        ctx.restore();
+      });
+      ctx.restore(); p.note(fmtNum(a*a)+' + '+fmtNum(b*b)+' = '+fmtNum(a*a+b*b)+' square units',10,h-8);
+    });
+
+  modelScene('swings', 'Pendulums', 'Both bobs start at 10° under the same gravity. Compare a one-metre reference (blue) with the selected length (gold).', true,
+    function (ctx, w, h, e, p) {
+      var s = e.st, scale = h * 0.65 / Math.max(1,s.L);
+      [1,s.L].forEach(function (length,i) {
+        var x=w*(i ? 0.7 : 0.28), y=h*0.12, color=i?p.gold:p.ink;
+        var angle=rad(10)*Math.cos(e.time*Math.sqrt(s.g/length));
+        var bx=x+scale*length*Math.sin(angle), by=y+scale*length*Math.cos(angle);
+        p.line(x-12,y,x+12,y,'#aab8c7',3); p.line(x,y,bx,by,color); p.disk(bx,by,6,color);
+        p.note(fmtNum(length)+' m',x-12,h-10);
+      });
+    });
+
+  modelScene('crests', 'Wave', 'The gold mark follows one crest. The vertical detector stays fixed. The bracket spans one full wavelength. Motion is shown in slow time.', true,
+    function (ctx,w,h,e,p) {
+      var s=e.st, lambda=s.lam || e.calc.f(s), speed=s.v || lambda*s.f*1e6;
+      var reference=e.calc.vars.find(function(v){return v.param==='f';});
+      var span = s.lam ? 6 : speed / (reference.min * 1e6) * 1.1;
+      var wavelength=w*lambda/span, mid=h*0.55, amp=h*0.19;
+      var time=e.time*(s.lam ? 0.001 : 1e-9);
+      var phase=(speed*time/span*w)%wavelength;
+      ctx.beginPath();
+      for(var x=0;x<=w;x++) {
+        var y=mid-amp*Math.cos(2*Math.PI*(x-phase)/wavelength);
+        if(x) ctx.lineTo(x,y); else ctx.moveTo(x,y);
+      }
+      ctx.strokeStyle=p.ink; ctx.lineWidth=2; ctx.stroke();
+      p.line(w*0.78,h*0.25,w*0.78,h*0.88,'#97a6b6',1);
+      p.disk((speed*time/span*w)% (Math.ceil(w/wavelength)*wavelength),mid-amp,4,p.gold);
+      var bracket = phase + wavelength <= w ? phase : phase - wavelength;
+      p.line(bracket,h*0.19,bracket+wavelength,h*0.19,p.gold);
+      p.note('λ = '+fmtNum(lambda)+' m',10,h-8);
+    });
+
   registerScene('graph', {
     label: 'Graph',
     draw: function (ctx, w, h, env) {
@@ -6094,7 +6386,7 @@
         });
         Object.keys(simState).forEach(function (k) { start[k] = simState[k]; });
         var focus = vars[0];
-        var sceneNames = (calc.scenes || []).concat(['graph', 'bars']).filter(function (name, i, all) { return SCENES[name] && all.indexOf(name) === i; });
+        var sceneNames = (calc.scenes || []).concat(['graph', 'samples', 'bars']).filter(function (name, i, all) { return SCENES[name] && all.indexOf(name) === i; });
         var view = sceneNames[0];
         var labId = 'cos-fx-lab-' + (++uid);
 
@@ -6173,6 +6465,7 @@
             card(1, e);
           nextEl.style.setProperty('--fx-token-color', COLOR_MAP[roleOf[focus.param]] || COLOR_MAP.neutral);
           var scene = SCENES[view];
+          canvas.style.touchAction = view === 'squares' || (view === 'lever' && simState.th !== undefined) ? 'none' : '';
           var cap = scene.caption ? scene.caption(e) : '';
           captionEl.innerHTML = mathHtml(cap);
           canvas.setAttribute('aria-label', (calc.line ? calc.line(simState) : cap).replace(/_/g, ' '));
@@ -6195,6 +6488,36 @@
             refresh();
           });
         });
+        function changeParameter(param, value) {
+          var variable = vars.find(function (v) { return v.param === param; });
+          if (!variable) return;
+          var snapped = variable.min + Math.round((value - variable.min) / variable.step) * variable.step;
+          simState[param] = Math.max(variable.min, Math.min(variable.max, Number(snapped.toFixed(6))));
+          focus = variable;
+        }
+        function dragModel(event) {
+          var box = canvas.getBoundingClientRect();
+          var x = event.clientX - box.left, y = event.clientY - box.top;
+          if (view === 'lever' && simState.th !== undefined) {
+            var tip = box.width * (0.20 + 0.46 * simState.r / (simState.r + 0.35));
+            changeParameter('th', Math.atan2(Math.max(0, box.height * 0.59 - y), x - tip) * 180 / Math.PI);
+          } else if (view === 'squares' && dragStart) {
+            changeParameter('a', dragStart.a + (x - dragStart.x) / dragStart.scale);
+            changeParameter('b', dragStart.b - (y - dragStart.y) / dragStart.scale);
+          } else return;
+          refresh();
+        }
+        var dragStart = null;
+        canvas.addEventListener('pointerdown', function (event) {
+          if (view !== 'squares' && !(view === 'lever' && simState.th !== undefined)) return;
+          var box = canvas.getBoundingClientRect(), a = simState.a, b = simState.b;
+          dragStart = { x: event.clientX - box.left, y: event.clientY - box.top, a: a, b: b,
+            scale: Math.min((box.width - 24) / (a + 2*b), (box.height - 38) / (2*a + b)) };
+          canvas.setPointerCapture(event.pointerId);
+          dragModel(event);
+        });
+        canvas.addEventListener('pointermove', function (event) { if (dragStart) dragModel(event); });
+        canvas.addEventListener('lostpointercapture', function () { dragStart = null; });
         nextEl.addEventListener('click', function (ev) {
           var btn = ev.target.closest ? ev.target.closest('button.cos-fx-next-card') : null;
           if (!btn) return;
@@ -6221,7 +6544,12 @@
         lab = {
           refresh: refresh,
           select: function (seg) { var p = paramOf(seg); if (p) setFocus(p); refresh(); },
-          draw: function (ctx, cw, ch) { SCENES[view].draw(ctx, cw, ch, env()); }
+          moving: function () { return SCENES[view].moving; },
+          draw: function (ctx, cw, ch, time) {
+            var e = env();
+            e.time = time;
+            SCENES[view].draw(ctx, cw, ch, e);
+          }
         };
       })();
     }
@@ -6233,7 +6561,7 @@
       var vType = visualOf(seg);
       if (!lab && vType === 'none') return;
       var rect = canvas.getBoundingClientRect();
-      var cw = Math.max(260, Math.round(rect.width || 360));
+      var cw = Math.max(1, Math.round(rect.width || 360));
       var ch = Math.max(175, Math.round(rect.height || 225));
       var dpr = Math.min(2, window.devicePixelRatio || 1);
       if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
@@ -6251,7 +6579,7 @@
       var mode3d = has3D(vType) && viewMode === '3d';
 
       if (lab) {
-        lab.draw(ctx, cw, ch);
+        lab.draw(ctx, cw, ch, elapsed);
       } else if (vType.indexOf('stokes-') === 0) {
         if (mode3d) {
           drawStokes3D(ctx, cw, ch, elapsed, yaw, pitch, vType, simState, accentHex);
@@ -6272,7 +6600,7 @@
       ctx.restore();
 
       // Only the moving 3D scenes need a frame loop; graphs redraw when something changes.
-      var animated = mode3d && (vType.indexOf('stokes-') === 0 || vType === 'fluid-ns-3d');
+      var animated = lab ? lab.moving() : mode3d && (vType.indexOf('stokes-') === 0 || vType === 'fluid-ns-3d');
       if (animated && !reducedMotion && !panel.hidden) rafId = nextFrame(drawFrame);
     }
 

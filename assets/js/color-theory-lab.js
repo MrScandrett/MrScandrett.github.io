@@ -10,6 +10,51 @@
     s /= 100; v /= 100;
     return [5, 3, 1].map(n => { const k = (n + h / 60) % 6; return Math.round((v - v * s * Math.max(0, Math.min(k, 4 - k, 1))) * 255); });
   }
+
+  // Studio tabs: Color Harmony Studio, Paint Mixing Table, 3D CIELAB Space
+  const studioTabs = [...document.querySelectorAll('.color-studio-tabs [role="tab"]')];
+  const studioPanels = [...document.querySelectorAll('.color-studio-panel[role="tabpanel"]')];
+  let volumeView = null;
+  let drawnLightness = null;
+
+  function activateStudioTab(tab) {
+    const id = tab.getAttribute('aria-controls');
+    studioTabs.forEach(t => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+    });
+    studioPanels.forEach(p => { p.hidden = p.id !== id; });
+    if (id === 'lab-space') {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new Event('resize'));
+        renderLab();
+      });
+    }
+  }
+
+  studioTabs.forEach((tab, idx) => {
+    tab.addEventListener('click', () => activateStudioTab(tab));
+    tab.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      const next = studioTabs[(idx + (e.key === 'ArrowRight' ? 1 : -1) + studioTabs.length) % studioTabs.length];
+      activateStudioTab(next);
+      next.focus();
+    });
+  });
+
+  document.querySelectorAll('.lab-route a[data-studio-tab]').forEach(link => {
+    link.addEventListener('click', e => {
+      const targetTab = document.querySelector(`.color-studio-tabs [aria-controls="${link.dataset.studioTab}"]`);
+      if (targetTab) {
+        e.preventDefault();
+        activateStudioTab(targetTab);
+        document.querySelector('.color-studio-shell')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
   let paints = [];
   const paintButtons = [...document.querySelectorAll('[data-paint]')];
   function updatePaint() {
@@ -40,17 +85,17 @@
     $('paint-result').classList.remove('mixed'); void $('paint-result').offsetWidth; $('paint-result').classList.add('mixed');
     $('mix-status').textContent = `${paints[0]} + ${paints[1]} = ${result}. What would you name your new color?`;
   });
+
   // CIELAB (D65) to sRGB. Out-of-gamut values are flagged before clipping.
   function labToRgb(l, a, b) {
     const fy = (l + 16) / 116, fx = fy + a / 500, fz = fy - b / 200;
     const inverse = t => t ** 3 > 216 / 24389 ? t ** 3 : (116 * t - 16) / (24389 / 27);
     const x = .95047 * inverse(fx), y = inverse(fy), z = 1.08883 * inverse(fz);
-    const linear = [3.2404542*x - 1.5371385*y - .4985314*z, -.969266*x + 1.8760108*y + .041556*z, .0556434*x - .2040259*y + 1.0572252*z];
+    const linear = [3.2404542 * x - 1.5371385 * y - .4985314 * z, -.969266 * x + 1.8760108 * y + .041556 * z, .0556434 * x - .2040259 * y + 1.0572252 * z];
     const gamut = linear.every(c => c >= -0.00001 && c <= 1.00001);
-    return { gamut, rgb: linear.map(c => Math.round(255 * Math.max(0, Math.min(1, c <= .0031308 ? 12.92*c : 1.055*Math.pow(c, 1/2.4)-.055)))) };
+    return { gamut, rgb: linear.map(c => Math.round(255 * Math.max(0, Math.min(1, c <= .0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - .055)))) };
   }
   const labCanvas = $('lab-map'), labContext = labCanvas.getContext('2d');
-  let drawnLightness = null, volumeView = null;
   function renderLab() {
     const l = Number($('lab-lightness').value), a = Number($('lab-a').value), b = Number($('lab-b').value);
     ['lightness', 'a', 'b'].forEach(id => { $('lab-' + id + '-out').value = $('lab-' + id).value; });
@@ -60,11 +105,10 @@
         const color = labToRgb(l, x / (labCanvas.width - 1) * 200 - 100, 100 - y / (labCanvas.height - 1) * 200);
         const i = (y * labCanvas.width + x) * 4;
         const shade = !color.gamut && (x + y) % 12 < 4 ? .65 : 1;
-        color.rgb.forEach ( (v, channel) => { image.data[i + channel] = v * shade; }); image.data[i + 3] = 255;
+        color.rgb.forEach((v, channel) => { image.data[i + channel] = v * shade; }); image.data[i + 3] = 255;
       }
       labContext.putImageData(image, 0, 0); drawnLightness = l;
     } else {
-      // Redraw the cached slice to erase the previous selection marker.
       labContext.putImageData(labContext._slice, 0, 0);
     }
     if (!labContext._slice || labContext._sliceL !== l) { labContext._slice = labContext.getImageData(0, 0, labCanvas.width, labCanvas.height); labContext._sliceL = l; }
@@ -99,6 +143,7 @@
     $('lab-turn').disabled = true;
     $('lab-view-reset').disabled = true;
   });
+
   $('reveal').addEventListener('click', () => {
     const connected = $('reveal').getAttribute('aria-pressed') !== 'true';
     $('reveal').setAttribute('aria-pressed', String(connected));
@@ -126,6 +171,7 @@
   document.querySelectorAll('[data-rgb]').forEach(button => button.addEventListener('click', () => {
     button.dataset.rgb.split(',').forEach((v, i) => { $(['red', 'green', 'blue'][i]).value = v; }); renderLight();
   }));
+
   const schemes = {
     analogous: { offsets: [-30, 0, 30], note: 'Neighbors: −30°, 0°, +30° from your base hue.' },
     complementary: { offsets: [0, 180], note: 'Opposites: two hues separated by 180° on this RGB wheel.' },
@@ -160,6 +206,11 @@
     swatches($('swatches'), palette);
     const scene = $('mood-scene');
     [0, 1, 2].forEach(i => scene.style.setProperty('--scene-' + i, palette[i % palette.length].hex));
+    const pairRatio = contrast(palette[0].rgb, palette[palette.length - 1].rgb);
+    const badge = $('palette-contrast-badge');
+    if (badge) {
+      badge.textContent = `Pair 1↔${palette.length}: ${pairRatio.toFixed(2)}:1`;
+    }
   }
   ['hue', 'sat', 'val', 'harmony'].forEach(id => $(id).addEventListener('input', renderPalette));
   const moods = {
@@ -177,13 +228,18 @@
   $('save-palette').addEventListener('click', () => {
     saved = { colors: palette.map(c => ({ ...c })), scheme: $('harmony').selectedOptions[0].textContent, s: $('sat').value, v: $('val').value };
     swatches($('saved-swatches'), saved.colors);
-    $('saved-palette').textContent = `Saved: ${saved.scheme}, S ${saved.s}%, V ${saved.v}%. Live palette remains on the left.`;
+    $('saved-palette').textContent = `Saved: ${saved.scheme}, S ${saved.s}%, V ${saved.v}%.`;
     $('save-palette').textContent = 'Replace saved comparison';
+  });
+  $('test-in-contrast')?.addEventListener('click', () => {
+    $('ink').value = palette[0].hex;
+    $('paper').value = palette[palette.length - 1].hex;
+    renderContrast();
+    $('contrast')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   function renderContrast() {
     const ink = $('ink').value, paper = $('paper').value, ratio = contrast(unhex(ink), unhex(paper));
     $('type-preview').style.color = ink; $('type-preview').style.background = paper;
-    // Never round up a failing ratio when determining conformance.
     $('ratio').textContent = (Math.floor(ratio * 100) / 100).toFixed(2) + ':1';
     $('contrast-result').textContent = ratio >= 4.5 ? 'Passes AA contrast for normal and large text.' : ratio >= 3 ? 'Passes AA for large text only. The smaller sample text fails.' : 'Below AA for both normal and large text.';
     $('pair-values').textContent = `Text ${ink.toUpperCase()} / background ${paper.toUpperCase()}. Relative luminance: ${luminance(unhex(ink)).toFixed(3)} / ${luminance(unhex(paper)).toFixed(3)}. Ratio shown to two decimals, rounded down.`;

@@ -518,7 +518,7 @@ test('Formula packs: common physics, maths and electronics formulas get hand-wri
     assert.equal(await newton.locator('.cos-fx-lab-row[data-param="m"] input').inputValue(), '4');
     await newton.locator('.cos-fx-lab-reset').click();
     assert.equal(await newton.locator('.cos-fx-lab-result').textContent(), 'F = 2 kg × 3 m/s² = 6 N');
-    assert.deepEqual(await newton.locator('.cos-fx-mode-btn').allInnerTexts(), ['Graph', 'Sizes'], 'computed formulas offer the graph and the bars, no 3D toggle');
+    assert.deepEqual(await newton.locator('.cos-fx-mode-btn').allInnerTexts(), ['Graph', 'Equation map', 'Sizes'], 'computed formulas offer the graph, the equation map and the bars, no 3D toggle');
     await newton.locator('.cos-fx-mode-btn[data-view="graph"]').click();
     const painted = await newton.locator('canvas').evaluate((c) => {
       const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
@@ -632,7 +632,7 @@ test('The lab: beat rate, absolute values, word names and plain arithmetic formu
     await beats.locator('.cos-fx-toggle-btn').click();
     assert.equal(await beats.locator('.cos-fx-title').textContent(), 'Right-ear tone');
     assert.equal(await result('beats'), 'Beat rate = |224 − 220| = 4 Hz');
-    assert.deepEqual(await beats.locator('.cos-fx-mode-btn').allInnerTexts(), ['Picture', 'Graph', 'Sizes']);
+    assert.deepEqual(await beats.locator('.cos-fx-mode-btn').allInnerTexts(), ['Picture', 'Graph', 'Equation map', 'Sizes']);
     assert.deepEqual(await cards('beats'), [
       '▼ Lower fright to 220 Hz Beat rate = 0 Hz drops to zero',
       'Now: fright = 224 Hz Beat rate = 4 Hz',
@@ -708,7 +708,7 @@ test('The lab: beat rate, absolute values, word names and plain arithmetic formu
       fx.upgrade(box);
     });
     await page.locator('#custom .cos-fx-toggle-btn').click();
-    assert.deepEqual(await page.locator('#custom .cos-fx-mode-btn').allInnerTexts(), ['Mine', 'Graph', 'Sizes']);
+    assert.deepEqual(await page.locator('#custom .cos-fx-mode-btn').allInnerTexts(), ['Mine', 'Graph', 'Equation map', 'Sizes']);
     assert.deepEqual(await page.evaluate(() => window.__sceneEnv), { st: { z: 3 }, focus: 'z', low: 2, high: 6 });
     assert.deepEqual(errors, []);
   } finally {

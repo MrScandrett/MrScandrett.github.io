@@ -396,6 +396,17 @@
       color: #3a1f1f;
       line-height: 1.55;
     }
+    .homeo-page .ll-breadcrumb { margin: 0; color: #5a3a3a; }
+    .homeo-page .ll-breadcrumb a { color: #a12f2f; }
+    .homeo-page .ll-crumb-current { color: #3a1f1f; font-weight: 600; }
+    .homeo-presets { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 0.95rem; }
+    .homeo-quiz-list { display: grid; gap: 0.85rem; margin-bottom: 1rem; }
+    .homeo-quiz-item { background: #fff9f7; border: 1px solid #d9b3ac; border-radius: 14px; padding: 0.95rem 1rem; }
+    .homeo-quiz-item.is-correct { background: #eef8ef; border-color: #6bc47e; }
+    .homeo-quiz-item.is-wrong { background: #fdf1f0; border-color: #d97a73; }
+    .homeo-quiz-q { margin: 0 0 0.6rem; font-size: 0.94rem; color: #3a1f1f; }
+    .homeo-quiz-opts { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .homeo-quiz-fb { margin: 0.55rem 0 0; font-size: 0.86rem; color: #4d3535; min-height: 1.2em; }
 
     @media (max-width: 900px) {
       .homeo-loop { grid-template-columns: repeat(2, 1fr); }
@@ -436,6 +447,13 @@
      SECTION 1 — HERO
      ════════════════════════════════════════════════════════════ -->
 <div class="homeo-shell">
+
+  <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+    <a href="../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+    <a href="../../steam-lessons.html">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+    <a href="../../steam-lessons.html#module-lifesci">Life Sciences</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+    <span class="ll-crumb-current" aria-current="page">Homeostasis &amp; Body Systems</span>
+  </nav>
 
   <div class="homeo-hero">
     <div class="homeo-card">
@@ -586,15 +604,21 @@
     <h2 class="homeo-h2">Lab: Thermoregulation Feedback Loop</h2>
     <p class="homeo-p">
       Predict what will happen to the temperature trace if you change one condition.
-      Set ambient temperature, exercise, or clothing; then watch this simplified model
-      respond around a <strong>37°C target</strong>. Pause to compare its numbers.
-      Reset with the same settings and switch feedback off to compare a second trial.
+      Set ambient temperature, exercise, clothing, or switch the hypothalamus setpoint to <strong>Fever (38.8°C)</strong>; then watch this simplified model
+      respond. Pause to compare its numbers, or switch feedback off to compare a second trial.
     </p>
+    <div class="homeo-presets" role="group" aria-label="Thermoregulation scenario presets">
+      <button type="button" class="homeo-btn" data-thermo-preset="resting">Resting Room</button>
+      <button type="button" class="homeo-btn" data-thermo-preset="winter">Winter Sprint</button>
+      <button type="button" class="homeo-btn" data-thermo-preset="heatwave">Heat Wave</button>
+      <button type="button" class="homeo-btn" data-thermo-preset="fever">Fever Onset</button>
+    </div>
     <div class="homeo-sim-layout">
       <div class="homeo-canvas-wrap">
         <canvas id="thermoCanvas" width="760" height="360" role="img" aria-label="Model core temperature over simulated time; numerical readings and samples follow below" aria-describedby="homeoModelNote"></canvas>
         <div class="homeo-readout" id="thermoReadout">
           Core Temp <span class="big" id="tempVal">37.0°C</span><br/>
+          Setpoint: <span id="setpointVal">37.0°C</span><br/>
           Status: <span id="statusVal">Stable</span><br/>
           Response: <span id="responseVal">None</span>
         </div>
@@ -612,20 +636,21 @@
           <label for="clothingSlider">Clothing / Insulation <span id="clothingLbl">Medium</span></label>
           <input type="range" id="clothingSlider" min="0" max="2" step="1" value="1" />
         </div>
-        <button class="homeo-btn primary" id="feedbackToggleBtn" aria-pressed="true">Feedback Loop: ON</button>
-        <button class="homeo-btn" id="pausePlayBtn">Pause</button>
-        <button class="homeo-btn" id="resetThermoBtn">Reset Simulation</button>
+        <button class="homeo-btn" id="feverToggleBtn" type="button" aria-pressed="false">Setpoint: Normal (37.0°C)</button>
+        <button class="homeo-btn primary" id="feedbackToggleBtn" type="button" aria-pressed="true">Feedback Loop: ON</button>
+        <button class="homeo-btn" id="pausePlayBtn" type="button">Pause</button>
+        <button class="homeo-btn" id="resetThermoBtn" type="button">Reset Simulation</button>
         <div class="homeo-legend">
           <span class="swatch" style="background:#c23b3b"></span><strong>Line</strong>: core temperature<br/>
-          <span class="swatch" style="background:rgba(143,227,161,0.35)"></span><strong>Band</strong>: model target band (36.5–37.5°C)<br/>
+          <span class="swatch" style="background:rgba(143,227,161,0.35)"></span><strong>Band</strong>: model target band (±0.5°C)<br/>
           The high and low alerts are model markers, not clinical thresholds.
         </div>
       </div>
     </div>
     <div class="homeo-data">
-      <p id="homeoModelNote"><strong>Model limits:</strong> This classroom model uses one target and simple heat gains and losses. It omits humidity, hydration, blood flow details, acclimatization, and changing fever setpoints. Its simulated minutes and alerts are not medical measurements.</p>
+      <p id="homeoModelNote"><strong>Model limits:</strong> This classroom model uses simplified heat gains and losses. It omits humidity, hydration, blood flow details, and acclimatization. Its simulated minutes and alerts are not medical measurements.</p>
       <p id="thermoText" role="status">At the start: 37.0°C, feedback on, no response.</p>
-      <details><summary>Temperature samples in text</summary><table><caption>Simulated core temperature about every five model minutes</caption><thead><tr><th scope="col">Model minute</th><th scope="col">Core temperature</th><th scope="col">Feedback</th><th scope="col">Response</th></tr></thead><tbody id="thermoSamples"></tbody></table></details>
+      <details><summary>Temperature samples in text</summary><table><caption>Simulated core temperature about every five model minutes</caption><thead><tr><th scope="col">Model minute</th><th scope="col">Core temperature</th><th scope="col">Target</th><th scope="col">Feedback</th><th scope="col">Response</th></tr></thead><tbody id="thermoSamples"></tbody></table></details>
     </div>
   </div>
 
@@ -639,7 +664,7 @@
       <div class="homeo-case-card">
         <span class="tag">Immune Response</span>
         <h3>Fever: A Loop With a New Setpoint</h3>
-        <p>During many infections, immune signals raise the temperature target. Shivering and narrowed skin blood vessels can make you feel cold while temperature rises. Fever is a regulated response, but it can also be dangerous; the temperature model above does not simulate a changing target.</p>
+        <p>During many infections, immune signals raise the hypothalamus temperature target. Shivering and narrowed skin blood vessels can make you feel cold while temperature rises toward the new setpoint. Test <strong>Fever Onset</strong> or the <strong>Setpoint: Fever (38.8°C)</strong> toggle in the simulator above to watch shivering actively drive core temperature upward.</p>
       </div>
       <div class="homeo-case-card">
         <span class="tag">Respiratory-Nervous Loop</span>
@@ -664,7 +689,9 @@
      ════════════════════════════════════════════════════════════ -->
 
   <div class="homeo-card">
-    <h2 class="homeo-h2">Discussion &amp; Formative Check</h2>
+    <h2 class="homeo-h2">Feedback Loop Check &amp; Discussion</h2>
+    <div class="homeo-quiz-list" id="homeoScenarioQuiz"></div>
+    <p class="homeo-p" id="homeoScenarioScore" style="font-weight:700;margin-bottom:1rem;" aria-live="polite"></p>
     <ul class="homeo-reflect-list">
       <li>Label the four steps of the negative feedback loop (stimulus, sensor, control center, effector) for what happens when you get overheated during recess. What plays each role?</li>
       <li>Predict the result of switching feedback off under one setting. Record the temperature after five model minutes in each trial. What changed, and which part of the model caused it?</li>
@@ -678,271 +705,7 @@
 </div><!-- /.homeo-shell -->
 
 <script src="../../assets/js/sim-kit.js"></script>
-<script>
-(function () {
-  'use strict';
-
-  var canvas = document.getElementById('thermoCanvas');
-  var wrap = canvas.parentElement;
-  var tempValEl = document.getElementById('tempVal');
-  var statusValEl = document.getElementById('statusVal');
-  var responseValEl = document.getElementById('responseVal');
-  var textEl = document.getElementById('thermoText');
-  var samplesEl = document.getElementById('thermoSamples');
-
-  var SETPOINT = 37.0;
-  var BAND_LOW = 36.5;
-  var BAND_HIGH = 37.5;
-  var HYPER_LIMIT = 40.0;
-  var HYPO_LIMIT = 34.0;
-
-  var ambientTemp = 20;
-  var exercise = 0;      // 0-100
-  var clothing = 1;      // 0=light, 1=medium, 2=heavy
-  var feedbackOn = true;
-  var running = true;
-
-  var coreTemp = 37.0;
-  var history = [];       // {t, temp}
-  var elapsed = 0;
-  var nextSample = 5;
-  var responseLabel = 'None';
-
-  var clothingLabels = ['Light', 'Medium', 'Heavy'];
-  var clothingInsulation = [0.4, 1.0, 1.7]; // multiplier that dampens heat loss/gain to ambient
-
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-  function stepSimulation(dt) {
-    // Simulated "minutes" pass faster than real seconds for a livelier chart.
-    var simDt = dt * 6;
-    elapsed += simDt;
-
-    // Passive heat exchange with environment (Newton's law of cooling style)
-    var insulation = clothingInsulation[clothing];
-    var ambientPull = (ambientTemp - coreTemp) * 0.006 / insulation;
-    var restingHeat = 0.102; // balances passive loss at 20°C with medium insulation
-
-    // Metabolic heat from exercise
-    var exerciseHeat = (exercise / 100) * 0.09;
-
-    var delta = ambientPull + restingHeat + exerciseHeat;
-
-    if (feedbackOn) {
-      var error = coreTemp - SETPOINT;
-      if (error > 0.15) {
-        // Too hot: sweating + vasodilation resist further rise and pull down
-        var strength = clamp(error * 0.35, 0, 0.14);
-        delta -= strength;
-        responseLabel = error > 1.5 ? 'Heavy sweating + vasodilation' : 'Sweating + vasodilation';
-      } else if (error < -0.15) {
-        // Too cold: shivering + vasoconstriction generate/conserve heat
-        var strength2 = clamp(-error * 0.35, 0, 0.14);
-        delta += strength2;
-        responseLabel = error < -1.5 ? 'Shivering hard + vasoconstriction' : 'Mild shivering + vasoconstriction';
-      } else {
-        responseLabel = 'None (within setpoint band)';
-      }
-    } else {
-      responseLabel = 'Disabled — no correction';
-    }
-
-    coreTemp = clamp(coreTemp + delta * simDt, 25, 45);
-
-    history.push({ t: elapsed, temp: coreTemp });
-    if (elapsed >= nextSample) {
-      addSample();
-      nextSample += 5;
-    }
-    var maxHistorySeconds = 180;
-    while (history.length && (elapsed - history[0].t) > maxHistorySeconds) {
-      history.shift();
-    }
-  }
-
-  function statusFor(temp) {
-    if (temp >= HYPER_LIMIT) return { label: 'Very high in model', cls: 'high' };
-    if (temp > BAND_HIGH) return { label: 'Elevated', cls: 'high' };
-    if (temp <= HYPO_LIMIT) return { label: 'Very low in model', cls: 'low' };
-    if (temp < BAND_LOW) return { label: 'Low', cls: 'low' };
-    return { label: 'Stable', cls: 'stable' };
-  }
-
-  function updateReadout() {
-    var st = statusFor(coreTemp);
-    tempValEl.textContent = coreTemp.toFixed(1) + '°C';
-    tempValEl.className = 'big ' + st.cls;
-    statusValEl.textContent = st.label;
-    statusValEl.className = st.cls;
-    responseValEl.textContent = responseLabel;
-  }
-
-  function describeState() {
-    textEl.textContent = 'Model minute ' + elapsed.toFixed(1) + ': core temperature ' + coreTemp.toFixed(1) + '°C, ' + statusFor(coreTemp).label.toLowerCase() + '. Feedback ' + (feedbackOn ? 'on' : 'off') + '. Simulation ' + (running ? 'running' : 'paused') + '. Response: ' + responseLabel + '.';
-  }
-
-  function addSample() {
-    var row = document.createElement('tr');
-    [elapsed.toFixed(1), coreTemp.toFixed(1) + '°C', feedbackOn ? 'On' : 'Off', responseLabel].forEach(function (value) {
-      var cell = document.createElement('td');
-      cell.textContent = value;
-      row.appendChild(cell);
-    });
-    samplesEl.appendChild(row);
-    while (samplesEl.rows.length > 20) samplesEl.deleteRow(0);
-    describeState();
-  }
-
-  function render(ctx, w, h) {
-    var colors = SimKit.theme.colors();
-
-    ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#1a1210';
-    ctx.fillRect(0, 0, w, h);
-
-    var padL = 46, padR = 14, padT = 14, padB = 26;
-    var plotW = w - padL - padR;
-    var plotH = h - padT - padB;
-
-    var tMin = 25, tMax = 45;
-    function yForTemp(temp) {
-      var t = clamp((temp - tMin) / (tMax - tMin), 0, 1);
-      return padT + (1 - t) * plotH;
-    }
-
-    // Gridlines + axis labels
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.fillStyle = 'rgba(255,225,215,0.55)';
-    ctx.font = '10px IBM Plex Mono, monospace';
-    ctx.textAlign = 'right';
-    for (var gt = 25; gt <= 45; gt += 5) {
-      var gy = yForTemp(gt);
-      ctx.beginPath();
-      ctx.moveTo(padL, gy);
-      ctx.lineTo(w - padR, gy);
-      ctx.stroke();
-      ctx.fillText(gt + '°', padL - 6, gy + 3);
-    }
-
-    // Healthy band
-    ctx.fillStyle = 'rgba(143, 227, 161, 0.18)';
-    var yHigh = yForTemp(BAND_HIGH);
-    var yLow = yForTemp(BAND_LOW);
-    ctx.fillRect(padL, yHigh, plotW, yLow - yHigh);
-    ctx.strokeStyle = 'rgba(143, 227, 161, 0.5)';
-    ctx.setLineDash([4, 3]);
-    ctx.beginPath();
-    ctx.moveTo(padL, yForTemp(SETPOINT));
-    ctx.lineTo(w - padR, yForTemp(SETPOINT));
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Danger zones
-    ctx.fillStyle = 'rgba(255, 138, 118, 0.10)';
-    ctx.fillRect(padL, padT, plotW, yForTemp(HYPER_LIMIT) - padT);
-    ctx.fillRect(padL, yForTemp(HYPO_LIMIT), plotW, (padT + plotH) - yForTemp(HYPO_LIMIT));
-
-    // Temperature trace
-    if (history.length > 1) {
-      var tStart = history[0].t;
-      var tEnd = history[history.length - 1].t;
-      var span = Math.max(1, tEnd - tStart);
-      ctx.beginPath();
-      for (var i = 0; i < history.length; i++) {
-        var pt = history[i];
-        var x = padL + ((pt.t - tStart) / span) * plotW;
-        var y = yForTemp(pt.temp);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = '#c23b3b';
-      ctx.lineWidth = 2.4;
-      ctx.stroke();
-
-      // Current point marker
-      var last = history[history.length - 1];
-      var lx = padL + plotW;
-      var ly = yForTemp(last.temp);
-      ctx.beginPath();
-      ctx.arc(lx, ly, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffd9cc';
-      ctx.fill();
-    }
-
-    // Axis caption
-    ctx.fillStyle = 'rgba(255,225,215,0.45)';
-    ctx.textAlign = 'left';
-    ctx.font = '10px IBM Plex Mono, monospace';
-    ctx.fillText('Core temperature over time →', padL, h - 8);
-  }
-
-  var sk = SimKit.canvas2d(canvas, { box: wrap, dpr: 2, height: 360, onResize: render });
-
-  SimKit.loop(function (dt) {
-    if (running) stepSimulation(dt);
-    updateReadout();
-    render(sk.ctx, sk.width, sk.height);
-  }, { el: SimKit.stage(canvas) });
-
-  document.getElementById('ambientSlider').addEventListener('input', function (e) {
-    ambientTemp = parseInt(e.target.value, 10);
-    document.getElementById('ambientLbl').textContent = ambientTemp + '°C';
-  });
-
-  document.getElementById('exerciseSlider').addEventListener('input', function (e) {
-    exercise = parseInt(e.target.value, 10);
-    document.getElementById('exerciseLbl').textContent = exercise + '%';
-  });
-
-  document.getElementById('clothingSlider').addEventListener('input', function (e) {
-    clothing = parseInt(e.target.value, 10);
-    document.getElementById('clothingLbl').textContent = clothingLabels[clothing];
-  });
-
-  document.getElementById('feedbackToggleBtn').addEventListener('click', function (e) {
-    feedbackOn = !feedbackOn;
-    e.target.textContent = 'Feedback Loop: ' + (feedbackOn ? 'ON' : 'OFF');
-    e.target.classList.toggle('primary', feedbackOn);
-    e.target.setAttribute('aria-pressed', String(feedbackOn));
-    describeState();
-  });
-
-  document.getElementById('pausePlayBtn').addEventListener('click', function (e) {
-    running = !running;
-    e.target.textContent = running ? 'Pause' : 'Play';
-    describeState();
-  });
-
-  document.getElementById('resetThermoBtn').addEventListener('click', function () {
-    coreTemp = 37.0;
-    history = [];
-    elapsed = 0;
-    nextSample = 5;
-    samplesEl.innerHTML = '';
-    running = true;
-    feedbackOn = true;
-    ambientTemp = 20;
-    exercise = 0;
-    clothing = 1;
-    document.getElementById('ambientSlider').value = 20;
-    document.getElementById('ambientLbl').textContent = '20°C';
-    document.getElementById('exerciseSlider').value = 0;
-    document.getElementById('exerciseLbl').textContent = '0%';
-    document.getElementById('clothingSlider').value = 1;
-    document.getElementById('clothingLbl').textContent = 'Medium';
-    document.getElementById('pausePlayBtn').textContent = 'Pause';
-    var fbBtn = document.getElementById('feedbackToggleBtn');
-    fbBtn.textContent = 'Feedback Loop: ON';
-    fbBtn.classList.add('primary');
-    fbBtn.setAttribute('aria-pressed', 'true');
-    responseLabel = 'None';
-    updateReadout();
-    addSample();
-  });
-  updateReadout();
-  addSample();
-}());
-</script>
+<script src="../../assets/js/lessons/homeostasis-lab.js"></script>
 <script src="../../assets/js/canvas-bg.js"></script>
 
       </main>

@@ -143,7 +143,7 @@
     var chapter = tile.closest(".lesson-pathway");
     var chapterTitle = chapter && chapter.querySelector(".module-cluster-label strong");
     var chapterBand = chapterTitle && chapterTitle.textContent.match(/\(((?:K|\d+)[–-]\d+)\)\s*$/i);
-    var grade = gradeLabel(meta.gradeBand || tile.dataset.catalogGrade || (chapterBand && chapterBand[1]));
+    var grade = gradeLabel(tile.dataset.catalogGrade || meta.gradeBand || (chapterBand && chapterBand[1]));
     badges.innerHTML = '<span class="tile-type" data-type="' + type.toLowerCase() + '">' + type + "</span>" +
       (grade ? '<span class="tile-grade">' + grade + "</span>" : "");
     tile.dataset.lessonTopics = topicsFor(parts, meta).join(" ");

@@ -965,6 +965,9 @@
   renderCircuit();
   renderRecords();
   renderQuiz();
+  drawCut();
+  drawDishes();
+  dirty = false;
 
   SimKit.loop(dt => {
     if (state.playing) {
@@ -979,5 +982,5 @@
       drawDishes();
       dirty = false;
     }
-  }, { el: SimKit.stage('#dishCanvas') });
+  }, { el: SimKit.stage('#main-content') });
 })();

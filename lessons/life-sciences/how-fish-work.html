@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>How Fish Work · Mr. Scandrett's ClassroomOS</title>
+<link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
 <meta name="description" content="Investigate osmosis, follow oxygen through a gill, and test a fish-inspired robot tail.">
 <link rel="stylesheet" href="../../assets/css/classroom-home.css">
 <style>
@@ -26,16 +27,20 @@ main.fish{max-width:1040px;box-sizing:border-box;font-family:Inter,system-ui,san
 .fish header figure{margin:0;min-width:0}.fish header img{display:block;border-radius:12px}.fish header figcaption{font-size:.85rem;color:#d0e6de;margin-top:.4em}
 
 .fish h1,.fish h2,.fish h3{font-family:Georgia,serif}.fish h2{border-bottom:1px solid #85a5a5;padding-bottom:.35em}.fish section>p{max-width:72ch}
-.fish button{font:inherit;cursor:pointer;border:1px solid #63918c;border-radius:8px;padding:.45em .9em;background:#e0f5eb;color:#123e40;margin:.45em 0;min-height:44px}
+.fish button{font:inherit;cursor:pointer;border:1px solid #63918c;border-radius:8px;padding:.45em .9em;background:#e0f5eb;color:#123e40;margin:.45em .4rem .45em 0;min-height:44px}
+.fish button.active,.fish button[aria-pressed="true"]{background:#12585f;color:#fff;border-color:#092f3f}
+.fish .gill-toggle{display:flex;flex-wrap:wrap;gap:.45rem;margin:.5rem 0 .25rem}
 .fish .model{display:block;max-height:150px;margin:.5em auto}.fish .plate{margin:1.25em 0;display:grid;align-items:center;grid-template-columns:minmax(0,1fr) 1fr;gap:1em}.plate img{width:100%;height:auto}.fish .credit{font-size:.85em}.fish .takeaway{border-inline-start:4px solid #498d84;padding-inline-start:1em}
 @media(max-width:600px){.fish .plate{grid-template-columns:1fr}}
 @media screen{
   html[data-lighting="night"] .fish button{background:#134e4a;color:#e6fffa;border-color:#2dd4bf}
+  html[data-lighting="night"] .fish button.active,html[data-lighting="night"] .fish button[aria-pressed="true"]{background:#2dd4bf;color:#052018;border-color:#99f6ea}
   html[data-lighting="night"] .fish select{background:#112329;color:#e6fffa;border:1px solid #4d7c82}
 }
 </style>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header">
     <div class="nav-wrap">
       <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
@@ -65,33 +70,16 @@ main.fish{max-width:1040px;box-sizing:border-box;font-family:Inter,system-ui,san
 <div class="tank"><div class="balance-map" aria-hidden="true"><span>Fish body</span><span id="direction">→</span><span>Water outside</span></div><svg class="model" viewBox="0 0 400 96" role="img" aria-label="Water particles crossing in both directions through a membrane"><path d="M200 0V96" stroke="#f3d891" stroke-width="4" stroke-dasharray="6 3"/><g id="water-dots" fill="#a4f0ef"></g></svg><button data-play="salt" type="button">Play osmosis</button><p aria-live="polite" id="balance">Fish → surrounding water. A marine bony fish loses water, drinks seawater, and releases excess salt through special gill cells.</p></div>
 <details><summary>Predict what changes in a river</summary><p>A freshwater bony fish gains water. Its kidneys release lots of dilute urine, and its gills take up salts. Salmon adjust these systems when they migrate between river and sea.</p></details><p class="takeaway"><strong>In the wild.</strong> A young Atlantic salmon prepares for the ocean before it leaves its river. During this change, called <em>smoltification</em>, its gills adjust how they handle salt. <a href="https://www.fisheries.noaa.gov/species/atlantic-salmon">NOAA Fisheries · Atlantic salmon</a></p></section>
 <section id="gills"><h2>2. Follow one breath through a gill</h2>
-<p>Water enters the mouth, passes over gill filaments, and exits beneath the gill covers. Each filament carries thin folds packed with tiny blood vessels. Dissolved oxygen crosses the thin wall into blood by <strong>diffusion</strong>.</p>
-<div class="tank"><strong>Water flows right →</strong><div class="flow"><b>90</b><b>65</b><b>40</b></div><svg class="model" viewBox="0 0 400 76" role="img" aria-label="Water travels right above a gill fold, blood travels left below it, and oxygen crosses into blood"><path d="M0 38H400" stroke="#e1cb91" stroke-dasharray="5 4"/><g id="flow-dots"></g></svg><div class="flow blood"><b>75</b><b>50</b><b>25</b></div><strong>← Blood flows left</strong><p>Gold dots trace oxygen crossing one gill fold.</p><button type="button" data-play="gills">Play gill exchange</button></div>
+<p>Water enters the mouth, passes over gill filaments, and exits beneath the gill covers. Each filament carries thin folds packed with tiny blood vessels. Dissolved oxygen crosses the thin wall into blood by <strong>diffusion</strong>. Compare opposite-direction (countercurrent) flow with same-direction (concurrent) flow below.</p>
+<div class="gill-toggle" role="group" aria-label="Gill flow direction">
+  <button type="button" class="active" data-gill-flow="countercurrent" aria-pressed="true">Countercurrent (opposite)</button>
+  <button type="button" data-gill-flow="concurrent" aria-pressed="false">Concurrent (same direction)</button>
+</div>
+<div class="tank"><strong>Water flows right →</strong><div class="flow" id="gillWaterVals"><b>90</b><b>65</b><b>40</b></div><svg class="model" viewBox="0 0 400 76" role="img" aria-label="Water travels right above a gill fold, blood travels beside it, and oxygen crosses into blood"><path d="M0 38H400" stroke="#e1cb91" stroke-dasharray="5 4"/><g id="flow-dots"></g></svg><div class="flow blood" id="gillBloodVals"><b>75</b><b>50</b><b>25</b></div><strong id="gillBloodDir">← Blood flows left (countercurrent)</strong><p id="gillModeNote" aria-live="polite">Opposite flow maintains an oxygen gradient along the entire fold, letting blood reach 75.</p><button type="button" data-play="gills">Play gill exchange</button></div>
 <p>These model numbers show relative oxygen levels at three places along one fold. Pick any column. Which side has more oxygen?</p>
 <details><summary>Trace the blood from right to left</summary><p>Blood enters at 25 and passes water at 40. Farther left, the water still has more oxygen than the blood beside it. Opposite flow keeps oxygen moving into blood along the whole fold. This is <strong>countercurrent exchange</strong>.</p></details></section>
 <section id="swim"><h2>3. Slow down a tail beat</h2><p>Viewed from above, a wave of bending travels toward the tail. The tail sweeps sideways and angles against the water, pushing some water backward. The water pushes the fish forward.</p>
 <div class="tank"><svg viewBox="0 0 420 124" role="img" aria-label="Top view of a fish facing left with a bending tail"><path fill="#65d3c4" d="M36 62 Q69 13 151 45 L197 58 L197 66 L151 79 Q69 111 36 62Z"/><circle cx="65" cy="52" r="4" fill="#083b4a"/><path id="tail" fill="#65d3c4" d="M145 44 Q180 54 218 55 L244 36 L240 62 L244 88 L218 69 Q180 70 145 80Z"/><text x="260" y="68" fill="white" font-size="14">Water pushed →</text></svg></div>
 <button type="button" data-play="swim">Play tail beat</button><br><label for="stroke">Scrub through one tail beat</label><br><input id="stroke" type="range" min="0" max="100" value="0"><output id="phase-value" for="stroke">0%</output><p>Watch the tip lag behind the base. Many fish use paired fins to steer or brake while the tail supplies thrust.</p></section>
 <section aria-labelledby="plate-heading"><h2 id="plate-heading">Reading a naturalist’s plate</h2><figure class="plate" data-zoomable data-full="https://upload.wikimedia.org/wikipedia/commons/3/35/Denton_Rainbow_Trout_1896.png"><img loading="lazy" width="960" height="698" src="https://thumb.wikimedia.org/wikipedia/commons/thumb/3/35/Denton_Rainbow_Trout_1896.png/960px-Denton_Rainbow_Trout_1896.png" alt="Watercolor showing the side profile and fins of a rainbow trout"><figcaption>Follow the trout’s back toward its tail. Where does the body narrow, and where does the fin widen again? Sketch that transition before designing your robot fin.</figcaption></figure><p class="credit">Sherman Foote Denton, rainbow trout watercolor for New York State’s 1896 fisheries report. Public domain in the United States. <a href="https://commons.wikimedia.org/wiki/File:Denton_Rainbow_Trout_1896.png">Original plate and rights record</a></p></section><section id="build"><h2>Engineering lab · Test a robot tail</h2><p>Can changing tail stiffness make the same robot swim farther?</p><ol><li>Mount a battery-powered servo above the splash line on a foam float. Attach a strip to the servo arm so its fin hangs in the water. Keep the controller and battery dry.</li><li>Make two fins with the same outline. Stiffen one with a strip of tape. Program the servo to alternate between 60° and 120° every half second.</li><li>Start each run at the same mark in still water. Measure forward distance after ten seconds. Run each fin three times and compare the averages.</li></ol><p>Which fin bent most? Did it travel farthest? Use your measurements to defend one change for the next prototype.</p><a href="../engineering/mechanical-and-civil-design/biomimicry.html">Continue to the Biomimicry design lab →</a></section>
-</main><script src="../../assets/js/sim-kit.js"></script><script src="../../assets/js/photo-lightbox.js"></script><script>
-const responses = {
-  sea: document.getElementById('balance').textContent,
-  equal: 'Fish ⇄ surrounding water. Water crosses both ways at the same average rate. There is no net water movement in this model.',
-  fresh: 'Surrounding water → fish. A freshwater bony fish gains water, releases dilute urine, and takes up salts through its gills.'
-};
-document.getElementById('water').addEventListener('change', event => {
-  document.getElementById('direction').textContent = {sea:'→', equal:'⇄', fresh:'←'}[event.target.value];
-  document.getElementById('balance').textContent = responses[event.target.value];
-});
-const stroke = document.getElementById('stroke');
-function drawTail() {
-  document.getElementById("phase-value").value = stroke.value + "%";
-  const phase = Number(stroke.value) * Math.PI / 50;
-  const base = 9 * Math.sin(phase);
-  const tip = 24 * Math.sin(phase - 0.8);
-  document.getElementById('tail').setAttribute('d',
-    `M145 44 Q180 ${54+base} 218 ${55+tip} L244 ${36+tip} L240 ${62+tip} L244 ${88+tip} L218 ${69+tip} Q180 ${70+base} 145 80Z`);
-}
-stroke.addEventListener('input', drawTail);
-drawTail();
-</script><script src="../../assets/js/theme-registry.js"></script><script src="../../assets/js/nav-mobile.js" defer></script><script src="../../assets/js/lesson-print-button.js" defer></script><script src="../../assets/js/how-fish-work.js"></script></body></html>
+</main><script src="../../assets/js/sim-kit.js"></script><script src="../../assets/js/photo-lightbox.js"></script><script src="../../assets/js/theme-registry.js"></script><script src="../../assets/js/nav-mobile.js" defer></script><script src="../../assets/js/lesson-print-button.js" defer></script><script src="../../assets/js/how-fish-work.js"></script></body></html>

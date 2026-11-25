@@ -363,6 +363,38 @@
       color: #0a2223;
       line-height: 1.55;
     }
+    .imm-page .ll-breadcrumb { margin: 0; color: #2b5152; }
+    .imm-page .ll-breadcrumb a { color: #0f7274; }
+    .imm-page .ll-crumb-current { color: #0a2223; font-weight: 600; }
+    .imm-telemetry {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.85rem;
+    }
+    .imm-stat-pill {
+      padding: 0.65rem 0.85rem;
+      border-radius: 12px;
+      background: #eefaf8;
+      border: 1px solid rgba(15, 139, 141, 0.22);
+      font-size: 0.82rem;
+      color: #2b5152;
+    }
+    .imm-stat-pill strong {
+      display: block;
+      font-size: 1rem;
+      color: #0a2223;
+      font-variant-numeric: tabular-nums;
+      margin-top: 0.15rem;
+    }
+    .imm-quiz-list { display: grid; gap: 0.85rem; margin-top: 0.9rem; }
+    .imm-quiz-item { background: #eefaf8; border: 1px solid rgba(15, 139, 141, 0.22); border-radius: 14px; padding: 0.95rem 1rem; }
+    .imm-quiz-item.is-correct { background: #e8f8ee; border-color: #4ea874; }
+    .imm-quiz-item.is-wrong { background: #fdf1f2; border-color: #e48e98; }
+    .imm-quiz-q { margin: 0 0 0.6rem; font-size: 0.95rem; color: #0a2223; }
+    .imm-quiz-opts { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .imm-quiz-fb { margin: 0.55rem 0 0; font-size: 0.86rem; color: #24484a; min-height: 1.2em; }
+    @media (max-width: 640px) { .imm-telemetry { grid-template-columns: 1fr; } }
 
     @media (max-width: 900px) {
       .imm-defense-grid { grid-template-columns: 1fr; }
@@ -402,6 +434,13 @@
      SECTION 1 — HERO
      ════════════════════════════════════════════════════════════ -->
 <div class="imm-shell">
+
+  <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+    <a href="../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+    <a href="../../steam-lessons.html">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+    <a href="../../steam-lessons.html#module-lifesci">Life Sciences</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+    <span class="ll-crumb-current" aria-current="page">Immunology</span>
+  </nav>
 
   <div class="imm-hero">
     <div class="imm-card">
@@ -519,18 +558,27 @@
       before you'd ever feel sick.
     </p>
     <div class="imm-sim-layout">
-      <div class="imm-canvas-wrap">
-        <canvas id="immCanvas"></canvas>
-        <div class="imm-readout">
-          <span><i style="background:#f0546b"></i>Pathogen</span>
-          <span><i style="background:#3fb6e0"></i>Innate</span>
-          <span><i style="background:#ffd166"></i>Adaptive / Antibodies</span>
+      <div>
+        <div class="imm-canvas-wrap">
+          <canvas id="immCanvas" role="img" aria-label="Infection and immune response simulator plotting pathogen, vaccine antigen, innate, and adaptive antibody curves"></canvas>
+          <div class="imm-readout">
+            <span><i style="background:#f0546b"></i>Pathogen</span>
+            <span><i style="background:#4ee1c1"></i>Vaccine Antigen</span>
+            <span><i style="background:#3fb6e0"></i>Innate</span>
+            <span><i style="background:#ffd166"></i>Adaptive</span>
+          </div>
+        </div>
+        <div class="imm-telemetry" aria-live="polite">
+          <div class="imm-stat-pill">Peak Pathogen<strong id="immPeakVal">0.0</strong></div>
+          <div class="imm-stat-pill">Peak Severity<strong id="immSeverityVal">None</strong></div>
+          <div class="imm-stat-pill">Clearance Time<strong id="immClearVal">—</strong></div>
         </div>
       </div>
       <div class="imm-controls">
-        <button class="imm-btn primary" id="infectBtn">Trigger Infection</button>
-        <button class="imm-btn" id="vaccinateBtn">Vaccinate (safe pre-exposure)</button>
-        <button class="imm-btn" id="resetBtn">Reset Immune History</button>
+        <button class="imm-btn primary" id="infectBtn" type="button">Trigger Infection</button>
+        <button class="imm-btn" id="vaccinateBtn" type="button">Vaccinate (non-replicating antigen)</button>
+        <button class="imm-btn" id="variantBtn" type="button">Mutated Variant (Antigenic Drift)</button>
+        <button class="imm-btn" id="resetBtn" type="button">Reset Immune History</button>
 
         <label class="imm-toggle">
           Innate response active
@@ -592,6 +640,13 @@
     </div>
   </div>
 
+  <div class="imm-card">
+    <h2 class="imm-h2">Check Your Reasoning</h2>
+    <p class="imm-p">Test your understanding of immune layers, primary vs. secondary response curves, and vaccine memory.</p>
+    <div class="imm-quiz-list" id="immQuiz"></div>
+    <p class="imm-p" id="immQuizScore" style="margin-top:0.75rem;font-weight:700;" aria-live="polite"></p>
+  </div>
+
 <!-- ════════════════════════════════════════════════════════════
      SECTION 5 — REFLECTION / FORMATIVE ASSESSMENT
      ════════════════════════════════════════════════════════════ -->
@@ -609,185 +664,7 @@
 </div><!-- /.imm-shell -->
 
 <script src="../../assets/js/sim-kit.js"></script>
-<script>
-(function () {
-  'use strict';
-
-  var canvas = document.getElementById('immCanvas');
-  var cv2d = SimKit.canvas2d(canvas, { height: 320 });
-
-  // ── Simulation state ──────────────────────────────────────────
-  var SIM_SPEED = 6;          // sim-hours per real second
-  var HISTORY_HOURS = 220;    // rolling chart window
-  var SAMPLE_EVERY = 0.6;     // sim-hours between chart samples
-
-  var pathogen = 0;
-  var innate = 0;
-  var adaptive = 0;
-  var memory = 0;             // 0..100, persists across infections
-  var infectionActive = false;
-  var simTime = 0;
-  var sinceLastSample = 0;
-
-  var innateOn = true;
-  var adaptiveOn = true;
-
-  var history = []; // { t, p, i, a }
-
-  var infectBtn = document.getElementById('infectBtn');
-  var vaccinateBtn = document.getElementById('vaccinateBtn');
-  var resetBtn = document.getElementById('resetBtn');
-  var innateToggle = document.getElementById('innateToggle');
-  var adaptiveToggle = document.getElementById('adaptiveToggle');
-  var memoryVal = document.getElementById('memoryVal');
-  var memoryFill = document.getElementById('memoryFill');
-
-  function beginInfection(startLevel) {
-    pathogen = Math.max(pathogen, startLevel);
-    infectionActive = true;
-  }
-
-  infectBtn.addEventListener('click', function () {
-    beginInfection(4);
-  });
-
-  vaccinateBtn.addEventListener('click', function () {
-    // A vaccine is a safe, low-grade simulated exposure: it trains memory
-    // without the large, symptomatic pathogen surge a real infection causes.
-    beginInfection(1.2);
-  });
-
-  resetBtn.addEventListener('click', function () {
-    pathogen = 0;
-    innate = 0;
-    adaptive = 0;
-    memory = 0;
-    infectionActive = false;
-    simTime = 0;
-    sinceLastSample = 0;
-    history = [];
-  });
-
-  innateToggle.addEventListener('change', function (e) {
-    innateOn = e.target.checked;
-  });
-  adaptiveToggle.addEventListener('change', function (e) {
-    adaptiveOn = e.target.checked;
-  });
-
-  function stepSim(simDt) {
-    simTime += simDt;
-
-    // Pathogen: logistic growth, suppressed by immune killing.
-    var growthRate = 0.10;
-    var carryingCapacity = 100;
-    var innateKill = innateOn ? 0.0022 : 0;
-    var adaptiveKill = adaptiveOn ? 0.0065 : 0;
-
-    if (pathogen > 0.01) {
-      var growth = growthRate * pathogen * (1 - pathogen / carryingCapacity);
-      var killed = (innateKill * innate + adaptiveKill * adaptive) * pathogen;
-      pathogen += (growth - killed) * simDt;
-      if (pathogen < 0.05) { pathogen = 0; infectionActive = false; }
-      pathogen = Math.max(0, Math.min(carryingCapacity, pathogen));
-    }
-
-    // Innate: rises fast toward a moderate plateau whenever pathogen present.
-    var innateTarget = pathogen > 0.3 ? 70 : 0;
-    var innateTau = innateTarget > innate ? 6 : 14;
-    innate += (innateTarget - innate) / innateTau * simDt;
-    innate = Math.max(0, innate);
-
-    // Adaptive: rises toward a high plateau, but how *fast* and how *high*
-    // depends on existing memory — this is the primary vs. secondary response.
-    var memoryFactor = memory / 100; // 0 = naive, 1 = fully primed
-    var adaptiveTarget = pathogen > 0.3 ? (60 + 40 * memoryFactor) : Math.max(memory * 0.15, 0);
-    var riseTau = pathogen > 0.3 ? (36 - 28 * memoryFactor) : 30; // naive: ~36h, primed: ~8h
-    var fallTau = 40;
-    var tau = adaptiveTarget > adaptive ? riseTau : fallTau;
-    adaptive += (adaptiveTarget - adaptive) / tau * simDt;
-    adaptive = Math.max(0, adaptive);
-
-    // Memory builds whenever an adaptive response is meaningfully engaged,
-    // and decays extremely slowly (it does not decay away on this timescale).
-    if (adaptive > 15) {
-      memory = Math.min(100, memory + (adaptive / 100) * 0.35 * simDt);
-    }
-
-    memoryVal.textContent = Math.round(memory) + '%';
-    memoryFill.style.width = Math.round(memory) + '%';
-
-    sinceLastSample += simDt;
-    if (sinceLastSample >= SAMPLE_EVERY) {
-      sinceLastSample = 0;
-      history.push({ t: simTime, p: pathogen, i: innate, a: adaptive });
-      var cutoff = simTime - HISTORY_HOURS;
-      while (history.length && history[0].t < cutoff) history.shift();
-    }
-  }
-
-  function drawLine(ctx, w, h, tMin, tMax, valueKey, color, maxVal) {
-    if (history.length < 2) return;
-    ctx.beginPath();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = color;
-    for (var idx = 0; idx < history.length; idx++) {
-      var pt = history[idx];
-      var x = ((pt.t - tMin) / (tMax - tMin)) * w;
-      var y = h - (pt[valueKey] / maxVal) * (h - 14) - 6;
-      if (idx === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  }
-
-  function render() {
-    var ctx = cv2d.ctx;
-    var w = cv2d.width;
-    var h = cv2d.height;
-
-    ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#06161a';
-    ctx.fillRect(0, 0, w, h);
-
-    // gridlines
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    for (var gy = 1; gy < 4; gy++) {
-      var yy = (h / 4) * gy;
-      ctx.beginPath();
-      ctx.moveTo(0, yy);
-      ctx.lineTo(w, yy);
-      ctx.stroke();
-    }
-
-    var tMax = Math.max(simTime, HISTORY_HOURS);
-    var tMin = tMax - HISTORY_HOURS;
-
-    drawLine(ctx, w, h, tMin, tMax, 'p', '#f0546b', 100);
-    drawLine(ctx, w, h, tMin, tMax, 'i', '#3fb6e0', 100);
-    drawLine(ctx, w, h, tMin, tMax, 'a', '#ffd166', 100);
-
-    if (!infectionActive && pathogen === 0 && history.length === 0) {
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      ctx.font = '13px "Manrope", sans-serif';
-      ctx.fillText('Click "Trigger Infection" to begin — optionally vaccinate first.', 16, h / 2);
-    }
-  }
-
-  SimKit.loop(function (dt) {
-    var simDt = dt * SIM_SPEED;
-    // Cap the per-frame step so a backgrounded/slow tab doesn't jump wildly.
-    simDt = Math.min(simDt, 3);
-    if (pathogen > 0 || adaptive > 0.1 || innate > 0.1 || memory > 0) {
-      stepSim(simDt);
-    } else {
-      simTime += simDt;
-    }
-    render();
-  }, { el: SimKit.stage('#immCanvas') });
-}());
-</script>
+<script src="../../assets/js/lessons/immunology-lab.js"></script>
 <script src="../../assets/js/canvas-bg.js"></script>
 
       </main>

@@ -385,6 +385,32 @@
       color: #5a4a24;
       line-height: 1.6;
     }
+    .ns-page .ll-breadcrumb { margin: 0; color: #3c4a37; }
+    .ns-page .ll-breadcrumb a { color: #2e5f3d; }
+    .ns-page .ll-crumb-current { color: #1c3320; font-weight: 600; }
+    .ns-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin: 0 0 0.9rem;
+    }
+    .ns-quiz-list {
+      display: grid;
+      gap: 0.85rem;
+      margin: 1rem 0;
+    }
+    .ns-quiz-item {
+      background: #f2f7ee;
+      border: 1px solid rgba(63, 125, 82, 0.22);
+      border-radius: 12px;
+      padding: 0.95rem 1rem;
+    }
+    .ns-quiz-item.is-correct { background: #e9f6ec; border-color: #5ca772; }
+    .ns-quiz-item.is-wrong { background: #fdf3f1; border-color: #df9a8f; }
+    .ns-quiz-q { margin: 0 0 0.6rem; font-size: 0.94rem; color: #1c3320; }
+    .ns-quiz-opts { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .ns-quiz-fb { margin: 0.55rem 0 0; font-size: 0.86rem; color: #2e3b29; min-height: 1.2em; }
+    .ns-quiz-score { margin: 0.5rem 0 0; font-weight: 700; font-size: 0.92rem; color: #1c3320; }
 
     @media (max-width: 900px) {
       .ns-req-grid { grid-template-columns: 1fr 1fr; }
@@ -424,6 +450,13 @@
   <div class="cl-page">
     <main id="main-content">
 <div class="ns-shell">
+
+  <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+    <a href="../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+    <a href="../../steam-lessons.html">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+    <a href="../../steam-lessons.html#module-lifesci">Life Sciences</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+    <span class="ll-crumb-current" aria-current="page">Natural Selection Lab</span>
+  </nav>
 
 <!-- ════════════════════════════════════════════════════════════
      SECTION 1 — HERO
@@ -549,14 +582,19 @@
     <p class="ns-p">
       This is a population of 160 virtual moths. Each one carries a single
       heritable trait — body color, from pale (0.0) to dark (1.0) — shown as a dot
-      color. Pick a selection pressure, set how strong it is, then step the
-      population forward one generation at a time (or press Play) and watch the
-      color histogram and trend line shift as the trait that survives best becomes
-      more common.
+      color. Pick a selection pressure or preset, set how strong it is, then step the
+      population forward one or ten generations at a time (or press Play) and watch the
+      color histogram, mean, spread (SD), and trend line shift.
     </p>
+    <div class="ns-presets" role="group" aria-label="Quick experiment presets">
+      <button type="button" class="ns-btn" data-ns-preset="birch">Clean Birch Forest (15%)</button>
+      <button type="button" class="ns-btn" data-ns-preset="soot">Industrial Soot (88%)</button>
+      <button type="button" class="ns-btn" data-ns-preset="nomut">Zero-Mutation Bottleneck</button>
+      <button type="button" class="ns-btn" data-ns-preset="drift">Pure Genetic Drift</button>
+    </div>
     <div class="ns-sim-layout">
       <div class="ns-canvas-wrap">
-        <canvas id="nsCanvas"></canvas>
+        <canvas id="nsCanvas" role="img" aria-label="Natural selection moth population simulation, trait histogram, and generation trend"></canvas>
         <span class="ns-canvas-hint">Top: population · middle: trait histogram · bottom: generation trend</span>
       </div>
       <div class="ns-controls">
@@ -570,20 +608,21 @@
           </select>
         </div>
         <div class="ns-control-group">
-          <label>Bark / Target Tone <span id="envVal">50%</span></label>
+          <label for="envSlider">Bark / Target Tone <span id="envVal">50%</span></label>
           <input type="range" id="envSlider" min="0" max="100" step="1" value="50" />
         </div>
         <div class="ns-control-group">
-          <label>Selection Strength <span id="strengthVal">60%</span></label>
+          <label for="strengthSlider">Selection Strength <span id="strengthVal">60%</span></label>
           <input type="range" id="strengthSlider" min="0" max="100" step="1" value="60" />
         </div>
         <div class="ns-control-group">
-          <label>Mutation Rate <span id="mutVal">3%</span></label>
+          <label for="mutSlider">Mutation Rate <span id="mutVal">3%</span></label>
           <input type="range" id="mutSlider" min="0" max="10" step="1" value="3" />
         </div>
-        <button class="ns-btn primary" id="stepBtn">Run 1 Generation</button>
-        <button class="ns-btn rust" id="playBtn">Play</button>
-        <button class="ns-btn" id="resetBtn">Reset Population</button>
+        <button class="ns-btn primary" id="stepBtn" type="button">Run 1 Generation</button>
+        <button class="ns-btn" id="step10Btn" type="button">Run 10 Generations</button>
+        <button class="ns-btn rust" id="playBtn" type="button">Play</button>
+        <button class="ns-btn" id="resetBtn" type="button">Reset Population</button>
         <div class="ns-stats" id="nsStats">
           Generation <strong>0</strong><br />
           Mean trait <strong>0.50</strong><br />
@@ -614,7 +653,10 @@
       <li>The peppered moth story is sometimes summarized as "moths turned dark to hide from birds." Rewrite that sentence so it accurately describes what natural selection actually did.</li>
     </ul>
     <div class="ns-assess">
-      <h3>Formative Check</h3>
+      <h3>Misconception Check</h3>
+      <div class="ns-quiz-list" id="nsCheckQuiz"></div>
+      <p class="ns-quiz-score" id="nsCheckScore" aria-live="polite"></p>
+      <h3 style="margin-top:1rem;">Written Formative Check</h3>
       <p>In two or three sentences, explain why a population of moths that all have <em>identical</em> genes for color could never undergo natural selection for color, no matter how many birds hunted them. Name which of the three requirements is missing.</p>
     </div>
   </div>
@@ -633,327 +675,7 @@
 <script src="../../assets/js/photo-lightbox.js"></script>
 <script src="../../assets/js/lesson-layout.js"></script>
 <script src="../../assets/js/sim-kit.js"></script>
-<script>
-(function () {
-  'use strict';
-
-  var canvas = document.getElementById('nsCanvas');
-  var box = canvas.parentElement;
-  var N = 160;
-  var MUT_BASE = 0.03;
-
-  var generation = 0;
-  var moths = [];
-  var history = []; // mean trait per generation
-  var lastStepText = '—';
-  var running = false;
-  var playTimer = null;
-
-  var pressureSelect = document.getElementById('pressureSelect');
-  var envSlider = document.getElementById('envSlider');
-  var strengthSlider = document.getElementById('strengthSlider');
-  var mutSlider = document.getElementById('mutSlider');
-  var envVal = document.getElementById('envVal');
-  var strengthVal = document.getElementById('strengthVal');
-  var mutVal = document.getElementById('mutVal');
-  var statsBox = document.getElementById('nsStats');
-  var stepBtn = document.getElementById('stepBtn');
-  var playBtn = document.getElementById('playBtn');
-  var resetBtn = document.getElementById('resetBtn');
-
-  function rand() { return Math.random(); }
-
-  function gaussian(std) {
-    // Box-Muller
-    var u = 1 - Math.random();
-    var v = Math.random();
-    var z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-    return z * std;
-  }
-
-  function clamp01(v) { return Math.max(0, Math.min(1, v)); }
-
-  function makeMoth(trait) {
-    return {
-      trait: trait,
-      x: rand(),
-      y: rand(),
-      phase: rand() * Math.PI * 2,
-      died: false
-    };
-  }
-
-  function seedPopulation() {
-    moths = [];
-    for (var i = 0; i < N; i++) moths.push(makeMoth(rand()));
-    generation = 0;
-    history = [meanTrait()];
-    lastStepText = '—';
-  }
-
-  function meanTrait() {
-    var s = 0;
-    for (var i = 0; i < moths.length; i++) s += moths[i].trait;
-    return moths.length ? s / moths.length : 0.5;
-  }
-
-  function envTarget() {
-    return clamp01(parseInt(envSlider.value, 10) / 100);
-  }
-  function strength() {
-    return clamp01(parseInt(strengthSlider.value, 10) / 100);
-  }
-  function mutationStd() {
-    return (parseInt(mutSlider.value, 10) / 100);
-  }
-
-  function applyPreset(kind) {
-    if (kind === 'predation') {
-      envSlider.value = 50;
-    } else if (kind === 'drought') {
-      envSlider.value = 15;
-    } else if (kind === 'cold') {
-      envSlider.value = 85;
-    } else if (kind === 'none') {
-      strengthSlider.value = 0;
-    }
-    syncLabels();
-  }
-
-  function syncLabels() {
-    envVal.textContent = envSlider.value + '%';
-    strengthVal.textContent = strengthSlider.value + '%';
-    mutVal.textContent = mutSlider.value + '%';
-  }
-
-  function stepGeneration() {
-    var target = envTarget();
-    var str = pressureSelect.value === 'none' ? 0 : strength();
-    var mut = MUT_BASE * 0 + mutationStd();
-
-    // Determine survivors
-    var survivors = [];
-    for (var i = 0; i < moths.length; i++) {
-      var m = moths[i];
-      var mismatch = Math.abs(m.trait - target); // 0 = perfectly matched
-      var deathChance = clamp01(str * mismatch * 2.2 + 0.015); // small baseline drift risk
-      if (rand() > deathChance) survivors.push(m);
-    }
-    if (survivors.length < 4) {
-      // avoid extinction: keep the best-matched individuals
-      var sorted = moths.slice().sort(function (a, b) {
-        return Math.abs(a.trait - target) - Math.abs(b.trait - target);
-      });
-      survivors = sorted.slice(0, Math.max(4, Math.floor(moths.length * 0.1)));
-    }
-
-    var died = moths.length - survivors.length;
-
-    // Repopulate to N via reproduction with mutation
-    var next = [];
-    for (var j = 0; j < N; j++) {
-      var parent = survivors[Math.floor(rand() * survivors.length)];
-      var offspringTrait = clamp01(parent.trait + gaussian(mut));
-      next.push(makeMoth(offspringTrait));
-    }
-    moths = next;
-    generation++;
-    history.push(meanTrait());
-    if (history.length > 400) history.shift();
-    lastStepText = died + ' of ' + (survivors.length + died) + ' died, ' + survivors.length + ' survived to breed';
-
-    updateStats();
-  }
-
-  function updateStats() {
-    var mt = meanTrait();
-    var darkPct = 0;
-    for (var i = 0; i < moths.length; i++) if (moths[i].trait > 0.5) darkPct++;
-    darkPct = Math.round((darkPct / moths.length) * 100);
-    statsBox.innerHTML =
-      'Generation <strong>' + generation + '</strong><br />' +
-      'Mean trait <strong>' + mt.toFixed(2) + '</strong><br />' +
-      'Dark morph <strong>~' + darkPct + '%</strong><br />' +
-      'Last step: <strong>' + lastStepText + '</strong>';
-  }
-
-  /* ── Rendering ── */
-  function traitColor(t) {
-    // pale cream -> mid tan -> dark umber
-    var stops = [
-      [237, 227, 200],
-      [176, 138, 82],
-      [92, 62, 30],
-      [42, 28, 14]
-    ];
-    var seg = clamp01(t) * (stops.length - 1);
-    var i0 = Math.min(stops.length - 2, Math.floor(seg));
-    var lt = seg - i0;
-    var c0 = stops[i0], c1 = stops[i0 + 1];
-    var r = c0[0] + (c1[0] - c0[0]) * lt;
-    var g = c0[1] + (c1[1] - c0[1]) * lt;
-    var b = c0[2] + (c1[2] - c0[2]) * lt;
-    return 'rgb(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ')';
-  }
-
-  function barkColor(t) {
-    var pale = [214, 201, 168];
-    var dark = [46, 36, 24];
-    var r = pale[0] + (dark[0] - pale[0]) * t;
-    var g = pale[1] + (dark[1] - pale[1]) * t;
-    var b = pale[2] + (dark[2] - pale[2]) * t;
-    return 'rgb(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ')';
-  }
-
-  function draw(ctx, w, h) {
-    var target = envTarget();
-
-    var scatterH = h * 0.5;
-    var histH = h * 0.32;
-    var trendH = h - scatterH - histH;
-
-    // ── Scatter band (population on bark) ──
-    ctx.fillStyle = barkColor(target);
-    ctx.fillRect(0, 0, w, scatterH);
-
-    var t = performance.now() / 1000;
-    var r = Math.max(3, Math.min(6, w / 140));
-    for (var i = 0; i < moths.length; i++) {
-      var m = moths[i];
-      var px = 20 + m.x * (w - 40) + Math.sin(t * 0.6 + m.phase) * 2;
-      var py = 16 + m.y * (scatterH - 32) + Math.cos(t * 0.5 + m.phase) * 2;
-      ctx.beginPath();
-      ctx.arc(px, py, r, 0, Math.PI * 2);
-      ctx.fillStyle = traitColor(m.trait);
-      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-      ctx.lineWidth = 1;
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    // ── Histogram band ──
-    var histY = scatterH;
-    ctx.fillStyle = '#150f0a';
-    ctx.fillRect(0, histY, w, histH);
-
-    var bins = 12;
-    var counts = new Array(bins).fill(0);
-    for (var j = 0; j < moths.length; j++) {
-      var bi = Math.min(bins - 1, Math.floor(moths[j].trait * bins));
-      counts[bi]++;
-    }
-    var maxCount = Math.max(1, Math.max.apply(null, counts));
-    var padX = 14;
-    var barGap = 3;
-    var barW = (w - padX * 2 - barGap * (bins - 1)) / bins;
-    var baseline = histY + histH - 10;
-    var maxBarH = histH - 22;
-    for (var bIdx = 0; bIdx < bins; bIdx++) {
-      var bh = (counts[bIdx] / maxCount) * maxBarH;
-      var bx = padX + bIdx * (barW + barGap);
-      var by = baseline - bh;
-      ctx.fillStyle = traitColor((bIdx + 0.5) / bins);
-      ctx.fillRect(bx, by, barW, bh);
-    }
-    // target marker on histogram
-    var markerX = padX + target * (w - padX * 2);
-    ctx.strokeStyle = '#b3462c';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(markerX, histY + 6);
-    ctx.lineTo(markerX, baseline);
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(255,244,214,0.85)';
-    ctx.font = '600 11px IBM Plex Mono, monospace';
-    ctx.fillText('trait distribution (pale → dark)', padX, histY + 16);
-
-    // ── Trend band ──
-    var trendY = histY + histH;
-    ctx.fillStyle = '#0f0c08';
-    ctx.fillRect(0, trendY, w, trendH);
-    ctx.fillStyle = 'rgba(255,244,214,0.85)';
-    ctx.font = '600 11px IBM Plex Mono, monospace';
-    ctx.fillText('mean trait over generations', padX, trendY + 14);
-
-    var histLen = history.length;
-    var plotTop = trendY + 20;
-    var plotH = trendH - 28;
-    var visibleN = Math.min(histLen, 120);
-    var startIdx = histLen - visibleN;
-    if (visibleN > 1) {
-      ctx.beginPath();
-      for (var k = 0; k < visibleN; k++) {
-        var val = history[startIdx + k];
-        var hx = padX + (k / (visibleN - 1)) * (w - padX * 2);
-        var hy = plotTop + (1 - val) * plotH;
-        if (k === 0) ctx.moveTo(hx, hy);
-        else ctx.lineTo(hx, hy);
-      }
-      ctx.strokeStyle = '#5cad74';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    }
-    // target reference line on trend
-    var targetY = plotTop + (1 - target) * plotH;
-    ctx.strokeStyle = 'rgba(179,70,44,0.6)';
-    ctx.setLineDash([4, 3]);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(padX, targetY);
-    ctx.lineTo(w - padX, targetY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  var sk = SimKit.canvas2d(canvas, {
-    box: box,
-    dpr: 2,
-    onResize: function (ctx, w, h) { draw(ctx, w, h); }
-  });
-
-  SimKit.loop(function () {
-    draw(sk.ctx, sk.width, sk.height);
-  }, { el: SimKit.stage(canvas) });
-
-  /* ── Controls ── */
-  pressureSelect.addEventListener('change', function (e) {
-    applyPreset(e.target.value);
-  });
-  envSlider.addEventListener('input', syncLabels);
-  strengthSlider.addEventListener('input', syncLabels);
-  mutSlider.addEventListener('input', syncLabels);
-
-  stepBtn.addEventListener('click', function () {
-    stepGeneration();
-  });
-
-  playBtn.addEventListener('click', function () {
-    running = !running;
-    playBtn.textContent = running ? 'Pause' : 'Play';
-    if (running) {
-      playTimer = setInterval(stepGeneration, 550);
-    } else {
-      clearInterval(playTimer);
-      playTimer = null;
-    }
-  });
-
-  resetBtn.addEventListener('click', function () {
-    seedPopulation();
-    updateStats();
-    if (running) {
-      running = false;
-      playBtn.textContent = 'Play';
-      clearInterval(playTimer);
-      playTimer = null;
-    }
-  });
-
-  syncLabels();
-  seedPopulation();
-  updateStats();
-}());
-</script>
+<script src="../../assets/js/lessons/natural-selection-lab.js"></script>
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
