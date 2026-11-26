@@ -466,7 +466,111 @@ function gospelReader() {
   });
 }
 
+// Genesis divides itself with a repeated heading, “This is the account of …” (Hebrew toledot).
+// Verse counts per chapter (BSB) place each section to scale on the chapter bar.
+const GENESIS_CHAPTERS = [31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20, 67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34, 31, 22, 33, 26];
+const GENESIS_KINDS = {
+  prologue: ['#55763e', 'Prologue'],
+  world: ['#447480', 'The whole world'],
+  line: ['#a0602f', 'The chosen line'],
+  branch: ['#8065a5', 'A side branch']
+};
+const GENESIS_SECTIONS = [
+  ['Prologue: seven days', 'prologue', [1, 1], [2, 3], ['Genesis', 2, 1, 3], 'Creation in six days of work and a seventh day of rest.', 'The prologue has no “account of” heading. It sets the stage for everything the ten headings will follow.'],
+  ['The heavens and the earth', 'world', [2, 4], [4, 26], ['Genesis', 2, 4, 4], 'The garden, the first disobedience, and Cain’s violence against Abel. Seth is born and people “call upon the name of the LORD” (4:26).', 'The account of the heavens and the earth is about what came out of them: humanity in the garden.'],
+  ['Adam', 'world', [5, 1], [6, 8], ['Genesis', 5, 1, 1], 'Ten generations from Adam to Noah, a refrain of “and then he died,” and God’s grief over violence.', 'This heading alone says “book of the generations.” Listen for the refrain: almost every life ends “and then he died.” Enoch’s does not (5:24).'],
+  ['Noah', 'world', [6, 9], [9, 29], ['Genesis', 6, 9, 9], 'The ark, the flood, and God’s covenant with every living creature.', 'The flood account sits inside Noah’s account. Compare the commission in 9:1 with 1:28.'],
+  ['Noah’s sons', 'world', [10, 1], [11, 9], ['Genesis', 10, 1, 1], 'The Table of Nations (Genesis 10) and the tower of Babel (11:1–9).', 'Every nation is listed first; then Babel explains the scattering. The wide view comes before the narrow one.'],
+  ['Shem', 'line', [11, 10], [11, 26], ['Genesis', 11, 10, 10], 'Ten generations from Shem to Terah, ending with Abram, Nahor, and Haran.', 'The camera narrows: out of all the nations in chapter 10, this list follows one line.'],
+  ['Terah', 'line', [11, 27], [25, 11], ['Genesis', 11, 27, 27], 'Abram’s call, the promise, Isaac’s birth, and Abraham’s death.', 'The account is named for the father, but the story follows his son. Abraham’s whole story is “the account of Terah.”'],
+  ['Ishmael', 'branch', [25, 12], [25, 18], ['Genesis', 25, 12, 12], 'Ishmael’s twelve sons and where they settled.', 'Seven verses. The brother not carried forward still gets his own heading, and his twelve princes fulfill the promise in 17:20.'],
+  ['Isaac', 'line', [25, 19], [35, 29], ['Genesis', 25, 19, 19], 'Jacob and Esau, the stolen blessing, Jacob’s exile in Haran, and his return as Israel.', 'Short branch, then long main line: the same order as Noah’s sons (all nations) before Shem.'],
+  ['Esau', 'branch', [36, 1], [37, 1], ['Genesis', 36, 1, 1], 'Esau’s family, the chiefs and kings of Edom.', 'The heading appears twice (36:1 and 36:9), so some readers count eleven headings, not ten.'],
+  ['Jacob', 'line', [37, 2], [50, 26], ['Genesis', 37, 2, 2], 'Joseph sold into Egypt, Judah and Tamar, Joseph’s rise, and the family’s move to Egypt.', 'Named for Jacob, the story follows Joseph and his brothers. Genesis ends in Egypt, where Exodus begins.']
+];
+
+function genesisLab() {
+  const lab = mount('Read Genesis by its own headings', 'Genesis divides itself with a repeated heading: “This is the account of …” (Hebrew toledot, “generations”). Step through the headings, read each one, and watch the story narrow from the whole world to one family.');
+  const firstVerse = [0];
+  for (const count of GENESIS_CHAPTERS) firstVerse.push(firstVerse.at(-1) + count);
+  const total = firstVerse.at(-1);
+  const x = ([chapter, verse]) => 20 + (firstVerse[chapter - 1] + verse - 1) / total * 700;
+  const end = ([chapter, verse]) => x([chapter, verse + 1]);
+  const legend = Object.values(GENESIS_KINDS).map(([color, label], i) =>
+    `<rect x="${20 + i * 176}" y="160" width="14" height="14" rx="3" fill="${color}"/><text x="${40 + i * 176}" y="172">${label}</text>`).join('');
+  const ticks = [1, 12, 25, 37, 50].map((chapter) => `<line x1="${x([chapter, 1])}" y1="126" x2="${x([chapter, 1])}" y2="132" class="bible-lab-cursor"/><text x="${x([chapter, 1])}" y="148" text-anchor="${chapter === 1 ? 'start' : 'middle'}">${chapter === 1 ? 'Chapter 1' : chapter}</text>`).join('');
+
+  steps(lab, GENESIS_SECTIONS.map(([title], i) => i ? `${i} · ${title}` : title), 'Section', (output, index) => {
+    const [title, kind, from, to, heading, contents, notice] = GENESIS_SECTIONS[index];
+    const blocks = GENESIS_SECTIONS.map(([, k, a, b], i) => {
+      const left = x(a);
+      const width = Math.max(4, end(b) - left);
+      const chosen = i === index;
+      return `<rect x="${left + 0.75}" y="${chosen ? 70 : 78}" width="${width - 1.5}" height="${chosen ? 48 : 32}" rx="2" fill="${GENESIS_KINDS[k][0]}"${chosen ? ' stroke="#29251d" stroke-width="3"' : ' opacity=".72"'}><title>${i ? 'Account ' + i + ': ' + GENESIS_SECTIONS[i][0] : GENESIS_SECTIONS[i][0]}</title></rect>`;
+    }).join('');
+    const mid = (x(from) + end(to)) / 2;
+    const anchor = mid < 120 ? 'start' : mid > 620 ? 'end' : 'middle';
+    const drawing = `<text x="20" y="28">Genesis 1–11 · the whole world</text><text x="700" y="28" text-anchor="end">Genesis 12–50 · one family</text>
+      <line x1="${x([12, 1])}" y1="36" x2="${x([12, 1])}" y2="124" class="bible-lab-cursor"/>
+      ${blocks}<text x="${mid}" y="60" text-anchor="${anchor}">${index ? 'Account ' + index + ': ' + title : title}</text>
+      ${ticks}${legend}`;
+    const range = `Genesis ${from[0]}:${from[1]}–${to[0] === from[0] ? '' : to[0] + ':'}${to[1]}`;
+    const card = detail(index ? `The account of ${title.toLowerCase().startsWith('the ') ? title.toLowerCase() : title}` : title, `${range} · ${GENESIS_KINDS[kind][1]}`, [['What follows', contents], ['Notice', notice]]);
+    const quote = element('div', 'bible-lab-heading-verse');
+    card.querySelector('h3').after(element('h4', '', (index ? 'The heading · ' : 'The close · ') + reference(heading) + ' · BSB'), quote);
+    readPassage(quote, heading);
+    illustration(output, graphic(740, 186, `Genesis 1 to 50 drawn to scale by verses, with ${range} highlighted`, drawing),
+      'Each block is drawn to scale by number of verses. Side branches are short; the chosen line gets the long stories.', card);
+    output.classList.remove('bible-lab-layout');
+  });
+
+  lab.append(formingAndFilling());
+}
+
+function formingAndFilling() {
+  const section = element('div', 'bible-lab-forming');
+  const realms = [
+    ['Day 1', 'Light and darkness separated', 'Genesis 1:3–5'],
+    ['Day 2', 'The expanse: sky above, waters below', 'Genesis 1:6–8'],
+    ['Day 3', 'Dry land and plants', 'Genesis 1:9–13']
+  ];
+  const fillers = [
+    ['Day 4', 'Sun, moon, and stars', 'Genesis 1:14–19', 0, 'They “rule the day and the night” and “separate the light from the darkness” (1:18), the very words of Day 1.'],
+    ['Day 5', 'Sea creatures and birds', 'Genesis 1:20–23', 1, 'Fish fill the waters and birds fill the sky that Day 2 separated.'],
+    ['Day 6', 'Land animals and humans', 'Genesis 1:24–31', 2, 'They live on Day 3’s dry land, and Day 3’s plants are given to them for food (1:29–30).']
+  ];
+  section.append(element('h3', '', 'Forming and filling: the pattern of Genesis 1'),
+    element('p', '', 'Genesis 1:2 says the earth was “formless and void.” Days 1–3 give it form by separating realms; Days 4–6 fill those realms. Match each day of filling to the realm it fills.'));
+  const grid = element('div', 'bible-lab-forming-grid');
+  const choices = fillers.map(([day, what, ref], i) => {
+    const realm = element('article', 'bible-lab-detail');
+    realm.append(element('p', 'bible-lab-context', realms[i][0] + ' · forming · ' + realms[i][2]), element('h4', '', realms[i][1]));
+    const filler = element('article', 'bible-lab-detail');
+    const pick = select(`${day} fills the realm of…`, ['Choose a day', ...realms.map(([d, r]) => `${d} · ${r}`)], () => { result.replaceChildren(); filler.dataset.state = ''; });
+    const why = element('p', 'bible-lab-forming-why');
+    filler.append(element('p', 'bible-lab-context', day + ' · filling · ' + ref), element('h4', '', what), pick.wrapper, why);
+    grid.append(realm, filler);
+    return { pick, filler, why };
+  });
+  const result = element('div', 'bible-lab-result');
+  result.setAttribute('aria-live', 'polite');
+  const check = button('Check my matches', () => {
+    let right = 0;
+    choices.forEach(({ pick, filler, why }, i) => {
+      const ok = Number(pick.input.value) - 1 === fillers[i][3];
+      right += ok;
+      filler.dataset.state = ok ? 'right' : 'wrong';
+      why.textContent = (ok ? '✓ ' : '✗ It fills ' + realms[fillers[i][3]][0] + '. ') + fillers[i][4];
+    });
+    result.replaceChildren(element('p', '', `${right} of 3 matched. Day 7 has no realm and no “evening and morning”: God rests, blesses the day, and sets it apart (2:1–3).`),
+      element('p', 'bible-lab-caption', 'Readers who take the days in sequence and readers who see a literary framework both notice this pattern. It shows how the chapter is built; on its own it does not settle how long the days were.'));
+  });
+  section.append(grid, check, result);
+  return section;
+}
+
 const labs = {
+  genesis: genesisLab,
   'the-tabernacle': tabernacle,
   'pauls-missionary-journeys': () => routeLab(false),
   'kingdoms-prophets-exile': kingdoms,
