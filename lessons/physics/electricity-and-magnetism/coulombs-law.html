@@ -4,706 +4,613 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Coulomb's Law · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Explore Coulomb's Law, electric fields, equipotentials, the inverse-square law, Coulomb's 1785 torsion balance experiment, dielectric mediums, and electric vs. gravitational scale." />
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Physics Lesson 08 — explore Coulomb's Law and the electric force between charged objects with an interactive simulation." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/electricity-path.css" />
-  <style>
-    .cl-page { padding-bottom: 0; }
-    .ll-viewport { --ll-panel-w: 280px; }
-
-    .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
-    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .cl-lede,
-    [data-theme="vaporwave"] .cl-lede,
-    [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.7); }
-
-    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#ff9f0a); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
-    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
-    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .cl-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .cl-card,
-    [data-theme="vaporwave"] .cl-card,
-    [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
-    [data-lighting="night"] .cl-card p,
-    [data-theme="vaporwave"] .cl-card p,
-    [data-theme="bark"] .cl-card p { color: rgba(245,245,247,0.72); }
-
-    .cl-formula-box { background: linear-gradient(135deg,rgba(255,149,0,0.08),rgba(255,149,0,0.03)); border: 1px solid rgba(255,149,0,0.3); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
-    .cl-formula-sym { font-size: clamp(1.5rem,4vw,2.2rem); font-weight: 800; letter-spacing: -0.02em; color: #ff9f0a; display: block; margin-bottom: 0.5rem; }
-    .cl-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .cl-formula-vars,
-    [data-theme="vaporwave"] .cl-formula-vars,
-    [data-theme="bark"] .cl-formula-vars { color: rgba(245,245,247,0.7); }
-
-    .cl-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 0.8rem 0; }
-    .cl-compare-card { border-radius: 12px; padding: 0.9rem 1rem; border: 1px solid var(--line,#d2d2d7); }
-    .cl-compare-card.attract { background: rgba(52,199,89,0.07); border-color: rgba(52,199,89,0.3); }
-    .cl-compare-card.repel  { background: rgba(255,59,48,0.07);  border-color: rgba(255,59,48,0.3);  }
-    .cl-compare-card strong { display: block; font-size: 0.9rem; margin-bottom: 0.3rem; }
-    .cl-compare-card small  { font-size: 0.78rem; color: var(--text-secondary, #3f4f65); line-height: 1.5; }
-    [data-lighting="night"] .cl-compare-card small,
-    [data-theme="vaporwave"] .cl-compare-card small,
-    [data-theme="bark"] .cl-compare-card small { color: rgba(245,245,247,0.68); }
-
-    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #050814; }
-    [data-lighting="night"] .cl-canvas-wrap,
-    [data-theme="vaporwave"] .cl-canvas-wrap,
-    [data-theme="bark"] .cl-canvas-wrap { background: #02040a; }
-    #cl-canvas { width: 100%; height: 220px; display: block; cursor: crosshair; }
-
-    .cl-readouts { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.5rem; margin: 0.6rem 0; }
-    .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
-    [data-lighting="night"] .cl-readout,
-    [data-theme="vaporwave"] .cl-readout,
-    [data-theme="bark"] .cl-readout { background: rgba(255,255,255,0.06); }
-    .cl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
-    .cl-readout-val   { font-size: 1rem; font-weight: 700; color: #ff9f0a; }
-
-    .cl-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
-    .cl-callout.orange { background: rgba(255,149,0,0.1); border-left: 3px solid #ff9500; }
-    .cl-callout.blue { background: rgba(0,122,255,0.09); border-left: 3px solid #007aff; }
-    .cl-field-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.7rem; margin: 0.8rem 0; }
-    .cl-field-item { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; background: rgba(0,0,0,0.03); }
-    .cl-field-item strong { display:block; font-size:0.82rem; margin-bottom:0.2rem; }
-    .cl-field-item small { display:block; font-size:0.77rem; color: var(--text-muted, #64748b); line-height:1.5; }
-
-    .cl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
-    .cl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
-    .cl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
-    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
-    .cl-app small   { font-size: 0.77rem; color: var(--text-muted, #64748b); line-height: 1.5; display: block; }
-
-    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
-    .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
-    .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 90px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
-    .cl-check-btn { background: #a36300; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
-    .cl-check-btn:hover { background: #e68a00; }
-    .cl-feedback { font-size: 0.82rem; font-weight: 600; }
-    .cl-feedback.ok  { color: #34c759; }
-    .cl-feedback.err { color: #ff3b30; }
-    .cl-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
-    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
-    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
-    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/lessons/coulombs-law.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-<div class="ll-viewport">
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../library.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
 
-  <header class="site-header">
-    <div class="nav-wrap">
-      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
-      <nav class="site-nav" aria-label="Primary">
-        <ul>
-          <li><a href="../../../index.html">Home</a></li>
-          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../../../paths.html">Paths</a></li>
-          <li><a href="../../../showcase.html">Showcase</a></li>
-          <li><a href="../../../applications.html">Apps</a></li>
-          <li><a href="../../../library.html">Library</a></li>
-          <li><a href="../../../about.html">About</a></li>
-        </ul>
+    <main id="main-content" class="cl-page">
+      <!-- ── Hero ── -->
+      <section class="cl-hero">
+        <span class="cl-hero-stripe" aria-hidden="true"></span>
+        <div class="cl-hero-grid">
+          <div>
+            <p class="cl-eyebrow">Physics · Lesson 08 · Electrostatics</p>
+            <h1>Coulomb's Law</h1>
+            <p class="cl-lede">In 1785, Charles-Augustin de <span data-glossary="coulomb">Coulomb</span> measured the invisible push and pull between tiny charged spheres and uncovered the mathematical law governing <span data-glossary="electric charge">electric charge</span>. Like gravity, it obeys an inverse-square law—yet it can both attract and repel, and at atomic scales it is trillions of trillions of times stronger.</p>
+            <div class="cl-pills">
+              <span class="cl-pill">Grades 7–12</span>
+              <span class="cl-pill">4 interactive labs</span>
+              <span class="cl-pill">2D field &amp; force sandbox</span>
+              <span class="cl-pill">~35 minutes</span>
+            </div>
+          </div>
+
+          <div class="cl-hero-visual" aria-label="Diagram of an electric dipole showing field lines from positive to negative charge">
+            <svg class="cl-mini-dipole" viewBox="0 0 380 185" role="img" aria-labelledby="cl-hero-dipole-title" data-present="off">
+              <title id="cl-hero-dipole-title">Opposite charges attracting with electric field lines flowing from positive to negative</title>
+              <rect x="6" y="6" width="368" height="173" rx="14" fill="#07111f" />
+              <g stroke="#38bdf8" stroke-opacity="0.45" stroke-width="2" fill="none">
+                <path class="field-arc" d="M115 92H265" />
+                <path class="field-arc" d="M112 78C155 32 225 32 268 78" />
+                <path class="field-arc" d="M112 106C155 152 225 152 268 106" />
+                <path class="field-arc" d="M104 66C145 10 235 10 276 66" />
+                <path class="field-arc" d="M104 118C145 174 235 174 276 118" />
+              </g>
+              <g fill="#4ade80" stroke="#4ade80" stroke-width="2.5">
+                <line x1="136" y1="92" x2="165" y2="92" />
+                <polygon points="170,92 160,87 160,97" />
+                <line x1="244" y1="92" x2="215" y2="92" />
+                <polygon points="210,92 220,87 220,97" />
+              </g>
+              <circle cx="105" cy="92" r="24" fill="#dc2626" stroke="#fecaca" stroke-width="2" />
+              <text x="105" y="97" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="800">+q₁</text>
+              <circle cx="275" cy="92" r="24" fill="#0284c7" stroke="#bae6fd" stroke-width="2" />
+              <text x="275" y="97" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="800">−q₂</text>
+              <text x="190" y="168" text-anchor="middle" fill="#cbd5e1" font-size="11" font-weight="700">F = k · q₁q₂ / r² · Equal &amp; opposite forces</text>
+            </svg>
+            <div class="cl-hero-key">
+              <span>+ &amp; − Attract</span>
+              <span>+ &amp; + or − &amp; − Repel</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cl-signal-strip" aria-label="Coulomb's Law in three core facts">
+          <div class="cl-signal-fact"><span>Polarity rule</span><strong>Opposites attract; likes repel.</strong> Flip one sign to reverse the force vector.</div>
+          <div class="cl-signal-fact"><span>Inverse-square</span><strong>Double r → 1/4 the force.</strong> Halve r → 4× stronger push or pull.</div>
+          <div class="cl-signal-fact"><span>Newton's 3rd Law</span><strong>Always equal &amp; opposite.</strong> Even +1 μC and +8 μC feel identical forces.</div>
+        </div>
+      </section>
+
+      <!-- ── Sticky Jump Nav ── -->
+      <nav class="cl-jump" aria-label="On this page">
+        <a href="#cl-the-law">The Law</a>
+        <a href="#cl-sandbox">2D Field Sandbox</a>
+        <a href="#cl-inverse-square">Inverse-Square Lab</a>
+        <a href="#cl-history">1785 Torsion Balance</a>
+        <a href="#cl-scale">Mediums &amp; Scale</a>
+        <a href="#cl-apps">Applications</a>
+        <a href="#cl-practice">Practice</a>
       </nav>
-    </div>
-  </header>
 
-  <div class="ll-stage">
-    <div class="ll-sim">
-      <main id="main-content" class="cl-page">
+      <!-- ── Learning Goals ── -->
+      <section class="cl-card" style="--card-accent:#0284c7;" aria-labelledby="cl-goals-title">
+        <h2 id="cl-goals-title">Learning goals</h2>
+        <p>By the end of this lesson, you should be able to:</p>
+        <div class="cl-targets">
+          <div class="cl-target">Predict whether two charges attract or repel and verify that both feel equal-magnitude forces.</div>
+          <div class="cl-target">Use <strong>F = k q₁q₂ / r²</strong> to calculate how changing charge or distance scales electric force.</div>
+          <div class="cl-target">Read electric field lines and equipotential contours for two or more charges in 2D space.</div>
+          <div class="cl-target">Explain how Coulomb measured tiny forces in 1785 and why dielectrics and neutrality matter in the real world.</div>
+        </div>
+      </section>
 
-        <!-- Hero -->
-        <section class="hero cl-hero">
-          <p class="eyebrow">Physics · Lesson 08</p>
-          <h1>Coulomb's Law</h1>
-          <div class="cl-hero-meta">
-            <span>Electrostatics</span><span class="dot"></span>
-            <span>Electric Force</span><span class="dot"></span>
-            <span>Inverse-Square Law</span><span class="dot"></span>
-            <span>Attraction &amp; Repulsion</span>
-          </div>
-          <p class="cl-lede">In 1785, Charles-Augustin de <span data-glossary="coulomb">Coulomb</span> measured the force between two charged objects and found it follows the same inverse-square pattern as gravity — but with two important differences: it can push as well as pull, and it is enormously stronger.</p>
-        </section>
+      <!-- ── Section 1: The Law ── -->
+      <section class="cl-card" id="cl-the-law" style="--card-accent:#d97706;">
+        <h2>1. The Law &amp; Vector Superposition</h2>
+        <p>The electrostatic force between two point charges depends directly on the product of their charges and inversely on the square of the center-to-center distance between them:</p>
 
-        <!-- Who Was Coulomb? -->
-        <section class="cl-card" style="--card-accent:#ffcc00;">
-          <h2>Who Was Charles Coulomb?</h2>
-          <p><strong>Charles-Augustin de Coulomb (1736–1806)</strong> was a French physicist and military engineer. Using a torsion balance — a thin wire that twists when a force is applied — he measured the tiny forces between charged spheres with remarkable precision. From those experiments he wrote down the law that now bears his name. The unit of <span data-glossary="electric charge">electric charge</span>, the <strong>coulomb (C)</strong>, is named in his honor.</p>
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:0.9rem; margin:1rem 0 0.4rem;">
-            <figure data-zoomable data-lightbox-group="coulombs-law" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Bcoulomb.png?width=1600" style="margin:0; border:1px solid var(--line,#d2d2d7); border-radius:12px; overflow:hidden; background:var(--white,#fff); display:flex; flex-direction:column;">
-              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Bcoulomb.png?width=600" alt="Engraving of French physicist Charles-Augustin de Coulomb" style="width:100%; height:230px; object-fit:contain; background:#f8fafc; padding:0.5rem; display:block;" loading="lazy" />
-              <figcaption style="padding:0.6rem 0.85rem; font-size:0.78rem; line-height:1.5; color:var(--text-secondary,#3f4f65); border-top:1px solid var(--line,#d2d2d7); flex-grow:1;">
-                <strong>Charles-Augustin de Coulomb (1736&ndash;1806).</strong> French physicist and military engineer who mathematically formulated the electrostatic force law and friction laws. Wikimedia Commons · Public domain.
-              </figcaption>
-            </figure>
-            <figure data-zoomable data-lightbox-group="coulombs-law" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Balance%20de%20Coulomb.jpg?width=1600" style="margin:0; border:1px solid var(--line,#d2d2d7); border-radius:12px; overflow:hidden; background:var(--white,#fff); display:flex; flex-direction:column;">
-              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Balance%20de%20Coulomb.jpg?width=600" alt="Diagram of Coulomb's electrostatic torsion balance apparatus from 1785" style="width:100%; height:230px; object-fit:contain; background:#f8fafc; padding:0.5rem; display:block;" loading="lazy" />
-              <figcaption style="padding:0.6rem 0.85rem; font-size:0.78rem; line-height:1.5; color:var(--text-secondary,#3f4f65); border-top:1px solid var(--line,#d2d2d7); flex-grow:1;">
-                <strong>Coulomb's Torsion Balance (1785).</strong> A fine silver suspension thread twisted in direct proportion to the minuscule repulsive force between charged pith balls inside a glass cylinder, confirming the inverse-square law $F \propto 1/r^2$. Académie des Sciences / Wikimedia Commons · Public domain.
-              </figcaption>
-            </figure>
-          </div>
-        </section>
-
-        <!-- The Law -->
-        <section class="cl-card" style="--card-accent:#ff9f0a;">
-          <h2>The Law</h2>
-          <p>The electric force between two point charges depends on the size of each charge and the distance between them:</p>
-
-          <div class="cl-formula-box" role="img" aria-label="F equals k times q1 times q2 divided by r squared">
-            <span class="cl-formula-sym">F = k · q₁q₂ / r²</span>
-            <div class="cl-formula-vars">
+        <div class="cl-formula-box" role="img" aria-label="F equals k times q1 times q2 divided by r squared">
+          <span class="cl-formula-sym">F = k · q₁q₂ / r²</span>
+          <div class="cl-formula-vars">
             <div><strong>F</strong> = electric force (Newtons, N)</div>
             <div><strong>k</strong> = Coulomb's constant ≈ 8.99 × 10⁹ N·m²/C²</div>
             <div><strong>q₁, q₂</strong> = charges (Coulombs, C)</div>
-            <div><strong>r</strong> = distance between charges (metres, m)</div>
-          </div>
-          </div>
-
-          <div class="cl-callout blue">
-            <strong>Vector idea:</strong> Coulomb's law does not just tell us how big the force is. It also tells us the force acts along the line joining the two charges. In coordinate-style models, positions like <strong>x₁</strong> and <strong>x₂</strong> determine <strong>r</strong>, and then the force direction follows from whether the charges attract or repel.
-          </div>
-
-          <div class="cl-compare">
-            <div class="cl-compare-card attract">
-              <strong>✅ Opposite charges attract</strong>
-              <small>One positive (+) and one negative (−) charge pull toward each other. The force points from each charge toward the other.</small>
-            </div>
-            <div class="cl-compare-card repel">
-              <strong>🚫 Like charges repel</strong>
-              <small>Two positive or two negative charges push away from each other. The force points outward from each charge.</small>
-            </div>
-          </div>
-
-          <div class="cl-callout orange">
-            <strong>Compare with gravity:</strong> Both gravity and Coulomb's law are inverse-square laws — double the distance and the force drops to one quarter. But Coulomb force can be millions of times stronger than gravity, and it has both attractive and repulsive versions. Gravity only attracts.
-          </div>
-
-          <h3>From Formula to Field Model</h3>
-          <p>The companion files for this simulation hint at a more physical setup with regions labeled <strong>air</strong>, <strong>boundary</strong>, and <strong><span data-glossary="conductor">conductor</span></strong>. That is a helpful reminder that Coulomb's law is often used inside a modeled space: charges sit somewhere, the surrounding region matters, and conductors or boundaries can shape what the electric field looks like.</p>
-          <div class="cl-field-grid">
-            <div class="cl-field-item">
-              <strong>Air region</strong>
-              <small>The field fills the space around the charges, not just the line between them.</small>
-            </div>
-            <div class="cl-field-item">
-              <strong>Boundaries</strong>
-              <small>A simulation often defines the edges of the world so distances and field behavior stay measurable.</small>
-            </div>
-            <div class="cl-field-item">
-              <strong>Conductors</strong>
-              <small>Nearby conductive objects can redistribute charge and distort the simple two-charge picture.</small>
-            </div>
-          </div>
-        </section>
-
-        <!-- Simulator -->
-        <section class="cl-card" style="--card-accent:#5856d6;">
-          <h2>Interactive Simulator</h2>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Drag the charges to change the distance. Use the panel controls to adjust charge magnitudes and signs.</p>
-          <div class="cl-canvas-wrap">
-            <canvas id="cl-canvas" aria-label="Coulomb's law simulator showing two charges and the force between them"></canvas>
-          </div>
-          <div class="cl-readouts">
-            <div class="cl-readout"><span class="cl-readout-label">q₁</span><span class="cl-readout-val" id="cl-r-q1">+2 μC</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">q₂</span><span class="cl-readout-val" id="cl-r-q2">−2 μC</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">Distance</span><span class="cl-readout-val" id="cl-r-dist">0.20 m</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">Force</span><span class="cl-readout-val" id="cl-r-force">0.90 N</span></div>
-          </div>
-        </section>
-
-        <!-- Real-World Applications -->
-        <section class="cl-card" style="--card-accent:#34c759;">
-          <h2>Real-World Applications</h2>
-          <div class="cl-apps">
-            <div class="cl-app">
-              <div class="cl-app-icon">⚡</div>
-              <strong>Lightning</strong>
-              <small>Charge separation in storm clouds builds until the electric force is strong enough to drive a spark through the air — a lightning bolt.</small>
-            </div>
-            <div class="cl-app">
-              <div class="cl-app-icon">🖨️</div>
-              <strong>Laser Printers</strong>
-              <small>A charged drum attracts toner particles to the right spots using Coulomb forces, then transfers them to paper to form the image.</small>
-            </div>
-            <div class="cl-app">
-              <div class="cl-app-icon">🧲</div>
-              <strong>Atomic Bonding</strong>
-              <small>Coulomb attraction between protons and electrons holds atoms together. Chemistry is fundamentally Coulomb's law at atomic scale.</small>
-            </div>
-            <div class="cl-app">
-              <div class="cl-app-icon">🩺</div>
-              <strong>Electrostatic Filters</strong>
-              <small>Air purifiers and surgical masks use electrostatic charge to attract and trap microscopic particles that would otherwise pass through.</small>
-            </div>
-          </div>
-        </section>
-
-        <!-- Practice Problems -->
-        <section class="cl-card" style="--card-accent:#007aff;">
-          <h2>Practice Problems</h2>
-          <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Use F = kq₁q₂/r². k = 9 × 10⁹ N·m²/C². Give answers to 2 significant figures.</p>
-          <div class="cl-practice">
-
-            <div class="cl-problem">
-              <p><span class="diff-easy">Easy</span>1. Two charges of +1 μC and −1 μC are 0.1 m apart. Is the force attractive or repulsive?</p>
-              <div class="cl-problem-row">
-                <select class="cl-ans-input" id="clans-1" style="width:130px;">
-                  <option value="">Choose…</option>
-                  <option value="attractive">Attractive</option>
-                  <option value="repulsive">Repulsive</option>
-                </select>
-                <button class="cl-check-btn" onclick="clCheckText(1,'attractive')">Check</button>
-                <span class="cl-feedback" id="clfb-1"></span>
-              </div>
-              <div class="cl-hint" id="clhint-1">Hint: Opposite signs (+/−) always attract.</div>
-            </div>
-
-            <div class="cl-problem">
-              <p><span class="diff-easy">Easy</span>2. Two identical +2 μC charges are 0.3 m apart. What is the force? (Round to 1 decimal.) [F = 9×10⁹ × (2×10⁻⁶)² / 0.09]</p>
-              <div class="cl-problem-row">
-                <input type="number" class="cl-ans-input" id="clans-2" step="0.1" placeholder="N" />
-                <button class="cl-check-btn" onclick="clCheck(2, 0.4, 0.05)">Check</button>
-                <span class="cl-feedback" id="clfb-2"></span>
-              </div>
-              <div class="cl-hint" id="clhint-2">Hint: F = 9×10⁹ × 4×10⁻¹² / 0.09 = 0.4 N</div>
-            </div>
-
-            <div class="cl-problem">
-              <p><span class="diff-mid">Medium</span>3. If the distance between two charges doubles, by what factor does the force change?</p>
-              <div class="cl-problem-row">
-                <select class="cl-ans-input" id="clans-3" style="width:130px;">
-                  <option value="">Choose…</option>
-                  <option value="halves">Halves (÷ 2)</option>
-                  <option value="quarters">Quarters (÷ 4)</option>
-                  <option value="doubles">Doubles (× 2)</option>
-                  <option value="quadruples">Quadruples (× 4)</option>
-                </select>
-                <button class="cl-check-btn" onclick="clCheckText(3,'quarters')">Check</button>
-                <span class="cl-feedback" id="clfb-3"></span>
-              </div>
-              <div class="cl-hint" id="clhint-3">Hint: Inverse-square law: (2r)² = 4r², so force becomes F/4.</div>
-            </div>
-
-            <div class="cl-problem">
-              <p><span class="diff-mid">Medium</span>4. A +3 μC charge and a +5 μC charge are 0.2 m apart. Calculate the force (in N, 1 decimal).</p>
-              <div class="cl-problem-row">
-                <input type="number" class="cl-ans-input" id="clans-4" step="0.1" placeholder="N" />
-                <button class="cl-check-btn" onclick="clCheck(4, 3.4, 0.1)">Check</button>
-                <span class="cl-feedback" id="clfb-4"></span>
-              </div>
-              <div class="cl-hint" id="clhint-4">Hint: F = 9×10⁹ × 3×10⁻⁶ × 5×10⁻⁶ / 0.04 = 3.375 ≈ 3.4 N</div>
-            </div>
-
-            <div class="cl-problem">
-              <p><span class="diff-hard">Challenge</span>5. Two charges exert a 10 N force on each other at 0.1 m. What distance would reduce the force to 2.5 N?</p>
-              <div class="cl-problem-row">
-                <input type="number" class="cl-ans-input" id="clans-5" step="0.01" placeholder="m" />
-                <button class="cl-check-btn" onclick="clCheck(5, 0.2, 0.01)">Check</button>
-                <span class="cl-feedback" id="clfb-5"></span>
-              </div>
-              <div class="cl-hint" id="clhint-5">Hint: Force quartered → distance doubled → 0.2 m</div>
-            </div>
-
-          </div>
-        </section>
-
-        <section style="margin: 0 0 1rem; padding: 0.85rem 1.1rem; background: rgba(255,255,255,0.8); border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
-          <p style="margin: 0 0 0.45rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #64748b);">Innovator Profile · See Also</p>
-          <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
-            <a href="../pioneers/nikola-tesla.html" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.7rem; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 7px; font-size: 0.81rem; font-weight: 600; color: #3730a3; text-decoration: none;">⚡ Nikola Tesla — Electrostatics &amp; High-Voltage Engineering</a>
-            <a href="../pioneers/james-clerk-maxwell.html" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.7rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 7px; font-size: 0.81rem; font-weight: 600; color: #1e40af; text-decoration: none;">🌊 James Clerk Maxwell — Gauss's Law &amp; Maxwell's Equations</a>
-          </div>
-        </section>
-
-        <footer class="site-footer">
-          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
-        </footer>
-      </main>
-    </div><!-- .ll-sim -->
-
-    <aside class="ll-panel" aria-hidden="false">
-      <div class="ll-panel-head">
-        <div class="ll-tabs">
-          <button class="ll-tab" aria-selected="true"  data-pane="cl-pane-sim">Simulator</button>
-          <button class="ll-tab" aria-selected="false" data-pane="cl-pane-guide">Summary</button>
-        </div>
-        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
-      </div>
-      <div class="ll-panel-body">
-
-        <div class="ll-pane ll-active" id="cl-pane-sim">
-          <span class="ll-label">Charge 1 (left)</span>
-          <div style="margin-bottom:0.7rem;">
-            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">q₁ magnitude <span id="cl-q1-val">2 μC</span></label>
-            <input type="range" class="nl-slider" id="cl-q1" min="1" max="10" value="2" style="width:100%;" />
-          </div>
-          <div style="margin-bottom:0.9rem;">
-            <label style="font-size:0.8rem;">Sign</label><br>
-            <button class="ll-preset" id="cl-q1-pos" onclick="clSetSign(1,1)" style="margin-right:0.3rem;">+ Positive</button>
-            <button class="ll-preset" id="cl-q1-neg" onclick="clSetSign(1,-1)">− Negative</button>
-          </div>
-          <hr class="ll-hr">
-          <span class="ll-label">Charge 2 (right)</span>
-          <div style="margin-bottom:0.7rem;">
-            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">q₂ magnitude <span id="cl-q2-val">2 μC</span></label>
-            <input type="range" class="nl-slider" id="cl-q2" min="1" max="10" value="2" style="width:100%;" />
-          </div>
-          <div>
-            <label style="font-size:0.8rem;">Sign</label><br>
-            <button class="ll-preset" id="cl-q2-pos" onclick="clSetSign(2,1)" style="margin-right:0.3rem;">+ Positive</button>
-            <button class="ll-preset" id="cl-q2-neg" onclick="clSetSign(2,-1)">− Negative</button>
+            <div><strong>r</strong> = center-to-center distance (meters, m)</div>
           </div>
         </div>
 
-        <div class="ll-pane" id="cl-pane-guide">
-          <div class="ll-info"><strong>Coulomb's Law</strong>F = kq₁q₂/r². The force is proportional to the product of charges and inversely proportional to the square of the distance.</div>
-          <div class="ll-info"><strong>Opposite charges</strong>Attract — the force pulls them together.</div>
-          <div class="ll-info"><strong>Like charges</strong>Repel — the force pushes them apart.</div>
-          <div class="ll-info"><strong>Inverse-square</strong>Double the distance → force drops to one quarter.</div>
-          <div class="ll-info"><strong>Position-based model</strong>Coordinate variables such as x-positions can be used to compute r and then determine both the size and direction of the force.</div>
+        <div class="cl-compare">
+          <div class="cl-compare-card attract">
+            <strong>Opposite charges attract (+ and −)</strong>
+            <small>One positive and one negative charge pull inward along the line joining their centers. More <span data-glossary="electron">electrons</span> on one object and fewer on the other create a mutual inward pull.</small>
+          </div>
+          <div class="cl-compare-card repel">
+            <strong>Like charges repel (+/+ or −/−)</strong>
+            <small>Two positive or two negative charges push outward away from each other along the line joining them. Neither object can escape the pair's equal-and-opposite push.</small>
+          </div>
         </div>
 
-      </div>
-    </aside>
+        <div class="cl-callout blue">
+          <strong>Vector direction &amp; Newton's Third Law:</strong> Notice the formula multiplies <em>q₁ × q₂</em> together. That means a +1 μC charge and a +8 μC charge exert the <strong>exact same force magnitude</strong> on each other—just in opposite directions! When three or more charges are present, the net force on any charge is the vector sum (<strong>superposition</strong>) of every pairwise push and pull.
+        </div>
 
-    <button class="ll-open-btn" aria-label="Open panel">
-      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
-    </button>
+        <div class="cl-worked">
+          <h3>Worked Example: Calculating Electrostatic Force</h3>
+          <p style="margin:0; font-size:0.84rem;">Two small spheres carry <strong>q₁ = +2 μC</strong> (2 × 10⁻⁶ C) and <strong>q₂ = −3 μC</strong> (−3 × 10⁻⁶ C) and sit <strong>r = 0.30 m</strong> apart in air.</p>
+          <ol>
+            <li>Convert microcoulombs: <code>1 μC = 10⁻⁶ C</code>, so <code>|q₁| = 2 × 10⁻⁶ C</code> and <code>|q₂| = 3 × 10⁻⁶ C</code>.</li>
+            <li>Substitute into Coulomb's law (using <code>k ≈ 9.0 × 10⁹ N·m²/C²</code>): <code>F = (9.0 × 10⁹) × (2 × 10⁻⁶) × (3 × 10⁻⁶) / (0.30)²</code>.</li>
+            <li>Compute numerator and denominator: <code>0.054 / 0.09 = 0.60 N</code>.</li>
+            <li>Determine direction from signs: opposite signs mean <strong>0.60 N attractive</strong> on both charges.</li>
+          </ol>
+        </div>
+      </section>
 
-  </div><!-- .ll-stage -->
-</div><!-- .ll-viewport -->
+      <!-- ── Section 2: 2D Force & Electric Field Sandbox ── -->
+      <section class="cl-card" id="cl-sandbox" style="--card-accent:#6d28d9;">
+        <h2>2. Interactive 2D Force &amp; Electric Field Sandbox</h2>
+        <p>Drag charges anywhere in 2D space, switch presets to test Newton's Third Law or 3-charge equilibrium, add up to four charges, toggle field vectors and equipotentials, or release the charges to watch them accelerate.</p>
 
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
-<script src="../../../assets/js/sim-kit.js"></script>
-<script>
-(function () {
-  const K = 9e9;
-  let q1mag = 2, q1sign = 1;
-  let q2mag = 2, q2sign = -1;
-  let chargeX1 = 0.3, chargeX2 = 0.7; // fractional positions
-  let dragging = null, dragOffX = 0;
+        <div class="cl-lab-box" data-present>
+          <div class="cl-chip-row" role="group" aria-label="Sandbox charge presets">
+            <span class="cl-chip-label">Presets</span>
+            <button type="button" class="cl-chip" data-cl-preset="dipole" aria-pressed="true">Dipole (+2, −2 μC)</button>
+            <button type="button" class="cl-chip" data-cl-preset="repel" aria-pressed="false">Like Pair (+4, +4 μC)</button>
+            <button type="button" class="cl-chip" data-cl-preset="thirdlaw" aria-pressed="false">3rd Law (+1, +8 μC)</button>
+            <button type="button" class="cl-chip" data-cl-preset="equilibrium" aria-pressed="false">3-Charge Line</button>
+            <button type="button" class="cl-chip" data-cl-preset="quadrupole" aria-pressed="false">Quadrupole (4q)</button>
+          </div>
 
-  const canvas = document.getElementById('cl-canvas');
-  const ctx    = canvas.getContext('2d');
+          <div class="cl-chip-row" role="group" aria-label="Surrounding medium">
+            <span class="cl-chip-label">Medium (εᵣ)</span>
+            <button type="button" class="cl-chip" data-cl-medium="air" aria-pressed="true">Air / Vacuum (1.0)</button>
+            <button type="button" class="cl-chip" data-cl-medium="paper" aria-pressed="false">Paper (3.5)</button>
+            <button type="button" class="cl-chip" data-cl-medium="glass" aria-pressed="false">Glass (5.0)</button>
+            <button type="button" class="cl-chip" data-cl-medium="water" aria-pressed="false">Pure Water (80)</button>
+          </div>
 
-  function getQ1() { return q1sign * q1mag * 1e-6; }
-  function getQ2() { return q2sign * q2mag * 1e-6; }
-  // Fixed scale: full canvas width = 0.5 m. Initial positions (0.3, 0.7) → 0.20 m apart.
-  function distMeters() { return Math.max(0.01, Math.abs(chargeX2 - chargeX1) * 0.5); }
+          <div class="cl-lab-grid">
+            <div class="cl-stage-col">
+              <div class="cl-canvas-wrap">
+                <canvas id="cl-sandbox-canvas" class="cl-canvas" tabindex="0" role="img" aria-label="Interactive 2D Coulomb force and electric field simulator. Click a charge to select it, drag to move, or use arrow keys."></canvas>
+              </div>
+              <p class="cl-stage-hint">Tip: Drag any charge in 2D (or click to select and nudge with Arrow keys). Force arrows start on the outside rim of each sphere and point along the exact net force vector.</p>
+            </div>
 
-  function calcForce() {
-    const r = distMeters();
-    return K * Math.abs(getQ1()) * Math.abs(getQ2()) / (r * r);
-  }
+            <div class="cl-controls">
+              <div class="cl-control">
+                <div class="cl-control-head">
+                  <span>Active Charge</span>
+                  <span style="font-size:0.71rem;color:var(--cl-muted);">2–4 charges</span>
+                </div>
+                <div class="cl-charge-tabs" id="cl-charge-tabs" role="group" aria-label="Select charge to edit"></div>
+                <div class="cl-btn-pair">
+                  <button type="button" class="cl-btn-action" id="cl-add-charge">+ Add charge</button>
+                  <button type="button" class="cl-btn-action" id="cl-remove-charge">Remove selected</button>
+                </div>
+              </div>
 
-  function drawFieldLines(W, H, x1, x2, CY) {
-    const q1 = getQ1(), q2 = getQ2();
-    const STEP = 4, MAX_STEPS = 280, R_START = 30, R_STOP = 26, NUM_LINES = 9;
+              <div class="cl-control">
+                <label for="cl-q-slider"><span id="cl-q-slider-label">Selected q₁ charge</span><output id="cl-q-slider-out">+2 μC</output></label>
+                <input id="cl-q-slider" type="range" min="-10" max="10" step="1" value="2" />
+                <div class="cl-btn-pair" style="margin-top:0.45rem;">
+                  <button type="button" class="cl-btn-action" id="cl-flip-sign">Flip + / − sign</button>
+                  <button type="button" class="cl-btn-action" id="cl-zero-charge">Set 0 μC</button>
+                </div>
+              </div>
 
-    function eAt(px, py) {
-      let ex = 0, ey = 0;
-      const add = (cx, cy, q) => {
-        const dx = px - cx, dy = py - cy;
-        const r2 = dx*dx + dy*dy;
-        if (r2 < 1) return;
-        const r3 = r2 * Math.sqrt(r2);
-        ex += q * dx / r3; ey += q * dy / r3;
-      };
-      add(x1, CY, q1); add(x2, CY, q2);
-      return [ex, ey];
-    }
+              <div class="cl-control">
+                <div class="cl-control-head"><span>Field &amp; Potential Layers</span></div>
+                <div class="cl-btn-pair" style="margin-bottom:0.4rem;">
+                  <button type="button" class="cl-btn-action" id="cl-layer-lines" aria-pressed="true">Field lines</button>
+                  <button type="button" class="cl-btn-action" id="cl-layer-vectors" aria-pressed="false">Field vectors</button>
+                </div>
+                <div class="cl-btn-pair">
+                  <button type="button" class="cl-btn-action" id="cl-layer-eq" aria-pressed="false">Equipotentials</button>
+                  <button type="button" class="cl-btn-action" id="cl-layer-probe" aria-pressed="false">Test probe (+1 μC)</button>
+                </div>
+              </div>
 
-    function traceLine(sx, sy, fwd) {
-      const pts = [[sx, sy]];
-      let px = sx, py = sy;
-      const dir = fwd ? 1 : -1;
-      for (let s = 0; s < MAX_STEPS; s++) {
-        const [ex, ey] = eAt(px, py);
-        const mag = Math.sqrt(ex*ex + ey*ey);
-        if (mag < 1e-12) break;
-        px += dir * ex / mag * STEP; py += dir * ey / mag * STEP;
-        pts.push([px, py]);
-        if (px < -10 || px > W+10 || py < -10 || py > H+10) break;
-        if (Math.hypot(px-x1, py-CY) < R_STOP || Math.hypot(px-x2, py-CY) < R_STOP) break;
-      }
-      return pts;
-    }
+              <div class="cl-control">
+                <div class="cl-control-head"><span>Dynamics</span></div>
+                <div class="cl-btn-pair">
+                  <button type="button" class="cl-btn-primary" id="cl-motion-btn" aria-pressed="false">Release motion</button>
+                  <button type="button" class="cl-btn-action" id="cl-sandbox-reset">Reset preset</button>
+                </div>
+              </div>
+            </div>
+          </div>
 
-    function renderLine(pts, fwd) {
-      if (pts.length < 3) return;
-      ctx.beginPath();
-      ctx.moveTo(pts[0][0], pts[0][1]);
-      for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]);
-      ctx.strokeStyle = 'rgba(160,195,255,0.3)';
-      ctx.lineWidth = 1.3;
-      ctx.stroke();
-      const ai = Math.floor(pts.length * 0.62);
-      if (ai > 0 && ai < pts.length) {
-        const p0 = pts[ai-1], p1 = pts[ai];
-        const ang = Math.atan2(p1[1]-p0[1], p1[0]-p0[0]) + (fwd ? 0 : Math.PI);
-        ctx.fillStyle = 'rgba(160,195,255,0.55)';
-        ctx.beginPath();
-        ctx.moveTo(p1[0], p1[1]);
-        ctx.lineTo(p1[0]-8*Math.cos(ang-0.45), p1[1]-8*Math.sin(ang-0.45));
-        ctx.lineTo(p1[0]-8*Math.cos(ang+0.45), p1[1]-8*Math.sin(ang+0.45));
-        ctx.closePath(); ctx.fill();
-      }
-    }
+          <div class="cl-metrics" aria-live="polite">
+            <div class="cl-metric"><span>Force on q₁</span><strong id="cl-m-force">0.90 N</strong><small id="cl-m-force-sub">|F₁| = |F₂| (Newton's 3rd Law)</small></div>
+            <div class="cl-metric"><span>Separation r</span><strong id="cl-m-dist">0.20 m</strong><small id="cl-m-dist-sub">+2 μC &amp; −2 μC</small></div>
+            <div class="cl-metric"><span>Interaction</span><strong id="cl-m-mode">Attractive</strong><small id="cl-m-mode-sub">Opposite signs pull inward</small></div>
+            <div class="cl-metric"><span>Medium / Probe</span><strong id="cl-m-field">εᵣ = 1</strong><small id="cl-m-field-sub">Full vacuum/air force</small></div>
+          </div>
 
-    const bothNeg = q1 < 0 && q2 < 0;
-    [[x1, q1], [x2, q2]].forEach(([cx, cq]) => {
-      if (!bothNeg && cq <= 0) return;
-      const fwd = !bothNeg;
-      for (let i = 0; i < NUM_LINES; i++) {
-        const a = (i / NUM_LINES) * Math.PI * 2;
-        renderLine(traceLine(cx + Math.cos(a)*R_START, CY + Math.sin(a)*R_START, fwd), fwd);
-      }
-    });
-  }
+          <div class="cl-readout" id="cl-sandbox-readout" aria-live="polite"></div>
+        </div>
+      </section>
 
-  let timeOffset = 0;
-  function draw(ts = 0) {
-    timeOffset = ts / 1000;
-    const W = canvas.offsetWidth || 600;
-    canvas.width = W; canvas.height = 220;
-    const H = 220;
-    const CY = H / 2;
-    const R = 22;
-    const x1 = chargeX1 * W;
-    const x2 = chargeX2 * W;
-    const force = calcForce();
-    const attract = (getQ1() * getQ2()) < 0;
+      <!-- ── Section 3: Inverse-Square Law Explorer ── -->
+      <section class="cl-card" id="cl-inverse-square" style="--card-accent:#0284c7;">
+        <h2>3. Why Squaring the Distance Changes Everything</h2>
+        <p>Because <em>r</em> is squared in the denominator (<em>F</em> &prop; 1/<em>r</em><sup>2</sup>), moving charges apart shrinks the force much faster than a simple 1/<em>r</em> drop. Drag directly along the curve or tap the distance multipliers below to compare.</p>
 
-    // Richer background and spatial grid to give depth
-    const bgGrad = ctx.createRadialGradient(W/2, CY, 0, W/2, CY, W*0.8);
-    bgGrad.addColorStop(0, '#0f172a');
-    bgGrad.addColorStop(1, '#02040a');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, W, H);
+        <div class="cl-lab-box" data-present>
+          <div class="cl-chip-row" role="group" aria-label="Distance multipliers relative to baseline r0 = 0.12 m">
+            <span class="cl-chip-label">Multiply r₀</span>
+            <button type="button" class="cl-chip" data-inv-mult="0.5" aria-pressed="false">½ r₀ (4× F)</button>
+            <button type="button" class="cl-chip" data-inv-mult="1" aria-pressed="false">1× r₀ (Baseline)</button>
+            <button type="button" class="cl-chip" data-inv-mult="2" aria-pressed="true">2× r₀ (¼ F)</button>
+            <button type="button" class="cl-chip" data-inv-mult="3" aria-pressed="false">3× r₀ (⅑ F)</button>
+            <button type="button" class="cl-chip" data-inv-mult="4" aria-pressed="false">4× r₀ (1/16 F)</button>
+            <button type="button" class="cl-chip" id="cl-inv-compare-1r" aria-pressed="false">Compare 1/r curve</button>
+          </div>
 
-    ctx.strokeStyle = 'rgba(120, 150, 200, 0.05)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 30) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-    for (let y = 0; y < H; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+          <div class="cl-canvas-wrap cl-canvas-wrap--inv">
+            <canvas id="cl-inv-canvas" class="cl-canvas" role="img" aria-label="Inverse-square force versus distance curve and synced charge separation track"></canvas>
+          </div>
 
-    drawFieldLines(W, H, x1, x2, CY);
+          <div class="cl-inv-controls">
+            <div class="cl-control">
+              <label for="cl-inv-r">Distance r <output id="cl-inv-r-out">0.24 m</output></label>
+              <input id="cl-inv-r" type="range" min="0.05" max="0.54" step="0.01" value="0.24" />
+            </div>
+            <div class="cl-control">
+              <label for="cl-inv-qprod">Charge product |q₁·q₂| <output id="cl-inv-qprod-out">4 μC²</output></label>
+              <input id="cl-inv-qprod" type="range" min="1" max="25" step="1" value="4" />
+            </div>
+          </div>
 
-    // Distance line
-    ctx.setLineDash([4,4]);
-    ctx.strokeStyle = 'rgba(140,160,200,0.4)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x1, CY); ctx.lineTo(x2, CY); ctx.stroke();
-    ctx.setLineDash([]);
+          <div class="cl-metrics" aria-live="polite">
+            <div class="cl-metric"><span>Distance r</span><strong id="cl-inv-m-dist">0.24 m</strong><small>Baseline r₀ = 0.12 m</small></div>
+            <div class="cl-metric"><span>Distance ratio</span><strong id="cl-inv-m-ratio">2.00× r₀</strong><small>Current / baseline</small></div>
+            <div class="cl-metric"><span>Electric force</span><strong id="cl-inv-m-force">0.62 N</strong><small>F = k|q₁q₂| / r²</small></div>
+            <div class="cl-metric"><span>Force factor</span><strong id="cl-inv-m-factor">1 / 4.0 F₀</strong><small>Inverse-square scaling</small></div>
+          </div>
 
-    // Distance label
-    const r = distMeters();
-    ctx.font = '11px Inter,sans-serif';
-    ctx.fillStyle = '#94a3b8';
-    ctx.textAlign = 'center';
-    ctx.fillText('r = ' + r.toFixed(2) + ' m', (x1+x2)/2, CY - 12);
+          <div class="cl-readout" id="cl-inv-readout" aria-live="polite"></div>
+        </div>
+      </section>
 
-    // Force arrows
-    const maxArrow = 60;
-    const scale = Math.min(maxArrow, force * 200);
-    const arrowColor = attract ? '#34c759' : '#ff3b30';
-    ctx.strokeStyle = arrowColor;
-    ctx.fillStyle   = arrowColor;
-    ctx.lineWidth = 2.5;
-    ctx.shadowColor = arrowColor;
-    ctx.shadowBlur = 12;
+      <!-- ── Section 4: Coulomb's 1785 Torsion Balance & History ── -->
+      <section class="cl-card" id="cl-history" style="--card-accent:#d97706;">
+        <h2>4. How Coulomb Proved It: The 1785 Torsion Balance</h2>
+        <p><strong>Charles-Augustin de Coulomb (1736–1806)</strong> was a French physicist and military engineer. To measure electrostatic forces smaller than the weight of a grain of sand, he built a <strong>torsion balance</strong>: a needle-thin silver wire inside a draft-proof glass cylinder that twisted smoothly in proportion to the repulsive force between two small pith balls.</p>
+        <p>By twisting the top micrometer dial to squeeze the balls to half their separation, Coulomb measured that the wire twist—and therefore the force—jumped fourfold. He also touched a charged sphere to an identical uncharged sphere, splitting the charge in half (<em>q</em> &rarr; <em>q</em>/2) and proving force is proportional to each charge.</p>
 
-    if (attract) {
-      // arrows pointing inward
-      drawArrow(ctx, x1 - R - 5, CY, x1 - R - 5 + scale, CY); // left charge: rightward
-      drawArrow(ctx, x2 + R + 5, CY, x2 + R + 5 - scale, CY); // right charge: leftward
-    } else {
-      // arrows pointing outward
-      drawArrow(ctx, x1 + R + 5, CY, x1 + R + 5 - scale, CY);
-      drawArrow(ctx, x2 - R - 5, CY, x2 - R - 5 + scale, CY);
-    }
-    ctx.shadowBlur = 0;
+        <div class="cl-lab-box" data-present>
+          <div class="cl-chip-row" role="group" aria-label="Coulomb 1785 memoir trials">
+            <span class="cl-chip-label">1785 Trials</span>
+            <button type="button" class="cl-chip" data-torsion-trial="1" data-torsion-dial="0" aria-pressed="true">Trial 1: α ≈ 36° (0° dial)</button>
+            <button type="button" class="cl-chip" data-torsion-trial="2" data-torsion-dial="126" aria-pressed="false">Trial 2: α ≈ 18° (126° dial)</button>
+            <button type="button" class="cl-chip" data-torsion-trial="3" data-torsion-dial="567" aria-pressed="false">Trial 3: α ≈ 9° (567° dial)</button>
+          </div>
 
-    // Charge circles
-    [[x1, q1sign, q1mag], [x2, q2sign, q2mag]].forEach(([cx, sign, mag]) => {
-      const baseColor = sign > 0 ? '255, 40, 80' : '0, 190, 255';
-      const coreColor = sign > 0 ? '#ffb3b0' : '#b0efff';
-      const shadowColor = sign > 0 ? '#8a0010' : '#002b66';
+          <div class="cl-canvas-wrap cl-canvas-wrap--torsion">
+            <canvas id="cl-torsion-canvas" class="cl-canvas" role="img" aria-label="Top-down simulation of Coulomb's 1785 torsion balance and micrometer dial"></canvas>
+          </div>
 
-      const pulse = 1 + Math.sin(timeOffset * 5 + cx) * 0.08;
-      const glowRadius = (R + mag * 4.5) * pulse;
+          <div class="cl-torsion-toolbar">
+            <div class="cl-torsion-slider">
+              <label for="cl-torsion-dial">Top micrometer dial twist (θ<sub>dial</sub>) <output id="cl-torsion-dial-out">0°</output></label>
+              <input id="cl-torsion-dial" type="range" min="0" max="600" step="1" value="0" />
+            </div>
+            <button type="button" class="cl-btn-primary" id="cl-torsion-split">Split charge (touch neutral sphere → q/2)</button>
+            <button type="button" class="cl-btn-action" id="cl-torsion-reset">Reset full charge (q)</button>
+          </div>
 
-      ctx.globalCompositeOperation = 'screen';
-      const glow = ctx.createRadialGradient(cx, CY, R * 0.5, cx, CY, glowRadius);
-      glow.addColorStop(0, `rgba(${baseColor}, 0.6)`);
-      glow.addColorStop(0.4, `rgba(${baseColor}, 0.15)`);
-      glow.addColorStop(1, `rgba(${baseColor}, 0)`);
-      ctx.fillStyle = glow;
-      ctx.beginPath(); ctx.arc(cx, CY, glowRadius, 0, Math.PI*2); ctx.fill();
+          <div class="cl-metrics" aria-live="polite">
+            <div class="cl-metric"><span>Separation angle α</span><strong id="cl-tor-m-alpha">36.0°</strong><small>Between spheres A &amp; B</small></div>
+            <div class="cl-metric"><span>Total wire twist</span><strong id="cl-tor-m-twist">36.0°</strong><small>θ_dial + α (∝ Force)</small></div>
+            <div class="cl-metric"><span>Sphere charge</span><strong id="cl-tor-m-charge">q (100%)</strong><small>Charge sharing test</small></div>
+            <div class="cl-metric"><span>Twist × r² check</span><strong id="cl-tor-m-const">13.75</strong><small>Constant when q is fixed</small></div>
+          </div>
 
-      ctx.globalCompositeOperation = 'source-over';
-      // Harder specular highlight for a glossy 3D feel
-      const sphere = ctx.createRadialGradient(cx - R * 0.35, CY - R * 0.35, R * 0.05, cx, CY, R * 1.1);
-      sphere.addColorStop(0, '#ffffff');
-      sphere.addColorStop(0.15, coreColor);
-      sphere.addColorStop(0.5, `rgb(${baseColor})`);
-      sphere.addColorStop(1, shadowColor);
-      ctx.fillStyle = sphere;
-      ctx.beginPath(); ctx.arc(cx, CY, R, 0, Math.PI*2); ctx.fill();
+          <div class="cl-readout" id="cl-torsion-readout" aria-live="polite"></div>
 
-      // Subtle inner rim light to pop off the dark background
-      const rim = ctx.createRadialGradient(cx, CY, R * 0.75, cx, CY, R);
-      rim.addColorStop(0, 'rgba(255,255,255,0)');
-      rim.addColorStop(1, 'rgba(255,255,255,0.25)');
-      ctx.fillStyle = rim;
-      ctx.beginPath(); ctx.arc(cx, CY, R, 0, Math.PI*2); ctx.fill();
+          <div class="cl-table-wrap">
+            <table class="cl-table" aria-label="Coulomb's 1785 inverse-square data summary">
+              <thead>
+                <tr>
+                  <th>1785 Trial</th>
+                  <th>Dial twist (θ<sub>dial</sub>)</th>
+                  <th>Separation angle (α)</th>
+                  <th>Total wire twist (τ = θ<sub>dial</sub> + α)</th>
+                  <th>Relative force</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Trial 1</td><td>0°</td><td>36°</td><td>36°</td><td>1× baseline</td></tr>
+                <tr><td>Trial 2</td><td>126°</td><td>18° (½ α₁)</td><td>144°</td><td>4× stronger</td></tr>
+                <tr><td>Trial 3</td><td>567°</td><td>9° (¼ α₁)</td><td>576°</td><td>16× stronger</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(cx, CY, R - 1, 0, Math.PI*2); ctx.stroke();
+        <div class="cl-figure-grid">
+          <figure class="cl-figure" data-zoomable data-lightbox-group="coulombs-law" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Bcoulomb.png?width=1600">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Bcoulomb.png?width=600" alt="Engraving of French physicist Charles-Augustin de Coulomb" loading="lazy" />
+            <figcaption>
+              <strong>Charles-Augustin de Coulomb (1736&ndash;1806).</strong> French physicist and military engineer who formulated the electrostatic force law and laws of friction. The SI unit of charge (1 C) is named in his honor. Wikimedia Commons · Public domain.
+            </figcaption>
+          </figure>
+          <figure class="cl-figure" data-zoomable data-lightbox-group="coulombs-law" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Balance%20de%20Coulomb.jpg?width=1600">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Balance%20de%20Coulomb.jpg?width=600" alt="Diagram of Coulomb's electrostatic torsion balance apparatus from 1785" loading="lazy" />
+            <figcaption>
+              <strong>Coulomb's Torsion Balance (1785).</strong> A fine silver suspension thread twisted in direct proportion to the tiny repulsive force between charged pith balls inside a glass cylinder, confirming the inverse-square law <em>F</em> &prop; 1/<em>r</em><sup>2</sup>. Académie des Sciences / Wikimedia Commons · Public domain.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
 
-      ctx.font = 'bold 15px Inter,sans-serif';
-      ctx.fillStyle = '#fff';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = `rgb(${baseColor})`;
-      ctx.shadowBlur = 8;
-      ctx.fillText((sign > 0 ? '+' : '−') + mag + 'μ', cx, CY);
-      ctx.shadowBlur = 0;
-    });
-    ctx.textBaseline = 'alphabetic';
+      <!-- ── Section 5: Mediums, Conductors & Gravity Scale ── -->
+      <section class="cl-card" id="cl-scale" style="--card-accent:#15803d;">
+        <h2>5. Mediums, Conductors &amp; Electric vs. Gravity Scale</h2>
+        <p>Coulomb's constant <em>k</em> describes charges in a vacuum (and almost identically in dry air). When charges sit inside an insulating material or near a metal surface, the surrounding space actively responds:</p>
 
-    // Force readout label
-    ctx.font = '600 12px Inter,sans-serif';
-    ctx.fillStyle = arrowColor;
-    ctx.textAlign = 'center';
-    ctx.fillText('F = ' + force.toFixed(2) + ' N (' + (attract ? 'attractive' : 'repulsive') + ')', W/2, H - 16);
+        <div class="cl-field-grid">
+          <div class="cl-field-item">
+            <strong>Air &amp; Vacuum (εᵣ ≈ 1)</strong>
+            <small>Almost nothing gets in the way between the charges, so they feel the full Coulomb force. Only above ~3 million V/m does dry air undergo <span data-glossary="dielectric breakdown">dielectric breakdown</span> into a spark.</small>
+          </div>
+          <div class="cl-field-item">
+            <strong>Dielectric Insulators (εᵣ &gt; 1)</strong>
+            <small>In an <span data-glossary="insulator">insulator</span> like glass (εᵣ ≈ 5) or pure water (εᵣ ≈ 80), molecules align to partially oppose the electric field, reducing the net force between two charges by a factor of εᵣ.</small>
+          </div>
+          <div class="cl-field-item">
+            <strong>Conductors &amp; Shielding</strong>
+            <small>Inside a <span data-glossary="conductor">conductor</span>, free electrons rearrange almost instantly via <span data-glossary="electrostatic induction">electrostatic induction</span>, reshaping external fields and canceling the electric field completely inside a <span data-glossary="Faraday cage">Faraday cage</span>.</small>
+          </div>
+        </div>
 
-    // Update display readouts
-    document.getElementById('cl-r-q1').textContent   = (q1sign>0?'+':'-') + q1mag + ' μC';
-    document.getElementById('cl-r-q2').textContent   = (q2sign>0?'+':'-') + q2mag + ' μC';
-    document.getElementById('cl-r-dist').textContent = r.toFixed(2) + ' m';
-    document.getElementById('cl-r-force').textContent = force.toFixed(2) + ' N';
-  }
+        <h3>How Much Stronger Is Electricity Than Gravity?</h3>
+        <p>Newton's law of gravity (<em>F<sub>g</sub></em> = <em>G m₁m₂ / r²</em>) looks identical in mathematical shape to Coulomb's law, yet the constants differ enormously. Compare both forces across real physical scales below:</p>
 
-  function drawArrow(ctx, x1, y1, x2, y2) {
-    const dx = x2-x1, dy = y2-y1;
-    const len = Math.sqrt(dx*dx+dy*dy);
-    if (len < 4) return;
-    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-    const angle = Math.atan2(dy,dx);
-    ctx.beginPath();
-    ctx.moveTo(x2,y2);
-    ctx.lineTo(x2-10*Math.cos(angle-0.4), y2-10*Math.sin(angle-0.4));
-    ctx.lineTo(x2-10*Math.cos(angle+0.4), y2-10*Math.sin(angle+0.4));
-    ctx.closePath(); ctx.fill();
-  }
+        <div class="cl-lab-box" data-present>
+          <div class="cl-chip-row" role="group" aria-label="Physical scale comparison scenarios">
+            <span class="cl-chip-label">Scale scenario</span>
+            <button type="button" class="cl-chip" data-scale-id="hydrogen" aria-pressed="true">Hydrogen Atom (p⁺ &amp; e⁻)</button>
+            <button type="button" class="cl-chip" data-scale-id="balloons" aria-pressed="false">Two Rubbed Balloons</button>
+            <button type="button" class="cl-chip" data-scale-id="dust" aria-pressed="false">Charged Dust Specks</button>
+            <button type="button" class="cl-chip" data-scale-id="planets" aria-pressed="false">Earth &amp; Moon (Neutral)</button>
+          </div>
 
-  function pointerX(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    return (clientX - rect.left) / rect.width;
-  }
+          <div class="cl-canvas-wrap cl-canvas-wrap--scale">
+            <canvas id="cl-scale-canvas" class="cl-canvas" role="img" aria-label="Logarithmic comparison of electric force versus gravitational force across scales"></canvas>
+          </div>
 
-  function hitTest(px, W) {
-    const x1n = chargeX1, x2n = chargeX2;
-    const r = 22/W;
-    const pxn = px;
-    if (Math.abs(pxn - x1n) < r + 0.02) return 1;
-    if (Math.abs(pxn - x2n) < r + 0.02) return 2;
-    return 0;
-  }
+          <div class="cl-metrics" aria-live="polite">
+            <div class="cl-metric"><span>Electric force (Fₑ)</span><strong id="cl-scale-fe">8.24e-8 N</strong><small>Coulomb attraction/repulsion</small></div>
+            <div class="cl-metric"><span>Gravity (Fg)</span><strong id="cl-scale-fg">3.63e-47 N</strong><small>Mutual mass attraction</small></div>
+            <div class="cl-metric"><span>Strength ratio</span><strong id="cl-scale-ratio">2.3e+39×</strong><small>Fₑ ÷ Fg</small></div>
+            <div class="cl-metric"><span>Dominant force</span><strong id="cl-scale-rule">Electric Force</strong><small>Governs behavior at this scale</small></div>
+          </div>
 
-  canvas.addEventListener('mousedown', e => {
-    const px = pointerX(e);
-    dragging = hitTest(px, canvas.offsetWidth);
-  });
-  canvas.addEventListener('touchstart', e => {
-    const px = pointerX(e);
-    dragging = hitTest(px, canvas.offsetWidth);
-  }, {passive:true});
-  function onMove(e) {
-    if (!dragging) return;
-    const px = pointerX(e);
-    const other = dragging === 1 ? chargeX2 : chargeX1;
-    const minGap = 44/canvas.offsetWidth;
-    if (dragging === 1) chargeX1 = Math.max(0.05, Math.min(chargeX2 - minGap, px));
-    else                chargeX2 = Math.min(0.95, Math.max(chargeX1 + minGap, px));
-    draw();
-  }
-  canvas.addEventListener('mousemove', onMove);
-  canvas.addEventListener('touchmove', onMove, {passive:true});
-  canvas.addEventListener('mouseup',   () => { dragging = null; });
-  canvas.addEventListener('touchend',  () => { dragging = null; });
+          <div class="cl-readout" id="cl-scale-readout" aria-live="polite"></div>
+        </div>
+      </section>
 
-  // Sliders
-  document.getElementById('cl-q1').addEventListener('input', e => {
-    q1mag = parseInt(e.target.value);
-    document.getElementById('cl-q1-val').textContent = q1mag + ' μC';
-    draw();
-  });
-  document.getElementById('cl-q2').addEventListener('input', e => {
-    q2mag = parseInt(e.target.value);
-    document.getElementById('cl-q2-val').textContent = q2mag + ' μC';
-    draw();
-  });
+      <!-- ── Section 6: Real-World Applications ── -->
+      <section class="cl-card" id="cl-apps" style="--card-accent:#0284c7;">
+        <h2>6. Real-World Applications</h2>
+        <div class="cl-apps">
+          <div class="cl-app">
+            <div class="cl-app-icon" aria-hidden="true">⚡</div>
+            <strong>Lightning &amp; Breakdown</strong>
+            <small>Charge separation in storm clouds creates electric fields strong enough to ionize air and trigger <span data-glossary="dielectric breakdown">dielectric breakdown</span>—a multi-kilometer spark.</small>
+          </div>
+          <div class="cl-app">
+            <div class="cl-app-icon" aria-hidden="true">🖨️</div>
+            <strong>Laser Printers &amp; Copiers</strong>
+            <small>A laser draws a charge pattern onto a rotating drum; charged toner dust is pulled onto the exact pixels by Coulomb attraction and fused onto paper.</small>
+          </div>
+          <div class="cl-app">
+            <div class="cl-app-icon" aria-hidden="true">⚛️</div>
+            <strong>Atomic &amp; Chemical Bonding</strong>
+            <small>Coulomb attraction between protons and electrons holds atoms together, and electrostatic forces between ions and dipoles drive every chemical bond.</small>
+          </div>
+          <div class="cl-app">
+            <div class="cl-app-icon" aria-hidden="true">🩺</div>
+            <strong>Electrostatic Air Filters</strong>
+            <small>HEPA and hospital filters use permanently charged fibers to pull microscopic smoke, pollen, and aerosols out of moving air without blocking airflow.</small>
+          </div>
+          <div class="cl-app">
+            <div class="cl-app-icon" aria-hidden="true">🎨</div>
+            <strong>Electrostatic Spray Painting</strong>
+            <small>Car frames are grounded while paint droplets leave the nozzle negatively charged. Droplets repel each other into an even mist and wrap around onto the metal.</small>
+          </div>
+          <div class="cl-app">
+            <div class="cl-app-icon" aria-hidden="true">📱</div>
+            <strong>Touchscreens &amp; ESD Safety</strong>
+            <small>Capacitive screens sense tiny shifts in your finger's electric field, while wrist straps prevent sudden <span data-glossary="electrostatic discharge">electrostatic discharge (ESD)</span> from zapping microchips.</small>
+          </div>
+        </div>
+      </section>
 
-  window.clSetSign = function(which, sign) {
-    if (which === 1) q1sign = sign;
-    else             q2sign = sign;
-    draw();
-  };
+      <!-- ── Section 7: Practice & Check Your Understanding ── -->
+      <section class="cl-card" id="cl-practice" style="--card-accent:#0284c7;">
+        <h2>7. Practice &amp; Check Your Understanding</h2>
+        <p>Test your conceptual intuition first, then solve the quantitative problems using <strong>F = k q₁q₂ / r²</strong> with <strong>k = 9 × 10⁹ N·m²/C²</strong>.</p>
 
-  function loop(ts) {
-    draw(ts);
-    SimKit.frame('#cl-canvas', loop);
-  }
-  window.addEventListener('resize', () => draw(performance.now()));
-  SimKit.frame('#cl-canvas', loop);
+        <h3>Part A · Concept &amp; Scaling Quiz</h3>
+        <div class="cl-quiz">
+          <div class="cl-question" data-answer="b" data-explain="Opposite signs (+ and −) always attract each other along the line connecting their centers.">
+            <p>1. Two charges of +1 μC and −1 μC sit 0.10 m apart. Is the force between them attractive or repulsive?</p>
+            <div class="cl-q-options" role="group" aria-label="Question 1 choices">
+              <button type="button" class="cl-q-opt" data-choice="a" aria-pressed="false">Repulsive — they push apart</button>
+              <button type="button" class="cl-q-opt" data-choice="b" aria-pressed="false">Attractive — they pull together</button>
+              <button type="button" class="cl-q-opt" data-choice="c" aria-pressed="false">Zero — equal magnitudes cancel</button>
+              <button type="button" class="cl-q-opt" data-choice="d" aria-pressed="false">Sideways — perpendicular to the line</button>
+            </div>
+            <div class="cl-feedback" aria-live="polite"></div>
+          </div>
 
-  // Practice
-  window.clCheck = function(n, ans, tol) {
-    const val = parseFloat(document.getElementById('clans-'+n).value);
-    const fb  = document.getElementById('clfb-'+n);
-    const hint = document.getElementById('clhint-'+n);
-    if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className='cl-feedback err'; return; }
-    if (Math.abs(val - ans) <= tol) {
-      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
-    } else {
-      fb.textContent = '✗ Try again.'; fb.className = 'cl-feedback err';
-      hint.style.display = 'block';
-    }
-  };
-  window.clCheckText = function(n, ans) {
-    const el = document.getElementById('clans-'+n);
-    const fb = document.getElementById('clfb-'+n);
-    const hint = document.getElementById('clhint-'+n);
-    if (el.value === ans) {
-      fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
-    } else {
-      fb.textContent = '✗ Try again.'; fb.className = 'cl-feedback err';
-      hint.style.display = 'block';
-    }
-  };
-})();
-</script>
-<script src="../../../assets/js/classroom-animations.js"></script>
-  <script src="../../../assets/js/lesson-layout.js"></script>
-<script src="../../../assets/js/electricity-path.js"></script>
-<script src="../../../assets/js/lesson-print-button.js"></script>
-<script src="../../../assets/js/photo-lightbox.js"></script>
-<script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/electronics-glossary.json"></script>
+          <div class="cl-question" data-answer="c" data-explain="Because F ∝ 1/r², doubling r makes the denominator (2r)² = 4r², cutting force to one quarter (÷ 4).">
+            <p>2. If you double the distance between two point charges, how does the electric force change?</p>
+            <div class="cl-q-options" role="group" aria-label="Question 2 choices">
+              <button type="button" class="cl-q-opt" data-choice="a" aria-pressed="false">It halves (÷ 2)</button>
+              <button type="button" class="cl-q-opt" data-choice="b" aria-pressed="false">It doubles (× 2)</button>
+              <button type="button" class="cl-q-opt" data-choice="c" aria-pressed="false">It drops to one quarter (÷ 4)</button>
+              <button type="button" class="cl-q-opt" data-choice="d" aria-pressed="false">It quadruples (× 4)</button>
+            </div>
+            <div class="cl-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="cl-question" data-answer="a" data-explain="By Newton's Third Law and the symmetric product q₁q₂ in Coulomb's law, both charges experience the exact same force magnitude.">
+            <p>3. A +1 μC charge sits near a +8 μC charge. Which charge feels the larger electric force?</p>
+            <div class="cl-q-options" role="group" aria-label="Question 3 choices">
+              <button type="button" class="cl-q-opt" data-choice="a" aria-pressed="false">Neither — both feel the exact same magnitude of force</button>
+              <button type="button" class="cl-q-opt" data-choice="b" aria-pressed="false">The +1 μC charge feels 8× more force</button>
+              <button type="button" class="cl-q-opt" data-choice="c" aria-pressed="false">The +8 μC charge feels 8× more force</button>
+              <button type="button" class="cl-q-opt" data-choice="d" aria-pressed="false">The +8 μC charge feels 64× more force</button>
+            </div>
+            <div class="cl-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="cl-question" data-answer="d" data-explain="Halving the distance multiplies force by (1/0.5)² = 4×, and tripling one charge multiplies it by 3×, giving 4 × 3 = 12×.">
+            <p>4. Two charges exert force F. If one charge is tripled and their separation is cut in half, what is the new force?</p>
+            <div class="cl-q-options" role="group" aria-label="Question 4 choices">
+              <button type="button" class="cl-q-opt" data-choice="a" aria-pressed="false">1.5 F</button>
+              <button type="button" class="cl-q-opt" data-choice="b" aria-pressed="false">6 F</button>
+              <button type="button" class="cl-q-opt" data-choice="c" aria-pressed="false">9 F</button>
+              <button type="button" class="cl-q-opt" data-choice="d" aria-pressed="false">12 F</button>
+            </div>
+            <div class="cl-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="cl-question" data-answer="b" data-explain="Electric force divides by the dielectric constant εᵣ (about 80 for pure water), weakening the force 80×.">
+            <p>5. When two charges are placed in pure water (εᵣ = 80) instead of air, what happens to the force between them?</p>
+            <div class="cl-q-options" role="group" aria-label="Question 5 choices">
+              <button type="button" class="cl-q-opt" data-choice="a" aria-pressed="false">It becomes 80 times stronger</button>
+              <button type="button" class="cl-q-opt" data-choice="b" aria-pressed="false">It becomes 80 times weaker</button>
+              <button type="button" class="cl-q-opt" data-choice="c" aria-pressed="false">It stays identical</button>
+              <button type="button" class="cl-q-opt" data-choice="d" aria-pressed="false">It reverses direction</button>
+            </div>
+            <div class="cl-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="cl-question" data-answer="c" data-explain="Large objects like planets contain nearly equal numbers of protons and electrons, so their net charge is essentially zero.">
+            <p>6. Why does gravity—not electric force—control the orbits of Earth and the Moon even though Coulomb's law is far stronger?</p>
+            <div class="cl-q-options" role="group" aria-label="Question 6 choices">
+              <button type="button" class="cl-q-opt" data-choice="a" aria-pressed="false">Electric force stops working beyond 1 meter</button>
+              <button type="button" class="cl-q-opt" data-choice="b" aria-pressed="false">Vacuum blocks all electric fields</button>
+              <button type="button" class="cl-q-opt" data-choice="c" aria-pressed="false">Planets are electrically neutral overall, while mass always adds up</button>
+              <button type="button" class="cl-q-opt" data-choice="d" aria-pressed="false">Gravity obeys a 1/r rule instead of 1/r²</button>
+            </div>
+            <div class="cl-feedback" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="cl-quiz-toolbar">
+          <p class="cl-quiz-score" id="cl-quiz-score" aria-live="polite">Score: 0 / 6 · 0 checked</p>
+          <button type="button" class="cl-reset" id="cl-quiz-reset">Reset quiz</button>
+        </div>
+
+        <h3>Part B · Quantitative Calculations</h3>
+        <div class="cl-calc-list">
+          <div class="cl-calc-problem" data-ans="0.4" data-tol="0.05">
+            <p><span class="diff-badge diff-easy">Easy</span><strong>1.</strong> Two identical +2 μC charges are 0.30 m apart in air. What is the force magnitude? (Round to 1 decimal place.)</p>
+            <div class="cl-problem-row">
+              <input type="number" class="cl-ans-input" step="0.1" aria-label="Problem 1 answer in Newtons" placeholder="0.0" />
+              <span class="cl-unit-tag">N</span>
+              <button type="button" class="cl-check-btn">Check</button>
+              <button type="button" class="cl-hint-btn">Show hint</button>
+              <span class="cl-feedback" aria-live="polite"></span>
+            </div>
+            <div class="cl-hint" hidden>Hint: F = (9 × 10⁹) × (2 × 10⁻⁶)² / (0.30)² = 0.036 / 0.09 = 0.4 N</div>
+          </div>
+
+          <div class="cl-calc-problem" data-ans="3.4" data-tol="0.1">
+            <p><span class="diff-badge diff-mid">Medium</span><strong>2.</strong> A +3 μC charge and a +5 μC charge are 0.20 m apart. Calculate the repulsive force (in N, 1 decimal place).</p>
+            <div class="cl-problem-row">
+              <input type="number" class="cl-ans-input" step="0.1" aria-label="Problem 2 answer in Newtons" placeholder="0.0" />
+              <span class="cl-unit-tag">N</span>
+              <button type="button" class="cl-check-btn">Check</button>
+              <button type="button" class="cl-hint-btn">Show hint</button>
+              <span class="cl-feedback" aria-live="polite"></span>
+            </div>
+            <div class="cl-hint" hidden>Hint: F = (9 × 10⁹) × (3 × 10⁻⁶) × (5 × 10⁻⁶) / (0.20)² = 0.135 / 0.04 = 3.375 ≈ 3.4 N</div>
+          </div>
+
+          <div class="cl-calc-problem" data-ans="0.2" data-tol="0.01">
+            <p><span class="diff-badge diff-hard">Challenge</span><strong>3.</strong> Two charges exert a 10 N force at 0.10 m. At what distance (in meters) will the force drop to 2.5 N?</p>
+            <div class="cl-problem-row">
+              <input type="number" class="cl-ans-input" step="0.01" aria-label="Problem 3 answer in meters" placeholder="0.00" />
+              <span class="cl-unit-tag">m</span>
+              <button type="button" class="cl-check-btn">Check</button>
+              <button type="button" class="cl-hint-btn">Show hint</button>
+              <span class="cl-feedback" aria-live="polite"></span>
+            </div>
+            <div class="cl-hint" hidden>Hint: Force drops by 10 ÷ 2.5 = 4×, so distance must double: 2 × 0.10 m = 0.20 m.</div>
+          </div>
+
+          <div class="cl-calc-problem" data-ans="576" data-tol="5">
+            <p><span class="diff-badge diff-hard">Challenge</span><strong>4.</strong> In Coulomb's 1785 torsion balance, the total twist is 36° at separation angle α = 36°. If you twist the top dial until α shrinks to 9° (one-quarter the separation), what total wire twist (in degrees) balances the force?</p>
+            <div class="cl-problem-row">
+              <input type="number" class="cl-ans-input" step="1" aria-label="Problem 4 answer in degrees" placeholder="0" />
+              <span class="cl-unit-tag">°</span>
+              <button type="button" class="cl-check-btn">Check</button>
+              <button type="button" class="cl-hint-btn">Show hint</button>
+              <span class="cl-feedback" aria-live="polite"></span>
+            </div>
+            <div class="cl-hint" hidden>Hint: Quartering distance multiplies force by 4² = 16×, so total twist = 16 × 36° = 576°.</div>
+          </div>
+        </div>
+        <div class="cl-quiz-toolbar">
+          <span style="font-size:0.78rem;color:var(--cl-muted);">Tip: Press Enter inside any number box to check your answer.</span>
+          <button type="button" class="cl-reset" id="cl-calc-reset">Reset calculations</button>
+        </div>
+      </section>
+
+      <!-- ── Quick Glossary ── -->
+      <section class="cl-card" style="--card-accent:#6d28d9;" aria-labelledby="cl-glossary-title">
+        <h2 id="cl-glossary-title">Quick glossary</h2>
+        <div class="cl-glossary">
+          <details><summary>Coulomb (C)</summary><p>The SI unit of electric charge, equal to the combined charge of about 6.24 × 10¹⁸ protons or electrons. Everyday static charges are usually microcoulombs (1 μC = 10⁻⁶ C).</p></details>
+          <details><summary>Coulomb's constant (k)</summary><p>The proportionality constant in Coulomb's law: k ≈ 8.99 × 10⁹ N·m²/C² in vacuum or air.</p></details>
+          <details><summary>Electric field (E)</summary><p>The electric force per unit positive test charge at a point in space (E = F / q), pointing away from positive charges and toward negative charges.</p></details>
+          <details><summary>Equipotential</summary><p>A line or surface where electric potential (voltage) has the same value everywhere, always crossing electric field lines at right angles.</p></details>
+          <details><summary>Dielectric constant (εᵣ)</summary><p>A dimensionless factor measuring how strongly an insulating material polarizes and reduces the electric force between charges inside it.</p></details>
+          <details><summary>Superposition</summary><p>The rule that the net electric force (or field) on a charge equals the vector sum of the individual forces from every other charge.</p></details>
+        </div>
+      </section>
+
+      <!-- ── See Also ── -->
+      <section class="cl-see-also" aria-labelledby="cl-seealso-title">
+        <p class="cl-see-also-eyebrow" id="cl-seealso-title">Related Lessons &amp; Pioneers · See Also</p>
+        <div class="cl-see-also-links">
+          <a class="cl-see-link" href="van-de-graaff-balloon.html">🎈 Van de Graaff &amp; <span data-glossary="static electricity">Static Electricity</span></a>
+          <a class="cl-see-link" href="faraday-cage.html">🛡️ Faraday Cage &amp; Shielding</a>
+          <a class="cl-see-link" href="../pioneers/benjamin-franklin.html">🪁 Benjamin Franklin — Conservation of Charge</a>
+          <a class="cl-see-link" href="../pioneers/nikola-tesla.html">⚡ Nikola Tesla — High-Voltage Electrostatics</a>
+          <a class="cl-see-link" href="../pioneers/james-clerk-maxwell.html">🌊 James Clerk Maxwell — Gauss's Law &amp; Fields</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+    </footer>
+  </div>
+
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/lessons/coulombs-law.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/electricity-path.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/electronics-glossary.json"></script>
 </body>
 </html>

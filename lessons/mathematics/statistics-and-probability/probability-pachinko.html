@@ -9,7 +9,8 @@
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <style>
-    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #0ea5e9; --ll-tab-active: #0ea5e9; --ll-tab-active-bg: rgba(14,165,233,0.12); }
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #0ea5e9; --ll-tab-active: #0ea5e9; --ll-tab-active-bg: rgba(14,165,233,0.12); }
+
     .pk-panel-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -44,8 +45,13 @@
     [data-theme="vaporwave"] .pk-panel-preset,
     [data-theme="bark"] .pk-panel-preset {
       background: #1c1c1e;
-      border-color: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.16);
       color: #f5f5f7;
+    }
+    [data-lighting="night"] .pk-panel-preset small,
+    [data-theme="vaporwave"] .pk-panel-preset small,
+    [data-theme="bark"] .pk-panel-preset small {
+      color: rgba(245,245,247,0.68);
     }
     [data-lighting="night"] .pk-panel-preset:hover,
     [data-theme="vaporwave"] .pk-panel-preset:hover,
@@ -54,28 +60,67 @@
       border-color: #38bdf8;
     }
     .pk-panel-actions {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 0.4rem;
       margin-bottom: 0.85rem;
     }
+    .pk-panel-actions .pk-btn {
+      padding: 0.5rem 0.6rem;
+      font-size: 0.78rem;
+    }
+    .pk-panel-actions .pk-btn-neutral {
+      background: var(--surface, #f1f5f9);
+      color: var(--text-primary, #1d1d1f);
+      border: 1px solid var(--line, #cbd5e1);
+    }
+    [data-lighting="night"] .pk-panel-actions .pk-btn-neutral,
+    [data-theme="vaporwave"] .pk-panel-actions .pk-btn-neutral,
+    [data-theme="bark"] .pk-panel-actions .pk-btn-neutral {
+      background: rgba(255,255,255,0.08);
+      color: #f5f5f7;
+      border-color: rgba(255,255,255,0.18);
+    }
+    .pk-panel-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-primary, #1d1d1f);
+      margin-bottom: 0.85rem;
+      cursor: pointer;
+    }
+    .pk-panel-toggle input { width: 1rem; height: 1rem; accent-color: #0ea5e9; }
+    [data-lighting="night"] .pk-panel-toggle,
+    [data-theme="vaporwave"] .pk-panel-toggle,
+    [data-theme="bark"] .pk-panel-toggle {
+      color: #f5f5f7;
+    }
+
     .pk-page { padding-bottom: 3.5rem; }
 
-    .pk-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .pk-hero h1 { max-width: 18ch; margin-left: 0; margin-right: 0; font-size: clamp(1.7rem, 4vw, 2.6rem); }
+    .pk-hero { padding: 0.4rem 0 1rem; text-align: left; }
+    .pk-hero h1 { max-width: 22ch; margin-left: 0; margin-right: 0; font-size: clamp(1.65rem, 3.8vw, 2.45rem); }
     .pk-hero-meta {
       display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem;
-      margin: 0.5rem 0 0.7rem; font-size: 0.82rem; color: var(--text-muted, #64748b);
+      margin: 0.45rem 0 0.6rem; font-size: 0.82rem; color: var(--text-muted, #64748b);
     }
     .pk-hero-meta .dot {
       width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45;
       display: inline-block; vertical-align: middle;
     }
-    .pk-lede { max-width: 74ch; margin: 0; color: var(--text-secondary, #3f4f65); font-size: 0.98rem; line-height: 1.66; }
-    .pk-back-link { display: inline-block; margin-top: 0.85rem; font-size: 0.84rem; font-weight: 700; color: #0369a1; text-decoration: none; }
+    .pk-lede { max-width: 76ch; margin: 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    .pk-back-link { display: inline-block; margin-top: 0.65rem; font-size: 0.84rem; font-weight: 700; color: #0369a1; text-decoration: none; }
     .pk-back-link:hover { text-decoration: underline; }
+    .pk-lede .pk-back-link-inline { color: inherit; text-decoration: underline; font-weight: 700; }
+    [data-lighting="night"] .pk-hero-meta,
     [data-lighting="night"] .pk-lede,
     [data-theme="vaporwave"] .pk-lede,
-    [data-theme="bark"] .pk-lede { color: rgba(245,245,247,0.72); }
+    [data-theme="bark"] .pk-lede { color: rgba(245,245,247,0.78); }
+    [data-lighting="night"] .pk-back-link,
+    [data-theme="vaporwave"] .pk-back-link,
+    [data-theme="bark"] .pk-back-link { color: #7dd3fc; }
 
     .pk-card {
       background: var(--white, #fff);
@@ -86,21 +131,31 @@
       padding: 1.2rem 1.4rem;
       margin-bottom: 1rem;
     }
-/* Dark surface at night: keep night text tokens. */
-:where(html[data-lighting="night"]) .pk-card { --text: #f5f5f7; --muted: #98989d; --text-primary: #f5f5f7; --text-secondary: #dddde4; --text-muted: #98989d; --text-subtle: #b3b3ba; --ink: #f5f5f7; --ink-2: #dddde4; --ink-muted: #98989d; --accent: #69a8ff; --accent-strong: #8ec0ff; --accent-hover: #8ec0ff; --info: #69a8ff; --success: #4dbd87; --warning: #e0a84b; --danger: #f06a6a; --lesson-violet-text: #c4b5fd; --lesson-orange-text: #ffbd66; --blue: #69a8ff; --accent-gold: #69a8ff; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .pk-card { --text: #f5f5f7; --muted: #98989d; --text-primary: #f5f5f7; --text-secondary: #dddde4; --text-muted: #98989d; --text-subtle: #b3b3ba; --ink: #f5f5f7; --ink-2: #dddde4; --ink-muted: #98989d; --accent: #69a8ff; --accent-strong: #8ec0ff; --accent-hover: #8ec0ff; --info: #69a8ff; --success: #4dbd87; --warning: #e0a84b; --danger: #f06a6a; --lesson-violet-text: #c4b5fd; --lesson-orange-text: #ffbd66; --blue: #69a8ff; --accent-gold: #69a8ff; } }
     .pk-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
     .pk-card h3 { margin: 0.95rem 0 0.3rem; font-size: 0.98rem; letter-spacing: -0.01em; }
     .pk-card p { margin: 0 0 0.65rem; color: var(--text-secondary, #3f4f65); font-size: 0.89rem; line-height: 1.65; }
-:where(html[data-lighting="night"]) .pk-card p { color: #8888ff; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .pk-card p { color: #8888ff; } }
     .pk-card p:last-child { margin-bottom: 0; }
     [data-lighting="night"] .pk-card,
     [data-theme="vaporwave"] .pk-card,
-    [data-theme="bark"] .pk-card { background: var(--white, #2c2c2e); }
+    [data-theme="bark"] .pk-card {
+      background: var(--surface-1, #232326);
+      border-color: rgba(255,255,255,0.14);
+      color: #f5f5f7;
+    }
+    [data-lighting="night"] .pk-card h2,
+    [data-lighting="night"] .pk-card h3,
+    [data-theme="vaporwave"] .pk-card h2,
+    [data-theme="bark"] .pk-card h2 { color: #f5f5f7; }
     [data-lighting="night"] .pk-card p,
     [data-theme="vaporwave"] .pk-card p,
-    [data-theme="bark"] .pk-card p { color: rgba(245,245,247,0.73); }
+    [data-theme="bark"] .pk-card p { color: rgba(245,245,247,0.8); }
+
+    @media (prefers-color-scheme: dark) {
+      :where(html:not([data-lighting])) .pk-card { background: var(--surface-1, #232326); color: #f5f5f7; }
+      :where(html:not([data-lighting])) .pk-card p { color: rgba(245,245,247,0.8); }
+      :where(html:not([data-lighting])) .pk-lede { color: rgba(245,245,247,0.78); }
+      :where(html:not([data-lighting])) .pk-back-link { color: #7dd3fc; }
+    }
 
     .pk-grid,
     .pk-band-grid,
@@ -117,7 +172,7 @@
     .pk-sequence-grid,
     .pk-scenario-grid,
     .pk-vocab-grid,
-    .pk-question-grid { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+    .pk-question-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     @media (max-width: 760px) {
       .pk-grid { grid-template-columns: 1fr; }
     }
@@ -129,11 +184,9 @@
       border: 1px solid var(--line, #d2d2d7);
       border-radius: 14px;
       padding: 0.95rem 1rem;
+      display: flex;
+      flex-direction: column;
     }
-/* Light surface in every theme: keep day text tokens. */
-.pk-panel, .pk-mini-card, .pk-question { --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349; --text-muted: #5f5f64; --text-subtle: #73737a; --ink: #1d1d1f; --ink-2: #434349; --ink-muted: #5f5f64; --accent: #0066cc; --accent-strong: #005ec3; --accent-hover: #005ec3; --info: #0066cc; --success: #1c8257; --warning: #8f5d0b; --danger: #c23b3b; --lesson-violet-text: #6d28d9; --lesson-orange-text: #8a4500; --blue: #0066cc; --accent-gold: #0066cc; }
-:where(html[data-lighting="night"]) .pk-panel, :where(html[data-lighting="night"]) .pk-mini-card, :where(html[data-lighting="night"]) .pk-question { color: #1d1d1f; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .pk-panel, :where(html:not([data-lighting])) .pk-mini-card, :where(html:not([data-lighting])) .pk-question { color: #1d1d1f; } }
     [data-lighting="night"] .pk-panel,
     [data-theme="vaporwave"] .pk-panel,
     [data-theme="bark"] .pk-panel,
@@ -142,18 +195,36 @@
     [data-theme="bark"] .pk-mini-card,
     [data-lighting="night"] .pk-question,
     [data-theme="vaporwave"] .pk-question,
-    [data-theme="bark"] .pk-question { background: rgba(255,255,255,0.04); }
+    [data-theme="bark"] .pk-question {
+      background: rgba(255,255,255,0.055);
+      border-color: rgba(255,255,255,0.14);
+      color: #f5f5f7;
+    }
+    @media (prefers-color-scheme: dark) {
+      :where(html:not([data-lighting])) .pk-panel,
+      :where(html:not([data-lighting])) .pk-mini-card,
+      :where(html:not([data-lighting])) .pk-question {
+        background: rgba(255,255,255,0.055);
+        border-color: rgba(255,255,255,0.14);
+        color: #f5f5f7;
+      }
+    }
+
     .pk-mini-title {
       margin: 0 0 0.55rem;
       font-size: 0.74rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: #6b7280;
+      color: #475569;
     }
     [data-lighting="night"] .pk-mini-title,
     [data-theme="vaporwave"] .pk-mini-title,
-    [data-theme="bark"] .pk-mini-title { color: rgba(245,245,247,0.72); }
+    [data-theme="bark"] .pk-mini-title { color: rgba(245,245,247,0.75); }
+    @media (prefers-color-scheme: dark) {
+      :where(html:not([data-lighting])) .pk-mini-title { color: rgba(245,245,247,0.75); }
+    }
+
     .pk-checklist,
     .pk-step-list {
       margin: 0;
@@ -177,7 +248,7 @@
     [data-theme="bark"] .pk-checklist li,
     [data-lighting="night"] .pk-step-list li,
     [data-theme="vaporwave"] .pk-step-list li,
-    [data-theme="bark"] .pk-step-list li { color: rgba(245,245,247,0.72); }
+    [data-theme="bark"] .pk-step-list li { color: rgba(245,245,247,0.82); }
     .pk-checklist li::before,
     .pk-step-num {
       display: inline-flex;
@@ -192,11 +263,13 @@
       color: #fff;
       margin-top: 0.02rem;
     }
-    .pk-checklist li::before { content: "\2713"; background: #14b8a6; }
-    .pk-step-num { background: #0b7caf; }
+    .pk-checklist li::before { content: "\2713"; background: #0d9488; }
+    .pk-step-num { background: #0369a1; }
+
     .pk-tag {
       display: inline-flex;
       align-items: center;
+      align-self: flex-start;
       padding: 0.2rem 0.55rem;
       border-radius: 999px;
       font-size: 0.68rem;
@@ -207,6 +280,13 @@
       background: rgba(14,165,233,0.12);
       color: #0369a1;
     }
+    [data-lighting="night"] .pk-tag,
+    [data-theme="vaporwave"] .pk-tag,
+    [data-theme="bark"] .pk-tag {
+      background: rgba(56,189,248,0.18);
+      color: #7dd3fc;
+    }
+
     .pk-mini-card strong {
       display: block;
       margin-bottom: 0.28rem;
@@ -217,14 +297,33 @@
       margin: 0;
       font-size: 0.85rem;
       line-height: 1.6;
-      color: #4b5563;
+      color: #3f4f65;
     }
     [data-lighting="night"] .pk-mini-card p,
     [data-theme="vaporwave"] .pk-mini-card p,
     [data-theme="bark"] .pk-mini-card p,
     [data-lighting="night"] .pk-question,
     [data-theme="vaporwave"] .pk-question,
-    [data-theme="bark"] .pk-question { color: rgba(245,245,247,0.68); }
+    [data-theme="bark"] .pk-question { color: rgba(245,245,247,0.8); }
+
+    .pk-scenario-launch {
+      margin-top: auto;
+      padding-top: 0.65rem;
+      align-self: flex-start;
+      border: 0;
+      background: transparent;
+      color: #0369a1;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .pk-scenario-launch:hover { text-decoration: underline; }
+    [data-lighting="night"] .pk-scenario-launch,
+    [data-theme="vaporwave"] .pk-scenario-launch,
+    [data-theme="bark"] .pk-scenario-launch { color: #7dd3fc; }
 
     .pk-callout {
       background: linear-gradient(135deg, rgba(14,165,233,0.09), rgba(20,184,166,0.07));
@@ -241,123 +340,160 @@
       letter-spacing: 0.06em;
       color: #0369a1;
     }
+    [data-lighting="night"] .pk-callout strong,
+    [data-theme="vaporwave"] .pk-callout strong,
+    [data-theme="bark"] .pk-callout strong { color: #7dd3fc; }
     .pk-callout p { margin: 0; }
 
+    /* Interactive Lab */
     .pk-lab {
       background:
-        radial-gradient(circle at 20% 10%, rgba(45,212,191,0.16), transparent 28%),
-        radial-gradient(circle at 80% 0%, rgba(251,191,36,0.16), transparent 28%),
-        linear-gradient(135deg, #07111f 0%, #102138 52%, #0f3a46 100%);
+        radial-gradient(circle at 18% 8%, rgba(45,212,191,0.16), transparent 28%),
+        radial-gradient(circle at 82% 0%, rgba(251,191,36,0.15), transparent 28%),
+        linear-gradient(135deg, #07111f 0%, #0f2036 52%, #0f3644 100%);
       border-radius: 20px;
-      padding: 1.55rem 1.35rem;
-      margin-bottom: 1rem;
+      padding: 1.35rem 1.25rem;
+      margin-bottom: 1.1rem;
       box-shadow: 0 22px 55px rgba(0,0,0,0.28);
-      border: 1px solid rgba(125,211,252,0.22);
+      border: 1px solid rgba(125,211,252,0.24);
+      color: #f0f9ff;
     }
-    .pk-lab h2 { color: #f0f9ff; margin: 0 0 0.25rem; font-size: 1.25rem; }
-    .pk-lab > p { color: rgba(240,249,255,0.7); font-size: 0.86rem; margin: 0 0 1.1rem; line-height: 1.65; }
+    .pk-lab-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 0.6rem 1rem;
+      margin-bottom: 0.9rem;
+    }
+    .pk-lab h2 { color: #f0f9ff; margin: 0 0 0.2rem; font-size: 1.25rem; }
+    .pk-lab-sub { color: rgba(240,249,255,0.78); font-size: 0.85rem; margin: 0; line-height: 1.55; max-width: 72ch; }
     .pk-lab-badge {
       display: inline-flex; align-items: center; gap: 0.45rem;
-      background: rgba(14,165,233,0.16); border: 1px solid rgba(125,211,252,0.34);
-      border-radius: 999px; padding: 0.24rem 0.75rem; margin-bottom: 0.75rem;
-      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #bae6fd;
+      background: rgba(14,165,233,0.18); border: 1px solid rgba(125,211,252,0.36);
+      border-radius: 999px; padding: 0.2rem 0.7rem; margin-bottom: 0.45rem;
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #bae6fd; font-weight: 700;
     }
     .pk-lab-grid {
       display: grid;
-      grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
-      gap: 1rem;
+      grid-template-columns: minmax(255px, 320px) minmax(0, 1fr);
+      gap: 0.95rem;
       align-items: start;
     }
-    @media (max-width: 900px) {
+    @media (max-width: 920px) {
       .pk-lab-grid { grid-template-columns: 1fr; }
     }
     .pk-controls,
     .pk-results {
       background: rgba(255,255,255,0.055);
-      border: 1px solid rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.14);
       border-radius: 16px;
-      padding: 1rem;
+      padding: 0.95rem;
       backdrop-filter: blur(10px);
     }
     .pk-controls label,
     .pk-results-label {
       display: block;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: rgba(240,249,255,0.58);
-      margin-bottom: 0.35rem;
+      color: rgba(240,249,255,0.72);
+      margin-bottom: 0.3rem;
     }
     .pk-select,
-    .pk-range {
-      width: 100%;
-    }
-    .pk-select,
-    .pk-number {
-      padding: 0.62rem 0.75rem;
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 12px;
-      background: rgba(2,6,23,0.72);
+    .pk-range { width: 100%; }
+    .pk-select {
+      padding: 0.52rem 0.68rem;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      background: rgba(2,6,23,0.78);
       color: #f8fafc;
       font: inherit;
-      margin-bottom: 0.8rem;
+      font-size: 0.84rem;
+      margin-bottom: 0.72rem;
     }
-    .pk-number { width: 100%; }
     .pk-control-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.7rem;
+      gap: 0.65rem;
     }
     @media (max-width: 520px) {
       .pk-control-row { grid-template-columns: 1fr; }
     }
-    .pk-range-wrap { margin: 0.2rem 0 0.85rem; }
+    .pk-range-wrap { margin: 0.1rem 0 0.72rem; }
     .pk-range { accent-color: #38bdf8; }
     .pk-range-meta {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 0.6rem;
-      color: rgba(240,249,255,0.6);
-      font-size: 0.74rem;
+      gap: 0.5rem;
+      color: rgba(240,249,255,0.68);
+      font-size: 0.72rem;
     }
-    .pk-range-meta strong { color: #e0f2fe; font-size: 0.78rem; }
+    .pk-range-meta strong { color: #e0f2fe; font-size: 0.78rem; font-family: "IBM Plex Mono", monospace; }
+
     .pk-button-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.55rem;
-      margin: 0.9rem 0;
+      gap: 0.45rem;
+      margin: 0.65rem 0;
     }
     .pk-btn {
       border: 0;
-      border-radius: 12px;
-      padding: 0.64rem 0.85rem;
+      border-radius: 10px;
+      padding: 0.56rem 0.78rem;
       font-weight: 800;
+      font-size: 0.8rem;
       cursor: pointer;
-      transition: transform 0.16s ease, filter 0.16s ease;
+      transition: transform 0.14s ease, filter 0.14s ease, background 0.14s ease;
     }
-    .pk-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .pk-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
     .pk-btn-primary { background: #38bdf8; color: #082f49; }
-    .pk-btn-secondary { background: rgba(255,255,255,0.1); color: #f8fafc; border: 1px solid rgba(255,255,255,0.16); }
+    .pk-btn-secondary { background: rgba(255,255,255,0.11); color: #f8fafc; border: 1px solid rgba(255,255,255,0.18); }
+    .pk-btn-secondary.is-active { background: #22c55e; color: #052e16; border-color: #4ade80; }
     .pk-btn-chip {
-      border: 1px solid rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.18);
       background: rgba(255,255,255,0.08);
-      color: rgba(240,249,255,0.86);
+      color: rgba(240,249,255,0.92);
       border-radius: 999px;
-      padding: 0.38rem 0.65rem;
-      font-weight: 750;
-      font-size: 0.76rem;
+      padding: 0.34rem 0.62rem;
+      font-weight: 700;
+      font-size: 0.73rem;
       cursor: pointer;
     }
+    .pk-btn-chip:hover { border-color: #38bdf8; background: rgba(56,189,248,0.18); }
+
+    .pk-toggles-box {
+      border-top: 1px solid rgba(255,255,255,0.12);
+      padding-top: 0.6rem;
+      margin-top: 0.6rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+    .pk-controls .pk-toggle {
+      font-size: 0.8rem;
+      text-transform: none;
+      letter-spacing: 0;
+      color: rgba(240,249,255,0.92);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+      font-weight: 600;
+    }
+    .pk-toggle input { width: 1rem; height: 1rem; accent-color: #22c55e; flex-shrink: 0; }
+
     .pk-model-note {
+      margin-top: 0.75rem;
       border-radius: 12px;
-      padding: 0.8rem 0.85rem;
-      background: rgba(45,212,191,0.08);
-      border: 1px solid rgba(45,212,191,0.18);
-      color: rgba(240,249,255,0.74);
-      font-size: 0.82rem;
-      line-height: 1.55;
+      padding: 0.72rem 0.8rem;
+      background: rgba(45,212,191,0.09);
+      border: 1px solid rgba(45,212,191,0.22);
+      color: rgba(240,249,255,0.85);
+      font-size: 0.8rem;
+      line-height: 1.5;
     }
     .pk-model-note strong {
       display: block;
@@ -371,69 +507,143 @@
     .pk-board-wrap {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
-      gap: 0.85rem;
+      gap: 0.75rem;
     }
     .pk-canvas-shell {
       position: relative;
       overflow: hidden;
       border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: linear-gradient(180deg, rgba(15,23,42,0.52), rgba(2,6,23,0.72));
+      border: 1px solid rgba(255,255,255,0.16);
+      background: #07111f;
+      height: min(60vh, 500px);
       min-height: 360px;
     }
     .pk-canvas {
       display: block;
       width: 100%;
-      height: min(62vh, 520px);
-      min-height: 360px;
+      height: 100%;
     }
+    .pk-hud-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.45rem 0.8rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 10px;
+      background: rgba(2,6,23,0.5);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 0.76rem;
+      color: rgba(226,232,240,0.88);
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .pk-trace-banner {
+      padding: 0.52rem 0.75rem;
+      border-radius: 10px;
+      background: rgba(250,204,21,0.12);
+      border: 1px solid rgba(250,204,21,0.28);
+      color: #fef08a;
+      font-size: 0.78rem;
+      font-family: "IBM Plex Mono", monospace;
+      line-height: 1.45;
+    }
+    .pk-ev-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 12px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(74,222,128,0.26);
+    }
+    @media (max-width: 600px) {
+      .pk-ev-strip { grid-template-columns: 1fr; }
+    }
+    .pk-ev-cell span {
+      display: block;
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #bbf7d0;
+      font-weight: 700;
+    }
+    .pk-ev-cell strong {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.94rem;
+      color: #f0fdf4;
+    }
+    .pk-ev-note {
+      grid-column: 1 / -1;
+      font-size: 0.78rem;
+      color: rgba(220,252,231,0.9);
+      line-height: 1.45;
+    }
+
     .pk-stats-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.65rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
     }
-    @media (max-width: 760px) {
+    @media (max-width: 640px) {
       .pk-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     .pk-stat {
       border-radius: 12px;
-      padding: 0.75rem;
+      padding: 0.62rem 0.72rem;
       background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.12);
     }
     .pk-stat-label {
-      color: rgba(240,249,255,0.58);
-      font-size: 0.68rem;
+      color: rgba(240,249,255,0.68);
+      font-size: 0.66rem;
       font-weight: 800;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      margin-bottom: 0.2rem;
+      margin-bottom: 0.16rem;
     }
     .pk-stat-value {
       color: #f8fafc;
-      font-size: 1.05rem;
-      font-weight: 850;
+      font-size: 0.94rem;
+      font-weight: 800;
       font-family: "IBM Plex Mono", monospace;
     }
+
+    .pk-bars-details {
+      border-radius: 12px;
+      background: rgba(2,6,23,0.34);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 0.55rem 0.75rem;
+    }
+    .pk-bars-details summary {
+      cursor: pointer;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(240,249,255,0.8);
+      list-style: none;
+    }
+    .pk-bars-details summary::-webkit-details-marker { display: none; }
     .pk-bars {
       display: grid;
-      gap: 0.38rem;
-      margin-top: 0.45rem;
+      gap: 0.34rem;
+      margin-top: 0.55rem;
     }
     .pk-bar-row {
       display: grid;
-      grid-template-columns: 58px minmax(0, 1fr) 72px;
+      grid-template-columns: 68px minmax(0, 1fr) 118px;
       gap: 0.5rem;
       align-items: center;
-      color: rgba(240,249,255,0.78);
-      font-size: 0.75rem;
+      color: rgba(240,249,255,0.85);
+      font-size: 0.73rem;
       font-family: "IBM Plex Mono", monospace;
     }
+    .pk-bar-row.is-predicted { color: #fde047; font-weight: 700; }
     .pk-bar-track {
       position: relative;
-      height: 14px;
+      height: 12px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.09);
       overflow: hidden;
     }
     .pk-bar-fill {
@@ -449,33 +659,21 @@
       position: absolute;
       top: -2px;
       bottom: -2px;
-      width: 2px;
+      width: 2.5px;
       background: #facc15;
-      box-shadow: 0 0 0 1px rgba(250,204,21,0.35);
+      box-shadow: 0 0 0 1px rgba(250,204,21,0.4);
     }
     .pk-insight {
-      margin-top: 0.75rem;
       border-radius: 12px;
-      padding: 0.78rem 0.85rem;
-      background: rgba(250,204,21,0.08);
-      border: 1px solid rgba(250,204,21,0.18);
-      color: rgba(254,249,195,0.9);
+      padding: 0.72rem 0.85rem;
+      background: rgba(250,204,21,0.1);
+      border: 1px solid rgba(250,204,21,0.24);
+      color: #fef9c3;
       font-size: 0.82rem;
-      line-height: 1.55;
+      line-height: 1.5;
     }
-    .pk-source-list {
-      margin: 0.65rem 0 0;
-      padding-left: 1.1rem;
-      color: var(--text-secondary, #3f4f65);
-      font-size: 0.84rem;
-      line-height: 1.65;
-    }
-    [data-lighting="night"] .pk-source-list,
-    [data-theme="vaporwave"] .pk-source-list,
-    [data-theme="bark"] .pk-source-list { color: rgba(245,245,247,0.72); }
-    .pk-source-list a { color: #0369a1; font-weight: 700; }
-:where(html[data-lighting="night"]) .pk-source-list a { color: #049df1; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .pk-source-list a { color: #049df1; } }
+
+    /* Figures */
     .pk-galton-figures {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -484,8 +682,8 @@
     }
     .pk-figure {
       margin: 0;
-      background: rgba(255,255,255,0.6);
-      border: 1px solid rgba(15,23,42,0.1);
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(15,23,42,0.12);
       border-radius: 14px;
       overflow: hidden;
       display: flex;
@@ -494,14 +692,14 @@
     .pk-figure img {
       display: block;
       width: 100%;
-      height: 230px;
+      height: 220px;
       object-fit: cover;
       background: #fff;
     }
     .pk-figure img.pk-figure-contain { object-fit: contain; padding: 0.4rem; }
     .pk-figure figcaption {
       padding: 0.7rem 0.85rem 0.85rem;
-      font-size: 0.86rem;
+      font-size: 0.85rem;
       line-height: 1.5;
     }
     .pk-figure figcaption strong { display: block; margin-bottom: 0.2rem; }
@@ -514,31 +712,99 @@
     .pk-figure figcaption a { color: #0369a1; }
     [data-lighting="night"] .pk-figure,
     [data-theme="vaporwave"] .pk-figure,
-    [data-theme="bark"] .pk-figure { background: rgba(15,23,42,0.55); border-color: rgba(226,232,240,0.14); }
+    [data-theme="bark"] .pk-figure {
+      background: rgba(15,23,42,0.62);
+      border-color: rgba(226,232,240,0.16);
+      color: #f5f5f7;
+    }
     [data-lighting="night"] .pk-figure figcaption small,
     [data-theme="vaporwave"] .pk-figure figcaption small,
-    [data-theme="bark"] .pk-figure figcaption small { color: rgba(245,245,247,0.72); }
-    .pk-controls .pk-toggle {
-      font-size: 0.92rem;
-      text-transform: none;
-      letter-spacing: 0;
-      color: rgba(240,249,255,0.9);
+    [data-theme="bark"] .pk-figure figcaption small { color: rgba(245,245,247,0.74); }
+    [data-lighting="night"] .pk-figure figcaption a,
+    [data-theme="vaporwave"] .pk-figure figcaption a,
+    [data-theme="bark"] .pk-figure figcaption a { color: #7dd3fc; }
+
+    /* Practice Check Your Understanding */
+    .pk-practice-list {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 0.7rem;
+    }
+    .pk-practice-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 0.6rem;
+      align-items: center;
+      padding: 0.7rem 0.85rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      background: var(--surface, #f8fafc);
+    }
+    .pk-practice-item p { margin: 0; font-size: 0.87rem; }
+    .pk-practice-item input {
+      width: 6rem;
+      padding: 0.4rem 0.55rem;
+      border: 1px solid var(--line, #cbd5e1);
+      border-radius: 8px;
+      background: var(--white, #fff);
+      color: var(--text-primary, #1d1d1f);
+      font: 700 0.88rem "IBM Plex Mono", monospace;
+    }
+    .pk-practice-item button {
+      border: 0;
+      border-radius: 8px;
+      padding: 0.44rem 0.85rem;
+      background: #0369a1;
+      color: #fff;
+      font: 700 0.8rem var(--font-sans);
       cursor: pointer;
     }
-    .pk-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-top: 0.7rem;
-      font-weight: 600;
+    .pk-practice-item button:hover { filter: brightness(1.08); }
+    .pk-practice-item .fb {
+      grid-column: 1 / -1;
+      font-size: 0.82rem;
+      font-weight: 700;
+      min-height: 1.1em;
     }
-    .pk-toggle input { width: 1.1rem; height: 1.1rem; accent-color: #22c55e; }
-    .pk-lede .pk-back-link-inline { color: inherit; text-decoration: underline; font-weight: 700; }
-      :where(html[data-lighting="night"]) .pk-panel .pk-mini-title { color: #4b5563; }
-    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .pk-panel .pk-mini-title { color: #4b5563; } }
-      /* Night: plain links in paragraphs on dark cards. */
-    :where(html[data-lighting="night"]) p a:not([class]), :where(html[data-lighting="night"]) li a:not([class]) { color: #8ec0ff; }
-    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) p a:not([class]), :where(html:not([data-lighting])) li a:not([class]) { color: #8ec0ff; } }
+    .pk-practice-item .fb.ok { color: #15803d; }
+    .pk-practice-item .fb.no { color: #b45309; }
+    @media (max-width: 560px) {
+      .pk-practice-item { grid-template-columns: 1fr; }
+    }
+    [data-lighting="night"] .pk-practice-item,
+    [data-theme="vaporwave"] .pk-practice-item,
+    [data-theme="bark"] .pk-practice-item {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.16);
+    }
+    [data-lighting="night"] .pk-practice-item input,
+    [data-theme="vaporwave"] .pk-practice-item input,
+    [data-theme="bark"] .pk-practice-item input {
+      background: rgba(0,0,0,0.35);
+      border-color: rgba(255,255,255,0.22);
+      color: #f8fafc;
+    }
+    [data-lighting="night"] .pk-practice-item .fb.ok,
+    [data-theme="vaporwave"] .pk-practice-item .fb.ok,
+    [data-theme="bark"] .pk-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .pk-practice-item .fb.no,
+    [data-theme="vaporwave"] .pk-practice-item .fb.no,
+    [data-theme="bark"] .pk-practice-item .fb.no { color: #fbbf24; }
+
+    .pk-source-list {
+      margin: 0.65rem 0 0;
+      padding-left: 1.1rem;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.84rem;
+      line-height: 1.65;
+    }
+    [data-lighting="night"] .pk-source-list,
+    [data-theme="vaporwave"] .pk-source-list,
+    [data-theme="bark"] .pk-source-list { color: rgba(245,245,247,0.78); }
+    .pk-source-list a { color: #0369a1; font-weight: 700; }
+    [data-lighting="night"] .pk-source-list a,
+    [data-theme="vaporwave"] .pk-source-list a,
+    [data-theme="bark"] .pk-source-list a { color: #7dd3fc; }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -546,21 +812,21 @@
 
   <div class="ll-viewport">
     <header class="site-header">
-    <div class="nav-wrap">
-      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
-      <nav class="site-nav" aria-label="Primary">
-        <ul>
-          <li><a href="../../../index.html">Home</a></li>
-          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../../../paths.html">Paths</a></li>
-          <li><a href="../../../showcase.html">Showcase</a></li>
-          <li><a href="../../../applications.html">Apps</a></li>
-          <li><a href="../../../library.html">Library</a></li>
-          <li><a href="../../../about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../library.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
 
     <div class="ll-stage">
       <div class="ll-sim">
@@ -575,74 +841,45 @@
               <span class="dot"></span>
               <span>Bell Curve</span>
               <span class="dot"></span>
-              <span>Binomial Distributions</span>
+              <span>Binomial &amp; Expected Value</span>
               <span class="dot"></span>
-              <span>Simulation</span>
-              <span class="dot"></span>
-              <span>STEM History</span>
+              <span>Interactive Simulation</span>
             </div>
-            <p class="pk-lede">A <span data-glossary="Galton board">Galton board</span> is a beautiful probability machine: each peg nudges a ball left or right, and many tiny decisions add up to a visible distribution. Part 2 of the probability sequence: the <a class="pk-back-link-inline" href="probability-simulator.html">Probability Simulator</a> studies one coin or die at a time; this lab adds many of those events together and watches a <span data-glossary="bell curve">bell curve</span> appear. It moves beyond coins and dice into systems thinking, showing how sample size, bias, design choices, expected value, and data displays can change what students believe about chance.</p>
+            <p class="pk-lede">A <span data-glossary="Galton board">Galton board</span> turns tiny coin-flip bounces into a visible distribution. Part 2 of the probability sequence: the <a class="pk-back-link-inline" href="probability-simulator.html">Probability Simulator</a> tests one coin or die at a time; here, dozens of decisions stack up into a <span data-glossary="bell curve">bell curve</span>. Tilt individual pegs, predict a winning bin, or attach prize values to see how design and sample size shape what happens.</p>
             <a class="pk-back-link" href="../../../steam-lessons.html#module-math">&larr; Back to Mathematics</a>
           </section>
 
-          <section class="pk-card" style="--card-accent:#0ea5e9;">
-            <h2>Lesson Launchpad</h2>
-            <p>This lesson treats pachinko as an engineering and probability case study. Students study the path of a ball through pegs, then use the simulator to make predictions, collect data, and explain why the center bins usually fill more than the edges on a fair board.</p>
-            <div class="pk-grid">
-              <div class="pk-panel">
-                <p class="pk-mini-title">Students Should Leave Able To</p>
-                <ul class="pk-checklist">
-                  <li>connect a pachinko board to repeated left-right probability events.</li>
-                  <li>explain why a fair board often forms a mound-shaped distribution.</li>
-                  <li>describe how Francis Galton used the board to show the bell curve emerging from many random events.</li>
-                  <li>describe how bias, obstacles, and board geometry change outcomes.</li>
-                  <li>compare experimental counts with an expected model.</li>
-                  <li>use simulations ethically by separating amusement history from mathematical analysis.</li>
-                </ul>
-              </div>
-              <div class="pk-panel">
-                <p class="pk-mini-title">5-Minute Start</p>
-                <ol class="pk-step-list">
-                  <li><span class="pk-step-num">1</span><span>Ask students where one ball is most likely to land: edge, center, or impossible to predict.</span></li>
-                  <li><span class="pk-step-num">2</span><span>Run 100 balls on the fair board and let students describe the shape before naming it.</span></li>
-                  <li><span class="pk-step-num">3</span><span>Run 2000 balls, turn on the bell curve, and introduce "many small random choices can create a stable pattern."</span></li>
-                </ol>
+          <section id="pk-lab" class="pk-lab" aria-labelledby="pk-lab-title">
+            <div class="pk-lab-head">
+              <div>
+                <div class="pk-lab-badge">Interactive Galton &amp; Pachinko Lab</div>
+                <h2 id="pk-lab-title">Drop Balls &amp; Test the Board</h2>
+                <p class="pk-lab-sub">Blue bars show experimental counts; yellow ticks mark the exact model; the green curve draws the normal approximation with &plusmn;1&sigma; and &plusmn;2&sigma; bands. Click any peg to tilt it or click any bin to lock a prediction.</p>
               </div>
             </div>
-            <div class="pk-band-grid">
-              <article class="pk-mini-card">
-                <span class="pk-tag">Grades K-5</span>
-                <strong>Pattern Watchers</strong>
-                <p>Focus on left, right, middle, more, less, most common, and simple tally charts. Students predict with words before seeing data.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">Grades 6-8</span>
-                <strong>Distribution Builders</strong>
-                <p>Use fractions, percentages, bar graphs, sample size, and fair-versus-biased comparisons. Students explain why center bins have more paths.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">Grades 9-12</span>
-                <strong>Model Critics</strong>
-                <p>Connect binomial probability, expected value, weighted outcomes, variance, normal approximation, and model limitations.</p>
-              </article>
-            </div>
-          </section>
 
-          <section class="pk-lab" aria-labelledby="pk-lab-title">
-            <div class="pk-lab-badge">Interactive Lab</div>
-            <h2 id="pk-lab-title">Run the Pachinko Simulator</h2>
-            <p>Choose a board scenario, change the number of peg rows, and launch a sample. The yellow markers show the expected model; the blue bars show what happened in this run. Turn on the bell curve to compare the bins with the smooth normal curve Galton predicted.</p>
             <div class="pk-lab-grid">
               <div class="pk-controls">
-                <label for="pk-scenario">Scenario</label>
+                <label for="pk-scenario">Board Scenario</label>
                 <select id="pk-scenario" class="pk-select">
-                  <option value="fair">Fair board: left and right equally likely</option>
-                  <option value="left">Tilted board: slight left bias</option>
-                  <option value="right">Tilted board: slight right bias</option>
-                  <option value="center">Center-friendly board</option>
+                  <option value="fair">Fair board (p = 0.50)</option>
+                  <option value="left">Tilted left (p = 0.35)</option>
+                  <option value="right">Tilted right (p = 0.65)</option>
+                  <option value="center">Center-friendly funnel</option>
                   <option value="edge">Edge challenge board</option>
-                  <option value="random">Noisy board: uneven peg reactions</option>
+                  <option value="random">Uneven peg rows</option>
+                  <option value="custom">Custom tilt / hand-tuned pegs</option>
                 </select>
+
+                <div class="pk-range-wrap">
+                  <label for="pk-prob">Right-bounce probability (p)</label>
+                  <input id="pk-prob" class="pk-range" type="range" min="0.10" max="0.90" step="0.01" value="0.50" />
+                  <div class="pk-range-meta">
+                    <span>0.10 (L)</span>
+                    <strong id="pk-prob-readout">p = 0.50</strong>
+                    <span>0.90 (R)</span>
+                  </div>
+                </div>
 
                 <div class="pk-control-row">
                   <div class="pk-range-wrap">
@@ -655,7 +892,7 @@
                     </div>
                   </div>
                   <div class="pk-range-wrap">
-                    <label for="pk-balls">Balls</label>
+                    <label for="pk-balls">Sample size</label>
                     <input id="pk-balls" class="pk-range" type="range" min="50" max="3000" step="50" value="1000" />
                     <div class="pk-range-meta">
                       <span>50</span>
@@ -665,36 +902,102 @@
                   </div>
                 </div>
 
+                <div class="pk-control-row">
+                  <div>
+                    <label for="pk-ev-mode">Bin Payouts (EV)</label>
+                    <select id="pk-ev-mode" class="pk-select">
+                      <option value="off">Off (counts only)</option>
+                      <option value="edge-jackpot">Edge Jackpot (+500 / 0)</option>
+                      <option value="center-target">Center Target (+100)</option>
+                      <option value="graded">Linear Ramp (0..10n)</option>
+                      <option value="carnival">Carnival Edge (-10 mid)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="pk-speed">Drop Speed</label>
+                    <select id="pk-speed" class="pk-select">
+                      <option value="slow">Slow (study)</option>
+                      <option value="normal" selected>Normal</option>
+                      <option value="turbo">Turbo</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div class="pk-button-row">
                   <button id="pk-run" class="pk-btn pk-btn-primary" type="button">Launch sample</button>
-                  <button id="pk-one" class="pk-btn pk-btn-secondary" type="button">Watch one ball</button>
+                  <button id="pk-one" class="pk-btn pk-btn-secondary" type="button">+1 Trace</button>
+                  <button id="pk-ten" class="pk-btn pk-btn-secondary" type="button">+10</button>
+                  <button id="pk-hundred" class="pk-btn pk-btn-secondary" type="button">+100</button>
+                  <button id="pk-stream" class="pk-btn pk-btn-secondary" type="button" aria-pressed="false">Stream</button>
                   <button id="pk-reset" class="pk-btn pk-btn-secondary" type="button">Reset</button>
                 </div>
 
+                <button id="pk-clear-pegs" class="pk-btn pk-btn-secondary" type="button" hidden style="width:100%; margin-bottom:0.5rem;">Clear tilted pegs</button>
+
                 <div class="pk-button-row" aria-label="Quick investigations">
-                  <button class="pk-btn-chip" type="button" data-scenario="fair" data-rows="8" data-balls="200">Small sample</button>
+                  <button class="pk-btn-chip" type="button" data-scenario="fair" data-rows="8" data-balls="100">Small sample</button>
                   <button class="pk-btn-chip" type="button" data-scenario="fair" data-rows="12" data-balls="2500">Large sample</button>
                   <button class="pk-btn-chip" type="button" data-scenario="left" data-rows="10" data-balls="1200">Detect bias</button>
-                  <button class="pk-btn-chip" type="button" data-scenario="center" data-rows="10" data-balls="1200">Center design</button>
-                  <button class="pk-btn-chip" type="button" data-scenario="edge" data-rows="10" data-balls="1200">Edge design</button>
+                  <button class="pk-btn-chip" type="button" data-scenario="fair" data-rows="10" data-balls="1200" data-ev="edge-jackpot">Edge jackpot</button>
                 </div>
 
-                <label class="pk-toggle" for="pk-bell">
-                  <input id="pk-bell" type="checkbox" checked />
-                  Show the bell curve (normal approximation)
-                </label>
+                <div class="pk-toggles-box">
+                  <label class="pk-toggle" for="pk-bell">
+                    <input id="pk-bell" type="checkbox" checked />
+                    Show bell curve &amp; &plusmn;1&sigma;/&plusmn;2&sigma; bands
+                  </label>
+                  <label class="pk-toggle" for="pk-expected-toggle">
+                    <input id="pk-expected-toggle" type="checkbox" checked />
+                    Show expected model (uncheck to predict)
+                  </label>
+                  <label class="pk-toggle" for="pk-pascal">
+                    <input id="pk-pascal" type="checkbox" />
+                    Show Pascal path counts C(r, c)
+                  </label>
+                  <label class="pk-toggle" for="pk-heatmap">
+                    <input id="pk-heatmap" type="checkbox" />
+                    Show peg visit heatmap
+                  </label>
+                  <label class="pk-toggle" for="pk-sound">
+                    <input id="pk-sound" type="checkbox" />
+                    Sound plinks (pentatonic bins)
+                  </label>
+                </div>
 
                 <div id="pk-model-note" class="pk-model-note">
-                  <strong>Current model</strong>
-                  A fair board uses the same probability for left and right at every peg. The center bins have more possible paths, so they are expected to fill more often.
+                  <strong>Fair Galton board</strong>
+                  A fair board uses the same probability (p = 0.50) for left and right at every peg.
                 </div>
               </div>
 
               <div class="pk-results">
                 <div class="pk-board-wrap">
                   <div class="pk-canvas-shell">
-                    <canvas id="pk-canvas" class="pk-canvas" width="900" height="560" aria-label="Pachinko probability simulator"></canvas>
+                    <canvas id="pk-canvas" class="pk-canvas" width="900" height="500" aria-label="Interactive Galton board and pachinko probability simulator"></canvas>
                   </div>
+
+                  <div id="pk-hover-info" class="pk-hud-bar" aria-live="polite">
+                    Tip: Click any peg to tilt it left/right, or click any bin below to lock a ★ prediction.
+                  </div>
+
+                  <div id="pk-trace-banner" class="pk-trace-banner" hidden aria-live="polite"></div>
+
+                  <div id="pk-ev-strip" class="pk-ev-strip" hidden aria-live="polite">
+                    <div class="pk-ev-cell">
+                      <span>Theoretical EV</span>
+                      <strong id="pk-ev-theo">--</strong>
+                    </div>
+                    <div class="pk-ev-cell">
+                      <span>Observed Avg</span>
+                      <strong id="pk-ev-obs">--</strong>
+                    </div>
+                    <div class="pk-ev-cell">
+                      <span>Total Score</span>
+                      <strong id="pk-ev-total">0 pts</strong>
+                    </div>
+                    <div id="pk-ev-note" class="pk-ev-note"></div>
+                  </div>
+
                   <div class="pk-stats-grid">
                     <div class="pk-stat">
                       <div class="pk-stat-label">Trials</div>
@@ -705,29 +1008,38 @@
                       <div id="pk-stat-mode" class="pk-stat-value">--</div>
                     </div>
                     <div class="pk-stat">
-                      <div class="pk-stat-label">Mean Bin</div>
+                      <div class="pk-stat-label">Mean (vs &mu;)</div>
                       <div id="pk-stat-mean" class="pk-stat-value">--</div>
+                    </div>
+                    <div class="pk-stat">
+                      <div class="pk-stat-label">Std Dev (vs &sigma;)</div>
+                      <div id="pk-stat-sd" class="pk-stat-value">--</div>
                     </div>
                     <div class="pk-stat">
                       <div class="pk-stat-label">Center Share</div>
                       <div id="pk-stat-center" class="pk-stat-value">--</div>
                     </div>
+                    <div class="pk-stat">
+                      <div class="pk-stat-label">Within &plusmn;1&sigma;</div>
+                      <div id="pk-stat-sigma1" class="pk-stat-value">--</div>
+                    </div>
                   </div>
-                  <div>
-                    <div class="pk-results-label">Bin Distribution</div>
+
+                  <details class="pk-bars-details" open>
+                    <summary>Bin Distribution Table (Observed vs Expected)</summary>
                     <div id="pk-bars" class="pk-bars" aria-live="polite"></div>
-                  </div>
-                  <div id="pk-insight" class="pk-insight">Launch a sample to compare the expected model with experimental results.</div>
+                  </details>
+
+                  <div id="pk-insight" class="pk-insight">Click any bin to predict the winner, then launch balls to test the model.</div>
                 </div>
               </div>
             </div>
           </section>
 
-
           <section class="pk-card" id="pk-galton" style="--card-accent:#16a34a;">
             <h2>The Galton Board: Where the Bell Curve Comes From</h2>
             <p>The simulator above is a digital <span data-glossary="Galton board">Galton board</span>. Sir Francis Galton (1822–1911), an English scientist, built one in the 1870s to show how the <span data-glossary="normal distribution">normal distribution</span> arises. He described it in his 1889 book <em>Natural Inheritance</em>. He called it a <span data-glossary="quincunx">quincunx</span>, after the five-dot pattern on a die, because the pins sit in staggered rows: each pin is centered under the gap between two pins above it.</p>
-            <p>In this model, each ball makes a string of independent left-or-right choices with the same probability at every row. The landing bin follows a discrete binomial distribution. On a fair board with many rows, that shape can be approximated by a smooth normal curve; a small sample may still look lumpy.</p>
+            <p>In this model, each ball makes a string of independent left-or-right choices with the same probability at every row. The landing bin follows a discrete binomial distribution. On a fair board with many rows, that shape is closely approximated by a smooth normal curve; a small sample may still look lumpy.</p>
             <div class="pk-galton-figures">
               <figure class="pk-figure" data-zoomable data-lightbox-group="pk-galton" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Galton_box.jpg?width=1600">
                 <img style="object-position: center 78%;" src="https://commons.wikimedia.org/wiki/Special:FilePath/Galton_box.jpg?width=520" alt="A tall wooden Galton board with rows of pins above narrow bins, the balls piled into a bell shape" loading="lazy" />
@@ -746,26 +1058,117 @@
               <strong>The big idea: the central limit theorem</strong>
               <p>Each landing bin counts the rightward choices across a fixed number of rows. If those choices are independent and each has the same probability, the count is binomial. With enough rows and probabilities away from 0 and 1, a normal curve is a useful approximation. Real-world data need their own evidence before we call them normal. See <a href="https://openstax.org/books/introductory-statistics-2e/pages/7-3-using-the-central-limit-theorem">OpenStax's normal-approximation conditions</a>.</p>
             </div>
-            <div class="pk-scenario-grid">
-              <article class="pk-mini-card">
-                <span class="pk-tag">Try It</span>
-                <strong>Watch the Bell Form</strong>
-                <p>On the fair board, run 50 balls, then 3000. Compare the bins to the green bell curve. The small run is lumpy; the big run hugs the curve.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">Try It</span>
-                <strong>More Rows, Smoother Bell</strong>
-                <p>Set 6 rows, then 14. More rows means each ball adds up more bounces, and the bins fit the bell curve more closely.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">Think About It</span>
-                <strong>Chaos Hides a Pattern</strong>
-                <p>One ball is unpredictable. Thousands of balls are very predictable. How can both be true at the same time?</p>
-              </article>
-            </div>
             <ul class="pk-source-list">
               <li>Teacher background: Francis Galton, <em>Natural Inheritance</em> (1889), chapter 5; <a href="https://en.wikipedia.org/wiki/Galton_board">Galton board</a> and <a href="https://en.wikipedia.org/wiki/Central_limit_theorem">central limit theorem</a> on Wikipedia.</li>
             </ul>
+          </section>
+
+          <section class="pk-card" style="--card-accent:#f59e0b;">
+            <h2>Simulation Investigations</h2>
+            <p>Each investigation connects a parameter on the board to a core statistics concept. Predict first, load the setup into the lab, and compare the sample against the exact model.</p>
+            <div class="pk-scenario-grid">
+              <article class="pk-mini-card">
+                <span class="pk-tag">Sample Size</span>
+                <strong>Small Run vs. Large Run</strong>
+                <p>Compare 50 balls against 2,500 balls. Small runs look jagged and unpredictable; large runs lock onto the smooth bell curve.</p>
+                <button class="pk-scenario-launch" type="button" data-scenario="fair" data-rows="10" data-balls="50">Load 50-ball run &uarr;</button>
+              </article>
+              <article class="pk-mini-card">
+                <span class="pk-tag">Combinatorics</span>
+                <strong>Why the Middle Wins</strong>
+                <p>Turn on Pascal path counts: on a 10-row board there are 252 ways to reach Bin 5, versus only 1 way to reach Bin 0 or Bin 10.</p>
+                <button class="pk-scenario-launch" type="button" data-scenario="fair" data-rows="10" data-balls="1200">Load fair 10-row &uarr;</button>
+              </article>
+              <article class="pk-mini-card">
+                <span class="pk-tag">Bias Detection</span>
+                <strong>The Tilted Machine</strong>
+                <p>Set right-bounce probability to 0.35. Watch the entire distribution slide left and test how many drops it takes to spot the tilt.</p>
+                <button class="pk-scenario-launch" type="button" data-scenario="left" data-rows="10" data-balls="1200">Load tilted left &uarr;</button>
+              </article>
+              <article class="pk-mini-card">
+                <span class="pk-tag">Expected Value</span>
+                <strong>The +500 Edge Trap</strong>
+                <p>Edge bins pay +500 pts while middle bins pay 0. Even huge prizes on rare edges barely lift the long-run average per ball.</p>
+                <button class="pk-scenario-launch" type="button" data-scenario="fair" data-rows="10" data-balls="1000" data-ev="edge-jackpot">Load Edge Jackpot &uarr;</button>
+              </article>
+              <article class="pk-mini-card">
+                <span class="pk-tag">Design</span>
+                <strong>Center-Friendly Funnel</strong>
+                <p>Outer pegs nudge drifting balls back inward. Notice how engineering changes spread (&sigma;) without removing randomness.</p>
+                <button class="pk-scenario-launch" type="button" data-scenario="center" data-rows="10" data-balls="1200">Load center funnel &uarr;</button>
+              </article>
+              <article class="pk-mini-card">
+                <span class="pk-tag">House Edge</span>
+                <strong>Carnival Payouts</strong>
+                <p>Middle bins cost &minus;10 pts while rare edges pay +250. Run 100 balls vs 2,000 balls to see short-term luck meet expected value.</p>
+                <button class="pk-scenario-launch" type="button" data-scenario="fair" data-rows="10" data-balls="1000" data-ev="carnival">Load carnival board &uarr;</button>
+              </article>
+            </div>
+          </section>
+
+          <section class="pk-card" style="--card-accent:#8b5cf6;">
+            <h2>Teach the Math</h2>
+            <p><strong>Independent events:</strong> In the classic Galton model, each peg collision is a fresh Bernoulli trial. Previous left or right bounces do not force the next bounce to "even things out."</p>
+            <p><strong>Binomial distribution:</strong> On a board with <em>n</em> rows, a ball makes <em>n</em> binary decisions and lands in bin <em>k</em> (0 &le; <em>k</em> &le; <em>n</em>) after <em>k</em> right bounces. There are <em>C</em>(<em>n</em>, <em>k</em>) distinct paths to that bin, each occurring with probability <em>p<sup>k</sup></em>(1 &minus; <em>p</em>)<sup><em>n</em>&minus;<em>k</em></sup>.</p>
+            <p><strong>Normal approximation:</strong> With enough independent rows and <em>p</em> away from 0 or 1, the binomial distribution aligns closely with a <span data-glossary="normal distribution">normal curve</span> of mean &mu; = <em>np</em> and standard deviation &sigma; = &radic;(<em>np</em>(1 &minus; <em>p</em>)). On a fair 10-row board, &mu; = 5 and &sigma; &approx; 1.58, so roughly 68% of balls land in bins 4, 5, and 6. Explore the 68–95–99.7 rule further in <a href="how-spread-out.html#bell">How Spread Out?</a>.</p>
+            <p><strong>Expected value:</strong> When bins carry point values <em>v<sub>k</sub></em>, the theoretical expected value is <em>E</em>[<em>X</em>] = &Sigma; <em>v<sub>k</sub></em> &middot; <em>P</em>(Bin = <em>k</em>)—a long-run average, never a guarantee for a single drop.</p>
+            <div class="pk-vocab-grid">
+              <article class="pk-mini-card">
+                <span class="pk-tag">Vocabulary</span>
+                <strong>Distribution</strong>
+                <p>The pattern of counts or probabilities across all possible landing bins.</p>
+              </article>
+              <article class="pk-mini-card">
+                <span class="pk-tag">Vocabulary</span>
+                <strong>Standard Deviation (&sigma;)</strong>
+                <p>The typical spread around the mean; about 68% of drops fall within &plusmn;1&sigma;.</p>
+              </article>
+              <article class="pk-mini-card">
+                <span class="pk-tag">Vocabulary</span>
+                <strong>Expected Value</strong>
+                <p>The probability-weighted average payout per ball over the long run.</p>
+              </article>
+              <article class="pk-mini-card">
+                <span class="pk-tag">Misconception</span>
+                <strong>"Random means flat"</strong>
+                <p>Each peg is fair (50/50), yet the bins are not flat—paths combine multiplicatively in the middle.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="pk-card" style="--card-accent:#0284c7;">
+            <h2>Check Your Understanding</h2>
+            <p>Use the simulator or mental math to solve these four quick checks.</p>
+            <div class="pk-practice-list">
+              <div class="pk-practice-item" data-answer="6" data-tolerance="0.01" data-hint="Look at row 4 of Pascal's triangle: 1, 4, ?, 4, 1." data-explain="C(4, 2) = 4! / (2!2!) = 6 paths reach Bin 2.">
+                <p><strong>1. Pascal Paths:</strong> On a 4-row fair board, how many distinct left-right paths reach Bin 2?</p>
+                <label class="skip-link" for="pk-q1">Answer 1</label>
+                <input id="pk-q1" type="number" step="any" placeholder="?" aria-label="Question 1 answer" />
+                <button type="button">Check</button>
+                <div class="fb" aria-live="polite"></div>
+              </div>
+              <div class="pk-practice-item" data-answer="6" data-tolerance="0.01" data-hint="Use μ = n × p with n = 12 and p = 0.50." data-explain="μ = 12 × 0.50 = 6, right in the center bin.">
+                <p><strong>2. Fair Mean:</strong> On a 12-row fair board (<em>p</em> = 0.50), what is the expected mean bin &mu;?</p>
+                <label class="skip-link" for="pk-q2">Answer 2</label>
+                <input id="pk-q2" type="number" step="any" placeholder="?" aria-label="Question 2 answer" />
+                <button type="button">Check</button>
+                <div class="fb" aria-live="polite"></div>
+              </div>
+              <div class="pk-practice-item" data-answer="7" data-tolerance="0.01" data-hint="Multiply rows (10) by right-bounce probability (0.70)." data-explain="μ = 10 × 0.70 = 7, shifting the peak two bins right of center.">
+                <p><strong>3. Tilted Mean:</strong> On a 10-row board tilted right with <em>p</em> = 0.70, what is the expected mean bin?</p>
+                <label class="skip-link" for="pk-q3">Answer 3</label>
+                <input id="pk-q3" type="number" step="any" placeholder="?" aria-label="Question 3 answer" />
+                <button type="button">Check</button>
+                <div class="fb" aria-live="polite"></div>
+              </div>
+              <div class="pk-practice-item" data-answer="20" data-tolerance="0.05" data-hint="Compute 40(0.25) + 0(0.50) + 40(0.25)." data-explain="40(0.25) + 0(0.50) + 40(0.25) = 10 + 0 + 10 = 20 pts per ball.">
+                <p><strong>4. Expected Value:</strong> A 2-row fair board pays 40 pts for Bin 0, 0 pts for Bin 1, and 40 pts for Bin 2 (probabilities 0.25, 0.50, 0.25). What is the expected value per ball?</p>
+                <label class="skip-link" for="pk-q4">Answer 4</label>
+                <input id="pk-q4" type="number" step="any" placeholder="?" aria-label="Question 4 answer" />
+                <button type="button">Check</button>
+                <div class="fb" aria-live="polite"></div>
+              </div>
+            </div>
           </section>
 
           <section class="pk-card" style="--card-accent:#14b8a6;">
@@ -784,7 +1187,7 @@
               <article class="pk-mini-card">
                 <span class="pk-tag">Engineering</span>
                 <strong>Board Geometry</strong>
-                <p>The spacing of pins, the launch speed, and the slope of the board all affect the path of a ball.</p>
+                <p>Pin spacing, nail angles, launch speed, and slope all alter real ball probabilities—just like clicking individual pegs in the lab above.</p>
               </article>
               <article class="pk-mini-card">
                 <span class="pk-tag">Culture</span>
@@ -797,100 +1200,67 @@
             </ul>
           </section>
 
-          <section class="pk-card" style="--card-accent:#f59e0b;">
-            <h2>Simulation Scenarios</h2>
-            <p>Each scenario is a classroom investigation, not just a setting. Have students predict first, run the model, then write one sentence connecting the data to a math concept.</p>
-            <div class="pk-scenario-grid">
+          <section class="pk-card" style="--card-accent:#0ea5e9;">
+            <h2>Lesson Launchpad &amp; Sequence</h2>
+            <p>Use this guide to frame predictions, compare experimental samples with the expected model, and scaffold across grade bands.</p>
+            <div class="pk-grid">
+              <div class="pk-panel">
+                <p class="pk-mini-title">Students Should Leave Able To</p>
+                <ul class="pk-checklist">
+                  <li>connect a pachinko board to repeated left-right probability events.</li>
+                  <li>explain why a fair board forms a mound-shaped distribution.</li>
+                  <li>describe how Francis Galton used the board to demonstrate the bell curve.</li>
+                  <li>explain how bias, tilted pegs, and board geometry shift outcomes.</li>
+                  <li>compare experimental counts with an expected model and expected value.</li>
+                  <li>separate historical/engineering curiosity from gambling claims using math.</li>
+                </ul>
+              </div>
+              <div class="pk-panel">
+                <p class="pk-mini-title">5-Minute Start</p>
+                <ol class="pk-step-list">
+                  <li><span class="pk-step-num">1</span><span>Uncheck "Show expected model," then ask students to click the bin they think will win.</span></li>
+                  <li><span class="pk-step-num">2</span><span>Drop +10 or 50 balls and let students describe the jagged shape before naming it.</span></li>
+                  <li><span class="pk-step-num">3</span><span>Stream 2,000 balls, re-enable the bell curve, and compare &mu; and &plusmn;1&sigma; to the data.</span></li>
+                </ol>
+              </div>
+            </div>
+            <div class="pk-band-grid">
               <article class="pk-mini-card">
-                <span class="pk-tag">Sample Size</span>
-                <strong>Small Run vs. Large Run</strong>
-                <p>Run 50 balls, then 3000. Students should notice that larger samples usually look smoother and closer to the expected model.</p>
+                <span class="pk-tag">Grades K-5</span>
+                <strong>Pattern Watchers</strong>
+                <p>Focus on left, right, middle, most common, and tally comparisons. Students predict by clicking a bin before seeing data.</p>
               </article>
               <article class="pk-mini-card">
-                <span class="pk-tag">Binomial</span>
-                <strong>Why the Middle Wins</strong>
-                <p>Count how many left-right paths reach each bin. The center has many path combinations; the far edge has only one all-left or all-right path.</p>
+                <span class="pk-tag">Grades 6-8</span>
+                <strong>Distribution Builders</strong>
+                <p>Use percentages, sample size, Pascal path counts, and tilted-peg experiments to explain why middle bins dominate.</p>
               </article>
               <article class="pk-mini-card">
-                <span class="pk-tag">Bias</span>
-                <strong>The Tilted Machine</strong>
-                <p>Use left or right bias. Students decide whether the evidence is strong enough to claim the board is unfair.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">Expected Value</span>
-                <strong>Weighted Bins</strong>
-                <p>Assign point values to bins on paper and multiply each value by its probability. The "best-looking" target may not be the best expected outcome.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">Design</span>
-                <strong>Center-Friendly Board</strong>
-                <p>Compare the center-friendly scenario to the fair board and discuss how design can steer outcomes without removing randomness.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">Data Literacy</span>
-                <strong>Misleading Displays</strong>
-                <p>Ask how a graph could exaggerate differences. Students should inspect scales, sample size, and whether expected values are shown.</p>
+                <span class="pk-tag">Grades 9-12</span>
+                <strong>Model Critics</strong>
+                <p>Connect binomial coefficients, standard deviation, normal approximation, Markov chains on tilted pegs, and expected value.</p>
               </article>
             </div>
-          </section>
-
-          <section class="pk-card" style="--card-accent:#8b5cf6;">
-            <h2>Teach the Math</h2>
-            <p><strong>Independent events:</strong> In the simplest model, each peg collision is treated as a new left-or-right event. The previous bounce does not force the next bounce to compensate.</p>
-            <p><strong>Binomial distribution:</strong> If a board has 10 rows, the ball makes 10 left-right decisions and lands in one of 11 bins. The number of right bounces determines the bin.</p>
-            <p><strong>Normal approximation:</strong> With enough independent rows and a right-bounce probability away from 0 or 1, the binomial shape can be approximated by a <span data-glossary="normal distribution">normal curve</span> with mean <em>np</em> and standard deviation √(<em>np</em>(1 − <em>p</em>)). On a fair 10-row board, the mean is 5 and the standard deviation is about 1.58; the discrete bin probabilities give the exact answer. The 68–95–99.7 rule in <a href="how-spread-out.html#bell">How Spread Out?</a> describes a continuous normal model.</p>
-            <p><strong>Expected value:</strong> If bins have point values, multiply each bin's value by its probability and add the results. Expected value is a long-run average, not a promise for one ball.</p>
-            <div class="pk-vocab-grid">
-              <article class="pk-mini-card">
-                <span class="pk-tag">Vocabulary</span>
-                <strong>Distribution</strong>
-                <p>The pattern of counts across all possible outcomes.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">Vocabulary</span>
-                <strong>Mode</strong>
-                <p>The bin or outcome that appears most often in a data set.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">Vocabulary</span>
-                <strong>Bias</strong>
-                <p>A systematic tilt in a process that makes some outcomes more likely than the fair model predicts.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">Misconception</span>
-                <strong>"Random means even"</strong>
-                <p>Random outcomes are not automatically balanced in small samples. Pattern and variation can exist at the same time.</p>
-              </article>
-            </div>
-          </section>
-
-          <section class="pk-card" style="--card-accent:#ef4444;">
-            <h2>Suggested Lesson Sequence</h2>
             <div class="pk-sequence-grid">
               <article class="pk-mini-card">
-                <span class="pk-tag">5 min</span>
-                <strong>Hook</strong>
-                <p>Show the board and ask students to point to the bin they think will win. Do not reveal the expected model yet.</p>
+                <span class="pk-tag">5 min · Hook</span>
+                <strong>Blind Prediction</strong>
+                <p>Hide the expected model and have students lock a bin prediction before any balls drop.</p>
               </article>
               <article class="pk-mini-card">
-                <span class="pk-tag">10 min</span>
-                <strong>Fair Board Run</strong>
-                <p>Run a fair sample and compare the center with the edges. Name the binomial pattern.</p>
+                <span class="pk-tag">10 min · Fair Run</span>
+                <strong>Pascal &amp; Binomial</strong>
+                <p>Toggle Pascal path counts and trace one ball to connect combinations to bin height.</p>
               </article>
               <article class="pk-mini-card">
-                <span class="pk-tag">15 min</span>
-                <strong>Scenario Teams</strong>
-                <p>Groups investigate a different board setting and write a claim-evidence-reasoning paragraph.</p>
+                <span class="pk-tag">15 min · Scenarios</span>
+                <strong>Bias &amp; EV Teams</strong>
+                <p>Teams test tilted boards, custom-tilted pegs, or Edge Jackpot payouts and write a claim-evidence paragraph.</p>
               </article>
               <article class="pk-mini-card">
-                <span class="pk-tag">10 min</span>
-                <strong>Design Debate</strong>
-                <p>Students decide which board is fairest, which is most predictable, and which is hardest to model.</p>
-              </article>
-              <article class="pk-mini-card">
-                <span class="pk-tag">5 min</span>
-                <strong>Exit Ticket</strong>
-                <p>Explain why a center bin can be most likely even though each peg only gives two choices.</p>
+                <span class="pk-tag">10 min · Exit</span>
+                <strong>Synthesis</strong>
+                <p>Explain how one ball is unpredictable while 2,000 balls obey &mu; and &sigma;.</p>
               </article>
             </div>
           </section>
@@ -899,12 +1269,11 @@
             <h2>Discussion Prompts</h2>
             <div class="pk-question-grid">
               <div class="pk-question">How many different paths can reach an edge bin? How many can reach a middle bin?</div>
-              <div class="pk-question">Galton called the board a quincunx. Why do the pins have to be staggered? What would happen if every pin sat directly under the one above?</div>
-              <div class="pk-question">When does a weird result mean "random variation," and when might it be evidence of bias?</div>
-              <div class="pk-question">How would you design a pachinko board to make outcomes more predictable?</div>
-              <div class="pk-question">Why should a simulator show both experimental data and an expected model?</div>
-              <div class="pk-question">What parts of the real world are missing from this model: friction, spin, ball size, peg shape, or human launch force?</div>
-              <div class="pk-question">How can probability knowledge help people make better decisions around games, risk, and advertising?</div>
+              <div class="pk-question">Galton called the board a quincunx. Why must the pins be staggered rather than stacked vertically?</div>
+              <div class="pk-question">When is a lopsided result just small-sample scatter, and when is it strong evidence of bias?</div>
+              <div class="pk-question">If you tilt just the top peg right, how far does its effect ripple down the board? Test it!</div>
+              <div class="pk-question">Why can a game advertise a "+500 Jackpot" and still have a near-zero or negative expected value?</div>
+              <div class="pk-question">What real-world physics are missing here: spin, friction, ball mass, or bounce elasticity?</div>
             </div>
           </section>
         </main>
@@ -934,17 +1303,31 @@
                 Right Bias
                 <small>p = 0.65 · 10 rows</small>
               </button>
+              <button type="button" class="pk-panel-preset" data-preset="center">
+                Center Funnel
+                <small>Narrow spread · 10 rows</small>
+              </button>
+              <button type="button" class="pk-panel-preset" data-preset="edge">
+                Edge Jackpot
+                <small>EV +500 edges · 10 rows</small>
+              </button>
               <button type="button" class="pk-panel-preset" data-preset="deep">
                 Deep Funnel
-                <small>p = 0.50 · 12 rows</small>
+                <small>p = 0.50 · 14 rows</small>
               </button>
             </div>
 
             <div class="pk-panel-actions">
-              <button type="button" class="pk-btn pk-btn-primary" id="pk-p-run" style="flex:1;">Run 1,000</button>
-              <button type="button" class="pk-btn" id="pk-p-one" style="flex:1;">Drop 1</button>
-              <button type="button" class="pk-btn" id="pk-p-reset" style="flex:1;">Reset</button>
+              <button type="button" class="pk-btn pk-btn-primary" id="pk-p-run">+100 Balls</button>
+              <button type="button" class="pk-btn pk-btn-neutral" id="pk-p-one">Drop 1</button>
+              <button type="button" class="pk-btn pk-btn-neutral" id="pk-p-stream" aria-pressed="false">Stream</button>
+              <button type="button" class="pk-btn pk-btn-neutral" id="pk-p-reset">Reset</button>
             </div>
+
+            <label class="pk-panel-toggle" for="pk-p-hide-expected">
+              <input id="pk-p-hide-expected" type="checkbox" />
+              Teacher hook: hide expected curve
+            </label>
 
             <hr class="ll-hr">
             <span class="ll-label">Live Telemetry</span>
@@ -962,8 +1345,16 @@
                 <span class="ll-readout-val" id="pk-p-mean">--</span>
               </div>
               <div class="ll-readout">
+                <span class="ll-readout-lbl">Std Dev (s)</span>
+                <span class="ll-readout-val" id="pk-p-sd">--</span>
+              </div>
+              <div class="ll-readout">
                 <span class="ll-readout-lbl">Center %</span>
                 <span class="ll-readout-val" id="pk-p-center">--</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Within &plusmn;1&sigma;</span>
+                <span class="ll-readout-val" id="pk-p-sigma1">--</span>
               </div>
             </div>
           </div>
@@ -971,19 +1362,19 @@
           <div class="ll-pane" id="pk-guide" aria-hidden="true">
             <span class="ll-label">Key Principles</span>
             <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
-              <strong>Galton's Quincunx (1873):</strong> Sir Francis Galton engineered the quincunx to prove that order emerges from sheer chaos. Each peg represents an independent binary choice: bounce left (<em>q</em> = 1 − <em>p</em>) or bounce right (<em>p</em>).
+              <strong>Galton's Quincunx (1873):</strong> Sir Francis Galton engineered the quincunx to show order emerging from many small random nudges: bounce left (<em>q</em> = 1 &minus; <em>p</em>) or bounce right (<em>p</em>).
             </p>
             <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
               <strong>Pascal's Triangle &amp; Combinatorics:</strong> The number of distinct routes to bin <em>k</em> on row <em>n</em> is given by the binomial coefficient:
             </p>
-            <div style="background:rgba(0,0,0,0.06); padding:0.4rem; border-radius:6px; font-family:var(--font-mono, monospace); font-size:0.82rem; text-align:center; margin-bottom:0.75rem;">
-              C(<em>n</em>, <em>k</em>) = <em>n</em>! / [<em>k</em>!(<em>n</em> − <em>k</em>)!]
+            <div style="background:rgba(128,128,128,0.14); padding:0.45rem; border-radius:6px; font-family:var(--font-mono, monospace); font-size:0.82rem; text-align:center; margin-bottom:0.75rem;">
+              C(<em>n</em>, <em>k</em>) = <em>n</em>! / [<em>k</em>!(<em>n</em> &minus; <em>k</em>)!]
             </div>
             <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
-              <strong>Normal approximation:</strong> For sufficiently many independent rows with the same right-bounce probability <em>p</em>, the binomial bin counts are well approximated by a normal curve with <em>μ</em> = <em>np</em> and <em>σ</em> = √(<em>np</em>(1 − <em>p</em>)), after accounting for the discrete bins.
+              <strong>Normal approximation:</strong> For independent rows with fixed <em>p</em>, binomial counts align with a normal curve of &mu; = <em>np</em> and &sigma; = &radic;(<em>np</em>(1 &minus; <em>p</em>)).
             </p>
             <p style="font-size:0.8rem; line-height:1.55;">
-              <strong>Law of Large Numbers:</strong> As the number of independent drops grows, the frequency in each bin tends toward its theoretical probability. Any finite run can still differ.
+              <strong>Custom Pegs &amp; Markov Chains:</strong> Tilting individual pegs breaks identical-row symmetry; the simulator computes exact bin probabilities row-by-row from top to bottom.
             </p>
           </div>
         </div>
@@ -994,470 +1385,15 @@
   </div>
 
   <script src="../../../assets/js/sim-kit.js"></script>
-  <script>
-    (function () {
-      var canvas = document.getElementById('pk-canvas');
-      var ctx;
-      var boardWidth = 900, boardHeight = 560;
-      var scenarioSelect = document.getElementById('pk-scenario');
-      var rowsInput = document.getElementById('pk-rows');
-      var ballsInput = document.getElementById('pk-balls');
-      var rowsReadout = document.getElementById('pk-rows-readout');
-      var ballsReadout = document.getElementById('pk-balls-readout');
-      var runBtn = document.getElementById('pk-run');
-      var oneBtn = document.getElementById('pk-one');
-      var resetBtn = document.getElementById('pk-reset');
-      var barsNode = document.getElementById('pk-bars');
-      var insightNode = document.getElementById('pk-insight');
-      var modelNote = document.getElementById('pk-model-note');
-      var statTrials = document.getElementById('pk-stat-trials');
-      var statMode = document.getElementById('pk-stat-mode');
-      var statMean = document.getElementById('pk-stat-mean');
-      var statCenter = document.getElementById('pk-stat-center');
-      var bellToggle = document.getElementById('pk-bell');
-      var quickButtons = Array.prototype.slice.call(document.querySelectorAll('.pk-btn-chip'));
-
-      var counts = [];
-      var expected = [];
-      var animatedPaths = [];
-      var rafId = null;
-
-      var scenarios = {
-        fair: {
-          p: 0.5,
-          title: 'Fair board',
-          note: 'A fair board uses the same probability for left and right at every peg. The center bins have more possible paths, so they are expected to fill more often.'
-        },
-        left: {
-          p: 0.44,
-          title: 'Tilted left board',
-          note: 'A small left bias shifts the distribution. With enough trials, the whole mound should lean left of center.'
-        },
-        right: {
-          p: 0.56,
-          title: 'Tilted right board',
-          note: 'A small right bias may be hard to prove in a tiny sample, but it becomes visible as the sample grows.'
-        },
-        center: {
-          p: 0.5,
-          title: 'Center-friendly board',
-          note: 'This board gently pulls extreme paths back toward the center. It demonstrates how design can steer a random system.'
-        },
-        edge: {
-          p: 0.5,
-          title: 'Edge challenge board',
-          note: 'This board rewards continued movement away from the center, making edge bins less rare than they are in the fair binomial model.'
-        },
-        random: {
-          p: 0.5,
-          title: 'Noisy peg board',
-          note: 'This board gives different rows slightly different behavior. The result is still random, but the simple binomial model is only an approximation.'
-        }
-      };
-
-      function combination(n, k) {
-        if (k < 0 || k > n) return 0;
-        k = Math.min(k, n - k);
-        var result = 1;
-        for (var i = 1; i <= k; i += 1) {
-          result = result * (n - k + i) / i;
-        }
-        return result;
-      }
-
-      function binomialExpected(rows, p) {
-        var values = [];
-        for (var k = 0; k <= rows; k += 1) {
-          values.push(combination(rows, k) * Math.pow(p, k) * Math.pow(1 - p, rows - k));
-        }
-        return values;
-      }
-
-      function scenarioProbability(baseP, scenarioKey, rowIndex, rights, rows) {
-        if (scenarioKey === 'center') {
-          var drift = (rights - rowIndex / 2) / Math.max(1, rows);
-          return clamp(baseP - drift * 0.42, 0.18, 0.82);
-        }
-        if (scenarioKey === 'edge') {
-          var edgeDrift = (rights - rowIndex / 2) / Math.max(1, rows);
-          return clamp(baseP + edgeDrift * 0.38, 0.18, 0.82);
-        }
-        if (scenarioKey === 'random') {
-          return clamp(baseP + Math.sin((rowIndex + 1) * 1.7) * 0.09, 0.22, 0.78);
-        }
-        return baseP;
-      }
-
-      function clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
-      }
-
-      function simulateOne(rows, scenarioKey) {
-        var scenario = scenarios[scenarioKey];
-        var rights = 0;
-        var path = [0];
-        for (var row = 0; row < rows; row += 1) {
-          var p = scenarioProbability(scenario.p, scenarioKey, row, rights, rows);
-          if (Math.random() < p) rights += 1;
-          path.push(rights);
-        }
-        return { bin: rights, path: path };
-      }
-
-      function runSample(total) {
-        var rows = Number(rowsInput.value);
-        var scenarioKey = scenarioSelect.value;
-        counts = new Array(rows + 1).fill(0);
-        animatedPaths = [];
-        for (var i = 0; i < total; i += 1) {
-          var result = simulateOne(rows, scenarioKey);
-          counts[result.bin] += 1;
-          if (i < 34 || i % Math.ceil(total / 28) === 0) {
-            animatedPaths.push({ path: result.path, progress: 0, colorSeed: i });
-          }
-        }
-        updateExpected();
-        renderAll();
-        animatePaths();
-      }
-
-      function watchOne() {
-        var rows = Number(rowsInput.value);
-        var result = simulateOne(rows, scenarioSelect.value);
-        counts = new Array(rows + 1).fill(0);
-        counts[result.bin] = 1;
-        animatedPaths = [{ path: result.path, progress: 0, colorSeed: 3 }];
-        updateExpected();
-        renderAll();
-        animatePaths();
-      }
-
-      function updateExpected() {
-        var rows = Number(rowsInput.value);
-        var scenario = scenarios[scenarioSelect.value];
-        expected = binomialExpected(rows, scenario.p);
-      }
-
-      function getBoardGeometry() {
-        var width = boardWidth;
-        var height = boardHeight;
-        var rows = Number(rowsInput.value);
-        var top = 58;
-        var bottom = height - 84;
-        var rowGap = (bottom - top) / rows;
-        var centerX = width / 2;
-        var spread = Math.min(width * 0.78, 54 * rows);
-        var stepX = spread / rows;
-        return { width: width, height: height, rows: rows, top: top, bottom: bottom, rowGap: rowGap, centerX: centerX, stepX: stepX };
-      }
-
-      function pointFor(row, rights) {
-        var g = getBoardGeometry();
-        var x = g.centerX + (rights - row / 2) * g.stepX;
-        var y = g.top + row * g.rowGap;
-        return { x: x, y: y };
-      }
-
-      function drawBoard() {
-        var g = getBoardGeometry();
-        ctx.clearRect(0, 0, g.width, g.height);
-        ctx.fillStyle = '#07111f';
-        ctx.fillRect(0, 0, g.width, g.height);
-
-        var gradient = ctx.createLinearGradient(0, 0, g.width, g.height);
-        gradient.addColorStop(0, 'rgba(56,189,248,0.16)');
-        gradient.addColorStop(0.55, 'rgba(20,184,166,0.08)');
-        gradient.addColorStop(1, 'rgba(250,204,21,0.12)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, g.width, g.height);
-
-        ctx.strokeStyle = 'rgba(226,232,240,0.16)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(g.centerX - g.stepX * (g.rows / 2 + 0.9), g.top - 26);
-        ctx.lineTo(g.centerX - g.stepX * (g.rows / 2 + 0.9), g.bottom + 28);
-        ctx.lineTo(g.centerX + g.stepX * (g.rows / 2 + 0.9), g.bottom + 28);
-        ctx.lineTo(g.centerX + g.stepX * (g.rows / 2 + 0.9), g.top - 26);
-        ctx.stroke();
-
-        for (var row = 0; row < g.rows; row += 1) {
-          for (var r = 0; r <= row; r += 1) {
-            var p = pointFor(row, r);
-            ctx.beginPath();
-            ctx.fillStyle = 'rgba(226,232,240,0.78)';
-            ctx.arc(p.x, p.y, 4.4, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.fillStyle = 'rgba(56,189,248,0.18)';
-            ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-
-        drawBins();
-      }
-
-      function normalPdf(x, mean, sd) {
-        var z = (x - mean) / sd;
-        return Math.exp(-0.5 * z * z) / (sd * Math.sqrt(2 * Math.PI));
-      }
-
-      function drawBins() {
-        var g = getBoardGeometry();
-        var total = counts.reduce(function (sum, value) { return sum + value; }, 0);
-        var p = scenarios[scenarioSelect.value].p;
-        var mean = g.rows * p;
-        var sd = Math.sqrt(g.rows * p * (1 - p));
-        var showBell = bellToggle.checked;
-        // Bars and curve share one scale so the curve is the expected count per bin.
-        var scale = Math.max(1, Math.max.apply(null, counts.length ? counts : [0]));
-        if (showBell) scale = Math.max(scale, Math.max(total, 1) * normalPdf(mean, mean, sd));
-        var binY = g.bottom + 46;
-        var barMax = 72;
-        ctx.font = '700 14px IBM Plex Mono, monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        for (var bin = 0; bin <= g.rows; bin += 1) {
-          var pt = pointFor(g.rows, bin);
-          var h = counts[bin] ? barMax * (counts[bin] / scale) : 4;
-          ctx.fillStyle = 'rgba(56,189,248,0.42)';
-          ctx.fillRect(pt.x - g.stepX * 0.32, binY - 18 - h, g.stepX * 0.64, h);
-          ctx.strokeStyle = 'rgba(226,232,240,0.25)';
-          ctx.strokeRect(pt.x - g.stepX * 0.32, binY - 18, g.stepX * 0.64, 30);
-          ctx.fillStyle = 'rgba(240,249,255,0.75)';
-          ctx.fillText(String(bin), pt.x, binY - 3);
-        }
-        if (!showBell) return;
-        ctx.beginPath();
-        for (var i = 0; i <= 120; i += 1) {
-          var k = -0.6 + (g.rows + 1.2) * i / 120;
-          var x = g.centerX + (k - g.rows / 2) * g.stepX;
-          var y = binY - 18 - barMax * (Math.max(total, 1) * normalPdf(k, mean, sd)) / scale;
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = 'rgba(74,222,128,0.95)';
-        ctx.lineWidth = 2.5;
-        ctx.stroke();
-      }
-
-      function drawAnimatedPaths() {
-        var g = getBoardGeometry();
-        animatedPaths.forEach(function (ball) {
-          var maxSegment = Math.min(g.rows, Math.floor(ball.progress));
-          var partial = ball.progress - maxSegment;
-          ctx.beginPath();
-          for (var row = 0; row <= maxSegment; row += 1) {
-            var p = pointFor(row, ball.path[row]);
-            if (row === 0) ctx.moveTo(p.x, p.y - 24);
-            ctx.lineTo(p.x, p.y);
-          }
-          if (maxSegment < g.rows) {
-            var a = pointFor(maxSegment, ball.path[maxSegment]);
-            var b = pointFor(maxSegment + 1, ball.path[maxSegment + 1]);
-            ctx.lineTo(a.x + (b.x - a.x) * partial, a.y + (b.y - a.y) * partial);
-          }
-          ctx.strokeStyle = ball.colorSeed % 3 === 0 ? 'rgba(250,204,21,0.56)' : 'rgba(45,212,191,0.45)';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-
-          var lastRow = Math.min(g.rows, Math.ceil(ball.progress));
-          var prevRow = Math.max(0, lastRow - 1);
-          var start = pointFor(prevRow, ball.path[prevRow]);
-          var end = pointFor(lastRow, ball.path[lastRow]);
-          var local = lastRow === 0 ? 0 : clamp(ball.progress - prevRow, 0, 1);
-          var x = start.x + (end.x - start.x) * local;
-          var y = start.y + (end.y - start.y) * local;
-          ctx.beginPath();
-          ctx.fillStyle = '#f8fafc';
-          ctx.arc(x, y, 6.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(56,189,248,0.95)';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        });
-      }
-
-      function animatePaths() {
-        if (rafId) cancelAnimationFrame(rafId);
-        function step() {
-          var stillMoving = false;
-          animatedPaths.forEach(function (ball, index) {
-            var stagger = index * 0.02;
-            ball.progress += Math.max(0, 0.2 - stagger * 0.002);
-            if (ball.progress < Number(rowsInput.value)) stillMoving = true;
-          });
-          drawBoard();
-          drawAnimatedPaths();
-          if (stillMoving) {
-            rafId = requestAnimationFrame(step);
-          }
-        }
-        step();
-      }
-
-      function formatPercent(value) {
-        return (value * 100).toFixed(value < 0.1 ? 1 : 0) + '%';
-      }
-
-      function renderBars() {
-        var total = counts.reduce(function (sum, value) { return sum + value; }, 0);
-        var maxRate = 0.01;
-        counts.forEach(function (count) {
-          maxRate = Math.max(maxRate, total ? count / total : 0);
-        });
-        expected.forEach(function (rate) { maxRate = Math.max(maxRate, rate); });
-        barsNode.innerHTML = counts.map(function (count, index) {
-          var observed = total ? count / total : 0;
-          var expectedRate = expected[index] || 0;
-          return '<div class="pk-bar-row">' +
-            '<span>Bin ' + index + '</span>' +
-            '<span class="pk-bar-track"><span class="pk-bar-fill" style="width:' + (observed / maxRate * 100).toFixed(1) + '%"></span><span class="pk-bar-expected" style="left:' + (expectedRate / maxRate * 100).toFixed(1) + '%"></span></span>' +
-            '<span>' + count + ' / ' + formatPercent(observed) + '</span>' +
-          '</div>';
-        }).join('');
-      }
-
-      function renderStats() {
-        var total = counts.reduce(function (sum, value) { return sum + value; }, 0);
-        var modeIndex = 0;
-        var weighted = 0;
-        counts.forEach(function (count, index) {
-          if (count > counts[modeIndex]) modeIndex = index;
-          weighted += count * index;
-        });
-        var rows = Number(rowsInput.value);
-        var centerLow = Math.floor(rows / 2);
-        var centerHigh = Math.ceil(rows / 2);
-        var centerCount = counts[centerLow] + (centerHigh === centerLow ? 0 : counts[centerHigh]);
-        statTrials.textContent = String(total);
-        statMode.textContent = total ? 'Bin ' + modeIndex : '--';
-        statMean.textContent = total ? (weighted / total).toFixed(2) : '--';
-        statCenter.textContent = total ? formatPercent(centerCount / total) : '--';
-
-        var pTrials = document.getElementById('pk-p-trials');
-        var pMode = document.getElementById('pk-p-mode');
-        var pMean = document.getElementById('pk-p-mean');
-        var pCenter = document.getElementById('pk-p-center');
-        if (pTrials) pTrials.textContent = String(total);
-        if (pMode) pMode.textContent = total ? 'Bin ' + modeIndex : '--';
-        if (pMean) pMean.textContent = total ? (weighted / total).toFixed(2) : '--';
-        if (pCenter) pCenter.textContent = total ? formatPercent(centerCount / total) : '--';
-      }
-
-      function renderInsight() {
-        var total = counts.reduce(function (sum, value) { return sum + value; }, 0);
-        var rows = Number(rowsInput.value);
-        var scenarioKey = scenarioSelect.value;
-        if (!total) {
-          insightNode.textContent = 'Launch a sample to compare the expected model with experimental results.';
-          return;
-        }
-        var maxGap = 0;
-        counts.forEach(function (count, index) {
-          var observed = count / total;
-          maxGap = Math.max(maxGap, Math.abs(observed - (expected[index] || 0)));
-        });
-        var center = rows / 2;
-        var mean = counts.reduce(function (sum, count, index) { return sum + count * index; }, 0) / total;
-        var direction = mean < center - 0.25 ? 'left of center' : mean > center + 0.25 ? 'right of center' : 'near the center';
-        var modelPhrase = scenarioKey === 'fair'
-          ? 'The fair binomial model expects a mound shape because the middle bins have more possible paths.'
-          : 'This scenario intentionally changes the simple fair-board assumptions, so the yellow expected markers are a comparison point, not a perfect physical law.';
-        insightNode.textContent = modelPhrase + ' This run landed ' + direction + ', and the largest bin gap from the comparison model was about ' + formatPercent(maxGap) + '.';
-      }
-
-      function updateReadouts() {
-        rowsReadout.textContent = rowsInput.value + ' rows';
-        ballsReadout.textContent = ballsInput.value + ' balls';
-        var scenario = scenarios[scenarioSelect.value];
-        modelNote.innerHTML = '<strong>Current model</strong>' + scenario.note;
-      }
-
-      function renderAll() {
-        updateReadouts();
-        drawBoard();
-        renderBars();
-        renderStats();
-        renderInsight();
-      }
-
-      function reset() {
-        var rows = Number(rowsInput.value);
-        counts = new Array(rows + 1).fill(0);
-        animatedPaths = [];
-        updateExpected();
-        renderAll();
-      }
-
-      scenarioSelect.addEventListener('change', reset);
-      rowsInput.addEventListener('input', reset);
-      ballsInput.addEventListener('input', updateReadouts);
-      bellToggle.addEventListener('change', function () { drawBoard(); drawAnimatedPaths(); });
-      runBtn.addEventListener('click', function () { runSample(Number(ballsInput.value)); });
-      oneBtn.addEventListener('click', watchOne);
-      resetBtn.addEventListener('click', function () {
-        scenarioSelect.value = 'fair';
-        rowsInput.value = 10;
-        ballsInput.value = 1000;
-        reset();
-      });
-      quickButtons.forEach(function (button) {
-        button.addEventListener('click', function () {
-          scenarioSelect.value = button.dataset.scenario;
-          rowsInput.value = button.dataset.rows;
-          ballsInput.value = button.dataset.balls;
-          runSample(Number(ballsInput.value));
-        });
-      });
-
-      var pRun = document.getElementById('pk-p-run');
-      var pOne = document.getElementById('pk-p-one');
-      var pReset = document.getElementById('pk-p-reset');
-      if (pRun) pRun.addEventListener('click', function () { runBtn.click(); });
-      if (pOne) pOne.addEventListener('click', function () { oneBtn.click(); });
-      if (pReset) pReset.addEventListener('click', function () { resetBtn.click(); });
-
-      document.querySelectorAll('.pk-panel-preset').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var preset = btn.dataset.preset;
-          if (preset === 'fair') {
-            scenarioSelect.value = 'fair';
-            rowsInput.value = 10;
-            ballsInput.value = 1000;
-          } else if (preset === 'left') {
-            scenarioSelect.value = 'left';
-            rowsInput.value = 10;
-            ballsInput.value = 1000;
-          } else if (preset === 'right') {
-            scenarioSelect.value = 'right';
-            rowsInput.value = 10;
-            ballsInput.value = 1000;
-          } else if (preset === 'deep') {
-            scenarioSelect.value = 'fair';
-            rowsInput.value = 12;
-            ballsInput.value = 1000;
-          }
-          reset();
-          runSample(Number(ballsInput.value));
-        });
-      });
-
-      SimKit.canvas2d(canvas, { onResize: function (rCtx, w, h) {
-        ctx = rCtx; boardWidth = w; boardHeight = h;
-        drawBoard();
-      } });
-
-      reset();
-      runSample(1000);
-    })();
-  </script>
+  <script src="../../../assets/js/lessons/probability-pachinko-core.js"></script>
+  <script src="../../../assets/js/lessons/probability-pachinko.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
   <script src="../../../assets/js/math-pathway-nav.js"></script>
-<script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
   <script src="../../../assets/js/photo-lightbox.js"></script>
   <script src="../../../assets/js/site-glossary.js"></script>
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
 </body>
 </html>

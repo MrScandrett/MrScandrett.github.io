@@ -1,0 +1,1138 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Pythagoras & Triangles — Theme-Aware Stylesheet
+   ClassroomOS · Mr. Scandrett's STEAM Lessons
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ll-viewport {
+  --ll-panel-w: 308px;
+  --ll-accent: #1d4ed8;
+  --ll-tab-active: #1d4ed8;
+  --ll-tab-active-bg: rgba(29, 78, 216, 0.12);
+}
+
+[data-lighting="night"] .ll-viewport,
+[data-theme="vaporwave"] .ll-viewport,
+[data-theme="bark"] .ll-viewport,
+[data-theme="mandelbrot"] .ll-viewport,
+[data-theme="lavalamp"] .ll-viewport {
+  --ll-accent: #60a5fa;
+  --ll-tab-active: #60a5fa;
+  --ll-tab-active-bg: rgba(96, 165, 250, 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-lighting]) .ll-viewport {
+    --ll-accent: #60a5fa;
+    --ll-tab-active: #60a5fa;
+    --ll-tab-active-bg: rgba(96, 165, 250, 0.16);
+  }
+}
+
+/* ── Color-coded geometry tokens ─────────────────────────────────── */
+.py-page,
+.ll-panel {
+  --py-a: #1d4ed8;
+  --py-a-soft: rgba(29, 78, 216, 0.13);
+  --py-a-fill: rgba(59, 130, 246, 0.34);
+  --py-b: #047857;
+  --py-b-soft: rgba(4, 120, 87, 0.13);
+  --py-b-fill: rgba(16, 185, 129, 0.34);
+  --py-c: #b45309;
+  --py-c-soft: rgba(180, 83, 9, 0.13);
+  --py-c-fill: rgba(245, 158, 11, 0.24);
+  --py-ok: #15803d;
+  --py-ok-bg: rgba(21, 128, 61, 0.13);
+  --py-bad: #b91c1c;
+  --py-bad-bg: rgba(185, 28, 28, 0.12);
+  --py-board-bg: #f1f5f9;
+  --py-board-grid: #e2e8f0;
+  --py-board-border: #cbd5e1;
+  --py-tri-fill: rgba(255, 255, 255, 0.88);
+  --py-tri-stroke: #1e293b;
+  --py-ink: #0f172a;
+  --py-muted: #475569;
+  --py-subcard-bg: #f8fafc;
+  --py-subcard-border: #e2e8f0;
+}
+
+[data-lighting="night"] .py-page,
+[data-lighting="night"] .ll-panel,
+[data-theme="vaporwave"] .py-page,
+[data-theme="vaporwave"] .ll-panel,
+[data-theme="bark"] .py-page,
+[data-theme="bark"] .ll-panel,
+[data-theme="mandelbrot"] .py-page,
+[data-theme="mandelbrot"] .ll-panel,
+[data-theme="lavalamp"] .py-page,
+[data-theme="lavalamp"] .ll-panel {
+  --py-a: #60a5fa;
+  --py-a-soft: rgba(96, 165, 250, 0.18);
+  --py-a-fill: rgba(96, 165, 250, 0.36);
+  --py-b: #34d399;
+  --py-b-soft: rgba(52, 211, 153, 0.18);
+  --py-b-fill: rgba(52, 211, 153, 0.34);
+  --py-c: #fbbf24;
+  --py-c-soft: rgba(251, 191, 36, 0.18);
+  --py-c-fill: rgba(251, 191, 36, 0.26);
+  --py-ok: #4ade80;
+  --py-ok-bg: rgba(74, 222, 128, 0.16);
+  --py-bad: #f87171;
+  --py-bad-bg: rgba(248, 113, 113, 0.16);
+  --py-board-bg: #0f172a;
+  --py-board-grid: rgba(148, 163, 184, 0.14);
+  --py-board-border: rgba(148, 163, 184, 0.24);
+  --py-tri-fill: rgba(30, 41, 59, 0.85);
+  --py-tri-stroke: #e2e8f0;
+  --py-ink: #f8fafc;
+  --py-muted: #94a3b8;
+  --py-subcard-bg: rgba(255, 255, 255, 0.04);
+  --py-subcard-border: rgba(255, 255, 255, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-lighting]) .py-page,
+  html:not([data-lighting]) .ll-panel {
+    --py-a: #60a5fa;
+    --py-a-soft: rgba(96, 165, 250, 0.18);
+    --py-a-fill: rgba(96, 165, 250, 0.36);
+    --py-b: #34d399;
+    --py-b-soft: rgba(52, 211, 153, 0.18);
+    --py-b-fill: rgba(52, 211, 153, 0.34);
+    --py-c: #fbbf24;
+    --py-c-soft: rgba(251, 191, 36, 0.18);
+    --py-c-fill: rgba(251, 191, 36, 0.26);
+    --py-ok: #4ade80;
+    --py-ok-bg: rgba(74, 222, 128, 0.16);
+    --py-bad: #f87171;
+    --py-bad-bg: rgba(248, 113, 113, 0.16);
+    --py-board-bg: #0f172a;
+    --py-board-grid: rgba(148, 163, 184, 0.14);
+    --py-board-border: rgba(148, 163, 184, 0.24);
+    --py-tri-fill: rgba(30, 41, 59, 0.85);
+    --py-tri-stroke: #e2e8f0;
+    --py-ink: #f8fafc;
+    --py-muted: #94a3b8;
+    --py-subcard-bg: rgba(255, 255, 255, 0.04);
+    --py-subcard-border: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.py-page {
+  padding-bottom: 3.5rem;
+  color: var(--text, #1d1d1f);
+}
+
+.py-page :focus-visible {
+  outline: 2.5px solid var(--py-a);
+  outline-offset: 2px;
+}
+
+.py-mono {
+  font-family: "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.py-c-a { color: var(--py-a); }
+.py-c-b { color: var(--py-b); }
+.py-c-c { color: var(--py-c); }
+
+/* ── Inline color pills ──────────────────────────────────────────── */
+.py-pill {
+  display: inline-block;
+  padding: 0.08rem 0.45rem;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.9em;
+}
+.py-pill-a { color: var(--py-a); background: var(--py-a-soft); }
+.py-pill-b { color: var(--py-b); background: var(--py-b-soft); }
+.py-pill-c { color: var(--py-c); background: var(--py-c-soft); }
+
+/* ── Hero ────────────────────────────────────────────────────────── */
+.py-hero {
+  padding: 0.45rem 0 1rem;
+  text-align: left;
+}
+.py-hero h1 {
+  max-width: 26ch;
+  margin: 0.15rem 0 0;
+  font-size: clamp(1.65rem, 3.6vw, 2.45rem);
+  letter-spacing: -0.025em;
+}
+.py-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.7rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  color: var(--py-muted);
+}
+.py-hero-meta .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+  display: inline-block;
+}
+.py-lede {
+  margin: 0.65rem 0 0;
+  max-width: 70ch;
+  color: var(--text-secondary, #3f4f65);
+  font-size: 0.96rem;
+  line-height: 1.62;
+}
+[data-lighting="night"] .py-lede,
+[data-theme="vaporwave"] .py-lede,
+[data-theme="bark"] .py-lede,
+[data-theme="mandelbrot"] .py-lede,
+[data-theme="lavalamp"] .py-lede {
+  color: rgba(245, 245, 247, 0.78);
+}
+
+/* ── Section jump nav ────────────────────────────────────────────── */
+.ll-lesson-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 1.1rem;
+}
+.ll-lesson-steps a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.36rem 0.78rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--py-muted);
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+}
+.ll-lesson-steps a:hover {
+  color: var(--py-a);
+  border-color: var(--py-a);
+}
+.ll-lesson-steps a.ll-step-active {
+  color: var(--py-a);
+  background: var(--py-a-soft);
+  border-color: var(--py-a);
+}
+
+/* ── Section cards ───────────────────────────────────────────────── */
+.py-card {
+  background: var(--white, #fff);
+  border: 1px solid var(--line, #d2d2d7);
+  border-left: 3.5px solid var(--card-accent, var(--py-a));
+  border-radius: var(--radius, 18px);
+  box-shadow: var(--shadow, 0 12px 34px rgba(0, 0, 0, 0.08));
+  padding: clamp(1rem, 2.5vw, 1.4rem);
+  margin-bottom: 1.15rem;
+}
+[data-lighting="night"] .py-card,
+[data-theme="vaporwave"] .py-card,
+[data-theme="bark"] .py-card,
+[data-theme="mandelbrot"] .py-card,
+[data-theme="lavalamp"] .py-card {
+  background: var(--white, #2c2c2e);
+}
+.py-card h2 {
+  margin: 0 0 0.45rem;
+  font-size: 1.24rem;
+  letter-spacing: -0.02em;
+}
+.py-card h3 {
+  margin: 0.9rem 0 0.35rem;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+.py-card p {
+  margin: 0 0 0.65rem;
+  color: var(--text-secondary, #3f4f65);
+  font-size: 0.9rem;
+  line-height: 1.64;
+}
+.py-card p:last-child {
+  margin-bottom: 0;
+}
+[data-lighting="night"] .py-card p,
+[data-theme="vaporwave"] .py-card p,
+[data-theme="bark"] .py-card p,
+[data-theme="mandelbrot"] .py-card p,
+[data-theme="lavalamp"] .py-card p {
+  color: rgba(245, 245, 247, 0.78);
+}
+
+.py-sub {
+  color: var(--py-muted) !important;
+  font-size: 0.86rem !important;
+}
+
+/* ── Preset chips & buttons ──────────────────────────────────────── */
+.py-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0.9rem;
+}
+.py-chip,
+.py-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38rem;
+  padding: 0.44rem 0.82rem;
+  border-radius: 999px;
+  border: 1px solid var(--py-subcard-border);
+  background: var(--py-subcard-bg);
+  color: var(--py-ink);
+  font: inherit;
+  font-size: 0.79rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 120ms ease;
+}
+.py-chip:hover,
+.py-btn:hover:not(:disabled) {
+  border-color: var(--py-a);
+  color: var(--py-a);
+}
+.py-chip[aria-pressed="true"],
+.py-chip.is-active {
+  background: var(--py-a);
+  border-color: var(--py-a);
+  color: #fff;
+}
+[data-lighting="night"] .py-chip[aria-pressed="true"],
+[data-lighting="night"] .py-chip.is-active {
+  color: #0f172a;
+}
+.py-btn-primary {
+  background: var(--py-a);
+  border-color: var(--py-a);
+  color: #fff;
+}
+.py-btn-primary:hover:not(:disabled) {
+  color: #fff;
+  opacity: 0.92;
+}
+[data-lighting="night"] .py-btn-primary {
+  color: #0f172a;
+}
+[data-lighting="night"] .py-btn-primary:hover:not(:disabled) {
+  color: #0f172a;
+}
+.py-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ── Blueprint Lab ───────────────────────────────────────────────── */
+.py-blueprint-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(270px, 310px);
+  gap: 1.15rem;
+  align-items: start;
+}
+
+.py-drafting-board {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--py-board-border);
+  background-color: var(--py-board-bg);
+  background-image:
+    linear-gradient(var(--py-board-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--py-board-grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+  transition: transform 260ms ease, box-shadow 260ms ease;
+}
+.py-drafting-board.is-3d {
+  transform: perspective(1150px) rotateX(11deg) rotateY(-10deg) scale(0.98);
+  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.22);
+}
+
+.py-drafting-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.38rem 0.78rem;
+  border-radius: 999px;
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-board-border);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--py-muted);
+}
+.py-drafting-tip {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  z-index: 2;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-board-border);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--py-muted);
+  pointer-events: none;
+}
+
+.py-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--py-a);
+  animation: py-pulse 1.8s infinite;
+}
+@keyframes py-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+.py-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  touch-action: pan-y;
+}
+#geoCanvas {
+  touch-action: none;
+}
+
+/* Blueprint SVG geometry elements */
+.py-sq-a { fill: var(--py-a-soft); stroke: var(--py-a); stroke-width: 2.2; }
+.py-sq-b { fill: var(--py-b-soft); stroke: var(--py-b); stroke-width: 2.2; }
+.py-sq-c { fill: var(--py-c-soft); stroke: var(--py-c); stroke-width: 2.2; }
+.py-fill-a { fill: var(--py-a-fill); }
+.py-fill-b { fill: var(--py-b-fill); }
+.py-fill-c { fill: var(--py-c-fill); }
+
+#trianglePath {
+  fill: var(--py-tri-fill);
+  stroke: var(--py-tri-stroke);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+#rightAngle {
+  stroke: var(--py-tri-stroke);
+  stroke-width: 2.2;
+  fill: none;
+}
+#altitudeLine {
+  stroke: var(--py-c);
+  stroke-width: 2.2;
+  stroke-dasharray: 6 4;
+}
+.py-unit-grid line {
+  stroke: var(--py-ink);
+  stroke-opacity: 0.16;
+  stroke-width: 1;
+}
+
+.py-handle {
+  cursor: grab;
+  transition: r 120ms ease;
+}
+.py-handle:active {
+  cursor: grabbing;
+}
+.py-handle-ring {
+  fill: none;
+  stroke-width: 2;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.py-blueprint-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+.py-subcard {
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+  border-radius: 16px;
+  padding: 0.95rem 1rem;
+}
+.py-subcard h3 {
+  margin-top: 0;
+  margin-bottom: 0.45rem;
+  font-size: 0.96rem;
+}
+
+.py-measure-row {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+}
+.py-measure-row:last-child {
+  margin-bottom: 0;
+}
+.py-measure-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.py-measure-head .py-mono {
+  font-size: 0.92rem;
+}
+.py-inline-range {
+  width: 100%;
+  accent-color: currentColor;
+}
+
+.py-big-result {
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  background: var(--py-c-soft);
+  border: 1px solid var(--py-c);
+  margin-top: 0.75rem;
+}
+.py-big-result .kicker {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--py-c);
+}
+.py-big-result .value {
+  margin-top: 0.18rem;
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--py-ink);
+  font-variant-numeric: tabular-nums;
+}
+.py-big-result .formula {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--py-muted);
+  font-variant-numeric: tabular-nums;
+}
+.py-big-result .radical {
+  margin-top: 0.22rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--py-c);
+}
+
+.py-toggle-stack {
+  display: grid;
+  gap: 0.45rem;
+}
+.py-toggle-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.62rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid var(--py-subcard-border);
+  background: var(--white, #fff);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--py-ink);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+[data-lighting="night"] .py-toggle-btn,
+[data-theme="vaporwave"] .py-toggle-btn,
+[data-theme="bark"] .py-toggle-btn,
+[data-theme="mandelbrot"] .py-toggle-btn,
+[data-theme="lavalamp"] .py-toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+}
+.py-toggle-btn[aria-pressed="true"] {
+  border-color: var(--py-a);
+  background: var(--py-a-soft);
+}
+.py-toggle-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--py-muted);
+  opacity: 0.45;
+  flex-shrink: 0;
+  transition: background 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
+}
+.py-toggle-indicator.on {
+  background: var(--py-a);
+  opacity: 1;
+  box-shadow: 0 0 0 4px var(--py-a-soft);
+}
+
+.py-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+}
+.py-mini-stat {
+  border-radius: 12px;
+  padding: 0.62rem 0.7rem;
+  background: var(--white, #fff);
+  border: 1px solid var(--py-subcard-border);
+}
+[data-lighting="night"] .py-mini-stat,
+[data-theme="vaporwave"] .py-mini-stat,
+[data-theme="bark"] .py-mini-stat,
+[data-theme="mandelbrot"] .py-mini-stat,
+[data-theme="lavalamp"] .py-mini-stat {
+  background: rgba(255, 255, 255, 0.04);
+}
+.py-mini-stat .lbl {
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--py-muted);
+}
+.py-mini-stat .num {
+  display: block;
+  margin-top: 0.14rem;
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: var(--py-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Water / Liquid Pour bars ────────────────────────────────────── */
+.py-water-proof {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.55rem;
+}
+.py-pour-row {
+  display: grid;
+  gap: 0.25rem;
+}
+.py-pour-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.py-pour-track {
+  position: relative;
+  height: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--py-board-grid);
+}
+.py-pour-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  border-radius: inherit;
+  transition: width 160ms ease;
+}
+
+/* ── Tabs (Visual Proofs & Real-World Labs) ──────────────────────── */
+.py-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.7rem 0 0.95rem;
+  border-bottom: 1px solid var(--py-subcard-border);
+  padding-bottom: 0.65rem;
+}
+.py-tab-btn {
+  padding: 0.46rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--py-subcard-border);
+  background: var(--py-subcard-bg);
+  color: var(--py-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.py-tab-btn:hover {
+  color: var(--py-ink);
+  border-color: var(--py-a);
+}
+.py-tab-btn[aria-selected="true"] {
+  background: var(--py-a-soft);
+  border-color: var(--py-a);
+  color: var(--py-a);
+}
+
+/* ── Visual Proof Explorer ───────────────────────────────────────── */
+.py-proof-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 1fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+.py-proof-stage {
+  border-radius: 18px;
+  border: 1px solid var(--py-board-border);
+  background: var(--py-board-bg);
+  padding: 0.75rem;
+}
+.py-proof-steps {
+  display: grid;
+  gap: 0.65rem;
+}
+.py-proof-callout {
+  padding: 0.8rem 0.95rem;
+  border-radius: 12px;
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.py-algebra-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.py-algebra-box {
+  padding: 1rem;
+  border-radius: 14px;
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+}
+.py-algebra-eq {
+  font-size: 1.04rem;
+  font-weight: 800;
+  line-height: 1.65;
+  color: var(--py-ink);
+  margin: 0.4rem 0;
+}
+
+/* ── Converse & Triangle Types Lab ───────────────────────────────── */
+.py-converse-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
+  gap: 1.15rem;
+  align-items: start;
+}
+.py-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.34rem 0.82rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.py-status-right { background: var(--py-ok-bg); color: var(--py-ok); }
+.py-status-acute { background: var(--py-a-soft); color: var(--py-a); }
+.py-status-obtuse { background: var(--py-c-soft); color: var(--py-c); }
+
+.py-tri-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+.py-tri-type {
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+  border-radius: 14px;
+  padding: 0.85rem;
+  text-align: center;
+}
+.py-tri-type svg {
+  display: block;
+  margin: 0 auto 0.45rem;
+}
+.py-tri-type strong {
+  display: block;
+  font-size: 0.88rem;
+  margin-bottom: 0.2rem;
+}
+.py-tri-type small {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--py-muted);
+  line-height: 1.48;
+}
+
+/* ── Theorem & Solve Method ──────────────────────────────────────── */
+.py-theorem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  flex-wrap: wrap;
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0;
+}
+.py-formula {
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--py-ink);
+}
+.py-formula sup {
+  font-size: 0.6em;
+  vertical-align: super;
+}
+.py-solve-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+.py-solve-box {
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+  border-radius: 14px;
+  padding: 1rem;
+}
+.py-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0.55rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.py-steps li {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  font-size: 0.87rem;
+  line-height: 1.5;
+}
+.py-step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--py-a);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+[data-lighting="night"] .py-step-num {
+  color: #0f172a;
+}
+
+.py-warning-box {
+  margin-top: 0.85rem;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  background: var(--py-c-soft);
+  border-left: 3.5px solid var(--py-c);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.py-table-wrap {
+  overflow-x: auto;
+  margin-top: 0.75rem;
+}
+.py-triples-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+.py-triples-table th,
+.py-triples-table td {
+  text-align: left;
+  padding: 0.52rem 0.65rem;
+  border-bottom: 1px solid var(--py-subcard-border);
+}
+.py-triples-table th {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--py-muted);
+}
+
+/* ── Real-World Interactive Labs ─────────────────────────────────── */
+.py-lab-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
+  gap: 1.15rem;
+  align-items: start;
+}
+.py-coord-handle {
+  cursor: grab;
+}
+.py-coord-handle:active {
+  cursor: grabbing;
+}
+
+/* ── History & Lightbox Gallery ──────────────────────────────────── */
+.py-history-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 0.9rem;
+}
+.py-history-gallery figure {
+  margin: 0;
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.py-history-gallery img {
+  width: 100%;
+  height: 205px;
+  object-fit: cover;
+  display: block;
+}
+.py-history-gallery figcaption {
+  padding: 0.75rem 0.9rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--py-muted);
+}
+.py-history-gallery figcaption strong {
+  color: var(--py-ink);
+}
+.py-history-gallery .credit {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.74rem;
+  opacity: 0.85;
+}
+
+/* ── Practice & Infinite Drill ───────────────────────────────────── */
+.py-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+#py-score {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--py-muted);
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+  border-radius: 999px;
+  padding: 0.28rem 0.82rem;
+}
+#py-score.is-complete {
+  color: var(--py-ok);
+  background: var(--py-ok-bg);
+  border-color: var(--py-ok);
+}
+.py-practice {
+  display: grid;
+  gap: 0.85rem;
+}
+.py-problem {
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+  border-left: 3.5px solid transparent;
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: center;
+  transition: border-color 200ms ease, background 200ms ease;
+}
+.py-problem.solved {
+  border-left-color: var(--py-ok);
+  background: var(--py-ok-bg);
+}
+.py-prob-svg {
+  width: 112px;
+  height: 88px;
+  display: block;
+  border-radius: 10px;
+  background: var(--py-board-bg);
+  border: 1px solid var(--py-board-border);
+}
+.py-problem p {
+  margin: 0 0 0.55rem;
+  font-size: 0.9rem;
+  color: var(--py-ink);
+  font-weight: 600;
+}
+.py-problem-input-row {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.py-ans-input {
+  width: 96px;
+  padding: 0.42rem 0.65rem;
+  border: 1.5px solid var(--py-board-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: var(--white, #fff);
+  color: var(--py-ink);
+}
+[data-lighting="night"] .py-ans-input,
+[data-theme="vaporwave"] .py-ans-input,
+[data-theme="bark"] .py-ans-input,
+[data-theme="mandelbrot"] .py-ans-input,
+[data-theme="lavalamp"] .py-ans-input {
+  background: rgba(15, 23, 42, 0.7);
+}
+.py-check-btn {
+  padding: 0.44rem 0.9rem;
+  border-radius: 8px;
+  border: none;
+  background: var(--py-a);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+[data-lighting="night"] .py-check-btn {
+  color: #0f172a;
+}
+.py-feedback {
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.24rem 0.7rem;
+  border-radius: 999px;
+  display: none;
+}
+.py-feedback.correct {
+  background: var(--py-ok-bg);
+  color: var(--py-ok);
+  display: inline-block;
+}
+.py-feedback.wrong {
+  background: var(--py-bad-bg);
+  color: var(--py-bad);
+  display: inline-block;
+}
+.py-hint {
+  font-size: 0.8rem;
+  color: var(--py-muted);
+  margin-top: 0.42rem;
+  display: none;
+}
+.py-hint.visible {
+  display: block;
+}
+
+@keyframes py-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-4px); }
+}
+.py-shake {
+  animation: py-shake 0.32s ease;
+}
+
+.py-drill-card {
+  margin-top: 1.1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 16px;
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+}
+.py-drill-grid {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  margin-top: 0.7rem;
+}
+.py-drill-select {
+  padding: 0.38rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--py-board-border);
+  background: var(--white, #fff);
+  color: var(--py-ink);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+[data-lighting="night"] .py-drill-select {
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.py-exit-ticket {
+  margin-top: 1.1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: var(--py-subcard-bg);
+  border: 1px solid var(--py-subcard-border);
+}
+.py-exit-ticket summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--py-a);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .py-blueprint-body,
+  .py-proof-grid,
+  .py-converse-grid,
+  .py-lab-grid,
+  .py-algebra-grid,
+  .py-solve-cols,
+  .py-history-gallery {
+    grid-template-columns: 1fr;
+  }
+  .py-tri-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .py-problem,
+  .py-drill-grid {
+    grid-template-columns: 1fr;
+  }
+  .py-prob-svg {
+    width: 140px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .py-drafting-board,
+  .py-pour-fill,
+  .py-chip,
+  .py-btn,
+  .py-toggle-indicator {
+    transition: none;
+  }
+  .py-live-dot,
+  .py-shake {
+    animation: none;
+  }
+}

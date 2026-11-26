@@ -1,4 +1,23 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Enemies &amp; Simple AI · Godot Pathway</title><meta name="description" content="Godot Pathway Lesson 5: build a state-based enemy with patrol, detection, navigation, chase, damage, and respawn behavior."><link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="../../assets/css/classroom-home.css"><link rel="stylesheet" href="../../assets/css/lessons/godot-pathway.css"><link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print"></head><body class="theme-liquid-woodland theme-steam"><a class="skip-link" href="#main-content">Skip to content</a>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Enemies &amp; Simple AI · Godot Pathway</title>
+  <meta name="description" content="Godot Pathway Lesson 5: build, simulate, and debug a state-based enemy with NavMesh pathfinding, Area3D detection, RayCast3D line of sight, chase, damage cooldown, and respawn." />
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/godot-pathway.css" />
+  <link rel="stylesheet" href="../../assets/css/creation-app.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/godot-enemies-lab.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
   <header class="site-header">
     <div class="nav-wrap">
       <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
@@ -16,29 +35,391 @@
     </div>
   </header>
 
-<header class="gd-course-top"><div><a href="godot-pathway.html">← Pathway</a><span>Lesson 5 · Enemies &amp; Simple AI</span><a href="godot-animation-game-feel.html">Next lesson →</a></div></header><main id="main-content" class="gd-course">
-<section class="gd-lesson-hero"><p class="gd-eyebrow">Lesson 05 · 70 minutes · Challenge layer</p><h1 class="gd-title">Make an enemy choose.</h1><p class="gd-lede">Build a guard that patrols while the player is far away, chases after detection, deals damage on contact, and returns to patrol when the player escapes.</p><div class="gd-meta"><span>STATES</span><span>AREA3D</span><span>NAVIGATION</span><span>CHASE</span><span>DAMAGE</span></div></section><section class="gd-teaching-bridge" aria-label="How to think in this lesson"><div><b>Big idea</b><span>Enemy AI is a set of named states connected by visible conditions.</span></div><div><b>Predict</b><span>Leaving the detection area should return the enemy to patrol, not leave it stuck chasing.</span></div><div><b>Test</b><span>Trigger each state deliberately and narrate what condition caused the transition.</span></div><div><b>Why it matters</b><span>Readable challenge gives players a chance to learn, choose, and recover.</span></div></section><nav class="gd-nav"><a href="godot-collectibles-ui.html">← 04 Collectibles &amp; UI</a><a href="godot-animation-game-feel.html">06 Animation &amp; Feel →</a></nav>
-<section class="gd-section"><div class="gd-section-mark">01 / MODEL</div><div><p class="gd-kicker">State machine</p><h2>One enemy, three clear modes.</h2><div class="gd-card-grid"><article class="gd-card"><h3>Patrol</h3><p>Move between points and watch for the player.</p></article><article class="gd-card"><h3>Chase</h3><p>Update a navigation target and pursue while detected.</p></article><article class="gd-card"><h3>Return</h3><p>Navigate back to the patrol route after the player escapes.</p></article><article class="gd-card"><h3>Transition</h3><p>A detection signal changes the current state; the state controls behavior.</p></article></div><p>States prevent one large function from trying to patrol, chase, attack, and return at the same time.</p></div></section>
-<section class="gd-section"><div class="gd-section-mark">02 / NAV</div><div><p class="gd-kicker">Scene setup</p><h2>Give the guard a walkable map.</h2><div class="gd-mini-tree" style="max-width:520px"><b>enemy.tscn</b><span>Enemy · CharacterBody3D</span><span>NavigationAgent3D</span><span>DetectionArea · Area3D</span><span>CollisionShape3D</span><span>Mesh + Body Collision</span></div><ol class="gd-steps"><li><b>Add NavigationRegion3D to Main.</b>Create a NavigationMesh resource and bake the floor.</li><li><b>Create the enemy scene.</b>Add its mesh, physical collision, detection area, and NavigationAgent3D.</li><li><b>Create two patrol markers.</b>Add Marker3D nodes to Main, place them on the baked region, then assign both to the enemy’s <code>patrol_points</code> array.</li><li><b>Assign groups and signals.</b>Keep Player in <code>player</code>; connect DetectionArea’s <code>body_entered</code> and <code>body_exited</code>.</li><li><b>Test the map.</b>Turn on visible navigation in the Debug menu and confirm the route stays on the baked floor.</li></ol><div class="gd-editor-proof"><div class="gd-editor-proof-grid"><figure data-zoomable data-lightbox-group="godot-enemies-ai" class="gd-editor-proof-card"><img src="../../assets/images/lessons/godot-enemies-ai/bake-navmesh-button.webp" alt="Godot's 3D viewport toolbar with a NavigationRegion3D selected, showing the Bake NavMesh button." width="535" height="80" loading="lazy" /><figcaption><b>Select the region, then bake.</b> With NavigationRegion3D selected, its toolbar grows a Bake NavMesh button — click it after assigning a NavigationMesh resource.</figcaption></figure><figure data-zoomable data-lightbox-group="godot-enemies-ai" class="gd-editor-proof-card"><img src="../../assets/images/lessons/godot-enemies-ai/baked-navmesh-result.webp" alt="Godot's 3D viewport showing a teal-highlighted baked navigation mesh hovering over a floor plane." width="675" height="266" loading="lazy" /><figcaption><b>The teal overlay is the walkable map.</b> That highlighted surface is what NavigationAgent3D actually paths across — if your floor isn't covered, the enemy can't reach it.</figcaption></figure></div><p class="gd-editor-proof-credit">Screenshots: <a href="https://docs.godotengine.org/en/stable/tutorials/navigation/navigation_introduction_3d.html" target="_blank" rel="noreferrer noopener">Godot Engine documentation</a>, © Juan Linietsky, Ariel Manzur and the Godot community, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer noopener">CC BY 3.0</a>.</p></div></div></section>
-<section class="gd-section"><div class="gd-section-mark">03 / CODE</div><div><p class="gd-kicker">Chase behavior</p><h2>Ask navigation for the next safe position.</h2><div class="gd-code"><div class="gd-code-head"><span>enemy.gd</span><button class="gd-copy">Copy</button></div><pre><code><span class="k">extends</span> CharacterBody3D
+  <header class="gd-course-top">
+    <div>
+      <a href="godot-pathway.html">← Pathway</a>
+      <span>Lesson 5 · Enemies &amp; Simple AI</span>
+      <a href="godot-animation-game-feel.html">Next lesson →</a>
+    </div>
+  </header>
+
+  <main id="main-content" class="gd-course gd-course--studio">
+    <section id="ai-studio" class="gd-ai-studio creation-app" data-creation-app data-creation-fit data-ai-studio aria-labelledby="ai-studio-title">
+      <div class="gd-ai-studio__header">
+        <div class="gd-ai-studio__title-wrap">
+          <h1 id="ai-studio-title">Enemy AI &amp; NavMesh Studio</h1>
+          <span class="gd-ai-studio__sub">State Machine · NavigationAgent3D · RayCast3D · Cooldown</span>
+        </div>
+        <a class="gd-ai-studio__jump" href="#lesson-overview">Read the lesson ↓</a>
+      </div>
+
+      <div id="ai-studio-primary" class="gd-ai-studio__primary" data-creation-primary>
+        <div class="gd-ai-topbar">
+          <div class="gd-ai-mode-tabs" role="tablist" aria-label="Studio workspace mode">
+            <button type="button" class="gd-ai-mode-tab is-active" role="tab" aria-selected="true" aria-controls="ai-panel-play" id="ai-tab-play" data-ai-tab="play">1. Arena &amp; AI Lab</button>
+            <button type="button" class="gd-ai-mode-tab" role="tab" aria-selected="false" aria-controls="ai-panel-code" id="ai-tab-code" data-ai-tab="code">2. Live enemy.gd</button>
+          </div>
+
+          <div class="gd-ai-top-controls">
+            <label class="gd-ai-select-wrap" for="ai-map-preset">
+              <span>Map</span>
+              <select id="ai-map-preset" class="gd-ai-select">
+                <option value="courtyard">Courtyard</option>
+                <option value="corridor">Corridor</option>
+                <option value="maze">Maze</option>
+                <option value="arena">Open Arena</option>
+              </select>
+            </label>
+            <button type="button" class="gd-ai-btn gd-ai-btn--primary" data-ai-pause aria-pressed="false">Pause</button>
+            <button type="button" class="gd-ai-btn" data-ai-reset>Reset</button>
+            <button type="button" class="gd-ai-challenge-pill" data-challenge-pill>Challenges: 0 / 4</button>
+          </div>
+        </div>
+
+        <!-- PANEL 1: INTERACTIVE ARENA + INSPECTOR -->
+        <section id="ai-panel-play" class="gd-ai-mode-panel" role="tabpanel" aria-labelledby="ai-tab-play" data-ai-panel="play">
+          <div class="gd-ai-play-grid">
+            <div class="gd-ai-stage-col">
+              <div class="gd-ai-stage-bar">
+                <div class="gd-ai-tool-group" role="group" aria-label="Arena interaction tool">
+                  <span class="gd-ai-group-label">Tool</span>
+                  <button type="button" class="gd-ai-tool-btn is-active" data-ai-tool="move">Move Player</button>
+                  <button type="button" class="gd-ai-tool-btn" data-ai-tool="walls">Walls</button>
+                  <button type="button" class="gd-ai-tool-btn" data-ai-tool="patrol">Patrol Markers</button>
+                </div>
+                <div class="gd-ai-overlay-group" role="group" aria-label="Debug overlays">
+                  <span class="gd-ai-group-label">Debug</span>
+                  <button type="button" class="gd-ai-overlay-btn" data-ai-overlay="navmesh" aria-pressed="true">NavMesh</button>
+                  <button type="button" class="gd-ai-overlay-btn" data-ai-overlay="path" aria-pressed="true">Path</button>
+                  <button type="button" class="gd-ai-overlay-btn" data-ai-overlay="los" aria-pressed="true">RayCast LOS</button>
+                </div>
+              </div>
+
+              <div class="gd-ai-canvas-wrap">
+                <canvas id="ai-arena-canvas" tabindex="0" role="region" aria-label="Interactive Enemy AI arena. Move Player with WASD, Arrow keys, or pointer clicks; place walls to rebake the NavMesh; or add patrol markers."></canvas>
+                <div class="gd-ai-toast" data-ai-toast aria-live="polite">Courtyard ready — move with WASD or click arena</div>
+                <p class="gd-ai-canvas-hint">WASD / Arrows or click to move · Switch to Walls to test NavMesh rerouting</p>
+              </div>
+
+              <div class="gd-ai-hud-strip" aria-label="Live telemetry">
+                <div class="gd-ai-hud-cell">
+                  <small>HP</small>
+                  <strong data-hud-hp>♥♥♥ (3/3)</strong>
+                  <span class="gd-ai-iframe-bar" title="Damage cooldown (i-frames)"><span data-hud-iframe></span></span>
+                </div>
+                <div class="gd-ai-hud-cell">
+                  <small>State</small>
+                  <span class="gd-ai-state-badge" data-hud-state data-state="PATROL">PATROL</span>
+                </div>
+                <div class="gd-ai-hud-cell">
+                  <small>Cells</small>
+                  <strong data-hud-cells>0 / 3</strong>
+                </div>
+                <div class="gd-ai-hud-cell">
+                  <small>Reason</small>
+                  <strong data-hud-reason>Loaded Courtyard</strong>
+                </div>
+              </div>
+            </div>
+
+            <aside class="gd-ai-ctrl-col" aria-label="AI parameters and logs">
+              <div class="gd-ai-fsm-strip">
+                <div class="gd-ai-fsm-nodes" aria-label="Active state machine">
+                  <span class="gd-ai-fsm-pill is-active" data-fsm-node="PATROL">PATROL</span>
+                  <span class="gd-ai-fsm-pill" data-fsm-node="ALERT">ALERT</span>
+                  <span class="gd-ai-fsm-pill" data-fsm-node="CHASE">CHASE</span>
+                  <span class="gd-ai-fsm-pill is-off" data-fsm-node="INVESTIGATE">INVESTIGATE</span>
+                  <span class="gd-ai-fsm-pill" data-fsm-node="RETURN">RETURN</span>
+                </div>
+                <p class="gd-ai-fsm-edge" data-fsm-edge>Last transition: Loaded Courtyard</p>
+              </div>
+
+              <div class="gd-ai-subtabs" role="tablist" aria-label="Control panel tabs">
+                <button type="button" class="gd-ai-subtab is-active" role="tab" aria-selected="true" aria-controls="ai-sub-inspector" id="ai-subtab-inspector" data-ai-subtab="inspector">Inspector</button>
+                <button type="button" class="gd-ai-subtab" role="tab" aria-selected="false" aria-controls="ai-sub-log" id="ai-subtab-log" data-ai-subtab="log">Signal Log</button>
+                <button type="button" class="gd-ai-subtab" role="tab" aria-selected="false" aria-controls="ai-sub-challenges" id="ai-subtab-challenges" data-ai-subtab="challenges">Challenges</button>
+              </div>
+
+              <div class="gd-ai-subbody">
+                <div id="ai-sub-inspector" class="gd-ai-subpanel" role="tabpanel" aria-labelledby="ai-subtab-inspector" data-ai-subpanel="inspector">
+                  <div class="gd-ai-sliders">
+                    <div class="gd-ai-control">
+                      <label for="ai-speed">Guard chase speed</label>
+                      <output data-out="speed">3.8 m/s</output>
+                      <input id="ai-speed" type="range" min="1.5" max="6.0" step="0.1" value="3.8" data-param="speed" />
+                    </div>
+                    <div class="gd-ai-control">
+                      <label for="ai-radius">DetectionArea radius</label>
+                      <output data-out="radius">4.2 m</output>
+                      <input id="ai-radius" type="range" min="2.0" max="7.0" step="0.2" value="4.2" data-param="radius" />
+                    </div>
+                    <div class="gd-ai-control">
+                      <label for="ai-cooldown">Damage cooldown (i-frames)</label>
+                      <output data-out="cooldown">1.0 s</output>
+                      <input id="ai-cooldown" type="range" min="0.0" max="2.0" step="0.1" value="1.0" data-param="cooldown" />
+                    </div>
+                  </div>
+
+                  <div class="gd-ai-toggles">
+                    <label class="gd-ai-switch">
+                      <input type="checkbox" data-toggle="los" checked />
+                      <span>
+                        <strong>RayCast3D line of sight</strong>
+                        <small>Walls block vision even inside DetectionArea.</small>
+                      </span>
+                    </label>
+                    <label class="gd-ai-switch">
+                      <input type="checkbox" data-toggle="investigate" />
+                      <span>
+                        <strong>INVESTIGATE state (Remix)</strong>
+                        <small>Walk to last seen spot and scan before returning.</small>
+                      </span>
+                    </label>
+                    <label class="gd-ai-switch">
+                      <input type="checkbox" data-toggle="telegraph" checked />
+                      <span>
+                        <strong>Alert telegraph (0.35s)</strong>
+                        <small>Flash warning before starting CHASE.</small>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <div id="ai-sub-log" class="gd-ai-subpanel" role="tabpanel" aria-labelledby="ai-subtab-log" data-ai-subpanel="log" hidden>
+                  <div class="gd-ai-log-head">
+                    <span>Godot Events &amp; Transitions</span>
+                    <button type="button" class="gd-ai-mini-btn" data-clear-log>Clear</button>
+                  </div>
+                  <ul class="gd-ai-log-list" data-signal-log aria-live="polite"></ul>
+                </div>
+
+                <div id="ai-sub-challenges" class="gd-ai-subpanel" role="tabpanel" aria-labelledby="ai-subtab-challenges" data-ai-subpanel="challenges" hidden>
+                  <div class="gd-ai-challenges" data-challenge-list></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- PANEL 2: LIVE SYNCHRONIZED GDSCRIPT -->
+        <section id="ai-panel-code" class="gd-ai-mode-panel" role="tabpanel" aria-labelledby="ai-tab-code" data-ai-panel="code" hidden>
+          <div class="gd-ai-code-grid">
+            <div class="gd-ai-code-pane">
+              <div class="gd-ai-code-bar">
+                <span>enemy.gd · synced with your Inspector settings</span>
+                <div style="display:flex;gap:.5rem;align-items:center;">
+                  <span data-live-state-tag>Active: State.PATROL</span>
+                  <button type="button" class="gd-ai-btn" data-copy-live>Copy enemy.gd</button>
+                </div>
+              </div>
+              <div class="gd-ai-code-scroll">
+                <pre class="gd-ai-code-block"><code data-live-code></code></pre>
+              </div>
+            </div>
+
+            <aside class="gd-ai-code-aside" aria-label="Live script explanation">
+              <h2>Watch state logic update live</h2>
+              <p>Every slider and checkbox in the Arena Inspector rewrites this Godot 4 script. As the guard switches states in the simulation, the matching function glows yellow on the left.</p>
+              <div class="gd-ai-sync-list">
+                <div class="gd-ai-sync-card">
+                  <b>1. Toggle RayCast3D LOS</b>
+                  <span>Adds <code>can_see_player()</code> so walls block detection instead of letting guards see through stone.</span>
+                </div>
+                <div class="gd-ai-sync-card">
+                  <b>2. Toggle INVESTIGATE</b>
+                  <span>Expands <code>enum State</code> with <code>INVESTIGATE</code> and saves <code>last_known_pos</code> during chase.</span>
+                </div>
+                <div class="gd-ai-sync-card">
+                  <b>3. Adjust @export var speed</b>
+                  <span>Patrol uses <code>speed * 0.72</code> for readable pacing; chase switches to full <code>speed</code>.</span>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="lesson-overview" class="gd-lesson-hero">
+      <p class="gd-eyebrow">Lesson 05 · 70 minutes · Challenge layer</p>
+      <h2 class="gd-title">Make an enemy choose.</h2>
+      <p class="gd-lede">Build a guard that patrols a baked navigation mesh, telegraphs detection, checks line of sight, chases around obstacles, deals fair cooldown-gated damage, and returns cleanly when you escape.</p>
+      <div class="gd-meta">
+        <span>STATES</span>
+        <span>NAVIGATIONAGENT3D</span>
+        <span>AREA3D</span>
+        <span>RAYCAST3D</span>
+        <span>COOLDOWN</span>
+      </div>
+    </section>
+
+    <section class="gd-teaching-bridge" aria-label="How to think in this lesson">
+      <div><b>Big idea</b><span>Enemy AI is a finite state machine: one active mode at a time, connected by clear triggers.</span></div>
+      <div><b>Predict</b><span>Leaving detection—or breaking line of sight behind a wall—must end CHASE cleanly.</span></div>
+      <div><b>Test</b><span>Trigger every transition deliberately in the studio and narrate why the state changed.</span></div>
+      <div><b>Why it matters</b><span>Readable challenge lets players learn patterns, make tactical choices, and recover.</span></div>
+    </section>
+
+    <nav class="gd-nav" aria-label="Lesson pathway navigation">
+      <a href="godot-collectibles-ui.html">← 04 Collectibles &amp; UI</a>
+      <a href="godot-animation-game-feel.html">06 Animation &amp; Feel →</a>
+    </nav>
+
+    <nav class="gd-jump-nav" aria-label="Lesson sections">
+      <a href="#model"><b>01</b> State Model</a>
+      <a href="#nav"><b>02</b> Scene &amp; NavMesh</a>
+      <a href="#code"><b>03</b> Enemy Script</a>
+      <a href="#damage"><b>04</b> Damage &amp; Cooldown</a>
+      <a href="#debug"><b>05</b> Debug Clinic</a>
+      <a href="#check"><b>06</b> Check</a>
+    </nav>
+
+    <!-- SECTION 01: STATE MODEL -->
+    <section id="model" class="gd-section">
+      <div class="gd-section-mark">01 / MODEL</div>
+      <div>
+        <p class="gd-kicker">Finite state machine</p>
+        <h2>One enum prevents impossible behavior.</h2>
+        <p>Beginners often write enemy AI with separate booleans: <code>is_patrolling</code>, <code>is_chasing</code>, and <code>is_returning</code>. When two booleans accidentally stay <code>true</code> at the same time, the enemy twitches between goals. A Godot <code>enum State</code> guarantees the guard is in <strong>exactly one mode</strong> per physics frame.</p>
+
+        <div class="gd-fsm-diagram" aria-label="Enemy finite state machine diagram">
+          <div class="gd-fsm-diagram-grid">
+            <article class="gd-fsm-box">
+              <span class="gd-fsm-tag">STATE 1</span>
+              <h3>PATROL</h3>
+              <p>Walks between assigned <code>Marker3D</code> waypoints at calm speed while watching for Player.</p>
+            </article>
+            <article class="gd-fsm-box">
+              <span class="gd-fsm-tag">STATE 2</span>
+              <h3>CHASE</h3>
+              <p>Continuously updates <code>agent.target_position</code> to Player and pursues at full speed.</p>
+            </article>
+            <article class="gd-fsm-box gd-fsm-box--remix">
+              <span class="gd-fsm-tag">REMIX STATE</span>
+              <h3>INVESTIGATE</h3>
+              <p>Walks to <code>last_known_pos</code> and scans left/right before giving up the search.</p>
+            </article>
+            <article class="gd-fsm-box">
+              <span class="gd-fsm-tag">STATE 3</span>
+              <h3>RETURN</h3>
+              <p>Navigates back to the current patrol marker; switches back to <code>PATROL</code> on arrival.</p>
+            </article>
+          </div>
+          <div class="gd-fsm-routes">
+            <span>PATROL → CHASE: DetectionArea entered (+ LOS clear)</span>
+            <span>CHASE → RETURN: Player exited / LOS blocked</span>
+            <span>CHASE → INVESTIGATE → RETURN: Optional Remix</span>
+            <span>RETURN → PATROL: agent.is_navigation_finished()</span>
+          </div>
+        </div>
+
+        <div class="gd-practice" data-question data-correct="Correct. A single enum guarantees only one branch of the match statement runs each frame." data-retry="Think about what happens when two boolean flags are both true at once.">
+          <strong>Why use <code>enum State</code> instead of three separate booleans?</strong>
+          <div class="gd-practice-options">
+            <button type="button" data-answer="wrong">Enums make the 3D mesh render faster.</button>
+            <button type="button" data-answer="correct">Only one state can be active at a time, so patrol and chase cannot collide.</button>
+            <button type="button" data-answer="wrong">Godot requires an enum to bake a NavigationMesh.</button>
+          </div>
+          <p class="gd-practice-result" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 02: SCENE & NAVMESH -->
+    <section id="nav" class="gd-section">
+      <div class="gd-section-mark">02 / NAV</div>
+      <div>
+        <p class="gd-kicker">Scene setup &amp; NavMesh</p>
+        <h2>Give the guard a walkable map and separate sensors.</h2>
+        <p>Click any node in <code>enemy.tscn</code> below to inspect its job, then follow the five setup steps in your Godot project.</p>
+
+        <div class="gd-nav-layout">
+          <div class="gd-tree-interactive" aria-label="Interactive enemy.tscn scene tree">
+            <div class="gd-tree-bar">
+              <b>enemy.tscn</b>
+              <small>Click a node</small>
+            </div>
+            <div class="gd-tree-nodes">
+              <button type="button" class="gd-tree-node is-active" data-enemy-node="enemy"><span>◆ Enemy</span><small>CharacterBody3D</small></button>
+              <button type="button" class="gd-tree-node is-child" data-enemy-node="mesh"><span>◫ BodyMesh</span><small>MeshInstance3D</small></button>
+              <button type="button" class="gd-tree-node is-child" data-enemy-node="collision"><span>⬡ BodyCollision</span><small>CollisionShape3D</small></button>
+              <button type="button" class="gd-tree-node is-child" data-enemy-node="agent"><span>⌖ NavigationAgent3D</span><small>Pathfinder</small></button>
+              <button type="button" class="gd-tree-node is-child" data-enemy-node="detect"><span>◎ DetectionArea</span><small>Area3D (4–6 m)</small></button>
+              <button type="button" class="gd-tree-node is-grandchild" data-enemy-node="hitbox"><span>⚡ Hitbox</span><small>Area3D (Contact)</small></button>
+              <button type="button" class="gd-tree-node is-child" data-enemy-node="los"><span>⤢ LineOfSight</span><small>RayCast3D</small></button>
+            </div>
+            <div id="enemyNodeReadout" class="gd-tree-readout" aria-live="polite">
+              <strong>Enemy · CharacterBody3D</strong>
+              <p>Root node moved by enemy.gd using velocity and move_and_slide(). Holds the state machine.</p>
+              <p class="gd-tree-tip">Watch out: CharacterBody3D needs a physical CollisionShape3D child to collide with floors and walls.</p>
+            </div>
+          </div>
+
+          <ol class="gd-steps">
+            <li><b>Add NavigationRegion3D to Main.</b>Place your floor and wall meshes inside it as children, create a <code>NavigationMesh</code> resource, and press <strong>Bake NavMesh</strong>.</li>
+            <li><b>Build the Enemy scene.</b>Use <code>CharacterBody3D</code> as root with a mesh, physical collider, <code>NavigationAgent3D</code>, a wide <code>DetectionArea</code>, and a tight <code>Hitbox</code>.</li>
+            <li><b>Add patrol Marker3D nodes.</b>Drop 2–4 <code>Marker3D</code> points onto the teal baked floor in Main and assign them to the enemy’s exported <code>patrol_points</code> array.</li>
+            <li><b>Isolate collision layers &amp; masks.</b>Put Player in group <code>"player"</code> (and Layer 2). Set <code>DetectionArea</code>’s mask to only detect Player so walls never trigger chase.</li>
+            <li><b>Verify with Debug navigation.</b>Enable <em>Debug → Visible Navigation</em> and watch the path bend around obstacles in real time.</li>
+          </ol>
+        </div>
+
+        <div class="gd-callout"><strong>Layers vs. Masks:</strong> A body’s <em>Layer</em> says “what I am.” An Area3D or RayCast3D’s <em>Mask</em> says “what I scan for.” Setting <code>DetectionArea</code> to scan only the Player layer prevents walls, floors, and collectibles from firing false <code>body_entered</code> signals.</div>
+
+        <div class="gd-editor-proof">
+          <div class="gd-editor-proof-grid">
+            <figure data-zoomable data-lightbox-group="godot-enemies-ai" class="gd-editor-proof-card">
+              <img src="../../assets/images/lessons/godot-enemies-ai/bake-navmesh-button.webp" alt="Godot's 3D viewport toolbar with a NavigationRegion3D selected, showing the Bake NavMesh button." width="535" height="80" loading="lazy" />
+              <figcaption><b>Select the region, then bake.</b> With <code>NavigationRegion3D</code> selected, its toolbar grows a <strong>Bake NavMesh</strong> button — click it whenever you move walls or obstacles.</figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="godot-enemies-ai" class="gd-editor-proof-card">
+              <img src="../../assets/images/lessons/godot-enemies-ai/baked-navmesh-result.webp" alt="Godot's 3D viewport showing a teal-highlighted baked navigation mesh hovering over a floor plane." width="675" height="266" loading="lazy" />
+              <figcaption><b>The teal overlay is the walkable map.</b> That highlighted surface is what <code>NavigationAgent3D</code> actually paths across — just like the teal NavMesh toggle in the studio above.</figcaption>
+            </figure>
+          </div>
+          <p class="gd-editor-proof-credit">Screenshots: <a href="https://docs.godotengine.org/en/stable/tutorials/navigation/navigation_introduction_3d.html" target="_blank" rel="noreferrer noopener">Godot Engine documentation</a>, © Juan Linietsky, Ariel Manzur and the Godot community, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer noopener">CC BY 3.0</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 03: ENEMY SCRIPT -->
+    <section id="code" class="gd-section">
+      <div class="gd-section-mark">03 / CODE</div>
+      <div>
+        <p class="gd-kicker">Core Godot 4 script</p>
+        <h2>Ask NavigationAgent3D for the next safe step.</h2>
+        <p>This production-ready <code>enemy.gd</code> fixes the three most common student pitfalls: waiting one physics frame for NavMesh registration, keeping movement horizontal with gravity, and separating contact damage from detection range.</p>
+
+        <div class="gd-code">
+          <div class="gd-code-head">
+            <span>enemy.gd · Godot 4</span>
+            <button type="button" class="gd-copy">Copy</button>
+          </div>
+          <pre><code><span class="k">extends</span> CharacterBody3D
+
 <span class="k">enum</span> State { PATROL, CHASE, RETURN }
-<span class="k">@export var</span> speed := <span class="n">3.5</span>
-<span class="k">@export var</span> patrol_points: Array[Node3D]
+
+<span class="k">@export var</span> patrol_speed := <span class="n">2.6</span>
+<span class="k">@export var</span> chase_speed := <span class="n">3.8</span>
+<span class="k">@export var</span> patrol_points: Array[Marker3D]
+
 <span class="k">@onready var</span> agent: NavigationAgent3D = $NavigationAgent3D
+
 <span class="k">var</span> state := State.PATROL
 <span class="k">var</span> player: Node3D
 <span class="k">var</span> patrol_index := <span class="n">0</span>
 
 <span class="k">func</span> _ready() -> void:
+    <span class="k">await</span> get_tree().physics_frame
     <span class="k">if not</span> patrol_points.is_empty():
         agent.target_position = patrol_points[<span class="n">0</span>].global_position
 
-<span class="k">func</span> _physics_process(_delta: float) -> void:
+<span class="k">func</span> _physics_process(delta: float) -> void:
     <span class="k">match</span> state:
         State.PATROL: patrol()
         State.CHASE: chase()
         State.RETURN: return_to_patrol()
-    follow_path()
+    follow_path(delta)
 
 <span class="k">func</span> patrol() -> void:
     <span class="k">if</span> agent.is_navigation_finished() <span class="k">and not</span> patrol_points.is_empty():
@@ -51,38 +432,271 @@
 
 <span class="k">func</span> return_to_patrol() -> void:
     <span class="k">if</span> patrol_points.is_empty(): <span class="k">return</span>
-    agent.target_position = patrol_points[patrol_index].global_position
-    <span class="k">if</span> agent.is_navigation_finished(): state = State.PATROL
-
-<span class="k">func</span> follow_path() -> void:
     <span class="k">if</span> agent.is_navigation_finished():
-        velocity = Vector3.ZERO
+        state = State.PATROL
+
+<span class="k">func</span> follow_path(delta: float) -> void:
+    <span class="k">if not</span> is_on_floor():
+        velocity.y -= <span class="n">9.8</span> * delta
+    <span class="k">if</span> agent.is_navigation_finished():
+        velocity.x = <span class="n">0.0</span>
+        velocity.z = <span class="n">0.0</span>
+        move_and_slide()
         <span class="k">return</span>
     <span class="k">var</span> next := agent.get_next_path_position()
-    <span class="k">var</span> direction := global_position.direction_to(next)
-    velocity = direction * speed
+    <span class="k">var</span> dir := global_position.direction_to(next)
+    dir.y = <span class="n">0.0</span>
+    dir = dir.normalized()
+    <span class="k">var</span> active_speed := chase_speed <span class="k">if</span> state == State.CHASE <span class="k">else</span> patrol_speed
+    velocity.x = dir.x * active_speed
+    velocity.z = dir.z * active_speed
+    rotation.y = lerp_angle(rotation.y, atan2(-dir.x, -dir.z), <span class="n">10.0</span> * delta)
     move_and_slide()
 
-<span class="k">func</span> _on_detection_body_entered(body: Node3D) -> void:
+<span class="k">func</span> _on_detection_area_body_entered(body: Node3D) -> void:
     <span class="k">if</span> body.is_in_group(<span class="s">"player"</span>):
         player = body
         state = State.CHASE
 
-<span class="k">func</span> _on_detection_body_exited(body: Node3D) -> void:
+<span class="k">func</span> _on_detection_area_body_exited(body: Node3D) -> void:
     <span class="k">if</span> body == player:
         player = <span class="k">null</span>
-        state = State.RETURN</code></pre></div><div class="gd-callout danger"><strong>Navigation is not collision.</strong> Navigation finds a route; CharacterBody3D and CollisionShape3D still handle physical contact.</div><div class="gd-practice" data-question data-correct="Correct. RETURN gives the enemy one clear goal before PATROL resumes." data-retry="The enemy no longer has a valid player target. It needs to reconnect with its route."><strong>The player leaves detection. Which state should run next?</strong><div class="gd-practice-options"><button data-answer="wrong">Keep CHASE forever</button><button data-answer="correct">RETURN to the current patrol point</button><button data-answer="wrong">Delete the enemy</button></div><p class="gd-practice-result" aria-live="polite"></p></div></div></section>
-<section class="gd-section"><div class="gd-section-mark">04 / DAMAGE</div><div><p class="gd-kicker">Fair challenge</p><h2>Signal danger before punishment.</h2><p>Add a red detection glow or sound before the chase begins. Use a short invulnerability timer after damage so one collision cannot remove all health in a single second.</p><div class="gd-code"><div class="gd-code-head"><span>player.gd · damage cooldown</span><button class="gd-copy">Copy</button></div><pre><code><span class="k">var</span> can_take_damage := <span class="k">true</span>
+        state = State.RETURN
+        <span class="k">if not</span> patrol_points.is_empty():
+            agent.target_position = patrol_points[patrol_index].global_position
+
+<span class="k">func</span> _on_hitbox_body_entered(body: Node3D) -> void:
+    <span class="k">if</span> body.is_in_group(<span class="s">"player"</span>) <span class="k">and</span> body.has_method(<span class="s">"take_damage"</span>):
+        body.take_damage(<span class="n">1</span>)</code></pre>
+        </div>
+
+        <div class="gd-code-reader" aria-label="Interactive code breakdown">
+          <div class="gd-code-pills">
+            <button type="button" class="gd-code-pill is-active" data-code-part="enum">State Enum</button>
+            <button type="button" class="gd-code-pill" data-code-part="sync">Nav Sync</button>
+            <button type="button" class="gd-code-pill" data-code-part="patrol">Patrol</button>
+            <button type="button" class="gd-code-pill" data-code-part="chase">Chase</button>
+            <button type="button" class="gd-code-pill" data-code-part="move">Horizontal Move</button>
+            <button type="button" class="gd-code-pill" data-code-part="signals">Signals</button>
+          </div>
+          <p id="enemyCodeExplain" class="gd-code-explain" aria-live="polite"><strong>enum State:</strong> Replacing multiple booleans (<code>is_chasing</code>, <code>is_returning</code>) with one <code>enum</code> makes impossible overlapping states mathematically unreachable.</p>
+        </div>
+
+        <div class="gd-callout danger"><strong>Navigation is not collision.</strong> <code>NavigationAgent3D</code> only computes a path; <code>CharacterBody3D</code> + <code>CollisionShape3D</code> still handle physical walls, gravity, and slopes.</div>
+
+        <div class="gd-practice" data-question data-correct="Correct. RETURN gives the enemy one clear goal before PATROL resumes." data-retry="The enemy no longer has a valid player target. It needs to reconnect with its route.">
+          <strong>The player leaves detection. Which state should run next?</strong>
+          <div class="gd-practice-options">
+            <button type="button" data-answer="wrong">Keep CHASE forever</button>
+            <button type="button" data-answer="correct">RETURN to the current patrol point</button>
+            <button type="button" data-answer="wrong">Delete the enemy</button>
+          </div>
+          <p class="gd-practice-result" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 04: DAMAGE & COOLDOWN -->
+    <section id="damage" class="gd-section">
+      <div class="gd-section-mark">04 / DAMAGE</div>
+      <div>
+        <p class="gd-kicker">Fair challenge</p>
+        <h2>Telegraph danger, gate damage, and respawn cleanly.</h2>
+        <p>Try setting <strong>Damage cooldown</strong> to <code>0.0 s</code> in the studio above and walk into the guard—without invulnerability frames (i-frames), 60 physics ticks per second drain all 3 HP almost instantly. Fair enemies follow three rules:</p>
+
+        <div class="gd-fair-grid">
+          <article class="gd-card">
+            <h3>1. Telegraph first</h3>
+            <p>Flash an amber light or play a chirp for ~0.35s before starting CHASE so surprise hits feel fair.</p>
+          </article>
+          <article class="gd-card">
+            <h3>2. Cooldown i-frames</h3>
+            <p>Lock <code>can_take_damage</code> for 1.0s after each hit and blink the player mesh to communicate safety.</p>
+          </article>
+          <article class="gd-card">
+            <h3>3. Clean respawn</h3>
+            <p>Emit <code>health_changed</code> to the HUD, move Player back to SpawnPad, and restore full health.</p>
+          </article>
+        </div>
+
+        <div class="gd-code">
+          <div class="gd-code-head">
+            <span>player.gd · health, cooldown &amp; respawn</span>
+            <button type="button" class="gd-copy">Copy</button>
+          </div>
+          <pre><code><span class="k">signal</span> health_changed(current: int, max_hp: int)
+
+<span class="k">@export var</span> max_health := <span class="n">3</span>
+<span class="k">@export var</span> spawn_point: Marker3D
+
+<span class="k">var</span> health := max_health
+<span class="k">var</span> can_take_damage := <span class="k">true</span>
 
 <span class="k">func</span> take_damage(amount: int) -> void:
     <span class="k">if not</span> can_take_damage: <span class="k">return</span>
     can_take_damage = <span class="k">false</span>
-    health -= amount
-    <span class="k">if</span> health &lt;= <span class="n">0</span>: respawn()
+    health = max(<span class="n">0</span>, health - amount)
+    health_changed.emit(health, max_health)
+    <span class="k">if</span> health &lt;= <span class="n">0</span>:
+        respawn()
     <span class="k">await</span> get_tree().create_timer(<span class="n">1.0</span>).timeout
-    can_take_damage = <span class="k">true</span></code></pre></div><div class="gd-challenge"><h3>Remix challenge</h3><p>Add an INVESTIGATE state. When the player escapes, the enemy first walks to the last position where it saw the player.</p></div><div class="gd-savepoint"><div><b>Duplicate the project as <code>SignalRun_05_AI</code>.</b><span>Your restore point must demonstrate Patrol → Chase → Return → Patrol and a one-second damage cooldown.</span></div></div></div></section>
-<section class="gd-section"><div class="gd-section-mark">05 / CHECK</div><div><p class="gd-kicker">Definition of done</p><h2>Your enemy is fair when…</h2><div class="gd-checklist"><label><input type="checkbox">The enemy follows at least two assigned patrol points.</label><label><input type="checkbox">Entering detection changes patrol into chase.</label><label><input type="checkbox">Escaping detection returns the enemy to its route.</label><label><input type="checkbox">Damage has clear warning and a cooldown.</label></div><p data-check-status>0/4 checked</p><p class="gd-evidence"><strong>Evidence:</strong> Narrate the current state while a partner deliberately triggers every transition.</p><div class="gd-complete"><div><h3>Lesson 5 complete</h3><p>Your game now creates pressure and meaningful risk.</p></div><button class="gd-button" data-complete-lesson="5">Mark lesson complete</button></div></div></section>
-</main><script src="../../assets/js/lessons/godot-pathway.js"></script><script src="../../assets/js/lesson-print-button.js"></script><script src="../../assets/js/photo-lightbox.js"></script>
-<script src="../../assets/js/theme-registry.js"></script>
-<script src="../../assets/js/nav-mobile.js"></script>
-</body></html>
+    can_take_damage = <span class="k">true</span>
+
+<span class="k">func</span> respawn() -> void:
+    health = max_health
+    health_changed.emit(health, max_health)
+    <span class="k">if</span> spawn_point:
+        global_position = spawn_point.global_position
+    velocity = Vector3.ZERO</code></pre>
+        </div>
+
+        <details class="gd-upgrade-details">
+          <summary>Optional Upgrade: Add RayCast3D Line of Sight + INVESTIGATE state in Godot 4</summary>
+          <div class="gd-upgrade-body">
+            <p>Ready to implement what you tested with the <strong>RayCast3D</strong> and <strong>INVESTIGATE</strong> switches in the studio? Add a <code>RayCast3D</code> child named <code>LineOfSight</code> to Enemy and upgrade your state enum:</p>
+            <div class="gd-code">
+              <div class="gd-code-head">
+                <span>enemy_investigate.gd · Line of sight + search</span>
+                <button type="button" class="gd-copy">Copy</button>
+              </div>
+              <pre><code><span class="k">enum</span> State { PATROL, CHASE, INVESTIGATE, RETURN }
+
+<span class="k">@onready var</span> los: RayCast3D = $LineOfSight
+<span class="k">var</span> last_known_pos := Vector3.ZERO
+<span class="k">var</span> scan_timer := <span class="n">0.0</span>
+
+<span class="k">func</span> can_see_player() -> bool:
+    <span class="k">if not</span> is_instance_valid(player): <span class="k">return false</span>
+    los.target_position = los.to_local(player.global_position + Vector3.UP)
+    los.force_raycast_update()
+    <span class="k">return not</span> los.is_colliding() <span class="k">or</span> los.get_collider() == player
+
+<span class="k">func</span> investigate(delta: float) -> void:
+    <span class="k">if</span> can_see_player():
+        state = State.CHASE
+        <span class="k">return</span>
+    <span class="k">if</span> agent.is_navigation_finished():
+        scan_timer -= delta
+        rotate_y(<span class="n">2.2</span> * delta)
+        <span class="k">if</span> scan_timer &lt;= <span class="n">0.0</span>:
+            state = State.RETURN
+            agent.target_position = patrol_points[patrol_index].global_position</code></pre>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- SECTION 05: DEBUG CLINIC -->
+    <section id="debug" class="gd-section">
+      <div class="gd-section-mark">05 / DEBUG</div>
+      <div>
+        <p class="gd-kicker">Enemy AI Debug Clinic</p>
+        <h2>Six classic Godot AI bugs—and how to spot each one.</h2>
+        <div class="gd-debug-grid">
+          <article class="gd-debug-card">
+            <h3>1. Guard stands completely still</h3>
+            <p><strong>Cause:</strong> NavMesh was never baked, or <code>patrol_points</code> is empty / placed off the teal mesh.</p>
+            <p class="gd-debug-fix"><strong>Fix:</strong> Select <code>NavigationRegion3D</code>, click <em>Bake NavMesh</em>, and verify <code>await get_tree().physics_frame</code> in <code>_ready()</code>.</p>
+          </article>
+          <article class="gd-debug-card">
+            <h3>2. Guard jitters or spins at Marker3D</h3>
+            <p><strong>Cause:</strong> Target distance threshold is too small, or <code>Marker3D</code> floats slightly above the floor.</p>
+            <p class="gd-debug-fix"><strong>Fix:</strong> Snap patrol markers to floor level and keep <code>agent.target_desired_distance</code> around <code>0.5</code> m.</p>
+          </article>
+          <article class="gd-debug-card">
+            <h3>3. Guard sees through solid walls</h3>
+            <p><strong>Cause:</strong> <code>DetectionArea</code> is a pure sphere trigger—it ignores walls unless paired with a raycast.</p>
+            <p class="gd-debug-fix"><strong>Fix:</strong> Add a <code>RayCast3D</code> aimed at the player and require <code>can_see_player()</code> before entering <code>CHASE</code>.</p>
+          </article>
+          <article class="gd-debug-card">
+            <h3>4. Guard never detects Player</h3>
+            <p><strong>Cause:</strong> Player is not in the <code>"player"</code> group, or <code>DetectionArea</code>’s collision mask skips Player’s layer.</p>
+            <p class="gd-debug-fix"><strong>Fix:</strong> Check <em>Node → Groups</em> on Player and confirm <code>DetectionArea.monitoring</code> and masks match.</p>
+          </article>
+          <article class="gd-debug-card">
+            <h3>5. Guard gets snagged on doorway corners</h3>
+            <p><strong>Cause:</strong> NavMesh <code>agent_radius</code> is smaller than the enemy’s physical <code>BodyCollision</code> radius.</p>
+            <p class="gd-debug-fix"><strong>Fix:</strong> Set <code>NavigationMesh.agent_radius</code> slightly larger than the enemy capsule and rebake.</p>
+          </article>
+          <article class="gd-debug-card">
+            <h3>6. Player loses all HP in one touch</h3>
+            <p><strong>Cause:</strong> Contact check runs every physics frame with no invulnerability cooldown.</p>
+            <p class="gd-debug-fix"><strong>Fix:</strong> Gate <code>take_damage()</code> behind <code>can_take_damage</code> and a <code>1.0 s</code> timer.</p>
+          </article>
+        </div>
+
+        <div class="gd-practice" data-question data-correct="Correct. Area3D checks proximity; RayCast3D verifies nothing solid blocks the line of sight." data-retry="Remember that Area3D spheres ignore solid geometry between the enemy and player.">
+          <strong>Your enemy starts chasing even when a solid brick wall stands between you. What is the cleanest fix?</strong>
+          <div class="gd-practice-options">
+            <button type="button" data-answer="wrong">Shrink DetectionArea radius down to 0.5 meters.</button>
+            <button type="button" data-answer="correct">Pair DetectionArea with a RayCast3D check toward the player.</button>
+            <button type="button" data-answer="wrong">Delete the NavigationRegion3D from the scene.</button>
+          </div>
+          <p class="gd-practice-result" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 06: REMIX & CHECK -->
+    <section id="check" class="gd-section">
+      <div class="gd-section-mark">06 / CHECK</div>
+      <div>
+        <p class="gd-kicker">Remix &amp; definition of done</p>
+        <h2>Choose a remix tier, save your restore point, and verify.</h2>
+        <div class="gd-remix-grid">
+          <article class="gd-remix-card">
+            <span class="gd-remix-tier">A</span>
+            <h3>Investigate State</h3>
+            <p>Add <code>State.INVESTIGATE</code> so escaping sends the guard to your last seen spot for 1.5s before returning.</p>
+          </article>
+          <article class="gd-remix-card">
+            <span class="gd-remix-tier">B</span>
+            <h3>Vision Cone + RayCast</h3>
+            <p>Use <code>RayCast3D</code> plus a dot-product forward check so you can sneak behind the guard’s back.</p>
+          </article>
+          <article class="gd-remix-card">
+            <span class="gd-remix-tier">C</span>
+            <h3>Guard Archetypes</h3>
+            <p>Export speed, detection scale, and patrol style to create a slow Heavy Sentinel and a fast Scout from one scene.</p>
+          </article>
+        </div>
+
+        <div class="gd-savepoint">
+          <div>
+            <b>Duplicate the project as <code>SignalRun_05_AI</code>.</b>
+            <span>Your restore point must demonstrate Patrol → Chase → Return → Patrol, NavMesh obstacle avoidance, and a 1.0s damage cooldown.</span>
+          </div>
+        </div>
+
+        <div class="gd-checklist">
+          <label><input type="checkbox" />The enemy navigates around baked obstacles between at least two patrol markers.</label>
+          <label><input type="checkbox" />Entering detection switches Patrol into Chase (with optional telegraph/LOS check).</label>
+          <label><input type="checkbox" />Escaping detection transitions cleanly to Return and back to Patrol.</label>
+          <label><input type="checkbox" />Contact damage uses a cooldown timer and respawns the player at 0 HP.</label>
+          <label><input type="checkbox" />All four studio challenges or a live Godot playtest verify every state transition.</label>
+        </div>
+        <p data-check-status>0/5 checked</p>
+        <p class="gd-evidence"><strong>Evidence:</strong> Narrate the current state aloud while a partner deliberately triggers Patrol, Alert/Chase, Return, and Damage Cooldown.</p>
+
+        <div class="gd-complete">
+          <div>
+            <h3>Lesson 5 complete</h3>
+            <p>Your game now creates readable pressure and meaningful risk.</p>
+          </div>
+          <button type="button" class="gd-button" data-complete-lesson="5">Mark lesson complete</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script src="../../assets/js/lessons/godot-pathway.js"></script>
+  <script src="../../assets/js/lessons/godot-enemies-lab.js"></script>
+  <script src="../../assets/js/creation-app.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+</body>
+</html>

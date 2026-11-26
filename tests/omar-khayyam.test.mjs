@@ -60,7 +60,7 @@ test("the forge reads FitzGerald's own quatrains as rubāʿiyāt (at least 97%)"
   // Every quatrain printed in the lesson's three-layer lab, both editions.
   const html = fs.readFileSync(new URL('../lessons/language-literature/pioneers/omar-khayyam.html', import.meta.url), 'utf8');
   const stanzas = [...html.matchAll(/<p data-kh-lines>([\s\S]*?)<\/p>/g)].map((m) => m[1].split(/<br>/).map((l) => l.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&')));
-  assert.equal(stanzas.length, 18, 'nine quatrains × two editions');
+  assert.equal(stanzas.length, 28, 'fourteen quatrains × two editions');
   const ok = stanzas.filter((s) => K.checkRubai(s).isRubai).length;
   assert.ok(ok / stanzas.length >= 0.97, `only ${ok} of ${stanzas.length} read as AABA/AAAA`);
   const r = K.checkRubai(['With them the seed of Wisdom did I sow,', 'And with mine own hand wrought to make it grow;', 'And this was all the Harvest that I reap’d—', '“I came like Water, and like Wind I go.”']);

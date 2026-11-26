@@ -29,15 +29,23 @@
     var cs = getComputedStyle(main);
     function v(name, fallback) { return (cs.getPropertyValue(name) || '').trim() || fallback; }
     return {
-      ink: v('--kh-ink', '#1d2233'),
-      muted: v('--kh-muted', '#4c5468'),
-      lapis: v('--kh-lapis', '#1f3a68'),
-      turq: v('--kh-turq', '#11706f'),
-      pom: v('--kh-pom', '#8f2632'),
-      gold: v('--kh-gold', '#c8962f'),
-      line: v('--kh-line', '#d8c7a1'),
-      paper: v('--kh-paper', '#fbf6ea')
+      ink: v('--kh-ink', '#1b2030'),
+      muted: v('--kh-muted', '#4b4852'),
+      lapis: v('--kh-lapis', '#162f5c'),
+      turq: v('--kh-turq', '#0d6261'),
+      pom: v('--kh-pom', '#831d2b'),
+      gold: v('--kh-gold', '#c9962c'),
+      line: v('--kh-line', '#cbb07a'),
+      paper: v('--kh-paper', '#faf1dc')
     };
+  }
+  function drawGildedFrame(ctx, W, H, col) {
+    ctx.save();
+    ctx.strokeStyle = col.gold;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(5.5, 5.5, Math.max(0, W - 11), Math.max(0, H - 11));
+    ctx.restore();
   }
   function sizer(canvas, draw) {
     if (SimKit && SimKit.canvas2d) {
@@ -62,6 +70,34 @@
     if (SimKit && SimKit.theme && SimKit.theme.onChange) SimKit.theme.onChange(function () { fn(); });
   }
 
+  /* ── Works library filter ──────────────────────────────────────── */
+  (function worksFilter() {
+    var filterBar = $('kh-works-filter'), grid = $('kh-works-grid'), countEl = $('kh-works-count');
+    if (!filterBar || !grid) return;
+    var cards = Array.prototype.slice.call(grid.querySelectorAll('.kh-work[data-work-cat]'));
+    var btns = Array.prototype.slice.call(filterBar.querySelectorAll('[data-work-filter]'));
+
+    function applyFilter(cat) {
+      var visible = 0;
+      cards.forEach(function (card) {
+        var match = cat === 'all' || card.getAttribute('data-work-cat') === cat;
+        card.hidden = !match;
+        if (match) visible++;
+      });
+      btns.forEach(function (btn) {
+        btn.setAttribute('aria-pressed', String(btn.getAttribute('data-work-filter') === cat));
+      });
+      if (countEl) countEl.textContent = 'Showing ' + visible + ' of ' + cards.length + ' works';
+    }
+
+    btns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        applyFilter(btn.getAttribute('data-work-filter') || 'all');
+      });
+    });
+    applyFilter('all');
+  })();
+
   /* ── Lab 1: cubic by conics ─────────────────────────────────────── */
   (function cubicLab() {
     var canvas = $('kh-cubic-canvas');
@@ -82,6 +118,7 @@
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = col.paper;
       ctx.fillRect(0, 0, W, H);
+      drawGildedFrame(ctx, W, H, col);
 
       // World window: the circle (0…b, height b/2) and the crossing, with margins; equal scales.
       var top = Math.max(b / 2, r.y) * 1.2;
@@ -91,6 +128,20 @@
       var oy = H - (H - (y1 - y0) * s) / 2 + y0 * s;
       function X(x) { return ox + x * s; }
       function Y(y) { return oy - y * s; }
+
+      // subtle gilded coordinate grid
+      ctx.save();
+      ctx.strokeStyle = col.gold;
+      ctx.globalAlpha = 0.16;
+      ctx.lineWidth = 1;
+      var step = Math.max(0.5, Math.pow(10, Math.floor(Math.log10(Math.max(1, b) / 3))));
+      for (var gx = Math.ceil(x0 / step) * step; gx <= x1; gx += step) {
+        ctx.beginPath(); ctx.moveTo(X(gx), Y(y0)); ctx.lineTo(X(gx), Y(y1)); ctx.stroke();
+      }
+      for (var gy = Math.ceil(y0 / step) * step; gy <= y1; gy += step) {
+        ctx.beginPath(); ctx.moveTo(X(x0), Y(gy)); ctx.lineTo(X(x1), Y(gy)); ctx.stroke();
+      }
+      ctx.restore();
 
       // axes
       ctx.strokeStyle = col.line; ctx.lineWidth = 1.5;
@@ -273,6 +324,7 @@
       var theta = K.summitAngle(Kv, size, size * 1.2) * Math.PI / 180;
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = col.paper; ctx.fillRect(0, 0, W, H);
+      drawGildedFrame(ctx, W, H, col);
 
       var w = Math.min(W * 0.62, H * 1.1) * (0.55 + size * 0.28);
       var h = w / 1.2;
@@ -471,12 +523,26 @@
       'a clay pot on a shelf', 'the night sky over a city', 'an old photograph', 'the first snow', 'a clock that runs fast',
       'a test you already handed in', 'a candle at the end of the night', 'a garden in winter'
     ];
-    var MODEL = [
-      'With them the seed of Wisdom did I sow,',
-      'And with mine own hand wrought to make it grow;',
-      'And this was all the Harvest that I reap’d—',
-      '“I came like Water, and like Wind I go.”'
-    ];
+    var MODELS = {
+      wind: [
+        'With them the seed of Wisdom did I sow,',
+        'And with mine own hand wrought to make it grow;',
+        'And this was all the Harvest that I reap’d—',
+        '“I came like Water, and like Wind I go.”'
+      ],
+      finger: [
+        'The Moving Finger writes; and, having writ,',
+        'Moves on: nor all your Piety nor Wit',
+        'Shall lure it back to cancel half a Line,',
+        'Nor all your Tears wash out a Word of it.'
+      ],
+      potter: [
+        'For I remember stopping by the way',
+        'To watch a Potter thumping his wet Clay:',
+        'And with its all-obliterated Tongue',
+        'It murmur’d—“Gently, Brother, gently, pray!”'
+      ]
+    };
 
     function update() {
       var lines = inputs.map(function (i) { return i.value; });
@@ -514,10 +580,13 @@
     $('kh-prompt-btn').addEventListener('click', function () {
       $('kh-prompt').textContent = 'Subject: ' + SUBJECTS[Math.floor(Math.random() * SUBJECTS.length)] + '.';
     });
-    $('kh-example').addEventListener('click', function () {
-      inputs.forEach(function (i, n) { i.value = MODEL[n]; });
-      override = [null, null, null, null];
-      update();
+    Array.prototype.forEach.call(forge.parentElement.querySelectorAll('[data-kh-model]'), function (btn) {
+      btn.addEventListener('click', function () {
+        var lines = MODELS[btn.getAttribute('data-kh-model')] || MODELS.wind;
+        inputs.forEach(function (i, n) { i.value = lines[n]; });
+        override = [null, null, null, null];
+        update();
+      });
     });
     $('kh-clear').addEventListener('click', function () {
       inputs.forEach(function (i) { i.value = ''; });
