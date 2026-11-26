@@ -1299,6 +1299,7 @@ function wire() {
   document.querySelectorAll('[data-new-project]').forEach((button) => button.addEventListener('click', newProject));
   $('wb-add-box').addEventListener('click', () => { addShape('box'); el.canvas.focus({ preventScroll: true }); });
   $('wb-help').addEventListener('click', () => el.helpDialog.showModal());
+  $('wb-city').addEventListener('click', () => { openCityPlan(); });
   document.querySelectorAll('[data-close-dialog]').forEach((button) => button.addEventListener('click', () => button.closest('dialog').close()));
   $('wb-focus').addEventListener('click', toggleFocus);
   window.addEventListener('pagehide', () => {
@@ -1448,12 +1449,55 @@ async function start() {
 function openFromLink() {
   const params = new URLSearchParams(location.search);
   const template = params.get('template'), blank = params.get('new'), linked = W.shapeLink(location.search);
-  if (!template && !blank && !params.get('shape')) return false;
+  if (!template && !blank && !params.get('shape') && params.get('tool') !== 'city') return false;
   window.history.replaceState(null, '', location.pathname + location.hash);
+  if (params.get('tool') === 'city') { openCityPlan(); return true; }
   if (template && templateById(template)) { startTemplate(template); return true; }
   if (blank && W.PRESETS[blank]) { startBlank(blank); return true; }
   if (linked) { startLinkedShape(linked); return true; }
   return false;
+}
+
+/* City plan: the Perspective City studio in a dialog. It shares its autosave with
+   the lesson, so a city drawn there is waiting here. Raising it replaces the
+   design with an Architecture project; Undo brings back what you had. */
+let cityStudio = null;
+async function openCityPlan() {
+  setPlaying(false);
+  const dialog = $('wb-city-dialog');
+  if (!cityStudio) {
+    if (!document.querySelector('link[data-perspective-city-css]')) {
+      const link = h('link', { rel: 'stylesheet', href: new URL('../../css/lessons/perspective-city.css', import.meta.url).href });
+      link.dataset.perspectiveCityCss = '';
+      document.head.append(link);
+    }
+    const { mountPerspectiveCity } = await import('../lessons/perspective-city.mjs');
+    cityStudio = mountPerspectiveCity(dialog.querySelector('[data-perspective-city]'), { threeD: false, workbench: raiseCity });
+  } else {
+    cityStudio.reload();
+  }
+  if (!dialog.open) dialog.showModal();
+  requestAnimationFrame(() => cityStudio.redraw());
+}
+
+async function raiseCity(city) {
+  if (!engine) { say('The geometry engine is still starting. Try again in a moment.'); return; }
+  let next;
+  try {
+    const [{ cityProject }, { parseCity }] = await Promise.all([import('./city.mjs'), import('../lessons/perspective-city-core.mjs')]);
+    next = cityProject(parseCity(city));
+  } catch (error) { say(`Could not raise that city: ${error.message}`); return; }
+  if (!next.objects.length) { say('Draw at least one footprint on the plan first.'); return; }
+  project = next;
+  el.multi.checked = false;
+  selection = [];
+  commit();
+  setMode('build');
+  projectChanged(true);
+  $('wb-city-dialog').close();
+  showLibrary('objects');
+  showMobilePanel('objects');
+  say(`Raised ${project.objects.length} towers (1 square = 1 m; prints at 1:100). Open a tower in Objects to edit its tiers. Undo brings back what you had before.`);
 }
 
 function startLinkedShape(link) {

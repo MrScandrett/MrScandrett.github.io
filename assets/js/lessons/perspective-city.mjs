@@ -14,14 +14,141 @@ const PAPER = '#fbfaf5';
 const PENCIL = 'rgba(70, 110, 170, 0.32)';
 const reduceMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const root = document.querySelector('[data-perspective-city]');
-if (root) init(root);
+// The studio's markup lives here so the lesson page and Workbench's City plan tool share it.
+const STUDIO_HTML = `      <div class="pc-toolbar" role="toolbar" aria-label="Drawing tools">
+        <div class="pc-group" aria-label="Tool">
+          <button type="button" data-tool="select" aria-pressed="false" title="Select and move (V)">↖ Select</button>
+          <button type="button" data-tool="rect" aria-pressed="true" title="Draw a box (R)">▭ Box</button>
+          <button type="button" data-tool="poly" aria-pressed="false" title="Draw any shape (P)">⬠ Shape</button>
+          <button type="button" data-tool="stamp" aria-pressed="false" title="Stamp a footprint (S)">◈ Stamp</button>
+          <button type="button" data-tool="word" aria-pressed="false" title="Block letters (T)">A Letters</button>
+        </div>
+        <div class="pc-group">
+          <label>Stamp
+            <select id="pc-stamp">
+              <option value="box">Box</option><option value="slab">Slab</option><option value="ell">L</option>
+              <option value="tee">T</option><option value="plus">Plus</option><option value="tri">Triangle</option>
+              <option value="wedge">Wedge</option><option value="hex">Hexagon</option><option value="round">Round tower</option>
+              <option value="ring">Courtyard</option><option value="star">Star</option>
+            </select>
+          </label>
+          <label>Size <output id="pc-size-out">4</output>
+            <input id="pc-size" type="range" min="1" max="5" step="0.5" value="2">
+          </label>
+          <label>Word <input id="pc-word" type="text" maxlength="8" value="CITY" autocomplete="off" spellcheck="false"></label>
+        </div>
+        <div class="pc-group">
+          <button type="button" id="pc-undo" title="Undo (Ctrl+Z)">↶ Undo</button>
+          <button type="button" id="pc-sample">Sample</button>
+          <button type="button" id="pc-random">Random</button>
+          <button type="button" id="pc-clear">Clear</button>
+          <a id="pc-workbench" class="pc-workbench" hidden>Build it in Workbench →</a>
+        </div>
+      </div>
 
-function init(root) {
+      <div class="pc-panes">
+        <div class="pc-pane pc-plan-pane" data-night-keep>
+          <p class="pc-pane-label"><strong>1 · Plan</strong> <span>draw footprints here</span></p>
+          <canvas id="pc-plan" tabindex="0" aria-label="Plan view: a 24 by 24 grid. Draw footprints with the chosen tool. Keys: V select, R box, P shape, S stamp, T letters, N next tower, arrows move, [ and ] change height, Delete removes."></canvas>
+        </div>
+        <div class="pc-pane pc-view-pane" data-night-keep>
+          <div class="pc-pane-label pc-tabs" role="tablist" aria-label="Skyline view">
+            <button type="button" role="tab" data-view="sketch" aria-selected="true">2 · Sketch (one-point)</button>
+            <button type="button" role="tab" data-view="3d" aria-selected="false">3D walk-around</button>
+          </div>
+          <canvas id="pc-sketch" tabindex="0" aria-label="Skyline drawn in one-point perspective from above. Drag anywhere, or use the arrow keys, to move the vanishing point."></canvas>
+          <canvas id="pc-3d" hidden aria-label="3D model of the city. Drag to orbit, scroll to zoom."></canvas>
+          <div id="pc-3d-tools" class="pc-3d-tools" hidden>
+            <button type="button" id="pc-match">Match the sketch camera</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pc-controls">
+        <fieldset class="pc-props">
+          <legend id="pc-props-title">Next tower</legend>
+          <label>Height <output id="pc-height-out">8</output>
+            <input id="pc-height" type="range" min="0.5" max="20" step="0.5" value="8">
+          </label>
+          <div class="pc-inks" role="group" aria-label="Marker colour">
+            <button type="button" data-ink="ink" style="--ink:#1f2328" aria-label="Black marker" aria-pressed="true"></button>
+            <button type="button" data-ink="green" style="--ink:#1f9d55" aria-label="Green marker" aria-pressed="false"></button>
+            <button type="button" data-ink="orange" style="--ink:#ef7d22" aria-label="Orange marker" aria-pressed="false"></button>
+            <button type="button" data-ink="red" style="--ink:#d7342b" aria-label="Red marker" aria-pressed="false"></button>
+            <button type="button" data-ink="blue" style="--ink:#2563eb" aria-label="Blue marker" aria-pressed="false"></button>
+            <button type="button" data-ink="purple" style="--ink:#7c3aed" aria-label="Purple marker" aria-pressed="false"></button>
+            <button type="button" data-ink="brown" style="--ink:#8a4b2a" aria-label="Brown marker" aria-pressed="false"></button>
+          </div>
+          <label>Fill
+            <select id="pc-fill"><option value="paper">White paper</option><option value="tint">Light tint</option><option value="solid">Coloured in</option></select>
+          </label>
+          <label>Setbacks
+            <select id="pc-tiers"><option value="1">None</option><option value="2">2 tiers</option><option value="3">3 tiers</option><option value="4">4 tiers</option></select>
+          </label>
+          <label>Roof
+            <select id="pc-roof"><option value="flat">Flat</option><option value="spire">Pyramid spire</option></select>
+          </label>
+          <div class="pc-sel-actions">
+            <button type="button" id="pc-duplicate">Copy</button>
+            <button type="button" id="pc-delete">Delete</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="pc-camera">
+          <legend>Camera &amp; marker</legend>
+          <label>Camera height <output id="pc-camera-out">44</output>
+            <input id="pc-camera" type="range" min="26" max="120" step="1" value="44">
+          </label>
+          <label>Marker weight
+            <input id="pc-weight" type="range" min="1.5" max="7" step="0.5" value="4">
+          </label>
+          <label class="pc-check"><input id="pc-ortho" type="checkbox" checked> Construction lines to the VP</label>
+          <label class="pc-check"><input id="pc-shade" type="checkbox"> Shade the walls</label>
+          <label class="pc-check"><input id="pc-wobble" type="checkbox" checked> Hand-drawn wobble</label>
+          <div class="pc-sel-actions">
+            <button type="button" id="pc-fly" aria-pressed="false">▶ Fly over</button>
+            <button type="button" id="pc-center">Centre VP</button>
+            <button type="button" id="pc-shuffle">New heights</button>
+          </div>
+          <div class="pc-sel-actions">
+            <button type="button" id="pc-png">Download PNG</button>
+            <button type="button" id="pc-save">Save city</button>
+            <button type="button" id="pc-open">Open city</button>
+            <input id="pc-file" type="file" accept=".json,application/json" hidden aria-label="Open a saved city file">
+          </div>
+        </fieldset>
+      </div>
+      <p id="pc-status" class="pc-status" role="status" aria-live="polite"></p>
+    `;
+
+/**
+ * Mount the studio into an element (empty, or holding the markup already).
+ * opts.threeD      false drops the 3D walk-around tab (Workbench is the 3D view)
+ * opts.workbench   a URL for the "Build it in Workbench" link, or a function to call instead
+ * Returns { city() → save-file object, flush() → write the autosave now }.
+ */
+export function mountPerspectiveCity(root, opts = {}) {
+  if (root.__perspectiveCity) return root.__perspectiveCity;
+  if (!root.querySelector('#pc-plan')) root.insertAdjacentHTML('beforeend', STUDIO_HTML);
+  if (opts.threeD === false) {
+    root.querySelectorAll('[data-view="3d"], #pc-3d, #pc-3d-tools').forEach(n => n.remove());
+    const tab = root.querySelector('[data-view="sketch"]');
+    if (tab) tab.textContent = '2 · Sketch (one-point perspective)';
+  }
+  const api = init(root, opts);
+  root.__perspectiveCity = api;
+  return api;
+}
+
+for (const el of document.querySelectorAll('[data-perspective-city]')) {
+  if (el.dataset.perspectiveCity !== 'manual') mountPerspectiveCity(el, { workbench: el.dataset.workbench || null });
+}
+
+function init(root, opts) {
   const $ = sel => root.querySelector(sel);
   const planCanvas = $('#pc-plan');
   const sketchCanvas = $('#pc-sketch');
-  const threeCanvas = $('#pc-3d');
+  const threeCanvas = $('#pc-3d') || document.createElement('canvas');
   const statusEl = $('#pc-status');
   const propsTitle = $('#pc-props-title');
   const inputs = {
@@ -700,7 +827,8 @@ function init(root) {
     root.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === view)));
     sketchCanvas.hidden = view !== 'sketch';
     threeCanvas.hidden = view !== '3d';
-    $('#pc-3d-tools').hidden = view !== '3d';
+    const tools3d = $('#pc-3d-tools');
+    if (tools3d) tools3d.hidden = view !== '3d';
     if (view === '3d' && !three) {
       say('Loading the 3D view…');
       try {
@@ -730,6 +858,35 @@ function init(root) {
     const ro = new ResizeObserver(() => { drawPlan(); requestFrame(); if (three) three.resize(); });
     ro.observe(planCanvas); ro.observe(sketchCanvas); ro.observe(threeCanvas);
   }
+
+  function flush() {
+    clearTimeout(saveTimer);
+    try { localStorage.setItem(STORE, JSON.stringify(serializeCity(state))); } catch (e) { /* private mode */ }
+  }
+  const wb = $('#pc-workbench');
+  if (wb && opts.workbench) {
+    wb.hidden = false;
+    if (typeof opts.workbench === 'function') {
+      wb.setAttribute('role', 'button'); wb.tabIndex = 0; wb.textContent = 'Raise it in Workbench →';
+      const go = e => { e.preventDefault(); stopFly(); flush(); opts.workbench(serializeCity(state)); };
+      wb.addEventListener('click', go);
+      wb.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') go(e); });
+    } else {
+      wb.href = opts.workbench;
+      wb.addEventListener('click', () => { stopFly(); flush(); });
+    }
+  }
+
+  return {
+    city: () => serializeCity(state),
+    flush,
+    /** Pick up a city saved by another page (the lesson and Workbench share one autosave). */
+    reload() {
+      if (load()) { state.selected = null; changed(true); }
+      requestFrame();
+    },
+    redraw() { drawPlan(); requestFrame(); }
+  };
 }
 
 function mix(a, b, t) {
