@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 516 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 517 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -15,7 +15,7 @@ This metadata-only draft organizes 516 public lessons and classifies 17 supporti
 
 # Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 65 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 66 lessons
 
 ## Mathematics & Quantitative Reasoning (MAT)
 
@@ -53,24 +53,25 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 65 lesson
 
 - **MAT-22** — Algebra Tiles: Factoring
 - **MAT-23** — Completing the Square
-- **MAT-24** — Logarithm Explorer: Powers & Scales
-- **MAT-25** — Smart Blackboard: Geometry & 3D Nets Studio
-- **MAT-26** — SOH-CAH-TOA
-- **MAT-27** — The Unit Circle & Waves
-- **MAT-28** — Matrix Transformations & Linear Algebra
-- **MAT-29** — Fibonacci Sequence
-- **MAT-30** — The Math of the Rubik's Cube
+- **MAT-24** — Circles & Complex Roots
+- **MAT-25** — Logarithm Explorer: Powers & Scales
+- **MAT-26** — Smart Blackboard: Geometry & 3D Nets Studio
+- **MAT-27** — SOH-CAH-TOA
+- **MAT-28** — The Unit Circle & Waves
+- **MAT-29** — Matrix Transformations & Linear Algebra
+- **MAT-30** — Fibonacci Sequence
+- **MAT-31** — The Math of the Rubik's Cube
 
 ### Calculus, Wave Analysis & Open Problems
 
-- **MAT-31** — How 𝑒 Was Discovered
-- **MAT-32** — Slope of a Curve
-- **MAT-33** — Snap, Crackle, Pop: The Ladder of Time Derivatives
-- **MAT-34** — Minecraft Calculus: Terrain & Water Flow
-- **MAT-35** — Area Under a Curve: Accumulation & Integrals
-- **MAT-36** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
-- **MAT-37** — The Equations Iceberg
-- **MAT-38** — Riemann Hypothesis
+- **MAT-32** — How 𝑒 Was Discovered
+- **MAT-33** — Slope of a Curve
+- **MAT-34** — Snap, Crackle, Pop: The Ladder of Time Derivatives
+- **MAT-35** — Minecraft Calculus: Terrain & Water Flow
+- **MAT-36** — Area Under a Curve: Accumulation & Integrals
+- **MAT-37** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
+- **MAT-38** — The Equations Iceberg
+- **MAT-39** — Riemann Hypothesis
 
 ## Astronomy & Space Science (COS)
 

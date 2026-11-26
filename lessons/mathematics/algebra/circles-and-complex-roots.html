@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Circles &amp; Complex Roots · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Complete the square twice to find a circle's centre and radius, see why the circle equation is Pythagoras, and watch a parabola lift off the x-axis as its roots become complex numbers p ± qi." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #7c3aed; --ll-tab-active: #7c3aed; --ll-tab-active-bg: rgba(124,58,237,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #c84b0a; --tan: #16a34a; }
+:where(html[data-lighting="night"]) .tc-page { --cos: #f46c26; }
+@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .tc-page { --cos: #ea580c; } }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-sin { color: var(--sin); font-weight: 700; }
+    .tc-cos { color: var(--cos); font-weight: 700; }
+    .tc-tan { color: var(--tan); font-weight: 700; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 320px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv.short { height: 280px; }
+    .tc-cv canvas { display: block; touch-action: none; }
+    .tc-cv.drag canvas { cursor: grab; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(240px, 60vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .tc-status { min-height: 1.4em; margin: 0.4rem 0 0; font-size: 0.85rem; font-weight: 700; }
+    .tc-status.ok { color: #15803d; }
+
+    .tc-table { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.8rem; }
+    .tc-table th, .tc-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); text-align: center; color: var(--text-secondary, #3f4f65); }
+    .tc-table th { color: var(--text-main, #1d1d1f); }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; }
+    .tc-practice-item input { width: 5.5rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { grid-column: 1 / -1; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+    @media (max-width: 520px) { .tc-practice-item { grid-template-columns: 1fr; } }
+
+    [data-lighting="night"] .tc-lede, [data-theme="vaporwave"] .tc-lede, [data-theme="bark"] .tc-lede,
+    [data-lighting="night"] .tc-card p, [data-theme="vaporwave"] .tc-card p, [data-theme="bark"] .tc-card p,
+    [data-lighting="night"] .tc-card li, [data-theme="vaporwave"] .tc-card li, [data-theme="bark"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-card, [data-theme="vaporwave"] .tc-card, [data-theme="bark"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-controls label, [data-theme="vaporwave"] .tc-controls label, [data-theme="bark"] .tc-controls label,
+    [data-lighting="night"] .tc-read strong, [data-theme="vaporwave"] .tc-read strong, [data-theme="bark"] .tc-read strong,
+    [data-lighting="night"] .tc-btn, [data-theme="vaporwave"] .tc-btn, [data-theme="bark"] .tc-btn,
+    [data-lighting="night"] .tc-table th, [data-theme="vaporwave"] .tc-table th, [data-theme="bark"] .tc-table th,
+    [data-lighting="night"] .tc-practice-item input, [data-theme="vaporwave"] .tc-practice-item input, [data-theme="bark"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-btn.primary, [data-theme="vaporwave"] .tc-btn.primary, [data-theme="bark"] .tc-btn.primary { color: #fff; }
+    [data-lighting="night"] .tc-table td, [data-theme="vaporwave"] .tc-table td, [data-theme="bark"] .tc-table td { color: rgba(245,245,247,0.72); }
+
+    .cc-page { --im: #7c3aed; }
+    [data-lighting="night"] .cc-page, [data-theme="vaporwave"] .cc-page, [data-theme="bark"] .cc-page { --sin: #7fb0ff; --cos: #ff9f5f; --tan: #4ade80; --im: #c4a5ff; }
+    .cc-im { color: var(--im); font-weight: 700; }
+    .tc-status.no { color: #b45309; }
+    [data-lighting="night"] .tc-status.no, [data-theme="vaporwave"] .tc-status.no, [data-theme="bark"] .tc-status.no { color: #fbbf24; }
+    .cc-eq { margin: 0.6rem 0; padding: 0.6rem 0.8rem; border: 1px dashed var(--line, #d2d2d7); border-radius: 10px; font: 700 1.08rem "IBM Plex Mono", ui-monospace, monospace; color: var(--text-main, #1d1d1f); overflow-wrap: anywhere; }
+    .cc-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .cc-forms div { padding: 0.55rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.74rem; color: var(--text-muted, #64748b); }
+    .cc-forms strong { display: block; margin-top: 0.15rem; font: 700 0.95rem "IBM Plex Mono", ui-monospace, monospace; color: var(--text-main, #1d1d1f); overflow-wrap: anywhere; }
+    .cc-answer { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin: 0.6rem 0; }
+    .cc-answer label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .cc-answer input { width: 7.5rem; padding: 0.32rem 0.5rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: inherit; font: 600 0.9rem "IBM Plex Mono", ui-monospace, monospace; }
+    .cc-btns [aria-pressed="true"] { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+    .cc-steps { margin: 0.6rem 0 0; padding: 0; list-style: none; }
+    .cc-steps li { padding: 0.5rem 0.2rem; border-top: 1px solid var(--line, #d2d2d7); font-size: 0.86rem; color: var(--text-main, #1d1d1f); }
+    .cc-step-math { margin-top: 0.25rem; white-space: pre-wrap; font: 600 0.92rem "IBM Plex Mono", ui-monospace, monospace; overflow-wrap: anywhere; }
+    .cc-step-note { margin-top: 0.2rem; font-size: 0.8rem; color: var(--text-muted, #64748b); }
+    .cc-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .cc-two figure { margin: 0; }
+    .cc-two figcaption { margin-top: 0.3rem; font-size: 0.78rem; color: var(--text-muted, #64748b); }
+    .cc-check { display: flex; align-items: center; gap: 0.45rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .cc-mistakes { display: grid; gap: 0.5rem; margin: 0.4rem 0 0; padding: 0; list-style: none; }
+    .cc-mistakes li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.6rem; padding: 0.55rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; }
+    .cc-mistakes .bad { text-decoration: line-through; text-decoration-color: #dc2626; text-decoration-thickness: 2px; }
+    .cc-mistakes span { font: 600 0.84rem "IBM Plex Mono", ui-monospace, monospace; overflow-wrap: anywhere; }
+    .cc-mistakes small { grid-column: 1 / -1; font-size: 0.8rem; color: var(--text-muted, #64748b); }
+    .cc-cube { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 1rem; align-items: center; }
+    .cc-cube svg { width: 100%; height: auto; color: var(--text-main, #1d1d1f); }
+    .cc-practice .tc-practice-item input { width: 7rem; }
+    @media (max-width: 560px) { .cc-cube, .cc-mistakes li { grid-template-columns: minmax(0, 1fr); } }
+    [data-lighting="night"] .cc-eq, [data-theme="vaporwave"] .cc-eq, [data-theme="bark"] .cc-eq,
+    [data-lighting="night"] .cc-forms strong, [data-theme="vaporwave"] .cc-forms strong, [data-theme="bark"] .cc-forms strong,
+    [data-lighting="night"] .cc-answer label, [data-theme="vaporwave"] .cc-answer label, [data-theme="bark"] .cc-answer label,
+    [data-lighting="night"] .cc-steps li, [data-theme="vaporwave"] .cc-steps li, [data-theme="bark"] .cc-steps li,
+    [data-lighting="night"] .cc-check, [data-theme="vaporwave"] .cc-check, [data-theme="bark"] .cc-check { color: rgba(245,245,247,0.92); }
+    @media print { .tc-cv { height: 260px !important; } .cc-two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page cc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Algebra 2</p>
+          <h1>Circles &amp; Complex Roots</h1>
+          <div class="tc-meta">
+            <span>Completing the square</span><span class="dot"></span>
+            <span>Centre and radius</span><span class="dot"></span>
+            <span>The discriminant</span><span class="dot"></span>
+            <span>Complex numbers p ± qi</span>
+          </div>
+          <p class="tc-lede">One move, completing the square, unlocks both halves of this lesson. Do it twice and a scrambled equation turns out to be a circle. Do it inside the quadratic formula and a parabola that never touches the x-axis still has two roots, just not on the number line.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>Explain why <span class="tc-mono">(x − h)² + (y − k)² = r²</span> describes a circle, using the Pythagorean theorem.</li>
+            <li>Complete the square in x and in y to find the centre and radius of a circle written in general form.</li>
+            <li>Use the discriminant <span class="tc-mono">b² − 4ac</span> to predict two real roots, one, or a complex pair.</li>
+            <li>Use <span class="tc-mono">i = √(−1)</span> to write complex roots exactly as <span class="tc-mono">p ± qi</span>, simplified.</li>
+          </ul>
+          <p>Prerequisites: <a href="completing-the-square.html">Completing the Square</a> and <a href="../geometry-and-trigonometry/pythagoras.html">Pythagoras &amp; Triangles</a>. Next: <a href="../geometry-and-trigonometry/unit-circle-waves.html">The Unit Circle &amp; Waves</a>.</p>
+        </section>
+
+        <section class="tc-card" id="build" style="--card-accent:#2563eb;">
+          <h2>Lab 1 · A Circle Is Pythagoras</h2>
+          <p>A circle is every point P that sits exactly <strong>r</strong> away from a centre <strong>(h, k)</strong>. Walk from the centre to P: you go <span class="tc-cos">x − h</span> across and <span class="tc-tan">y − k</span> up, and the straight-line distance is <strong>r</strong>. That is a right triangle, so <span class="tc-mono">(x − h)² + (y − k)² = r²</span>. Drag the centre or the edge, or move P around the circle.</p>
+          <div class="tc-cv drag" id="cb-box" style="height:380px;"><canvas id="cb-canvas" aria-label="A circle on a coordinate plane with a right triangle from its centre to a point P on the circle"></canvas></div>
+          <div class="tc-controls">
+            <label>centre h <input id="cb-h" type="range" min="-8" max="8" step="1" value="2" /> <span id="cb-hv" class="tc-mono">2</span></label>
+            <label>centre k <input id="cb-k" type="range" min="-8" max="8" step="1" value="-1" /> <span id="cb-kv" class="tc-mono">−1</span></label>
+            <label>radius r <input id="cb-r" type="range" min="0.5" max="9" step="0.5" value="5" /> <span id="cb-rv" class="tc-mono">5</span></label>
+            <label>P angle <input id="cb-t" type="range" min="0" max="355" step="5" value="40" /> <span id="cb-tv" class="tc-mono">40°</span></label>
+          </div>
+          <div class="cc-forms">
+            <div>Standard form (read the centre and radius)<strong id="cb-std"></strong></div>
+            <div>General form (multiplied out)<strong id="cb-gen"></strong></div>
+            <div>Pythagoras at P<strong id="cb-pyth"></strong></div>
+          </div>
+          <p><strong>Notice:</strong> in the general form you can't see the centre or radius at all. Expanding the squares scattered them into the x, y and number terms. Lab 2 runs the film backwards.</p>
+        </section>
+
+        <section class="tc-card" id="unhide" style="--card-accent:#ea580c;">
+          <h2>Lab 2 · Un-hide the Circle</h2>
+          <p>To get from general form back to standard form, <strong>complete the square twice</strong>: once for the x-terms and once for the y-terms. Whatever you add on the left, you add on the right. Solve it on paper, then enter the centre and radius. If you get stuck, reveal one step at a time.</p>
+          <div class="tc-btns cc-btns" role="group" aria-label="Difficulty">
+            <button class="tc-btn" type="button" data-uh-level="starter" aria-pressed="true">Starter</button>
+            <button class="tc-btn" type="button" data-uh-level="radical" aria-pressed="false">Radical radius</button>
+            <button class="tc-btn" type="button" data-uh-level="halves" aria-pressed="false">Half-number centre</button>
+            <button class="tc-btn" type="button" data-uh-level="scaled" aria-pressed="false">Leading coefficient</button>
+          </div>
+          <div class="tc-btns">
+            <button class="tc-btn primary" id="uh-new" type="button" style="background:#c2410c;border-color:#c2410c;">🎲 New circle</button>
+            <button class="tc-btn" id="uh-folder" type="button">📁 From real homework</button>
+          </div>
+          <p class="cc-eq" id="uh-eq" aria-live="polite"></p>
+          <div class="cc-answer">
+            <label>h = <input id="uh-h" type="text" inputmode="decimal" autocomplete="off" aria-label="Centre h" /></label>
+            <label>k = <input id="uh-k" type="text" inputmode="decimal" autocomplete="off" aria-label="Centre k" /></label>
+            <label>r = <input id="uh-r" type="text" autocomplete="off" aria-label="Radius r" /></label>
+            <button class="tc-btn" id="uh-check" type="button">Check</button>
+            <button class="tc-btn" id="uh-next" type="button">Reveal next step</button>
+          </div>
+          <p class="tc-status" id="uh-status" aria-live="polite"></p>
+          <ol class="cc-steps" id="uh-steps" hidden></ol>
+          <div class="tc-cv short" id="uh-box"><canvas id="uh-canvas" aria-label="Coordinate plane that reveals the circle once it is solved"></canvas></div>
+          <p><strong>When it isn't a circle:</strong> if the right-hand side comes out <strong>0</strong>, only the centre itself works (a "circle" of radius 0). If it comes out <strong>negative</strong>, no real point works, because two squares can never add to a negative number. That same dead end is what sends us into complex numbers in Lab 3.</p>
+        </section>
+
+        <section class="tc-card" id="lift" style="--card-accent:#7c3aed;">
+          <h2>Lab 3 · When the Parabola Lifts Off</h2>
+          <p>The real roots of <span class="tc-mono">y = ax² + bx + c</span> are where the parabola crosses the x-axis. Raise <strong>c</strong> until the parabola lifts off the axis. The roots don't vanish: they leave the number line and move into the <strong>complex plane</strong>, a sideways number line for real parts and an upright one for <span class="cc-im">imaginary</span> parts.</p>
+          <div class="cc-two">
+            <figure>
+              <div class="tc-cv" id="pb-box" style="height:320px;"><canvas id="pb-canvas" aria-label="Graph of the parabola y = ax² + bx + c"></canvas></div>
+              <figcaption>The parabola. Orange dots are real roots; the dashed violet curve is its flipped twin.</figcaption>
+            </figure>
+            <figure>
+              <div class="tc-cv" id="cp-box" style="height:320px;"><canvas id="cp-canvas" aria-label="Complex plane showing where the two roots are"></canvas></div>
+              <figcaption>The complex plane. Real roots sit on the horizontal axis; complex roots sit straight above and below the vertex.</figcaption>
+            </figure>
+          </div>
+          <div class="tc-controls">
+            <label>a <input id="pb-a" type="range" min="-3" max="3" step="0.5" value="1" /> <span id="pb-av" class="tc-mono">1</span></label>
+            <label>b <input id="pb-b" type="range" min="-8" max="8" step="0.5" value="-4" /> <span id="pb-bv" class="tc-mono">−4</span></label>
+            <label>c <input id="pb-c" type="range" min="-6" max="12" step="0.5" value="8" /> <span id="pb-cv" class="tc-mono">8</span></label>
+          </div>
+          <div class="tc-btns">
+            <button class="tc-btn primary" id="pb-sweep" type="button" style="background:#6d28d9;border-color:#6d28d9;">▶ Sweep c</button>
+            <label class="cc-check"><input id="pb-mirror" type="checkbox" checked /> Show the flipped twin</label>
+          </div>
+          <p class="tc-mono" id="pb-eq"></p>
+          <div class="tc-read">
+            <div>Discriminant b² − 4ac<strong id="pb-d"></strong></div>
+            <div>Vertex<strong id="pb-vx"></strong></div>
+            <div>Roots<strong id="pb-roots"></strong></div>
+          </div>
+          <p class="tc-status" id="pb-kind" aria-live="polite"></p>
+          <p><strong>Press Sweep c and watch the trail.</strong> The two real roots slide together along the axis, collide at the vertex when the discriminant hits 0, then turn a right angle and split up and down. The real part of a complex pair is always the vertex's x, <span class="tc-mono">p = −b/2a</span>.</p>
+          <p><strong>The flipped twin:</strong> flip the parabola upside down about its vertex. The twin <em>does</em> cross the axis, at <span class="tc-mono">p ± q</span>. That q is exactly the imaginary part: the roots of the original are <span class="tc-mono">p ± <span class="cc-im">q</span>i</span>. Turn the twin on and check it against the complex plane.</p>
+        </section>
+
+        <section class="tc-card" id="formula" style="--card-accent:#16a34a;">
+          <h2>Lab 4 · The Quadratic Formula with i</h2>
+          <p>The formula <span class="tc-mono">x = (−b ± √(b² − 4ac)) / 2a</span> still works when the discriminant is negative. You only need one new fact: <span class="tc-mono">i = √(−1)</span>, so <span class="tc-mono">i² = −1</span> and <span class="tc-mono">√(−95) = i√95</span>. Find the discriminant, then the real part <span class="tc-mono">−b/2a</span> and the imaginary part <span class="tc-mono">√|b² − 4ac| / 2|a|</span>.</p>
+          <div class="tc-btns cc-btns" role="group" aria-label="Difficulty" style="--card-accent:#15803d;">
+            <button class="tc-btn" type="button" data-qf-level="whole" aria-pressed="true">Whole-number parts</button>
+            <button class="tc-btn" type="button" data-qf-level="radical" aria-pressed="false">Radicals</button>
+            <button class="tc-btn" type="button" data-qf-level="leading" aria-pressed="false">Leading coefficient</button>
+          </div>
+          <div class="tc-btns">
+            <button class="tc-btn primary" id="qf-new" type="button" style="background:#15803d;border-color:#15803d;">🎲 New equation</button>
+            <button class="tc-btn" id="qf-folder" type="button">📁 5y² − 5y + 6 = 0</button>
+            <button class="tc-btn" id="qf-folder2" type="button">📁 x² + x + 4 = 0</button>
+          </div>
+          <p class="cc-eq" id="qf-eq" aria-live="polite"></p>
+          <div class="cc-answer">
+            <label>b² − 4ac = <input id="qf-d" type="text" inputmode="decimal" autocomplete="off" aria-label="Discriminant" /></label>
+            <label>real part = <input id="qf-re" type="text" inputmode="decimal" autocomplete="off" aria-label="Real part" /></label>
+            <label>imaginary part = ± <input id="qf-im" type="text" autocomplete="off" aria-label="Imaginary part" /> i</label>
+          </div>
+          <div class="tc-btns">
+            <button class="tc-btn" id="qf-check" type="button">Check</button>
+            <button class="tc-btn" id="qf-next" type="button">Reveal next step</button>
+          </div>
+          <p class="tc-status" id="qf-status" aria-live="polite"></p>
+          <ol class="cc-steps" id="qf-steps" hidden></ol>
+          <p>Answers can be typed as fractions and roots: <span class="tc-mono">1/2</span>, <span class="tc-mono">√95/10</span> or <span class="tc-mono">sqrt(95)/10</span>. The solving variable here is <span class="tc-mono" id="qf-var">x</span>.</p>
+        </section>
+
+        <section class="tc-card" id="mistakes" style="--card-accent:#dc2626;">
+          <h2>Slips Seen on Real Homework</h2>
+          <p>Every one of these came from a real Algebra 2 worksheet. Each is a single small move, and each changes the answer.</p>
+          <ul class="cc-mistakes">
+            <li><span class="bad">✗ (x² + 10x + 25) + (y² − 6y + 9) = −18</span><span>✓ … = −18 + 25 + 9 = 16</span><small>You added 25 and 9 on the left, so add them on the right too. Otherwise the equation changes.</small></li>
+            <li><span class="bad">✗ (x + 5)² → centre x = 5</span><span>✓ (x + 5)² = (x − (−5))² → h = −5</span><small>The form is x <em>minus</em> h. A plus sign inside means the centre is on the negative side.</small></li>
+            <li><span class="bad">✗ = 16, so radius 16</span><span>✓ r² = 16, so r = 4</span><small>The right side is r². Take the square root, and simplify it: r² = 12 gives r = 2√3.</small></li>
+            <li><span class="bad">✗ 4(k − 1)² = 4k² + 4</span><span>✓ 4(k² − 2k + 1) = 4k² − 8k + 4</span><small>A squared binomial has a middle term. That missing −2k is the "corner piece" completing the square is all about.</small></li>
+            <li><span class="bad">✗ 5 ± √(−95): no answer</span><span>✓ √(−95) = i√95</span><small>A negative discriminant means no <em>real</em> roots. Pull out i and keep going.</small></li>
+            <li><span class="bad">✗ (5 ± i√95)/10 = 5 ± i√95/10</span><span>✓ = 1/2 ± (√95/10)i</span><small>The 10 divides the whole top: both the 5 and the i√95.</small></li>
+          </ul>
+        </section>
+
+        <section class="tc-card" id="cube" style="--card-accent:#0ea5e9;">
+          <h2>Going Further · Three Cube Roots on a Circle</h2>
+          <div class="cc-cube">
+            <svg viewBox="-3.2 -3.2 6.4 6.4" role="img" aria-label="The three cube roots of −8 drawn as points on a circle of radius 2 in the complex plane">
+              <line x1="-3" y1="0" x2="3" y2="0" stroke="currentColor" stroke-width="0.04" opacity="0.6" />
+              <line x1="0" y1="-3" x2="0" y2="3" stroke="currentColor" stroke-width="0.04" opacity="0.6" />
+              <circle cx="0" cy="0" r="2" fill="none" stroke="#2563eb" stroke-width="0.07" />
+              <polygon points="-2,0 1,-1.732 1,1.732" fill="none" stroke="#7c3aed" stroke-width="0.05" stroke-dasharray="0.15 0.1" />
+              <circle cx="-2" cy="0" r="0.16" fill="#c2410c" />
+              <circle cx="1" cy="-1.732" r="0.16" fill="#7c3aed" />
+              <circle cx="1" cy="1.732" r="0.16" fill="#7c3aed" />
+              <text x="-2.3" y="-0.3" font-size="0.42" fill="currentColor" text-anchor="end">−2</text>
+              <text x="1.25" y="-1.95" font-size="0.42" fill="currentColor">1 + i√3</text>
+              <text x="1.25" y="2.25" font-size="0.42" fill="currentColor">1 − i√3</text>
+            </svg>
+            <div>
+              <p><span class="tc-mono">x³ = −8</span> has the real answer <strong>x = −2</strong> (not 2: (−2)³ = −8). But a cubic has <em>three</em> roots. The other two are a complex pair, <span class="tc-mono">1 ± i√3</span>.</p>
+              <p>All three sit on a <strong>circle of radius 2</strong>, evenly spaced 120° apart. Check one with Lab 1's idea: the distance from 0 to <span class="tc-mono">1 + i√3</span> is <span class="tc-mono">√(1² + (√3)²) = √4 = 2</span>. Circles and complex roots turn out to be the same subject. The <a href="../geometry-and-trigonometry/unit-circle-waves.html">Unit Circle</a> lesson picks up from here.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="tc-card cc-practice" id="practice" style="--card-accent:#0ea5e9;">
+          <h2>Practice</h2>
+          <p>Type exact answers or decimals: <span class="tc-mono">−1</span>, <span class="tc-mono">3/2</span>, <span class="tc-mono">2√3</span> and <span class="tc-mono">3.46</span> all work.</p>
+          <div>
+            <div class="tc-practice-item" data-answer="-1" data-hint="(y + 1)² = (y − (−1))², so k = −1."><p>1. (x − 4)² + (y + 1)² = 9. What is k, the y of the centre?</p><input type="text" inputmode="decimal" aria-label="Answer 1" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="5" data-hint="(x² − 6x + 9) + (y² + 8y + 16) = 0 + 9 + 16 = 25, so r = √25."><p>2. x² + y² − 6x + 8y = 0. What is the radius?</p><input type="text" inputmode="decimal" aria-label="Answer 2" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="9" data-hint="Move −4 across: 4. Then add (4/2)² = 4 and (−2/2)² = 1: 4 + 4 + 1."><p>3. x² + y² + 4x − 2y − 4 = 0. What is r² after completing the square?</p><input type="text" inputmode="decimal" aria-label="Answer 3" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="3" data-hint="Divide by 2 first: x² + y² − 4x − 5 = 0, then (x − 2)² + y² = 5 + 4."><p>4. 2x² + 2y² − 8x − 10 = 0. What is the radius?</p><input type="text" inputmode="decimal" aria-label="Answer 4" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="2√3" data-hint="(x − 1)² + (y + 2)² = 7 + 1 + 4 = 12, and √12 = √(4 · 3) = 2√3."><p>5. x² + y² − 2x + 4y − 7 = 0. What is the radius? (Exact or decimal.)</p><input type="text" aria-label="Answer 5" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="0" data-hint="(x + 1)² + y² = −10 + 1 = −9. Two squares can't add to a negative."><p>6. How many points (x, y) make x² + y² + 2x + 10 = 0 true?</p><input type="text" inputmode="decimal" aria-label="Answer 6" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="-36" data-hint="b² − 4ac = 2² − 4(1)(10) = 4 − 40."><p>7. What is the discriminant of x² + 2x + 10 = 0?</p><input type="text" inputmode="decimal" aria-label="Answer 7" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="2" data-hint="b² − 4ac = 36 − 52 = −16, √(−16) = 4i, and 4 ÷ 2 = 2."><p>8. The roots of x² − 6x + 13 = 0 are 3 ± qi. What is q?</p><input type="text" inputmode="decimal" aria-label="Answer 8" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="3/2" data-hint="b² − 4ac = 4 − 40 = −36, so the imaginary part is 6 ÷ (2 · 2)."><p>9. What is the imaginary part of the roots of 2x² + 2x + 5 = 0?</p><input type="text" inputmode="decimal" aria-label="Answer 9" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="1/2" data-hint="Real part = −b/2a = −(−5)/(2 · 5) = 5/10."><p>10. What is the real part of the roots of 5y² − 5y + 6 = 0?</p><input type="text" inputmode="decimal" aria-label="Answer 10" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+            <div class="tc-practice-item" data-answer="-4" data-hint="(2i)² = 2² · i² = 4 · (−1)."><p>11. What is (2i)²?</p><input type="text" inputmode="decimal" aria-label="Answer 11" /><button class="tc-btn" type="button">Check</button><span class="fb"></span></div>
+          </div>
+        </section>
+
+        <section class="tc-card" style="--card-accent:#dc2626;">
+          <h2>Exit Ticket</h2>
+          <ul>
+            <li>Write the equation of a circle with centre (−3, 4) and radius 6 in standard form, then expand it into general form.</li>
+            <li>Without solving, explain how you can tell that x² + 4x + 9 = 0 has complex roots, and where they sit in the complex plane.</li>
+            <li>A classmate says (x + 5)² + (y − 3)² = 16 has centre (5, −3) and radius 16. Find both mistakes and explain each in one sentence.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <aside class="ll-panel" aria-label="Lesson panel">
+      <div class="ll-panel-inner">
+        <div class="ll-tabs" role="tablist" aria-label="Circles and complex roots panel tabs">
+          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
+          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+        </div>
+        <div class="ll-pane active" data-ll-panel="guide">
+          <span class="ll-label">Circles</span>
+          <div class="ll-info"><strong>Standard</strong> (x − h)² + (y − k)² = r²</div>
+          <div class="ll-info"><strong>General</strong> x² + y² + Dx + Ey + F = 0</div>
+          <div class="ll-info">1. Divide out any number in front of x² and y².</div>
+          <div class="ll-info">2. Group x-terms and y-terms; move the constant across.</div>
+          <div class="ll-info">3. Half each middle coefficient, square it, add it to <strong>both</strong> sides.</div>
+          <div class="ll-info">4. Factor. Flip the signs for the centre; square-root the right side for r.</div>
+          <span class="ll-label">Complex roots</span>
+          <div class="ll-info"><strong>i</strong> = √(−1), i² = −1</div>
+          <div class="ll-info"><strong>b² − 4ac &lt; 0</strong> two complex roots p ± qi</div>
+          <div class="ll-info"><strong>p</strong> = −b/2a (vertex x)</div>
+          <div class="ll-info"><strong>q</strong> = √|b² − 4ac| / 2|a|</div>
+        </div>
+        <div class="ll-pane" data-ll-panel="controls">
+          <span class="ll-label">Lesson Flow</span>
+          <div class="ll-info"><strong>Warm-up</strong> Plot every point 5 away from (0, 0). What shape appears, and what rule do the points follow?</div>
+          <div class="ll-info"><strong>Lab 1</strong> Move P all the way round and point out that the Pythagoras line always totals r².</div>
+          <div class="ll-info"><strong>Lab 2</strong> Start with “From real homework”. Students solve on paper and reveal steps only to check.</div>
+          <div class="ll-info"><strong>Lab 3</strong> Ask for a prediction before pressing Sweep: where do the roots go when the parabola lifts off?</div>
+          <div class="ll-info"><strong>Lab 4</strong> Pairs: one finds the discriminant, the other the parts; swap each round.</div>
+          <div class="ll-info"><strong>Close</strong> Slips card: have each student find which slip they are most likely to make.</div>
+        </div>
+      </div>
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+    </button>
+  </div>
+</div>
+
+  <footer class="site-footer">
+    <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+  </footer>
+
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/lessons/circle-complex-math.js"></script>
+  <script src="../../../assets/js/lessons/circles-complex-roots.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/math-pathway-nav.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
