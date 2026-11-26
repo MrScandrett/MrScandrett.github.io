@@ -12,6 +12,15 @@
   var KHAYYAM = 'language-literature/pioneers/omar-khayyam.html';
 
   var LINKS = {
+    'engineering/mechanical-and-civil-design/hydra-matic-transmission.html': [
+      ['engineering/mechanical-and-civil-design/mechanical-drives.html', 'Mechanical Drives: How Motors Move Things', 'Planetary sets are one of eighteen drives: run them beside worms, harmonic drives, belts, chains and ball screws.']
+    ],
+    'engineering/mechanical-and-civil-design/simple-machines-lab.html': [
+      ['engineering/mechanical-and-civil-design/mechanical-drives.html', 'Mechanical Drives: How Motors Move Things', 'The screw and the wheel grown up: see how gears, belts and leadscrews carry a motor\'s power to a load.']
+    ],
+    'computer-science/robotics/robot-build-studio.html': [
+      ['engineering/mechanical-and-civil-design/mechanical-drives.html', 'Mechanical Drives: How Motors Move Things', 'Choose the gearbox for your robot: compare planetary, harmonic, cycloidal and worm drives on backlash, torque and holding.']
+    ],
     'physics/waves-and-sound/sound-and-vibration.html': [
       ['physics/waves-and-sound/binaural-beats.html', 'Binaural Beats: Two Ears, Two Tones', 'Send a different tone to each ear and compare it with ordinary acoustic beats and a same-tone control.']
     ],

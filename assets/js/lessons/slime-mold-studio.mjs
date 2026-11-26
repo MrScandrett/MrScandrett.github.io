@@ -417,7 +417,7 @@ const animation = SimKit.loop(dt => {
   grow(job.trial);
   if (job.trial.step === stepsPerRun) job.done();
   paint();
-});
+}, { el: canvas });
 animation.pause();
 
 function startAnimation() {

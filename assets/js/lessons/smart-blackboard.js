@@ -1340,7 +1340,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           controls.update();
           threeSceneKit.syncSize();
           renderer.render(scene, camera);
-        });
+        }, { el: threeCanvas });
       }
 
       /* 1. Cube Net Unfold */

@@ -917,6 +917,7 @@
   })();
   </script>
 
+  <script src="../../assets/js/sim-kit.js"></script>
   <script>
   (function () {
     const canvas = document.getElementById('pbd-canvas');
@@ -1877,18 +1878,13 @@
 
       Object.keys(MODEL_CONFIGS).forEach(name => createViewer(name, MODEL_CONFIGS[name]));
 
-      const priorityLoads = ['Earth', 'Sun', 'Moon', 'Jupiter', 'Saturn'];
+      // Only the opening view's bodies load with the page (~3 MB). The other planets (~10 MB,
+      // Saturn alone is 6.7 MB) wait until the visitor zooms or starts the journey
+      // (noteInteraction), and until then draw as their 2D stand-ins.
+      const priorityLoads = ['Earth', 'Moon'];
       priorityLoads.forEach(name => {
         const viewer = viewers.get(name);
         if (viewer) viewer.load();
-      });
-
-      requestIdle(() => {
-        Object.keys(MODEL_CONFIGS).forEach(name => {
-          if (priorityLoads.includes(name)) return;
-          const viewer = viewers.get(name);
-          if (viewer) viewer.load();
-        });
       });
 
       return {
@@ -1987,6 +1983,7 @@
 
     function startJourney() {
       stopJourney();
+      if (modelSystem && modelSystem.noteInteraction) modelSystem.noteInteraction();
       const leg2 = journeyLabel() !== 'Start Journey';
       const from = leg2 ? parseFloat(slider.value) : 0;
       const to = leg2 ? 100 : LEG1_END;
@@ -2764,11 +2761,13 @@
       draw();
     });
 
+    // Waits while the zoom stage is scrolled away or the tab is hidden.
+    const nextFrame = window.SimKit ? cb => SimKit.frame(wrap, cb) : cb => requestAnimationFrame(cb);
     let animId;
     function animate() {
       draw();
       if (modelSystem) modelSystem.render();
-      animId = requestAnimationFrame(animate);
+      animId = nextFrame(animate);
     }
 
     // Scroll to zoom

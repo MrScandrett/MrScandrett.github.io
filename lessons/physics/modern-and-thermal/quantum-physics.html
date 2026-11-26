@@ -598,6 +598,7 @@
     .quantum-h2 { margin: 0 0 0.2rem; color: #f4fbff; font-size: 1.25rem; letter-spacing: -0.03em; }
     .quantum-sub { margin: 0; color: rgba(225, 239, 255, 0.7); font-size: 0.9rem; }
   </style>
+<script src="../../../assets/js/sim-kit.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -1464,15 +1465,15 @@
         const e = Math.floor(Math.log10(p));
         return (p / Math.pow(10, e)).toFixed(1) + " × 10" + sup(e);
       }
-      function loop(fn) {
+      function loop(el, fn) { if (!fn) { fn = el; el = null; }
         let last = performance.now();
         function frame(now) {
           const dt = Math.min(0.05, (now - last) / 1000);
           last = now;
           if (!document.hidden) fn(dt, now / 1000);
-          requestAnimationFrame(frame);
+          (el && window.SimKit ? SimKit.frame(el, frame) : requestAnimationFrame(frame));
         }
-        requestAnimationFrame(frame);
+        (el && window.SimKit ? SimKit.frame(el, frame) : requestAnimationFrame(frame));
       }
       return { $: $, nmToColor: nmToColor, bandName: bandName, fmtProb: fmtProb, loop: loop, reduceMotion: reduceMotion };
     })();
@@ -1509,7 +1510,7 @@
       }
       ["peMetal", "peWave", "peInt"].forEach(function (id) { $(id).addEventListener("input", update); });
 
-      QP.loop(function (dt) {
+      QP.loop(canvas, function (dt) {
         const E = energy();
         carry += intensity * 1.6 * dt;
         while (carry >= 1) {
@@ -1863,7 +1864,7 @@
       $("tunFire").addEventListener("click", fire);
       update();
 
-      QP.loop(function (dt, t) {
+      QP.loop(canvas, function (dt, t) {
         const phase = QP.reduceMotion ? 0 : t * 4;
         const bx1 = bx0 + L * nmPx;
         ctx.clearRect(0, 0, W, H);

@@ -1276,6 +1276,6 @@ import { createScene } from '../sim-kit-three.mjs';
   ══════════════════════════════════════════ */
   onResize();
   onParamChange(true);
-  SimKit.loop(animate);
+  SimKit.loop(animate, { el: document.getElementById('earth-canvas') });
 
 })();

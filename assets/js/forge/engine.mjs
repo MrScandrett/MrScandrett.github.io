@@ -23,6 +23,22 @@ const MANIFOLD_MEMBER = ['add', 'subtract', 'intersect', 'decompose', 'warp', 't
 const SECTION_STATIC = ['square', 'circle', 'union', 'difference', 'intersection', 'compose', 'ofPolygons', 'hull'];
 const SECTION_MEMBER = ['add', 'subtract', 'intersect', 'rectClip', 'decompose', 'transform', 'translate', 'rotate', 'scale', 'mirror', 'simplify', 'offset', 'hull', 'extrude', 'revolve', 'warp'];
 
+/* Demo poses: a list of steps applied in order, in the part's own (pre-layout) millimetres.
+   ['x'|'y'|'z', degrees, pivot?] turns about an axis through `pivot` (default the origin);
+   ['t', x, y, z] moves. demo-player.mjs applies the same steps to Three.js meshes. */
+export function applyOps(manifold, ops) {
+  let m = manifold;
+  for (const op of ops) {
+    if (op[0] === 't') m = m.translate([op[1], op[2], op[3]]);
+    else {
+      const p = op[2] || [0, 0, 0];
+      const r = op[0] === 'x' ? [op[1], 0, 0] : op[0] === 'y' ? [0, op[1], 0] : [0, 0, op[1]];
+      m = m.translate([-p[0], -p[1], -p[2]]).rotate(r).translate(p);
+    }
+  }
+  return m;
+}
+
 export const PLA_DENSITY = 1.24;          // g/cm³
 const SHELL = 0.8;                        // two 0.4 mm perimeters / top-bottom skin
 const INFILL = 0.15;
@@ -135,7 +151,7 @@ export function overhangs(positions, limitDeg = OVERHANG_LIMIT) {
 export function layoutBodies(bodies, printer = DEFAULT_PRINTER, arrange = 'apart') {
   if (arrange === 'keep') {
     const { size } = bounds(concat(bodies.map((b) => b.positions)));
-    return { bodies, size, fit: printerFit(size, printer), nested: true };
+    return { bodies: bodies.map((b) => ({ ...b, offset: [0, 0, 0] })), size, fit: printerFit(size, printer), nested: true };
   }
   if (arrange === 'nested') {
     const { min, max } = bounds(concat(bodies.map((b) => b.positions)));
@@ -143,7 +159,7 @@ export function layoutBodies(bodies, printer = DEFAULT_PRINTER, arrange = 'apart
     const placed = bodies.map((b) => {
       const p = new Float32Array(b.positions.length);
       for (let k = 0; k < p.length; k += 3) { p[k] = b.positions[k] + d[0]; p[k + 1] = b.positions[k + 1] + d[1]; p[k + 2] = b.positions[k + 2] + d[2]; }
-      return { ...b, positions: p };
+      return { ...b, positions: p, offset: d };
     });
     const size = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
     return { bodies: placed, size, fit: printerFit(size, printer), nested: true };
@@ -173,7 +189,7 @@ export function layoutBodies(bodies, printer = DEFAULT_PRINTER, arrange = 'apart
     const [dx, dy, dz] = offsets[i];
     const p = new Float32Array(b.positions.length);
     for (let k = 0; k < p.length; k += 3) { p[k] = b.positions[k] + dx; p[k + 1] = b.positions[k + 1] + dy; p[k + 2] = b.positions[k + 2] + dz; }
-    return { ...b, positions: p };
+    return { ...b, positions: p, offset: offsets[i] };
   });
   const all = bounds(concat(placed.map((b) => b.positions)));
   return { bodies: placed, size: all.size, fit: printerFit(all.size, printer) };
@@ -257,6 +273,43 @@ export async function createEngine(ManifoldModule, { font } = {}) {
     }
   }
 
+  /* Builds the part again, moves its pieces through `samples` poses of its demo and
+     reports where any two pieces overlap. Pieces that are meant to touch (a peg in
+     its hole) are built with clearance, so any real overlap means the parts bind. */
+  function demoCheck(part, givenParams, givenSettings = {}, samples = 12) {
+    const params = resolveParams(part, givenParams);
+    const settings = { ...DEFAULT_SETTINGS, ...givenSettings };
+    const ctx = { Manifold, CrossSection, Mesh, font, settings, printer: DEFAULT_PRINTER, track };
+    try {
+      const built = part.build(ctx, params);
+      const demo = built.demo;
+      if (!demo) return null;
+      const names = built.bodies.map((b) => b.name);
+      const pairs = [];
+      let worst = null;
+      for (let s = 0; s < samples; s++) {
+        const u = demo.mode === 'swing' ? Math.sin((2 * Math.PI * s) / samples) : s / samples;
+        const pose = demo.pose(u);
+        const moved = built.bodies.map((b, i) => applyOps(b.manifold, pose[i] || []));
+        for (let i = 0; i < moved.length; i++) {
+          for (let j = i + 1; j < moved.length; j++) {
+            if (demo.ignore?.some(([a, b]) => (a === i && b === j) || (a === j && b === i))) continue;
+            const v = moved[i].intersect(moved[j]).volume();
+            if (v > (demo.tolerance ?? 0.5)) {
+              pairs.push({ a: names[i], b: names[j], u, volume: v });
+              if (!worst || v > worst.volume) worst = { a: names[i], b: names[j], u, volume: v };
+            }
+          }
+        }
+      }
+      return { samples, worst, pairs };
+    } catch (error) {
+      return { error: error.message || String(error) };
+    } finally {
+      free();
+    }
+  }
+
   /* fn(ctx) may build anything; copy plain data out before it returns. */
   function scoped(fn) {
     try {
@@ -266,7 +319,7 @@ export async function createEngine(ManifoldModule, { font } = {}) {
     }
   }
 
-  return { run, scoped, wasm };
+  return { run, scoped, demoCheck, wasm };
 }
 
 function finish(part, params, settings, rawBodies, built) {
@@ -316,5 +369,5 @@ function finish(part, params, settings, rawBodies, built) {
     { label: 'PLA', value: `≈ ${round(grams, grams < 10 ? 1 : 0)} g` },
     { label: 'Print time', value: `≈ ${formatDuration(printMinutes(plastic))}` },
   ];
-  return { bodies, layout, verdicts, stats, notes: built.notes || [] };
+  return { bodies, layout, verdicts, stats, notes: built.notes || [], demo: built.demo || null };
 }

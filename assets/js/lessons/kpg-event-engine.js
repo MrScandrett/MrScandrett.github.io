@@ -8,12 +8,12 @@
 
   var SHOW_LENGTH = 18000;
   var CUES = [
-    { at: 0, step: 0, phase: "warning", message: "T−00:18 · Unusual object detected above the horizon" },
-    { at: 3000, step: 1, phase: "entry", message: "T−00:15 · Atmospheric entry · The sky begins to burn" },
-    { at: 7000, step: 2, phase: "impact", message: "T+00:00 · Chicxulub impact · Energy crosses Earth systems" },
-    { at: 9200, step: 3, phase: "firestorm", message: "T+hours · Ejecta returns and landscapes ignite" },
-    { at: 13500, step: 4, phase: "winter", message: "T+months–years · Sunlight and photosynthesis collapse" },
-    { at: SHOW_LENGTH, step: 4, phase: "complete", message: "Event complete · The recovery story now begins", button: "Replay extinction experience" }
+    { at: 0, step: 0, phase: "warning", message: "T−00:18 · Unusual object detected above the horizon", hudLabel: "Extinction event in progress", mapClock: "T−00:18" },
+    { at: 3000, step: 1, phase: "entry", message: "T−00:15 · Atmospheric entry · The sky begins to burn", hudLabel: "Atmospheric entry", mapClock: "T−00:15" },
+    { at: 7000, step: 2, phase: "impact", message: "T+00:00 · Chicxulub impact · Energy crosses Earth systems", hudLabel: "Chicxulub impact", mapClock: "T+00:00" },
+    { at: 9200, step: 3, phase: "firestorm", message: "T+hours · Ejecta returns and landscapes ignite", hudLabel: "Global ejecta firestorm", mapClock: "T+01 HOUR" },
+    { at: 13500, step: 4, phase: "winter", message: "T+months–years · Sunlight and photosynthesis collapse", hudLabel: "Impact winter established", mapClock: "T+24 HOURS" },
+    { at: SHOW_LENGTH, step: 4, phase: "complete", message: "Event complete · The recovery story now begins", hudLabel: "Impact winter established", mapClock: "T+48 HOURS · GLOBAL", button: "Replay extinction experience" }
   ];
 
   function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
@@ -38,15 +38,23 @@
     this.hudLabel = this.world.querySelector("[data-kpg-hud-label]");
     this.particles = [];
     this.running = false;
+    this.isPaused = false;
     this.elapsed = 0;
     this.cueIndex = -1;
     this.frame = 0;
     this.lastFrame = 0;
+    this.shakeTimer = 0;
     this.audio = null;
     this.soundEnabled = false;
     this.reducedMotion = global.matchMedia("(prefers-reduced-motion: reduce)").matches;
     this.resize = this.resize.bind(this);
     this.tick = this.tick.bind(this);
+    this.raf = (global.SimKit && typeof global.SimKit.raf === "function")
+      ? global.SimKit.raf(this.canvas)
+      : function (cb) { return global.requestAnimationFrame(cb); };
+    this.cancelRaf = (this.raf && typeof this.raf.cancel === "function")
+      ? this.raf.cancel.bind(this.raf)
+      : function (id) { global.cancelAnimationFrame(id); };
     this.resize();
     global.addEventListener("resize", this.resize, { passive: true });
     this.resizeObserver = global.ResizeObserver ? new ResizeObserver(this.resize) : null;
@@ -70,19 +78,191 @@
     this.soundEnabled = Boolean(options && options.sound);
     if (this.soundEnabled) this.initAudio();
     this.running = true;
+    this.isPaused = false;
     this.startedAt = performance.now();
-    this.lastFrame = this.startedAt;
+    this.lastFrame = 0;
     this.world.dataset.show = "running";
-    this.fireCue(CUES[0]);
+    this.fireCue(CUES[0], { silent: false });
     this.cueIndex = 0;
-    this.frame = requestAnimationFrame(this.tick);
+    this.frame = this.raf(this.tick);
+  };
+
+  KpgEventEngine.prototype.pause = function () {
+    if (!this.running || this.isPaused) return;
+    this.cancelRaf(this.frame);
+    this.isPaused = true;
+    this.lastFrame = 0;
+    this.stopAudio();
+    var cue = CUES[Math.max(0, this.cueIndex)];
+    this.onCue({
+      step: cue.step,
+      message: cue.message + " (Paused)",
+      button: "Resume sequence",
+      running: true,
+      paused: true,
+      phase: cue.phase
+    });
+  };
+
+  KpgEventEngine.prototype.resume = function (options) {
+    if (!this.running || !this.isPaused) return;
+    if (options && typeof options.sound === "boolean") {
+      this.soundEnabled = options.sound;
+    }
+    if (this.soundEnabled) this.initAudio();
+    this.isPaused = false;
+    this.lastFrame = 0;
+    var cue = CUES[Math.max(0, this.cueIndex)];
+    this.onCue({
+      step: cue.step,
+      message: cue.message,
+      button: "Event in progress",
+      running: true,
+      paused: false,
+      phase: cue.phase
+    });
+    this.frame = this.raf(this.tick);
+  };
+
+  KpgEventEngine.prototype.togglePause = function (options) {
+    if (!this.running) return;
+    if (this.isPaused) this.resume(options);
+    else this.pause();
+  };
+
+  KpgEventEngine.prototype.jumpToPhase = function (phaseName, options) {
+    var opts = options || {};
+    if (phaseName === "calm") {
+      this.reset();
+      this.onCue({
+        step: -1,
+        message: "System stable · Late Cretaceous",
+        button: "Begin extinction experience",
+        running: false,
+        paused: false,
+        phase: "calm"
+      });
+      return;
+    }
+
+    var targetIndex = -1;
+    for (var i = 0; i < CUES.length; i += 1) {
+      if (CUES[i].phase === phaseName) {
+        targetIndex = i;
+        break;
+      }
+    }
+    if (targetIndex === -1) return;
+
+    var cue = CUES[targetIndex];
+    var shouldPlay = Boolean(opts.play) && cue.phase !== "complete";
+
+    this.cancelRaf(this.frame);
+    global.clearTimeout(this.shakeTimer);
+    this.particles.length = 0;
+    this.lastFrame = 0;
+    this.elapsed = cue.at;
+    this.cueIndex = targetIndex;
+    this.soundEnabled = Boolean(opts.sound);
+    if (shouldPlay && this.soundEnabled) this.initAudio();
+    else this.stopAudio();
+
+    this.applyPhaseState(cue, { staticJump: !shouldPlay });
+    if (!shouldPlay && cue.phase === "winter") {
+      this.elapsed = SHOW_LENGTH;
+    }
+    this.updateHud();
+    this.updateLedger();
+
+    if (shouldPlay) {
+      this.running = true;
+      this.isPaused = false;
+      this.world.dataset.show = "running";
+      this.fireCue(cue, { silent: false });
+      this.frame = this.raf(this.tick);
+    } else {
+      this.running = false;
+      this.isPaused = false;
+      this.world.dataset.show = cue.phase === "complete" ? "complete" : "running";
+      this.renderStaticFrame(cue.phase);
+      this.onCue({
+        step: cue.step,
+        message: cue.message,
+        button: cue.phase === "complete" ? "Replay extinction experience" : "Begin extinction experience",
+        running: false,
+        paused: false,
+        phase: cue.phase
+      });
+    }
+  };
+
+  KpgEventEngine.prototype.applyPhaseState = function (cue, opts) {
+    var staticJump = Boolean(opts && opts.staticJump);
+    this.world.dataset.phase = cue.phase;
+    this.world.classList.remove("is-warning", "is-impacting", "is-firestorm", "is-winter");
+    this.stage.classList.remove("is-shaking");
+
+    if (cue.phase === "warning") this.world.classList.add("is-warning");
+    if (cue.phase === "impact") this.world.classList.add("is-impacting");
+    if (cue.phase === "firestorm") this.world.classList.add("is-firestorm");
+    if (cue.phase === "winter" || cue.phase === "complete") this.world.classList.add("is-winter");
+
+    if (this.map) {
+      this.map.classList.remove("is-tsunami", "is-global");
+      if (cue.phase === "impact" || cue.phase === "firestorm" || cue.phase === "winter" || cue.phase === "complete") {
+        this.map.classList.add("is-tsunami");
+      }
+      if (cue.phase === "winter" || cue.phase === "complete") {
+        this.map.classList.add("is-global");
+      }
+      this.map.dataset.phase = cue.phase;
+    }
+
+    if (this.mapClock && cue.mapClock) {
+      this.mapClock.textContent = cue.mapClock;
+    }
+    if (this.hudLabel && cue.hudLabel) {
+      this.hudLabel.textContent = cue.hudLabel;
+    }
+    if (this.ledger) {
+      this.ledger.classList.toggle("is-counting", cue.phase === "impact" || cue.phase === "firestorm" || cue.phase === "winter");
+      this.ledger.classList.toggle("is-complete", cue.phase === "complete");
+    }
+
+    if (staticJump && cue.phase === "impact") {
+      this.spawnImpactDebris();
+    }
+  };
+
+  KpgEventEngine.prototype.renderStaticFrame = function (phase) {
+    this.resize();
+    if (phase === "entry") {
+      this.elapsed = 4800;
+      this.render(0.016);
+      this.elapsed = 3000;
+    } else if (phase === "impact") {
+      this.elapsed = 7400;
+      this.render(0.016);
+      this.elapsed = 7000;
+    } else if (phase === "firestorm") {
+      this.spawnEmbers(0.4);
+      this.render(0.016);
+    } else if (phase === "winter" || phase === "complete") {
+      this.spawnAsh(0.5);
+      this.render(0.016);
+    } else {
+      this.render(0.016);
+    }
   };
 
   KpgEventEngine.prototype.reset = function () {
-    cancelAnimationFrame(this.frame);
+    this.cancelRaf(this.frame);
+    global.clearTimeout(this.shakeTimer);
     this.running = false;
+    this.isPaused = false;
     this.elapsed = 0;
     this.cueIndex = -1;
+    this.lastFrame = 0;
     this.particles.length = 0;
     this.world.dataset.show = "idle";
     this.world.dataset.phase = "calm";
@@ -96,11 +276,14 @@
     if (this.ledger) this.ledger.classList.remove("is-counting", "is-complete");
     if (this.lossPercent) this.lossPercent.textContent = "0%";
     if (this.lossFill) this.lossFill.style.width = "0%";
-    if (this.lossCount) this.lossCount.textContent = "0 of " + this.lossItems.length + " representative taxa marked";
+    if (this.lossCount) this.lossCount.textContent = "0 of " + this.lossItems.length + " representative taxa evaluated";
     this.lossItems.forEach(function (item) {
-      item.classList.remove("is-lost");
+      var fate = item.dataset.fate || "extinct";
+      item.classList.remove("is-lost", "is-bottleneck", "is-survived");
       var status = item.querySelector(".kpg-taxon-status");
-      if (status) status.textContent = "At risk";
+      if (status) {
+        status.textContent = fate === "survived" ? "Pre-impact" : "At risk";
+      }
     });
     this.ctx.clearRect(0, 0, this.width, this.height);
     if (this.hudTime) this.hudTime.textContent = "00:18";
@@ -110,12 +293,13 @@
   };
 
   KpgEventEngine.prototype.tick = function (now) {
-    if (!this.running) return;
+    if (!this.running || this.isPaused) return;
     var rect = this.world.getBoundingClientRect();
     if (Math.abs(rect.width - this.width) > 1 || Math.abs(rect.height - this.height) > 1) this.resize();
-    var dt = Math.min(34, now - this.lastFrame) / 1000;
+    if (!this.lastFrame) this.lastFrame = now;
+    var dt = Math.min(50, Math.max(0, now - this.lastFrame)) / 1000;
     this.lastFrame = now;
-    this.elapsed = now - this.startedAt;
+    this.elapsed += dt * 1000;
 
     while (this.cueIndex + 1 < CUES.length && this.elapsed >= CUES[this.cueIndex + 1].at) {
       this.cueIndex += 1;
@@ -126,48 +310,42 @@
     this.updateLedger();
     this.render(dt);
     if (this.elapsed < SHOW_LENGTH) {
-      this.frame = requestAnimationFrame(this.tick);
+      this.frame = this.raf(this.tick);
     } else {
       this.running = false;
+      this.isPaused = false;
       this.world.dataset.show = "complete";
-      this.stopAudio(2.5);
+      this.stopAudio();
     }
   };
 
-  KpgEventEngine.prototype.fireCue = function (cue) {
-    this.world.dataset.phase = cue.phase;
-    this.world.classList.toggle("is-warning", cue.phase === "warning");
-    if (cue.phase === "entry") {
-      this.world.classList.remove("is-warning");
-      this.playEntrySound();
+  KpgEventEngine.prototype.fireCue = function (cue, opts) {
+    var silent = Boolean(opts && opts.silent);
+    this.applyPhaseState(cue, { staticJump: false });
+
+    if (!silent) {
+      if (cue.phase === "entry") {
+        this.playEntrySound();
+      }
+      if (cue.phase === "impact") {
+        if (!this.reducedMotion) this.stage.classList.add("is-shaking");
+        this.spawnImpactDebris();
+        this.playImpactSound();
+        this.shakeTimer = global.setTimeout(function (stage) { stage.classList.remove("is-shaking"); }, 2300, this.stage);
+      }
+      if (cue.phase === "firestorm") {
+        this.playRumble();
+      }
     }
-    if (cue.phase === "impact") {
-      this.world.classList.add("is-impacting");
-      if (!this.reducedMotion) this.stage.classList.add("is-shaking");
-      this.spawnImpactDebris();
-      this.playImpactSound();
-      if (this.map) this.map.classList.add("is-tsunami");
-      if (this.mapClock) this.mapClock.textContent = "T+00:00";
-      if (this.ledger) this.ledger.classList.add("is-counting");
-      global.setTimeout(function (stage) { stage.classList.remove("is-shaking"); }, 2300, this.stage);
-    }
-    if (cue.phase === "firestorm") {
-      this.world.classList.remove("is-impacting");
-      this.world.classList.add("is-firestorm");
-      this.playRumble();
-      if (this.mapClock) this.mapClock.textContent = "T+01 HOUR";
-    }
-    if (cue.phase === "winter") {
-      this.world.classList.remove("is-firestorm");
-      this.world.classList.add("is-winter");
-      if (this.hudLabel) this.hudLabel.textContent = "Impact winter established";
-      if (this.map) this.map.classList.add("is-global");
-      if (this.mapClock) this.mapClock.textContent = "T+24 HOURS";
-    }
-    if (cue.phase === "complete" && this.mapClock) this.mapClock.textContent = "T+48 HOURS · GLOBAL";
-    if (cue.phase === "complete" && this.ledger) this.ledger.classList.add("is-complete");
-    if (this.map) this.map.dataset.phase = cue.phase;
-    this.onCue({ step: cue.step, message: cue.message, button: cue.button, running: cue.phase !== "complete", phase: cue.phase });
+
+    this.onCue({
+      step: cue.step,
+      message: cue.message,
+      button: cue.button,
+      running: cue.phase !== "complete",
+      paused: false,
+      phase: cue.phase
+    });
   };
 
   KpgEventEngine.prototype.updateHud = function () {
@@ -180,18 +358,44 @@
     if (!this.ledger) return;
     var progress = clamp((this.elapsed - 7000) / (SHOW_LENGTH - 7000), 0, 1);
     var percent = Math.round(progress * 75);
-    var marked = Math.min(this.lossItems.length, Math.floor(progress * (this.lossItems.length + .99)));
+    var total = this.lossItems.length;
+    var marked = progress <= 0 ? 0 : Math.min(total, Math.floor(progress * (total + 0.99)));
     if (this.lossPercent) this.lossPercent.textContent = (progress >= 1 ? "~" : "") + percent + "%";
     if (this.lossFill) this.lossFill.style.width = (progress * 100).toFixed(1) + "%";
+
+    var counts = { extinct: 0, bottleneck: 0, survived: 0 };
     this.lossItems.forEach(function (item, index) {
-      var lost = index < marked;
-      if (lost && !item.classList.contains("is-lost")) {
-        item.classList.add("is-lost");
-        var status = item.querySelector(".kpg-taxon-status");
-        if (status) status.textContent = "Lineage lost";
+      var fate = item.dataset.fate || "extinct";
+      var evaluated = index < marked;
+      var status = item.querySelector(".kpg-taxon-status");
+      item.classList.remove("is-lost", "is-bottleneck", "is-survived");
+
+      if (evaluated) {
+        if (fate === "bottleneck") {
+          item.classList.add("is-bottleneck");
+          if (status) status.textContent = "Severe bottleneck";
+          counts.bottleneck += 1;
+        } else if (fate === "survived") {
+          item.classList.add("is-survived");
+          if (status) status.textContent = "Crossed boundary";
+          counts.survived += 1;
+        } else {
+          item.classList.add("is-lost");
+          if (status) status.textContent = "Lineage lost";
+          counts.extinct += 1;
+        }
+      } else if (status) {
+        status.textContent = fate === "survived" ? "Pre-impact" : "At risk";
       }
     });
-    if (this.lossCount) this.lossCount.textContent = marked + " of " + this.lossItems.length + " representative taxa marked";
+
+    if (this.lossCount) {
+      if (marked >= total && total > 0) {
+        this.lossCount.textContent = counts.extinct + " lost · " + counts.bottleneck + " bottlenecked · " + counts.survived + " survived";
+      } else {
+        this.lossCount.textContent = marked + " of " + total + " representative taxa evaluated";
+      }
+    }
   };
 
   KpgEventEngine.prototype.render = function (dt) {
@@ -223,7 +427,7 @@
     }
   };
 
-  KpgEventEngine.prototype.drawMeteor = function (dt) {
+  KpgEventEngine.prototype.drawMeteor = function () {
     var ctx = this.ctx;
     var p = clamp((this.elapsed - 3000) / 4000, 0, 1);
     var eased = easeIn(p);

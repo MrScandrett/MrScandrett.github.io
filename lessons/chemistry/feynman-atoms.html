@@ -20,10 +20,12 @@ window.simRaf=(function(){
   document.addEventListener('DOMContentLoaded',function(){
     btn=document.createElement('button');btn.type='button';btn.id='simPauseBtn';
     btn.style.cssText='position:fixed;right:12px;bottom:12px;z-index:50;padding:10px 14px;min-height:44px;border-radius:8px;border:1px solid currentColor;background:var(--bg,#fff);color:var(--text,#111);cursor:pointer';
-    btn.addEventListener('click',function(){paused=!paused;sync();if(!paused){var q=pending;pending=[];q.forEach(function(f){requestAnimationFrame(f);});}});
+    btn.addEventListener('click',function(){paused=!paused;sync();if(!paused){var q=pending;pending=[];q.forEach(function(p){next(p[0],p[1]);});}});
     document.body.appendChild(btn);sync();
   });
-  return function(fn){ if(paused){pending.push(fn);} else {requestAnimationFrame(fn);} };
+  /* With a canvas, the frame also waits while that canvas is scrolled away (SimKit.frame). */
+  function next(fn,el){ if(el&&window.SimKit&&SimKit.frame){SimKit.frame(el,fn);} else {requestAnimationFrame(fn);} }
+  return function(fn,el){ if(paused){pending.push([fn,el]);} else {next(fn,el);} };
 })();
 </script>
 </head>
@@ -912,6 +914,7 @@ flattening. Label the most probable speed on the histogram.</pre>
 </footer>
 
 <!-- ══ SCRIPTS ══════════════════════════════════════════ -->
+<script src="../../assets/js/sim-kit.js"></script>
 <script src="../../assets/js/lessons/chem-feynman-atoms.js"></script>
 <script src="../../assets/js/site-glossary.js" data-glossary-src="../../data/periodic-table-glossary.json"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>

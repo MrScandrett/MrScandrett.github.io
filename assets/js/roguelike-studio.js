@@ -804,9 +804,9 @@
           console.error('ROGUE STUDIO RAF ERROR:', e);
         }
 
-        rafId = requestAnimationFrame(frame);
+        rafId = window.SimKit ? SimKit.frame('#rg-viewport', frame) : requestAnimationFrame(frame);
       }
-      rafId = requestAnimationFrame(frame);
+      rafId = window.SimKit ? SimKit.frame('#rg-viewport', frame) : requestAnimationFrame(frame);
     }
 
     function updateVfx(dt) {
@@ -1720,7 +1720,7 @@
       focus: function () { if (el.canvas) el.canvas.focus(); },
       destroy: function () {
         destroyed = true;
-        if (rafId) cancelAnimationFrame(rafId);
+        if (rafId) { if (window.SimKit) SimKit.frame.cancel('#rg-viewport', rafId); else cancelAnimationFrame(rafId); }
       }
     };
   }

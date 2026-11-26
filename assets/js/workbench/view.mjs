@@ -340,7 +340,7 @@ export function createView(canvas, { onPick, onGizmoChange, onGizmoEnd, onDropSh
     syncSize();
     for (const b of selectionBoxes) b.update();
     renderer.render(scene, camera);
-  });
+  }, { el: canvas });
 
   function snapshot() {
     const was = [gizmoHelper.visible, helpers.visible];

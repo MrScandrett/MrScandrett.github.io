@@ -178,7 +178,7 @@
     window.addEventListener('resize', resize);
 
     (function loop() {
-      requestAnimationFrame(loop);
+      if (window.SimKit) SimKit.frame(renderer.domElement, loop); else requestAnimationFrame(loop);
       renderer.render(scene, camera);
     }());
 

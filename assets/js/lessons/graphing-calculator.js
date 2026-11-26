@@ -1843,7 +1843,7 @@
     function animateFrame() {
       modelState.animationPhase = (modelState.animationPhase + 0.0035) % 1;
       if (modelState.animate) draw();
-      window.requestAnimationFrame(animateFrame);
+      (window.SimKit ? SimKit.frame(canvas, animateFrame) : requestAnimationFrame(animateFrame));
     }
 
     /* ─── Init ──────────────────────────────────────────── */
@@ -1933,7 +1933,7 @@
     syncWindowFromView();
     renderCalculatorScreen();
     tryAutoImportData();
-    window.requestAnimationFrame(animateFrame);
+    (window.SimKit ? SimKit.frame(canvas, animateFrame) : requestAnimationFrame(animateFrame));
 
     /* ═══════════════════════════════════════════════════════
        MINI-GRAPH WIDGET — a small, independent, page-scoped

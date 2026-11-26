@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 517 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 518 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -269,7 +269,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 117 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 118 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -303,26 +303,27 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 ### Mechanisms, Feedback & Control
 
 - **ENG-22** — Mechanisms and Gear Systems
-- **ENG-23** — Hydra-Matic: The Gearbox That Shifted Itself
-- **ENG-24** — PID Control & Feedback Loops
-- **ENG-25** — Maglev Train Engineering
-- **ENG-26** — Engineering Design Process Studio
+- **ENG-23** — Mechanical Drives: How Motors Move Things
+- **ENG-24** — Hydra-Matic: The Gearbox That Shifted Itself
+- **ENG-25** — PID Control & Feedback Loops
+- **ENG-26** — Maglev Train Engineering
+- **ENG-27** — Engineering Design Process Studio
 
 ### Structural Design Projects
 
-- **ENG-27** — Bridge Over Troubled Water
-- **ENG-28** — Engineering an Immersive Sphere
-- **ENG-29** — Biomimicry: Engineering Nature's Genius
+- **ENG-28** — Bridge Over Troubled Water
+- **ENG-29** — Engineering an Immersive Sphere
+- **ENG-30** — Biomimicry: Engineering Nature's Genius
 
 ### People Who Changed Engineering
 
-- **ENG-30** — Emily Roebling
-- **ENG-31** — Gustave Eiffel
-- **ENG-32** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-33** — James Watt and the Steam Engine
-- **ENG-34** — Rube Goldberg Machine Lab
-- **ENG-35** — Siege Engines: Physics You Can Launch
-- **ENG-36** — Hedy Lamarr
+- **ENG-31** — Emily Roebling
+- **ENG-32** — Gustave Eiffel
+- **ENG-33** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-34** — James Watt and the Steam Engine
+- **ENG-35** — Rube Goldberg Machine Lab
+- **ENG-36** — Siege Engines: Physics You Can Launch
+- **ENG-37** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 

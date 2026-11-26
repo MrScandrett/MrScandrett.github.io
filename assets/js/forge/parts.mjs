@@ -15,6 +15,8 @@
  */
 
 import { centerDistance, spurGearOutline, supportedText, textOutline } from './outlines.mjs';
+import { DRIVE_PARTS, SHARP_FIX, crossWallCheck, legoBeam, legoOr } from './drive-parts.mjs';
+import { LEGO_LABEL, crossHoleSolid, fitParam, gridPartners, gridVerdict, legoTeethParam, metricOnly } from './technic.mjs';
 
 const round = (v, places = 1) => Number(Number(v).toFixed(places));
 const SEG = 64;
@@ -288,6 +290,11 @@ const spiral = {
     const bodies = [{ name: 'Outer', manifold: outer }, { name: 'Inner', manifold: inner }];
     return {
       bodies,
+      demo: {
+        mode: 'swing', input: 'Push the cone up through the sleeve',
+        note: `The fins follow the slots, so the cone turns ${round(m.rate * m.H * 0.6)}° as it rises.`,
+        pose: (u) => { const dz = m.H * 0.3 * (1 + u); return [[], [['z', m.rate * dz], ['t', 0, 0, dz]]]; },
+      },
       layout: p.arrange === 'nested' ? 'nested' : 'apart',
       verdicts,
       overhangNote: m.leanDeg <= 45
@@ -311,26 +318,37 @@ const gears = {
   blurb: 'Two involute spur gears that really mesh, and a board with pegs at exactly the right distance apart.',
   lesson: { href: 'lessons/engineering/mechanical-and-civil-design/mechanisms-gears.html', label: 'Mechanisms & gears' },
   params: [
-    { id: 'module', label: 'Module (tooth size)', type: 'select', default: '2', options: ['1.5', '2', '2.5', '3'].map((v) => ({ value: v, label: `${v} mm` })), help: 'Gears only mesh with gears of the same module.' },
-    { id: 'teethA', label: 'Teeth on gear A', type: 'range', min: 8, max: 60, step: 1, default: 12 },
-    { id: 'teethB', label: 'Teeth on gear B', type: 'range', min: 8, max: 60, step: 1, default: 24 },
-    { id: 'thickness', label: 'Gear thickness', type: 'range', min: 3, max: 15, step: 0.5, default: 6, unit: 'mm' },
-    { id: 'bore', label: 'Bore', type: 'range', min: 3, max: 10, step: 0.5, default: 5, unit: 'mm' },
-    { id: 'board', label: 'Print a peg board', type: 'toggle', default: true },
+    fitParam,
+    metricOnly({ id: 'module', label: 'Module (tooth size)', type: 'select', default: '2', options: ['1.5', '2', '2.5', '3'].map((v) => ({ value: v, label: `${v} mm` })), help: 'Gears only mesh with gears of the same module.' }),
+    metricOnly({ id: 'teethA', label: 'Teeth on gear A', type: 'range', min: 8, max: 60, step: 1, default: 12 }),
+    metricOnly({ id: 'teethB', label: 'Teeth on gear B', type: 'range', min: 8, max: 60, step: 1, default: 24 }),
+    legoTeethParam('legoA', 'Teeth on gear A', 12),
+    legoTeethParam('legoB', 'Teeth on gear B', 20),
+    { id: 'thickness', label: 'Gear thickness', type: 'range', min: 3, max: 15, step: 0.5, default: 6, unit: 'mm', help: 'Real Technic gears are about half a stud (4 mm) thick.' },
+    metricOnly({ id: 'bore', label: 'Bore', type: 'range', min: 3, max: 10, step: 0.5, default: 5, unit: 'mm' }),
+    { id: 'board', label: 'Print a peg board (a beam for the LEGO fit)', type: 'toggle', default: true },
   ],
   build(ctx, p) {
     const { Manifold: M, CrossSection: CS } = ctx;
-    const m = Number(p.module);
+    const L = legoOr(p, [['zA', 'teethA', 'legoA'], ['zB', 'teethB', 'legoB']]);
+    const m = L.module;
     const c = ctx.settings.clearance;
     const gear = (teeth) => {
       const g = spurGearOutline({ module: m, teeth, backlash: c / 2 });
-      const body = CS.ofPolygons([g.points]).extrude(p.thickness).subtract(M.cylinder(p.thickness + 2, p.bore / 2, p.bore / 2, 48).translate([0, 0, -1]));
+      const blank = CS.ofPolygons([g.points]).extrude(p.thickness);
+      const body = L.lego ? blank.subtract(crossHoleSolid(ctx, p.thickness)) : blank.subtract(M.cylinder(p.thickness + 2, p.bore / 2, p.bore / 2, 48).translate([0, 0, -1]));
       return { body, g };
     };
-    const A = gear(p.teethA), B = gear(p.teethB);
-    const dist = centerDistance(m, p.teethA, p.teethB);
-    const bodies = [{ name: `Gear A (${p.teethA} teeth)`, manifold: A.body }, { name: `Gear B (${p.teethB} teeth)`, manifold: B.body }];
-    if (p.board) {
+    const zA = L.zA, zB = L.zB;
+    const A = gear(zA), B = gear(zB);
+    const dist = centerDistance(m, zA, zB);
+    const bodies = [{ name: `Gear A (${zA} teeth)`, manifold: A.body }, { name: `Gear B (${zB} teeth)`, manifold: B.body }];
+    let seat = { x0: 0, z: 0 };
+    if (p.board && L.lego) {
+      const beam = legoBeam(ctx, dist);
+      bodies.push({ name: `Technic-compatible beam (${beam.holes} holes)`, manifold: beam });
+      seat = { x0: beam.x0, z: beam.top };
+    } else if (p.board) {
       const plateT = 3, pad = 6;
       const len = dist + A.g.tipRadius + B.g.tipRadius + 2 * pad;
       const wid = 2 * Math.max(A.g.tipRadius, B.g.tipRadius) + 2 * pad;
@@ -341,21 +359,35 @@ const gears = {
       const washer = (x) => M.cylinder(0.6, pegR + 2, pegR + 2, 40).translate([x, 0, plateT - 0.01]);
       const plate = roundedRect(CS, len, wid, 4).extrude(plateT);
       bodies.push({ name: 'Peg board', manifold: M.union([plate, peg(x0), peg(x0 + dist), washer(x0), washer(x0 + dist)]) });
+      seat = { x0, z: plateT + 0.8 };
     }
-    const ratio = p.teethB / p.teethA;
+    const ratio = zB / zA;
     const verdicts = [];
     const nozzle = ctx.settings.nozzle;
     const thinTip = Math.min(A.g.tipThickness, B.g.tipThickness);
-    if (thinTip < nozzle * 1.5) verdicts.push({ tone: 'warn', tag: 'SHARP TEETH', text: `Tooth tips are ${round(thinTip, 2)} mm wide — under 1.5 nozzle widths, so they print as a single wobbly line. Use a bigger module.` });
-    if (Math.min(p.teethA, p.teethB) < 12) verdicts.push({ tone: 'warn', tag: 'UNDERCUT', text: 'Gears under about 12 teeth (at 20° pressure angle) get thin at the root. They still turn, but go gently.' });
-    if (p.bore / 2 + 1.2 > Math.min(A.g.rootRadius, B.g.rootRadius)) verdicts.push({ tone: 'bad', tag: 'BORE', text: 'The bore cuts into the tooth roots of the small gear. Make the bore smaller or add teeth.' });
+    if (thinTip < nozzle * 1.5) verdicts.push({ tone: 'warn', tag: 'SHARP TEETH', text: `Tooth tips are ${round(thinTip, 2)} mm wide — under 1.5 nozzle widths, so they print as a single wobbly line. ${SHARP_FIX(L.lego)}` });
+    if (Math.min(zA, zB) < 12) verdicts.push({ tone: 'warn', tag: 'UNDERCUT', text: 'Gears under about 12 teeth (at 20° pressure angle) get thin at the root. They still turn, but go gently.' });
+    if (L.lego) {
+      crossWallCheck(ctx, verdicts, [A.g, B.g]);
+      verdicts.push(gridVerdict(dist, 'The centre distance', gridPartners(zA)));
+      verdicts.push({ tone: 'ok', tag: 'LEGO FIT', text: `${LEGO_LABEL}: module 1 and a cross-axle hole, so these mesh with real Technic gears and slide onto real axles.` });
+    } else if (p.bore / 2 + 1.2 > Math.min(A.g.rootRadius, B.g.rootRadius)) verdicts.push({ tone: 'bad', tag: 'BORE', text: 'The bore cuts into the tooth roots of the small gear. Make the bore smaller or add teeth.' });
     verdicts.push({ tone: 'ok', tag: 'MESH', text: `Same ${m} mm module, centres ${round(dist, 2)} mm apart, and ${c / 2} mm thinner teeth (half your class clearance) for play. Print flat, no supports.` });
     return {
       bodies,
       verdicts,
+      demo: {
+        mode: 'spin', input: 'Turn gear A',
+        note: `Gear B turns ${round(ratio, 2)} times slower, the other way.`,
+        pose: (u) => [
+          [['z', 360 * u], ['t', seat.x0, 0, seat.z]],
+          [['z', 180 - 180 / zB - (360 * u * zA) / zB], ['t', seat.x0 + dist, 0, seat.z]],
+          [],
+        ],
+      },
       stats: [
         { label: 'Gear ratio', value: `1 : ${round(ratio, 2)}` },
-        { label: 'Centre distance', value: `${round(dist, 2)} mm` },
+        { label: 'Centre distance', value: L.lego ? `${round(dist, 2)} mm = ${round(dist / 8, 3)} studs` : `${round(dist, 2)} mm` },
         { label: 'Pitch Ø A / B', value: `${round(2 * A.g.pitchRadius)} / ${round(2 * B.g.pitchRadius)} mm` },
         { label: 'B speed / torque', value: `${round(1 / ratio, 2)}× / ${round(ratio, 2)}×` },
       ],
@@ -421,6 +453,7 @@ const captured = {
     return {
       bodies: [{ name: 'Cup', manifold: cup }, { name: 'Disc', manifold: disc }],
       layout: 'nested',
+      demo: { mode: 'spin', input: 'Spin the disc', note: 'The disc turns freely but the lip stops it lifting out.', pose: (u) => [[], [['z', 360 * u]]] },
       verdicts,
       overhangNote: `The disc's underside shows red because it is not on the bed: it prints one ${layer} mm layer above the cup's floor, on plastic that has already cooled, so the two don't bond. The lip's underside slopes at 45°, the steepest a printer holds by itself. Print with supports OFF — support would fill the gaps and lock the disc.`,
       stats: [
@@ -483,10 +516,17 @@ const rings = {
     else verdicts.push({ tone: 'ok', tag: 'AIR GAP', text: `${round(an.clearance, 2)} mm of real air between neighbours${p.shape === 'star' ? ', measured across a flat side' : ''}: free, without rattling.` });
     if (an.wallTrue < nozzle * 3) verdicts.push({ tone: 'warn', tag: 'THIN', text: `Across a side the wall is only ${round(an.wallTrue, 2)} mm. Thicken it so the rings survive a pocket.` });
 
+    // an.down / an.up: how far a ring moves against the next one out (fidget-rings.js playBetween), kept a hair inside
+    const slide = an.locked ? (u) => 0.95 * (an.down + (an.up - an.down) * (1 + u) / 2) : null;
     return {
       bodies,
       layout: 'nested',
       verdicts,
+      demo: slide ? {
+        mode: 'swing', input: 'Pull the rings out and push them back',
+        note: `Each ring slides ${round(an.play)} mm and its ridge stops it in the next ring's groove.`,
+        pose: (u) => bodies.map((_, i) => [...(p.shape === 'round' ? [['z', 25 * (bodies.length - 1 - i) * u]] : []), ['t', 0, 0, (bodies.length - 1 - i) * slide(u)]]),
+      } : null,
       overhangNote: `Each ring climbs out and steps back in ${FR.SLAB} mm at a time (two layers), so the walls lean at about 45°. The red faces are those small steps, each only ${round(an.run * an.h, 2)} mm across a side, which the printer bridges. Print with supports OFF — support would fill the gaps and glue the rings.`,
       stats: [
         { label: 'Real air between rings', value: `${round(an.clearance, 2)} mm` },
@@ -601,10 +641,18 @@ const spinner = {
     if (p.weights === 'penny') verdicts.push({ tone: 'ok', tag: 'PENNIES', text: `Each arm holds a stack of ${Math.floor(T / PENNY.t)} pennies (${p.arms * Math.floor(T / PENNY.t)} in all). A drop of glue keeps the stacks in.` });
     if (p.weights === 'none') verdicts.push({ tone: 'ok', tag: 'NO WEIGHTS', text: 'Solid arms make it light, so it spins for seconds, not minutes. Weights out at the tips store more spin.' });
 
+    const capZ = 2.21;
     return {
       bodies,
       layout: printed ? 'nested' : 'apart',
       verdicts,
+      demo: {
+        mode: 'spin', input: 'Flick the arms',
+        note: printed ? 'The body spins round the printed hub, which stays still between your fingers.' : 'The body spins on the bearing; the caps hold the bearing\'s middle still.',
+        // the bearing itself is not printed, so its caps may overlap where it would sit
+        tolerance: printed ? 0.5 : Infinity,
+        pose: (u) => printed ? [[['z', 360 * u]], []] : [[['z', 360 * u]], [['t', 0, 0, (T - BEARING_608.width) / 2 - capZ]], [['x', 180], ['t', 0, 0, (T + BEARING_608.width) / 2 + capZ]]],
+      },
       stats: [
         { label: 'Across the arms', value: `${round(2 * (reach + lobeR))} mm` },
         { label: 'Hardware', value: bearings ? `${bearings} × 608 bearing` : p.weights === 'penny' ? `${p.arms * Math.floor(T / PENNY.t)} pennies` : 'none' },
@@ -695,6 +743,11 @@ const hinge = {
     return {
       bodies: [{ name: 'Leaf A', manifold: A }, { name: 'Leaf B', manifold: B }],
       layout: 'nested',
+      demo: {
+        mode: 'swing', input: 'Fold leaf B',
+        note: 'Leaf B swings round the knuckles. If the leaves are thicker than the knuckles, they hit before folding flat.',
+        pose: (u) => [[], [['y', -85 * (1 + u), [0, 0, r]]]],
+      },
       verdicts,
       stats: [
         { label: 'Knuckles', value: `${n} × ${round(seg)} mm` },
@@ -1046,6 +1099,7 @@ const wheelAxle = {
     return {
       bodies: [{ name: 'Mount & Axle', manifold: mount }, { name: 'Wheel', manifold: wheel }],
       layout: 'nested',
+      demo: { mode: 'spin', input: 'Spin the wheel', note: 'The wheel turns on the axle; the cone head keeps it on.', pose: (u) => [[], [['z', 360 * u]]] },
       overhangNote: 'The wheel floats above the base on a calibrated clearance gap. Print with supports OFF — slicer supports will fill the radial gap and fuse the wheel to the axle.',
       verdicts,
       stats: [
@@ -1231,6 +1285,6 @@ const rollingTool = {
   },
 };
 
-export const PARTS = [rollingTool, wheelAxle, caseCase, captured, spinner, hinge, rings, gears, spiral, tag, storage, stand, clip, comb];
-export const PART_GROUPS = ['Mechanisms', 'Electronics housings', 'Fidgets', 'Everyday', 'Calibration'];
+export const PARTS = [rollingTool, wheelAxle, caseCase, captured, spinner, hinge, rings, gears, ...DRIVE_PARTS, spiral, tag, storage, stand, clip, comb];
+export const PART_GROUPS = ['Mechanisms', 'Drives', 'Electronics housings', 'Fidgets', 'Everyday', 'Calibration'];
 export const partById = (id) => PARTS.find((p) => p.id === id);

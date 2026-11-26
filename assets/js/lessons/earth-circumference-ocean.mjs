@@ -127,7 +127,7 @@ try {
     if(!visible||paused)return;
     water.update(dt);sceneAPI.syncSize();renderer.render(scene,camera);
     canvas.dataset.frames=String(++frames);
-  });
+  }, { el: canvas });
   const resize=new ResizeObserver(updateView);resize.observe(canvas);
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();loop.stop();status.textContent='Ocean graphics interrupted. Reload to restore; measurements remain available.';});
   window.addEventListener('pagehide',event=>{if(event.persisted)return;loop.stop();observer.disconnect();resize.disconnect();water.dispose();sceneAPI.dispose();},{once:true});

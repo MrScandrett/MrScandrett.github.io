@@ -34,6 +34,8 @@
   (function () {
     var svg = document.getElementById('rc-svg');
     var canvas = document.getElementById('rc-scope');
+    // Waits while the scope is scrolled away or the tab is hidden.
+    function nextFrame(cb) { return window.SimKit ? SimKit.frame(canvas, cb) : requestAnimationFrame(cb); }
     if (!svg || !canvas) return;
     var VS = 5;
     var SWEEP = 4; // wall-clock seconds to draw one full screen
@@ -144,7 +146,7 @@
 
     var last = null;
     function frame(ts) {
-      requestAnimationFrame(frame);
+      nextFrame(frame);
       if (document.hidden) { last = null; return; }
       var dtWall = last == null ? 0 : Math.min(0.1, (ts - last) / 1000);
       last = ts;
@@ -174,7 +176,7 @@
     });
     EELab.slider(document.getElementById('rc-r'), function (v) { s.r = e12(v); restart(); updateText(); drawScope(); }, function (v) { return fmt(e12(v), 'Ω'); });
     EELab.slider(document.getElementById('rc-c'), function (v) { s.c = CAPS[v]; restart(); updateText(); drawScope(); }, function (v) { return fmt(CAPS[v], 'F'); });
-    requestAnimationFrame(frame);
+    nextFrame(frame);
 
     window.RCLab = { state: s, done: done, advance: advance };
   })();

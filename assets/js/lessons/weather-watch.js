@@ -1084,7 +1084,7 @@
         ctx.fillText(compact ? 'WARM AIR RISES' : 'WARM AIR OVERRIDING', compact ? 10 : 20, 60);
       }
 
-      animFrame = requestAnimationFrame(draw);
+      animFrame = window.SimKit ? SimKit.frame('#ww-front-canvas', draw) : requestAnimationFrame(draw);
     }
 
     draw();

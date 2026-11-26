@@ -12,6 +12,8 @@
   if (!canvas) return;
 
   const ctx = canvas.getContext('2d');
+  // Waits while the court is scrolled away or the tab is hidden.
+  const nextFrame = (cb) => (window.SimKit ? SimKit.frame(canvas, cb) : requestAnimationFrame(cb));
   const modeBtns = [...document.querySelectorAll('[data-pong-lab-mode]')];
   const slider = document.getElementById('pong-impact-slider');
   const sliderOffsetOut = document.getElementById('pong-impact-offset');
@@ -227,7 +229,7 @@
 
     // Render Frame
     render();
-    requestAnimationFrame(step);
+    nextFrame(step);
   }
 
   function render() {
@@ -344,7 +346,7 @@
   // Initialize
   updateTelemetry();
   launchTest();
-  requestAnimationFrame(step);
+  nextFrame(step);
 
   // =========================================================================
   // 2. SELF-CHECK QUIZ COMPONENT

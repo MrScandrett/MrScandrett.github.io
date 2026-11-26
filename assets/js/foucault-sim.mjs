@@ -221,7 +221,7 @@ function init(root) {
   }
   let last = performance.now(), acc = 0, rdTick = 0;
   function frame(now) {
-    requestAnimationFrame(frame);
+    (window.SimKit ? SimKit.frame(canvas, frame) : requestAnimationFrame(frame));
     const dt = Math.min((now - last) / 1000, 0.1);
     last = now;
     syncSize();
@@ -252,5 +252,5 @@ function init(root) {
   setPanMode(false);
   setPlaying(playing);
   reset();
-  requestAnimationFrame(frame);
+  (window.SimKit ? SimKit.frame(canvas, frame) : requestAnimationFrame(frame));
 }

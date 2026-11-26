@@ -220,3 +220,58 @@ test('mphAt matches the wheels: 3000 rpm in 4th is about 62 mph', () => {
   assert.ok(H.mphAt(3000, 1) < H.mphAt(3000, 2));
   assert.equal(H.mphAt(3000, 9), 0);
 });
+
+test('planetOffsets and planetMeshAngle keep all three planets meshed with sun and ring', () => {
+  for (const set of [H.FRONT, H.REAR, { S: 24, R: 42 }, { S: 18, R: 34 }]) {
+    const offs = H.planetOffsets(set);
+    assert.equal(offs.length, 3);
+    assert.equal(offs[0], 0);
+    // Each offset is an integer multiple of 2*pi/(S+R), guaranteeing simultaneous sun & ring tooth phase match
+    for (const d of offs) {
+      const m = (d * (set.S + set.R)) / (2 * Math.PI);
+      close(m, Math.round(m), 1e-9);
+    }
+    // Check sun-planet phase at sun contact (carrier=0, spin=0 => planet valley sits at angle d+pi)
+    const P = H.planetTeeth(set);
+    for (const d of offs) {
+      const pAng = H.planetMeshAngle(set, d, 0);
+      const sunPhase = (set.S * d) / (2 * Math.PI);
+      const planetAtSun = (P * (d + Math.PI - pAng)) / (2 * Math.PI);
+      const sum = sunPhase + planetAtSun;
+      close(sum - Math.round(sum - 0.5), 0.5, 1e-9);
+    }
+  }
+});
+
+test('torque converter multiplies torque at stall and freewheels at coupling point and overrun', () => {
+  close(H.torqueConverterMultiplier(1700 / H.RPM, 0), 2.1, 1e-9);
+  const wp = 200;
+  close(H.torqueConverterMultiplier(wp, 0.85 * wp), 1, 1e-9);
+  close(H.torqueConverterMultiplier(wp, 0.95 * wp), 1, 1e-9);
+  close(H.torqueConverterMultiplier(100, 150), 1, 1e-9);
+  const stallCoup = H.couplingTorque(1700 / H.RPM, 0);
+  const stallConv = H.converterOutputTorque(1700 / H.RPM, 0);
+  close(stallConv / stallCoup, 2.1, 1e-9);
+});
+
+test('valveState models hysteresis latching, kickdown detent, and custom spring tuning', () => {
+  // 2->3 valve at 50% throttle: upshift is ~23.3 mph, downshift is ~18.4 mph; at 20 mph it is in the band
+  const rising = H.valveState(2, 20, 0.5, false);
+  assert.equal(rising.inHysteresisBand, true);
+  assert.equal(rising.nextHigh, false, 'stays in 2nd while accelerating through the band');
+
+  const falling = H.valveState(2, 20, 0.5, true);
+  assert.equal(falling.inHysteresisBand, true);
+  assert.equal(falling.nextHigh, true, 'holds 3rd while decelerating through the band');
+
+  // Kickdown at >= 90% throttle raises downshift threshold near upshift threshold
+  const normal = H.valveState(3, 45, 0.5, true);
+  assert.equal(normal.nextHigh, true);
+  const kick = H.valveState(3, 45, 0.95, true);
+  assert.equal(kick.kickdown, true);
+  assert.equal(kick.nextHigh, false, 'kickdown drops 4->3 at 45 mph');
+
+  // Design challenge Q&A #6: spring = 1.35 psi puts 1->2 upshift at ~25 mph at wide-open throttle
+  const tuned = H.valveState(1, 25, 1, false, 1.35);
+  assert.ok(Math.abs(tuned.upMph - 25) < 0.25, `tuned upMph ${tuned.upMph}`);
+});

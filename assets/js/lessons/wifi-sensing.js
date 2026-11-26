@@ -610,7 +610,7 @@ function tick(now) {
   }
   drawRoom(now); drawTrace(); drawPhasor();
   if (now - lastDecode > 450) { lastDecode = now; runDecode(); }
-  requestAnimationFrame(tick);
+  if (window.SimKit) SimKit.frame(roomCv, tick); else requestAnimationFrame(tick);
 }
 // warm the buffer so the page opens with a breath already on screen
 for (let i = 0; i < FS * 25; i++) roomFrames.push(synth.step());

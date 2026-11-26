@@ -673,6 +673,7 @@
 
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
   <script>
   (function () {
 
@@ -687,6 +688,8 @@
     let t    = 0;
     let lastTS = null;
     let animFrame = null;
+    // Waits while the orrery is scrolled away or the tab is hidden.
+    const nextFrame = (cb) => (window.SimKit ? SimKit.frame(canvas, cb) : requestAnimationFrame(cb));
 
     // All distances relative to Sun-Earth distance = 100 units
     // Heliocentric semi-major axes in AU (scaled to canvas units)
@@ -882,7 +885,7 @@
       lastTS = ts;
       t += delta * SIM_SPEED;
       drawFrame(t);
-      animFrame = requestAnimationFrame(loop);
+      animFrame = nextFrame(loop);
     }
 
     function setMode(newMode) {
@@ -907,7 +910,7 @@
     tychoBtn.addEventListener('click', () => setMode('tycho'));
     helioBtn.addEventListener('click', () => setMode('helio'));
 
-    animFrame = requestAnimationFrame(loop);
+    animFrame = nextFrame(loop);
 
     /* ── Practice checker ─────────────────────────────── */
     window.tbCheck = function (num, correct, tol) {

@@ -48,6 +48,19 @@
     return (wCarrier * (set.S + P) - wSun * set.S) / P;
   }
 
+  // Exact carrier assembly angles (radians) for 3 planets so every planet's teeth mesh
+  // simultaneously with both the sun and the internal ring gear, even when (S + R) % 3 !== 0.
+  function planetOffsets(set) {
+    const total = set.S + set.R;
+    return [0, Math.round(total / 3), Math.round((2 * total) / 3)].map((m) => (m * 2 * Math.PI) / total);
+  }
+
+  // Exact visual rotation angle of a planet located at carrier offset `offsetRad`.
+  function planetMeshAngle(set, offsetRad, spinAngle) {
+    const P = planetTeeth(set);
+    return spinAngle + ((set.S + P) / P) * offsetRad + Math.PI * (1 - 1 / P);
+  }
+
   // Ratio (input speed / output speed) of any one set when one member is the input, one is held still and the
   // third is the output. Negative = output turns the other way (reverse), under 1 = overdrive.
   function planetaryRatio(set, input, held, output) {
@@ -122,6 +135,18 @@
     return (wPump - wTurbine) / wPump;
   }
 
+  // 3-element torque converter (adding a one-way stator to the fluid coupling) for Job 1 comparison.
+  // At stall it multiplies torque up to 2.10x; above the 0.85 coupling point (or on overrun) the stator freewheels (1.00x).
+  function torqueConverterMultiplier(wPump, wTurbine) {
+    if (wPump <= 1 || wTurbine >= 0.85 * wPump) return 1;
+    const sr = Math.max(0, wTurbine / wPump);
+    return 1 + 1.1 * (1 - sr / 0.85);
+  }
+
+  function converterOutputTorque(wPump, wTurbine, K) {
+    return couplingTorque(wPump, wTurbine, K) * torqueConverterMultiplier(wPump, wTurbine);
+  }
+
   /* ---------- The engine ---------- */
 
   const ENGINE = {
@@ -182,6 +207,27 @@
     if (g < 4 && p > upshiftPsi(g, thr)) g += 1;
     else if (g > 1 && p < downshiftPsi(g - 1, thr)) g -= 1;
     return g;
+  }
+
+  // Single shift-valve inspection helper (1 = 1->2, 2 = 2->3, 3 = 3->4) with optional custom spring preload (psi).
+  function valveState(valveIdx, mph, thr, isHigh, customSpringPsi) {
+    const v = SHIFT_VALVES[valveIdx - 1];
+    if (!v) throw new Error('valveState: valveIdx must be 1, 2, or 3');
+    const t = Math.min(1, Math.max(0, thr || 0));
+    const spring = customSpringPsi == null ? v.a : Math.max(0, customSpringPsi);
+    const govPsi = governorPsi(Math.abs(mph || 0));
+    const thrPsi = throttlePsi(t);
+    const upPsi = spring + v.k * thrPsi;
+    const kickdown = t >= KICKDOWN_THROTTLE;
+    const downPsi = upPsi * (kickdown ? KICKDOWN_FRACTION : DOWNSHIFT_FRACTION);
+    const upMph = Math.sqrt(upPsi / GOVERNOR_PSI_PER_MPH2);
+    const downMph = Math.sqrt(downPsi / GOVERNOR_PSI_PER_MPH2);
+    const nextHigh = isHigh ? !(govPsi < downPsi) : (govPsi > upPsi);
+    const inHysteresisBand = govPsi >= downPsi && govPsi <= upPsi;
+    return {
+      valve: v, spring, govPsi, thrPsi, upPsi, downPsi, upMph, downMph,
+      kickdown, nextHigh, inHysteresisBand
+    };
   }
 
   // Curves for plotting the shift map: arrays of {thr, mph} for each valve.
@@ -364,12 +410,12 @@
 
   return {
     RPM, MPS_TO_MPH,
-    FRONT, REAR, planetTeeth, willis, planetSpin, planetaryRatio,
+    FRONT, REAR, planetTeeth, willis, planetSpin, planetOffsets, planetMeshAngle, planetaryRatio,
     GEARS, FRONT_REDUCTION, REAR_REDUCTION, RATIOS, gearRatio, gearMembers,
-    COUPLING_K, couplingTorque, couplingSlip,
+    COUPLING_K, couplingTorque, couplingSlip, torqueConverterMultiplier, converterOutputTorque,
     ENGINE, engineMaxTorque, engineTorque,
     SHIFT_VALVES, DOWNSHIFT_FRACTION, KICKDOWN_FRACTION, KICKDOWN_THROTTLE,
-    governorPsi, throttlePsi, upshiftPsi, downshiftPsi, upshiftMph, downshiftMph, chooseGear, shiftCurves,
+    governorPsi, throttlePsi, upshiftPsi, downshiftPsi, upshiftMph, downshiftMph, chooseGear, valveState, shiftCurves,
     CAR, mphAt, createCar, stepCar, timeToSpeed
   };
 });

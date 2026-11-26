@@ -52,6 +52,71 @@
   let trackDensity = 'compact';
   try { trackDensity = localStorage.getItem('music-lab-track-density') || 'compact'; } catch (_) { /* storage unavailable */ }
   if (!['compact', 'detailed', 'fit'].includes(trackDensity)) trackDensity = 'compact';
+  let studioTheme = 'graphite';
+  try { studioTheme = localStorage.getItem('music-lab-studio-theme') || 'graphite'; } catch (_) { /* storage unavailable */ }
+  if (!['graphite', 'midnight', 'daylight'].includes(studioTheme)) studioTheme = 'graphite';
+  function applyStudioTheme(theme, redraw = true) {
+    if (!['graphite', 'midnight', 'daylight'].includes(theme)) theme = 'graphite';
+    studioTheme = theme;
+    try { localStorage.setItem('music-lab-studio-theme', studioTheme); } catch (_) { /* storage unavailable */ }
+    if (!quConsole) {
+      root.dataset.studioTheme = studioTheme;
+      document.body.dataset.studioTheme = studioTheme;
+    }
+    const sel = root.querySelector('[data-studio-theme-select]');
+    if (sel && sel.value !== studioTheme) sel.value = studioTheme;
+    if (redraw) {
+      drawRuler();
+      drawRoll();
+      const wave = R.editor?.querySelector('.daw-wave');
+      const selClip = selected();
+      if (wave && selClip?.clip.type === 'audio') drawBigWave(wave, selClip.clip);
+    }
+  }
+  function canvasPalette() {
+    if (quConsole) {
+      return {
+        rulerBg: '#1b2233', barTick: '#94a3b8', beatTick: '#475569', barText: '#e2e8f0',
+        loopOn: 'rgba(250, 204, 21, 0.85)', loopOff: 'rgba(148, 163, 184, 0.35)', sel: 'rgba(125, 211, 252, .7)', marker: '#f472b6',
+        rollBg: '#121826', rowEven: '#1a2234', rowOdd: '#161d2d', rowWhite: '#1b2335', rowBlack: '#141a28',
+        octaveLine: '#334155', beyondClip: 'rgba(0,0,0,0.45)', gridBar: '#64748b', gridBeat: '#334155', gridSub: '#222b3d',
+        noteSel: '#ffffff', keyDrumBg: '#1e293b', keyWhite: '#e2e8f0', keyBlack: '#0f172a', keyLine: '#475569', keyTextDrum: '#e2e8f0', keyText: '#0f172a',
+        playhead: '#f43f5e', waveBg: '#121826', specBg: '#0f1420', specGrid: '#2a3348', specText: '#64748b', specLine: '#7dd3fc',
+        stereoBg: 'rgba(15,20,32,.35)', stereoDot: '#a7f3d0',
+      };
+    }
+    if (studioTheme === 'daylight') {
+      return {
+        rulerBg: '#e4e8f0', barTick: '#7e889b', beatTick: '#b9c2d1', barText: '#262e3d',
+        loopOn: 'rgba(217, 119, 6, 0.78)', loopOff: 'rgba(100, 116, 139, 0.32)', sel: 'rgba(14, 116, 144, 0.55)', marker: '#be185d',
+        rollBg: '#f4f6f9', rowEven: '#f7f8fb', rowOdd: '#edf0f5', rowWhite: '#f8fafc', rowBlack: '#eaeef4',
+        octaveLine: '#c2cbd9', beyondClip: 'rgba(203, 213, 225, 0.55)', gridBar: '#98a3b5', gridBeat: '#c9d1de', gridSub: '#e2e7f0',
+        noteSel: '#111827', keyDrumBg: '#e2e8f0', keyWhite: '#ffffff', keyBlack: '#2b3445', keyLine: '#cbd5e1', keyTextDrum: '#1e293b', keyText: '#1e293b',
+        playhead: '#d9384a', waveBg: '#eef1f6', specBg: '#f1f4f9', specGrid: '#cfd7e3', specText: '#475569', specLine: '#0e7490',
+        stereoBg: 'rgba(241,244,249,.45)', stereoDot: '#0e7490',
+      };
+    }
+    if (studioTheme === 'midnight') {
+      return {
+        rulerBg: '#0e121a', barTick: '#465269', beatTick: '#242c3c', barText: '#b5c1d4',
+        loopOn: 'rgba(230, 169, 82, 0.85)', loopOff: 'rgba(139, 150, 169, 0.28)', sel: 'rgba(103, 167, 232, 0.65)', marker: '#e879a8',
+        rollBg: '#0a0d13', rowEven: '#121722', rowOdd: '#0e121b', rowWhite: '#121722', rowBlack: '#0c1018',
+        octaveLine: '#273145', beyondClip: 'rgba(0,0,0,0.52)', gridBar: '#39455e', gridBeat: '#222b3d', gridSub: '#161d29',
+        noteSel: '#ffffff', keyDrumBg: '#161d2b', keyWhite: '#cbd5e1', keyBlack: '#141923', keyLine: '#404b61', keyTextDrum: '#e2e8f0', keyText: '#0f172a',
+        playhead: '#e55365', waveBg: '#0b0f16', specBg: '#0b0f16', specGrid: '#222b3d', specText: '#7c8ba1', specLine: '#67a7e8',
+        stereoBg: 'rgba(11,15,22,.4)', stereoDot: '#72d9b0',
+      };
+    }
+    return {
+      rulerBg: '#181c24', barTick: '#4c5567', beatTick: '#2b313f', barText: '#b8c2d2',
+      loopOn: 'rgba(230, 169, 82, 0.85)', loopOff: 'rgba(143, 153, 170, 0.3)', sel: 'rgba(88, 184, 214, 0.65)', marker: '#e56b96',
+      rollBg: '#12151b', rowEven: '#191e27', rowOdd: '#141820', rowWhite: '#191e27', rowBlack: '#13171e',
+      octaveLine: '#2f3747', beyondClip: 'rgba(0,0,0,0.45)', gridBar: '#3f485b', gridBeat: '#282f3c', gridSub: '#1d222c',
+      noteSel: '#ffffff', keyDrumBg: '#1d222c', keyWhite: '#d5dbe5', keyBlack: '#1b202a', keyLine: '#4a5365', keyTextDrum: '#e6eaf0', keyText: '#141820',
+      playhead: '#e55365', waveBg: '#12151b', specBg: '#12151b', specGrid: '#282f3c', specText: '#8591a4', specLine: '#58b8d6',
+      stereoBg: 'rgba(18,21,27,.4)', stereoDot: '#68d3a8',
+    };
+  }
   let TRACK_H = COARSE ? 142 : 110;
   let HEAD_W = 200;
   let compactHeads = false;
@@ -1674,10 +1739,10 @@
   const snapOptions = [['bar', 'Bar'], [1, 'Beat'], [0.5, '1/8'], [0.25, '1/16'], [0, 'Off']];
   const gridOptions = [[1, '1/4'], [0.5, '1/8'], [0.25, '1/16'], [0.125, '1/32'], [1 / 3, '1/8 triplet'], [1 / 6, '1/16 triplet']];
   const DOCK_TABS = [
-    ['tools', 'Channel', 'Add learning tools to a channel'],
-    ['edit', '✎ Edit', 'Piano roll or audio clip editor for the selected clip'],
-    ['play', '🎹 Play', 'On-screen keyboard and drum pads for the armed track'],
-    ['mix', '🎚 Mix', 'Volume, pan, mute, solo and level meters for every track'],
+    ['tools', 'Channel', 'Add instruments, EQ, and learning tools to a channel'],
+    ['edit', 'Edit', 'Piano roll or audio clip editor for the selected clip'],
+    ['play', 'Play', 'On-screen keyboard and drum pads for the armed track'],
+    ['mix', 'Mix', 'Volume, pan, mute, solo and level meters for every track'],
     ['fx', 'FX', 'Channel effects (EQ, compressor) for one track'],
   ];
   // Drum pads in a 4×3 grid: hands on the bottom row like a pad controller.
@@ -1689,29 +1754,31 @@
   root.innerHTML = `
     <div class="daw-workflow"><strong>Make a song in layers</strong><span>1. Choose a channel and sound → 2. Arm ● and record → 3. Add another layer → 4. Mix and export</span></div>
     <div class="daw-bar daw-transport" role="toolbar" aria-label="Transport">
-      <div class="daw-group">
+      <div class="daw-group daw-transport-btns">
         <button type="button" class="daw-btn" data-act="home" aria-label="Back to start" title="Back to start (Home)">⏮</button>
         <button type="button" class="daw-btn daw-play" data-act="play" aria-label="Play" title="Play / pause (Space)">▶</button>
         <button type="button" class="daw-btn" data-act="stop" aria-label="Stop" title="Stop (press twice to go back to the start)">⏹</button>
         <button type="button" class="daw-btn daw-rec" data-act="record" aria-label="Record" title="Start recording on the armed track">⏺ Record</button>
-        <button type="button" class="daw-btn daw-toggle daw-studio-btn" data-act="studio" aria-pressed="false" aria-label="Full-screen studio" title="Full-screen studio: fill the screen with the tracks and panels">⛶ <span>Expand</span></button>
+        <button type="button" class="daw-btn daw-toggle daw-studio-btn" data-act="studio" aria-pressed="false" aria-label="Full-screen studio" title="Full-screen studio (Ctrl/⌘+Shift+F)">⛶ <span>Expand</span></button>
       </div>
-      <div class="daw-lcd" aria-live="off">
-        <span class="daw-lcd-state" data-ref="transport-state">Stopped</span>
-        <span class="daw-lcd-pos" title="Bar · beat · sixteenth" data-ref="pos">1.1.1</span>
-        <span class="daw-lcd-time" data-ref="time">0:00.0</span>
-      </div>
-      <div class="daw-group">
-        <button type="button" class="daw-btn daw-toggle" data-act="loop" aria-pressed="false" title="Loop the region on the ruler (drag across the ruler to set it)">🔁 Loop</button>
-        <button type="button" class="daw-btn daw-toggle" data-act="metronome" aria-pressed="false" title="Metronome click">𝅘𝅥 Click</button>
-        <button type="button" class="daw-btn daw-toggle" data-act="countin" aria-pressed="true" title="One bar of clicks before recording starts">Count-in</button>
-        <button type="button" class="daw-btn daw-toggle" data-act="punch" aria-pressed="false" title="Record only between the loop markers (set the loop region first)">Punch</button>
-      </div>
-      <div class="daw-group">
+      <div class="daw-group daw-lcd-capsule">
+        <div class="daw-lcd" aria-live="off">
+          <span class="daw-lcd-state" data-ref="transport-state">Stopped</span>
+          <span class="daw-lcd-pos" title="Bar · beat · sixteenth" data-ref="pos">1.1.1</span>
+          <span class="daw-lcd-time" data-ref="time">0:00.0</span>
+        </div>
         <label class="daw-field"><span>Tempo</span><input type="number" data-ref="bpm" min="40" max="240" step="1" aria-label="Tempo in beats per minute"></label>
         <label class="daw-field"><span>Meter</span>
           <select data-ref="sig" aria-label="Time signature"><option>4/4</option><option>3/4</option><option>2/4</option><option>6/8</option><option>5/4</option><option>7/8</option></select>
         </label>
+      </div>
+      <div class="daw-group daw-mode-toggles">
+        <button type="button" class="daw-btn daw-toggle" data-act="loop" aria-pressed="false" title="Loop the region on the ruler (drag across the ruler to set it)">Loop</button>
+        <button type="button" class="daw-btn daw-toggle" data-act="metronome" aria-pressed="false" title="Metronome click">Click</button>
+        <button type="button" class="daw-btn daw-toggle" data-act="countin" aria-pressed="true" title="One bar of clicks before recording starts">Count-in</button>
+        <button type="button" class="daw-btn daw-toggle" data-act="punch" aria-pressed="false" title="Record only between the loop markers (set the loop region first)">Punch</button>
+      </div>
+      <div class="daw-group daw-master-cluster">
         <label class="daw-field daw-master"><span>Master</span><input type="range" data-ref="master" min="0" max="1.2" step="0.01" aria-label="Master volume"><span class="daw-meter" aria-hidden="true"><i data-ref="meter"></i></span></label>
       </div>
     </div>
@@ -1772,7 +1839,7 @@
         </div>
         <label class="daw-field daw-name"><span>Song</span><input type="text" data-ref="name" maxlength="60" aria-label="Song name"></label>
       </div>
-      <div class="daw-group">
+      <div class="daw-group daw-history-tools">
         <button type="button" class="daw-btn" data-act="undo" aria-label="Undo" title="Undo (Ctrl/⌘+Z)">↶</button>
         <button type="button" class="daw-btn" data-act="redo" aria-label="Redo" title="Redo (Ctrl/⌘+Shift+Z)">↷</button>
         <label class="daw-field"><span>Snap</span>
@@ -1803,17 +1870,37 @@
   `;
 
   // Keep secondary controls out of the arrangement, without hiding essential transport.
-  const fileTools = root.querySelector(".daw-file-tools");
+  const transportBar = root.querySelector('.daw-transport');
+  const fileTools = root.querySelector('.daw-file-tools');
   const commandStrip = document.createElement('div');
   commandStrip.className = 'daw-command-strip';
   const transportSettings = document.createElement('details');
   transportSettings.className = 'daw-settings';
   transportSettings.innerHTML = '<summary>Settings</summary><div class="daw-settings-body"></div>';
-  const transportGroups = [...root.querySelector('.daw-transport').children];
-  transportGroups.slice(2).forEach(node => transportSettings.lastElementChild.append(node));
+  const settingsBody = transportSettings.lastElementChild;
+  if (quConsole) {
+    const transportGroups = [...transportBar.children];
+    transportGroups.slice(1).forEach(node => settingsBody.append(node));
+    transportBar.append(transportGroups[1]);
+  } else {
+    settingsBody.append(root.querySelector('[data-act="punch"]'));
+    const themeField = document.createElement('label');
+    themeField.className = 'daw-field';
+    themeField.innerHTML = '<span>Atmosphere</span><select data-studio-theme-select aria-label="Studio atmosphere"><option value="graphite">Graphite Zen</option><option value="midnight">Midnight</option><option value="daylight">Daylight Paper</option></select>';
+    const themeSelect = themeField.querySelector('select');
+    themeSelect.value = studioTheme;
+    themeSelect.addEventListener('change', event => {
+      applyStudioTheme(event.target.value);
+      status(`Studio atmosphere set to ${event.target.selectedOptions[0].text}.`);
+    });
+    const shortcutNote = document.createElement('p');
+    shortcutNote.className = 'daw-note daw-shortcuts-note';
+    shortcutNote.textContent = 'Shortcuts: Space Play/Pause · Ctrl/⌘+Z Undo · Ctrl/⌘+D Duplicate · Ctrl/⌘+E Split · [ / ] Zoom · Shift+1–4 Views · Ctrl/⌘+Shift+F Expand';
+    settingsBody.append(themeField, shortcutNote);
+  }
   // Attach the strip first: appending into a detached node would pull these out of root.
-  root.querySelector('.daw-transport').after(commandStrip);
-  commandStrip.append(transportSettings, root.querySelector('.daw-region'), fileTools);
+  transportBar.after(commandStrip);
+  commandStrip.append(fileTools, root.querySelector('.daw-region'), transportSettings);
   fileTools.open = false;
   const audioHealth = document.createElement('details');
   audioHealth.className = 'daw-audio-health';
@@ -1834,6 +1921,11 @@
   views.innerHTML = (quConsole ? ['tracks','split','instrument'] : ['tracks','channels','split','instrument']).map(view => `<button type="button" class="daw-btn" data-view="${view}" aria-pressed="${view==='split'}">${view==='tracks'?'Tracks':view==='channels'?'Channels':view==='split'?'Split':'Panels'}</button>`).join('');
   commandStrip.append(views);
   if (!quConsole) {
+    const historyGroup = document.createElement('div');
+    historyGroup.className = 'daw-group daw-history-tools';
+    historyGroup.setAttribute('role', 'group');
+    historyGroup.setAttribute('aria-label', 'History');
+    historyGroup.append(root.querySelector('[data-act="undo"]'), root.querySelector('[data-act="redo"]'));
     const layoutTools = document.createElement('div');
     layoutTools.className = 'daw-group daw-layout-tools';
     layoutTools.setAttribute('role', 'group');
@@ -1842,7 +1934,9 @@
       <button type="button" class="daw-btn" data-act="fit-song" title="Fit the whole song into the timeline width">Fit song</button>`;
     layoutTools.querySelector('select').value = trackDensity;
     layoutTools.append(root.querySelector('[data-act="zoom-out"]'), root.querySelector('[data-act="zoom-in"]'));
-    root.querySelector('.daw-lcd').before(layoutTools);
+    const masterCluster = root.querySelector('.daw-master-cluster');
+    masterCluster.append(root.querySelector('[data-act="studio"]'));
+    masterCluster.before(historyGroup, layoutTools);
     layoutTools.querySelector('select').addEventListener('change', event => {
       trackDensity = event.target.value;
       try { localStorage.setItem('music-lab-track-density', trackDensity); } catch (_) { /* storage unavailable */ }
@@ -1855,13 +1949,14 @@
     quickStart = document.createElement('section');
     quickStart.className = 'daw-quick-start';
     quickStart.setAttribute('aria-label', 'Play an instrument');
-    quickStart.innerHTML = `<div class="daw-quick-actions"><strong>Play an instrument</strong>
-      <label class="daw-field">Sound <select data-quick-sound aria-label="New instrument sound">${instrumentOptions('piano')}</select></label>
-      <button type="button" class="daw-btn daw-quick-add" data-act="play-instrument" aria-describedby="daw-quick-help">Add &amp; play</button>
+    quickStart.innerHTML = `<div class="daw-quick-actions"><strong>Play</strong>
+      <label class="daw-field"><span>Sound</span><select data-quick-sound aria-label="New instrument sound">${instrumentOptions('piano')}</select></label>
+      <button type="button" class="daw-btn daw-quick-add" data-act="play-instrument" aria-describedby="daw-quick-help">＋ Add &amp; play</button>
       <button type="button" class="daw-btn" data-act="connect-midi" aria-describedby="daw-midi-status">Connect MIDI keyboard</button></div>
-      <details class="daw-playing-help"><summary>Playing help</summary><p id="daw-quick-help">Play on screen or with A–K. For a USB keyboard, connect MIDI and allow browser access.</p></details>
+      <details class="daw-playing-help"><summary aria-label="Playing help">?</summary><p id="daw-quick-help">Play on screen or with A–K. For a USB keyboard, connect MIDI and allow browser access.</p></details>
       <p id="daw-midi-status" data-midi-status role="status" aria-live="polite" aria-atomic="true"></p>`;
-    commandStrip.prepend(quickStart);
+    views.before(quickStart);
+    applyStudioTheme(studioTheme, false);
   }
   // Phones: M / S / ● for the selected track in one row of full-size targets.
   const selBar = document.createElement('div');
@@ -1946,7 +2041,9 @@
     root.querySelector('.daw-input-help').hidden = track?.kind !== 'audio';
     button.setAttribute('aria-pressed', String(!!mic.monitor && mic.monitorOn));
     button.textContent = mic.monitorOn && mic.monitor ? 'Mic on' : 'Hear mic';
-    root.querySelector('[data-ref="input"]').classList.toggle('is-ready', !!track && (track.kind === 'instrument' || !!mic.node));
+    const inputEl = root.querySelector('[data-ref="input"]');
+    inputEl.classList.toggle('is-ready', !!track && (track.kind === 'instrument' || !!mic.node));
+    inputEl.classList.toggle('is-audio-armed', track?.kind === 'audio');
   }
   $('input-channel').addEventListener('change', event => {
     if (transport.recording || finishingTake) { updateInputUi(); return; }
@@ -2664,7 +2761,11 @@
     </div>`;
   }
   // Compact effect picker + reorder helpers, shared by the channel console and the FX rack.
-  const FX_GROUPS = [['Dynamics', ['compressor', 'punch-compressor', 'limiter']], ['Tone', ['eq', 'distortion', 'browser-tape-color']], ['Space & motion', ['reverb', 'studio-reverb', 'delay', 'chorus', 'browser-pulse-tremolo']]];
+  const FX_GROUPS = [
+    ['Dynamics', ['compressor', 'browser-opto-2a', 'punch-compressor', 'limiter']],
+    ['Tone & Preamp', ['browser-pultec-eq', 'eq', 'browser-neve-pre', 'distortion', 'browser-tape-color']],
+    ['Space & Motion', ['delay', 'reverb', 'studio-reverb', 'chorus', 'browser-pulse-tremolo']],
+  ];
   let lastFxPick = '';
   function fxPickerHtml(track, btnClass, addAttr) {
     const registry = window.AudioEffects.registry, count = (track.effects || []).length, full = count >= 8, seen = new Set();
@@ -2719,7 +2820,7 @@
           <span class="mc-mv"><button type="button" class="mc-mvbtn" data-ch-fx-move="-1" aria-label="Move ${esc(d.name)} earlier" title="Earlier in the chain" ${i === 0 ? 'disabled' : ''}>▲</button><button type="button" class="mc-mvbtn" data-ch-fx-move="1" aria-label="Move ${esc(d.name)} later" title="Later in the chain" ${i === total - 1 ? 'disabled' : ''}>▼</button><button type="button" class="mc-mvbtn mc-mvbtn-x" data-ch-fx-remove aria-label="Remove ${esc(d.name)}" title="Remove">✕</button></span>
           ${MK.sw({ attrs: `data-ch-fx-bypass="${i}"`, on: !e.bypass, tone: 'green', text: 'IN', label: `${d.name} in circuit`, title: 'In circuit (lit) or bypassed (dark), like the bypass switch on a hardware unit' })}</div>
         ${insertPanelHtml(e, params, i)}
-        ${e.type === 'eq' ? eqFaceHtml(e, params, i) : e.type === 'chorus' ? chorusFaceHtml(e, params, i) : `<div class="mc-knobs">${d.controls.map(c => insertKnob(i, d, c, params)).join('')}${MK.knob({ key: 'wet', label: `${d.name} wet mix`, short: 'Mix', min: 0, max: 1, step: .01, def: 1, value: e.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${i}"` })}</div>`}</li>`;
+        ${window.MusicHardwareVst?.faceplate(e, params, i, false, { insertKnob, MK, decimalsOf }) || (e.type === 'eq' ? eqFaceHtml(e, params, i) : e.type === 'chorus' ? chorusFaceHtml(e, params, i) : `<div class="mc-knobs">${d.controls.map(c => insertKnob(i, d, c, params)).join('')}${MK.knob({ key: 'wet', label: `${d.name} wet mix`, short: 'Mix', min: 0, max: 1, step: .01, def: 1, value: e.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${i}"` })}</div>`)}</li>`;
     }).join('');
     return `${fxPickerHtml(track, 'mk-btn mk-btn-primary', 'data-ch-fx-add-picked')}
       ${list ? `<ol class="mc-inserts">${list}</ol>` : '<p class="mc-empty"><strong>Straight wire.</strong> Add a compressor to even out loud and soft notes, or add delay for an echo.</p>'}
@@ -2865,7 +2966,7 @@
   }
   $('tools').addEventListener('click', async e => {
     const b=e.target.closest('button'), t=channelTarget(); if (!b||b.disabled||!t) return;
-    if (applyCompressorPreset(b, t, $('tools')) || applyReverbPreset(b, t, $('tools'))) return;
+    if (applyCompressorPreset(b, t, $('tools')) || applyReverbPreset(b, t, $('tools')) || window.MusicHardwareVst?.handleClick(b, t, $('tools'), commit)) return;
     if (b.hasAttribute('data-eq-freeze')) { eqDisplay.freeze = !eqDisplay.freeze; b.setAttribute('aria-pressed', String(eqDisplay.freeze)); b.textContent = eqDisplay.freeze ? 'Resume display' : 'Freeze display'; return; }
     if (b.dataset.flowJump) { const target=$('tools').querySelector(`[data-mc-section="${b.dataset.flowJump}"]`);target?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});target?.querySelector('h4')?.focus({preventScroll:true});return; }
     if (b.hasAttribute('data-ch-open-fx')) { effectsTrack=t.id; setTab('fx', true); return; }
@@ -3053,7 +3154,7 @@
           ${d.lesson ? `<a href="${siteURL(`lessons/technical-elements/audio-engineering/${d.lesson}`)}">Learn</a>` : ''}</div>
           ${d.description ? `<p class="daw-plugin-description">${esc(d.description)}</p>` : ''}
           ${insertPanelHtml(e, params, i)}
-          ${e.type === 'eq' ? eqFaceHtml(e, params, i) : e.type === 'chorus' ? chorusFaceHtml(e, params, i, true) : `<div class="daw-fx-controls"><label class="daw-field"><span>Rack mix (%)</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((e.wet ?? 1) * 100)}" aria-label="Insert ${i + 1} wet mix percent"></label>${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div>`}</li>`;
+          ${window.MusicHardwareVst?.faceplate(e, params, i, true, { insertKnob, MK, decimalsOf }) || (e.type === 'eq' ? eqFaceHtml(e, params, i) : e.type === 'chorus' ? chorusFaceHtml(e, params, i, true) : `<div class="daw-fx-controls"><label class="daw-field"><span>Rack mix (%)</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((e.wet ?? 1) * 100)}" aria-label="Insert ${i + 1} wet mix percent"></label>${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div>`)}</li>`;
       }).join('')}</ol>${(track.effects || []).length ? '' : '<p class="daw-note">No inserts: this channel is unprocessed. Add an EQ or compressor above.</p>'}${vstPanel(track)}`;
     MK.init(host);
   }
@@ -3062,7 +3163,7 @@
     if (b.hasAttribute('data-vst-connect')) { connectVst(); return; }
     if (b.dataset.vstLaunch) { launchVst(b.dataset.vstLaunch); return; }
     if (!track) return;
-    if (applyCompressorPreset(b, track, $('effects')) || applyReverbPreset(b, track, $('effects'))) return;
+    if (applyCompressorPreset(b, track, $('effects')) || applyReverbPreset(b, track, $('effects')) || window.MusicHardwareVst?.handleClick(b, track, $('effects'), commit)) return;
     if (b.dataset.vstLink) {
       const plugin = vstState.plugins.find(item => item.id === b.dataset.vstLink);
       if (plugin) {
@@ -3233,21 +3334,21 @@
     const view = R.scroll.clientWidth - HEAD_W;
     if (view <= 0) return;
     const h = 28, g = fitCanvas(rulerCanvas, view, h);
-    const sl = R.scroll.scrollLeft, ppb = ui.pxPerBeat, bar = barBeats();
-    g.fillStyle = '#1b2233'; g.fillRect(0, 0, view, h);
+    const sl = R.scroll.scrollLeft, ppb = ui.pxPerBeat, bar = barBeats(), pal = canvasPalette();
+    g.fillStyle = pal.rulerBg; g.fillRect(0, 0, view, h);
     if (project.loop.end > project.loop.start) {
-      g.fillStyle = project.loop.on ? 'rgba(250, 204, 21, 0.85)' : 'rgba(148, 163, 184, 0.35)';
+      g.fillStyle = project.loop.on ? pal.loopOn : pal.loopOff;
       g.fillRect(project.loop.start * ppb - sl, 0, (project.loop.end - project.loop.start) * ppb, 7);
     }
     if (ui.timeSelection) {
       const { start, end } = ui.timeSelection;
-      g.fillStyle = 'rgba(125, 211, 252, .7)';
+      g.fillStyle = pal.sel;
       g.fillRect(start * ppb - sl, 23, Math.max(1, (end - start) * ppb), 5);
     }
     (project.markers || []).forEach((m) => {
       const x = m.b * ppb - sl;
       if (x < -200 || x > view) return;
-      g.fillStyle = '#f472b6'; g.fillRect(x, 0, 2, h);
+      g.fillStyle = pal.marker; g.fillRect(x, 0, 2, h);
       g.font = '700 10px system-ui, sans-serif'; g.textBaseline = 'top'; g.fillText(m.name, x + 4, 1);
     });
     const first = Math.floor(sl / ppb), last = Math.ceil((sl + view) / ppb);
@@ -3258,10 +3359,10 @@
       const x = b * ppb - sl, isBar = Math.abs(b / bar - Math.round(b / bar)) < 1e-6;
       const barNo = Math.round(b / bar);
       if (isBar) {
-        g.fillStyle = '#94a3b8'; g.fillRect(x, 8, 1, h - 8);
-        if (barNo % barEvery === 0) { g.fillStyle = '#e2e8f0'; g.fillText(String(barNo + 1), x + 4, 18); }
+        g.fillStyle = pal.barTick; g.fillRect(x, 8, 1, h - 8);
+        if (barNo % barEvery === 0) { g.fillStyle = pal.barText; g.fillText(String(barNo + 1), x + 4, 18); }
       } else if (ppb >= 10) {
-        g.fillStyle = '#475569'; g.fillRect(x, h - 7, 1, 7);
+        g.fillStyle = pal.beatTick; g.fillRect(x, h - 7, 1, 7);
       }
     }
   }
@@ -3374,39 +3475,42 @@
     }
     const gridSel = gridOptions.map(([v, l]) => `<option value="${v}"${Math.abs(v - ui.rollGrid) < 1e-6 ? ' selected' : ''}>${l}</option>`).join('');
     R.editor.innerHTML = `
-      <div class="daw-bar daw-ed-bar"><div class="daw-group">${common}</div></div>
-      <div class="daw-bar daw-ed-bar"><div class="daw-group">
-        <div class="daw-seg" role="group" aria-label="Piano roll tool">
-          ${[['draw', '✏️ Draw', 'Tap to add notes, drag to lengthen; drag a note to move it'], ['select', '⬚ Select', 'Tap notes to select them, or drag a box around several'], ['erase', '⌫ Erase', 'Tap or swipe over notes to delete them']]
-            .map(([id, label, title]) => `<button type="button" class="daw-btn daw-toggle" data-act="roll-tool" data-tool="${id}" aria-pressed="${ui.rollTool === id}" title="${title}">${label}</button>`).join('')}
+      <div class="daw-bar daw-ed-bar"><div class="daw-group">${common}</div>
+        <div class="daw-group">
+          <div class="daw-seg" role="group" aria-label="Piano roll tool">
+            ${[['draw', 'Draw', 'Tap to add notes, drag to lengthen; drag a note to move it'], ['select', 'Select', 'Tap notes to select them, or drag a box around several'], ['erase', 'Erase', 'Tap or swipe over notes to delete them']]
+              .map(([id, label, title]) => `<button type="button" class="daw-btn daw-toggle" data-act="roll-tool" data-tool="${id}" aria-pressed="${ui.rollTool === id}" title="${title}">${label}</button>`).join('')}
+          </div>
+          <button type="button" class="daw-btn" data-act="select-all" title="Select every note (Ctrl/⌘+A)">All</button>
+          <button type="button" class="daw-btn" data-act="delete-notes" title="Delete the selected notes (Delete)">🗑 Notes</button>
         </div>
-        <button type="button" class="daw-btn" data-act="select-all" title="Select every note (Ctrl/⌘+A)">All</button>
-        <button type="button" class="daw-btn" data-act="delete-notes" title="Delete the selected notes (Delete)">🗑 Notes</button>
-      </div></div>
-      <div class="daw-bar daw-ed-bar"><div class="daw-group">
-        <label class="daw-field"><span>Grid</span><select data-ed="grid" aria-label="Piano roll grid">${gridSel}</select></label>
-        <output class="daw-cursor-readout" data-roll-cursor aria-label="Piano roll cursor">Move the mouse over the grid</output>
-        <button type="button" class="daw-btn" data-act="quantize" title="Snap the selected notes (or all notes) to the grid">Quantize</button>
-        <label class="daw-field"><span>Strength</span><input type="number" data-ed="qstrength" min="0" max="100" step="5" value="${ui.qStrength}" aria-label="Quantize strength percent"> %</label>
-        <label class="daw-field"><span>Swing</span><input type="number" data-ed="swing" min="0" max="100" step="5" value="${ui.swing}" aria-label="Swing percent (100 = triplet feel)"> %</label>
-        <button type="button" class="daw-btn" data-act="humanize" title="Nudge timing and velocity slightly so it sounds played">Humanize</button>
-      </div></div>
-      <div class="daw-bar daw-ed-bar"><div class="daw-group">
-        <label class="daw-field"><span>Key</span><select data-ed="keyroot" aria-label="Key root">${NOTE_NAMES.map((n, i) => `<option value="${i}"${(project.key?.root || 0) === i ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
-        <label class="daw-field"><span>Scale</span><select data-ed="scale" aria-label="Scale">${Object.keys(SCALES).map((k) => `<option value="${k}"${(project.key?.scale || 'chromatic') === k ? ' selected' : ''}>${k}</option>`).join('')}</select></label>
-        <button type="button" class="daw-btn daw-toggle" data-act="scale-snap" aria-pressed="${!!project.key?.snap}" title="New notes land only on notes of the scale">Snap to scale</button>
-        <button type="button" class="daw-btn" data-act="fit-scale" title="Move the selected notes (or all notes) to the nearest note in the scale">Fit to scale</button>
-        <label class="daw-field"><span>Draw</span><select data-ed="chord" aria-label="Chord to draw">${Object.entries(CHORDS).map(([k, l]) => `<option value="${k}"${ui.chord === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
-        <label class="daw-field"><span>Arp</span><select data-ed="arp" aria-label="Arpeggio pattern">${['up', 'down', 'up-down', 'random'].map((k) => `<option${ui.arp === k ? ' selected' : ''}>${k}</option>`).join('')}</select></label>
-        <button type="button" class="daw-btn" data-act="arpeggiate" title="Turn chords into arpeggios at the grid rate">Arpeggiate</button>
-        <button type="button" class="daw-btn" data-act="transpose" data-by="-12" title="Down an octave">−8va</button>
-        <button type="button" class="daw-btn" data-act="transpose" data-by="-1" title="Down a semitone">−1</button>
-        <button type="button" class="daw-btn" data-act="transpose" data-by="1" title="Up a semitone">+1</button>
-        <button type="button" class="daw-btn" data-act="transpose" data-by="12" title="Up an octave">+8va</button>
-        <label class="daw-field"><span>Velocity</span><input type="range" data-ed="velocity" min="0.05" max="1" step="0.01" value="${selectedVelocity(clip)}" aria-label="Velocity of selected notes"></label>
-        <button type="button" class="daw-btn" data-act="roll-zoom-out" aria-label="Zoom piano roll out">−</button>
-        <button type="button" class="daw-btn" data-act="roll-zoom-in" aria-label="Zoom piano roll in">＋</button>
-      </div></div>
+      </div>
+      <div class="daw-bar daw-ed-bar">
+        <div class="daw-group">
+          <label class="daw-field"><span>Grid</span><select data-ed="grid" aria-label="Piano roll grid">${gridSel}</select></label>
+          <output class="daw-cursor-readout" data-roll-cursor aria-label="Piano roll cursor">Move the mouse over the grid</output>
+          <button type="button" class="daw-btn" data-act="quantize" title="Snap the selected notes (or all notes) to the grid">Quantize</button>
+          <label class="daw-field"><span>Strength</span><input type="number" data-ed="qstrength" min="0" max="100" step="5" value="${ui.qStrength}" aria-label="Quantize strength percent"> %</label>
+          <label class="daw-field"><span>Swing</span><input type="number" data-ed="swing" min="0" max="100" step="5" value="${ui.swing}" aria-label="Swing percent (100 = triplet feel)"> %</label>
+          <button type="button" class="daw-btn" data-act="humanize" title="Nudge timing and velocity slightly so it sounds played">Humanize</button>
+        </div>
+        <div class="daw-group">
+          <label class="daw-field"><span>Key</span><select data-ed="keyroot" aria-label="Key root">${NOTE_NAMES.map((n, i) => `<option value="${i}"${(project.key?.root || 0) === i ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
+          <label class="daw-field"><span>Scale</span><select data-ed="scale" aria-label="Scale">${Object.keys(SCALES).map((k) => `<option value="${k}"${(project.key?.scale || 'chromatic') === k ? ' selected' : ''}>${k}</option>`).join('')}</select></label>
+          <button type="button" class="daw-btn daw-toggle" data-act="scale-snap" aria-pressed="${!!project.key?.snap}" title="New notes land only on notes of the scale">Snap to scale</button>
+          <button type="button" class="daw-btn" data-act="fit-scale" title="Move the selected notes (or all notes) to the nearest note in the scale">Fit to scale</button>
+          <label class="daw-field"><span>Draw</span><select data-ed="chord" aria-label="Chord to draw">${Object.entries(CHORDS).map(([k, l]) => `<option value="${k}"${ui.chord === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+          <label class="daw-field"><span>Arp</span><select data-ed="arp" aria-label="Arpeggio pattern">${['up', 'down', 'up-down', 'random'].map((k) => `<option${ui.arp === k ? ' selected' : ''}>${k}</option>`).join('')}</select></label>
+          <button type="button" class="daw-btn" data-act="arpeggiate" title="Turn chords into arpeggios at the grid rate">Arpeggiate</button>
+          <button type="button" class="daw-btn" data-act="transpose" data-by="-12" title="Down an octave">−8va</button>
+          <button type="button" class="daw-btn" data-act="transpose" data-by="-1" title="Down a semitone">−1</button>
+          <button type="button" class="daw-btn" data-act="transpose" data-by="1" title="Up a semitone">+1</button>
+          <button type="button" class="daw-btn" data-act="transpose" data-by="12" title="Up an octave">+8va</button>
+          <label class="daw-field"><span>Velocity</span><input type="range" data-ed="velocity" min="0.05" max="1" step="0.01" value="${selectedVelocity(clip)}" aria-label="Velocity of selected notes"></label>
+          <button type="button" class="daw-btn" data-act="roll-zoom-out" aria-label="Zoom piano roll out">−</button>
+          <button type="button" class="daw-btn" data-act="roll-zoom-in" aria-label="Zoom piano roll in">＋</button>
+        </div>
+      </div>
       <p class="daw-note">${track.instrument === 'drums' ? 'Each row is one drum. ' : ''}${COARSE
         ? 'Draw: tap to add a note, drag to make it longer · drag a note to move it, its right end to resize · double-tap a note to delete it · two fingers scroll, pinch to zoom.'
         : 'Hover to see the note and beat · click to add, drag to lengthen · Ctrl/⌘ while dragging for fine timing · drag a note to move it, its right edge to resize · right-click to delete · Shift-click or Select picks several.'}</p>
@@ -3446,26 +3550,26 @@
     const w = scroll.clientWidth, h = scroll.clientHeight;
     if (!w || !h) return;
     const g = fitCanvas(canvas, w, h);
-    const sx = scroll.scrollLeft, sy = scroll.scrollTop, px = ui.rollPx, bar = barBeats();
+    const sx = scroll.scrollLeft, sy = scroll.scrollTop, px = ui.rollPx, bar = barBeats(), pal = canvasPalette();
     const drums = track.instrument === 'drums';
-    g.fillStyle = '#121826'; g.fillRect(0, 0, w, h);
+    g.fillStyle = pal.rollBg; g.fillRect(0, 0, w, h);
     const r0 = Math.floor(sy / ROW_H), r1 = Math.min(rows.length - 1, Math.ceil((sy + h) / ROW_H));
     for (let r = r0; r <= r1; r++) {
       const p = rows[r], y = r * ROW_H - sy;
       const black = [1, 3, 6, 8, 10].includes(p % 12);
-      g.fillStyle = drums ? (r % 2 ? '#161d2d' : '#1a2234') : (black ? '#141a28' : '#1b2335');
+      g.fillStyle = drums ? (r % 2 ? pal.rowOdd : pal.rowEven) : (black ? pal.rowBlack : pal.rowWhite);
       g.fillRect(KEYS_W, y, w, ROW_H);
-      if (!drums && p % 12 === 0) { g.fillStyle = '#334155'; g.fillRect(KEYS_W, y + ROW_H - 1, w, 1); }
+      if (!drums && p % 12 === 0) { g.fillStyle = pal.octaveLine; g.fillRect(KEYS_W, y + ROW_H - 1, w, 1); }
     }
     // Beyond the clip end: shaded, notes there don't play.
     const endX = KEYS_W + clip.length * px - sx;
-    if (endX < w) { g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(Math.max(KEYS_W, endX), 0, w, h); }
+    if (endX < w) { g.fillStyle = pal.beyondClip; g.fillRect(Math.max(KEYS_W, endX), 0, w, h); }
     const b0 = Math.floor(sx / px / ui.rollGrid) * ui.rollGrid;
     for (let b = b0; b * px - sx < w; b += ui.rollGrid) {
       const x = KEYS_W + b * px - sx;
       if (x < KEYS_W) continue;
       const isBar = Math.abs(b / bar - Math.round(b / bar)) < 1e-6, isBeat = Math.abs(b - Math.round(b)) < 1e-6;
-      g.fillStyle = isBar ? '#64748b' : isBeat ? '#334155' : '#222b3d';
+      g.fillStyle = isBar ? pal.gridBar : isBeat ? pal.gridBeat : pal.gridSub;
       g.fillRect(Math.round(x), 0, 1, h);
     }
     // Notes
@@ -3476,10 +3580,10 @@
       const x = KEYS_W + n.start * px - sx, y = r * ROW_H - sy, nw = Math.max(4, n.duration * px - 1);
       if (y + ROW_H < 0 || y > h || x + nw < KEYS_W || x > w) return;
       g.globalAlpha = 0.45 + 0.55 * n.velocity;
-      g.fillStyle = ui.selNotes.has(i) ? '#ffffff' : color;
+      g.fillStyle = ui.selNotes.has(i) ? pal.noteSel : color;
       g.fillRect(x, y + 1, nw, ROW_H - 2);
       g.globalAlpha = 1;
-      g.fillStyle = 'rgba(0,0,0,0.5)';
+      g.fillStyle = 'rgba(0,0,0,0.42)';
       g.fillRect(x + nw - 3, y + 3, 2, ROW_H - 6);
     });
     if (roll.hover && !roll.marquee) {
@@ -3487,12 +3591,12 @@
       const x = KEYS_W + hover.beat * px - sx;
       const y = hover.row * ROW_H - sy;
       if (x >= KEYS_W && x <= w) {
-        g.fillStyle = 'rgba(125, 211, 252, .85)';
+        g.fillStyle = 'rgba(88, 184, 214, .85)';
         g.fillRect(Math.round(x), 0, 1, h);
         if (ui.rollTool === 'draw' && hover.hit < 0) {
-          g.fillStyle = 'rgba(125, 211, 252, .35)';
+          g.fillStyle = 'rgba(88, 184, 214, .32)';
           g.fillRect(x, y + 1, Math.max(4, ui.noteLen * px - 1), ROW_H - 2);
-          g.strokeStyle = '#7dd3fc';
+          g.strokeStyle = '#58b8d6';
           g.strokeRect(x + .5, y + 1.5, Math.max(4, ui.noteLen * px - 1), ROW_H - 3);
         }
       }
@@ -3502,13 +3606,13 @@
       const m = roll.marquee;
       const x0 = KEYS_W + Math.min(m.b0, m.b1) * px - sx, x1 = KEYS_W + Math.max(m.b0, m.b1) * px - sx;
       const y0 = Math.min(m.r0, m.r1) * ROW_H - sy, y1 = (Math.max(m.r0, m.r1) + 1) * ROW_H - sy;
-      g.fillStyle = 'rgba(56, 189, 248, 0.15)'; g.fillRect(x0, y0, x1 - x0, y1 - y0);
-      g.strokeStyle = '#38bdf8'; g.lineWidth = 1; g.strokeRect(x0 + 0.5, y0 + 0.5, x1 - x0 - 1, y1 - y0 - 1);
+      g.fillStyle = 'rgba(88, 184, 214, 0.16)'; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+      g.strokeStyle = '#58b8d6'; g.lineWidth = 1; g.strokeRect(x0 + 0.5, y0 + 0.5, x1 - x0 - 1, y1 - y0 - 1);
     }
     // Playhead
     if (ui.playhead >= clip.start && ui.playhead <= clip.start + rollBeats(clip)) {
       const x = KEYS_W + (ui.playhead - clip.start) * px - sx;
-      if (x >= KEYS_W) { g.fillStyle = '#f43f5e'; g.fillRect(x, 0, 2, h); }
+      if (x >= KEYS_W) { g.fillStyle = pal.playhead; g.fillRect(x, 0, 2, h); }
     }
     // Keys (drawn last so they cover the scrolled grid)
     g.font = '10px "IBM Plex Mono", ui-monospace, monospace';
@@ -3516,11 +3620,11 @@
     for (let r = r0; r <= r1; r++) {
       const p = rows[r], y = r * ROW_H - sy;
       const black = [1, 3, 6, 8, 10].includes(p % 12);
-      g.fillStyle = drums ? '#1e293b' : black ? '#0f172a' : '#e2e8f0';
+      g.fillStyle = drums ? pal.keyDrumBg : black ? pal.keyBlack : pal.keyWhite;
       g.fillRect(0, y, KEYS_W, ROW_H);
-      g.fillStyle = '#475569'; g.fillRect(0, y + ROW_H - 1, KEYS_W, 1);
+      g.fillStyle = pal.keyLine; g.fillRect(0, y + ROW_H - 1, KEYS_W, 1);
       const label = drums ? IO.DRUM_LABELS[p] : (p % 12 === 0 ? noteLabel(p) : '');
-      if (label) { g.fillStyle = drums ? '#e2e8f0' : '#0f172a'; g.fillText(label, 4, y + ROW_H / 2); }
+      if (label) { g.fillStyle = drums ? pal.keyTextDrum : pal.keyText; g.fillText(label, 4, y + ROW_H / 2); }
     }
   }
 
@@ -3528,7 +3632,7 @@
     const e = buffers.get(clip.bufferId);
     const w = Math.max(200, R.editor.clientWidth - 4), h = 120;
     const g = fitCanvas(canvas, w, h);
-    g.fillStyle = '#121826'; g.fillRect(0, 0, w, h);
+    g.fillStyle = canvasPalette().waveBg; g.fillRect(0, 0, w, h);
     if (!e) return;
     const d = e.buffer.getChannelData(0), sr = e.buffer.sampleRate;
     const a = Math.floor(clip.offset * sr), n = Math.floor(clip.duration * sr), per = n / w;
@@ -4738,10 +4842,6 @@
     const on = !studioOn();
     commandStrip.querySelectorAll(':scope > details[open]').forEach(details => { details.open = false; });
     closeMenus();
-    if (quickStart) {
-      if (on) transportSettings.lastElementChild.prepend(quickStart);
-      else commandStrip.prepend(quickStart);
-    }
     pillar.classList.toggle('is-studio', on);
     document.documentElement.classList.toggle('daw-studio-open', on);
     root.querySelector('[data-act="studio"]').setAttribute('aria-pressed', String(on));
@@ -4816,6 +4916,19 @@
     if (e.code === 'Space' && !t.closest('button, input, summary, a, [role="slider"]')) {
       e.preventDefault(); e.stopPropagation(); if (!e.repeat) togglePlay(); return;
     }
+    if (mod && e.shiftKey && e.key.toLowerCase() === 'f') { e.preventDefault(); e.stopPropagation(); toggleStudio(); return; }
+    if (!quConsole && e.shiftKey && !mod && !e.altKey) {
+      const viewByCode = { Digit1: 'tracks', Digit2: 'channels', Digit3: 'split', Digit4: 'instrument' }[e.code];
+      if (viewByCode) {
+        e.preventDefault(); e.stopPropagation(); silenceLive(); setWorkspaceView(viewByCode);
+        requestAnimationFrame(() => { renderTracks(); if (ui.tab === 'edit') { sizeRoll(); drawRoll(); } });
+        return;
+      }
+    }
+    if (!mod && !e.altKey && !e.shiftKey && !t.closest('button, input, summary, a, select, [role="slider"]')) {
+      if (e.key === '[') { e.preventDefault(); zoom(1 / 1.4); return; }
+      if (e.key === ']') { e.preventDefault(); zoom(1.4); return; }
+    }
     if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.stopPropagation(); e.shiftKey ? redo() : undo(); return; }
     if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); e.stopPropagation(); redo(); return; }
     if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); e.stopPropagation(); duplicateClip(); return; }
@@ -4889,14 +5002,15 @@
   function drawAnalysis() {
     const spec = R.mixer.querySelector('[data-spectrum]'), st = R.mixer.querySelector('[data-stereo]');
     if (!spec || !audio.spec) return;
+    const pal = canvasPalette();
     const g = spec.getContext('2d'), W = spec.width, H = spec.height, sr = audio.ctx.sampleRate;
     const bins = analysisBufs.spec ||= new Float32Array(audio.spec.frequencyBinCount);
     audio.spec.getFloatFrequencyData(bins);
-    g.fillStyle = '#0f1420'; g.fillRect(0, 0, W, H);
-    g.strokeStyle = '#2a3348'; g.fillStyle = '#64748b'; g.font = '10px system-ui, sans-serif';
+    g.fillStyle = pal.specBg; g.fillRect(0, 0, W, H);
+    g.strokeStyle = pal.specGrid; g.fillStyle = pal.specText; g.font = '10px system-ui, sans-serif';
     const xOf = (f) => Math.log10(f / 20) / 3 * W;
     [50, 100, 200, 500, 1000, 2000, 5000, 10000].forEach((f) => { const x = xOf(f); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); g.fillText(f >= 1000 ? f / 1000 + 'k' : String(f), x + 2, H - 3); });
-    g.beginPath(); g.strokeStyle = '#7dd3fc'; g.lineWidth = 1.5;
+    g.beginPath(); g.strokeStyle = pal.specLine; g.lineWidth = 1.5;
     for (let x = 0; x < W; x++) {
       const f = 20 * Math.pow(10, 3 * x / W), i = Math.min(bins.length - 1, Math.round(f / (sr / 2) * bins.length));
       const y = H - Math.max(0, Math.min(H, (bins[i] + 100) / 90 * H));
@@ -4907,9 +5021,9 @@
     const L = analysisBufs.L ||= new Float32Array(audio.anL.fftSize), Rr = analysisBufs.R ||= new Float32Array(audio.anR.fftSize);
     audio.anL.getFloatTimeDomainData(L); audio.anR.getFloatTimeDomainData(Rr);
     const s2 = st.getContext('2d'), S = st.width;
-    s2.fillStyle = 'rgba(15,20,32,.35)'; s2.fillRect(0, 0, S, S);
-    s2.strokeStyle = '#2a3348'; s2.beginPath(); s2.moveTo(S / 2, 0); s2.lineTo(S / 2, S); s2.moveTo(0, S / 2); s2.lineTo(S, S / 2); s2.stroke();
-    s2.fillStyle = '#a7f3d0';
+    s2.fillStyle = pal.stereoBg; s2.fillRect(0, 0, S, S);
+    s2.strokeStyle = pal.specGrid; s2.beginPath(); s2.moveTo(S / 2, 0); s2.lineTo(S / 2, S); s2.moveTo(0, S / 2); s2.lineTo(S, S / 2); s2.stroke();
+    s2.fillStyle = pal.stereoDot;
     let lr = 0, ll = 0, rr = 0;
     for (let i = 0; i < L.length; i++) {
       lr += L[i] * Rr[i]; ll += L[i] * L[i]; rr += Rr[i] * Rr[i];
@@ -4923,7 +5037,7 @@
   }
 
   function frame(now) {
-    requestAnimationFrame(frame);
+    if (window.SimKit) SimKit.frame(root, frame); else requestAnimationFrame(frame);
     if (document.hidden) return;
     if (transport.playing && audio.ctx && now + 0.5 >= nextPlayheadFrame) {
       nextPlayheadFrame = nextVisualFrame(now, nextPlayheadFrame, 60);
@@ -4977,6 +5091,7 @@
       const host = ui.tab === 'fx' ? $('effects') : $('tools'), instances = audio.mix?.strips.get(track?.id)?.effects;
       window.MusicLabCompressor?.draw(host, track, instances);
       window.MusicLabReverb?.draw(host, track, instances);
+      window.MusicHardwareVst?.draw(host, track, instances);
     }
     drawChannelEQ();
     if (mic.analyser) {

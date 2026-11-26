@@ -54,7 +54,7 @@ SimKit.loop((dt,time)=>{
   c.translate(pose.x,pose.y);c.rotate(pose.a);drawRover(c,{moving:!!motion,time});c.restore();
   c.fillStyle='#43574c';c.font='10px monospace';c.fillText('N ↑',14,22);c.fillText('NXT • DIFFERENTIAL DRIVE',14,h-14);
   $('pose').textContent=`${connection?'Estimated':'Simulated'} position: ${Math.round(pose.x)} mm, ${Math.round(-pose.y)} mm · heading ${Math.round((pose.a*180/Math.PI+450)%360)}° · grid 100 mm`;
-},{maxDt:.05});
+},{el: $('arena'), maxDt:.05});
 async function pause(ms,token){const end=performance.now()+ms;while(performance.now()<end){if(token!==generation)throw Error('Stopped.');await new Promise(r=>setTimeout(r,Math.min(40,Math.max(0,end-performance.now()))));}if(token!==generation)throw Error('Stopped.');}
 async function stop(message='Stopped.'){generation++;motion=null;activity();studio?.clearHighlight();const wasRunning=running;running=false;stopping=true;sync();try{if(connection)await connection.stop();}catch(e){status(`Stop could not be confirmed: ${e.message} Turn the brick off if needed.`);}finally{stopping=false;$('progress').textContent=message;document.querySelectorAll('#steps li').forEach(li=>li.classList.remove('active'));sync();}return wasRunning;}
 $('stop').onclick=()=>stop();

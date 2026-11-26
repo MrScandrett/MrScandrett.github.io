@@ -323,7 +323,7 @@ export class ChessBoard3D {
     this.clock = new THREE.Clock();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(this.host);
-    this.loop = window.SimKit.loop(this.animate);
+    this.loop = window.SimKit.loop(this.animate, { el: this.canvas });
   }
 
   bindInput() {

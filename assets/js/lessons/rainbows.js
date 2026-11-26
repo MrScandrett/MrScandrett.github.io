@@ -1451,7 +1451,7 @@
         drawDrop();
       }
       if (visible.sky) drawSky(clock);
-    });
+    }, { el: SimKit.stage(dropCanvas, skyCanvas) });
 
     updateDropReadouts();
     updateSkyText();

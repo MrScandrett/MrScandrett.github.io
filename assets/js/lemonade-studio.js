@@ -786,9 +786,9 @@
           console.error("ANIMATION FRAME ERROR:", e);
         }
 
-        rafId = requestAnimationFrame(frame);
+        rafId = window.SimKit ? SimKit.frame('#lemon-viewport', frame) : requestAnimationFrame(frame);
       }
-      rafId = requestAnimationFrame(frame);
+      rafId = window.SimKit ? SimKit.frame('#lemon-viewport', frame) : requestAnimationFrame(frame);
     }
 
     function updateSimulation(dt) {
@@ -2212,7 +2212,7 @@
     var instance = {
       destroy: function () {
         destroyed = true;
-        if (rafId) cancelAnimationFrame(rafId);
+        if (rafId) { if (window.SimKit) SimKit.frame.cancel('#lemon-viewport', rafId); else cancelAnimationFrame(rafId); }
         if (canvasHelper && canvasHelper.destroy) canvasHelper.destroy();
         rootEl._lemonStudio = null;
       },

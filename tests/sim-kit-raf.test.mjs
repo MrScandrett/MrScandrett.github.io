@@ -159,3 +159,17 @@ test('SimKit.raf with several elements runs while any one of them is on screen',
   w.frame();
   assert.equal(calls, 3);
 });
+
+test('SimKit.onScreen reports on at start, then each off/on and hidden/shown change once', () => {
+  const w = makeWorld();
+  const seen = [];
+  w.SimKit.onScreen({}, (on) => seen.push(on));
+  assert.deepEqual(seen, [true], 'called once at the start');
+  w.setOnScreen(false);
+  w.setOnScreen(false);
+  assert.deepEqual(seen, [true, false], 'repeat reports do not call back again');
+  w.setOnScreen(true);
+  w.setHidden(true);
+  w.setHidden(false);
+  assert.deepEqual(seen, [true, false, true, false, true]);
+});

@@ -111,7 +111,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     electronCount.textContent = protons;
     shellCount.textContent = shells.length;
 
-    simRaf(draw);
+    simRaf(draw, cv);
   }
 
   protonSlider.addEventListener('input', () => buildElectrons(Number(protonSlider.value)));
@@ -228,7 +228,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     avgSpeedEl.textContent = (totalSpeed / N).toFixed(2) + ' u/s';
     pressureEl.textContent = wallHits + ' hits/s';
 
-    simRaf(draw);
+    simRaf(draw, cv);
   }
 
   window.addEventListener('resize', resize);
@@ -346,7 +346,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     eHeat.textContent = heat + '%';
     eTotal.textContent = total + '%';
 
-    simRaf(draw);
+    simRaf(draw, cv);
   }
 
   function roundRect(ctx, x, y, w, h, r) {
@@ -443,7 +443,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.beginPath(); ctx.arc(planet.x, planet.y, 7, 0, Math.PI * 2);
     ctx.fillStyle = pg; ctx.fill();
 
-    simRaf(draw);
+    simRaf(draw, cv);
   }
 
   resetBtn.addEventListener('click', resetPlanet);
@@ -517,7 +517,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.fillText(`n = ${n}   r = ${r}a₀`, 12, 22);
     ctx.fillText(`E = ${energy} eV`, 12, 40);
 
-    simRaf(draw);
+    simRaf(draw, cv);
   }
 
   window.addEventListener('resize', resize);
@@ -631,7 +631,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     gasHitsEl.textContent = hitCount;
     gasPressEl.textContent = (hitCount * avgSpd * 0.01).toFixed(1) + ' Pa';
 
-    simRaf(draw);
+    simRaf(draw, cv);
   }
 
   window.addEventListener('resize', () => { resize(); molecules = []; });

@@ -60,61 +60,45 @@
     applySignal(0);
   })();
 
-  /* ── 2. Global Cryptidex + EarthEngine Map + Field Dossiers ──────── */
+  /* ── 2. Global Historical Field Atlas + EarthEngine Map + Dossiers ─ */
+  // All 30 entries use verified Public Domain / CC0 historical natural-history depictions.
   const rawEntries = [
-    ['Bigfoot','north-america','reported','Pacific Northwest, U.S. & Canada','A large hair-covered humanoid reported in forests; no diagnostic body or DNA has established a species.','1-0',[-122.6,45.6],'Level 1–2 · Testimony & casts','Unsupported as a biological species. Hair and tissue tests have matched known mammals (such as bears), and a breeding population should leave bones, eDNA, and repeatable camera-trap detections.','Paired camera traps with scale bars and blind lab DNA barcoding of controlled hair/scat samples.','CZ-05'],
-    ['Mothman','north-america','folklore','Point Pleasant, West Virginia','A winged red-eyed figure rooted in 1966–67 reports and later books, festivals, films, and local identity.','1-1',[-82.13,38.84],'Cultural folklore','Roots lie in 1966 eyewitness anxiety, misidentified large birds (such as sandhill cranes or owls), and decades of regional storytelling.','Study how local media, town festivals, and pop culture transform brief twilight sightings into an enduring modern legend.',null],
-    ['Jersey Devil','north-america','folklore','New Jersey Pine Barrens','A long-running regional legend often depicted with hooves, wings, and a horse-like head.','2-0',[-74.6,39.75],'Cultural folklore','A 300-year regional folktale shaped by colonial-era politics, pamphlet hoaxes, and 1909 newspaper panic.','Trace primary 18th–20th-century newspaper archives to see how print hoaxes spread before photography.',null],
-    ['Fresno Nightcrawler','north-america','internet','California internet video','A pair of pale walking shapes popularized by low-resolution footage and paranormal television.','2-1',[-119.78,36.74],'Viral video / unverified','Only low-resolution home security video exists, with no independent corroboration, physical trace, or biological anatomy capable of locomotion as shown.','Analyze frame compression, perspective distortion, and simple puppetry/hoax mechanics rather than inventing new anatomy.',null],
-    ['Flatwoods Monster','north-america','folklore','Flatwoods, West Virginia','A 1952 sighting became an iconic spade-headed monster image; proposed explanations include an owl and meteor.','3-6',[-80.65,38.72],'Cultural folklore / misidentification','Investigators documented a bright meteor passing over the region that evening and suggested a startled barn owl perched in tree branches explained the glowing eyes and silhouette.','Compare eyewitness sketches made days later against astronomical meteor records and local nocturnal bird behavior.',null],
-    ['Loveland Frog','north-america','folklore','Loveland, Ohio','Ohio stories describe upright frog-like beings; a later police encounter was identified as a tailless iguana.','3-10',[-84.26,39.27],'Cultural folklore','A 1972 officer later clarified that the animal he shot on a roadway was a large escaped pet iguana missing its tail, not a humanoid amphibian.','Cross-check police reports, reptile escape records, and how later retellings omit original corrections.',null],
-    ['Champ','north-america','reported','Lake Champlain (NY / VT / QC)','A lake-monster tradition spanning New York, Vermont, and Québec, supported mainly by sightings and ambiguous images.','3-4',[-73.33,44.5],'Level 1–2 · Sightings & sonar','No physical specimen or diagnostic DNA supports an unknown large aquatic reptile; boat wakes, logs, sturgeon, and optical mirages account for many reports.','Compare thermal surface surveys and lake-wide eDNA metabarcoding against known fish populations.',null],
-    ['Thunderbird reports','north-america','folklore','North American regional traditions','Giant-bird reports overlap with diverse Indigenous traditions that should not be collapsed into one zoological claim.','4-7',[-104.5,44.2],'Cultural tradition','Sacred Thunderbird narratives belong to distinct Indigenous cultural traditions; conflating them with modern "giant bird" sightings erases cultural meaning.','Approach Indigenous stories through community-authored histories and treat modern large-bird photos with scale checks.',null],
+    ['Okapi', 'africa', 'documented', 'Ituri Rainforest, DR Congo', 'Long known to the Indigenous Mbuti people, this shy giraffe relative was dismissed by outsiders as a myth until skins and skulls reached London in 1901.', 'okapi', [28.5, 1.5], 'Level 5 · Confirmed species', 'Sir Harry Johnston’s 1901 illustration accompanied physical hides and two skulls, confirming Okapia johnstoni as a living forest mammal.', 'Compare museum specimen records with modern camera-trap conservation surveys.', 'Sir Harry Johnston', '1901', 'Proceedings of the Zoological Society of London', 'Public domain', null],
+    ['Mountain & Western Gorilla', 'africa', 'documented', 'Equatorial Central Africa', 'For centuries, travelers’ tales of giant forest apes sounded like tall tales until explorers and museums examined complete skeletons in the 1840s–1860s.', 'gorilla', [10.5, 0.2], 'Level 5 · Confirmed species', 'Anatomical specimens studied by Richard Owen and Paul du Chaillu proved gorillas were real primates, not forest legends.', 'Examine how skeletal evidence settles doubts about unfamiliar wildlife.', 'Paul du Chaillu', '1861', 'Explorations and Adventures in Equatorial Africa', 'Public domain', null],
+    ['Coelacanth', 'africa', 'documented', 'East London, South Africa', 'Known only from ancient fossil plates like Gideon Mantell’s 1848 Macropoma drawing until a living coelacanth was caught off South Africa in 1938.', 'coelacanth', [27.91, -33.02], 'Level 5 · Confirmed species', 'Preservation of the 1938 catch allowed specialists to compare its lobed fins directly with fossil specimens—then DNA and submersibles confirmed two living species.', 'Benchmark case showing how one preserved specimen plus replication resolves a claim.', 'Gideon Algernon Mantell', '1848', 'Fossil coelacanth lithograph (Macropoma)', 'Public domain', 'CZ-01'],
+    ['Elephant Bird', 'africa', 'documented', 'Madagascar', 'Enormous eggshells and traveler stories about giant birds inspired legends, while fossil bones proved Aepyornis maximus once lived on Madagascar.', 'elephant-bird', [46.5, -20.5], 'Level 5 · Documented (Extinct)', 'Subfossil bones and intact giant eggs confirm elephant birds lived until roughly 1,000 years ago; no verified modern living population exists.', 'Study radiocarbon dates on subfossil bones and eggshells.', 'Monnier', '1913', 'Natural history plate of Aepyornis maximus', 'Public domain', null],
+    ['Mokele-mbembe', 'africa', 'reported', 'Congo Basin', 'Early 20th-century expedition stories described a large swamp animal that writers sketched like a living sauropod such as Charles R. Knight’s Diplodocus.', 'mokele-mbembe', [17.2, 1.3], 'Level 1–2 · Unverified testimony', 'Multiple surveys returned without photographs, tracks, carcasses, or non-avian dinosaur fossils younger than 66 million years.', 'Use autonomous camera traps and river eDNA to inventory real Congo Basin biodiversity.', 'Charles R. Knight', '1907', 'Century Magazine sauropod restoration', 'Public domain', null],
+    ['Dodo', 'africa', 'documented', 'Mauritius, Indian Ocean', 'So strange to 17th-century visitors that some later doubted it existed—preserved paintings by Roelant Savery and skeletal bones proved the dodo was real.', 'dodo', [57.55, -20.28], 'Level 5 · Documented (Extinct)', 'Museum skeletal remains and contemporary Dutch and Flemish paintings establish Raphus cucullatus as an extinct flightless pigeon.', 'Learn how habitat loss and introduced predators caused extinction, teaching faithful stewardship.', 'Roelant Savery', 'c. 1626', 'Natural History Museum London historical painting', 'Public domain', null],
 
-    ['Chupacabra','latin-america','reported','Puerto Rico & the Americas','The goat-sucker story surged in Puerto Rico in the 1990s; many photographed “chupacabras” are canids with mange.','1-3',[-66.5,18.22],'Level 2–4 · Misidentified canids','Genetic and veterinary examinations of hairless carcasses from the U.S. and Latin America repeatedly identified coyotes, dogs, and foxes with severe sarcoptic mange.','Veterinary necropsy and mitochondrial DNA sequencing of any recovered carcass.',null],
-    ['Mapinguari','latin-america','folklore','Amazon Basin','A powerful forest being in Amazonian traditions, later reframed by some outsiders as a surviving giant ground sloth.','2-6',[-63.0,-4.5],'Cultural folklore','Amazonian narratives describe a spiritual guardian being; attempts to map it onto Pleistocene giant ground sloths lack fossil, track, or tissue evidence after ~10,000 years ago.','Distinguish oral cultural traditions from paleontological hypotheses; test paleontological claims with dated fossils or eDNA.',null],
-    ['Yacumama','latin-america','folklore','Amazonian waterways','A “mother of the water” represented as an immense serpent in stories from the western Amazon.','2-7',[-73.25,-3.75],'Cultural folklore','A riverine guardian figure in western Amazonian cosmology, occasionally inspired by real green anacondas (Eunectes murinus), which grow up to ~5–6 meters.','Study river ecology and green anaconda size limits alongside respectful folklore scholarship.',null],
-    ['Nahuelito','latin-america','reported','Nahuel Huapi Lake, Argentina','Patagonian lake-monster reports often use a long-necked silhouette similar to modern Nessie imagery.','3-5',[-71.3,-41.08],'Level 1–2 · Unverified sightings','No specimen, verified bone, or diagnostic sonar/eDNA record supports an unknown large lake vertebrate in Patagonia.','Systematic sonar transects and eDNA water sampling paired with wind-wave and log-drift observations.',null],
-    ['El Cuero','latin-america','folklore','Chile & Patagonia','A hide-like aquatic being from Chilean and Mapuche-linked storytelling; cultural context varies by source.','4-0',[-72.9,-39.5],'Cultural folklore','An aquatic spirit/being in regional Mapuche and Chilean folklore, not a documented zoological taxon.','Read primary ethnographic sources from Mapuche storytellers rather than English cryptid compendia.',null],
-    ['Mono Grande','latin-america','reported','South American forests','Reports and sensational photographs of a giant ape-like primate have not produced a verified specimen.','3-0',[-72.5,8.5],'Level 1–2 · Disputed photo','The famous 1920 de Loys photograph is widely scrutinized as a staged spider monkey carcass propped on a crate without verified scale or skeletal remains.','Examine archival museum correspondence and anatomical proportions (tail/limb ratios) against known Ateles spider monkeys.',null],
+    ['Platypus', 'oceania', 'documented', 'Eastern Australia', 'When George Shaw and Frederick Nodder published this 1799 illustration, some European naturalists suspected the duck-billed specimen was stitched together as a hoax.', 'platypus', [149.8, -34.2], 'Level 5 · Confirmed species', 'Careful dissection of preserved specimens proved the platypus was a real egg-laying mammal (monotreme) designed for freshwater foraging.', 'Observe how direct anatomical study overcomes disbelief when a real animal looks surprising.', 'Frederick Polydore Nodder', '1799', 'The Naturalist’s Miscellany', 'CC0 1.0', null],
+    ['Thylacine', 'oceania', 'documented', 'Tasmania, Australia', 'A documented marsupial predator photographed at Hobart Zoo in 1928 and declared extinct in the 20th century; occasional modern sightings remain unconfirmed.', 'thylacine', [146.8, -42.1], 'Level 5 (Past) · Survival unresolved', 'Specimens, film, and sequenced DNA prove thylacines lived until 1936; modern search grids have not yet found a verified living individual.', 'Compare historical zoo records with modern remote camera-trap grids in Tasmania.', 'Harry Burrell', '1928', 'Archival Hobart Zoo photograph', 'Public domain', 'CZ-03'],
+    ['Giant Moa', 'oceania', 'documented', 'New Zealand', 'Māori oral traditions and giant bones sent to Richard Owen in London confirmed towering flightless birds once walked New Zealand’s forests.', 'giant-moa', [170.5, -43.8], 'Level 5 · Documented (Extinct)', 'Abundant subfossil skeletons confirm moa lived until ~1440 CE; modern survival claims lack feathers, footprints, or fresh eDNA.', 'Compare fossil skeletons with modern New Zealand forest bird surveys.', 'John van Voorst / Richard Owen', '1879', 'Memoirs on the Extinct Wingless Birds of New Zealand', 'Public domain', null],
+    ['Bunyip', 'oceania', 'folklore', 'Southeastern Australia', 'An umbrella name applied by 19th-century newspapers—like this 1890 engraving—to varied Aboriginal water-being traditions across Australia.', 'bunyip', [144.9, -36.0], 'Historical folklore', 'Originates in Wemba-Wemba and other Aboriginal traditions; colonial artists blended diverse regional stories into dramatic newspaper sketches.', 'Read Nation-specific Aboriginal histories alongside freshwater seal or bittern ecology.', 'J. Macfarlane', '1890', 'Illustrated Australian News', 'Public domain', null],
 
-    ['Loch Ness Monster','europe','reported','Scotland, United Kingdom','Nessie became a global icon through eyewitness reports, sonar claims, tourism, and famous—but disputed—photographs.','1-2',[-4.45,57.3],'Level 2 · Disputed / eDNA negative','A 2019 international eDNA survey of 250+ water samples found no unknown reptile or giant vertebrate DNA, while recording abundant European eel DNA alongside salmon and trout.','Evaluate food-web biomass limits of a deep cold oligotrophic loch rather than isolated ambiguous sonar pings.','CZ-04'],
-    ['Kraken','europe','folklore','North Atlantic & Norse tradition','A legendary immense sea creature, probably shaped partly by encounters with real large cephalopods.','3-11',[-3.0,63.5],'Folklore / real-animal inspiration','Medieval sea-monster accounts exaggerated scale to island size, yet stranded giant squid carcasses later proved large deep-sea cephalopods are real.','Compare historical sailors’ sketches with Architeuthis anatomy and deep-sea submersible footage.',null],
-    ['Beast of Gévaudan','europe','folklore','Lozère, France (1764–1767)','A series of real animal attacks in the 1760s produced a lasting legend; wolves or wolf-like canids remain leading explanations.','4-6',[3.45,44.6],'Historical wildlife record','Parish burial registers confirm real fatal attacks occurred, while historical hunters killed large wolves and wolf-dog hybrids, ending the incidents.','Analyze 18th-century parish records and wolf ecology rather than later supernatural embellishments.',null],
-    ['Tatzelwurm','europe','folklore','European Alps','An Alpine creature usually drawn as a short serpent with cat-like features and two forelegs.','2-3',[10.5,46.8],'Cultural folklore','Alpine folk stories spanning centuries vary wildly in body shape, with no preserved specimens in European natural history collections.','Survey historical Alpine woodcuts and compare descriptions with known lizards or otters seen briefly in rock crevices.',null],
-    ['Black Shuck','europe','folklore','East Anglia, England','A spectral black dog tradition that belongs to folklore rather than zoological field reporting.','2-2',[1.15,52.63],'Cultural folklore','Explicitly described in British folklore as an omen or phantom hound rather than a breeding biological mammal.','Classify as regional cultural heritage and folklore.',null],
-    ['Owlman','europe','folklore','Cornwall, England','A modern winged humanoid legend associated with 1970s reports near Mawnan church.','3-3',[-5.1,50.11],'Cultural folklore','1976 sketches originated with children’s accounts near Mawnan Old Church; eagle owls and practical jokes have been proposed as catalysts.','Compare early witness drawings with Eurasian eagle-owl silhouettes in twilight.',null],
-    ['Dobhar-chú','europe','folklore','Ireland','An Irish water-hound tradition sometimes described as an enormous, dangerous otter.','4-1',[-8.1,54.2],'Cultural folklore','Part of Irish folklore and medieval gravestones; real Eurasian otters (Lutra lutra) inhabit Irish lakes and rivers.','Compare folklore motifs with historical otter ranges.',null],
+    ['Giant Squid', 'asia', 'documented', 'North Pacific & North Atlantic', 'Sailors’ sea-monster stories were confirmed when stranded squid reached scientists like Addison Verrill in 1882; living deep-sea photos arrived in 2004.', 'giant-squid', [142.2, 27.1], 'Level 5 · Confirmed species', 'Stranded carcasses and beaks proved Architeuthis dux was real long before deep-water baited cameras photographed one alive.', 'Notice the difference between confirming a species from remains and filming it in habitat.', 'Addison Emery Verrill / J. H. Emerton', '1882', 'Report on the Cephalopods of the Northeastern Coast of America', 'Public domain', null],
+    ['Giant Panda', 'asia', 'documented', 'Sichuan Mountains, China', 'Known to local communities in western China for centuries, the giant panda first reached Western museums in 1869 and became a global symbol of conservation.', 'giant-panda', [103.5, 31.1], 'Level 5 · Confirmed species', 'Ailuropoda melanoleuca is a well-documented bamboo-eating bear protected through dedicated mountain reserves.', 'See how protected habitats help rare animals recover from low numbers.', 'Jeff Kubina', '2004', 'Smithsonian National Zoological Park record', 'Public domain', null],
+    ['Himalayan Bear (Yeti reports)', 'asia', 'reported', 'Himalayas & Tibetan Plateau', 'High-altitude footprint claims in the Himalayas led explorers to search for a mystery creature, while DNA tests on hair samples matched local bears like Joseph Smit’s 1897 plate.', 'yeti-tracks', [86.9, 27.9], 'Level 4 · DNA matched known bears', 'Peer-reviewed DNA testing of alleged Yeti hair, bone, and skin samples matched Himalayan brown bears, Tibetan blue bears, and black bears.', 'Compare melting snow tracks (which stretch as snow warms) with known bear paw shapes.', 'Joseph Smit', '1897', 'Proceedings of the Zoological Society of London', 'Public domain', null],
+    ['Kappa', 'asia', 'folklore', 'Japan', 'A well-known river creature from Japanese folklore—illustrated in this 1836 Edo-period scroll—created to teach children water safety and kindness.', 'kappa', [135.7, 35.0], 'Historical folklore (yōkai)', 'Kappa belong to Japanese folklore (yōkai) rather than proposed wildlife, though real Japanese giant salamanders also share mountain streams.', 'Appreciate traditional cultural artwork while distinguishing folklore from zoology.', 'Reikai (after Edo-period scroll)', '1836', 'Suiko Jūnishu (Twelve Types of Water Creatures)', 'Public domain', null],
 
-    ['Mokele-mbembe','africa','reported','Congo Basin','Expedition stories describe a large long-necked swamp animal, but no diagnostic evidence confirms one.','2-4',[17.2,1.3],'Level 1–2 · Unverified testimony','Multiple expeditions have returned without clear photographs, tracks, carcasses, or non-avian dinosaur fossils younger than 66 million years.','Survey swamp biodiversity using autonomous camera traps and eDNA without relying on leading interview illustrations.',null],
-    ['Coelacanth','africa','documented','East London, South Africa (1938)','A real deep-water fish lineage documented from a preserved 1938 specimen and many later observations.','1-9',[27.91,-33.02],'Level 5 · Confirmed species','Marjorie Courtenay-Latimer preserved the 1938 trawler specimen and J.L.B. Smith verified its anatomy, followed by dozens more specimens, submersibles, and DNA sequences.','Benchmark example of how one preserved specimen + independent replication settles a scientific claim.','CZ-01'],
-    ['Kongamato','africa','reported','Central & Southern Africa','A flying-creature report often illustrated like a pterosaur; stories were heavily filtered through colonial retellings.','2-5',[26.5,-11.5],'Level 1 · Filtered colonial accounts','Early 20th-century writers reframed local accounts using Western dinosaur-book illustrations; large storks, bats, and hornbills inhabit the wetlands.','Audit colonial expedition writings for leading questions and compare with native wetland bird/bat wingspans.',null],
-    ['Nandi Bear','africa','reported','East Africa','Colonial-era accounts describe a large carnivore; suggested identities include hyenas or other known mammals.','1-7',[35.2,0.2],'Level 1 · Historical reports','No skull, pelt, or specimen was ever catalogued despite decades of colonial hunting; spotted hyenas, honey badgers, and baboons match many details.','Examine museum mammal collections and historical East African carnivore ranges.',null],
-    ['Grootslang','africa','folklore','Richtersveld, South Africa','A legendary cave-dwelling serpent-elephant hybrid associated with deep pools, gems, and hidden places.','grootslang-0',[17.1,-28.3],'Cultural folklore','A South African mythic guardian creature symbolizing danger around deep river caves and diamond-mining stories.','Approach as regional mythology and cautionary folklore.',null],
-    ['Dingonek','africa','reported','East African waterways','An early twentieth-century traveler’s account of an armored aquatic animal never produced a specimen.','3-7',[34.8,-0.6],'Level 1 · Single traveler tale','Derived mainly from one 1907 hunter’s narrative with no corroborating specimens, tracks, or modern river sightings.','Treat single uncorroborated traveler anecdotes as Level 1 unless physical evidence appears.',null],
+    ['Loch Ness Monster', 'europe', 'reported', 'Loch Ness, Scotland', 'Postcards like this c. 1903 view of Urquhart Castle show how long people have visited Loch Ness, where later sighting waves and photos sparked monster legends.', 'loch-ness', [-4.45, 57.3], 'Level 2 · Disputed / eDNA negative', 'A 2019 international eDNA study of 250+ water samples found abundant eel, salmon, and trout DNA—with zero unknown reptile or giant mammal DNA.', 'Compare food-web energy limits in a cold freshwater loch against famous optical illusions.', 'Historical Scottish Postcard', 'c. 1903', 'Newberry Library Postcard Archive', 'Public domain', 'CZ-04'],
+    ['Plesiosaur (Duria Antiquior)', 'europe', 'explained', 'Lyme Regis, England', 'Henry De la Beche’s 1830 fossil reconstruction—inspired by Mary Anning’s discoveries—shows extinct marine reptiles that later inspired modern lake-monster art.', 'plesiosaur', [-2.93, 50.72], 'Explained · Extinct fossil lineage', 'Plesiosaurs are real fossil marine reptiles from the Mesozoic Era, known from rich skeletal beds—not living freshwater lake populations.', 'Notice how 19th-century fossil paintings shaped the silhouette people still sketch for Nessie.', 'Henry De la Beche', '1830', 'Duria Antiquior (Lyme Regis fossil reconstruction)', 'Public domain', null],
+    ['Kraken', 'europe', 'folklore', 'Norwegian & North Atlantic Seas', 'Early naturalists like Pierre Denys de Montfort (1810) drew giant tentacled octopuses from sailors’ stories—an exaggerated echo of real giant squid.', 'kraken', [5.0, 62.5], 'Folklore / real-animal inspiration', 'Medieval accounts magnified real cephalopod encounters to ship-wrapping size, yet Architeuthis carcasses proved giant deep-water squid truly exist.', 'Compare Denys de Montfort’s 1810 engraving with Verrill’s 1882 scientific drawing.', 'Pierre Denys de Montfort', '1810', 'Histoire Naturelle Générale et Particulière des Mollusques', 'Public domain', null],
+    ['HMS Daedalus Sea Serpent', 'ocean', 'reported', 'South Atlantic Ocean', 'In 1848, the crew of HMS Daedalus reported a long swimming shape in open water, engraved here in the Illustrated London News; historians still debate whales, kelp, or ribbons.', 'sea-serpent', [-15.0, -24.5], 'Level 1–2 · Unconfirmed sighting', 'Without a specimen or photograph, a brief shipboard sighting at sea remains open to ordinary explanations such as swimming elephant seals, whales, or oarfish.', 'Test how distance over open ocean waves makes estimating animal length difficult.', 'Edwin Weedon / Illustrated London News', '1848', 'Illustrated London News archival engraving', 'Public domain', null],
+    ['Unicorn (Early Natural History)', 'europe', 'folklore', 'Zurich, Switzerland', 'Renaissance scholar Conrad Gessner included the unicorn in his 1551 animal encyclopedia alongside real horses and deer because travelers’ tales still mixed fact and legend.', 'unicorn', [8.54, 47.37], 'Historical folklore / art', 'European unicorn imagery grew from misread descriptions of rhinoceroses and traded Arctic narwhal tusks.', 'Trace how museum collections separated mythical drawings from real horned mammals.', 'Conrad Gessner', '1551', 'Historiae Animalium (Wellcome Collection)', 'Public domain', null],
+    ['Narwhal ("Sea Unicorn")', 'ocean', 'documented', 'Arctic Ocean', 'Engravings like this 1800 plate of the "Horned Narval" revealed the real source of medieval "unicorn horns": the spiral tusk of an Arctic whale.', 'narwhal', [-55.0, 72.0], 'Level 5 · Confirmed species', 'Monodon monoceros males grow a spiral sensory tooth up to 3 meters long—explaining centuries of Arctic trade stories.', 'Compare Conrad Gessner’s 1551 unicorn woodcut with this 1800 narwhal engraving.', 'Harrison, Ause & Co.', '1800', 'Natural history engraving of Monodon monoceros', 'Public domain', null],
+    ['Tatzelwurm', 'europe', 'folklore', 'European Alps', 'An Alpine mountain legend pictured in this 1835 Weimar woodcut as a short lizard-like creature with cat features and two front legs.', 'tatzelwurm', [10.5, 46.8], 'Historical folklore', 'Centuries of Alpine traveler stories vary widely in size and shape, with zero preserved specimens in European museums.', 'Compare historical woodcuts with real Alpine salamanders and lizards.', 'G. Schultes', '1835', 'Weimar Alpine natural-history woodcut', 'Public domain', null],
+    ['Griffin (Aldrovandi Plate)', 'europe', 'folklore', 'Bologna, Italy', 'Italian naturalist Ulisse Aldrovandi published this 1642 woodcut of a griffin—half eagle, half lion—showing how Renaissance scholars catalogued ancient stories alongside real birds.', 'griffin', [11.34, 44.49], 'Historical folklore', 'Griffins are symbolic composite creatures from ancient Mediterranean and Central Asian art, not biological animals.', 'Notice how Renaissance encyclopedias gradually shifted from folklore woodcuts to anatomical drawings.', 'Ulisse Aldrovandi / Jean-Baptiste Coriolan', '1642', 'Monstrorum Historia', 'Public domain', null],
 
-    ['Kappa','asia','folklore','Japan','A famous water yōkai with a dish-like head. It is a folkloric being, not a proposed undiscovered amphibian.','1-4',[135.7,35.0],'Cultural folklore (yōkai)','A classic Japanese yōkai teaching river safety and social etiquette; Japanese giant salamanders (Andrias japonicus) are real, separate animals.','Explore yōkai art history alongside real Japanese river amphibian conservation.',null],
-    ['Tsuchinoko','asia','folklore','Japan','A thick-bodied snake-like yōkai and modern local legend that also inspires “wanted” hunts and pop culture.','1-5',[137.0,36.2],'Cultural folklore / local legend','Appears in Edo-period texts and modern town tourism promotions; snakes with recently swallowed prey can appear unusually thick-bodied.','Inspect real snake digestion anatomy and municipal mascot tourism.',null],
-    ['Tengu','asia','folklore','Japan','Mountain yōkai with complex religious and folkloric histories, commonly depicted with red faces, long noses, or bird traits.','2-8',[139.2,35.6],'Cultural folklore (yōkai)','Sacred mountain spirits/yōkai in Japanese folklore and Shinto-Buddhist tradition, never proposed as a zoological species.','Study through Japanese folklore and art history.',null],
-    ['Akkorokamui','asia','folklore','Ainu tradition, Hokkaidō','A giant octopus-like being associated with the sea. It should be approached through Ainu cultural context.','2-9',[140.9,42.3],'Cultural tradition','A sacred sea kamuy in Ainu tradition around Funka Bay; large North Pacific giant octopuses (Enteroctopus dofleini) also live in Hokkaidō waters.','Learn Ainu oral traditions directly from cultural centers rather than monster rankings.',null],
-    ['Giant squid','asia','documented','Ogasawara Islands, Japan (2004)','Physical remains established the animal long before researchers photographed a living giant squid in its habitat.','1-6',[142.2,27.1],'Level 5 · Confirmed species','Carcasses and beaks proved Architeuthis dux existed in the 1800s; Tsunemi Kubodera captured the first live deep-water photographs in 2004 and live video in 2012.','Contrast historical carcass evidence with deep-sea baited camera engineering.',null],
-    ['Nue','asia','folklore','Japan','A composite yōkai from classical literature, assembled from multiple animal traits and linked with ominous events.','3-8',[135.76,35.01],'Classical literature (yōkai)','Described in the medieval Tale of the Heike with a monkey head, tanuki body, tiger limbs, and snake tail—an emblem of literary symbolism.','Notice how its nocturnal call has been linked by historians to the real scaly thrush (Zoothera dauma).',null],
-    ['Hibagon','asia','reported','Hiroshima Prefecture, Japan','A shaggy humanoid from 1970s reports that became a regional mascot and media figure.','3-1',[133.0,35.0],'Level 1–2 · Historical sightings','Sightings clustered around Mt. Hiba in 1970–74 ended without biological evidence; Japanese macaques and Asiatic black bears inhabit the mountains.','Compare the short media sighting wave with local wildlife ranges.',null],
-    ['Yeren','asia','reported','Shennongjia, Central China','A “wild man” tradition and modern reports investigated without producing a confirmed unknown primate.','3-2',[110.5,31.7],'Level 1–2 · Hair tests negative','DNA and microscopic analyses of collected hairs have matched known animals such as bears, macaques, or humans; no fossil or living hominid specimen exists.','Use calibrated camera-trap grids in Shennongjia nature reserves to inventory real mammals.',null],
-    ['Orang Pendek','asia','reported','Sumatra, Indonesia','A small upright forest hominid reported in local accounts and expeditions, but not zoologically established.','4-8',[101.5,-1.7],'Level 1–2 · Unconfirmed tracks','Extensive camera-trap surveys for Sumatran tigers and rhinos have documented rare known species without capturing an unknown bipedal primate.','Review existing conservation camera-trap datasets from Kerinci Seblat.',null],
+    ['Bigfoot (Bear Misidentification)', 'north-america', 'reported', 'Pacific Northwest, North America', 'Reports of large forest silhouettes and footprints in North America overlap closely with the range of real upright-standing bears, shown in John Woodhouse Audubon’s 1845 plate.', 'bigfoot-tracks', [-122.6, 45.6], 'Level 1–2 · Testimony & casts', 'Published DNA tests on alleged hair samples have matched bears, dogs, or humans, and millions of trail-camera nights have captured bears—not an unknown ape.', 'Compare bear hind footprints with overlapping step patterns that look oversized in mud.', 'John Woodhouse Audubon', '1845', 'The Viviparous Quadrupeds of North America', 'Public domain', 'CZ-05'],
+    ['Thunderbird & Golden Eagle', 'north-america', 'folklore', 'North American Plains & Coast', 'Traditional Thunderbird stories hold deep cultural meaning in Indigenous communities, while modern giant-bird sightings often reflect real raptors like Audubon’s Golden Eagle.', 'thunderbird', [-104.5, 44.2], 'Cultural tradition / known raptors', 'Distinct Indigenous Thunderbird traditions are cultural heritage rather than zoological claims; modern large-bird photos are best checked with known eagle and condor wingspans.', 'Respect community histories and measure wingspan against background objects in photos.', 'John James Audubon', '1833', 'The Birds of America', 'Public domain', null],
+    ['Giant Oarfish', 'ocean', 'documented', 'Bermuda & Temperate Oceans', 'When this 16-foot ribbon-like fish washed ashore in Bermuda in 1860, Harper’s Weekly called it a "sea serpent"—proving a real deep-sea animal lay behind many sailor tales.', 'oarfish', [-64.75, 32.3], 'Level 5 · Confirmed species', 'Regalecus glesne is the longest living bony fish (up to ~11 meters), whose shimmering red dorsal fin explains many historic sea-serpent reports.', 'See how a single stranded specimen turns a sea-serpent report into real oceanography.', 'Harper’s Weekly', '1860', 'Harper’s Weekly natural history engraving', 'Public domain', null],
+    ['Manatee (Sailors’ "Mermaids")', 'ocean', 'documented', 'Caribbean & Atlantic Coasts', 'Early sailors wrote of mermaids in tropical waters, while naturalists like Albin Mesnel (1870) illustrated the gentle, plant-eating manatees behind those distant glimpses.', 'manatee-mermaid', [-77.3, 21.5], 'Level 5 · Confirmed species', 'Trichechus manatus and dugongs surface quietly to breathe in coastal lagoons, showing how brief, hazy sightings can spark centuries of folklore.', 'Compare misty horizon viewing conditions with clear underwater photography.', 'Albin Mesnel', '1870', 'Mammalia: Their Various Orders and Habits', 'Public domain', null],
 
-    ['Bunyip','oceania','folklore','Australian Aboriginal traditions','An English umbrella name applied to varied Aboriginal water-being traditions; local nation and story matter.','4-2',[144.9,-36.0],'Cultural tradition','Originates in Wemba-Wemba and other Aboriginal traditions; colonial settlers merged diverse cultural narratives into a single sensationalized monster label.','Respect Nation-specific Aboriginal storytelling rather than treating it as a single cryptid file.',null],
-    ['Yowie','oceania','reported','Eastern Australia','An Australian hairy-hominid legend combining recent reports, media, and older stories that require careful sourcing.','2-10',[150.3,-33.7],'Level 1 · Unverified reports','No fossil record of native non-human primates exists in Australia, and no physical remains or confirmed DNA support a large hominid.','Evaluate evolutionary biogeography (Wallace’s Line) alongside sighting claims.',null],
-    ['Thylacine','oceania','documented','Tasmania, Australia','A scientifically documented marsupial predator now classified as extinct; modern survival reports remain unconfirmed.','1-8',[146.8,-42.1],'Level 5 (Past) · Survival unresolved','Confirmed alive until 1936 with full museum specimens, film, and sequenced genomes; thousands of post-1936 sightings have not yielded verified modern DNA or photos.','Deploy dense long-term camera grids and eDNA sampling in remote Tasmanian catchments.','CZ-03'],
-    ['Waitoreke','oceania','reported','South Island, New Zealand','Reports of an otter-like animal are intriguing because New Zealand has no known native land mammals of that kind.','4-3',[168.5,-44.8],'Level 1 · Unconfirmed reports','Aotearoa New Zealand has no native terrestrial non-bat mammals; introduced stoats, ferrets, or swimming birds may explain brief river sightings.','Check wetland tracks and eDNA for introduced mustelids vs. any unexpected mammal DNA.',null],
-    ['Moa survival claims','oceania','reported','New Zealand','Moa are documented extinct birds; recent survival stories have not produced verified feathers, DNA, or bodies.','4-4',[170.5,-43.8],'Level 5 (Past) · Survival unsupported','Abundant subfossil bones confirm moa lived until ~1440 CE; modern survival claims lack feathers, droppings, footprints, or fresh eDNA in heavily surveyed parks.','Compare ancient DNA records with modern avian biodiversity surveys.',null],
+    ['Mapinguari (Giant Sloth Hypothesis)', 'latin-america', 'folklore', 'Amazon Basin', 'Some outsiders suggested Amazonian Mapinguari stories echoed surviving giant ground sloths—whose real fossil skeletons, like this 1906 Cuvier Megatherium mount, amazed early scientists.', 'mapinguari-sloth', [-63.0, -4.5], 'Historical folklore / fossil link', 'Fossil Megatherium skeletons confirm giant ground sloths lived until the end of the Ice Age (~10,000 years ago), with no modern bones or eDNA found since.', 'Distinguish living Amazonian storytelling from paleontological fossil records.', 'Agence Rol / Muséum national d’histoire naturelle', '1906', 'Bibliothèque nationale de France archival plate', 'Public domain', null],
+    ['Yacumama & Green Anaconda', 'latin-america', 'folklore', 'Western Amazon Waterways', 'River stories of an immense water serpent in the Amazon connect to real green anacondas—illustrated in this 18th-century Amsterdam print—which reach up to 5–6 meters.', 'yacumama-anaconda', [-73.25, -3.75], 'Folklore / real-animal inspiration', 'Eunectes murinus is Earth’s heaviest snake, though river stories often multiply its true measured length.', 'Compare folklore scales with verified museum field measurements of green anacondas.', 'Iconographia Zoologica', '1734–1765', 'University of Amsterdam Special Collections', 'Public domain', null],
 
-    ['El Gran Majá','internet','internet','Borisao Blois animation','A fictional six-eyed leviathan created for internet animation and often paired with a monster version of the Bloop.','1-10',null,'Internet fiction','Created intentionally as digital animation/storytelling; has zero connection to biological or oceanographic observations.','Check creator credits and publication dates before treating viral clips as field footage.',null],
-    ['The Bloop','internet','explained','South Pacific hydrophone signal, 1997','A real recorded ultra-low-frequency sound later matched to icequakes—not evidence of a giant organism.','2-11',[-95.0,-50.0],'Explained · Cryoseism (icequake)','NOAA Acoustic Monitoring researchers traced the 1997 signal’s spectral signature and timing to large Antarctic icebergs fracturing and grinding (icequakes).','Compare acoustic spectrograms of calving icebergs against biological marine mammal vocalizations.','CZ-06'],
-    ['Tung Tung Tung Sahur','internet','internet','Indonesia-origin viral meme, 2025','An AI-generated wooden character credited to @noxaasht, drawing its name from the Indonesian sahur wake-up tradition.','1-11',null,'Internet fiction (AI meme)','A purposefully absurd 2025 generative-AI social media character, not a biological report or traditional folklore.','Practice digital media literacy: trace the original social handle and AI visual artifacts.',null],
-    ['Tralalero Tralala','internet','internet','Italian brainrot meme, 2025','A surreal three-legged shark in sneakers from the AI “Italian brainrot” wave; included as internet culture, not zoology.','4-5',null,'Internet fiction (AI meme)','Generated for surreal humor online; clearly fictional and anatomically impossible.',null],
-    ['Bombardiro Crocodilo','internet','internet','Italian brainrot meme, 2025','A fictional crocodile-aircraft hybrid from the same surreal viral AI meme genre.','3-9',null,'Internet fiction (AI meme)','AI-generated internet absurdity combining a reptile and a bomber airplane.',null],
-    ['Bloop monster','internet','internet','Internet leviathan fiction','A giant-creature interpretation of the Bloop invented after the sound became famous; distinct from the explained real signal.','4-9',null,'Internet fiction','Artists and YouTubers invented giant-monster visuals years after NOAA recorded and later explained the 1997 icequake sound.','Separate the real 1997 acoustic recording from later fan art and CGI animations.',null]
+    ['The Bloop (1997 Hydrophone)', 'ocean', 'explained', 'South Pacific Ocean', 'In 1997, NOAA hydrophones recorded this ultra-low-frequency underwater sound; later acoustic studies matched it to massive Antarctic icebergs cracking—not a sea creature.', 'the-bloop', [-95.0, -50.0], 'Explained · Icequake acoustics', 'Comparing the 1997 spectrogram against Antarctic acoustic arrays proved fracturing icequakes produce the exact rising frequency sweep.', 'Study how scientists use spectrograms to separate physical ocean sounds from whale calls.', 'NOAA Acoustic Monitoring', '1997', 'NOAA Vents Program Pacific hydrophone spectrogram', 'Public domain', 'CZ-06'],
+    ['Carta Marina Sea Monsters', 'ocean', 'folklore', 'North Atlantic Ocean', 'Olaus Magnus’s 1539 Carta Marina filled uncharted northern waters with dramatic sea creatures, reminding us how early mapmakers mixed real whales and squid with imagination.', 'carta-marina', [2.0, 64.0], 'Historical cartography', 'Sixteenth-century maps blended sailors’ glimpses of whales, walruses, and giant squid with decorative sea-monster art in unexplored waters.', 'Notice how ocean mapping replaced guesswork with calibrated sonar and marine biology.', 'Olaus Magnus', '1539', 'Carta Marina (North Atlantic sea chart)', 'Public domain', null]
   ];
 
   const entries = rawEntries.map((e, index) => ({
@@ -124,19 +108,23 @@
     type: e[2],
     place: e[3],
     description: e[4],
-    art: e[5],
+    slug: e[5],
+    img: `../../assets/images/cryptozoology/plates/${e[5]}.webp`,
     coords: e[6],
     evidenceLevel: e[7],
     scientificStatus: e[8],
     testableNext: e[9],
-    caseId: e[10]
+    artist: e[10],
+    year: e[11],
+    sourceWork: e[12],
+    license: e[13],
+    caseId: e[14]
   }));
 
   const typeLabels = {
     reported: 'Reported',
     folklore: 'Folklore',
     documented: 'Documented',
-    internet: 'Fiction',
     explained: 'Explained'
   };
 
@@ -144,19 +132,18 @@
     reported: '#ffcb45',
     folklore: '#76e6cf',
     documented: '#6ee7b7',
-    explained: '#a8b7ff',
-    internet: '#f39ac4'
+    explained: '#a8b7ff'
   };
 
   const regionInfo = {
-    all: ['Whole world', 'Every archive layer, from field reports to playful born-online fiction.'],
-    'north-america': ['North America', 'Forest giants, lake monsters, winged omens, and modern regional legends.'],
-    'latin-america': ['Latin America', 'Amazonian traditions, lake reports, and the modern chupacabra phenomenon.'],
-    europe: ['Europe', 'Sea monsters, spectral animals, Alpine creatures, and historical wildlife accounts.'],
-    africa: ['Africa', 'Reports and traditions often distorted by colonial-era retellings—read claims critically.'],
-    asia: ['Asia + Japan', 'Reported wild people alongside yōkai, Ainu tradition, and regional popular culture.'],
-    oceania: ['Oceania', 'Australian and Aotearoa New Zealand reports, with living traditions kept in context.'],
-    internet: ['Internet culture', 'Playful fiction, explainable phenomena, animation, and surreal viral memes.']
+    all: ['Whole world', 'All 30 verified public-domain plates, from Renaissance woodcuts to modern field evidence.'],
+    'north-america': ['North America', 'Audubon wildlife plates and North American field questions.'],
+    'latin-america': ['Latin America', 'Amazonian natural-history prints, giant sloth fossils, and regional stories.'],
+    europe: ['Europe', 'Renaissance animal encyclopedias, fossil reconstructions, and Loch Ness history.'],
+    africa: ['Africa', 'Confirmed discoveries like the okapi, gorilla, coelacanth, and dodo alongside swamp reports.'],
+    asia: ['Asia + Japan', 'Deep-sea squid science, Himalayan bear genetics, panda conservation, and Edo-period artwork.'],
+    oceania: ['Oceania', 'Australia and New Zealand’s surprising discoveries—from the platypus to the thylacine.'],
+    ocean: ['Ocean & historic maps', 'Sixteenth-century sea charts, narwhals, giant oarfish, and explained hydrophone acoustics.']
   };
 
   const grid = document.getElementById('archiveGrid');
@@ -173,7 +160,11 @@
   const typeButtons = [...document.querySelectorAll('.type-btn')];
 
   const dialog = document.getElementById('dossierDialog');
-  const dossierArt = document.getElementById('dossierArt');
+  const dossierFigure = document.getElementById('dossierFigure');
+  const dossierImg = document.getElementById('dossierImg');
+  const dossierCapTitle = document.getElementById('dossierCapTitle');
+  const dossierCapText = document.getElementById('dossierCapText');
+  const dossierCapCredit = document.getElementById('dossierCapCredit');
   const dossierNum = document.getElementById('dossierNum');
   const dossierTitle = document.getElementById('dossierTitle');
   const dossierPlace = document.getElementById('dossierPlace');
@@ -195,11 +186,6 @@
   let lastTriggerEl = null;
   const pinElements = new Map();
 
-  function spriteClass(art) {
-    const [atlas, pos] = art.split('-');
-    return `atlas-${atlas} p-${pos}`;
-  }
-
   function initWorldMap() {
     if (!mapSvg || !window.EarthEngine || !window.d3) return;
     const E = window.EarthEngine;
@@ -215,13 +201,11 @@
 
     mapSvg.innerHTML = '';
 
-    // Ocean sphere backdrop
     mapSvg.appendChild(svgEl('path', {
       d: E.path(proj, { type: 'Sphere' }),
       class: 'map-ocean'
     }));
 
-    // Subtle latitude/longitude graticule
     if (window.d3.geoGraticule10) {
       mapSvg.appendChild(svgEl('path', {
         d: E.path(proj, window.d3.geoGraticule10()),
@@ -229,19 +213,16 @@
       }));
     }
 
-    // Natural Earth v5.1.2 land
     mapSvg.appendChild(svgEl('path', {
       d: E.path(proj, world.land),
       class: 'map-land'
     }));
 
-    // Generalized reference country lines (never shaded by continent)
     mapSvg.appendChild(svgEl('path', {
       d: E.path(proj, world.countries),
       class: 'map-countries'
     }));
 
-    // Disputed/claim lines drawn distinctly with dashed stroke
     if (world.disputed) {
       mapSvg.appendChild(svgEl('path', {
         d: E.path(proj, world.disputed),
@@ -249,7 +230,6 @@
       }));
     }
 
-    // Interactive Geographic Entry Pins projected via EarthEngine
     const pinsGroup = svgEl('g', { class: 'map-pins' });
     entries.forEach((entry) => {
       if (!entry.coords) return;
@@ -261,12 +241,12 @@
         transform: `translate(${xy[0].toFixed(1)}, ${xy[1].toFixed(1)})`,
         role: 'button',
         tabindex: '0',
-        'aria-label': `Open field dossier: ${entry.name} (${entry.place})`,
+        'aria-label': `Open historical dossier: ${entry.name} (${entry.place})`,
         'data-entry': entry.number
       });
 
       const title = svgEl('title');
-      title.textContent = `${entry.name} — ${entry.place} (${typeLabels[entry.type]})`;
+      title.textContent = `${entry.name} — ${entry.artist} (${entry.year})`;
 
       const halo = svgEl('circle', { r: '9.5', class: 'pin-halo', fill: pinColors[entry.type] || '#ffcb45' });
       const dot = svgEl('circle', { r: '5', class: 'pin-dot', fill: pinColors[entry.type] || '#ffcb45' });
@@ -293,7 +273,7 @@
     visibleEntries = entries.filter((e) =>
       (activeRegion === 'all' || e.region === activeRegion) &&
       (activeType === 'all' || e.type === activeType) &&
-      (!query || `${e.name} ${e.place} ${e.description} ${e.evidenceLevel}`.toLowerCase().includes(query))
+      (!query || `${e.name} ${e.place} ${e.description} ${e.artist} ${e.year} ${e.evidenceLevel}`.toLowerCase().includes(query))
     );
 
     const visibleSet = new Set(visibleEntries.map((e) => e.number));
@@ -303,65 +283,68 @@
       pin.classList.toggle('highlight', active && (activeRegion !== 'all' || activeType !== 'all' || query.length > 0));
     });
 
-    const autoExpand = visibleEntries.length <= 24 || query.length > 0;
+    const autoExpand = visibleEntries.length <= 15 || query.length > 0;
     const shown = (showAllEntries || autoExpand) ? visibleEntries : visibleEntries.slice(0, 12);
 
-    grid.innerHTML = shown.map((e) => {
-      return `
-        <article class="dex-entry">
-          <button type="button" class="entry-trigger" data-open-entry="${e.number}" aria-label="Open dossier for ${e.name}">
-            <div class="entry-art ${spriteClass(e.art)}" role="img" aria-label="Field-guide depiction of ${e.name}">
-              <span class="entry-num">ENTRY ${e.number}</span>
-              ${e.caseId ? `<span class="entry-case-pill">${e.caseId}</span>` : ''}
+    grid.innerHTML = shown.map((e) => `
+      <article class="dex-entry">
+        <button type="button" class="entry-trigger" data-open-entry="${e.number}" aria-label="Open dossier for ${e.name}">
+          <div class="entry-plate">
+            <img src="${e.img}" alt="Historical depiction of ${e.name} by ${e.artist} (${e.year})" loading="lazy" decoding="async" />
+            <span class="entry-num">PLATE ${e.number}</span>
+            <span class="entry-year-pill">${e.year}</span>
+            ${e.caseId ? `<span class="entry-case-pill">${e.caseId}</span>` : ''}
+          </div>
+          <div class="entry-body">
+            <div class="entry-top">
+              <h3>${e.name}</h3>
+              <span class="entry-type ${e.type}">${typeLabels[e.type]}</span>
             </div>
-            <div class="entry-body">
-              <div class="entry-top">
-                <h3>${e.name}</h3>
-                <span class="entry-type ${e.type}">${typeLabels[e.type]}</span>
-              </div>
-              <p class="entry-region">${e.place}</p>
-              <p class="entry-desc">${e.description}</p>
-              <span class="entry-cta">Inspect dossier →</span>
-            </div>
-          </button>
-        </article>`;
-    }).join('');
+            <p class="entry-region">${e.place}</p>
+            <p class="entry-desc">${e.description}</p>
+            <p class="entry-credit">${e.artist} · ${e.license}</p>
+            <span class="entry-cta">Inspect plate &amp; dossier →</span>
+          </div>
+        </button>
+      </article>`).join('');
 
     grid.querySelectorAll('[data-open-entry]').forEach((btn) => {
       btn.addEventListener('click', () => openDossierByNumber(btn.dataset.openEntry, btn));
     });
 
-    count.textContent = `${visibleEntries.length} of ${entries.length} entries`;
+    count.textContent = `${visibleEntries.length} of ${entries.length} plates`;
     empty.classList.toggle('show', visibleEntries.length === 0);
 
     if (showMoreWrap && showMoreBtn) {
-      const needsToggle = visibleEntries.length > 24 && !query;
+      const needsToggle = visibleEntries.length > 15 && !query;
       showMoreWrap.hidden = !needsToggle;
       if (needsToggle) {
         showMoreBtn.textContent = showAllEntries
-          ? `Show first 12 entries`
-          : `Show all ${visibleEntries.length} matching entries`;
+          ? 'Show first 12 plates'
+          : `Show all ${visibleEntries.length} historical plates`;
         showMoreBtn.setAttribute('aria-expanded', showAllEntries ? 'true' : 'false');
       }
     }
 
     if (regionStats) {
-      const geoCount = visibleEntries.filter((e) => e.coords !== null).length;
-      const onlineCount = visibleEntries.length - geoCount;
-      regionStats.textContent = onlineCount > 0
-        ? `${geoCount} mapped locations · ${onlineCount} born-online entries`
-        : `${geoCount} mapped locations shown`;
+      regionStats.textContent = `${visibleEntries.length} mapped historical plates`;
     }
   }
 
   function populateDossier(entry) {
-    dossierArt.className = `dossier-art ${spriteClass(entry.art)}`;
-    dossierArt.setAttribute('aria-label', `Enlarged field-guide art of ${entry.name}`);
-    dossierNum.textContent = `CRYPTIDEX ENTRY ${entry.number}`;
+    if (dossierImg && dossierFigure) {
+      const altText = `Historical natural-history depiction of ${entry.name} by ${entry.artist} (${entry.year})`;
+      dossierImg.src = entry.img;
+      dossierImg.alt = altText;
+      dossierImg.setAttribute('aria-label', `Enlarge historical plate: ${entry.name} (${entry.year})`);
+      dossierFigure.dataset.full = entry.img;
+      dossierCapTitle.textContent = `${entry.name} (${entry.year})`;
+      dossierCapText.textContent = entry.description;
+      dossierCapCredit.textContent = `Historical plate: ${entry.artist}, ${entry.year} — ${entry.sourceWork} (${entry.license}).`;
+    }
+    dossierNum.textContent = `HISTORICAL PLATE ${entry.number}`;
     dossierTitle.textContent = entry.name;
-    dossierPlace.textContent = entry.coords
-      ? `${entry.place} · ${Math.abs(entry.coords[1]).toFixed(1)}°${entry.coords[1] >= 0 ? 'N' : 'S'}, ${Math.abs(entry.coords[0]).toFixed(1)}°${entry.coords[0] >= 0 ? 'E' : 'W'}`
-      : `${entry.place} · Non-geographic internet origin`;
+    dossierPlace.textContent = `${entry.place} · ${Math.abs(entry.coords[1]).toFixed(1)}°${entry.coords[1] >= 0 ? 'N' : 'S'}, ${Math.abs(entry.coords[0]).toFixed(1)}°${entry.coords[0] >= 0 ? 'E' : 'W'}`;
     dossierType.className = `entry-type ${entry.type}`;
     dossierType.textContent = typeLabels[entry.type];
     dossierLevel.textContent = entry.evidenceLevel;
@@ -424,6 +407,20 @@
       e.preventDefault();
       closeDossier();
     });
+    // Close top-layer modal before opening PhotoLightbox so the lightbox is always on top
+    if (dossierFigure) {
+      const openZoom = (ev) => {
+        if (ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ') return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeDossier();
+        if (window.PhotoLightbox && typeof window.PhotoLightbox.open === 'function') {
+          window.PhotoLightbox.open(dossierFigure, dossierImg);
+        }
+      };
+      dossierFigure.addEventListener('click', openZoom, true);
+      dossierFigure.addEventListener('keydown', openZoom, true);
+    }
     dossierLabBtn.addEventListener('click', () => {
       const cid = dossierLabBtn.dataset.caseId;
       closeDossier();
@@ -593,7 +590,7 @@
         icon: 'ape',
         claim: 'Claim: an undiscovered breeding population of giant upright apes lives across North America.',
         answer: 'unsupported',
-        why: 'Unsupported by current evidence. Stories and uncontrolled casts cannot outweigh missing bones, DNA, roadkill, or repeatable camera-trap detections across millions of monitored forest nights.',
+        why: 'Unsupported by current evidence. Stories and uncontrolled casts cannot outweigh missing bones, DNA, or repeatable camera-trap detections across millions of monitored forest nights.',
         evidence: [
           ['Eyewitness reports', 'Many stories exist, but human perception in low light frequently misjudges bears or scale.', 'Anecdotal', 1, 'ambiguous'],
           ['Footprint casts', 'Some casts lack secure chain of custody; documented hoaxes show wooden carvings were used.', 'Uncontrolled', 2, 'weakens'],
@@ -606,12 +603,12 @@
         name: 'The Bloop',
         region: 'South Pacific · 1997 hydrophone',
         icon: 'hydrophone',
-        claim: 'Claim: the 1997 ultra-low-frequency ocean sound came from a colossal unknown sea monster.',
+        claim: 'Claim: the 1997 ultra-low-frequency ocean sound came from a colossal unknown sea animal.',
         answer: 'unsupported',
         why: 'Unsupported claim (explained physical phenomenon). NOAA acousticians matched the Bloop’s frequency sweep and timing to massive Antarctic icequakes—icebergs fracturing and grinding.',
         evidence: [
           ['1997 NOAA recording', 'Autonomous hydrophones detected a loud ~1-minute ultra-low-frequency sound across 5,000 km.', 'Calibrated', 3, 'ambiguous'],
-          ['Monster speculation', 'Early commentary joked about giant marine life; later internet art invented a leviathan.', 'Anecdotal', 1, 'ambiguous'],
+          ['Public speculation', 'Early commentary joked about giant marine life before full acoustic analysis finished.', 'Anecdotal', 1, 'ambiguous'],
           ['Icequake signature', 'Follow-up arrays near Antarctica recorded identical broadband acoustic patterns from fracturing icebergs.', 'Explained', 4, 'weakens'],
           ['Zero biological follow-up', 'No carcass, sonar target, or biological vocalization ever linked the sound to an animal.', 'Negative test', 4, 'weakens']
         ]
@@ -801,7 +798,7 @@
         features: 'animal trails, water crossings, and ridge lines',
         bg: '#081b15',
         contour: 'rgba(118, 230, 207, 0.14)',
-        knownSpecies: 'black bears, elk, cougars, and barred owls',
+        knownSpecies: 'black bears, elk, deer, and barred owls',
         falseSource: 'lens condensation, wind-blown branches, or common deer at dusk'
       },
       lake: {
@@ -826,7 +823,7 @@
         bg: '#0d1a14',
         contour: 'rgba(156, 231, 169, 0.15)',
         knownSpecies: 'herons, muskrats, snapping turtles, and swamp rabbits',
-        falseSource: 'mud-distorted tracks or overlapping overlapping amphibian calls'
+        falseSource: 'mud-distorted tracks or overlapping amphibian calls'
       }
     };
 
@@ -883,7 +880,6 @@
         }
       }
 
-      // Generate deterministic 30-day detection events scaled to station density
       const totalEvents = count * 2 + 4;
       for (let i = 0; i < totalEvents; i++) {
         const st = stations[i % stations.length];
@@ -935,7 +931,6 @@
       ctx.fillStyle = hab.bg;
       ctx.fillRect(0, 0, w, h);
 
-      // Subtle coordinate grid
       ctx.strokeStyle = 'rgba(255,255,255,0.045)';
       ctx.lineWidth = 1;
       for (let x = 40; x < w; x += 40) {
@@ -945,7 +940,6 @@
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
       }
 
-      // Habitat contour rings
       ctx.strokeStyle = hab.contour;
       ctx.lineWidth = 1.5;
       for (let i = 1; i <= 4; i++) {
@@ -954,7 +948,6 @@
         ctx.stroke();
       }
 
-      // Active scan sweep line when running
       if (running || day > 0) {
         const sweepX = (day / 30) * w;
         const grad = ctx.createLinearGradient(sweepX - 55, 0, sweepX, 0);
@@ -970,7 +963,6 @@
         ctx.stroke();
       }
 
-      // Draw detection rings
       detections.forEach((d) => {
         if (d.day > day) return;
         const age = Math.min(1, (day - d.day) / 3.5);
@@ -994,7 +986,6 @@
         ctx.fill();
       });
 
-      // Draw sensor stations
       stations.forEach((s) => {
         const sx = s.nx * w;
         const sy = s.ny * h;
@@ -1012,7 +1003,6 @@
         ctx.fillText(s.label, sx, sy - 13);
       });
 
-      // Legend badge inside canvas
       ctx.fillStyle = 'rgba(8, 19, 21, 0.84)';
       ctx.fillRect(10, 10, 236, 26);
       ctx.strokeStyle = 'rgba(167, 205, 192, 0.25)';

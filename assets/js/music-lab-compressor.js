@@ -62,8 +62,8 @@
     gentle: { name: 'Gentle leveling', params: { threshold: -20, ratio: 2, output: 1, knee: 6 } },
   };
   window.AudioEffects.register('punch-compressor', {
-    name: 'Punch Compressor', lesson: 'audio-compression.html',
-    description: 'RMS-style compression with automatic attack and release. Hard knee adds punch; a wider knee eases into compression. An original educational design, not a calibrated hardware emulation.',
+    name: '160A Punch Compressor', lesson: 'audio-compression.html',
+    description: 'OverEasy / hard-knee RMS dynamics inspired by the dbx 160A, with automatic program attack/release and a detector-only high-pass.',
     controls: [
       { key: 'sidechain', label: 'Detector low cut', min: 20, max: 500, step: 1, value: 20, unit: 'Hz' },
       { key: 'threshold', label: 'Threshold', min: -60, max: 0, step: 1, value: -24, unit: 'dBFS' },

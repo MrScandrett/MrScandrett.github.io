@@ -163,6 +163,7 @@
       var now = onScreen && !(pauseHidden && document.hidden);
       if (now === live) return;
       live = now;
+      if (opts.onChange) opts.onChange(live);
       var id;
       if (!live) {
         pausedAt = global.performance.now();
@@ -271,6 +272,34 @@
     else global.cancelAnimationFrame(id);
   };
 
+  /* ── Start/stop anything with the screen ──────────────────────────
+     SimKit.onScreen('#canvas', function (on) { ... }) calls back with
+     true once at the start, then false/true each time the element (or
+     its figure) moves more than 200 px off/on screen or the tab is
+     hidden/shown. For work that is not a rAF loop: a physics runner, a
+     setAnimationLoop renderer, CSS animations.
+
+     The markup-only form needs no script: an element with
+     data-pause-offscreen gets the class is-offscreen while it is away,
+     so a page's CSS can pause it:
+       .my-scene.is-offscreen * { animation-play-state: paused; }
+  */
+  function onScreen(target, callback, opts) {
+    var gate = gatedRaf(target, Object.assign({}, opts, { onChange: callback }));
+    callback(gate.isLive());
+    return gate;
+  }
+  function gateMarkup() {
+    var els = document.querySelectorAll('[data-pause-offscreen]');
+    Array.prototype.forEach.call(els, function (el) {
+      onScreen(el, function (on) { el.classList.toggle('is-offscreen', !on); });
+    });
+  }
+  if (typeof document !== 'undefined' && document.querySelectorAll) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', gateMarkup);
+    else gateMarkup();
+  }
+
   /* ── Animation loop ───────────────────────────────────────────────
      rAF wrapper that hands the callback a delta time in seconds and
      pauses itself while the tab is hidden. Pass `el` (the sim's canvas
@@ -361,6 +390,7 @@
     raf: gatedRaf,
     stage: stage,
     frame: frame,
+    onScreen: onScreen,
     noise: { hash: noiseHash, value: valueNoise, fbm: fbm }
   };
 }(window));

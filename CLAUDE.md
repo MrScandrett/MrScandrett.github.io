@@ -670,6 +670,14 @@ print-checks; `engine.scoped(fn)` builds anything and frees the WebAssembly obje
 uses `new Manifold(...)` must pass it to `ctx.track`).
 
 - **Forge** (`forge.html`, `assets/js/forge/`) is parametric: pick one of the parts, set numbers, print.
+  - The **Drives** shelf (`drive-parts.mjs`, outlines in `drive-outlines.mjs`) prints helical/herringbone, bevel,
+    worm + wheel, planetary, rack, cycloidal and leadscrew parts for the Mechanical Drives lesson. Threads and worms
+    use 30° flanks so they print upright without supports.
+  - **Demonstrate**: a part with moving pieces returns `demo: { mode: 'spin'|'swing', input, note, pose(u), ghost? }`
+    from `build()`; `pose(u)` gives each body a list of steps in its own pre-layout mm (`['z', deg, pivot?]`,
+    `['t', x, y, z]`). `demo-player.mjs` plays it on Three.js meshes (Forge's button and `part-viewer.mjs`, the
+    lessons' 3D view); `engine.demoCheck()` moves the real solids through the same poses and reports overlaps.
+    A new moving part needs a demo, and `tests/forge-demos.test.mjs` fails if its defaults bind.
 - **Workbench** (`workbench.html`, `assets/js/workbench/`) is the free-form builder: shapes + holes
   (Tinkercad-style; a hole cuts the solids in its own group, top-level holes cut everything), groups
   with pivots, patterns, a keyframe timeline, print check, STL / animated GLB / OBJ / PNG.

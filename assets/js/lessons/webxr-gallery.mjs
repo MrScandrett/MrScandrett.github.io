@@ -36,10 +36,21 @@ async function boot() {
   }));
   document.getElementById('gallery-center').addEventListener('click', () => { angle = 0; look(); });
   look();
-  renderer.setAnimationLoop(() => {
+  const frame = () => {
     if (!renderer.xr.isPresenting) syncSize();
     renderer.render(scene, camera);
-  });
+  };
+  // Stop drawing the desktop preview while it is scrolled away or the tab is hidden; a headset
+  // session always keeps the loop.
+  let onScreen = true;
+  const syncLoop = () => renderer.setAnimationLoop(renderer.xr.isPresenting || (onScreen && !document.hidden) ? frame : null);
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => { onScreen = entries[0].isIntersecting; syncLoop(); }, { rootMargin: '200px' }).observe(renderer.domElement);
+  }
+  document.addEventListener('visibilitychange', syncLoop);
+  renderer.xr.addEventListener('sessionstart', syncLoop);
+  renderer.xr.addEventListener('sessionend', syncLoop);
+  syncLoop();
   const reset = () => {
     session = null; enter.disabled = false; exit.disabled = true;
     status.textContent = 'VR ended. Desktop gallery is available.';

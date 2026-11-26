@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../../../assets/css/electricity-path.css" />
   <link rel="stylesheet" href="../../../assets/css/circuit-playground.css" />
   <link rel="stylesheet" href="../../../assets/css/circuit-playground-snap.css" />
-  <script type="module" src="../../../assets/js/vendor/model-viewer.min.js"></script>
+  <script type="module" src="../../../assets/js/vendor/model-viewer.min.js"></script><script src="../../../assets/js/model-viewer-gate.js" defer></script>
   <style>
     /* ── Page wrapper ──────────────────────────────────── */
     .bb-page { padding-bottom: 3.5rem; }
@@ -470,9 +470,12 @@
       pointer-events: none;
       stroke-linecap: round;
       stroke-dasharray: 10 10;
-      animation: bb-flow 0.8s linear infinite;
       transition: opacity 0.25s ease;
     }
+    /* Only the strips on show march; the other ~60 sit at opacity 0 and stay still. */
+    .bb-flow-line.is-visible,
+    .bb-flow-line.is-active { animation: bb-flow 0.8s linear infinite; }
+    .bb-board-svg.is-offscreen * { animation-play-state: paused; }
     .bb-flow-line.is-visible { opacity: 0.28; }
     .bb-flow-line.is-active { opacity: 0.95; }
     @keyframes bb-flow {
@@ -1084,7 +1087,7 @@
           <button class="bb-xray-toggle" id="bb-xray-toggle" type="button" aria-pressed="false">Enable X-Ray</button>
         </div>
         <div class="bb-board-frame bb-canvas-wrap">
-          <svg id="bb-board-svg" class="bb-board-svg" viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive breadboard x-ray diagram">
+          <svg id="bb-board-svg" class="bb-board-svg" data-pause-offscreen viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive breadboard x-ray diagram">
             <rect x="0" y="0" width="1000" height="560" rx="20" fill="#ffffff"></rect>
             <rect x="0" y="280" width="1000" height="12" fill="#f1f5f9"></rect>
             <line x1="80" y1="52" x2="906.5" y2="52" stroke="#ef4444" stroke-width="2" stroke-opacity="0.35"></line>

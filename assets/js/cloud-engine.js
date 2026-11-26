@@ -1614,7 +1614,7 @@
         this.simKitLoop = window.SimKit.loop((dt) => {
           this.update(Math.min(dt, 0.1));
           this.render();
-        });
+        }, { el: this.canvas || null });
       } else if (typeof window !== 'undefined') {
         this.rafId = window.requestAnimationFrame(tick);
       }

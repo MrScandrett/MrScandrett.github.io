@@ -485,5 +485,5 @@
   SimKit.loop(function (dt) {
     dt = Math.min(dt, 0.1);
     for (var i = 0; i < tvs.length; i++) if (tvs[i].visible) render(tvs[i], dt);
-  });
+  }, { el: wall });
 })();

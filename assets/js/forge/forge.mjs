@@ -13,6 +13,7 @@ import { DEFAULT_PRINTER, bounds, placeOnBed, prepareForPrint, write3mf, writeBi
 import { sendAndOpen } from '../handoff.mjs';
 import { DEFAULT_SETTINGS, concat, createEngine, resolveParams } from './engine.mjs';
 import { PARTS, PART_GROUPS, partById } from './parts.mjs';
+import { createDemoPlayer } from './demo-player.mjs';
 
 const STORE_KEY = 'classroomos:forge:v1';
 const FORMAT = 'classroomos-forge';
@@ -36,6 +37,7 @@ const el = {
   search: $('forge-search'), undo: $('forge-undo'), redo: $('forge-redo'), saved: $('forge-save-status'),
   summary: $('forge-check-summary'), checkLabel: $('forge-check-label'), checkCount: $('forge-check-count'),
   readiness: $('forge-export-readiness'), quickStats: $('forge-quick-stats'),
+  demo: $('forge-demo'), demoReport: $('forge-demo-report'),
 
 };
 
@@ -129,6 +131,7 @@ const currentParams = () => resolveParams(currentPart(), state.params[state.part
 
 // Small line drawings make templates recognizable without loading 14 previews.
 const PART_ICONS = {
+  'technic-beam': '<rect x="3" y="12" width="28" height="9" rx="4.5"/><circle cx="7.5" cy="16.5" r="2"/><circle cx="13.5" cy="16.5" r="2"/><circle cx="19.5" cy="16.5" r="2"/><circle cx="25.5" cy="16.5" r="2"/>',
   'rolling-tool': '<path d="M5 20V12Q16 2 27 12V20Z"/><circle cx="10" cy="23" r="4"/><circle cx="23" cy="23" r="4"/>',
   'wheel-axle': '<circle cx="16" cy="16" r="11"/><circle cx="16" cy="16" r="4"/><path d="M16 5V12M16 20V27M5 16H12M20 16H27"/>',
   case: '<rect x="4" y="10" width="24" height="17" rx="3"/><path d="M8 6H24M10 14V18M16 14V18M22 14V18M9 23H23"/>',
@@ -186,7 +189,7 @@ function filterLibrary() {
 }
 function selectPart(id) {
   if (!partById(id)) return;
-  if (id !== state.part) { checkpoint(); state.part = id; persist(); }
+  if (id !== state.part) { checkpoint(); state.part = id; persist(); if (demoState) stopDemo(); }
   navigatePart(); renderControls(); activateTab('design');
   if (window.matchMedia('(max-width: 900px)').matches) $('forge-library-disclosure').open = false;
   framed = false; schedule();
@@ -371,11 +374,12 @@ function setupView() {
     view = { scene, camera, renderer, syncSize, controls, parts };
     controls.addEventListener('start', () => setCameraButtons(null));
     syncSize();
-    window.SimKit.loop(() => {
+    window.SimKit.loop((dt) => {
+      if (demoState) demoState.player.tick(Math.min(dt, 0.1));
       controls.update();
       syncSize();
       renderer.render(scene, camera);
-    });
+    }, { el: el.canvas });
   } catch (error) {
     view = null;
     el.canvas.hidden = true;
@@ -397,6 +401,72 @@ function showBodies() {
   }
   paint();
   if (!framed) { frame(cameraView); framed = true; }
+  if (demoState) startDemo(true);
+}
+
+/* ── Demonstrate: assemble the printed pieces and run them ─────────────── */
+
+let demoState = null;
+let demoCheckTimer = 0;
+const DEMO_SHADES = [0, -0.16, 0.12, -0.3, 0.22, -0.08, 0.06];
+
+function syncDemoButton() {
+  const has = Boolean(result?.demo) && Boolean(view);
+  el.demo.hidden = !has;
+  el.demo.setAttribute('aria-pressed', String(Boolean(demoState)));
+  el.demo.textContent = demoState ? '■ Stop demo' : '▶ Demonstrate';
+  if (!has && demoState) stopDemo();
+}
+
+function startDemo(restart = false) {
+  if (!view || !result?.demo) { stopDemo(); return; }
+  if (demoState) demoState.player.stop();
+  const meshes = [...view.parts.children];
+  const player = createDemoPlayer(THREE, { group: view.parts, meshes, bodies: result.bodies, demo: result.demo });
+  meshes.forEach((mesh, i) => { const g = Boolean(result.demo.ghost?.includes(i)); mesh.material.transparent = g; mesh.material.opacity = g ? 0.35 : 1; mesh.material.depthWrite = !g; mesh.material.needsUpdate = true; });
+  demoState = { player, hits: new Set() };
+  paint();
+  syncDemoButton();
+  if (!restart) frame(cameraView);
+  el.demoReport.hidden = false;
+  el.demoReport.dataset.tone = '';
+  el.demoReport.innerHTML = `<strong>${result.demo.input}.</strong> Checking that nothing binds…`;
+  clearTimeout(demoCheckTimer);
+  // the check rebuilds the part and intersects every pair of pieces at 12 positions, so let the frame paint first
+  demoCheckTimer = setTimeout(() => {
+    if (!demoState || !engine) return;
+    const demo = result.demo;
+    const check = engine.demoCheck(currentPart(), state.params[state.part], state.settings, 12);
+    if (!demoState) return;
+    if (!check || check.error) {
+      el.demoReport.dataset.tone = 'bad';
+      el.demoReport.textContent = `Could not check the motion: ${check?.error || 'no demo'}`;
+      return;
+    }
+    const names = result.bodies.map((b) => b.name);
+    demoState.hits = new Set(check.pairs.flatMap((h) => [names.indexOf(h.a), names.indexOf(h.b)]));
+    paint();
+    if (!check.worst) {
+      el.demoReport.dataset.tone = 'ok';
+      el.demoReport.innerHTML = `<strong>✓ ${demo.input}: it moves freely.</strong> No two pieces touch at any of ${check.samples} positions through the motion. ${demo.note}`;
+    } else {
+      const w = check.worst;
+      const where = demo.mode === 'swing' ? (Math.abs(w.u) > 0.8 ? 'near the end of the swing' : 'part way through the swing') : `${Math.round(((w.u % 1) + 1) % 1 * 360)}° into the turn`;
+      el.demoReport.dataset.tone = 'bad';
+      el.demoReport.innerHTML = `<strong>⚠ ${w.a} runs into ${w.b}</strong> ${where} (${w.volume < 10 ? w.volume.toFixed(1) : Math.round(w.volume)} mm³ of overlap, shown in red). As printed it will bind there: raise the clearance or change the design. ${check.pairs.length > 1 ? `${check.pairs.length} touching positions in all.` : ''}`;
+    }
+  }, 60);
+}
+
+function stopDemo() {
+  clearTimeout(demoCheckTimer);
+  if (demoState) demoState.player.stop();
+  demoState = null;
+  if (view) for (const mesh of view.parts.children) { mesh.material.transparent = false; mesh.material.opacity = 1; mesh.material.depthWrite = true; mesh.material.needsUpdate = true; }
+  el.demoReport.hidden = true;
+  paint();
+  syncDemoButton();
+  if (view && result?.layout) frame(cameraView);
 }
 
 function paint() {
@@ -406,11 +476,15 @@ function paint() {
     // nested pieces sit inside each other, so shade every other one darker to
     // tell neighbours apart (a dozen locked rings would otherwise fade to black)
     const base = new THREE.Color(state.color);
-    if (result?.layout?.nested && i % 2) base.offsetHSL(0, 0, -0.2);
+    if (demoState) {
+      // while demonstrating, shade each piece differently so neighbours read apart; red if it collides
+      if (demoState.hits.has(i)) base.copy(OVERHANG); else base.offsetHSL(0, 0, DEMO_SHADES[i % DEMO_SHADES.length]);
+    } else if (result?.layout?.nested && i % 2) base.offsetHSL(0, 0, -0.2);
     const colors = mesh.geometry.getAttribute('color');
     const mask = mesh.userData.mask;
+    const overhangs = show && !demoState;
     for (let t = 0; t < mask.length; t++) {
-      const c = show && mask[t] === 1 ? OVERHANG : show && mask[t] === 2 ? BRIDGE : base;
+      const c = overhangs && mask[t] === 1 ? OVERHANG : overhangs && mask[t] === 2 ? BRIDGE : base;
       for (let k = 0; k < 3; k++) colors.setXYZ(t * 3 + k, c.r, c.g, c.b);
     }
     colors.needsUpdate = true;
@@ -427,7 +501,7 @@ function frame(name = 'iso') {
   setCameraButtons(name);
   if (!view || !result?.layout) return;
   view.syncSize();
-  const [w, d, h] = result.layout.size;
+  const [w, d, h] = demoState ? demoState.player.size : result.layout.size;
   // distance that fits the bounding sphere in the narrower of the two view angles
   const radius = Math.max(Math.hypot(w, d, h) / 2, 25);
   const vFov = (view.camera.fov * Math.PI) / 180;
@@ -466,6 +540,7 @@ function rebuild() {
   const disabled = Boolean(result.error) || !result.bodies.length;
   [el.stl, el.glb, el.obj, el.partStls, el.sendPrint].forEach((b) => { b.disabled = disabled; });
   el.partStls.hidden = result.bodies.length < 2;
+  syncDemoButton();
   const summary = result.verdicts.map((v) => `${v.tag}: ${v.text}`).join(' ');
   el.canvas.setAttribute('aria-label', `${part.name} on the print bed. ${summary}`);
 }
@@ -674,6 +749,7 @@ async function start() {
   persist();
   el.showOverhangs.addEventListener('change', paint);
   el.resetView.addEventListener('click', frame);
+  el.demo.addEventListener('click', () => (demoState ? stopDemo() : startDemo()));
   el.stl.addEventListener('click', exportStl);
   el.partStls.addEventListener('click', exportPartStls);
   el.glb.addEventListener('click', exportGlb);

@@ -3529,6 +3529,43 @@
     }
   });
 
+  physics({
+    id: 'nernst-equation', title: 'Nernst equation (25 °C)', match: ['E=E^0−(0.0592/n)·logQ', 'E=E^0−(0.0592/n)logQ'], y: 'the cell voltage', first: 'Q',
+    init: { E0: 1.10, n: 2, logQ: 0 }, out: ['E', 'V'],
+    f: function (s) { return s.E0 - (0.0592 / s.n) * s.logQ; },
+    line: function (s) {
+      var E = s.E0 - (0.0592 / s.n) * s.logQ;
+      return 'E = ' + s.E0.toFixed(2) + ' − (0.0592 / ' + s.n + ') × ' + s.logQ.toFixed(1) + ' = ' + E.toFixed(3) + ' V';
+    },
+    tokens: {
+      E: { t: 'Cell potential', c: 'lhs', role: 'Actual voltage', is: 'The actual open-circuit voltage of the electrochemical cell under the current ion concentrations, in volts (V).', does: 'Starts near E° when solutions are 1 M, rises when reactants outnumber products, and falls to 0 V when the battery reaches equilibrium.' },
+      'E^0': { t: 'Standard cell potential', c: 'drive', role: 'Standard baseline', sym: 'E⁰', is: 'Voltage when every ion is at 1.0 M concentration and 25 °C: E°cell = E°cathode − E°anode.', does: 'Sets the starting height of the voltage before concentration shifts it up or down.', s: ['E0', 0.0, 3.5, 0.05, 'V'] },
+      '0.0592': { t: 'Thermal voltage factor', c: 'const', role: '25 °C constant', is: 'Equals (R · T · ln 10) / F at 25 °C (298.15 K), in volts.', does: 'Tells you how much a tenfold change in Q shifts the voltage when n = 1: about 59.2 mV per decade.' },
+      n: { t: 'Electrons transferred', c: 'geo', role: 'Stoichiometric electrons', is: 'The number of moles of electrons transferred in the balanced overall redox equation.', does: 'Divides the concentration shift: a 2-electron reaction shifts half as steeply (29.6 mV per decade) as a 1-electron reaction.', s: ['n', 1, 6, 1, 'e⁻'] },
+      log: { t: 'Base-10 logarithm', c: 'op', role: 'Power of ten', is: 'Counts powers of ten in the reaction quotient Q: log(1) = 0, log(100) = +2, log(0.01) = −2.', does: 'Compresses huge concentration swings into small steady steps in voltage.' },
+      Q: { t: 'Reaction quotient', c: 'resist', role: 'Products ÷ reactants', is: 'Ratio of anode (product) ion concentration to cathode (reactant) ion concentration, raised to their balanced coefficients.', does: 'When Q > 1 (products build up), log Q is positive and voltage drops. When Q < 1 (extra cathode ions), log Q is negative and voltage rises. Slider shifts log₁₀ Q.', s: ['logQ', -4, 4, 0.2, 'decades'], x: 'log₁₀ Q' }
+    }
+  });
+
+  physics({
+    id: 'faraday-electrolysis', title: "Faraday's law of electrolysis", match: ['m=(I·t·M)/(n·F)', 'm=(I·t·M)/nF', 'm=ItM/nF'], y: 'the mass plated', first: 'I',
+    init: { I: 2.0, t: 1800, M: 63.55, n: 2 }, out: ['m', 'g'],
+    f: function (s) { return (s.I * s.t * s.M) / (s.n * 96485); },
+    line: function (s) {
+      var q = s.I * s.t;
+      var m = (q * s.M) / (s.n * 96485);
+      return 'Q = ' + q.toFixed(0) + ' C → ' + m.toFixed(3) + ' g plated';
+    },
+    tokens: {
+      m: { t: 'Mass deposited', c: 'lhs', role: 'Plated mass', is: 'Grams of solid metal plated onto the cathode (assuming 100% current efficiency).', does: 'Scales linearly with current I, time t, and molar mass M, and drops when each ion needs more electrons n.' },
+      I: { t: 'Electric current', c: 'drive', role: 'Charge flow rate', is: 'Steady current pushed through the electrolytic bath, in amperes (A = C/s).', does: 'Double the current and twice as many electrons arrive each second, so twice as much metal plates out.', s: ['I', 0.2, 10, 0.2, 'A'] },
+      t: { t: 'Time', c: 'drive', role: 'Duration', is: 'How long the current flows, in seconds (minutes × 60).', does: 'Run the bath twice as long and twice the total charge Q = I·t passes through.', s: ['t', 60, 7200, 60, 's'] },
+      M: { t: 'Molar mass', c: 'drive', role: 'Mass per mole', is: 'Atomic mass of the metal in grams per mole (for copper, 63.55 g/mol; for silver, 107.87 g/mol).', does: 'Heavier atoms deliver more grams per mole of reduced metal.', s: ['M', 24, 208, 1, 'g/mol'] },
+      n: { t: 'Ion charge / electrons', c: 'resist', role: 'Electrons per atom', is: 'Number of electrons needed to reduce one metal ion (1 for Ag⁺, 2 for Cu²⁺, 3 for Al³⁺).', does: 'Because each atom claims n electrons, doubling n cuts the moles of metal plated in half.', s: ['n', 1, 3, 1, 'e⁻'] },
+      F: { t: 'Faraday constant', c: 'const', role: 'Charge per mole e⁻', is: 'Total electric charge of one mole of electrons: 96,485 C/mol.', does: 'Converts raw coulombs of charge (I·t) into moles of electrons.' }
+    }
+  });
+
   (function () {
     var growth = { t: 'Growth factor', c: 'drive', role: 'Grows with time', sym: 'e^rt', is: 'e is about 2.718. r is the yearly interest rate as a decimal and t is the time in years. Here r is 0.05 (5%).', does: 'It is what the starting money is multiplied by. The slider changes t: at 5% the money doubles about every 14 years.', s: ['t', 0, 50, 1, 'years'], x: 't' };
     physics({
