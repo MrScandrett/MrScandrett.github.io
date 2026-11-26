@@ -5,6 +5,11 @@
 //   bright panels big, opaque, near-white text panels/cards (outermost only) that glare in a dark theme.
 //                 Photos, SVG, canvas and video are never counted: they keep their own rendering.
 //
+// What contrast-guard.js is told to leave alone is left out too, the same way the guard does it: a page with
+// data-theme-scope="independent" (it never enters a dark theme, so its panels are not judged; listed by name), and panels inside
+// [data-night-keep], [data-score], .fb-shell or .as-page (kept light on purpose; counted as "kept", not "bright").
+// Text contrast is still checked everywhere: unreadable text is wrong in any palette.
+//
 // Needs a running dev server (`node serve-local.js`, default http://localhost:8080).
 //
 //   node scripts/audit-night-mode.mjs                      all lessons, theme "night"
@@ -49,6 +54,11 @@ function listLessons(dir) {
 const files = listLessons(path.join(root, "lessons")).filter((f) => f.includes(match)).sort();
 
 function measure() {
+  // A theme-independent page keeps its own palette, so its panels aren't judged; its text still is.
+  const independent = document.documentElement.dataset.themeScope === "independent";
+  // Same list as SURFACE_KEEP in assets/js/contrast-guard.js (minus the Blocky skin, which this audit never loads).
+  const KEEP = "[data-night-keep], [data-score], .fb-shell, .as-page";
+  let kept = 0;
   const lum = (c) => {
     const a = c.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
     return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
@@ -132,6 +142,7 @@ function measure() {
     if (s.display === "none" || el.matches("[hidden], [aria-hidden=\"true\"]") || el.matches(".site-header, .nav-settings-panel, .nav-dd-panel, .site-footer")) return;
     const r = el.getBoundingClientRect();
     const area = r.width * r.height;
+    if (el.matches(KEEP)) { if (area >= 8000) kept++; return; }
     if (area >= 8000 && words(el) >= 5) {
       let c = cs(s.backgroundColor);
       let candidate = null;
@@ -147,17 +158,19 @@ function measure() {
     }
     for (const child of el.children) scan(child);
   };
-  scan(document.body);
+  if (!independent) scan(document.body);
 
   return {
     theme: document.documentElement.dataset.theme,
     lighting: document.documentElement.dataset.lighting,
+    independent,
     textChecked,
     low: low.slice(0, 40),
     lowCount: low.length,
     bright: bright.slice(0, 12),
     brightCount: bright.length,
     brightArea: bright.reduce((t, b) => t + b.area, 0),
+    kept,
   };
 }
 
@@ -182,6 +195,9 @@ async function worker() {
       await page.goto(`${base}/${file}`, { waitUntil: "domcontentloaded", timeout: 25000 });
       await page.addStyleTag({ content: "*,*::before,*::after{transition:none!important;animation:none!important}" });
       await page.waitForTimeout(Number(arg("wait", 2800)));
+      // Settle the guard now, as the a11y audit does: helpers that land at idle (related-lesson links) would
+      // otherwise be measured in the half second before its throttled pass reaches them.
+      await page.evaluate(() => window.ClassroomOSContrastGuard?.runNow?.());
       results[file] = await page.evaluate(measure);
     } catch (error) {
       results[file] = { error: String(error).slice(0, 120) };
@@ -194,13 +210,18 @@ await browser.close();
 
 const rows = Object.entries(results);
 const ok = rows.filter(([, r]) => !r.error);
-const dark = ok.filter(([, r]) => r.lighting === "night");
+const dark = ok.filter(([, r]) => r.lighting === "night" || r.independent);
 const sum = (key) => ok.reduce((t, [, r]) => t + (r[key] || 0), 0);
 const count = (fn) => ok.filter(([, r]) => fn(r)).length;
 
 console.log(`\nNight-mode audit: theme=${theme}, ${rows.length} lessons (${rows.length - ok.length} failed to load, ${ok.length - dark.length} did not enter a dark theme)`);
 console.log(`  low-contrast text : ${sum("lowCount")} elements on ${count((r) => r.lowCount)} lessons`);
 console.log(`  bright panels     : ${sum("brightCount")} panels on ${count((r) => r.brightCount)} lessons`);
+console.log(`  kept light        : ${sum("kept")} panels on ${count((r) => r.kept)} lessons (data-night-keep and friends; not counted)`);
+const independent = ok.filter(([, r]) => r.independent).map(([f]) => f);
+if (independent.length) console.log(`  theme-independent : ${independent.length} lessons (data-theme-scope="independent"; panels not judged, text still checked): ${independent.join(", ")}`);
+const notDark = ok.filter(([, r]) => !r.independent && r.lighting !== "night").map(([f]) => f);
+if (notDark.length) console.log(`  NOT in a dark theme: ${notDark.join(", ")}`);
 
 const worst = (key) => ok.filter(([, r]) => r[key]).sort((a, b) => b[1][key] - a[1][key]).slice(0, 12);
 if (sum("lowCount")) {
@@ -215,7 +236,7 @@ if (sum("brightCount")) {
 const out = arg("out", "");
 if (out) fs.writeFileSync(out, JSON.stringify(results, null, 1));
 
-const slim = Object.fromEntries(ok.map(([f, r]) => [f, { low: r.lowCount, bright: r.brightCount }]));
+const slim = Object.fromEntries(ok.slice().sort(([a], [b]) => (a < b ? -1 : 1)).map(([f, r]) => [f, { low: r.lowCount, bright: r.brightCount }]));
 if (flag("save-baseline")) {
   fs.mkdirSync(path.dirname(baselinePath), { recursive: true });
   fs.writeFileSync(baselinePath, JSON.stringify({ theme, lessons: slim }, null, 1) + "\n");
