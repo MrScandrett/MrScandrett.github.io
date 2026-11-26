@@ -5,956 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clocks &amp; Telling Time · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Mathematics Lesson — explore analog and digital clocks, the history of timekeeping, biblical time, world time zones, deep time and large numbers, and the science of time dilation." />
+  <meta name="description" content="Mathematics Lesson — explore analog and digital clocks, elapsed time jumps, the history of timekeeping, biblical time, world time zones, deep time and large numbers, and the science of time dilation." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
-  <style>
-    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #3b82f6; --ll-tab-active: #3b82f6; --ll-tab-active-bg: rgba(59,130,246,0.12); }
-    .ct-panel-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.45rem;
-      margin-bottom: 0.85rem;
-    }
-    .ct-panel-preset {
-      padding: 0.5rem 0.6rem;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 8px;
-      background: var(--white, #fff);
-      font-size: 0.76rem;
-      font-weight: 600;
-      color: var(--text-primary, #1d1d1f);
-      cursor: pointer;
-      text-align: left;
-      transition: background 0.15s, border-color 0.15s, transform 0.1s;
-    }
-    .ct-panel-preset:hover {
-      background: rgba(59,130,246,0.08);
-      border-color: #3b82f6;
-      transform: translateY(-1px);
-    }
-    .ct-panel-preset small {
-      display: block;
-      font-size: 0.66rem;
-      font-weight: 400;
-      color: var(--text-muted, #64748b);
-      margin-top: 0.15rem;
-    }
-    [data-lighting="night"] .ct-panel-preset,
-    [data-theme="vaporwave"] .ct-panel-preset,
-    [data-theme="bark"] .ct-panel-preset {
-      background: #1c1c1e;
-      border-color: rgba(255,255,255,0.15);
-      color: #f5f5f7;
-    }
-    [data-lighting="night"] .ct-panel-preset:hover,
-    [data-theme="vaporwave"] .ct-panel-preset:hover,
-    [data-theme="bark"] .ct-panel-preset:hover {
-      background: rgba(59,130,246,0.22);
-      border-color: #60a5fa;
-    }
-
-    /* ── Page ─────────────────────────────────────────── */
-    .ct-page { padding-bottom: 3.5rem; }
-
-    /* ── Hero ─────────────────────────────────────────── */
-    .ct-hero { padding: 0.4rem 0 1.3rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
-    .ct-hero h1 { max-width: 28ch; margin: 0 auto; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
-    .ct-hero-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .ct-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .ct-lede { margin: 0.65rem auto 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .ct-lede,
-    [data-theme="vaporwave"] .ct-lede,
-    [data-theme="bark"] .ct-lede { color: rgba(245,245,247,0.7); }
-
-    /* ── Section card ─────────────────────────────────── */
-    .ct-card {
-      background: var(--white, #fff);
-      border: 1px solid var(--line, #d2d2d7);
-      border-left: 3.5px solid var(--card-accent, #3b82f6);
-      border-radius: var(--radius, 18px);
-      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
-      padding: 1.2rem 1.4rem;
-      margin-bottom: 1rem;
-    }
-    .ct-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .ct-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; letter-spacing: -0.01em; }
-    .ct-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .ct-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .ct-card,
-    [data-theme="vaporwave"] .ct-card,
-    [data-theme="bark"] .ct-card { background: var(--white, #2c2c2e); }
-    [data-lighting="night"] .ct-card p,
-    [data-theme="vaporwave"] .ct-card p,
-    [data-theme="bark"] .ct-card p { color: rgba(245,245,247,0.72); }
-
-    /* ── Clock Lab ─────────────────────────────────────── */
-    .ct-clock-lab {
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
-      border-radius: 18px;
-      padding: 1.8rem 1.4rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-    }
-    .ct-clock-lab-head { text-align: center; margin-bottom: 1.4rem; }
-    .ct-clock-lab-head h2 { color: #fff; margin: 0 0 0.3rem; font-size: 1.25rem; }
-    .ct-clock-lab-head p  { color: rgba(255,255,255,0.6); font-size: 0.85rem; margin: 0; }
-    .ct-clock-badge {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      background: rgba(59,130,246,0.25); border: 1px solid rgba(59,130,246,0.5);
-      border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.75rem;
-      color: #93c5fd; margin-bottom: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase;
-    }
-    .ct-live-dot {
-      width: 7px; height: 7px; border-radius: 50%; background: #22c55e;
-      animation: ct-pulse 1.4s ease-in-out infinite;
-      box-shadow: 0 0 0 0 rgba(34,197,94,0.4);
-    }
-    @keyframes ct-pulse {
-      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
-      70%  { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
-      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
-    }
-    .ct-analog-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; }
-    .ct-clock-face {
-      width: 200px; height: 200px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #1e293b, #0f172a);
-      border: 3px solid rgba(59,130,246,0.6);
-      box-shadow: 0 0 30px rgba(59,130,246,0.2), inset 0 0 30px rgba(0,0,0,0.5);
-      position: relative;
-    }
-    .ct-clock-label { color: rgba(255,255,255,0.55); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
-    .ct-digital-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; }
-    .ct-digital-display {
-      background: #000;
-      border: 2px solid rgba(59,130,246,0.5);
-      border-radius: 12px;
-      padding: 1rem 1.6rem;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: clamp(1.6rem, 5vw, 2.4rem);
-      font-weight: 600;
-      color: #22c55e;
-      text-shadow: 0 0 12px rgba(34,197,94,0.7);
-      letter-spacing: 0.08em;
-      min-width: 200px;
-      text-align: center;
-      box-shadow: 0 0 20px rgba(34,197,94,0.15), inset 0 0 20px rgba(0,0,0,0.5);
-    }
-    .ct-digital-date {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.78rem;
-      color: rgba(34,197,94,0.6);
-      letter-spacing: 0.06em;
-      text-align: center;
-    }
-    .ct-clock-explainer {
-      display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center;
-      margin-top: 1.4rem;
-    }
-    .ct-hand-info {
-      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 10px; padding: 0.55rem 0.9rem; text-align: center;
-    }
-    .ct-hand-info .hand-name { font-size: 0.72rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.06em; }
-    .ct-hand-info .hand-val  { font-size: 1.05rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; margin-top: 0.15rem; }
-    .ct-hand-info.hour  .hand-val { color: #f59e0b; }
-    .ct-hand-info.min   .hand-val { color: #3b82f6; }
-    .ct-hand-info.sec   .hand-val { color: #ef4444; }
-
-    /* ── Carousel ─────────────────────────────────────── */
-    .ct-carousel-container { display: flex; flex-direction: column; gap: 1.5rem; align-items: center; margin-top: 1rem; }
-    .ct-carousel-controls { display: flex; align-items: center; gap: 1rem; width: 100%; justify-content: center; }
-    .ct-carousel-stage { flex: 1; max-width: 480px; min-height: 320px; display: flex; align-items: center; justify-content: center; position: relative; }
-    
-    .ct-clock-panel { display: none; flex-direction: column; align-items: center; text-align: center; animation: ct-fade-in 0.3s ease; width: 100%; }
-    .ct-clock-panel.active { display: flex; }
-    
-    @keyframes ct-fade-in {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    
-    .ct-nav-btn {
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #fff;
-      width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 1.4rem;
-      display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;
-    }
-    .ct-nav-btn:hover { background: rgba(59,130,246,0.3); border-color: #3b82f6; }
-    
-    .ct-carousel-dots { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
-    .ct-dot {
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
-      color: rgba(255,255,255,0.6); padding: 0.4rem 0.8rem; border-radius: 20px;
-      font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
-    }
-    .ct-dot:hover { background: rgba(255,255,255,0.1); color: #fff; }
-    .ct-dot.active { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #93c5fd; }
-    
-    .ct-ancient-wrap {
-      width: 160px; height: 160px; background: rgba(255,255,255,0.05); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 20px rgba(0,0,0,0.4);
-      margin-bottom: 1.2rem;
-    }
-    .ct-ancient-wrap svg { width: 80px; height: 80px; }
-    
-    .ct-clock-panel h3 { color: #fff; margin: 0 0 0.5rem; font-size: 1.4rem; }
-    .ct-clock-panel p {
-      color: rgba(255,255,255,0.65);
-      font-size: 0.9rem;
-      line-height: 1.6;
-      margin: 0;
-      max-width: 400px;
-    }
-
-    /* ── Timeline ─────────────────────────────────────── */
-    .ct-timeline { position: relative; padding-left: 2.2rem; }
-    .ct-timeline::before {
-      content: ''; position: absolute; left: 0.7rem; top: 0; bottom: 0;
-      width: 2px; background: linear-gradient(to bottom, #3b82f6, #a78bfa, #f59e0b, #ef4444);
-    }
-    .ct-tl-item { position: relative; margin-bottom: 1.25rem; }
-    .ct-tl-item::before {
-      content: ''; position: absolute; left: -1.8rem; top: 0.35rem;
-      width: 12px; height: 12px; border-radius: 50%;
-      background: var(--dot-color, #3b82f6);
-      border: 2px solid #fff;
-      box-shadow: 0 0 0 3px var(--dot-color, #3b82f6);
-    }
-    .ct-tl-item .ct-tl-era { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--dot-color, #3b82f6); margin-bottom: 0.15rem; }
-    .ct-tl-item .ct-tl-title { font-size: 0.96rem; font-weight: 700; margin-bottom: 0.2rem; }
-    .ct-tl-item .ct-tl-body { font-size: 0.85rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; margin: 0; }
-    [data-lighting="night"] .ct-tl-item::before,
-    [data-theme="vaporwave"] .ct-tl-item::before,
-    [data-theme="bark"] .ct-tl-item::before { border-color: #2c2c2e; }
-    [data-lighting="night"] .ct-tl-item .ct-tl-body,
-    [data-theme="vaporwave"] .ct-tl-item .ct-tl-body,
-    [data-theme="bark"] .ct-tl-item .ct-tl-body { color: rgba(245,245,247,0.65); }
-
-    /* ── Grace Hopper Wire Lab ────────────────────────── */
-    .ct-wire-lab {
-      background: linear-gradient(145deg, rgba(6,182,212,0.06) 0%, rgba(59,130,246,0.04) 100%);
-      border: 1px solid rgba(6,182,212,0.3);
-      border-radius: 16px;
-      padding: 1.25rem 1.4rem;
-      margin: 1.4rem 0 1rem;
-    }
-    .ct-wire-head h3 { margin: 0.15rem 0 0.45rem; font-size: 1.15rem; color: var(--text-strong, #0f172a); }
-    .ct-wire-head p { margin: 0 0 0.8rem; font-size: 0.86rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; }
-    .ct-wire-kicker {
-      display: inline-block;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.66rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #0284c7;
-      margin-bottom: 0.2rem;
-    }
-    .ct-wire-presets { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.9rem; }
-    .ct-wire-btn {
-      background: var(--surface-1, #fff);
-      border: 1px solid rgba(6,182,212,0.35);
-      border-radius: 8px;
-      padding: 0.35rem 0.65rem;
-      font-size: 0.76rem;
-      font-weight: 600;
-      color: #0369a1;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .ct-wire-btn:hover { background: rgba(6,182,212,0.12); border-color: #0284c7; }
-    .ct-wire-btn.active { background: #0284c7; border-color: #0284c7; color: #fff; box-shadow: 0 2px 6px rgba(2,132,199,0.25); }
-    .ct-wire-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-bottom: 0.9rem; font-size: 0.82rem; color: var(--text-secondary, #3f4f65); }
-    .ct-wire-input-row { display: flex; align-items: center; gap: 0.4rem; }
-    .ct-wire-unit-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; font-weight: 600; color: #0284c7; }
-    .ct-wire-display {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
-      background: var(--surface-1, #fff);
-      border: 1px solid rgba(6,182,212,0.25);
-      border-radius: 12px;
-      padding: 0.9rem 1.1rem;
-      margin-bottom: 0.85rem;
-    }
-    @media (max-width: 600px) { .ct-wire-display { grid-template-columns: 1fr; } }
-    .ct-wire-stat { display: flex; flex-direction: column; gap: 0.2rem; }
-    .ct-wire-stat-wide { grid-column: 1 / -1; border-top: 1px solid rgba(148,163,184,0.18); padding-top: 0.6rem; margin-top: 0.2rem; }
-    .ct-wire-stat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); font-weight: 600; }
-    .ct-wire-stat-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.96rem; font-weight: 700; color: var(--text-strong, #0f172a); }
-    .ct-wire-visual-track {
-      width: 100%; height: 8px; background: rgba(148,163,184,0.2); border-radius: 999px; overflow: hidden; margin-bottom: 0.8rem;
-    }
-    .ct-wire-visual-bar {
-      height: 100%; background: linear-gradient(90deg, #06b6d4, #3b82f6); border-radius: 999px; transition: width 0.25s ease;
-    }
-    .ct-wire-footnote {
-      margin: 0; font-size: 0.82rem; color: var(--text-secondary, #475569); line-height: 1.55;
-    }
-    .ct-wire-footnote a { color: #0284c7; font-weight: 600; text-decoration: underline; margin-left: 0.3rem; }
-    [data-lighting="night"] .ct-wire-lab,
-    [data-theme="vaporwave"] .ct-wire-lab,
-    [data-theme="bark"] .ct-wire-lab {
-      background: linear-gradient(145deg, rgba(6,182,212,0.12) 0%, rgba(59,130,246,0.08) 100%);
-      border-color: rgba(6,182,212,0.4);
-    }
-    [data-lighting="night"] .ct-wire-display,
-    [data-theme="vaporwave"] .ct-wire-display,
-    [data-theme="bark"] .ct-wire-display {
-      background: rgba(15,23,42,0.6);
-      border-color: rgba(6,182,212,0.3);
-    }
-    [data-lighting="night"] .ct-wire-btn,
-    [data-theme="vaporwave"] .ct-wire-btn,
-    [data-theme="bark"] .ct-wire-btn {
-      background: rgba(30,41,59,0.8);
-      color: #7dd3fc;
-      border-color: rgba(6,182,212,0.4);
-    }
-    [data-lighting="night"] .ct-wire-btn.active,
-    [data-theme="vaporwave"] .ct-wire-btn.active,
-    [data-theme="bark"] .ct-wire-btn.active {
-      background: #0284c7;
-      color: #fff;
-    }
-
-    /* ── Verse box ────────────────────────────────────── */
-    .ct-verse-box {
-      background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(167,139,250,0.08) 100%);
-      border: 1px solid rgba(245,158,11,0.3);
-      border-radius: 14px;
-      padding: 1.1rem 1.4rem;
-      margin: 0.8rem 0;
-      position: relative;
-    }
-    .ct-verse-box::before {
-      content: '\201C';
-      position: absolute; top: -0.3rem; left: 0.8rem;
-      font-size: 3.5rem; color: rgba(245,158,11,0.25);
-      font-family: Georgia, serif; line-height: 1;
-    }
-    .ct-verse-box p { margin: 0 0 0.4rem; font-style: italic; color: #44403c; font-size: 0.9rem; line-height: 1.7; padding-left: 1rem; }
-    .ct-verse-box cite { font-size: 0.78rem; color: #92400e; font-weight: 600; padding-left: 1rem; display: block; margin-top: 0.3rem; }
-    [data-lighting="night"] .ct-verse-box p,
-    [data-theme="vaporwave"] .ct-verse-box p,
-    [data-theme="bark"] .ct-verse-box p { color: rgba(245,245,247,0.8); }
-    [data-lighting="night"] .ct-verse-box cite,
-    [data-theme="vaporwave"] .ct-verse-box cite,
-    [data-theme="bark"] .ct-verse-box cite { color: #fcd34d; }
-
-    /* ── Day cards ────────────────────────────────────── */
-    .ct-day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.7rem; margin: 0.8rem 0; }
-    .ct-day-card {
-      background: linear-gradient(135deg, var(--day-from, #1e3a5f), var(--day-to, #0f172a));
-      border-radius: 12px; padding: 0.75rem 0.9rem;
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-    .ct-day-card .day-num { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.45); }
-    .ct-day-card .day-title { font-size: 0.92rem; font-weight: 700; color: #fff; margin: 0.2rem 0 0.3rem; }
-    .ct-day-card .day-body { font-size: 0.78rem; color: rgba(255,255,255,0.6); line-height: 1.55; }
-
-    /* ── Timezone Map ─────────────────────────────────── */
-    .ct-tz-lab {
-      background: linear-gradient(135deg, #0a0f1e 0%, #0f172a 100%);
-      border-radius: 18px;
-      padding: 1.6rem 1.4rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-    }
-    .ct-tz-lab h2 { color: #fff; margin: 0 0 0.3rem; font-size: 1.2rem; }
-    .ct-tz-lab > p { color: rgba(255,255,255,0.55); font-size: 0.84rem; margin: 0 0 1.2rem; }
-    .ct-tz-map-wrap { border-radius: 12px; overflow: hidden; background: #0a0f1e; position: relative; }
-    #ct-world-svg { width: 100%; max-width: 100%; display: block; }
-    /* SVG text paints with fill; mirror it into color for checkers and currentColor. */
-    #ct-world-svg text { color: #6283ad; }
-    #ct-world-svg .ct-map-labels, #ct-world-svg .ct-map-labels text { color: #85a5ba; }
-    #ct-analog-svg text { color: #c2c3c7; }
-    .ct-map-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .35rem .8rem; margin-top: .45rem; color: rgba(186,230,253,.7); font-family: 'IBM Plex Mono', monospace; font-size: .6rem; letter-spacing: .035em; }
-    .ct-map-caption a { color: #7dd3fc; text-decoration: none; }
-    .ct-map-caption a:hover { text-decoration: underline; }
-    .ct-map-labels { fill: rgba(186,230,253,.7); color: #85a5ba; font-size: 7px; letter-spacing: .08em; pointer-events: none; }
-    .ct-map-labels .prime { fill: rgba(251, 191, 36, 0.78); color: rgba(251, 191, 36, 0.78); }
-:where(html[data-lighting="night"]) .ct-map-labels .prime { fill: rgba(251,191,36,.78); }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .ct-map-labels .prime { fill: rgba(251,191,36,.78); } }
-    .ct-map-labels .date-line { fill: rgba(252, 143, 159, 0.7); color: rgba(252, 143, 159, 0.7); }
-:where(html[data-lighting="night"]) .ct-map-labels .date-line { fill: rgba(251,113,133,.7); }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .ct-map-labels .date-line { fill: rgba(251,113,133,.7); } }
-    .ct-utc-labels { fill: rgba(147,197,253,.64); font-size: 7px; pointer-events: none; }
-    .ct-utc-labels .zero { fill: #fbbf24; color: #fbbf24; font-weight: 700; }
-    .ct-city-marker { cursor: pointer; outline: none; }
-    .ct-city-marker .marker-halo { fill: rgba(52,211,153,.16); stroke: rgba(110,231,183,.35); transition: transform .18s ease, fill .18s ease; transform-box: fill-box; transform-origin: center; }
-    .ct-city-marker .marker-core { fill: #6ee7b7; stroke: #ecfdf5; stroke-width: 1; filter: url(#ct-city-glow); }
-    .ct-city-marker .marker-label { fill: #d1fae5; color: #d1fae5; font-family: 'IBM Plex Mono', monospace; font-size: 7px; font-weight: 700; letter-spacing: .05em; paint-order: stroke; stroke: #071425; stroke-width: 2.4px; stroke-linejoin: round; }
-    .ct-city-marker:hover .marker-halo,
-    .ct-city-marker:focus .marker-halo { fill: rgba(251,191,36,.3); transform: scale(1.55); }
-    .ct-city-marker:hover .marker-core,
-    .ct-city-marker:focus .marker-core { fill: #fbbf24; }
-    .ct-city-marker:hover .marker-label,
-    .ct-city-marker:focus .marker-label { fill: #fef3c7; }
-    .ct-tz-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 0; }
-    .ct-tz-btn {
-      background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.35);
-      border-radius: 8px; padding: 0.35rem 0.75rem; color: #93c5fd;
-      font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
-    }
-    .ct-tz-btn:hover, .ct-tz-btn.active { background: rgba(59,130,246,0.35); border-color: #3b82f6; color: #fff; }
-    .ct-tz-panel {
-      margin-top: 1rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px; padding: 1rem 1.2rem;
-    }
-    .ct-tz-panel h3 { color: #fff; font-size: 0.95rem; margin: 0 0 0.7rem; }
-    .ct-tz-cities { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; }
-    .ct-city-row {
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(255,255,255,0.04); border-radius: 8px; padding: 0.4rem 0.7rem;
-    }
-    .ct-city-row:target, .ct-city-row.is-map-active { background: rgba(34,211,238,.12); box-shadow: inset 0 0 0 1px rgba(34,211,238,.28); }
-    .ct-city-row .city-name { font-size: 0.82rem; color: rgba(255,255,255,0.75); }
-    .ct-city-row .city-clock { display: flex; flex: 0 0 auto; align-items: center; gap: .45rem; }
-    .ct-city-row .city-offset { color: rgba(147,197,253,.55); font-family: 'IBM Plex Mono', monospace; font-size: .62rem; white-space: nowrap; }
-    .ct-city-row .city-time { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: #34d399; font-weight: 600; }
-    .ct-tz-explainer { margin-top: 1rem; }
-    .ct-tz-explainer p { color: rgba(255,255,255,0.55); font-size: 0.82rem; line-height: 1.65; margin: 0 0 0.4rem; }
-
-    /* ── Sci-Fi / Time Travel ─────────────────────────── */
-    .ct-book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
-    .ct-book-card {
-      background: linear-gradient(135deg, var(--bk-from, #1e293b), var(--bk-to, #0f172a));
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px; padding: 0.9rem 1rem;
-    }
-    .ct-book-card .bk-tag { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bk-tag, #60a5fa); margin-bottom: 0.3rem; }
-    .ct-book-card .bk-title { font-size: 0.9rem; font-weight: 700; color: #fff; margin: 0 0 0.3rem; }
-    .ct-book-card .bk-author { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-bottom: 0.5rem; }
-    .ct-book-card .bk-body { font-size: 0.78rem; color: rgba(255,255,255,0.58); line-height: 1.55; }
-
-    /* ── Time Dilation ────────────────────────────────── */
-    .ct-dilation-lab {
-      background: linear-gradient(135deg, #0a0014 0%, #1a0533 50%, #0a0014 100%);
-      border-radius: 18px;
-      padding: 1.8rem 1.4rem;
-      margin-bottom: 1rem;
-      border: 1px solid rgba(167,139,250,0.2);
-      box-shadow: 0 0 60px rgba(139,92,246,0.15);
-    }
-    .ct-dilation-lab h2 { color: #e9d5ff; margin: 0 0 0.3rem; font-size: 1.2rem; }
-    .ct-dilation-lab > p { color: rgba(233,213,255,0.6); font-size: 0.85rem; margin: 0 0 1.2rem; line-height: 1.65; }
-    .ct-dilation-body { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
-    @media (max-width: 540px) { .ct-dilation-body { grid-template-columns: 1fr; } }
-    .ct-dilation-controls { display: flex; flex-direction: column; gap: 0.8rem; }
-    .ct-dil-label { font-size: 0.8rem; color: rgba(233,213,255,0.6); margin-bottom: 0.25rem; }
-    .ct-dil-value { font-family: 'IBM Plex Mono', monospace; font-size: 1rem; color: #c4b5fd; font-weight: 600; }
-    .ct-dil-slider { width: 100%; accent-color: #a78bfa; cursor: pointer; }
-    .ct-dilation-result {
-      background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3);
-      border-radius: 14px; padding: 1rem 1.2rem; display: flex; flex-direction: column; justify-content: center; gap: 0.7rem;
-    }
-    .ct-dil-row { display: flex; justify-content: space-between; align-items: baseline; }
-    .ct-dil-row .dil-key { font-size: 0.8rem; color: rgba(233,213,255,0.55); }
-    .ct-dil-row .dil-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.92rem; font-weight: 700; color: #e9d5ff; }
-    .ct-dil-highlight {
-      background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(59,130,246,0.25));
-      border: 1px solid rgba(139,92,246,0.4); border-radius: 10px; padding: 0.7rem 1rem; text-align: center;
-    }
-    .ct-dil-highlight .dh-label { font-size: 0.72rem; color: rgba(233,213,255,0.55); text-transform: uppercase; letter-spacing: 0.07em; }
-    .ct-dil-highlight .dh-val { font-size: 1.35rem; font-weight: 900; color: #c4b5fd; font-family: 'IBM Plex Mono', monospace; }
-    .ct-dil-warning {
-      margin-top: 0.7rem; padding: 0.6rem 0.9rem;
-      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
-      border-radius: 8px; font-size: 0.78rem; color: #fca5a5; text-align: center;
-      display: none;
-    }
-    .ct-dilation-fact {
-      margin-top: 1rem; padding: 0.9rem 1.1rem;
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-    }
-    .ct-dilation-fact h3 { color: #e9d5ff; font-size: 0.92rem; margin: 0 0 0.5rem; }
-    .ct-dilation-fact p { color: rgba(233,213,255,0.6); font-size: 0.82rem; line-height: 1.65; margin: 0 0 0.4rem; }
-    .ct-dilation-fact p:last-child { margin-bottom: 0; }
-
-    /* ── Practice Problems ────────────────────────────── */
-    .ct-score-bar { margin-bottom: 0.8rem; font-size: 0.85rem; color: var(--text-secondary, #3f4f65); font-weight: 600; }
-    [data-lighting="night"] .ct-score-bar,
-    [data-theme="vaporwave"] .ct-score-bar,
-    [data-theme="bark"] .ct-score-bar { color: rgba(245,245,247,0.65); }
-    .ct-practice { display: flex; flex-direction: column; gap: 0.8rem; }
-    .ct-problem {
-      background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.18);
-      border-radius: 12px; padding: 0.85rem 1rem; transition: border-left 0.3s, background 0.3s;
-    }
-    .ct-problem p { margin: 0 0 0.5rem; font-size: 0.88rem; color: var(--text-secondary, #3f4f65); font-weight: 500; }
-    [data-lighting="night"] .ct-problem p,
-    [data-theme="vaporwave"] .ct-problem p,
-    [data-theme="bark"] .ct-problem p { color: rgba(245,245,247,0.8); }
-    .ct-problem.solved { background: rgba(34,197,94,0.07); border-color: rgba(34,197,94,0.35); }
-    .ct-problem-input-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .ct-ans-input {
-      border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0.35rem 0.7rem;
-      font-size: 0.88rem; width: 120px; outline: none; background: #fff;
-      transition: border-color 0.2s;
-    }
-    [data-lighting="night"] .ct-ans-input,
-    [data-theme="vaporwave"] .ct-ans-input,
-    [data-theme="bark"] .ct-ans-input { background: #1c1c1e; color: #f5f5f7; border-color: #3a3a3c; }
-    .ct-check-btn {
-      background: #196cf4; color: #fff; border: none; border-radius: 8px;
-      padding: 0.35rem 0.85rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;
-      transition: background 0.2s;
-    }
-    .ct-check-btn:hover { background: #2563eb; }
-    .ct-feedback { font-size: 0.82rem; font-weight: 600; }
-    .ct-feedback.correct { color: #22c55e; }
-    .ct-feedback.wrong   { color: #ef4444; }
-    .ct-hint { display: none; margin-top: 0.4rem; padding: 0.4rem 0.7rem; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 7px; font-size: 0.8rem; color: #92400e; }
-    .ct-hint.visible { display: block; }
-    [data-lighting="night"] .ct-hint,
-    [data-theme="vaporwave"] .ct-hint,
-    [data-theme="bark"] .ct-hint { color: #fcd34d; }
-    @keyframes ct-shake {
-      0%, 100% { transform: translateX(0); }
-      20% { transform: translateX(-5px); }
-      40% { transform: translateX(5px); }
-      60% { transform: translateX(-4px); }
-      80% { transform: translateX(4px); }
-    }
-    .ct-shake { animation: ct-shake 0.4s ease; }
-
-    /* ── Key fact chip ────────────────────────────────── */
-    .ct-fact-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.7rem 0; }
-    .ct-fact {
-      display: inline-flex; align-items: center; gap: 0.3rem;
-      background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);
-      border-radius: 20px; padding: 0.25rem 0.7rem; font-size: 0.78rem; font-weight: 600; color: #1d4ed8;
-    }
-    [data-lighting="night"] .ct-fact,
-    [data-theme="vaporwave"] .ct-fact,
-    [data-theme="bark"] .ct-fact { color: #93c5fd; background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3); }
-
-    /* ── Separator ────────────────────────────────────── */
-    .ct-sep { height: 1px; background: linear-gradient(to right, transparent, rgba(59,130,246,0.3), transparent); margin: 1.2rem 0; }
-
-    /* ── 2026 visual evolution: precision instrument ───── */
-    .ct-page {
-      --ct-ink: var(--text-primary, #172033);
-      --ct-copy: var(--text-secondary, #465269);
-      --ct-paper: color-mix(in srgb, var(--surface-elevated, #fff) 94%, #f3ead7);
-      --ct-blue: #3b82f6;
-      --ct-cyan: #22d3ee;
-      --ct-gold: #f4b942;
-      width: min(1080px, calc(100% - 2rem));
-      padding-top: 1.25rem;
-      position: relative;
-    }
-    .ct-page::before {
-      content: '';
-      position: absolute;
-      z-index: -1;
-      top: 0;
-      left: 50%;
-      width: min(1280px, 100vw);
-      height: 36rem;
-      transform: translateX(-50%);
-      background:
-        radial-gradient(circle at 50% 3rem, color-mix(in srgb, var(--ct-blue) 13%, transparent), transparent 20rem),
-        linear-gradient(180deg, color-mix(in srgb, var(--surface-page-alt, #eef2f7) 70%, transparent), transparent 90%);
-      pointer-events: none;
-    }
-
-    .ct-hero {
-      min-height: 19rem;
-      justify-content: center;
-      isolation: isolate;
-      margin-bottom: 0.8rem;
-      padding: 2.3rem clamp(1.2rem, 5vw, 4rem) 2.5rem;
-      border: 1px solid color-mix(in srgb, var(--border-default, #d2d2d7) 68%, transparent);
-      border-radius: 28px;
-      background:
-        linear-gradient(135deg, color-mix(in srgb, var(--surface-elevated, #fff) 96%, transparent), color-mix(in srgb, var(--surface-panel-alt, #f8fafc) 88%, transparent));
-      box-shadow: 0 24px 70px color-mix(in srgb, var(--shadow-color, #000) 13%, transparent);
-    }
-    .ct-hero::before,
-    .ct-hero::after {
-      content: '';
-      position: absolute;
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: -1;
-    }
-    .ct-hero::before {
-      width: 17rem;
-      height: 17rem;
-      right: -5rem;
-      top: -6rem;
-      border: 1px solid color-mix(in srgb, var(--ct-blue) 28%, transparent);
-      box-shadow:
-        0 0 0 2.4rem color-mix(in srgb, var(--ct-blue) 4%, transparent),
-        0 0 0 4.8rem color-mix(in srgb, var(--ct-blue) 3%, transparent);
-    }
-    .ct-hero::after {
-      width: 8rem;
-      height: 8rem;
-      left: -2.5rem;
-      bottom: -3.5rem;
-      background: repeating-conic-gradient(from -10deg, color-mix(in srgb, var(--ct-gold) 38%, transparent) 0deg 1deg, transparent 1deg 15deg);
-      -webkit-mask: radial-gradient(circle, transparent 0 43%, #000 44% 46%, transparent 47% 66%, #000 67% 68%, transparent 69%);
-      mask: radial-gradient(circle, transparent 0 43%, #000 44% 46%, transparent 47% 66%, #000 67% 68%, transparent 69%);
-    }
-    .ct-hero .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      padding: 0.38rem 0.7rem;
-      border: 1px solid color-mix(in srgb, var(--ct-blue) 24%, transparent);
-      border-radius: 999px;
-      color: var(--ct-blue);
-      background: color-mix(in srgb, var(--ct-blue) 8%, transparent);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-    .ct-hero .eyebrow::before { content: '◷'; font-size: 0.95rem; }
-    .ct-hero h1 {
-      margin-top: 0.9rem;
-      color: var(--ct-ink);
-      font-size: min(clamp(2.25rem, 6.5vw, 4.7rem), 2.75rem, 1.25rem + 4.5vw);
-      font-weight: 800;
-      line-height: 0.95;
-      letter-spacing: -0.065em;
-    }
-    .ct-hero-meta {
-      margin-top: 1rem;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.66rem;
-      letter-spacing: 0.045em;
-      text-transform: uppercase;
-    }
-    .ct-hero-meta .dot { background: var(--ct-gold); opacity: 1; }
-    .ct-lede { max-width: 72ch; color: var(--ct-copy); font-size: clamp(0.9rem, 1.5vw, 1.02rem); }
-
-    .ct-chapter-nav {
-      position: sticky;
-      top: 0.65rem;
-      z-index: 20;
-      display: flex;
-      gap: 0.35rem;
-      width: max-content;
-      max-width: calc(100% - 1rem);
-      margin: 0 auto 1.4rem;
-      padding: 0.38rem;
-      overflow-x: auto;
-      scrollbar-width: none;
-      border: 1px solid color-mix(in srgb, var(--border-default, #d2d2d7) 75%, transparent);
-      border-radius: 999px;
-      background: color-mix(in srgb, var(--surface-elevated, #fff) 84%, transparent);
-      box-shadow: 0 10px 30px color-mix(in srgb, var(--shadow-color, #000) 13%, transparent);
-      backdrop-filter: blur(18px) saturate(150%);
-    }
-    .ct-chapter-nav::-webkit-scrollbar { display: none; }
-    .ct-chapter-nav a {
-      flex: 0 0 auto;
-      padding: 0.48rem 0.75rem;
-      border-radius: 999px;
-      color: var(--text-muted, #64748b);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.67rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: color 160ms ease, background 160ms ease, transform 160ms ease;
-    }
-    .ct-chapter-nav a:hover,
-    .ct-chapter-nav a:focus-visible { color: #fff; background: #2563eb; transform: translateY(-1px); outline: none; }
-
-    .ct-page > section:not(.ct-hero) { scroll-margin-top: 4.6rem; }
-    .ct-card,
-    .ct-clock-lab,
-    .ct-tz-lab,
-    .ct-dilation-lab { margin-bottom: 1.25rem; }
-    .ct-card {
-      position: relative;
-      overflow: hidden;
-      padding: clamp(1.25rem, 3vw, 2rem);
-      border: 1px solid color-mix(in srgb, var(--border-default, #d2d2d7) 72%, transparent);
-      border-left: 1px solid color-mix(in srgb, var(--border-default, #d2d2d7) 72%, transparent);
-      border-radius: 22px;
-      background: var(--ct-paper);
-      box-shadow: 0 12px 40px color-mix(in srgb, var(--shadow-color, #000) 10%, transparent);
-    }
-    .ct-card::before {
-      content: '';
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 4px;
-      background: linear-gradient(180deg, var(--card-accent, var(--ct-blue)), color-mix(in srgb, var(--card-accent, var(--ct-blue)) 15%, transparent));
-    }
-    .ct-card > h2,
-    .ct-clock-lab-head > h2,
-    .ct-tz-lab > h2,
-    .ct-dilation-lab > h2 {
-      display: flex;
-      align-items: baseline;
-      gap: 0.65rem;
-      font-size: clamp(1.25rem, 2.4vw, 1.7rem);
-      line-height: 1.15;
-    }
-    [data-step] > h2::before,
-    [data-step] > .ct-clock-lab-head > h2::before {
-      content: attr(data-step);
-      color: var(--card-accent, #60a5fa);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.08em;
-    }
-    .ct-card p { color: var(--ct-copy); font-size: 0.92rem; line-height: 1.72; }
-    .ct-card h3 { margin-top: 1.2rem; }
-
-    .ct-clock-lab,
-    .ct-tz-lab,
-    .ct-dilation-lab {
-      position: relative;
-      overflow: hidden;
-      padding: clamp(1.35rem, 3.5vw, 2.35rem);
-      border: 1px solid rgba(125, 211, 252, 0.18);
-      border-radius: 24px;
-      background:
-        radial-gradient(circle at 15% 0%, rgba(59,130,246,0.24), transparent 30%),
-        radial-gradient(circle at 92% 92%, rgba(34,211,238,0.12), transparent 28%),
-        linear-gradient(145deg, #101a2e, #08111f 68%);
-      box-shadow: 0 24px 60px rgba(4, 12, 28, 0.28);
-    }
-    .ct-clock-lab::after,
-    .ct-tz-lab::after,
-    .ct-dilation-lab::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0.22;
-      background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
-      background-size: 32px 32px;
-      -webkit-mask-image: linear-gradient(to bottom, #000, transparent 60%);
-      mask-image: linear-gradient(to bottom, #000, transparent 60%);
-    }
-    .ct-clock-lab > *, .ct-tz-lab > *, .ct-dilation-lab > * { position: relative; z-index: 1; }
-    .ct-clock-lab-head { max-width: 42rem; margin-inline: auto; }
-    .ct-clock-badge { background: rgba(34,211,238,.1); border-color: rgba(34,211,238,.3); color: #67e8f9; }
-    .ct-clock-face { width: clamp(190px, 27vw, 240px); height: clamp(190px, 27vw, 240px); background: radial-gradient(circle at 38% 30%, #263a58, #09111f 70%); border-color: rgba(125,211,252,.72); box-shadow: 0 0 0 9px rgba(59,130,246,.06), 0 20px 55px rgba(0,0,0,.45), inset 0 0 34px rgba(0,0,0,.55); }
-    .ct-clock-face svg { width: 100%; height: 100%; overflow: visible; }
-    .ct-clock-face::before {
-      content: '';
-      position: absolute;
-      inset: 5%;
-      z-index: 2;
-      border-radius: 50%;
-      background: linear-gradient(132deg, rgba(255,255,255,.18), transparent 28%, transparent 72%, rgba(56,189,248,.06));
-      pointer-events: none;
-    }
-    .ct-clock-face::after {
-      content: 'LOCAL  ·  PRECISION';
-      position: absolute;
-      left: 50%;
-      top: 61%;
-      transform: translateX(-50%);
-      color: rgba(186,230,253,.7);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: clamp(.36rem, .65vw, .47rem);
-      letter-spacing: .16em;
-      white-space: nowrap;
-      pointer-events: none;
-    }
-    #ct-hour-hand, #ct-min-hand, #ct-sec-hand { filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
-
-    .ct-digital-wrap { width: min(100%, 390px); }
-    .ct-digital-display {
-      position: relative;
-      width: 100%;
-      min-width: 0;
-      padding: 2rem 1.35rem 1.8rem;
-      overflow: hidden;
-      border: 1px solid rgba(103,232,249,.48);
-      border-radius: 18px;
-      background:
-        linear-gradient(90deg, rgba(34,211,238,.035) 1px, transparent 1px),
-        linear-gradient(rgba(34,211,238,.035) 1px, transparent 1px),
-        radial-gradient(circle at 50% 40%, #092b2d, #020a0d 72%);
-      background-size: 8px 8px, 8px 8px, auto;
-      color: #67f5c2;
-      font-size: clamp(1.65rem, 6vw, 2.65rem);
-      font-variant-numeric: tabular-nums;
-      text-shadow: 0 0 8px rgba(52,211,153,.9), 0 0 26px rgba(34,211,238,.35);
-      box-shadow: 0 0 0 7px rgba(34,211,238,.045), 0 22px 48px rgba(0,0,0,.42), inset 0 0 38px rgba(0,0,0,.72);
-    }
-    .ct-digital-display::before,
-    .ct-digital-display::after {
-      position: absolute;
-      left: 1rem;
-      right: 1rem;
-      display: flex;
-      justify-content: space-between;
-      color: rgba(103,232,249,.58);
-      font-size: .48rem;
-      font-weight: 500;
-      letter-spacing: .14em;
-      text-shadow: none;
-    }
-    .ct-digital-display::before { content: '◉  ATOMIC SYNC\A0\A0\A0\A0\A0 24H'; top: .65rem; }
-    .ct-digital-display::after { content: 'LOCAL CHRONOMETER\A0\A0 ±0.001s'; bottom: .55rem; }
-    .ct-digital-date {
-      width: calc(100% - 2rem);
-      margin-top: -0.3rem;
-      padding: .55rem .8rem;
-      border: 1px solid rgba(34,211,238,.18);
-      border-top: 0;
-      border-radius: 0 0 12px 12px;
-      background: rgba(2,10,13,.9);
-      color: rgba(103,245,194,.68);
-    }
-
-    .ct-ancient-wrap {
-      position: relative;
-      width: min(100%, 250px);
-      height: 205px;
-      overflow: hidden;
-      border: 1px solid rgba(125,211,252,.2);
-      border-radius: 22px;
-      background: radial-gradient(circle at 50% 20%, rgba(59,130,246,.16), transparent 45%), rgba(255,255,255,.035);
-      box-shadow: inset 0 0 45px rgba(0,0,0,.46), 0 18px 40px rgba(0,0,0,.24);
-      margin-bottom: 1rem;
-    }
-    .ct-ancient-wrap::before {
-      content: 'LIVE MODEL';
-      position: absolute;
-      z-index: 3;
-      top: .7rem;
-      left: .8rem;
-      color: rgba(125,211,252,.62);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: .48rem;
-      letter-spacing: .14em;
-    }
-    .ct-ancient-wrap::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      z-index: 2;
-      pointer-events: none;
-      background: linear-gradient(115deg, rgba(255,255,255,.08), transparent 28% 72%, rgba(34,211,238,.04));
-    }
-    .ct-ancient-wrap svg { width: 190px; height: 190px; overflow: visible; }
-    .ct-sim-pulse { transform-box: fill-box; transform-origin: center; animation: ct-sim-pulse 2.4s ease-in-out infinite; }
-    .ct-sim-drift { animation: ct-sim-drift 2.8s ease-in-out infinite alternate; }
-    .ct-water-bubble { animation: ct-water-rise 1.8s ease-in infinite; }
-    .ct-water-bubble:nth-of-type(2) { animation-delay: -.7s; }
-    .ct-sand-grain { animation: ct-sand-fall .9s linear infinite; }
-    .ct-sand-grain:nth-of-type(2) { animation-delay: -.3s; }
-    .ct-sand-grain:nth-of-type(3) { animation-delay: -.6s; }
-    @keyframes ct-sim-pulse { 50% { opacity: .55; transform: scale(.9); } }
-    @keyframes ct-sim-drift { to { transform: translateY(-2px); } }
-    @keyframes ct-water-rise { from { transform: translateY(4px); opacity: 0; } 30% { opacity: .75; } to { transform: translateY(-8px); opacity: 0; } }
-    @keyframes ct-sand-fall { from { transform: translateY(-3px); opacity: 0; } 20% { opacity: 1; } to { transform: translateY(7px); opacity: 0; } }
-    .ct-carousel-stage { min-height: 360px; }
-    .ct-nav-btn { border-radius: 14px; backdrop-filter: blur(8px); }
-    .ct-dot { border-radius: 9px; }
-    .ct-dot.active { background: #2563eb; border-color: #60a5fa; color: #fff; }
-
-    .ct-day-card,
-    .ct-book-card { border-radius: 16px; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
-    .ct-day-card:hover,
-    .ct-book-card:hover { transform: translateY(-3px); border-color: rgba(125,211,252,.38); box-shadow: 0 14px 28px rgba(4,12,28,.2); }
-    .ct-tl-item { padding: 0.1rem 0 0.35rem 0.45rem; }
-    .ct-tl-item .ct-tl-title { font-size: 1.02rem; }
-    .ct-verse-box { border-radius: 18px; background: linear-gradient(135deg, rgba(245,158,11,.1), rgba(167,139,250,.07)); }
-    .ct-curiosity { margin-top: 1.6rem; padding-top: 1.4rem; border-top: 1px dashed color-mix(in srgb, var(--border-strong, #94a3b8) 46%, transparent); }
-    .ct-curiosity-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: .9rem; }
-    .ct-curiosity-kicker { margin: 0 0 .25rem; color: #d97706; font-family: 'IBM Plex Mono', monospace; font-size: .65rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-    .ct-curiosity h3 { margin: 0; font-size: clamp(1.15rem, 2.4vw, 1.5rem); }
-    .ct-curiosity-stamp { flex: 0 0 auto; padding: .35rem .6rem; border: 1px solid rgba(34,197,94,.28); border-radius: 999px; color: #168654; background: rgba(34,197,94,.08); font-family: 'IBM Plex Mono', monospace; font-size: .58rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; transform: rotate(2deg); }
-    .ct-weird-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
-    .ct-weird-fact { --fact-accent: #3b82f6; position: relative; min-height: 13rem; overflow: hidden; padding: 1rem 1rem .9rem; border: 1px solid color-mix(in srgb, var(--fact-accent) 27%, var(--border-subtle, #d2d2d7)); border-radius: 17px; background: linear-gradient(145deg, color-mix(in srgb, var(--fact-accent) 8%, var(--surface-elevated, #fff)), var(--surface-panel-alt, #f8fafc)); transition: transform 180ms ease, box-shadow 180ms ease; }
-    .ct-weird-fact:hover { transform: translateY(-3px) rotate(-.2deg); box-shadow: 0 14px 30px color-mix(in srgb, var(--fact-accent) 13%, transparent); }
-    .ct-weird-fact::after { content: attr(data-icon); position: absolute; right: -.15rem; bottom: -1rem; color: color-mix(in srgb, var(--fact-accent) 12%, transparent); font-size: 5.5rem; line-height: 1; transform: rotate(-8deg); pointer-events: none; }
-    .ct-weird-era { color: var(--fact-accent); font-family: 'IBM Plex Mono', monospace; font-size: .61rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-    .ct-weird-fact h4 { position: relative; z-index: 1; margin: .42rem 0; color: var(--ct-ink); font-size: 1rem; line-height: 1.25; }
-    .ct-weird-fact p { position: relative; z-index: 1; margin: 0; color: var(--ct-copy); font-size: .82rem; line-height: 1.62; }
-    .ct-weird-source { position: relative; z-index: 1; display: inline-flex; margin-top: .7rem; color: var(--fact-accent); font-family: 'IBM Plex Mono', monospace; font-size: .61rem; font-weight: 700; text-decoration: none; }
-    .ct-weird-source:hover { text-decoration: underline; }
-    [data-lighting="night"] .ct-curiosity-stamp, [data-lighting="night"] .ct-curiosity-stamp { color: #6ee7b7; }
-    .ct-problem { border-radius: 14px; padding: 1rem 1.1rem; }
-    .ct-problem-input-row { margin-top: 0.7rem; }
-    .ct-ans-input { min-height: 40px; border-radius: 10px; }
-    .ct-check-btn { min-height: 40px; border-radius: 10px; padding-inline: 1rem; }
-
-    @media (max-width: 620px) {
-      .ct-page { width: min(100% - 1rem, 1080px); padding-top: 0.5rem; }
-      .ct-hero { min-height: auto; padding: 2rem 1rem; border-radius: 20px; }
-      .ct-hero h1 { font-size: min(clamp(2.35rem, 13vw, 3.35rem), 2.75rem, 1.25rem + 4.5vw); }
-      .ct-hero-meta { gap: 0.35rem 0.45rem; }
-      .ct-hero-meta .dot { display: none; }
-      .ct-chapter-nav { top: 0.35rem; justify-content: flex-start; max-width: 100%; border-radius: 14px; }
-      .ct-card, .ct-clock-lab, .ct-tz-lab, .ct-dilation-lab { border-radius: 18px; }
-      .ct-card > h2, .ct-clock-lab-head > h2, .ct-tz-lab > h2, .ct-dilation-lab > h2 { align-items: flex-start; flex-direction: column; gap: 0.3rem; }
-      .ct-carousel-controls { gap: 0.45rem; }
-      .ct-nav-btn { width: 38px; height: 44px; }
-      .ct-carousel-stage { min-width: 0; min-height: 335px; }
-      .ct-clock-explainer { gap: 0.4rem; }
-      .ct-hand-info { padding: 0.5rem 0.65rem; }
-      .ct-tz-map-wrap { overflow-x: auto; overscroll-behavior-inline: contain; }
-      #ct-world-svg { min-width: 680px; }
-      .ct-tz-cities { grid-template-columns: 1fr; }
-      .ct-curiosity-head { align-items: flex-start; flex-direction: column; }
-      .ct-weird-grid { grid-template-columns: 1fr; }
-      .ct-weird-fact { min-height: 0; }
-      .ct-problem-input-row { align-items: stretch; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .ct-live-dot { animation: none; }
-      .ct-clock-panel { animation: none; }
-      .ct-sim-pulse, .ct-sim-drift, .ct-water-bubble, .ct-sand-grain { animation: none; }
-      .ct-day-card, .ct-book-card, .ct-chapter-nav a { transition: none; }
-    }
-
-    .ct-deep-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; margin:1.2rem 0; }
-    .ct-deep-tile { border:1px solid var(--border); border-radius:12px; padding:1rem; min-width:0; }
-    .ct-deep-tile strong { display:block; font-family:'IBM Plex Mono',monospace; overflow-wrap:anywhere; font-size:1.15rem; }
-    .ct-deep-tile small { display:block; margin-top:.5rem; }
-    .ct-deep-controls { display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; margin:1rem 0; }
-    .ct-deep-controls select, .ct-deep-controls input { max-width:100%; padding:.6rem; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; }
-    .ct-deep-track { position:relative; height:2rem; margin:1.2rem 0 .3rem; border:1px solid var(--text); border-radius:6px; background:linear-gradient(90deg,#7c3aed,#2563eb,#0d9488); }
-    .ct-deep-marker { position:absolute; top:-.4rem; height:2.8rem; width:4px; background:var(--text); transform:translateX(-50%); }
-    .ct-deep-axis { display:flex; justify-content:space-between; font-size:.8rem; }
-    .ct-deep-result { padding:1rem; border-left:4px solid var(--accent); margin:1rem 0; }
-    #ct-deep-challenges { display:grid; gap:1rem; }
-    #ct-deep-challenges label { display:block; margin-bottom:.5rem; }
-    #ct-deep-challenges output { display:block; margin-top:.5rem; }
-    @media(max-width:650px) { .ct-deep-grid { grid-template-columns:1fr; } }
-  </style>
-<script src="../../../assets/js/sim-kit.js"></script>
+  <link rel="stylesheet" href="../../../assets/css/lessons/clocks-and-time.css" />
+  <script src="../../../assets/js/sim-kit.js"></script>
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <div class="ll-viewport">
     <header class="site-header">
-    <div class="nav-wrap">
-      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
-      <nav class="site-nav" aria-label="Primary">
-        <ul>
-          <li><a href="../../../index.html">Home</a></li>
-          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../../../paths.html">Paths</a></li>
-          <li><a href="../../../showcase.html">Showcase</a></li>
-          <li><a href="../../../applications.html">Apps</a></li>
-          <li><a href="../../../library.html">Library</a></li>
-          <li><a href="../../../about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../library.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
 
     <div class="ll-stage">
       <div class="ll-sim">
@@ -967,6 +43,8 @@
             <div class="ct-hero-meta">
               <span>Analog &amp; Digital</span>
               <span class="dot"></span>
+              <span>Elapsed Time</span>
+              <span class="dot"></span>
               <span>History of Timekeeping</span>
               <span class="dot"></span>
               <span>World Time Zones</span>
@@ -975,16 +53,15 @@
             </div>
             <p class="ct-lede">
               Time is the invisible river we all swim in — ancient civilizations watched shadows,
-              modern smartphones ping satellites, and physicists argue that time itself bends near
-              the speed of light. In this lesson we explore <em>how humans learned to measure,
-              divide, and wonder about time</em> — from the very first day described in Genesis
-              to the mind-bending science of time dilation.
+              modern smartphones ping satellites, and physicists discovered that time itself bends near
+              the speed of light. Explore <em>how humans learned to measure, divide, and wonder about
+              time</em> — from dragging hands on a clock face to relativistic starships.
             </p>
           </section>
 
           <nav class="ll-lesson-steps" aria-label="Lesson sections">
             <a href="#clock-lab">Clock lab</a>
-            <a href="#read-clock">Read a clock</a>
+            <a href="#read-clock">Read &amp; elapsed</a>
             <a href="#time-history">History</a>
             <a href="#ct-sec-origins">Origins</a>
             <a href="#ct-sec-reflect">Reflect</a>
@@ -995,60 +72,100 @@
             <a href="#practice">Practice</a>
           </nav>
 
-          <!-- ── LIVE CLOCK LAB ──────────────────────── -->
-          <section class="ct-clock-lab" id="clock-lab" data-step="01 / EXPLORE" aria-label="Live clock laboratory">
+          <!-- ── 01 · INTERACTIVE CLOCK LAB ──────────── -->
+          <section class="ct-clock-lab" id="clock-lab" data-step="01 / EXPLORE" aria-label="Interactive clock laboratory">
             <div class="ct-clock-lab-head">
-              <div class="ct-clock-badge">
+              <div class="ct-clock-badge" id="ct-lab-badge">
                 <span class="ct-live-dot"></span>
-                Live Clock — Your Local Time
+                <span id="ct-lab-badge-text">Live Clock — Your Local Time</span>
               </div>
-              <h2 data-step="01 / EXPLORE">Methods of Telling Time</h2>
-              <p>Swipe or click through history's timekeepers. Each speaks a different language of time.</p>
+              <h2 data-step="01 / EXPLORE">Interactive Clock Laboratory</h2>
+              <p>Drag the hour or minute hands directly, toggle angle guides, or switch to history's ancient timekeepers.</p>
+            </div>
+
+            <div class="ct-lab-toolbar" role="toolbar" aria-label="Clock lab display options">
+              <button type="button" class="ct-pill-toggle" id="ct-mode-live" aria-pressed="true">Live Time</button>
+              <button type="button" class="ct-pill-toggle" id="ct-mode-explore" aria-pressed="false">Drag Hands</button>
+              <button type="button" class="ct-pill-toggle" id="ct-toggle-24h" aria-pressed="false">24-Hour Mode</button>
+              <button type="button" class="ct-pill-toggle" id="ct-toggle-nums" aria-pressed="false">All 12 Numbers</button>
+              <button type="button" class="ct-pill-toggle" id="ct-toggle-5min" aria-pressed="false">5-Min Ring</button>
+              <button type="button" class="ct-pill-toggle" id="ct-toggle-angles" aria-pressed="false">Angle Arcs</button>
+              <button type="button" class="ct-pill-toggle" id="ct-toggle-snap" aria-pressed="true">Snap 5m</button>
             </div>
 
             <div class="ct-carousel-container">
               <div class="ct-carousel-controls">
-                <button id="ct-prev-btn" class="ct-nav-btn" aria-label="Previous clock">❮</button>
-                
+                <button type="button" id="ct-prev-btn" class="ct-nav-btn" aria-label="Previous clock">❮</button>
+
                 <div class="ct-carousel-stage">
-                  <!-- Panel 0: Analog -->
+                  <!-- Panel 0: Analog + Digital Synchronized Stage -->
                   <div class="ct-clock-panel active" data-index="0">
-                    <div class="ct-analog-wrap">
-                      <div class="ct-clock-face" role="img" aria-label="Analog clock showing current time" aria-live="polite">
-                        <svg id="ct-analog-svg" viewBox="0 0 200 200" width="200" height="200">
-                          <defs>
-                            <radialGradient id="ct-analog-dial" cx="38%" cy="28%" r="78%">
-                              <stop offset="0" stop-color="#29405f" />
-                              <stop offset="0.62" stop-color="#101c31" />
-                              <stop offset="1" stop-color="#050b14" />
-                            </radialGradient>
-                            <linearGradient id="ct-analog-rim" x1="0" y1="0" x2="1" y2="1">
-                              <stop stop-color="#b9e6ff" />
-                              <stop offset="0.28" stop-color="#2563a8" />
-                              <stop offset="0.72" stop-color="#0b2944" />
-                              <stop offset="1" stop-color="#67d4ff" />
-                            </linearGradient>
-                            <filter id="ct-hand-glow" x="-50%" y="-50%" width="200%" height="200%">
-                              <feGaussianBlur stdDeviation="1.7" result="blur" />
-                              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                            </filter>
-                          </defs>
-                          <circle cx="100" cy="100" r="99" fill="url(#ct-analog-rim)" />
-                          <circle cx="100" cy="100" r="95" fill="url(#ct-analog-dial)" stroke="#0e2740" stroke-width="2" />
-                          <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(125,211,252,.18)" stroke-width="1" />
-                          <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(125,211,252,.08)" stroke-width="1" stroke-dasharray="1 5" />
-                          <g id="ct-hour-markers"></g>
-                          <circle cx="100" cy="100" r="63" fill="none" stroke="rgba(96,165,250,.1)" stroke-width="1" />
-                          <line id="ct-hour-hand" x1="100" y1="108" x2="100" y2="54" stroke="#fbbf24" stroke-width="6" stroke-linecap="round" filter="url(#ct-hand-glow)" />
-                          <line id="ct-min-hand" x1="100" y1="111" x2="100" y2="30" stroke="#60a5fa" stroke-width="4" stroke-linecap="round" filter="url(#ct-hand-glow)" />
-                          <line id="ct-sec-hand" x1="100" y1="116" x2="100" y2="21" stroke="#fb7185" stroke-width="1.4" stroke-linecap="round" filter="url(#ct-hand-glow)" />
-                          <circle cx="100" cy="100" r="8" fill="#0b1424" stroke="#dbeafe" stroke-width="2" />
-                          <circle cx="100" cy="100" r="3" fill="#fb7185" />
-                          <path d="M43 42 A82 82 0 0 1 84 20" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="2" stroke-linecap="round" />
-                        </svg>
+                    <div class="ct-primary-stage">
+                      <div class="ct-analog-wrap">
+                        <div class="ct-clock-face ct-dial-interactive" id="ct-analog-face" role="img" aria-label="Interactive analog clock face">
+                          <svg id="ct-analog-svg" viewBox="0 0 200 200" width="200" height="200">
+                            <defs>
+                              <radialGradient id="ct-analog-dial" cx="38%" cy="28%" r="78%">
+                                <stop offset="0" stop-color="#29405f" />
+                                <stop offset="0.62" stop-color="#101c31" />
+                                <stop offset="1" stop-color="#050b14" />
+                              </radialGradient>
+                              <linearGradient id="ct-analog-rim" x1="0" y1="0" x2="1" y2="1">
+                                <stop stop-color="#b9e6ff" />
+                                <stop offset="0.28" stop-color="#2563a8" />
+                                <stop offset="0.72" stop-color="#0b2944" />
+                                <stop offset="1" stop-color="#67d4ff" />
+                              </linearGradient>
+                              <filter id="ct-hand-glow" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="1.7" result="blur" />
+                                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                              </filter>
+                            </defs>
+                            <circle cx="100" cy="100" r="99" fill="url(#ct-analog-rim)" />
+                            <circle cx="100" cy="100" r="95" fill="url(#ct-analog-dial)" stroke="#0e2740" stroke-width="2" />
+                            <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(125,211,252,.18)" stroke-width="1" />
+                            <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(125,211,252,.08)" stroke-width="1" stroke-dasharray="1 5" />
+                            <g id="ct-angle-arcs" hidden></g>
+                            <g id="ct-five-min-ring" hidden></g>
+                            <g id="ct-hour-markers"></g>
+                            <circle cx="100" cy="100" r="63" fill="none" stroke="rgba(96,165,250,.1)" stroke-width="1" />
+                            <line id="ct-hour-hand" x1="100" y1="108" x2="100" y2="54" stroke="#fbbf24" stroke-width="6" stroke-linecap="round" filter="url(#ct-hand-glow)" />
+                            <line id="ct-min-hand" x1="100" y1="111" x2="100" y2="30" stroke="#60a5fa" stroke-width="4" stroke-linecap="round" filter="url(#ct-hand-glow)" />
+                            <line id="ct-sec-hand" x1="100" y1="116" x2="100" y2="21" stroke="#fb7185" stroke-width="1.4" stroke-linecap="round" filter="url(#ct-hand-glow)" />
+                            <line id="ct-hour-hit" class="ct-hand-hit" data-hand="hour" x1="100" y1="108" x2="100" y2="50" stroke-width="22" stroke-linecap="round" />
+                            <line id="ct-min-hit" class="ct-hand-hit" data-hand="minute" x1="100" y1="111" x2="100" y2="24" stroke-width="22" stroke-linecap="round" />
+                            <circle cx="100" cy="100" r="8" fill="#0b1424" stroke="#dbeafe" stroke-width="2" />
+                            <circle cx="100" cy="100" r="3" fill="#fb7185" />
+                            <path d="M43 42 A82 82 0 0 1 84 20" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="2" stroke-linecap="round" />
+                          </svg>
+                        </div>
+                        <span class="ct-clock-label">Analog Dial (Drag Hands or Click)</span>
                       </div>
-                      <span class="ct-clock-label">Analog Clock</span>
+
+                      <div class="ct-digital-column">
+                        <div class="ct-digital-wrap">
+                          <div class="ct-digital-display" id="ct-digital-time" aria-live="polite" aria-label="Digital clock">00:00:00</div>
+                          <div class="ct-digital-date" id="ct-digital-date"></div>
+                        </div>
+
+                        <div class="ct-words-readout" id="ct-words-readout" aria-live="polite">
+                          <span id="ct-words-main">Twelve o'clock</span>
+                          <small id="ct-words-sub">AM · Morning</small>
+                        </div>
+
+                        <div class="ct-step-bar" role="group" aria-label="Step clock time">
+                          <button type="button" class="ct-step-btn" data-step-mins="-60">−1h</button>
+                          <button type="button" class="ct-step-btn" data-step-mins="-15">−15m</button>
+                          <button type="button" class="ct-step-btn" data-step-mins="1">+1m</button>
+                          <button type="button" class="ct-step-btn" data-step-mins="5">+5m</button>
+                          <button type="button" class="ct-step-btn" data-step-mins="15">+15m</button>
+                          <button type="button" class="ct-step-btn" data-step-mins="60">+1h</button>
+                          <button type="button" class="ct-step-btn" id="ct-toggle-ampm">AM/PM</button>
+                          <button type="button" class="ct-step-btn is-now" id="ct-step-now">Now</button>
+                        </div>
+                      </div>
                     </div>
+
                     <div class="ct-clock-explainer">
                       <div class="ct-hand-info hour">
                         <div class="hand-name">Hour Hand</div>
@@ -1062,21 +179,15 @@
                         <div class="hand-name">Second Hand</div>
                         <div class="hand-val" id="ct-sc-val">00</div>
                       </div>
+                      <div class="ct-hand-info gap">
+                        <div class="hand-name">Hand Gap</div>
+                        <div class="hand-val" id="ct-gap-val">0°</div>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Panel 1: Digital -->
+                  <!-- Panel 1: Obelisk -->
                   <div class="ct-clock-panel" data-index="1">
-                    <div class="ct-digital-wrap" style="margin-bottom: 1.5rem;">
-                      <div class="ct-digital-display" id="ct-digital-time" aria-live="polite" aria-label="Digital clock">00:00:00</div>
-                      <div class="ct-digital-date" id="ct-digital-date"></div>
-                      <span class="ct-clock-label">Digital Clock</span>
-                    </div>
-                    <p>Speaks in exact digits rather than geometry. Driven by the steady vibration of a quartz crystal or atomic resonance.</p>
-                  </div>
-
-                  <!-- Panel 2: Obelisk -->
-                  <div class="ct-clock-panel" data-index="2">
                     <div class="ct-ancient-wrap">
                       <svg id="ct-obelisk-svg" viewBox="-60 -60 120 115" aria-label="Animated obelisk shadow clock">
                         <defs>
@@ -1106,12 +217,12 @@
                         <path d="M-1 -6V12M1 -2V9" stroke="rgba(93,67,37,.65)" stroke-width=".7" stroke-dasharray="2 2" />
                       </svg>
                     </div>
-                    <h3>Obelisk</h3>
-                    <p>One of the earliest timekeepers. Cast a moving shadow as the sun crossed the sky, dividing the local solar day into parts.</p>
+                    <h3>Obelisk Shadow Clock</h3>
+                    <p>One of the earliest timekeepers. Cast a moving shadow across stone markers as the sun crossed the sky, dividing the sunlit day into parts.</p>
                   </div>
 
-                  <!-- Panel 3: Sundial -->
-                  <div class="ct-clock-panel" data-index="3">
+                  <!-- Panel 2: Sundial -->
+                  <div class="ct-clock-panel" data-index="2">
                     <div class="ct-ancient-wrap">
                       <svg id="ct-sundial-svg" viewBox="0 0 100 100" aria-label="Animated bronze sundial">
                         <defs>
@@ -1120,7 +231,7 @@
                           <linearGradient id="ct-sd-gnomon" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#f5d58c"/><stop offset=".5" stop-color="#94652d"/><stop offset="1" stop-color="#3c2818"/></linearGradient>
                         </defs>
                         <rect x="1" y="1" width="98" height="98" rx="13" fill="url(#ct-sd-sky)" />
-                        <circle cx="79" cy="19" r="5" fill="#fde68a" class="ct-sim-pulse" style="filter:drop-shadow(0 0 7px #fbbf24)"/>
+                        <circle id="ct-sundial-sun" cx="79" cy="19" r="5" fill="#fde68a" class="ct-sim-pulse" style="filter:drop-shadow(0 0 7px #fbbf24)"/>
                         <ellipse cx="50" cy="72" rx="47" ry="22" fill="#101923" opacity=".7" />
                         <ellipse cx="50" cy="68" rx="45" ry="20" fill="url(#ct-sd-bronze)" stroke="#f5d58c" stroke-width="1" />
                         <ellipse cx="50" cy="68" rx="38" ry="15" fill="none" stroke="rgba(255,238,185,.48)" stroke-width="1" />
@@ -1135,11 +246,11 @@
                       </svg>
                     </div>
                     <h3>Sundial</h3>
-                    <p>A refined shadow clock. The gnomon (pointer) casts a shadow onto marked hours, telling local solar time.</p>
+                    <p>A refined shadow clock. The angled gnomon (pointer) casts a shadow onto marked hour lines, telling local solar time.</p>
                   </div>
 
-                  <!-- Panel 4: Water Clock -->
-                  <div class="ct-clock-panel" data-index="4">
+                  <!-- Panel 3: Water Clock -->
+                  <div class="ct-clock-panel" data-index="3">
                     <div class="ct-ancient-wrap">
                       <svg id="ct-waterclock-svg" viewBox="0 0 40 40" aria-label="Animated water clock">
                         <defs>
@@ -1166,11 +277,11 @@
                       </svg>
                     </div>
                     <h3>Water Clock (Clepsydra)</h3>
-                    <p>Used regulated dripping water to measure time independently of the sun. Excellent for cloudy days and nights.</p>
+                    <p>Used regulated dripping water to measure intervals independently of the sun — essential on cloudy days and at night.</p>
                   </div>
 
-                  <!-- Panel 5: Hourglass -->
-                  <div class="ct-clock-panel" data-index="5">
+                  <!-- Panel 4: Hourglass -->
+                  <div class="ct-clock-panel" data-index="4">
                     <div class="ct-ancient-wrap">
                       <svg id="ct-hourglass-svg" viewBox="0 0 40 40" aria-label="Animated precision hourglass">
                         <defs>
@@ -1199,66 +310,187 @@
                       </svg>
                     </div>
                     <h3>Hourglass</h3>
-                    <p>Sand trickles through a narrow neck at a constant rate. Used on ships where motion disrupted water clocks and pendulums.</p>
+                    <p>Sand trickles through a narrow neck at a steady rate. Used at sea where rolling waves disrupted water clocks and pendulums.</p>
                   </div>
                 </div>
 
-                <button id="ct-next-btn" class="ct-nav-btn" aria-label="Next clock">❯</button>
+                <button type="button" id="ct-next-btn" class="ct-nav-btn" aria-label="Next clock">❯</button>
               </div>
-              
-              <div class="ct-carousel-dots">
-                 <button class="ct-dot active" data-index="0">Analog</button>
-                 <button class="ct-dot" data-index="1">Digital</button>
-                 <button class="ct-dot" data-index="2">Obelisk</button>
-                 <button class="ct-dot" data-index="3">Sundial</button>
-                 <button class="ct-dot" data-index="4">Water Clock</button>
-                 <button class="ct-dot" data-index="5">Hourglass</button>
+
+              <!-- Subpanel Controls for Solar & Vessel Timekeepers -->
+              <div class="ct-subpanel-controls" id="ct-solar-controls" hidden>
+                <label for="ct-solar-slider">Solar Hour:</label>
+                <input type="range" id="ct-solar-slider" min="300" max="1140" step="5" value="630" aria-label="Simulated solar time of day" />
+                <span id="ct-solar-readout" style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:#fde68a;">10:30 AM</span>
+                <button type="button" class="ct-step-btn is-now" id="ct-solar-sync">Use Clock Lab</button>
+              </div>
+
+              <div class="ct-subpanel-controls" id="ct-vessel-controls" hidden>
+                <button type="button" class="ct-step-btn" id="ct-vessel-flip">Flip / Refill</button>
+                <button type="button" class="ct-step-btn" id="ct-vessel-pause">Pause</button>
+                <button type="button" class="ct-step-btn" id="ct-vessel-dur">Cycle: 60s</button>
+                <span id="ct-vessel-readout" style="font-family:'IBM Plex Mono',monospace;color:#bae6fd;">0s / 60s</span>
+              </div>
+
+              <div class="ct-carousel-dots" role="tablist" aria-label="Timekeeper selector">
+                <button type="button" class="ct-dot active" data-index="0">Analog &amp; Digital</button>
+                <button type="button" class="ct-dot" data-index="1">Obelisk</button>
+                <button type="button" class="ct-dot" data-index="2">Sundial</button>
+                <button type="button" class="ct-dot" data-index="3">Water Clock</button>
+                <button type="button" class="ct-dot" data-index="4">Hourglass</button>
               </div>
             </div>
           </section>
 
-          <!-- ── READING A CLOCK ─────────────────────── -->
+          <!-- ── 02 · READING A CLOCK & ELAPSED TIME ─── -->
           <section class="ct-card" id="read-clock" data-step="02 / LEARN" style="--card-accent:#3b82f6;">
-            <h2 data-step="02 / LEARN">How to Read an Analog Clock</h2>
+            <h2 data-step="02 / LEARN">How to Read Clocks &amp; Calculate Elapsed Time</h2>
             <p>
-              An analog clock is a <strong>circle divided into 12 hours</strong>. The full circle is 360°,
-              so each hour takes up exactly <strong>30°</strong> (360 ÷ 12 = 30).
-              Each of those 12 hours is further divided into 5 minute marks — giving us 60 minute
-              marks around the full face.
+              An analog clock is a <strong>circle divided into 12 hours</strong>. A full circle measures 360°,
+              so each hour mark spans exactly <strong>30°</strong> (360 ÷ 12 = 30).
+              Each hour space is divided into 5 minute steps — giving 60 minute ticks around the dial,
+              each measuring <strong>6°</strong> (360 ÷ 60 = 6).
             </p>
             <div class="ct-fact-row">
               <span class="ct-fact">360° ÷ 12 = 30° per hour</span>
               <span class="ct-fact">360° ÷ 60 = 6° per minute</span>
-              <span class="ct-fact">360° ÷ 60 = 6° per second</span>
+              <span class="ct-fact">Hour hand creeps 0.5° per minute</span>
             </div>
 
             <h3>The Three Hands</h3>
-            <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.2rem;">
-              <div style="padding: 0.8rem 1rem; border-radius: 12px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.2);">
-                <strong style="color:#f59e0b; font-size: 0.95rem; display: block; margin-bottom: 0.2rem;">Hour Hand (short, gold)</strong>
-                <p style="margin: 0; font-size: 0.85rem;">Points to the current hour. It completes one full revolution every 12 hours, creeping forward by exactly <strong>0.5° per minute</strong>.</p>
+            <div class="ct-hands-list">
+              <div class="ct-hand-card" style="--hand-bg:rgba(245,158,11,0.08);--hand-border:rgba(245,158,11,0.28);">
+                <strong style="color:#d97706;">Hour Hand (short, gold)</strong>
+                <p>Completes one turn every 12 hours, drifting forward steadily by <strong>0.5° per minute</strong> between numbers.</p>
               </div>
-              <div style="padding: 0.8rem 1rem; border-radius: 12px; background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.2);">
-                <strong style="color:#3b82f6; font-size: 0.95rem; display: block; margin-bottom: 0.2rem;">Minute Hand (long, blue)</strong>
-                <p style="margin: 0; font-size: 0.85rem;">Points to the current minute. It completes a full revolution every 60 minutes, moving precisely <strong>6° per minute</strong>.</p>
+              <div class="ct-hand-card" style="--hand-bg:rgba(59,130,246,0.08);--hand-border:rgba(59,130,246,0.28);">
+                <strong style="color:#2563eb;">Minute Hand (long, blue)</strong>
+                <p>Counts by fives at each big number and completes one full circle every 60 minutes (<strong>6° per minute</strong>).</p>
               </div>
-              <div style="padding: 0.8rem 1rem; border-radius: 12px; background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.2);">
-                <strong style="color:#ef4444; font-size: 0.95rem; display: block; margin-bottom: 0.2rem;">Second Hand (thin, red)</strong>
-                <p style="margin: 0; font-size: 0.85rem;">Sweeps around the face in 60 seconds, moving <strong>6° per second</strong>. On a quartz watch it ticks; on a mechanical watch it glides.</p>
+              <div class="ct-hand-card" style="--hand-bg:rgba(239,68,68,0.08);--hand-border:rgba(239,68,68,0.28);">
+                <strong style="color:#dc2626;">Second Hand (thin, red)</strong>
+                <p>Sweeps around in 60 seconds at <strong>6° per second</strong> — ticking on quartz watches or gliding on mechanical ones.</p>
               </div>
             </div>
 
-            <h3>AM &amp; PM — Why Two Sets of 12?</h3>
-            <p>
-              The day is 24 hours long, but our clock face only shows 12. So we split the day in half:
-              <strong>AM</strong> (from the Latin <em>ante meridiem</em> — "before noon") covers midnight to noon,
-              and <strong>PM</strong> (<em>post meridiem</em> — "after noon") covers noon to midnight.
-              Midnight is 12:00 AM; noon is 12:00 PM. Digital clocks and the military use
-              <strong>24-hour time</strong> (00:00–23:59) to avoid this ambiguity entirely.
-            </p>
+            <div class="ct-figure-split">
+              <div>
+                <h3>AM, PM &amp; Why 60?</h3>
+                <p>
+                  Because Earth's day lasts 24 hours while a traditional dial shows 12, we split the day in two:
+                  <strong>AM</strong> (<em>ante meridiem</em> — "before noon") runs from midnight (12:00 AM) to
+                  just before noon; <strong>PM</strong> (<em>post meridiem</em> — "after noon") runs from noon
+                  (12:00 PM) to midnight. <strong>24-hour time</strong> (00:00–23:59) removes the guesswork.
+                </p>
+                <p>
+                  Why 60 minutes in an hour and 360° in a circle? Ancient Babylonian mathematicians used a
+                  <strong>base-60 (sexagesimal)</strong> number system because 60 divides cleanly by 2, 3, 4,
+                  5, 6, 10, 12, 15, 20, and 30 — making half hours, quarter hours, and thirds effortless.
+                </p>
+              </div>
+
+              <figure class="ct-figure-plate" data-zoomable data-lightbox-group="clocks-and-time">
+                <img loading="lazy" decoding="async" src="../../../assets/thumbs/babylonianB60.jpg" alt="Old Babylonian cuneiform clay tablet showing base-60 mathematical calculations" />
+                <figcaption>
+                  <strong>Why 60 Minutes &amp; 360°? Babylonian Base-60</strong>
+                  Babylonian scribes grouped quantities by 60s instead of 10s, giving us 60-second minutes, 60-minute hours, and 360° circles.
+                  <span class="ct-credit">Public domain · ClassroomOS archive</span>
+                </figcaption>
+              </figure>
+            </div>
+
+            <!-- ── Interactive Elapsed Time Visualizer ─────────── -->
+            <div class="ct-elapsed-lab" id="ct-elapsed-lab">
+              <span class="ct-lab-kicker">Interactive tool · Open number line</span>
+              <h3 style="margin-top:0.15rem;">Elapsed Time Jump Visualizer</h3>
+              <p>
+                To find how much time passes between two clocks without subtracting base-60 in your head,
+                jump to the nearest friendly hour (<strong>hills</strong>), leap across whole hours
+                (<strong>mountains</strong>), and finish with remaining minutes (<strong>rocks</strong>).
+              </p>
+
+              <div class="ct-elapsed-presets" role="group" aria-label="Elapsed time presets">
+                <button type="button" class="ct-chip-btn is-active" data-elapsed-start="10:45" data-elapsed-end="11:20">Recess (10:45 → 11:20)</button>
+                <button type="button" class="ct-chip-btn" data-elapsed-start="15:40" data-elapsed-end="17:15">Practice (3:40 PM → 5:15 PM)</button>
+                <button type="button" class="ct-chip-btn" data-elapsed-start="11:30" data-elapsed-end="14:15">Noon Crossing (11:30 → 2:15 PM)</button>
+                <button type="button" class="ct-chip-btn" data-elapsed-start="22:50" data-elapsed-end="01:15">Overnight (10:50 PM → 1:15 AM)</button>
+              </div>
+
+              <div class="ct-elapsed-inputs">
+                <label class="ct-time-field">
+                  <span>Start</span>
+                  <input type="time" id="ct-elapsed-start" value="10:45" />
+                </label>
+                <label class="ct-time-field">
+                  <span>End</span>
+                  <input type="time" id="ct-elapsed-end" value="11:20" />
+                </label>
+                <button type="button" class="ct-chip-btn" id="ct-elapsed-from-lab">Use Clock Lab as Start</button>
+              </div>
+
+              <div class="ct-elapsed-stage">
+                <svg id="ct-elapsed-svg" viewBox="0 0 640 138" role="img" aria-label="Open number line showing elapsed time jumps"></svg>
+                <svg id="ct-elapsed-dial" viewBox="0 0 120 120" role="img" aria-label="Swept clock sector showing elapsed minutes"></svg>
+              </div>
+
+              <p class="ct-elapsed-summary" id="ct-elapsed-summary" role="status"></p>
+            </div>
+
+            <!-- ── Interactive Read / Set the Clock Trainer ─────── -->
+            <div class="ct-trainer" id="ct-clock-trainer">
+              <span class="ct-lab-kicker">Skill builder · Instant feedback</span>
+              <h3 style="margin-top:0.15rem;">Read &amp; Set the Clock Challenge</h3>
+
+              <div class="ct-trainer-bar">
+                <button type="button" class="ct-chip-btn is-active" id="ct-tr-mode-read" aria-pressed="true">Read the Clock</button>
+                <button type="button" class="ct-chip-btn" id="ct-tr-mode-set" aria-pressed="false">Set the Clock</button>
+                <span style="flex:1 1 auto;"></span>
+                <button type="button" class="ct-chip-btn is-active" data-tr-diff="half">Half-Hours</button>
+                <button type="button" class="ct-chip-btn" data-tr-diff="five">5-Min Steps</button>
+                <button type="button" class="ct-chip-btn" data-tr-diff="exact">Exact Minute</button>
+              </div>
+
+              <div class="ct-trainer-stage">
+                <div class="ct-trainer-clock-box">
+                  <svg id="ct-tr-svg" viewBox="0 0 160 160" role="img" aria-label="Challenge clock face">
+                    <circle cx="80" cy="80" r="74" fill="rgba(15,23,42,0.06)" stroke="#3b82f6" stroke-width="2.5" />
+                    <g id="ct-tr-marks"></g>
+                    <line id="ct-tr-hr" x1="80" y1="86" x2="80" y2="44" stroke="#d97706" stroke-width="5" stroke-linecap="round" />
+                    <line id="ct-tr-mn" x1="80" y1="88" x2="80" y2="24" stroke="#2563eb" stroke-width="3.5" stroke-linecap="round" />
+                    <line id="ct-tr-min-hit" class="ct-hand-hit" data-tr-hand="minute" x1="80" y1="88" x2="80" y2="20" stroke-width="20" stroke-linecap="round" />
+                    <circle cx="80" cy="80" r="5" fill="#1e293b" stroke="#60a5fa" stroke-width="1.5" />
+                  </svg>
+                </div>
+
+                <div>
+                  <p class="ct-trainer-prompt" id="ct-tr-prompt">What time is shown on this clock?</p>
+
+                  <div class="ct-trainer-controls" id="ct-tr-read-wrap">
+                    <input type="text" class="ct-ans-input" id="ct-tr-input" placeholder="e.g. 3:30" aria-label="Enter clock time" />
+                    <button type="button" class="ct-check-btn" id="ct-tr-check-read">Check</button>
+                  </div>
+
+                  <div class="ct-trainer-controls" id="ct-tr-set-wrap" hidden>
+                    <button type="button" class="ct-chip-btn" data-tr-step="-60">−1h</button>
+                    <button type="button" class="ct-chip-btn" data-tr-step="-5">−5m</button>
+                    <button type="button" class="ct-chip-btn" data-tr-step="1">+1m</button>
+                    <button type="button" class="ct-chip-btn" data-tr-step="5">+5m</button>
+                    <button type="button" class="ct-chip-btn" data-tr-step="60">+1h</button>
+                    <button type="button" class="ct-check-btn" id="ct-tr-check-set">Check Hands</button>
+                  </div>
+
+                  <div class="ct-trainer-controls">
+                    <button type="button" class="ct-reset-btn" id="ct-tr-new">New Challenge</button>
+                    <button type="button" class="ct-reset-btn" id="ct-tr-hint-btn">Hint</button>
+                    <span id="ct-tr-streak" style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;font-weight:700;color:var(--ct-blue);">Streak: 0</span>
+                  </div>
+                  <div class="ct-trainer-status" id="ct-tr-status" aria-live="polite"></div>
+                </div>
+              </div>
+            </div>
           </section>
 
-          <!-- ── HISTORY OF TIMEKEEPING ──────────────── -->
+          <!-- ── 03 · HISTORY OF TIMEKEEPING ─────────── -->
           <section class="ct-card" id="time-history" data-step="03 / TRACE" style="--card-accent:#f59e0b;">
             <h2 data-step="03 / TRACE">The History of Telling Time</h2>
             <p>
@@ -1326,7 +558,7 @@
                   Ships at sea needed to know their <em>longitude</em> — which required knowing the
                   exact time back in Greenwich while also knowing the local solar time. After decades
                   of work, clockmaker John Harrison built the <strong>H4 chronometer</strong>, a
-                  pocketwatch-sized device so accurate it lost only five seconds during a 81-day
+                  pocketwatch-sized device so accurate it lost only five seconds during an 81-day
                   voyage to Jamaica. It solved the greatest navigation problem of the age.
                 </p>
               </li>
@@ -1361,33 +593,45 @@
                   As electronic computers began executing millions of instructions per second, people struggled to grasp invisible fractions of time like microseconds and nanoseconds. Computer pioneer <a href="../../computer-science/pioneers/grace-hopper.html"><strong>Rear Admiral Grace Hopper</strong></a> made invisible time tangible: she carried pieces of wire cut to exactly <strong>11.8 inches (30 cm)</strong> — the maximum distance electricity or light can travel in one <strong>nanosecond</strong> (a billionth of a second). To illustrate a <strong>microsecond</strong> (one millionth of a second), she brought a coil of wire <strong>984 feet (300 m)</strong> long — stretching nearly three football fields!
                 </p>
               </li>
-
             </ol>
 
             <!-- ── Interactive: Grace Hopper's Wire Lab ─────────────── -->
             <div class="ct-wire-lab" id="ct-wire-lab">
-              <div class="ct-wire-head">
-                <span class="ct-wire-kicker">Interactive lab · Speed of light &amp; computing</span>
-                <h3>The Physical Length of Time: Grace Hopper's Wire Lab</h3>
-                <p>
-                  How long is a billionth of a second? Grace Hopper proved that because electricity and light travel at approximately 300,000 km/s (186,000 miles/s), <strong>every unit of time is also a physical distance</strong>. Select a preset or type any duration in nanoseconds to see the length of wire it represents.
-                </p>
-              </div>
+              <div class="ct-figure-split">
+                <div>
+                  <div class="ct-wire-head">
+                    <span class="ct-wire-kicker">Interactive lab · Speed of light &amp; computing</span>
+                    <h3>The Physical Length of Time: Grace Hopper's Wire Lab</h3>
+                    <p>
+                      How long is a billionth of a second? Grace Hopper proved that because electricity and light travel at approximately 300,000 km/s (186,000 miles/s), <strong>every unit of time is also a physical distance</strong>. Select a preset or type any duration in nanoseconds to see the length of wire it represents.
+                    </p>
+                  </div>
 
-              <div class="ct-wire-presets" role="group" aria-label="Preset time intervals">
-                <button type="button" class="ct-wire-btn active" data-ns="1">1 Nanosecond (Wire in Hand)</button>
-                <button type="button" class="ct-wire-btn" data-ns="10">10 Nanoseconds</button>
-                <button type="button" class="ct-wire-btn" data-ns="1000">1 Microsecond (Hopper's Coil)</button>
-                <button type="button" class="ct-wire-btn" data-ns="1000000">1 Millisecond (City to City)</button>
-                <button type="button" class="ct-wire-btn" data-ns="0.333">3 GHz CPU Cycle</button>
-              </div>
+                  <div class="ct-wire-presets" role="group" aria-label="Preset time intervals">
+                    <button type="button" class="ct-wire-btn active" data-ns="1">1 Nanosecond (Wire in Hand)</button>
+                    <button type="button" class="ct-wire-btn" data-ns="10">10 Nanoseconds</button>
+                    <button type="button" class="ct-wire-btn" data-ns="1000">1 Microsecond (Hopper's Coil)</button>
+                    <button type="button" class="ct-wire-btn" data-ns="1000000">1 Millisecond (City to City)</button>
+                    <button type="button" class="ct-wire-btn" data-ns="0.333">3 GHz CPU Cycle</button>
+                  </div>
 
-              <div class="ct-wire-controls">
-                <label for="ct-wire-input">Enter duration in nanoseconds (ns):</label>
-                <div class="ct-wire-input-row">
-                  <input type="number" id="ct-wire-input" value="1" min="0.001" step="any" class="ct-ans-input" style="max-width:180px;" />
-                  <span class="ct-wire-unit-label">ns</span>
+                  <div class="ct-wire-controls">
+                    <label for="ct-wire-input">Enter duration in nanoseconds (ns):</label>
+                    <div class="ct-wire-input-row">
+                      <input type="number" id="ct-wire-input" value="1" min="0.001" step="any" class="ct-ans-input" style="max-width:180px;" />
+                      <span class="ct-wire-unit-label">ns</span>
+                    </div>
+                  </div>
                 </div>
+
+                <figure class="ct-figure-plate" data-zoomable data-lightbox-group="clocks-and-time">
+                  <img src="../../../assets/images/video-library/grace-hopper-nanoseconds.webp" alt="Captain Grace Hopper holding up an 11.8-inch piece of wire during her 1982 NSA lecture" loading="lazy" />
+                  <figcaption>
+                    <strong>Holding a Nanosecond (1982 NSA Lecture)</strong>
+                    Hopper holds a wire cut to 11.8 inches — the maximum distance light or electricity travels in one billionth of a second.
+                    <span class="ct-credit">NSA / National Archives · Public domain</span>
+                  </figcaption>
+                </figure>
               </div>
 
               <div class="ct-wire-display" aria-live="polite">
@@ -1454,10 +698,9 @@
                 </article>
               </div>
             </aside>
-
           </section>
 
-          <!-- ── TIME IN GENESIS ─────────────────────── -->
+          <!-- ── 04 · TIME IN GENESIS ────────────────── -->
           <section class="ct-card" id="ct-sec-origins" data-step="04 / ORIGINS" style="--card-accent:#f59e0b;">
             <h2 data-step="04 / ORIGINS">Time in the Beginning — Genesis and the Biblical Day</h2>
             <p>
@@ -1537,7 +780,7 @@
             </p>
           </section>
 
-          <!-- ── COMEDY & MUSIC TIMING ───────────────── -->
+          <!-- ── 05 · COMEDY & MUSIC TIMING ──────────── -->
           <section class="ct-card" id="ct-sec-reflect" data-step="05 / REFLECT" style="--card-accent:#a78bfa;">
             <h2 data-step="05 / REFLECT">The Greatest Gift: Perfect Timing</h2>
             <p>
@@ -1552,23 +795,31 @@
             </p>
           </section>
 
-          <!-- ── WORLD TIME ZONES ────────────────────── -->
+          <!-- ── 06 · WORLD TIME ZONES ───────────────── -->
           <section class="ct-tz-lab" id="world-time" data-step="06 / CONNECT" aria-label="World time zones explorer">
-            <h2 data-step="06 / CONNECT">World Time Zones</h2>
-            <p>Earth spins 360° every 24 hours — that's 15° per hour. So every 15° of longitude equals one hour of time difference. Click a region to see local times.</p>
+            <h2 data-step="06 / CONNECT">World Time Zones &amp; Sunlight Terminator</h2>
+            <p>Earth spins 360° every 24 hours — 15° per hour. Scrub UTC time to watch sunlight sweep across the globe, and click any two cities to compare them.</p>
 
-            <!-- Simplified SVG World Timezone Map -->
+            <div class="ct-tz-scrubber">
+              <label for="ct-tz-slider">UTC Clock:</label>
+              <input type="range" id="ct-tz-slider" min="0" max="1425" step="15" value="720" aria-label="Scrub UTC time of day" />
+              <span class="ct-tz-utc-readout" id="ct-tz-utc-readout">Live UTC</span>
+              <button type="button" class="ct-step-btn is-now" id="ct-tz-live-btn">Live Now</button>
+            </div>
+
             <div class="ct-tz-map-wrap">
               <svg id="ct-world-svg" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ct-world-title ct-world-desc">
-                <title id="ct-world-title">Interactive world time-zone map</title>
-                <desc id="ct-world-desc" style="color:#fff;fill:#fff">An equirectangular world map with 15-degree reference bands and accurately projected city markers. Select a region to show its cities.</desc>
+                <title id="ct-world-title">Interactive world time-zone and daylight map</title>
+                <desc id="ct-world-desc" style="color:#fff;fill:#fff">An equirectangular world map with 15-degree reference bands, live solar day-night terminator, and projected city markers. Select a region or click cities to compare times.</desc>
                 <defs>
                   <clipPath id="ct-world-clip"><rect width="800" height="400" rx="14" /></clipPath>
                   <filter id="ct-city-glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
                 </defs>
                 <g clip-path="url(#ct-world-clip)">
                   <image href="../../../assets/images/lessons/clocks-and-time/world-time-base.svg" width="800" height="400" />
+                  <path id="ct-night-overlay" d="" fill="rgba(2, 6, 23, 0.54)" pointer-events="none" />
                   <rect id="ct-tz-highlight" x="0" y="0" width="0" height="400" fill="rgba(59,130,246,.13)" stroke="rgba(125,211,252,.3)" opacity="0" pointer-events="none" />
+                  <g id="ct-subsolar-marker" pointer-events="none"></g>
                   <g id="ct-city-markers"></g>
                 </g>
                 <g class="ct-map-labels" font-family="'IBM Plex Mono',monospace">
@@ -1588,18 +839,27 @@
               </svg>
             </div>
             <div class="ct-map-caption">
-              <span>Equirectangular projection · markers use latitude/longitude</span>
+              <span>Equirectangular projection · live solar terminator · markers use latitude/longitude</span>
               <a href="https://www.naturalearthdata.com/downloads/110m-cultural-vectors/110m-admin-0-countries/" target="_blank" rel="noopener">Geography: Natural Earth 1:110m ↗</a>
             </div>
 
             <!-- Region Buttons -->
             <div class="ct-tz-controls">
-              <button class="ct-tz-btn active" data-region="americas">Americas</button>
-              <button class="ct-tz-btn" data-region="europe">Europe &amp; Africa</button>
-              <button class="ct-tz-btn" data-region="middleeast">Middle East</button>
-              <button class="ct-tz-btn" data-region="asia">South Asia</button>
-              <button class="ct-tz-btn" data-region="east_asia">East Asia</button>
-              <button class="ct-tz-btn" data-region="australia">Australia &amp; Pacific</button>
+              <button type="button" class="ct-tz-btn active" data-region="americas">Americas</button>
+              <button type="button" class="ct-tz-btn" data-region="europe">Europe &amp; Africa</button>
+              <button type="button" class="ct-tz-btn" data-region="middleeast">Middle East</button>
+              <button type="button" class="ct-tz-btn" data-region="asia">South Asia</button>
+              <button type="button" class="ct-tz-btn" data-region="east_asia">East Asia</button>
+              <button type="button" class="ct-tz-btn" data-region="australia">Australia &amp; Pacific</button>
+            </div>
+
+            <!-- Two-City Comparator -->
+            <div class="ct-tz-compare" id="ct-tz-compare" aria-live="polite">
+              <div class="ct-tz-compare-pair">
+                <span>Compare: <span class="ct-tz-badge-a" id="ct-cmp-a">New York</span> vs. <span class="ct-tz-badge-b" id="ct-cmp-b">London</span></span>
+                <span class="ct-tz-diff-pill" id="ct-cmp-diff">+5 hours ahead</span>
+              </div>
+              <button type="button" class="ct-step-btn" id="ct-cmp-swap">Swap A ↔ B</button>
             </div>
 
             <!-- City Time Panel -->
@@ -1610,13 +870,13 @@
 
             <!-- Explainer -->
             <div class="ct-tz-explainer">
-              <p><strong style="color:rgba(255,255,255,0.8);">Why show 24 reference bands?</strong> Earth completes one rotation (360°) every 24 hours, so 15° of longitude corresponds to one hour of solar rotation. The straight bands on the map show that mathematical ideal. Real civil time-zone boundaries bend around countries, states, and islands.</p>
-              <p><strong style="color:rgba(255,255,255,0.8);">The International Date Line</strong> sits roughly at 180° longitude — the opposite side of Earth from Greenwich. Cross it heading west and you gain a day; head east and you lose one. Pilots who fly trans-Pacific routes regularly "time travel" across it.</p>
-              <p><strong style="color:rgba(255,255,255,0.8);">Not all offsets are whole hours—or fixed year-round.</strong> India is UTC+5:30, Nepal is UTC+5:45, and parts of Australia use half-hour offsets. The clocks above use named IANA zones, so daylight-saving changes are applied for each city instead of relying on a fixed offset.</p>
+              <p><strong style="color:rgba(255,255,255,0.88);">Why show 24 reference bands?</strong> Earth completes one rotation (360°) every 24 hours, so 15° of longitude corresponds to one hour of solar rotation. The straight bands on the map show that mathematical ideal. Real civil time-zone boundaries bend around countries, states, and islands.</p>
+              <p><strong style="color:rgba(255,255,255,0.88);">The International Date Line</strong> sits roughly at 180° longitude — the opposite side of Earth from Greenwich. Cross it heading west and you gain a day; head east and you lose one. Pilots who fly trans-Pacific routes regularly "time travel" across it.</p>
+              <p><strong style="color:rgba(255,255,255,0.88);">Not all offsets are whole hours—or fixed year-round.</strong> India is UTC+5:30, Nepal is UTC+5:45, and parts of Australia use half-hour offsets. The clocks above use named IANA zones, so daylight-saving changes are applied for each city instead of relying on a fixed offset.</p>
             </div>
           </section>
 
-          <!-- ── TIME TRAVEL THROUGH HISTORY & SCI-FI ── -->
+          <!-- ── 07 · TIME TRAVEL THROUGH HISTORY & SCI-FI -->
           <section class="ct-card" id="ct-sec-imagine" data-step="07 / IMAGINE" style="--card-accent:#a78bfa;">
             <h2 data-step="07 / IMAGINE">Traveling Through Time — History, Books &amp; Science Fiction</h2>
             <p>
@@ -1666,10 +926,10 @@
                 <div class="bk-body">Introduces young readers to the "tesseract" — folding space-time so that two distant points touch. Based loosely on real physics concepts about the geometry of spacetime.</div>
               </div>
               <div class="ct-book-card" style="--bk-from:#2a1c1c;--bk-to:#201010;--bk-tag:#ef4444;">
-                <div class="bk-tag">1984 — Novel</div>
-                <div class="bk-title">Interstellar (based on Kip Thorne)</div>
-                <div class="bk-author">Carl Sagan / Kip Thorne</div>
-                <div class="bk-body">Nobel-winning physicist Kip Thorne ensured the science in <em>Contact</em> and later <em>Interstellar</em> was grounded in real general relativity — making time dilation visible and emotional for mainstream audiences.</div>
+                <div class="bk-tag">1985 &amp; 2014 — Novel &amp; Film</div>
+                <div class="bk-title">Contact &amp; Interstellar</div>
+                <div class="bk-author">Carl Sagan &amp; Kip Thorne</div>
+                <div class="bk-body">Astrophysicist Kip Thorne helped Carl Sagan ground <em>Contact</em> (1985) in real wormhole equations, and later advised <em>Interstellar</em> (2014) — showing relativistic time dilation near a black hole with mathematical rigor.</div>
               </div>
               <div class="ct-book-card" style="--bk-from:#1a2a2a;--bk-to:#0f1f1f;--bk-tag:#22d3ee;">
                 <div class="bk-tag">1985 — Novel</div>
@@ -1680,9 +940,9 @@
             </div>
           </section>
 
-          <!-- ── TIME DILATION ───────────────────────── -->
+          <!-- ── 08 · TIME DILATION ──────────────────── -->
           <section class="ct-dilation-lab" id="relativity" data-step="08 / EXPERIMENT" aria-label="Time dilation calculator">
-            <h2 data-step="08 / EXPERIMENT">Time Dilation — Faster Than Light and Bent Time</h2>
+            <h2 data-step="08 / EXPERIMENT">Time Dilation — Faster Motion &amp; Bent Time</h2>
             <p>
               Albert Einstein's Special Theory of Relativity (1905) delivered one of the most
               astonishing predictions in the history of science: <strong>time is not constant</strong>.
@@ -1692,12 +952,22 @@
               from the upper atmosphere all confirm it daily.
             </p>
 
+            <div class="ct-rel-presets" role="group" aria-label="Relativistic speed presets">
+              <button type="button" class="ct-rel-chip is-active" data-rel-pct="10" data-rel-yrs="1">10% c</button>
+              <button type="button" class="ct-rel-chip" data-rel-pct="50" data-rel-yrs="5">50% c</button>
+              <button type="button" class="ct-rel-chip" data-rel-pct="86.6" data-rel-yrs="10">86.6% c (γ ≈ 2)</button>
+              <button type="button" class="ct-rel-chip" data-rel-pct="90" data-rel-yrs="5">90% c (5y → 11.5y)</button>
+              <button type="button" class="ct-rel-chip" data-rel-pct="96.8" data-rel-yrs="5">96.8% c (γ ≈ 4, 5y → 20y)</button>
+              <button type="button" class="ct-rel-chip" data-rel-pct="99" data-rel-yrs="1">99% c</button>
+              <button type="button" class="ct-rel-chip" data-rel-pct="99.9" data-rel-yrs="1">99.9% c</button>
+            </div>
+
             <div class="ct-dilation-body">
               <div class="ct-dilation-controls">
                 <div>
                   <div class="ct-dil-label">Speed as a fraction of light speed (v/c)</div>
-                  <div class="ct-dil-value" id="ct-speed-val">10%</div>
-                  <input type="range" class="ct-dil-slider" id="ct-speed-slider" min="1" max="99" value="10" aria-label="Speed as percentage of the speed of light">
+                  <div class="ct-dil-value" id="ct-speed-val">10.0% of light speed</div>
+                  <input type="range" class="ct-dil-slider" id="ct-speed-slider" min="0" max="999" step="1" value="100" aria-label="Speed as percentage of the speed of light">
                 </div>
                 <div>
                   <div class="ct-dil-label">Time elapsed on the <em>moving</em> ship (years)</div>
@@ -1709,11 +979,11 @@
               <div class="ct-dilation-result">
                 <div class="ct-dil-row">
                   <span class="dil-key">Speed (v/c)</span>
-                  <span class="dil-val" id="ct-res-speed">10%</span>
+                  <span class="dil-val" id="ct-res-speed">10.0% c</span>
                 </div>
                 <div class="ct-dil-row">
                   <span class="dil-key">Lorentz Factor (γ)</span>
-                  <span class="dil-val" id="ct-res-gamma">1.005</span>
+                  <span class="dil-val" id="ct-res-gamma">1.0050</span>
                 </div>
                 <div class="ct-dil-row">
                   <span class="dil-key">Time on ship</span>
@@ -1724,42 +994,95 @@
                   <div class="dh-val" id="ct-res-earth">1.01 years</div>
                 </div>
                 <div class="ct-dil-warning" id="ct-dil-warning">
-                  At 100% light speed, time would stop entirely. At speeds &gt;c, physics as we know it breaks down — infinite energy would be required.
+                  Near 100% light speed, γ shoots upward steeply. No object with mass can reach c because it would require infinite energy.
                 </div>
               </div>
             </div>
 
+            <div class="ct-rel-visuals">
+              <div class="ct-twin-clocks">
+                <h3>Twin Clocks: Live Relative Tick Rate</h3>
+                <div class="ct-twin-pair">
+                  <div class="ct-twin-dial">
+                    <svg viewBox="0 0 100 100" aria-label="Earth clock tick rate">
+                      <circle cx="50" cy="50" r="44" fill="rgba(15,23,42,0.8)" stroke="#60a5fa" stroke-width="2" />
+                      <circle cx="50" cy="12" r="2" fill="#60a5fa" />
+                      <line id="ct-earth-dial-hand" x1="50" y1="54" x2="50" y2="16" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" />
+                      <circle cx="50" cy="50" r="3.5" fill="#dbeafe" />
+                    </svg>
+                    <span>Earth Frame</span>
+                    <strong id="ct-twin-earth-val">1.00× rate</strong>
+                  </div>
+                  <div class="ct-twin-dial">
+                    <svg viewBox="0 0 100 100" aria-label="Spaceship clock tick rate">
+                      <circle cx="50" cy="50" r="44" fill="rgba(15,23,42,0.8)" stroke="#c084fc" stroke-width="2" />
+                      <circle cx="50" cy="12" r="2" fill="#c084fc" />
+                      <line id="ct-ship-dial-hand" x1="50" y1="54" x2="50" y2="16" stroke="#c084fc" stroke-width="3" stroke-linecap="round" />
+                      <circle cx="50" cy="50" r="3.5" fill="#f3e8ff" />
+                    </svg>
+                    <span>Ship Frame</span>
+                    <strong id="ct-twin-ship-val">0.995× rate</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ct-lorentz-graph">
+                <h3>Lorentz Curve: γ = 1 / √(1 − v²/c²)</h3>
+                <svg id="ct-lorentz-svg" viewBox="0 0 320 150" role="img" aria-label="Graph of Lorentz factor gamma versus speed">
+                  <line x1="34" y1="126" x2="306" y2="126" stroke="rgba(233,213,255,0.3)" stroke-width="1" />
+                  <line x1="34" y1="14" x2="34" y2="126" stroke="rgba(233,213,255,0.3)" stroke-width="1" />
+                  <line x1="34" y1="100" x2="306" y2="100" stroke="rgba(233,213,255,0.12)" stroke-dasharray="3 3" />
+                  <line x1="34" y1="74" x2="306" y2="74" stroke="rgba(233,213,255,0.12)" stroke-dasharray="3 3" />
+                  <path id="ct-lorentz-path" d="" fill="none" stroke="#c084fc" stroke-width="2.5" stroke-linecap="round" />
+                  <circle id="ct-lorentz-dot" cx="61" cy="120" r="5" fill="#fde68a" stroke="#fff" stroke-width="1.5" />
+                  <text id="ct-lorentz-label" x="70" y="114" fill="#fde68a" font-family="'IBM Plex Mono',monospace" font-size="9" font-weight="700">γ=1.01</text>
+                  <text x="34" y="141" fill="rgba(233,213,255,0.65)" font-family="'IBM Plex Mono',monospace" font-size="8">0% c</text>
+                  <text x="160" y="141" fill="rgba(233,213,255,0.65)" font-family="'IBM Plex Mono',monospace" font-size="8" text-anchor="middle">50% c</text>
+                  <text x="304" y="141" fill="rgba(233,213,255,0.65)" font-family="'IBM Plex Mono',monospace" font-size="8" text-anchor="end">99% c</text>
+                  <text x="28" y="128" fill="rgba(233,213,255,0.65)" font-family="'IBM Plex Mono',monospace" font-size="8" text-anchor="end">1</text>
+                  <text x="28" y="77" fill="rgba(233,213,255,0.65)" font-family="'IBM Plex Mono',monospace" font-size="8" text-anchor="end">5</text>
+                  <text x="28" y="21" fill="rgba(233,213,255,0.65)" font-family="'IBM Plex Mono',monospace" font-size="8" text-anchor="end">10+</text>
+                </svg>
+              </div>
+            </div>
+
             <div class="ct-dilation-fact">
-              <h3>What is the Lorentz Factor?</h3>
-              <p>
-                The formula for time dilation is: <strong>t' = t × γ</strong>, where
-                <strong>γ (gamma)</strong> is the Lorentz factor: <span data-formula="lorentz-factor">γ = 1 / √(1 − v²/c²)</span>.
-                At everyday speeds the factor is essentially 1 (no noticeable dilation).
-                But as v approaches c (the speed of light, ~299,792 km/s), γ shoots toward
-                infinity — meaning time on the ship slows to almost nothing compared to Earth.
-              </p>
-              <p>
-                <strong>Faster than light and the problem:</strong> Science fiction loves
-                "warp drives," "hyperdrive," and "jump gates" — ways of crossing vast distances
-                faster than light. Real physics says this is impossible for anything with mass,
-                because at the speed of light, γ = ∞ and the required energy becomes infinite.
-                Some physicists speculate about <em>wormholes</em> (shortcuts through spacetime)
-                or the <em>Alcubierre warp drive</em> (contracting space in front and expanding
-                it behind), but these remain theoretical and require "exotic matter" that may
-                not exist. What IS real and measurable: the GPS satellites orbiting at 14,000 km/h
-                experience time about 7 microseconds per day slower than clocks on Earth — and
-                engineers must correct for this or GPS would drift by kilometers within a week.
-              </p>
-              <p>
-                <strong>Twin Paradox:</strong> Imagine you have a twin. You board a spaceship
-                and travel to a nearby star at 90% the speed of light, then return. Your trip
-                felt like 5 years. But when you land, your twin is 20 years older. You have
-                effectively traveled 15 years into the future — without a time machine, just
-                velocity and Einstein's equations.
-              </p>
+              <div class="ct-figure-split" style="margin-top:0;">
+                <div>
+                  <h3>What is the Lorentz Factor?</h3>
+                  <p>
+                    The formula for time dilation is: <strong>t' = t × γ</strong>, where
+                    <strong>γ (gamma)</strong> is the Lorentz factor: <span data-formula="lorentz-factor">γ = 1 / √(1 − v²/c²)</span>.
+                    At everyday speeds the factor is essentially 1 (no noticeable dilation).
+                    But as v approaches c (the speed of light, ~299,792 km/s), γ shoots upward — meaning time on the ship runs much slower than on Earth.
+                  </p>
+                  <p>
+                    <strong>GPS &amp; Relativistic Engineering:</strong> GPS satellites orbiting at 14,000 km/h
+                    lose about 7 microseconds per day from special relativity (speed) while gaining 45 microseconds
+                    per day from general relativity (weaker gravity), for a net +38 microseconds per day. Without correcting for both, GPS navigation would drift by kilometers in a single day.
+                  </p>
+                  <p>
+                    <strong>Twin Paradox:</strong> Imagine you have a twin. You board a spaceship and travel
+                    to a nearby star and back at <strong>90% the speed of light</strong> (γ ≈ 2.29). While your
+                    trip feels like 5 years, your twin on Earth ages <strong>11.5 years</strong> (6.5 years more!).
+                    To make Earth age a full <strong>20 years</strong> during your 5-year voyage (γ = 4), your ship
+                    would need to fly at <strong>96.8% the speed of light</strong> — try both presets above!
+                  </p>
+                </div>
+
+                <figure class="ct-figure-plate" data-zoomable data-lightbox-group="clocks-and-time" style="background:rgba(15,23,42,0.65);border-color:rgba(167,139,250,0.3);">
+                  <img src="../../../assets/thumbs/einstein-patent-office.jpg" width="1280" height="1673" loading="lazy" decoding="async" alt="Portrait of a young Albert Einstein during his years at the Swiss Patent Office in Bern" />
+                  <figcaption style="color:rgba(233,213,255,0.84);">
+                    <strong style="color:#f3e8ff;">Einstein at the Bern Patent Office (1902–1909)</strong>
+                    Examining patents for synchronizing Swiss railway clocks across towns helped spark Einstein's 1905 insight that simultaneity and time depend on motion.
+                    <span class="ct-credit" style="color:rgba(233,213,255,0.62);">ETH Zürich · <a href="https://commons.wikimedia.org/wiki/File:Einstein_patentoffice.jpg" target="_blank" rel="noopener" style="color:#c4b5fd;">Public Domain Mark</a></span>
+                  </figcaption>
+                </figure>
+              </div>
             </div>
           </section>
 
+          <!-- ── 09 · DEEP TIME & LARGE NUMBERS ──────── -->
           <section class="ct-card" id="deep-time" data-step="09 / SCALE" style="--card-accent:#0d9488;">
             <h2 data-step="09 / SCALE">From Clock Time to Deep Time</h2>
             <p>A clock measures seconds, minutes, and hours. <strong>Deep time</strong> describes Earth's history across millions and billions of years. To understand those numbers, start with something you already know: one second.</p>
@@ -1796,82 +1119,116 @@
             </form>
           </section>
 
-          <!-- ── PRACTICE PROBLEMS ──────────────────── -->
+          <!-- ── 10 · PRACTICE PROBLEMS ──────────────── -->
           <section class="ct-card" id="practice" data-step="10 / CHECK" style="--card-accent:#22c55e;">
             <h2 data-step="10 / CHECK">Practice Problems</h2>
             <div class="ct-score-bar">
-              <span id="ct-score">0 / 7 correct</span>
+              <span id="ct-score">0 / 10 correct</span>
+              <div class="ct-practice-progress" aria-hidden="true">
+                <div class="ct-practice-progress-fill" id="ct-practice-fill"></div>
+              </div>
+              <button type="button" class="ct-reset-btn" id="ct-practice-reset">Reset Practice</button>
             </div>
             <div class="ct-practice">
 
-              <div class="ct-problem" id="ct-prob-1">
-                <p>1. An analog clock shows the hour hand pointing straight at 3 and the minute hand pointing straight up at 12. What time does it show? (Enter the hour as a number, e.g. 3)</p>
+              <div class="ct-problem" id="ct-prob-1" data-prob="1" data-answer="3" data-tolerance="0" data-type="clock">
+                <p>1. An analog clock shows the hour hand pointing straight at 3 and the minute hand pointing straight up at 12. What time does it show? (e.g. 3 or 3:00)</p>
                 <div class="ct-problem-input-row">
-                  <input type="text" class="ct-ans-input" id="ct-ans-1" placeholder="Hour (1–12)">
-                  <button class="ct-check-btn" onclick="ctCheck(1, 3, 0)">Check</button>
-                  <span class="ct-feedback" id="ct-fb-1"></span>
+                  <input type="text" class="ct-ans-input" id="ct-ans-1" placeholder="e.g. 3:00">
+                  <button type="button" class="ct-check-btn">Check</button>
+                  <span class="ct-feedback" id="ct-fb-1" aria-live="polite"></span>
                 </div>
                 <div class="ct-hint" id="ct-hint-1">Hint: The hour hand is at 3, minute hand at 12 = exactly 3:00.</div>
               </div>
 
-              <div class="ct-problem" id="ct-prob-2">
+              <div class="ct-problem" id="ct-prob-2" data-prob="2" data-answer="90" data-tolerance="1" data-type="number">
                 <p>2. How many degrees does the minute hand move in exactly 15 minutes?</p>
                 <div class="ct-problem-input-row">
                   <input type="text" class="ct-ans-input" id="ct-ans-2" placeholder="Degrees">
-                  <button class="ct-check-btn" onclick="ctCheck(2, 90, 1)">Check</button>
-                  <span class="ct-feedback" id="ct-fb-2"></span>
+                  <button type="button" class="ct-check-btn">Check</button>
+                  <span class="ct-feedback" id="ct-fb-2" aria-live="polite"></span>
                 </div>
                 <div class="ct-hint" id="ct-hint-2">Hint: The minute hand moves 6° per minute. 6° × 15 = ?</div>
               </div>
 
-              <div class="ct-problem" id="ct-prob-3">
-                <p>3. Earth is divided into how many standard time zones?</p>
+              <div class="ct-problem" id="ct-prob-3" data-prob="3" data-answer="24" data-tolerance="0" data-type="number">
+                <p>3. Earth is divided into how many standard 15° time zones?</p>
                 <div class="ct-problem-input-row">
                   <input type="text" class="ct-ans-input" id="ct-ans-3" placeholder="Number">
-                  <button class="ct-check-btn" onclick="ctCheck(3, 24, 0)">Check</button>
-                  <span class="ct-feedback" id="ct-fb-3"></span>
+                  <button type="button" class="ct-check-btn">Check</button>
+                  <span class="ct-feedback" id="ct-fb-3" aria-live="polite"></span>
                 </div>
                 <div class="ct-hint" id="ct-hint-3">Hint: Earth rotates 360° in 24 hours.</div>
               </div>
 
-              <div class="ct-problem" id="ct-prob-4">
-                <p>4. Each time zone covers how many degrees of longitude?</p>
+              <div class="ct-problem" id="ct-prob-4" data-prob="4" data-answer="15" data-tolerance="0" data-type="number">
+                <p>4. Each standard time zone covers how many degrees of longitude?</p>
                 <div class="ct-problem-input-row">
                   <input type="text" class="ct-ans-input" id="ct-ans-4" placeholder="Degrees">
-                  <button class="ct-check-btn" onclick="ctCheck(4, 15, 0)">Check</button>
-                  <span class="ct-feedback" id="ct-fb-4"></span>
+                  <button type="button" class="ct-check-btn">Check</button>
+                  <span class="ct-feedback" id="ct-fb-4" aria-live="polite"></span>
                 </div>
                 <div class="ct-hint" id="ct-hint-4">Hint: 360° ÷ 24 time zones = ?</div>
               </div>
 
-              <div class="ct-problem" id="ct-prob-5">
+              <div class="ct-problem" id="ct-prob-5" data-prob="5" data-answer="4" data-tolerance="0" data-type="number">
                 <p>5. According to Genesis, on which numbered day did God create the sun and moon?</p>
                 <div class="ct-problem-input-row">
                   <input type="text" class="ct-ans-input" id="ct-ans-5" placeholder="Day number">
-                  <button class="ct-check-btn" onclick="ctCheck(5, 4, 0)">Check</button>
-                  <span class="ct-feedback" id="ct-fb-5"></span>
+                  <button type="button" class="ct-check-btn">Check</button>
+                  <span class="ct-feedback" id="ct-fb-5" aria-live="polite"></span>
                 </div>
                 <div class="ct-hint" id="ct-hint-5">Hint: Review the Seven Days of Creation section above.</div>
               </div>
 
-              <div class="ct-problem" id="ct-prob-6">
-                <p>6. A spaceship travels at 50% the speed of light. Using the Lorentz factor γ = 1 / √(1 − v²/c²), what is γ rounded to 2 decimal places? (Hint: √(1 − 0.25) = √0.75 ≈ 0.866)</p>
+              <div class="ct-problem" id="ct-prob-6" data-prob="6" data-answer="1.15" data-tolerance="0.02" data-type="number">
+                <p>6. A spaceship travels at 50% the speed of light. Using the Lorentz factor γ = 1 / √(1 − v²/c²), what is γ rounded to 2 decimal places? (Hint: √0.75 ≈ 0.866)</p>
                 <div class="ct-problem-input-row">
                   <input type="text" class="ct-ans-input" id="ct-ans-6" placeholder="γ value">
-                  <button class="ct-check-btn" onclick="ctCheck(6, 1.15, 0.02)">Check</button>
-                  <span class="ct-feedback" id="ct-fb-6"></span>
+                  <button type="button" class="ct-check-btn">Check</button>
+                  <span class="ct-feedback" id="ct-fb-6" aria-live="polite"></span>
                 </div>
                 <div class="ct-hint" id="ct-hint-6">Hint: γ = 1 / 0.866 ≈ 1.155 ≈ 1.15</div>
               </div>
 
-              <div class="ct-problem" id="ct-prob-7">
+              <div class="ct-problem" id="ct-prob-7" data-prob="7" data-answer="11.8" data-tolerance="0.5" data-type="number">
                 <p>7. Grace Hopper famously explained a nanosecond (one billionth of a second) by cutting a wire to the maximum distance light can travel in that time. About how long is this wire in inches?</p>
                 <div class="ct-problem-input-row">
                   <input type="text" class="ct-ans-input" id="ct-ans-7" placeholder="Inches (e.g. 11.8)">
-                  <button class="ct-check-btn" onclick="ctCheck(7, 11.8, 0.5)">Check</button>
-                  <span class="ct-feedback" id="ct-fb-7"></span>
+                  <button type="button" class="ct-check-btn">Check</button>
+                  <span class="ct-feedback" id="ct-fb-7" aria-live="polite"></span>
                 </div>
                 <div class="ct-hint" id="ct-hint-7">Hint: Light travels ~30 cm (or 11.8 inches, just shy of a 12-inch foot) in 1 nanosecond.</div>
+              </div>
+
+              <div class="ct-problem" id="ct-prob-8" data-prob="8" data-answer="35" data-tolerance="0" data-type="number">
+                <p>8. Recess starts at 10:45 AM and ends at 11:20 AM. How many minutes long is recess?</p>
+                <div class="ct-problem-input-row">
+                  <input type="text" class="ct-ans-input" id="ct-ans-8" placeholder="Minutes">
+                  <button type="button" class="ct-check-btn">Check</button>
+                  <span class="ct-feedback" id="ct-fb-8" aria-live="polite"></span>
+                </div>
+                <div class="ct-hint" id="ct-hint-8">Hint: Jump 15 minutes from 10:45 to 11:00, then jump 20 more minutes to 11:20 (15 + 20).</div>
+              </div>
+
+              <div class="ct-problem" id="ct-prob-9" data-prob="9" data-answer="165" data-tolerance="0" data-type="number">
+                <p>9. A science workshop runs from 11:30 AM to 2:15 PM. What is the total elapsed time in minutes?</p>
+                <div class="ct-problem-input-row">
+                  <input type="text" class="ct-ans-input" id="ct-ans-9" placeholder="Total minutes">
+                  <button type="button" class="ct-check-btn">Check</button>
+                  <span class="ct-feedback" id="ct-fb-9" aria-live="polite"></span>
+                </div>
+                <div class="ct-hint" id="ct-hint-9">Hint: 11:30 → 12:00 (+30m), 12:00 → 2:00 (+120m), 2:00 → 2:15 (+15m). Add 30 + 120 + 15.</div>
+              </div>
+
+              <div class="ct-problem" id="ct-prob-10" data-prob="10" data-answer="945" data-tolerance="0" data-type="time24">
+                <p>10. Write <strong>3:45 PM</strong> in 24-hour digital time (e.g. 15:45).</p>
+                <div class="ct-problem-input-row">
+                  <input type="text" class="ct-ans-input" id="ct-ans-10" placeholder="HH:MM">
+                  <button type="button" class="ct-check-btn">Check</button>
+                  <span class="ct-feedback" id="ct-fb-10" aria-live="polite"></span>
+                </div>
+                <div class="ct-hint" id="ct-hint-10">Hint: For PM hours after 12:59 PM, add 12 to the hour: 3 + 12 = 15, keeping :45.</div>
               </div>
 
             </div>
@@ -1883,13 +1240,33 @@
       <aside class="ll-panel" aria-hidden="false">
         <div class="ll-panel-head">
           <div class="ll-tabs">
-            <button class="ll-tab" aria-selected="true" data-pane="ct-controls">Controls</button>
-            <button class="ll-tab" aria-selected="false" data-pane="ct-guide">Guide</button>
+            <button type="button" class="ll-tab" aria-selected="true" data-pane="ct-controls">Controls</button>
+            <button type="button" class="ll-tab" aria-selected="false" data-pane="ct-guide">Guide</button>
           </div>
-          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+          <button type="button" class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
         </div>
         <div class="ll-panel-body">
           <div class="ll-pane ll-active" id="ct-controls">
+            <span class="ll-label">Clock Lab Quick Controls</span>
+            <div class="ct-panel-grid" role="group" aria-label="Clock lab controls">
+              <button type="button" class="ct-panel-preset is-active" id="ct-p-mode">
+                Mode: Live
+                <small>Toggle Drag Hands</small>
+              </button>
+              <button type="button" class="ct-panel-preset" id="ct-p-24h">
+                Format: 12h
+                <small>Switch 12h / 24h</small>
+              </button>
+              <button type="button" class="ct-panel-preset" id="ct-p-angles">
+                Angles: Off
+                <small>Show Degree Arcs</small>
+              </button>
+              <button type="button" class="ct-panel-preset" id="ct-p-now">
+                Sync to Now
+                <small>Reset to Local Time</small>
+              </button>
+            </div>
+
             <span class="ll-label">Dilation Presets (v/c)</span>
             <div class="ct-panel-grid" role="group" aria-label="Relativistic Presets">
               <button type="button" class="ct-panel-preset" data-speed="10" data-years="1">
@@ -1900,13 +1277,13 @@
                 Half Light
                 <small>0.50 c · γ = 1.155</small>
               </button>
-              <button type="button" class="ct-panel-preset" data-speed="87" data-years="10">
+              <button type="button" class="ct-panel-preset" data-speed="86.6" data-years="10">
                 Half Time
                 <small>0.866 c · γ = 2.000</small>
               </button>
-              <button type="button" class="ct-panel-preset" data-speed="99" data-years="1">
-                Extreme
-                <small>0.99 c · γ = 7.089</small>
+              <button type="button" class="ct-panel-preset" data-speed="96.8" data-years="5">
+                4× Dilation
+                <small>0.968 c · γ = 4.000</small>
               </button>
             </div>
 
@@ -1916,17 +1293,25 @@
                 Clock Lab
                 <small>Analog &amp; Digital</small>
               </a>
-              <a href="#time-history" class="ct-panel-preset" style="text-decoration:none;">
-                Ancient Clocks
-                <small>Sundials &amp; Water</small>
+              <a href="#ct-elapsed-lab" class="ct-panel-preset" style="text-decoration:none;">
+                Elapsed Time
+                <small>Jump Visualizer</small>
               </a>
               <a href="#world-time" class="ct-panel-preset" style="text-decoration:none;">
                 Time Zones
-                <small>World Lat &amp; Lon</small>
+                <small>Sunlight &amp; Cities</small>
               </a>
               <a href="#relativity" class="ct-panel-preset" style="text-decoration:none;">
                 Time Dilation
                 <small>Relativity &amp; γ</small>
+              </a>
+              <a href="#deep-time" class="ct-panel-preset" style="text-decoration:none;">
+                Deep Time
+                <small>Billions of Years</small>
+              </a>
+              <a href="#practice" class="ct-panel-preset" style="text-decoration:none;">
+                Practice Check
+                <small>10 Questions</small>
               </a>
             </div>
 
@@ -1934,12 +1319,16 @@
             <span class="ll-label">Live Telemetry</span>
             <div class="ll-readouts">
               <div class="ll-readout">
-                <span class="ll-readout-lbl">Local Time</span>
+                <span class="ll-readout-lbl">Clock Lab</span>
                 <span class="ll-readout-val" id="ct-p-time">--:--:--</span>
               </div>
               <div class="ll-readout">
+                <span class="ll-readout-lbl">Hand Angle</span>
+                <span class="ll-readout-val" id="ct-p-gap">0°</span>
+              </div>
+              <div class="ll-readout">
                 <span class="ll-readout-lbl">Speed v/c</span>
-                <span class="ll-readout-val" id="ct-p-speed">10%</span>
+                <span class="ll-readout-val" id="ct-p-speed">10.0%</span>
               </div>
               <div class="ll-readout">
                 <span class="ll-readout-lbl">Lorentz Factor γ</span>
@@ -1954,776 +1343,45 @@
 
           <div class="ll-pane" id="ct-guide" aria-hidden="true">
             <span class="ll-label">Foundations of Time</span>
-            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
-              <strong>Definition of the Second:</strong> Since 1967, the SI second is defined by exactly 9,192,631,770 oscillations of radiation from the caesium-133 atom.
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.7rem;">
+              <strong>Clock Geometry:</strong> Full dial = 360°. Each hour step = 30°; each minute tick = 6°; the hour hand creeps 0.5° every minute.
             </p>
-            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
-              <strong>Grace Hopper's Nanosecond:</strong> Light in vacuum travels ~30 cm (11.8 inches) in 1 nanosecond (10<sup>−9</sup> s). Computer architects must keep microchip traces short because electricity cannot travel faster than light!
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.7rem;">
+              <strong>Elapsed Time Strategy:</strong> Jump from the start time to the next whole hour (hills), leap whole hours (mountains), then add leftover minutes (rocks).
             </p>
-            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
-              <strong>Time Dilation Formula:</strong>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.7rem;">
+              <strong>12h ↔ 24h Conversion:</strong> 12:00 AM = 00:00, 12:00 PM = 12:00, and for 1:00 PM–11:59 PM add 12 to the hour.
             </p>
-            <div style="background:rgba(0,0,0,0.06); padding:0.4rem; border-radius:6px; font-family:var(--font-mono, monospace); font-size:0.82rem; text-align:center; margin-bottom:0.75rem;">
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.7rem;">
+              <strong>SI Second:</strong> Defined since 1967 as 9,192,631,770 oscillations of radiation from a caesium-133 atom.
+            </p>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.7rem;">
+              <strong>Grace Hopper's Nanosecond:</strong> Light travels ~30 cm (11.8 in) in 1 nanosecond (10<sup>−9</sup> s). Chip paths must stay tiny because signals obey light speed.
+            </p>
+            <div style="background:rgba(125,136,154,0.14); padding:0.45rem; border-radius:6px; font-family:var(--font-mono, monospace); font-size:0.8rem; text-align:center; margin-bottom:0.7rem;">
               <em>γ</em> = 1 / √(1 − <em>v</em><sup>2</sup>/<em>c</em><sup>2</sup>)
             </div>
             <p style="font-size:0.8rem; line-height:1.55;">
-              <strong>GPS Relativistic Corrections:</strong> Satellite atomic clocks tick faster due to weaker gravity (+45 µs/day) and slower due to orbital motion (-7 µs/day), netting +38 µs/day. Without relativity math, GPS navigation would fail within minutes!
+              <strong>GPS Relativity:</strong> Satellite clocks tick slower due to orbital velocity (−7 µs/day) and faster due to weaker gravity (+45 µs/day), netting +38 µs/day.
             </p>
           </div>
         </div>
       </aside>
 
-      <button class="ll-open-btn" aria-label="Open panel">&#x2630; Controls &amp; Guide</button>
+      <button type="button" class="ll-open-btn" aria-label="Open panel">&#x2630; Controls &amp; Guide</button>
     </div>
   </div>
 
-  <!-- ── LIVE CLOCK SCRIPT ───────────────────────────── -->
-  <script>
-  (function () {
-    const hourHand = document.getElementById('ct-hour-hand');
-    const minHand  = document.getElementById('ct-min-hand');
-    const secHand  = document.getElementById('ct-sec-hand');
-    const digitalEl = document.getElementById('ct-digital-time');
-    const dateEl    = document.getElementById('ct-digital-date');
-    const hrVal  = document.getElementById('ct-hr-val');
-    const mnVal  = document.getElementById('ct-mn-val');
-    const scVal  = document.getElementById('ct-sc-val');
-
-    const obeliskSun = document.getElementById('ct-obelisk-sun');
-    const obeliskShadow = document.getElementById('ct-obelisk-shadow');
-    const oLeftBase = document.getElementById('ct-obelisk-left-base');
-    const oLeftTop = document.getElementById('ct-obelisk-left-top');
-    const oRightBase = document.getElementById('ct-obelisk-right-base');
-    const oRightTop = document.getElementById('ct-obelisk-right-top');
-
-    const sundialShadow = document.getElementById('ct-sundial-shadow');
-    const sdLeft = document.getElementById('ct-sundial-gnomon-left');
-    const sdRight = document.getElementById('ct-sundial-gnomon-right');
-
-    const hgTop = document.getElementById('ct-hg-top-sand');
-    const hgBot = document.getElementById('ct-hg-bot-sand');
-    const hgStream = document.getElementById('ct-hg-stream');
-    const wcTop = document.getElementById('ct-wc-top-water');
-    const wcBot = document.getElementById('ct-wc-bot-water');
-    const wcDrip = document.getElementById('ct-wc-drip');
-
-      // Draw 60 minute and hour markers on the clock face
-    const markerGroup = document.getElementById('ct-hour-markers');
-      for (let i = 0; i < 60; i++) {
-        const isHour = i % 5 === 0;
-        const angle = (i / 60) * 2 * Math.PI - Math.PI / 2;
-        const cx = 100, cy = 100;
-        const innerR = isHour ? 84 : 92;
-        const outerR = 96;
-
-        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        tick.setAttribute('x1', (cx + innerR * Math.cos(angle)).toFixed(2));
-        tick.setAttribute('y1', (cy + innerR * Math.sin(angle)).toFixed(2));
-        tick.setAttribute('x2', (cx + outerR * Math.cos(angle)).toFixed(2));
-        tick.setAttribute('y2', (cy + outerR * Math.sin(angle)).toFixed(2));
-        tick.setAttribute('stroke', isHour ? (i === 0 ? '#f59e0b' : 'rgba(255,255,255,0.6)') : 'rgba(255,255,255,0.2)');
-        tick.setAttribute('stroke-width', isHour ? '2.5' : '1');
-        markerGroup.appendChild(tick);
-
-      // Hour numbers
-        if (isHour && [0, 15, 30, 45].includes(i)) {
-          const labelR = 70;
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          text.setAttribute('x', (cx + labelR * Math.cos(angle)).toFixed(2));
-          text.setAttribute('y', (cy + labelR * Math.sin(angle)).toFixed(2));
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('dominant-baseline', 'central');
-        text.setAttribute('fill', 'rgba(255,255,255,0.75)');
-        text.setAttribute('font-size', '14');
-        text.setAttribute('font-family', 'Inter, sans-serif');
-        text.setAttribute('font-weight', '700');
-          text.textContent = i === 0 ? '12' : String(i / 5);
-        markerGroup.appendChild(text);
-      }
-    }
-
-    const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-    function makeWorldState() {
-      return {
-        location: 'Local',
-        latitude: 40.7,
-        weather: 'clear',
-        precisionMode: 'standard',
-        simSpeed: 1,
-        activePanel: 0,
-        lastTimestamp: null,
-        deltaMs: 0,
-        simulatedNow: new Date(),
-        clock: {
-          mode: 'live',
-          driftSeconds: 0,
-          powerSource: 'quartz'
-        }
-      };
-    }
-
-    const worldState = makeWorldState();
-    window.ctClockLabState = worldState;
-
-    function getClockReadings(now) {
-      return {
-        h: now.getHours(),
-        m: now.getMinutes(),
-        s: now.getSeconds(),
-        ms: now.getMilliseconds()
-      };
-    }
-
-    function updateWorldState(timestamp) {
-      if (worldState.lastTimestamp == null) {
-        worldState.lastTimestamp = timestamp;
-      }
-
-      const rawDelta = timestamp - worldState.lastTimestamp;
-      worldState.deltaMs = Math.min(rawDelta, 100);
-      worldState.lastTimestamp = timestamp;
-      worldState.simulatedNow = new Date(Date.now());
-    }
-
-    const simulators = [
-      {
-        id: 'analog',
-        update(state) {
-          const now = state.simulatedNow;
-          const { h, m, s, ms } = getClockReadings(now);
-          const secDeg  = (s + ms / 1000) * 6;
-          const minDeg  = (m + s / 60) * 6;
-          const hourDeg = ((h % 12) + m / 60) * 30;
-
-          hourHand.setAttribute('transform', `rotate(${hourDeg}, 100, 100)`);
-          minHand.setAttribute('transform', `rotate(${minDeg}, 100, 100)`);
-          secHand.setAttribute('transform', `rotate(${secDeg}, 100, 100)`);
-
-          hrVal.textContent = String(h % 12 || 12).padStart(2, '0');
-          mnVal.textContent = String(m).padStart(2, '0');
-          scVal.textContent = String(s).padStart(2, '0');
-        }
-      },
-      {
-        id: 'digital',
-        update(state) {
-          const now = state.simulatedNow;
-          const { h, m, s } = getClockReadings(now);
-          const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-          digitalEl.textContent = timeStr;
-          const pTime = document.getElementById('ct-p-time');
-          if (pTime) pTime.textContent = timeStr;
-          dateEl.textContent = `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
-        }
-      },
-      {
-        id: 'obelisk',
-        update(state) {
-          if (!obeliskSun || !obeliskShadow || !oLeftBase) return;
-
-          const now = state.simulatedNow;
-          const dayHours = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-
-          if (dayHours >= 6 && dayHours <= 18) {
-            const progress = (dayHours - 6) / 12;
-            const sunAngle = Math.PI - (progress * Math.PI);
-            const sunX = Math.cos(sunAngle) * 45;
-            const sunY = 18 - Math.sin(sunAngle) * 55;
-            const shadowLen = 35 / Math.max(0.15, Math.sin(sunAngle));
-            const shadowX = -Math.cos(sunAngle) * shadowLen;
-            const shadowY = 18 - Math.sin(sunAngle) * 8;
-            const clampedX = Math.max(-45, Math.min(45, shadowX));
-
-            obeliskSun.setAttribute('cx', sunX.toFixed(2));
-            obeliskSun.setAttribute('cy', sunY.toFixed(2));
-            obeliskSun.setAttribute('opacity', '1');
-            obeliskShadow.setAttribute('points', `-4,18 4,18 ${clampedX.toFixed(2)},${shadowY.toFixed(2)}`);
-            obeliskShadow.setAttribute('opacity', Math.min(1, Math.sin(sunAngle) * 2.5).toFixed(2));
-
-            if (sunAngle > Math.PI / 2) {
-              oLeftBase.setAttribute('fill', '#cbd5e1');
-              oLeftTop.setAttribute('fill', '#f8fafc');
-              oRightBase.setAttribute('fill', '#64748b');
-              oRightTop.setAttribute('fill', '#94a3b8');
-            } else {
-              oLeftBase.setAttribute('fill', '#64748b');
-              oLeftTop.setAttribute('fill', '#94a3b8');
-              oRightBase.setAttribute('fill', '#cbd5e1');
-              oRightTop.setAttribute('fill', '#f8fafc');
-            }
-          } else {
-            obeliskSun.setAttribute('opacity', '0');
-            obeliskShadow.setAttribute('opacity', '0');
-            oLeftBase.setAttribute('fill', '#334155');
-            oLeftTop.setAttribute('fill', '#475569');
-            oRightBase.setAttribute('fill', '#334155');
-            oRightTop.setAttribute('fill', '#475569');
-          }
-        }
-      },
-      {
-        id: 'sundial',
-        update(state) {
-          if (!sundialShadow || !sdLeft || !sdRight) return;
-
-          const now = state.simulatedNow;
-          const dayHours = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-
-          if (dayHours >= 6 && dayHours <= 18) {
-            const progress = (dayHours - 6) / 12;
-            const sunAngle = Math.PI - (progress * Math.PI);
-            const shadowLen = 35 / Math.max(0.2, Math.sin(sunAngle));
-            const shadowX = 50 - Math.cos(sunAngle) * shadowLen;
-            const shadowY = 70 - Math.sin(sunAngle) * 16;
-
-            sundialShadow.setAttribute('points', `47,70 53,70 ${shadowX.toFixed(2)},${shadowY.toFixed(2)}`);
-            sundialShadow.setAttribute('opacity', Math.min(1, Math.sin(sunAngle) * 2).toFixed(2));
-
-            if (sunAngle > Math.PI / 2) {
-              sdLeft.setAttribute('fill', '#cbd5e1');
-              sdRight.setAttribute('fill', '#64748b');
-            } else {
-              sdLeft.setAttribute('fill', '#64748b');
-              sdRight.setAttribute('fill', '#cbd5e1');
-            }
-          } else {
-            sundialShadow.setAttribute('opacity', '0');
-            sdLeft.setAttribute('fill', '#334155');
-            sdRight.setAttribute('fill', '#475569');
-          }
-        }
-      },
-      {
-        id: 'water-clock',
-        update(state) {
-          if (!wcTop || !wcBot || !wcDrip) return;
-
-          const now = state.simulatedNow;
-          const progress = (now.getSeconds() + now.getMilliseconds() / 1000) / 60;
-          const secProgress = now.getMilliseconds() / 1000;
-
-          wcTop.setAttribute('y', (6 + 12 * progress).toFixed(2));
-          wcTop.setAttribute('height', (12 * (1 - progress)).toFixed(2));
-          wcBot.setAttribute('y', (38 - 12 * progress).toFixed(2));
-          wcBot.setAttribute('height', (12 * progress).toFixed(2));
-          wcDrip.setAttribute('cy', (18 + 8 * secProgress).toFixed(2));
-          wcDrip.setAttribute('opacity', progress > 0.995 ? '0' : (secProgress > 0.9 ? ((1 - secProgress) * 8).toFixed(2) : '0.8'));
-        }
-      },
-      {
-        id: 'hourglass',
-        update(state) {
-          if (!hgTop || !hgBot || !hgStream) return;
-
-          const now = state.simulatedNow;
-          const progress = (now.getSeconds() + now.getMilliseconds() / 1000) / 60;
-
-          hgTop.setAttribute('y', (6 + 13 * progress).toFixed(2));
-          hgTop.setAttribute('height', (13 * (1 - progress)).toFixed(2));
-          hgBot.setAttribute('y', (34 - 13 * progress).toFixed(2));
-          hgBot.setAttribute('height', (13 * progress).toFixed(2));
-          hgStream.setAttribute('stroke-dashoffset', String(-(now.getMilliseconds() / 50).toFixed(2)));
-          hgStream.setAttribute('opacity', progress > 0.995 ? '0' : '1');
-        }
-      }
-    ];
-
-    function runClockLabFrame(timestamp) {
-      updateWorldState(timestamp);
-      simulators.forEach((simulator) => simulator.update(worldState));
-      clockRaf(runClockLabFrame);
-    }
-
-    const clockRaf = window.SimKit ? SimKit.raf(SimKit.stage('#clock-lab', document.getElementById('ct-p-time').closest('section'))) : requestAnimationFrame.bind(window); clockRaf(runClockLabFrame);
-  })();
-  </script>
-
-  <!-- ── CAROUSEL SCRIPT ───────────────────────────── -->
-  <script>
-  (function() {
-    const panels = document.querySelectorAll('.ct-clock-panel');
-    const dots = document.querySelectorAll('.ct-dot');
-    const prevBtn = document.getElementById('ct-prev-btn');
-    const nextBtn = document.getElementById('ct-next-btn');
-    let currentIndex = 0;
-
-    function showPanel(index) {
-      panels.forEach(p => p.classList.remove('active'));
-      dots.forEach(d => d.classList.remove('active'));
-      panels[index].classList.add('active');
-      dots[index].classList.add('active');
-      currentIndex = index;
-      if (window.ctClockLabState) {
-        window.ctClockLabState.activePanel = index;
-      }
-    }
-
-    if (prevBtn && nextBtn) {
-      prevBtn.addEventListener('click', () => {
-        let newIndex = currentIndex - 1;
-        if (newIndex < 0) newIndex = panels.length - 1;
-        showPanel(newIndex);
-      });
-      nextBtn.addEventListener('click', () => {
-        let newIndex = currentIndex + 1;
-        if (newIndex >= panels.length) newIndex = 0;
-        showPanel(newIndex);
-      });
-    }
-
-    dots.forEach((dot, index) => {
-      dot.addEventListener('click', () => {
-        showPanel(index);
-      });
-    });
-  })();
-  </script>
-
-  <!-- ── TIMEZONE MAP SCRIPT ────────────────────────── -->
-  <script>
-  (function () {
-    const city = (name, code, lat, lon, timeZone) => ({ name, code, lat, lon, timeZone });
-    const regionData = {
-      americas: {
-        name: 'Americas — Local Times Right Now',
-        cities: [
-          city('Los Angeles', 'LAX', 34.0522, -118.2437, 'America/Los_Angeles'),
-          city('Denver', 'DEN', 39.7392, -104.9903, 'America/Denver'),
-          city('Chicago', 'CHI', 41.8781, -87.6298, 'America/Chicago'),
-          city('New York', 'NYC', 40.7128, -74.0060, 'America/New_York'),
-          city('Toronto', 'YYZ', 43.6532, -79.3832, 'America/Toronto'),
-          city('São Paulo', 'SAO', -23.5505, -46.6333, 'America/Sao_Paulo'),
-          city('Buenos Aires', 'BUE', -34.6037, -58.3816, 'America/Argentina/Buenos_Aires'),
-          city('Anchorage', 'ANC', 61.2181, -149.9003, 'America/Anchorage'),
-          city('Honolulu', 'HNL', 21.3069, -157.8583, 'Pacific/Honolulu')
-        ]
-      },
-      europe: {
-        name: 'Europe & Africa — Local Times Right Now',
-        cities: [
-          city('London', 'LON', 51.5074, -0.1278, 'Europe/London'),
-          city('Paris', 'PAR', 48.8566, 2.3522, 'Europe/Paris'),
-          city('Berlin', 'BER', 52.5200, 13.4050, 'Europe/Berlin'),
-          city('Madrid', 'MAD', 40.4168, -3.7038, 'Europe/Madrid'),
-          city('Rome', 'ROM', 41.9028, 12.4964, 'Europe/Rome'),
-          city('Cairo', 'CAI', 30.0444, 31.2357, 'Africa/Cairo'),
-          city('Lagos', 'LOS', 6.5244, 3.3792, 'Africa/Lagos'),
-          city('Nairobi', 'NBO', -1.2921, 36.8219, 'Africa/Nairobi'),
-          city('Cape Town', 'CPT', -33.9249, 18.4241, 'Africa/Johannesburg')
-        ]
-      },
-      middleeast: {
-        name: 'Middle East — Local Times Right Now',
-        cities: [
-          city('Jerusalem', 'JRS', 31.7683, 35.2137, 'Asia/Jerusalem'),
-          city('Riyadh', 'RUH', 24.7136, 46.6753, 'Asia/Riyadh'),
-          city('Dubai', 'DXB', 25.2048, 55.2708, 'Asia/Dubai'),
-          city('Tehran', 'THR', 35.6892, 51.3890, 'Asia/Tehran'),
-          city('Baghdad', 'BGW', 33.3152, 44.3661, 'Asia/Baghdad'),
-          city('Istanbul', 'IST', 41.0082, 28.9784, 'Europe/Istanbul')
-        ]
-      },
-      asia: {
-        name: 'South & Central Asia — Local Times Right Now',
-        cities: [
-          city('Karachi', 'KHI', 24.8607, 67.0011, 'Asia/Karachi'),
-          city('Mumbai', 'BOM', 19.0760, 72.8777, 'Asia/Kolkata'),
-          city('New Delhi', 'DEL', 28.6139, 77.2090, 'Asia/Kolkata'),
-          city('Kathmandu', 'KTM', 27.7172, 85.3240, 'Asia/Kathmandu'),
-          city('Dhaka', 'DAC', 23.8103, 90.4125, 'Asia/Dhaka'),
-          city('Colombo', 'CMB', 6.9271, 79.8612, 'Asia/Colombo'),
-          city('Tashkent', 'TAS', 41.2995, 69.2401, 'Asia/Tashkent')
-        ]
-      },
-      east_asia: {
-        name: 'East & Southeast Asia — Local Times Right Now',
-        cities: [
-          city('Bangkok', 'BKK', 13.7563, 100.5018, 'Asia/Bangkok'),
-          city('Singapore', 'SIN', 1.3521, 103.8198, 'Asia/Singapore'),
-          city('Beijing', 'PEK', 39.9042, 116.4074, 'Asia/Shanghai'),
-          city('Hong Kong', 'HKG', 22.3193, 114.1694, 'Asia/Hong_Kong'),
-          city('Seoul', 'SEL', 37.5665, 126.9780, 'Asia/Seoul'),
-          city('Tokyo', 'TYO', 35.6762, 139.6503, 'Asia/Tokyo'),
-          city('Manila', 'MNL', 14.5995, 120.9842, 'Asia/Manila'),
-          city('Jakarta', 'JKT', -6.2088, 106.8456, 'Asia/Jakarta')
-        ]
-      },
-      australia: {
-        name: 'Australia & Pacific — Local Times Right Now',
-        cities: [
-          city('Perth', 'PER', -31.9523, 115.8613, 'Australia/Perth'),
-          city('Darwin', 'DRW', -12.4634, 130.8456, 'Australia/Darwin'),
-          city('Adelaide', 'ADL', -34.9285, 138.6007, 'Australia/Adelaide'),
-          city('Sydney', 'SYD', -33.8688, 151.2093, 'Australia/Sydney'),
-          city('Auckland', 'AKL', -36.8509, 174.7645, 'Pacific/Auckland'),
-          city('Suva, Fiji', 'SUV', -18.1248, 178.4501, 'Pacific/Fiji'),
-          city('Honolulu', 'HNL', 21.3069, -157.8583, 'Pacific/Honolulu')
-        ]
-      }
-    };
-
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const markerLayer = document.getElementById('ct-city-markers');
-    const highlight = document.getElementById('ct-tz-highlight');
-    let activeRegion = 'americas';
-
-    function project(latitude, longitude) {
-      return {
-        x: ((longitude + 180) / 360) * 800,
-        y: ((90 - latitude) / 180) * 400
-      };
-    }
-
-    function timeFor(timeZone) {
-      return new Intl.DateTimeFormat([], {
-        timeZone,
-        hour: '2-digit',
-        minute: '2-digit',
-        hourCycle: 'h23'
-      }).format(new Date());
-    }
-
-    function offsetFor(timeZone) {
-      const part = new Intl.DateTimeFormat('en-US', {
-        timeZone,
-        timeZoneName: 'shortOffset'
-      }).formatToParts(new Date()).find(item => item.type === 'timeZoneName');
-      return (part ? part.value : 'UTC').replace('GMT', 'UTC');
-    }
-
-    function rowId(name) {
-      return `ct-city-${name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')}`;
-    }
-
-    function setActiveCity(name, active) {
-      const row = document.getElementById(rowId(name));
-      if (row) row.classList.toggle('is-map-active', active);
-    }
-
-    function renderMarkers(cities) {
-      markerLayer.replaceChildren();
-      const labelOffsets = [[8, -7], [8, 12], [-8, -7], [-8, 12], [0, -12], [0, 15]];
-
-      cities.forEach((item, index) => {
-        const point = project(item.lat, item.lon);
-        const [dx, dy] = labelOffsets[index % labelOffsets.length];
-        const group = document.createElementNS(svgNS, 'g');
-        group.classList.add('ct-city-marker');
-        group.setAttribute('transform', `translate(${point.x.toFixed(2)} ${point.y.toFixed(2)})`);
-        group.setAttribute('tabindex', '0');
-        group.setAttribute('role', 'button');
-        group.setAttribute('aria-label', `${item.name}, ${item.lat.toFixed(2)} latitude, ${item.lon.toFixed(2)} longitude`);
-
-        const title = document.createElementNS(svgNS, 'title');
-        title.textContent = `${item.name} · ${timeFor(item.timeZone)} · ${offsetFor(item.timeZone)}`;
-        const halo = document.createElementNS(svgNS, 'circle');
-        halo.setAttribute('class', 'marker-halo'); halo.setAttribute('r', '6');
-        const core = document.createElementNS(svgNS, 'circle');
-        core.setAttribute('class', 'marker-core'); core.setAttribute('r', '2.7');
-        const label = document.createElementNS(svgNS, 'text');
-        label.setAttribute('class', 'marker-label');
-        label.setAttribute('x', dx); label.setAttribute('y', dy);
-        label.setAttribute('text-anchor', dx < 0 ? 'end' : dx === 0 ? 'middle' : 'start');
-        label.textContent = item.code;
-        group.append(title, halo, core, label);
-        group.addEventListener('mouseenter', () => setActiveCity(item.name, true));
-        group.addEventListener('mouseleave', () => setActiveCity(item.name, false));
-        group.addEventListener('focus', () => setActiveCity(item.name, true));
-        group.addEventListener('blur', () => setActiveCity(item.name, false));
-        markerLayer.appendChild(group);
-      });
-    }
-
-    function renderHighlight(cities) {
-      let longitudes = cities.map(item => item.lon);
-      if (activeRegion === 'australia') longitudes = longitudes.filter(lon => lon > 0);
-      const minX = project(0, Math.min(...longitudes)).x;
-      const maxX = project(0, Math.max(...longitudes)).x;
-      highlight.setAttribute('x', Math.max(0, minX - 14).toFixed(2));
-      highlight.setAttribute('width', Math.min(800 - minX + 14, maxX - minX + 28).toFixed(2));
-      highlight.setAttribute('opacity', '1');
-
-      const mapWrap = document.querySelector('.ct-tz-map-wrap');
-      const mapSvg = document.getElementById('ct-world-svg');
-      if (mapWrap && mapSvg && mapWrap.scrollWidth > mapWrap.clientWidth) {
-        const scale = mapSvg.getBoundingClientRect().width / 800;
-        const center = ((minX + maxX) / 2) * scale;
-        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        mapWrap.scrollTo({
-          left: Math.max(0, center - mapWrap.clientWidth / 2),
-          behavior: reducedMotion ? 'auto' : 'smooth'
-        });
-      }
-    }
-
-    function renderRegion(key) {
-      const data = regionData[key];
-      if (!data) return;
-      activeRegion = key;
-      document.getElementById('ct-tz-region-name').textContent = data.name;
-      const container = document.getElementById('ct-tz-cities');
-      container.replaceChildren();
-
-      data.cities.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'ct-city-row';
-        row.id = rowId(item.name);
-        row.innerHTML = `<span class="city-name">${item.name}</span><span class="city-clock"><span class="city-offset">${offsetFor(item.timeZone)}</span><span class="city-time" data-zone="${item.timeZone}">${timeFor(item.timeZone)}</span></span>`;
-        container.appendChild(row);
-      });
-      renderMarkers(data.cities);
-      renderHighlight(data.cities);
-    }
-
-    function updateCityTimes() {
-      document.querySelectorAll('.city-time[data-zone]').forEach(el => {
-        el.textContent = timeFor(el.dataset.zone);
-      });
-      const data = regionData[activeRegion];
-      if (data) {
-        [...markerLayer.querySelectorAll('title')].forEach((title, index) => {
-          const item = data.cities[index];
-          title.textContent = `${item.name} · ${timeFor(item.timeZone)} · ${offsetFor(item.timeZone)}`;
-        });
-      }
-    }
-
-    document.querySelectorAll('.ct-tz-btn').forEach(btn => {
-      btn.addEventListener('click', function () {
-        document.querySelectorAll('.ct-tz-btn').forEach(button => button.classList.remove('active'));
-        this.classList.add('active');
-        renderRegion(this.dataset.region);
-      });
-    });
-
-    renderRegion('americas');
-    setInterval(updateCityTimes, 30000);
-  })();
-  </script>
-
-  <!-- ── TIME DILATION SCRIPT ───────────────────────── -->
-  <script>
-  (function () {
-    const speedSlider    = document.getElementById('ct-speed-slider');
-    const shipTimeSlider = document.getElementById('ct-ship-time-slider');
-    const speedVal       = document.getElementById('ct-speed-val');
-    const shipTimeVal    = document.getElementById('ct-ship-time-val');
-    const resSpeed  = document.getElementById('ct-res-speed');
-    const resGamma  = document.getElementById('ct-res-gamma');
-    const resShip   = document.getElementById('ct-res-ship');
-    const resEarth  = document.getElementById('ct-res-earth');
-    const warning   = document.getElementById('ct-dil-warning');
-
-    function update() {
-      const pct      = parseInt(speedSlider.value, 10);
-      const shipYrs  = parseInt(shipTimeSlider.value, 10);
-      const v_over_c = pct / 100;
-
-      speedVal.textContent    = `${pct}% of light speed`;
-      shipTimeVal.textContent = `${shipYrs} year${shipYrs !== 1 ? 's' : ''}`;
-      resSpeed.textContent    = `${pct}% c`;
-      resShip.textContent     = `${shipYrs}.00 year${shipYrs !== 1 ? 's' : ''}`;
-
-      const underRoot = 1 - v_over_c * v_over_c;
-      if (underRoot <= 0.0001) {
-        resGamma.textContent = '∞';
-        resEarth.textContent = '∞ years';
-        warning.style.display = 'block';
-
-        const pSpeed = document.getElementById('ct-p-speed');
-        const pGamma = document.getElementById('ct-p-gamma');
-        const pEarth = document.getElementById('ct-p-earth');
-        if (pSpeed) pSpeed.textContent = `${pct}% c`;
-        if (pGamma) pGamma.textContent = '∞';
-        if (pEarth) pEarth.textContent = '∞ years';
-        return;
-      }
-
-      const gamma     = 1 / Math.sqrt(underRoot);
-      const earthTime = gamma * shipYrs;
-
-      warning.style.display = pct >= 95 ? 'block' : 'none';
-      resGamma.textContent = gamma.toFixed(4);
-      resEarth.textContent = earthTime >= 1000
-        ? `${(earthTime / 1000).toFixed(2)}k years`
-        : `${earthTime.toFixed(2)} year${earthTime !== 1 ? 's' : ''}`;
-
-      const pSpeed = document.getElementById('ct-p-speed');
-      const pGamma = document.getElementById('ct-p-gamma');
-      const pEarth = document.getElementById('ct-p-earth');
-      if (pSpeed) pSpeed.textContent = `${pct}% c`;
-      if (pGamma) pGamma.textContent = gamma.toFixed(3);
-      if (pEarth) pEarth.textContent = resEarth.textContent;
-    }
-
-    speedSlider.addEventListener('input', update);
-    shipTimeSlider.addEventListener('input', update);
-
-    document.querySelectorAll('.ct-panel-preset[data-speed]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        speedSlider.value = btn.dataset.speed;
-        shipTimeSlider.value = btn.dataset.years;
-        update();
-      });
-    });
-
-    update();
-  })();
-  </script>
-
-  <!-- ── GRACE HOPPER WIRE LAB SCRIPT ───────────────── -->
-  <script>
-  (function () {
-    const input = document.getElementById('ct-wire-input');
-    const impEl = document.getElementById('ct-wire-imperial');
-    const metEl = document.getElementById('ct-wire-metric');
-    const compEl = document.getElementById('ct-wire-comparison');
-    const barEl = document.getElementById('ct-wire-bar');
-    const buttons = document.querySelectorAll('.ct-wire-btn');
-    if (!input || !impEl || !metEl || !compEl) return;
-
-    const C_METERS_PER_NS = 0.299792458;
-    const FT_PER_METER = 3.28084;
-    const IN_PER_METER = 39.3701;
-
-    function getComparison(ns, meters, feet) {
-      if (ns <= 0.4) return 'Cycle of a ~3 GHz computer CPU: signal only travels ~' + (meters * 100).toFixed(1) + ' cm — chip designers must keep internal paths microscopic!';
-      if (ns <= 1.5) return 'Grace Hopper\'s nanosecond wire (~11.8 in / 30 cm) — fits comfortably in your hand, like a standard 12-inch school ruler!';
-      if (ns <= 15) return '~' + feet.toFixed(1) + ' feet: stretches across an average classroom or bedroom (~' + meters.toFixed(1) + ' m).';
-      if (ns <= 200) return '~' + feet.toFixed(0) + ' feet: about the wingspan of a Boeing 777 airliner.';
-      if (ns <= 1500) return 'Grace Hopper\'s microsecond coil (984 ft / 300 m) — stretches the length of nearly three football fields!';
-      if (ns <= 1e5) return '~' + (meters / 1000).toFixed(1) + ' km (~' + (feet / 5280).toFixed(1) + ' miles): spans an entire metropolitan city!';
-      if (ns <= 1.5e6) return '~' + (meters / 1000).toFixed(0) + ' km (~' + (feet / 5280).toFixed(0) + ' miles): about the distance between Washington, D.C. and Philadelphia!';
-      return '~' + (meters / 1000).toLocaleString(undefined, {maximumFractionDigits:0}) + ' km: an immense distance across continents or into orbit!';
-    }
-
-    function update(ns) {
-      if (isNaN(ns) || ns <= 0) return;
-      const meters = ns * C_METERS_PER_NS;
-      const feet = meters * FT_PER_METER;
-      const inches = meters * IN_PER_METER;
-
-      let impStr = '';
-      if (feet < 3) {
-        impStr = inches.toFixed(2) + ' inches (' + feet.toFixed(2) + ' ft)';
-      } else if (feet < 5280) {
-        impStr = feet.toFixed(1) + ' feet (' + (feet / 3).toFixed(1) + ' yards)';
-      } else {
-        const miles = feet / 5280;
-        impStr = miles.toLocaleString(undefined, {maximumFractionDigits: 2}) + ' miles (' + feet.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' ft)';
-      }
-
-      let metStr = '';
-      if (meters < 1) {
-        metStr = (meters * 100).toFixed(2) + ' cm (' + (meters * 1000).toFixed(1) + ' mm)';
-      } else if (meters < 1000) {
-        metStr = meters.toFixed(2) + ' meters';
-      } else {
-        const km = meters / 1000;
-        metStr = km.toLocaleString(undefined, {maximumFractionDigits: 2}) + ' km (' + meters.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' m)';
-      }
-
-      impEl.textContent = impStr;
-      metEl.textContent = metStr;
-      compEl.textContent = getComparison(ns, meters, feet);
-
-      const logVal = Math.log10(Math.max(0.1, ns));
-      const pct = Math.min(100, Math.max(5, ((logVal - (-1)) / 7) * 100));
-      if (barEl) barEl.style.width = pct + '%';
-    }
-
-    input.addEventListener('input', function () {
-      const val = parseFloat(input.value);
-      buttons.forEach(btn => {
-        btn.classList.toggle('active', parseFloat(btn.dataset.ns) === val);
-      });
-      update(val);
-    });
-
-    buttons.forEach(btn => {
-      btn.addEventListener('click', function () {
-        buttons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        input.value = btn.dataset.ns;
-        update(parseFloat(btn.dataset.ns));
-      });
-    });
-
-    update(1);
-  })();
-  </script>
-
-  <!-- ── PRACTICE PROBLEMS SCRIPT ──────────────────── -->
-  <script>
-  (function () {
-    const total = 7;
-    const solved = new Set();
-
-    function updateScore() {
-      const el = document.getElementById('ct-score');
-      if (!el) return;
-      el.textContent = `${solved.size} / ${total} correct`;
-      if (solved.size === total) el.style.color = '#22c55e';
-    }
-
-    window.ctCheck = function (num, correct, tolerance) {
-      const input = document.getElementById('ct-ans-' + num);
-      const fb    = document.getElementById('ct-fb-' + num);
-      const hint  = document.getElementById('ct-hint-' + num);
-      const prob  = document.getElementById('ct-prob-' + num);
-      const val   = parseFloat(input.value);
-      const tol   = tolerance !== undefined ? tolerance : 0;
-
-      fb.className = 'ct-feedback';
-
-      if (isNaN(val)) {
-        fb.textContent = 'Enter a number.';
-        fb.classList.add('wrong');
-        return;
-      }
-
-      if (Math.abs(val - correct) <= Math.max(tol, 0.001)) {
-        fb.textContent = 'Correct!';
-        fb.classList.add('correct');
-        hint.classList.remove('visible');
-        input.style.borderColor = '#22c55e';
-        input.disabled = true;
-        prob.classList.add('solved');
-        if (!solved.has(num)) { solved.add(num); updateScore(); }
-      } else {
-        fb.textContent = 'Try again';
-        fb.classList.add('wrong');
-        hint.classList.add('visible');
-        input.style.borderColor = '#ef4444';
-        prob.classList.remove('ct-shake');
-        void prob.offsetWidth;
-        prob.classList.add('ct-shake');
-      }
-    };
-
-    document.querySelectorAll('.ct-ans-input').forEach(input => {
-      input.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-          const btn = input.closest('.ct-problem').querySelector('.ct-check-btn');
-          if (btn) btn.click();
-        }
-      });
-    });
-
-    updateScore();
-  })();
-  </script>
-
+  <script src="../../../assets/js/lessons/clocks-time-math.js"></script>
+  <script src="../../../assets/js/lessons/clocks-and-time.js"></script>
+  <script src="../../../assets/js/lessons/clocks-deep-time.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
   <script src="../../../assets/js/lesson-content.js"></script>
   <script src="../../../assets/js/math-pathway-nav.js"></script>
-<script src="../../../assets/js/lesson-print-button.js"></script>
-<script src="../../../assets/js/lessons/clocks-deep-time.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
   <script src="../../../assets/js/photo-lightbox.js"></script>
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
 </body>
 </html>

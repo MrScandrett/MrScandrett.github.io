@@ -5,587 +5,450 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Japanese Language Foundations · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Master foundational Japanese: Hiragana, Katakana, Kanji radicals, moraic rhythm, SOV sentence structure, essential particles, and survival conversation." />
+  <meta name="description" content="Learn step-by-step Japanese character stroke order (Hiragana, Katakana, Kanji) and practice brushwork in an interactive shodō calligraphy studio, plus SOV grammar and reading." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
-  <style>
-    .ll-viewport {
-      --ll-accent: #b91c1c;
-      --ll-tab-active: #dc2626;
-      --ll-tab-active-bg: rgba(220, 38, 38, 0.10);
-    }
-    .ll-sim {
-      background:
-        radial-gradient(circle at 12% 8%, rgba(254, 226, 226, 0.35) 0, transparent 36rem),
-        var(--surface-0);
-    }
-    .lf-page { max-width: 1080px; margin: 0 auto; padding: 0 1rem 3.5rem; }
-    .lf-hero { padding: 0.85rem 0 1.25rem; }
-    .lf-hero h1 { font-size: clamp(1.65rem, 3.8vw, 2.45rem); margin: 0.25rem 0 0.5rem; }
-    .lf-meta {
-      display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem;
-      margin: 0.55rem 0 0; font-size: 0.8rem; color: var(--text-muted, #64748b);
-    }
-    .lf-meta .dot {
-      width: 3px; height: 3px; border-radius: 50%;
-      background: currentColor; opacity: 0.45;
-      display: inline-block; align-self: center;
-    }
-    .lf-lede { margin: 0.75rem 0 0; max-width: 70ch; color: var(--text-secondary, #3f4f65); font-size: 0.95rem; line-height: 1.65; }
-
-    .lf-card {
-      background: #fff;
-      border: 1px solid #dde3ea;
-      border-left: 4px solid var(--lf-accent, #b91c1c);
-      border-radius: 16px;
-      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.06);
-      padding: 1.25rem 1.4rem;
-      margin-bottom: 1.1rem;
-      --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349;
-    }
-    :where(html[data-lighting="night"]) .lf-card { color: #1d1d1f; }
-    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .lf-card { color: #1d1d1f; } }
-    .lf-card h2 { margin: 0 0 0.45rem; font-size: 1.22rem; }
-    .lf-card p { margin: 0 0 0.65rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .lf-card p:last-child { margin-bottom: 0; }
-
-    .lf-label {
-      display: inline-block; margin-bottom: 0.35rem;
-      font-weight: 900; color: var(--lf-accent, #b91c1c);
-      letter-spacing: 0.07em; text-transform: uppercase; font-size: 0.72rem;
-    }
-    .lf-card-head {
-      display: flex; align-items: flex-start; justify-content: space-between;
-      gap: 0.75rem; margin-bottom: 0.5rem;
-    }
-
-    .lf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .lf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; }
-    .lf-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
-
-    /* Interactive Script Explorer */
-    .script-tabs { display: flex; gap: 0.4rem; margin-bottom: 0.85rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.4rem; }
-    .script-tab {
-      background: none; border: 1.5px solid transparent; border-radius: 8px;
-      padding: 0.4rem 0.85rem; font-weight: 700; font-size: 0.82rem; color: #64748b; cursor: pointer;
-      transition: all 120ms;
-    }
-    .script-tab.active { background: #fee2e2; border-color: #f87171; color: #991b1b; }
-
-    .char-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
-      gap: 0.5rem; margin-top: 0.5rem;
-    }
-    .char-tile {
-      background: #fafafa; border: 1.5px solid #e2e8f0; border-radius: 12px;
-      padding: 0.6rem 0.3rem; text-align: center; cursor: pointer;
-      transition: transform 90ms, border-color 120ms, background 120ms;
-    }
-    .char-tile:hover { transform: translateY(-2px); border-color: #dc2626; background: #fff5f5; }
-    .char-tile.selected { border-color: #b91c1c; background: #fee2e2; box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.2); }
-    .char-glyph { font-size: 1.6rem; font-weight: 800; line-height: 1.1; color: #1e293b; display: block; }
-    .char-romaji { font-size: 0.75rem; font-weight: 700; color: #dc2626; display: block; margin-top: 0.2rem; }
-    .char-sub { font-size: 0.65rem; color: #64748b; }
-
-    .char-inspect-box {
-      margin-top: 0.85rem; padding: 0.85rem 1rem; border-radius: 12px;
-      background: #f8fafc; border: 1px solid #cbd5e1;
-      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-    }
-    .char-inspect-left { display: flex; align-items: center; gap: 1rem; }
-    .char-inspect-big { font-size: 2.6rem; font-weight: 900; color: #991b1b; line-height: 1; }
-    .char-inspect-info h4 { margin: 0 0 0.2rem; font-size: 1rem; color: #0f172a; }
-    .char-inspect-info p { margin: 0; font-size: 0.8rem; color: #475569; }
-
-    .speak-btn {
-      border: 1.5px solid #dc2626; border-radius: 9px; background: #fff;
-      color: #b91c1c; font: inherit; font-weight: 800; font-size: 0.82rem;
-      padding: 0.5rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
-      transition: all 120ms;
-    }
-    .speak-btn:hover { background: #dc2626; color: #fff; }
-
-    /* Sentence Builder */
-    .sentence-dock {
-      min-height: 58px; border: 2px dashed #fca5a5; border-radius: 12px;
-      background: #fff8f8; padding: 0.6rem 0.8rem; display: flex; flex-wrap: wrap;
-      gap: 0.5rem; align-items: center; margin: 0.6rem 0;
-    }
-    .word-tile {
-      background: #fff; border: 1.5px solid #cbd5e1; border-radius: 10px;
-      padding: 0.45rem 0.75rem; font-weight: 700; font-size: 0.88rem; color: #1e293b;
-      cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      transition: transform 90ms, border-color 120ms;
-    }
-    .word-tile:hover { transform: translateY(-1px); border-color: #dc2626; }
-    .word-tile.particle { background: #fee2e2; border-color: #f87171; color: #991b1b; }
-    .word-tile.placed { cursor: default; }
-
-    .word-bank { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.6rem 0; }
-    .feedback-msg { font-size: 0.86rem; font-weight: 700; min-height: 1.6em; padding: 0.2rem 0; }
-    .feedback-msg.success { color: #059669; }
-    .feedback-msg.error { color: #dc2626; }
-    .feedback-msg.info { color: #475569; }
-
-    /* Flashcard Quiz */
-    .quiz-card {
-      border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem;
-      background: #f8fafc; text-align: center;
-    }
-    .quiz-prompt { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 0.4rem; }
-    .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.7rem; }
-    .quiz-opt {
-      border: 1.5px solid #cbd5e1; border-radius: 9px; background: #fff;
-      padding: 0.5rem; font-weight: 700; font-size: 0.85rem; color: #334155; cursor: pointer;
-      transition: all 120ms;
-    }
-    .quiz-opt:hover { border-color: #dc2626; background: #fff5f5; }
-    .quiz-opt.correct { background: #d1fae5; border-color: #10b981; color: #065f46; }
-    .quiz-opt.incorrect { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
-
-    /* Lightbox Figure */
-    .lf-card-figure {
-      margin: 1.1rem 0 0.5rem; border-radius: 14px; overflow: hidden;
-      border: 1px solid #e2e8f0; background: #f8fafc;
-    }
-    .lf-card-figure img { width: 100%; max-height: 380px; object-fit: cover; display: block; cursor: zoom-in; }
-    .lf-card-figure figcaption {
-      padding: 0.75rem 1rem; font-size: 0.82rem; color: #475569; line-height: 1.55;
-      border-top: 1px solid #e2e8f0; background: #fff;
-    }
-    .lf-card-figure figcaption strong { display: block; font-size: 0.88rem; color: #1e293b; margin-bottom: 0.15rem; }
-
-    @media (max-width: 768px) {
-      .lf-grid-2, .lf-grid-3, .lf-grid-4 { grid-template-columns: 1fr; }
-      .char-inspect-box { flex-direction: column; align-items: flex-start; }
-      .quiz-options { grid-template-columns: 1fr; }
-    }
-    .target-prompt-box {
-      background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px;
-      padding: 0.65rem 0.9rem; font-size: 0.83rem; color: #0369a1; margin-bottom: 0.75rem;
-    }
-    @media screen {
-      html[data-lighting="night"] .target-prompt-box {
-        background: #132536; border-color: #2b5478; color: #bae6fd;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/japanese-foundations.css" />
   <link rel="stylesheet" href="../../../assets/css/masterworks.css" />
 </head>
-<body>
+<body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <div class="ll-viewport">
-    <header class="site-header">
-      <div class="nav-wrap">
-        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
-        <nav class="site-nav" aria-label="Primary">
-          <ul>
-            <li><a href="../../../index.html">Home</a></li>
-            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
-            <li><a href="../../../paths.html">Paths</a></li>
-            <li><a href="../../../showcase.html">Showcase</a></li>
-            <li><a href="../../../applications.html">Apps</a></li>
-            <li><a href="../../../library.html">Library</a></li>
-            <li><a href="../../../about.html">About</a></li>
-          </ul>
-        </nav>
-      </div>
-    </header>
-
-    <div class="ll-stage">
-      <main class="ll-sim" id="main-content">
-        <div class="lf-page">
-
-          <!-- ── Hero ───────────────────────────────── -->
-          <section class="lf-hero">
-            <p class="eyebrow">Language Foundations · World Languages · K–12</p>
-            <h1>Japanese Language Foundations</h1>
-            <div class="lf-meta">
-              <span>Japonic Family</span><span class="dot"></span>
-              <span>Kana &amp; Kanji</span><span class="dot"></span>
-              <span>SOV Word Order</span><span class="dot"></span>
-              <span>Topic Particles (は/が)</span><span class="dot"></span>
-              <span>Moraic Rhythm</span>
-            </div>
-            <p class="lf-lede">
-              Japanese is an agglutinative language with an exceptionally logical structure: verbs always anchor the end of the clause, grammatical relations are tagged with precise particles, and sounds are metered not in syllables but in uniform time units called <em>mora</em>. Explore the tripartite writing system, phonology, and sentence architecture.
-            </p>
-          </section>
-
-          <!-- ── Lightbox Artwork ──────────────────── -->
-          <figure class="lf-card-figure" data-zoomable data-lightbox-group="japanese-art">
-            <img src="../../../assets/images/lessons/hokusai/great-wave.webp" alt="The Great Wave off Kanagawa by Katsushika Hokusai, showing traditional Japanese calligraphy in the upper-left cartouche" loading="lazy" />
-            <figcaption>
-              <strong>Writing and Culture in Visual Harmony</strong>
-              Katsushika Hokusai's iconic woodblock print <em>The Great Wave off Kanagawa</em> (c. 1831). The top-left cartouche demonstrates Japanese written symbols: the series title in Kanji (冨嶽三十六景 - Thirty-six Views of Mount Fuji) paired with the signature <em>北斎改為一筆</em> (From the brush of Hokusai, changing his name to Iitsu). Notice how logographic Kanji convey compact meaning while phonetic kana establish grammatical flow. Image: Public domain.
-            </figcaption>
-          </figure>
-
-          <!-- ── Core Linguistic Architecture ───────── -->
-          <section class="lf-card" style="--lf-accent:#dc2626;">
-            <span class="lf-label">Architecture</span>
-            <h2>How Japanese Works: The Four Pillars</h2>
-            <p>Before memorizing vocabulary, understand the engine underneath the language:</p>
-            <div class="lf-grid-4">
-              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
-                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">1. SOV Order</strong>
-                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Verbs always finish the sentence: <em>Subject + Object + Verb</em>. Information flows from broad context to final action.</p>
-              </div>
-              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
-                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">2. Particles (助詞)</strong>
-                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Postpositions like <strong>は (wa)</strong>, <strong>を (o)</strong>, and <strong>に (ni)</strong> tag the syntactic role of whatever word precedes them.</p>
-              </div>
-              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
-                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">3. Three Scripts</strong>
-                <p style="font-size:0.8rem; margin:0; line-height:1.5;"><strong>Hiragana</strong> for grammar &amp; native words; <strong>Katakana</strong> for loanwords; <strong>Kanji</strong> for conceptual roots.</p>
-              </div>
-              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
-                <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">4. Mora Timing</strong>
-                <p style="font-size:0.8rem; margin:0; line-height:1.5;">Every beat (mora) receives equal duration: <em>to-ky-o-u</em> is 4 beats, not 2 english syllables. Pure, predictable cadence.</p>
-              </div>
-            </div>
-          </section>
-
-          <!-- ── Interactive Writing & Sound Lab ───── -->
-          <section class="lf-card" style="--lf-accent:#b91c1c;">
-            <div class="lf-card-head">
-              <div>
-                <span class="lf-label">Interactive Lab</span>
-                <h2>Script Explorer &amp; Sound Lab</h2>
-                <p>Tap any character to hear native audio and inspect its phonetic identity and historical role.</p>
-              </div>
-            </div>
-
-            <div class="script-tabs" role="tablist">
-              <button class="script-tab active" id="tabHira" type="button" role="tab" aria-selected="true">Hiragana (平仮名)</button>
-              <button class="script-tab" id="tabKata" type="button" role="tab" aria-selected="false">Katakana (片仮名)</button>
-              <button class="script-tab" id="tabKanji" type="button" role="tab" aria-selected="false">Foundational Kanji (漢字)</button>
-            </div>
-
-            <div class="char-grid" id="charGrid" aria-label="Character Grid"></div>
-
-            <div class="char-inspect-box" id="inspectBox" aria-live="polite">
-              <div class="char-inspect-left">
-                <span class="char-inspect-big" id="inspectGlyph">あ</span>
-                <div class="char-inspect-info">
-                  <h4 id="inspectTitle">Hiragana "a"</h4>
-                  <p id="inspectDesc">Open vowel /a/, pronounced like 'ah' in father. The very first mora of the Japanese syllabary.</p>
-                </div>
-              </div>
-              <button class="speak-btn" id="inspectSpeakBtn" type="button">
-                <span>🔊</span> Listen (Web Speech)
-              </button>
-            </div>
-          </section>
-
-          <!-- ── Interactive Sentence Engine ───────── -->
-          <section class="lf-card" style="--lf-accent:#0284c7;">
-            <span class="lf-label">Syntax Builder</span>
-            <h2>Japanese Sentence Engine: SOV &amp; Particles</h2>
-            <p>
-              Assemble Japanese sentences in correct order. In Japanese, particles act like magnetic tags telling the brain whether a noun is the topic, the direct object, or the destination.
-            </p>
-
-            <div class="target-prompt-box">
-              <strong>Target Sentence:</strong> <span id="targetPrompt">"I read a book." (私 は 本 を 読みます)</span>
-            </div>
-
-            <div class="sentence-dock" id="sentenceDock">
-              <span style="color:#94a3b8; font-size:0.8rem; font-style:italic;" id="dockPlaceholder">Tap tiles below in SOV order →</span>
-            </div>
-
-            <div class="word-bank" id="wordBank"></div>
-            <div class="feedback-msg info" id="sentenceFeedback">Select tiles to build the sentence.</div>
-
-            <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
-              <button class="speak-btn" id="clearSentenceBtn" style="border-color:#94a3b8; color:#475569;" type="button">Reset</button>
-              <button class="speak-btn" id="speakSentenceBtn" style="display:none;" type="button">🔊 Speak Sentence</button>
-            </div>
-          </section>
-
-          <!-- ── Survival Vocabulary & Culture ─────── -->
-          <section class="lf-card" style="--lf-accent:#059669;">
-            <span class="lf-label">Applied Practice</span>
-            <h2>Foundational Greetings &amp; Politeness Quiz</h2>
-            <p>Japanese social interaction balances hierarchy, gratitude, and respect (敬語 keigo). Test your recognition of core survival phrases:</p>
-
-            <div class="lf-grid-2">
-              <div class="quiz-card">
-                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 1 · Greeting</span>
-                <div class="quiz-prompt" id="q1Prompt">こんにちは</div>
-                <p style="font-size:0.8rem; color:#64748b; margin:0;" id="q1Romaji">(Konnichiwa)</p>
-                <div class="quiz-options" id="q1Opts">
-                  <button class="quiz-opt" data-correct="true">Hello / Good Afternoon</button>
-                  <button class="quiz-opt">Goodbye</button>
-                  <button class="quiz-opt">Thank you</button>
-                  <button class="quiz-opt">Excuse me</button>
-                </div>
-                <p class="feedback-msg" id="q1Feedback" style="margin-top:0.5rem;"></p>
-              </div>
-
-              <div class="quiz-card">
-                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:0.06em;">Challenge 2 · Gratitude</span>
-                <div class="quiz-prompt" id="q2Prompt">ありがとう</div>
-                <p style="font-size:0.8rem; color:#64748b; margin:0;" id="q2Romaji">(Arigatou)</p>
-                <div class="quiz-options" id="q2Opts">
-                  <button class="quiz-opt">Good morning</button>
-                  <button class="quiz-opt" data-correct="true">Thank you</button>
-                  <button class="quiz-opt">Please</button>
-                  <button class="quiz-opt">Yes</button>
-                </div>
-                <p class="feedback-msg" id="q2Feedback" style="margin-top:0.5rem;"></p>
-              </div>
-            </div>
-          </section>
-
-          <!-- ── Read the Masters: graded reading & comprehension ── -->
-          <section id="masterworks" class="lf-card mw-root" data-masterworks="ja" style="--lf-accent:#be185d;">
-            <noscript><p>Turn on JavaScript to read the graded Japanese masterworks.</p></noscript>
-          </section>
-
-          <!-- ── Future Learning Roadmap ───────────── -->
-          <section class="lf-card" style="--lf-accent:#7c3aed;">
-            <span class="lf-label">Progression Pathway</span>
-            <h2>Roadmap for Future Japanese Lessons</h2>
-            <div class="lf-grid-3" style="margin-top:0.75rem;">
-              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
-                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#c084fc; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 1</span>
-                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Kana Mastery &amp; Phonetics</strong>
-                <p style="font-size:0.8rem; margin:0; color:#475569;">Learn complete 46 Hiragana and 46 Katakana charts, dakuten voicing marks, geminate stops (っ), and pitch accent contours.</p>
-              </div>
-              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
-                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#9333ea; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 2</span>
-                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Verbs, Te-Form &amp; Conjugations</strong>
-                <p style="font-size:0.8rem; margin:0; color:#475569;">The regular geometry of Godan and Ichidan verbs, past tense, negative forms, and connecting actions using the ubiquitous て-form.</p>
-              </div>
-              <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
-                <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#6b21a8; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 3</span>
-                <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Authentic Reading &amp; Kanji Roots</strong>
-                <p style="font-size:0.8rem; margin:0; color:#475569;">Building the Joyo Kanji foundation radical by radical, parsing authentic sentences, compound words (Jukugo), and conversational fluency.</p>
-              </div>
-            </div>
-          </section>
-
-        </div>
-      </main>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
     </div>
-  </div>
+  </header>
 
-  <script>
-    // ── Data Sets ──────────────────────────────────────────
-    const DATA_HIRA = [
-      { glyph: 'あ', romaji: 'a', desc: 'Hiragana "a" — open vowel like father.' },
-      { glyph: 'い', romaji: 'i', desc: 'Hiragana "i" — high front vowel like feet.' },
-      { glyph: 'う', romaji: 'u', desc: 'Hiragana "u" — unrounded vowel like flu.' },
-      { glyph: 'え', romaji: 'e', desc: 'Hiragana "e" — mid vowel like pet.' },
-      { glyph: 'お', romaji: 'o', desc: 'Hiragana "o" — round vowel like open.' },
-      { glyph: 'か', romaji: 'ka', desc: 'Hiragana "ka" — k + a consonant combination.' },
-      { glyph: 'さ', romaji: 'sa', desc: 'Hiragana "sa" — s + a consonant combination.' },
-      { glyph: 'た', romaji: 'ta', desc: 'Hiragana "ta" — t + a consonant combination.' },
-      { glyph: 'な', romaji: 'na', desc: 'Hiragana "na" — nasal n + a combination.' },
-      { glyph: 'は', romaji: 'ha/wa', desc: 'Hiragana "ha" — pronounced "wa" when serving as the topic particle!' },
-      { glyph: 'ま', romaji: 'ma', desc: 'Hiragana "ma" — bilabial nasal m + a.' },
-      { glyph: 'ら', romaji: 'ra', desc: 'Hiragana "ra" — alveolar tap between english r and l.' }
-    ];
+  <main id="main-content" class="jf-main">
 
-    const DATA_KATA = [
-      { glyph: 'ア', romaji: 'a', desc: 'Katakana "a" — used for loanwords like アメリカ (America).' },
-      { glyph: 'イ', romaji: 'i', desc: 'Katakana "i" — used in インターネット (Internet).' },
-      { glyph: 'ウ', romaji: 'u', desc: 'Katakana "u" — used in ウイルス (virus).' },
-      { glyph: 'エ', romaji: 'e', desc: 'Katakana "e" — used in エレベーター (elevator).' },
-      { glyph: 'オ', romaji: 'o', desc: 'Katakana "o" — used in オレンジ (orange).' },
-      { glyph: 'カ', romaji: 'ka', desc: 'Katakana "ka" — used in カメラ (camera).' },
-      { glyph: 'コ', romaji: 'ko', desc: 'Katakana "ko" — used in コンピューター (computer).' },
-      { glyph: 'ロ', romaji: 'ro', desc: 'Katakana "ro" — used in ロボット (robot).' }
-    ];
+    <!-- ── Interactive Stroke-Order & Shodō Calligraphy Studio ── -->
+    <section id="shodo-studio" class="shodo-studio creation-app" data-creation-app data-creation-fit aria-labelledby="shodo-studio-title">
+      <div class="shodo-studio__header">
+        <div class="shodo-studio__title-wrap">
+          <h1 id="shodo-studio-title">Japanese Writing &amp; Shodō Studio</h1>
+          <span class="shodo-studio__sub">Step-by-Step Stroke Order (書き順) · Sumi Brush Simulator</span>
+        </div>
+        <a class="shodo-studio__read-link" href="#lesson-reading">Stroke rules &amp; lesson ↓</a>
+      </div>
 
-    const DATA_KANJI = [
-      { glyph: '日', romaji: 'hi / nichi', desc: 'Kanji "sun / day" — origin of the name 日本 (Nihon / Japan).' },
-      { glyph: '本', romaji: 'hon / moto', desc: 'Kanji "book / origin" — pictograph of a tree with root marked.' },
-      { glyph: '人', romaji: 'hito / jin', desc: 'Kanji "person" — two strokes symbolizing a human walking.' },
-      { glyph: '月', romaji: 'tsuki / getsu', desc: 'Kanji "moon / month" — ancient pictograph of crescent moon.' },
-      { glyph: '木', romaji: 'ki / moku', desc: 'Kanji "tree / wood" — trunk, roots, and branches.' },
-      { glyph: '水', romaji: 'mizu / sui', desc: 'Kanji "water" — flowing river ripples.' },
-      { glyph: '火', romaji: 'hi / ka', desc: 'Kanji "fire" — flickering flames rising upward.' }
-    ];
+      <div id="shodo-studio-primary" class="shodo-studio__primary" data-creation-primary>
+        <div class="shodo-mode-bar">
+          <div class="shodo-mode-tabs" role="tablist" aria-label="Calligraphy studio modes">
+            <button type="button" id="modeGuidedBtn" class="shodo-mode-tab is-active" role="tab" aria-selected="true">1. Guided Stroke Steps</button>
+            <button type="button" id="modeFreeBtn" class="shodo-mode-tab" role="tab" aria-selected="false">2. Free Calligraphy (書道)</button>
+          </div>
+          <span class="shodo-mode-hint">Draw slowly for thick strokes; move briskly for flying-white (kasure).</span>
+        </div>
 
-    let currentSet = DATA_HIRA;
-    let selectedChar = DATA_HIRA[0];
+        <div class="shodo-workbench">
+          <!-- Left Column: Character / Tehon Picker -->
+          <aside class="shodo-picker-col" aria-label="Character and copybook selector">
+            <div class="shodo-panel-label">
+              <span>Characters</span>
+              <span>39 Kana &amp; Kanji</span>
+            </div>
 
-    // Speech helper
-    function speak(text, lang = 'ja-JP') {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = lang;
-        u.rate = 0.85;
-        window.speechSynthesis.speak(u);
-      }
-    }
+            <div class="shodo-script-tabs" id="guidedScriptTabs" role="tablist" aria-label="Japanese script">
+              <button type="button" class="shodo-script-tab is-active" role="tab" aria-selected="true" data-script-tab="hiragana">Hiragana</button>
+              <button type="button" class="shodo-script-tab" role="tab" aria-selected="false" data-script-tab="katakana">Katakana</button>
+              <button type="button" class="shodo-script-tab" role="tab" aria-selected="false" data-script-tab="kanji">Kanji</button>
+            </div>
 
-    // Render Script Explorer
-    const charGrid = document.getElementById('charGrid');
-    const inspectGlyph = document.getElementById('inspectGlyph');
-    const inspectTitle = document.getElementById('inspectTitle');
-    const inspectDesc = document.getElementById('inspectDesc');
-    const inspectSpeakBtn = document.getElementById('inspectSpeakBtn');
+            <div class="shodo-char-grid" id="guidedCharGrid" aria-label="Character grid"></div>
 
-    function renderChars() {
-      charGrid.innerHTML = '';
-      currentSet.forEach(item => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `char-tile ${item.glyph === selectedChar.glyph ? 'selected' : ''}`;
-        btn.innerHTML = `<span class="char-glyph">${item.glyph}</span><span class="char-romaji">${item.romaji}</span>`;
-        btn.addEventListener('click', () => {
-          selectedChar = item;
-          updateInspect();
-          renderChars();
-          speak(item.glyph);
-        });
-        charGrid.appendChild(btn);
-      });
-    }
+            <div id="freePresetWrap" hidden>
+              <div class="shodo-panel-label" style="margin-bottom:0.35rem;">
+                <span>Copybook (手本)</span>
+              </div>
+              <div class="shodo-preset-list" id="freePresetList"></div>
+            </div>
 
-    function updateInspect() {
-      inspectGlyph.textContent = selectedChar.glyph;
-      inspectTitle.textContent = `${selectedChar.glyph} (${selectedChar.romaji})`;
-      inspectDesc.textContent = selectedChar.desc;
-    }
+            <div id="freeOpacityWrap" hidden>
+              <div class="shodo-panel-label" style="margin-bottom:0.28rem;">
+                <span>Guide Opacity</span>
+              </div>
+              <div class="shodo-mini-pills" role="group" aria-label="Tehon guide opacity">
+                <button type="button" class="shodo-mini-btn" data-guide-opacity="0" aria-pressed="false">Off</button>
+                <button type="button" class="shodo-mini-btn is-active" data-guide-opacity="0.16" aria-pressed="true">Faint</button>
+                <button type="button" class="shodo-mini-btn" data-guide-opacity="0.28" aria-pressed="false">Clear</button>
+              </div>
+            </div>
+          </aside>
 
-    inspectSpeakBtn.addEventListener('click', () => speak(selectedChar.glyph));
+          <!-- Center Column: Hanshi Paper Canvas & Transport -->
+          <section class="shodo-stage-col" aria-label="Calligraphy paper canvas">
+            <div class="shodo-stage-head">
+              <div class="shodo-stage-identity">
+                <span class="shodo-glyph-badge" id="stageGlyphBadge" lang="ja">あ</span>
+                <div class="shodo-stage-titles">
+                  <h2 id="stageTitle">あ (a) — 3 Strokes</h2>
+                  <p id="stageSubtitle">Open vowel /a/, pronounced like "ah" in father.</p>
+                </div>
+              </div>
+              <button type="button" class="shodo-btn" id="stageSpeakBtn">🔊 Listen</button>
+            </div>
 
-    // Script Tabs
-    const tabs = [
-      { btn: document.getElementById('tabHira'), data: DATA_HIRA },
-      { btn: document.getElementById('tabKata'), data: DATA_KATA },
-      { btn: document.getElementById('tabKanji'), data: DATA_KANJI }
-    ];
+            <div class="shodo-paper-frame" id="shodoPaperFrame">
+              <canvas id="shodoCanvas" tabindex="0" aria-label="Interactive Japanese calligraphy paper. Drag with mouse, touch, or stylus to paint brush strokes."></canvas>
+            </div>
 
-    tabs.forEach(({ btn, data }) => {
-      btn.addEventListener('click', () => {
-        tabs.forEach(t => {
-          t.btn.classList.remove('active');
-          t.btn.setAttribute('aria-selected', 'false');
-        });
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected', 'true');
-        currentSet = data;
-        selectedChar = data[0];
-        updateInspect();
-        renderChars();
-      });
-    });
+            <div class="shodo-action-bar" role="toolbar" aria-label="Canvas actions">
+              <button type="button" class="shodo-btn shodo-btn--primary" id="animateAllBtn">▶ Animate All</button>
+              <button type="button" class="shodo-btn" id="animateStepBtn">Step Demo</button>
+              <button type="button" class="shodo-btn is-active" id="strictGuideBtn" aria-pressed="true">Check: On</button>
+              <button type="button" class="shodo-btn is-active" id="gridToggleBtn" aria-pressed="true">Grid</button>
+              <button type="button" class="shodo-btn" id="undoBtn">Undo</button>
+              <button type="button" class="shodo-btn" id="clearBtn">Clear</button>
+              <button type="button" class="shodo-btn" id="savePngBtn">Save PNG</button>
+            </div>
 
-    renderChars();
-    updateInspect();
+            <div class="shodo-status is-info" id="stageStatus" role="status" aria-live="polite">
+              Follow stroke 1 from the red dot, or press Animate All.
+            </div>
+          </section>
 
-    // ── Sentence Builder ───────────────────────────────────
-    const SENTENCE_PIECES = [
-      { text: '私', role: 'subject', gloss: 'I' },
-      { text: 'は', role: 'particle', gloss: '[topic]' },
-      { text: '本', role: 'object', gloss: 'book' },
-      { text: 'を', role: 'particle', gloss: '[object]' },
-      { text: '読みます', role: 'verb', gloss: 'read' }
-    ];
+          <!-- Right Column: Stroke Step Guide & Brush Rack -->
+          <aside class="shodo-guide-col" aria-label="Stroke steps and brush settings">
+            <div class="shodo-steps-panel" id="guidedStepsPanel">
+              <div class="shodo-panel-label">
+                <span>Stroke Steps (書き順)</span>
+                <span id="stepProgressBadge">0 / 3</span>
+              </div>
+              <div class="shodo-step-list" id="stepList" aria-label="Stroke sequence list"></div>
+              <p class="shodo-cultural-note" id="charCulturalNote"></p>
+            </div>
 
-    let sentenceDock = document.getElementById('sentenceDock');
-    let wordBank = document.getElementById('wordBank');
-    let sentenceFeedback = document.getElementById('sentenceFeedback');
-    let clearSentenceBtn = document.getElementById('clearSentenceBtn');
-    let speakSentenceBtn = document.getElementById('speakSentenceBtn');
-    let placedWords = [];
+            <div class="shodo-brush-rack">
+              <div class="shodo-panel-label">
+                <span>Brush &amp; Sumi Ink (筆と墨)</span>
+              </div>
 
-    function initSentence() {
-      placedWords = [];
-      sentenceDock.innerHTML = '<span style="color:#94a3b8; font-size:0.8rem; font-style:italic;" id="dockPlaceholder">Tap tiles below in SOV order →</span>';
-      sentenceFeedback.className = 'feedback-msg info';
-      sentenceFeedback.textContent = 'Target order: Topic/Subject (私) + Topic particle (は) + Object (本) + Object particle (を) + Verb (読みます)';
-      speakSentenceBtn.style.display = 'none';
+              <div class="shodo-brush-grid" role="group" aria-label="Brush style">
+                <button type="button" class="shodo-mini-btn is-active" data-brush-id="ofude" aria-pressed="true">Ōfude</button>
+                <button type="button" class="shodo-mini-btn" data-brush-id="kofude" aria-pressed="false">Kofude</button>
+                <button type="button" class="shodo-mini-btn" data-brush-id="kasure" aria-pressed="false">Dry Brush</button>
+              </div>
 
-      // Shuffle bank
-      const shuffled = [...SENTENCE_PIECES].sort(() => Math.random() - 0.5);
-      wordBank.innerHTML = '';
-      shuffled.forEach((w, idx) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = `word-tile ${w.role === 'particle' ? 'particle' : ''}`;
-        b.innerHTML = `${w.text} <small style="color:#64748b;">(${w.gloss})</small>`;
-        b.dataset.text = w.text;
-        b.addEventListener('click', () => {
-          b.remove();
-          placedWords.push(w);
-          renderDock();
-        });
-        wordBank.appendChild(b);
-      });
-    }
+              <div class="shodo-slider-row">
+                <label for="brushSizeInput"><span>Brush Size</span><output id="brushSizeOut">22px</output></label>
+                <input id="brushSizeInput" type="range" min="10" max="42" step="1" value="22" />
+              </div>
 
-    function renderDock() {
-      sentenceDock.innerHTML = '';
-      placedWords.forEach(w => {
-        const span = document.createElement('span');
-        span.className = `word-tile placed ${w.role === 'particle' ? 'particle' : ''}`;
-        span.textContent = w.text;
-        sentenceDock.appendChild(span);
-      });
+              <div class="shodo-slider-row">
+                <label for="absorbInput"><span>Paper Bleed (Nijimi)</span><output id="absorbOut">42%</output></label>
+                <input id="absorbInput" type="range" min="0" max="90" step="2" value="42" />
+              </div>
 
-      const assembled = placedWords.map(w => w.text).join('');
-      const targetStr = SENTENCE_PIECES.map(w => w.text).join('');
+              <div class="shodo-ink-row">
+                <span style="font-size:0.71rem;font-weight:700;">Ink</span>
+                <div class="shodo-swatches" role="group" aria-label="Ink color">
+                  <button type="button" class="shodo-swatch is-active" data-ink-color="sumi" style="background:#171514;" aria-label="Sumi Black ink" aria-pressed="true"></button>
+                  <button type="button" class="shodo-swatch" data-ink-color="charcoal" style="background:#34312f;" aria-label="Charcoal ink" aria-pressed="false"></button>
+                  <button type="button" class="shodo-swatch" data-ink-color="vermilion" style="background:#b91c1c;" aria-label="Vermilion ink" aria-pressed="false"></button>
+                  <button type="button" class="shodo-swatch" data-ink-color="indigo" style="background:#1e3a5f;" aria-label="Aizome Indigo ink" aria-pressed="false"></button>
+                </div>
+              </div>
 
-      if (placedWords.length === SENTENCE_PIECES.length) {
-        if (assembled === targetStr) {
-          sentenceFeedback.className = 'feedback-msg success';
-          sentenceFeedback.textContent = 'Correct! 素晴らしい! Watashi wa hon o yomimasu (I read a book). Verbs always seal the end in SOV order.';
-          speakSentenceBtn.style.display = 'inline-flex';
-          speak(assembled);
-        } else {
-          sentenceFeedback.className = 'feedback-msg error';
-          sentenceFeedback.textContent = 'Word order is off. Remember: [Topic/Subject] + [は] + [Object] + [を] + [Verb]. Reset and try again!';
-        }
-      }
-    }
+              <div class="shodo-meter-wrap">
+                <div class="shodo-meter-head">
+                  <span>Brush Ink Load</span>
+                  <span id="inkMeterText">100%</span>
+                </div>
+                <div class="shodo-meter-bar" aria-hidden="true">
+                  <div class="shodo-meter-fill" id="inkMeterFill"></div>
+                </div>
+              </div>
 
-    clearSentenceBtn.addEventListener('click', initSentence);
-    speakSentenceBtn.addEventListener('click', () => speak('私は本を読みます'));
-    initSentence();
+              <div class="shodo-dip-row">
+                <button type="button" class="shodo-btn" id="dipBrushBtn">Dip Brush (墨)</button>
+                <label class="shodo-autodip-lbl">
+                  <input type="checkbox" id="autoDipInput" checked />
+                  <span>Auto-dip</span>
+                </label>
+              </div>
 
-    // ── Quiz Handlers ──────────────────────────────────────
-    function setupQuiz(optsId, feedbackId, answerSpeech) {
-      const opts = document.querySelectorAll(`#${optsId} .quiz-opt`);
-      const fb = document.getElementById(feedbackId);
-      opts.forEach(btn => {
-        btn.addEventListener('click', () => {
-          opts.forEach(b => b.disabled = true);
-          if (btn.dataset.correct === 'true') {
-            btn.classList.add('correct');
-            fb.className = 'feedback-msg success';
-            fb.textContent = 'Correct! ✓';
-            speak(answerSpeech);
-          } else {
-            btn.classList.add('incorrect');
-            fb.className = 'feedback-msg error';
-            fb.textContent = 'Not quite — try again!';
-            setTimeout(() => {
-              opts.forEach(b => b.disabled = false);
-              btn.classList.remove('incorrect');
-              fb.textContent = '';
-            }, 1400);
-          }
-        });
-      });
-    }
+              <div class="shodo-hanko-section" id="freeHankoSection" hidden>
+                <div class="shodo-panel-label">
+                  <span>Hanko Seal (判子)</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.4rem;">
+                  <div class="shodo-hanko-choices" id="hankoChoices" role="group" aria-label="Select seal character"></div>
+                  <button type="button" class="shodo-btn" id="stampToggleBtn" aria-pressed="false">Stamp Seal</button>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
 
-    setupQuiz('q1Opts', 'q1Feedback', 'こんにちは');
-    setupQuiz('q2Opts', 'q2Feedback', 'ありがとう');
-  </script>
+    <!-- ── Lesson Reading & Reference Content Below Studio ── -->
+    <div id="lesson-reading" class="lf-page">
+
+      <!-- ── Hero ───────────────────────────────── -->
+      <section class="lf-hero">
+        <p class="eyebrow">Language Foundations · World Languages · K–12</p>
+        <h2>Japanese Language Foundations</h2>
+        <div class="lf-meta">
+          <span>Japonic Family</span><span class="dot"></span>
+          <span>Kana &amp; Kanji Stroke Order</span><span class="dot"></span>
+          <span>Shodō Calligraphy</span><span class="dot"></span>
+          <span>SOV Word Order</span><span class="dot"></span>
+          <span>Moraic Rhythm</span>
+        </div>
+        <p class="lf-lede">
+          Japanese is an agglutinative language with an exceptionally logical structure: verbs anchor the end of the clause, grammatical relations are tagged with particles, sounds are metered in equal beats called <em>mora</em>, and every character is written in a consistent stroke order designed for brush balance and speed.
+        </p>
+      </section>
+
+      <!-- ── Lightbox Artwork ──────────────────── -->
+      <figure class="lf-card-figure" data-zoomable data-lightbox-group="japanese-art">
+        <img src="../../../assets/images/lessons/hokusai/great-wave.webp" alt="The Great Wave off Kanagawa by Katsushika Hokusai, showing traditional Japanese calligraphy in the upper-left cartouche" loading="lazy" />
+        <figcaption>
+          <strong>Writing and Culture in Visual Harmony</strong>
+          Katsushika Hokusai's iconic woodblock print <em>The Great Wave off Kanagawa</em> (c. 1831). The top-left cartouche demonstrates Japanese written symbols: the series title in Kanji (<span lang="ja">冨嶽三十六景</span> — Thirty-six Views of Mount Fuji) paired with the signature <span lang="ja">北斎改為一筆</span> (From the brush of Hokusai, changing his name to Iitsu). Notice how logographic Kanji convey compact meaning while phonetic kana establish grammatical flow. Image: Public domain.
+        </figcaption>
+      </figure>
+
+      <!-- ── Stroke Order & Shodō Guide ─────────── -->
+      <section class="lf-card" style="--lf-accent:#b91c1c;" id="stroke-rules">
+        <span class="lf-label">Writing Craft · 書き順と筆法</span>
+        <h2>How to Write Japanese: Stroke Order &amp; Brush Endings</h2>
+        <p>
+          Japanese stroke order (<em>kakijun</em> <span lang="ja">書き順</span>) is not arbitrary memorization — it follows natural hand ergonomics so each stroke leads smoothly toward the next and characters sit squarely inside an imaginary grid. Click any example button below to animate and practice that character in the studio above.
+        </p>
+
+        <h3>The 6 Golden Rules of Stroke Order</h3>
+        <div class="kakijun-rules">
+          <div class="kakijun-rule-card">
+            <div class="kakijun-rule-head">
+              <strong>1. Top to Bottom</strong>
+              <button type="button" class="kakijun-ex-btn" data-practice-char="ま">Practice ま ↑</button>
+            </div>
+            <p style="font-size:0.81rem;margin:0;">Horizontal bars and top dots are always drawn from the top tier downward before lower curves.</p>
+          </div>
+
+          <div class="kakijun-rule-card">
+            <div class="kakijun-rule-head">
+              <strong>2. Left to Right</strong>
+              <button type="button" class="kakijun-ex-btn" data-practice-char="川">Practice 川 ↑</button>
+            </div>
+            <p style="font-size:0.81rem;margin:0;">Parallel vertical elements and left-to-right components progress left first, right second (like <span lang="ja">川</span> and <span lang="ja">い</span>).</p>
+          </div>
+
+          <div class="kakijun-rule-card">
+            <div class="kakijun-rule-head">
+              <strong>3. Horizontal Before Vertical</strong>
+              <button type="button" class="kakijun-ex-btn" data-practice-char="木">Practice 木 ↑</button>
+            </div>
+            <p style="font-size:0.81rem;margin:0;">When a horizontal and vertical line cross, write the horizontal bar first, then cut down through it.</p>
+          </div>
+
+          <div class="kakijun-rule-card">
+            <div class="kakijun-rule-head">
+              <strong>4. Center First in Symmetry</strong>
+              <button type="button" class="kakijun-ex-btn" data-practice-char="山">Practice 山 ↑</button>
+            </div>
+            <p style="font-size:0.81rem;margin:0;">When a central spine anchors symmetric wings — as in <span lang="ja">山</span> (mountain) or <span lang="ja">水</span> (water) — draw the center spine first.</p>
+          </div>
+
+          <div class="kakijun-rule-card">
+            <div class="kakijun-rule-head">
+              <strong>5. Enclosures: Close Last</strong>
+              <button type="button" class="kakijun-ex-btn" data-practice-char="日">Practice 日 ↑</button>
+            </div>
+            <p style="font-size:0.81rem;margin:0;">For box shapes (<span lang="ja">日</span>, <span lang="ja">ロ</span>), write left wall, top+right corner, fill the interior, then seal the bottom floor last.</p>
+          </div>
+
+          <div class="kakijun-rule-card">
+            <div class="kakijun-rule-head">
+              <strong>6. Left Sweep Before Right</strong>
+              <button type="button" class="kakijun-ex-btn" data-practice-char="人">Practice 人 ↑</button>
+            </div>
+            <p style="font-size:0.81rem;margin:0;">In diagonal crossings (<span lang="ja">人</span>, <span lang="ja">木</span>, <span lang="ja">火</span>), the leftward sweep precedes the rightward stabilizing sweep.</p>
+          </div>
+        </div>
+
+        <h3>Three Signature Brush Endings (Tome, Hane, Harai)</h3>
+        <div class="lf-grid-3">
+          <div class="tech-card">
+            <svg class="tech-svg" viewBox="0 0 64 64" role="img" aria-label="Tome stop stroke diagram">
+              <path d="M 10 34 Q 30 30 50 30" fill="none" stroke="#1b1715" stroke-width="7" stroke-linecap="round"/>
+              <circle cx="50" cy="30" r="6" fill="#dc2626"/>
+            </svg>
+            <div>
+              <strong>止 Tome (Firm Stop)</strong>
+              <p>Press slightly at a 45° angle at the end of a bar and lift straight up so the stroke ends squarely.</p>
+            </div>
+          </div>
+
+          <div class="tech-card">
+            <svg class="tech-svg" viewBox="0 0 64 64" role="img" aria-label="Hane hook stroke diagram">
+              <path d="M 36 12 L 36 50 L 20 39" fill="none" stroke="#1b1715" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M 24 42 L 18 37 L 26 37 Z" fill="#dc2626"/>
+            </svg>
+            <div>
+              <strong>跳 Hane (Spring Hook)</strong>
+              <p>Pause briefly at the corner, gather the brush bristles, and flick crisply inward toward the next stroke.</p>
+            </div>
+          </div>
+
+          <div class="tech-card">
+            <svg class="tech-svg" viewBox="0 0 64 64" role="img" aria-label="Harai sweep stroke diagram">
+              <path d="M 48 14 C 44 32 30 46 12 53" fill="none" stroke="#1b1715" stroke-width="6.5" stroke-linecap="round"/>
+              <polygon points="10,54 18,48 19,54" fill="#dc2626"/>
+            </svg>
+            <div>
+              <strong>払 Harai (Tapering Sweep)</strong>
+              <p>Keep the brush moving while gradually lifting off the paper so the ink thins into a luminous point.</p>
+            </div>
+          </div>
+        </div>
+
+        <h3>The Four Treasures of Shodō (<span lang="ja">文房四宝</span> Bunbō Shihō)</h3>
+        <p style="margin-bottom:0.5rem;">
+          Traditional Japanese calligraphy relies on four balanced tools: <strong>Fude</strong> (<span lang="ja">筆</span>, bamboo &amp; animal-hair brush), <strong>Sumi</strong> (<span lang="ja">墨</span>, soot-and-glue ink stick ground with water), <strong>Suzuri</strong> (<span lang="ja">硯</span>, carved inkstone), and <strong>Hanshi</strong> (<span lang="ja">半紙</span>, absorbent mulberry paper). Practice <button type="button" class="kakijun-ex-btn" data-practice-char="永">永 (Eternity) ↑</button> in the studio to combine all eight classic brush motions in one character.
+        </p>
+      </section>
+
+      <!-- ── Core Linguistic Architecture ───────── -->
+      <section class="lf-card" style="--lf-accent:#dc2626;">
+        <span class="lf-label">Architecture</span>
+        <h2>How Japanese Works: The Four Pillars</h2>
+        <p>Understand the linguistic engine underneath the three Japanese writing systems:</p>
+        <div class="lf-grid-4">
+          <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+            <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">1. SOV Order</strong>
+            <p style="font-size:0.81rem; margin:0; line-height:1.5;">Verbs always finish the sentence: <em>Subject + Object + Verb</em>. Information flows from broad context to final action.</p>
+          </div>
+          <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+            <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">2. Particles (助詞)</strong>
+            <p style="font-size:0.81rem; margin:0; line-height:1.5;">Postpositions like <strong>は (wa)</strong>, <strong>を (o)</strong>, and <strong>に (ni)</strong> tag the syntactic role of whatever word precedes them.</p>
+          </div>
+          <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+            <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">3. Three Scripts</strong>
+            <p style="font-size:0.81rem; margin:0; line-height:1.5;"><strong>Hiragana</strong> for grammar &amp; native words; <strong>Katakana</strong> for loanwords; <strong>Kanji</strong> for conceptual roots.</p>
+          </div>
+          <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:0.85rem;">
+            <strong style="color:#991b1b; display:block; font-size:0.9rem; margin-bottom:0.25rem;">4. Mora Timing</strong>
+            <p style="font-size:0.81rem; margin:0; line-height:1.5;">Every beat (mora) receives equal duration: <em>to-u-ky-o-u</em> is 4 beats, not 2 English syllables. Pure, predictable cadence.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Interactive Sentence Engine ───────── -->
+      <section class="lf-card" style="--lf-accent:#0284c7;">
+        <span class="lf-label">Syntax Builder</span>
+        <h2>Japanese Sentence Engine: SOV &amp; Particles</h2>
+        <p>
+          Assemble Japanese sentences in correct order. In Japanese, particles act like magnetic tags telling the listener whether a noun is the topic, the direct object, or the destination.
+        </p>
+
+        <div class="target-prompt-box">
+          <strong>Target Sentence:</strong> <span id="targetPrompt">"I read a book." (<span lang="ja">私 は 本 を 読みます</span>)</span>
+        </div>
+
+        <div class="sentence-dock" id="sentenceDock">
+          <span style="color:#64748b; font-size:0.8rem; font-style:italic;" id="dockPlaceholder">Tap tiles below in SOV order →</span>
+        </div>
+
+        <div class="word-bank" id="wordBank"></div>
+        <div class="feedback-msg info" id="sentenceFeedback" aria-live="polite">Select tiles to build the sentence.</div>
+
+        <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+          <button class="speak-btn" id="clearSentenceBtn" style="border-color:#94a3b8; color:#334155;" type="button">Reset</button>
+          <button class="speak-btn" id="speakSentenceBtn" style="display:none;" type="button">🔊 Speak Sentence</button>
+        </div>
+      </section>
+
+      <!-- ── Survival Vocabulary & Culture ─────── -->
+      <section class="lf-card" style="--lf-accent:#059669;">
+        <span class="lf-label">Applied Practice</span>
+        <h2>Foundational Greetings &amp; Politeness Quiz</h2>
+        <p>Japanese social interaction balances hierarchy, gratitude, and respect (<span lang="ja">敬語</span> keigo). Test your recognition of core survival phrases:</p>
+
+        <div class="lf-grid-2">
+          <div class="quiz-card">
+            <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#047857; letter-spacing:0.06em;">Challenge 1 · Greeting</span>
+            <div class="quiz-prompt" id="q1Prompt" lang="ja">こんにちは</div>
+            <p style="font-size:0.82rem; color:#475569; margin:0;" id="q1Romaji">(Konnichiwa)</p>
+            <div class="quiz-options" id="q1Opts">
+              <button type="button" class="quiz-opt" data-correct="true">Hello / Good Afternoon</button>
+              <button type="button" class="quiz-opt">Goodbye</button>
+              <button type="button" class="quiz-opt">Thank you</button>
+              <button type="button" class="quiz-opt">Excuse me</button>
+            </div>
+            <p class="feedback-msg" id="q1Feedback" style="margin-top:0.5rem;" aria-live="polite"></p>
+          </div>
+
+          <div class="quiz-card">
+            <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#047857; letter-spacing:0.06em;">Challenge 2 · Gratitude</span>
+            <div class="quiz-prompt" id="q2Prompt" lang="ja">ありがとう</div>
+            <p style="font-size:0.82rem; color:#475569; margin:0;" id="q2Romaji">(Arigatou)</p>
+            <div class="quiz-options" id="q2Opts">
+              <button type="button" class="quiz-opt">Good morning</button>
+              <button type="button" class="quiz-opt" data-correct="true">Thank you</button>
+              <button type="button" class="quiz-opt">Please</button>
+              <button type="button" class="quiz-opt">Yes</button>
+            </div>
+            <p class="feedback-msg" id="q2Feedback" style="margin-top:0.5rem;" aria-live="polite"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Read the Masters: graded reading & comprehension ── -->
+      <section id="masterworks" class="lf-card mw-root" data-masterworks="ja" style="--lf-accent:#be185d;">
+        <noscript><p>Turn on JavaScript to read the graded Japanese masterworks.</p></noscript>
+      </section>
+
+      <!-- ── Future Learning Roadmap ───────────── -->
+      <section class="lf-card" style="--lf-accent:#7c3aed;">
+        <span class="lf-label">Progression Pathway</span>
+        <h2>Roadmap for Future Japanese Lessons</h2>
+        <div class="lf-grid-3" style="margin-top:0.75rem;">
+          <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+            <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#7e22ce; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 1</span>
+            <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Kana Mastery &amp; Phonetics</strong>
+            <p style="font-size:0.81rem; margin:0; color:#374151;">Learn complete 46 Hiragana and 46 Katakana charts, dakuten voicing marks, geminate stops (<span lang="ja">っ</span>), and pitch accent contours.</p>
+          </div>
+          <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+            <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#6b21a8; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 2</span>
+            <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Verbs, Te-Form &amp; Conjugations</strong>
+            <p style="font-size:0.81rem; margin:0; color:#374151;">The regular geometry of Godan and Ichidan verbs, past tense, negative forms, and connecting actions using the ubiquitous <span lang="ja">て</span>-form.</p>
+          </div>
+          <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:0.85rem;">
+            <span style="display:inline-block; font-size:0.68rem; font-weight:800; background:#581c87; color:#fff; border-radius:4px; padding:2px 6px; margin-bottom:0.4rem;">LEVEL 3</span>
+            <strong style="display:block; font-size:0.92rem; color:#581c87; margin-bottom:0.25rem;">Authentic Reading &amp; Kanji Roots</strong>
+            <p style="font-size:0.81rem; margin:0; color:#374151;">Building the Jōyō Kanji foundation radical by radical, parsing authentic sentences, compound words (Jukugo), and conversational fluency.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/creation-app.js"></script>
+  <script src="../../../assets/js/lessons/japanese-strokes-data.js"></script>
+  <script src="../../../assets/js/lessons/japanese-calligraphy.js"></script>
   <script src="../../../assets/js/masterworks-data.js"></script>
   <script src="../../../assets/js/masterworks.js"></script>
   <script src="../../../assets/js/photo-lightbox.js"></script>
   <script src="../../../assets/js/lesson-print-button.js"></script>
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
 </body>
 </html>
-

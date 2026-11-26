@@ -15,7 +15,8 @@
       '#functions':{grade:'8',num:'10',title:'Patterns to Functions',strand:'functions'}
     };
 
-    var activeStrand='counting',session=null,reviewItem=null,attempted=new Set(),mistakes=[],saved={};
+    var activeStrand='counting',session=null,reviewItem=null,attempted=new Set(),mistakes=[],saved={},variantCounters={};
+    var strandLabels={counting:'Operations',patterns:'Patterns',place:'Place Value',multiply:'Products & Rates',fractions:'Fractions',geometry:'Geometry',data:'Data',integers:'Integers & Rational Numbers',equations:'Equations',functions:'Rules & Models'};
     try{saved=JSON.parse(localStorage.getItem('math-foundations-trainer-v1'))||{};}catch(e){}
     function statsKey(strand){return level+':'+strand;}
     function updateTrainer(){
@@ -41,7 +42,7 @@
       }
     }
     function startSet(review){
-      var items=review?mistakes.slice():Array.from({length:5},function(){return exercise(activeStrand,level);});
+      var items=review?mistakes.slice():Array.from({length:5},function(_,idx){return exercise(activeStrand,level,idx);});
       if(!items.length)return;
       mistakes=[];attempted.clear();session={items:items,index:0,right:0,answered:false,review:review};reviewItem=items[0];
       var station=document.querySelector('.station[data-strand="'+activeStrand+'"]');render(station);updateTrainer();focusAnswer(station);
@@ -59,7 +60,7 @@
     document.getElementById('math-start').addEventListener('click',function(){startSet(false);});
     document.getElementById('math-review').addEventListener('click',function(){startSet(true);});
     function chosenLevel(){return level;}
-    function exercise(strand,grade){return FoundationTasks.create(strand,grade);}
+    function exercise(strand,grade,variantIndex){return FoundationTasks.create(strand,grade,variantIndex);}
     function setupThinkingBoard(station,promptText){
       var board=station.querySelector('.thinking-board');
       var logic=window.MathThinkingBoard;
@@ -483,16 +484,30 @@
       redraw();
     }
     function render(station){
-      if(station.destroyWhiteboard){station.destroyWhiteboard();station.destroyWhiteboard=null;}var strand=station.dataset.strand,item=reviewItem||exercise(strand,chosenLevel()),escape=FoundationTasks.escape;reviewItem=null;current[strand]=item;
+      if(station.destroyWhiteboard){station.destroyWhiteboard();station.destroyWhiteboard=null;}
+      if(station.integerLab){station.integerLab.destroy();station.integerLab=null;}
+      var strand=station.dataset.strand;
+      var vIdx=variantCounters[strand]||0;
+      var item=reviewItem||exercise(strand,chosenLevel(),vIdx),escape=FoundationTasks.escape;reviewItem=null;current[strand]=item;
       station.querySelector('.station-head h2').textContent=item.goal;station.querySelector('.station-openmoji').alt='Illustration for '+item.goal;station.querySelector('.station-openmoji').setAttribute('aria-label','Enlarge illustration for '+item.goal);
-      station.querySelector('.station-head small').textContent=item.label+' · '+strand;
+      var subLabel=item.label+' · '+(strandLabels[strand]||strand)+(item.integerMeta&&item.integerMeta.subskill?' · '+item.integerMeta.subskill:'');
+      station.querySelector('.station-head small').textContent=subLabel;
       var prompt=mode==='apply'?item.apply:item.prompt;
-      station.querySelector('.workbench').innerHTML='<p class="problem">'+escape(prompt)+'</p><button type="button" class="model-toggle" aria-expanded="'+(mode==='explore')+'">'+(mode==='explore'?'Hide model':'Inspect model')+'</button><div class="model" '+(mode==='explore'?'':'hidden')+'>'+item.visual+'</div><div class="response"><input type="text" aria-label="Answer: '+escape(item.goal)+'" aria-describedby="answer-format-'+strand+'" placeholder="Your answer"/><button class="check-btn" type="button">Check</button><button class="new-btn" type="button">New</button><button class="hint-btn" type="button" aria-expanded="false">Need a hint?</button><p class="hint" hidden>'+escape(item.hint)+'</p><p class="feedback" aria-live="polite"></p></div><p class="answer-format" id="answer-format-'+strand+'">'+(item.answer==='blue'?'Enter a color word.':'Enter a number or an exact fraction such as 3/5. Equivalent fractions and decimals are accepted.')+(item.unit?' Report in '+escape(item.unit)+'.':'')+'</p><div class="reasoning" data-present="off"><div class="reasoning-head"><label for="reason-'+strand+'">Explain your thinking</label></div><p>'+escape(item.reason)+'</p><div class="thinking-board" data-wb-strand="'+strand+'" data-wb-tool="pen"><div class="tb-toolbar" role="toolbar" aria-label="Show your work tools"><div class="tb-group"><button type="button" class="tb-btn is-active" data-wb-tool="pen" aria-pressed="true">Pen</button><button type="button" class="tb-btn" data-wb-tool="counter" aria-pressed="false">Counter</button><button type="button" class="tb-btn" data-wb-tool="eraser" aria-pressed="false">Erase</button></div><div class="tb-group"><button type="button" class="tb-btn" data-wb-action="paper" aria-label="Paper style: Grid">Grid</button><button type="button" class="tb-btn" data-wb-action="undo" disabled>Undo</button><button type="button" class="tb-btn" data-wb-action="clear" disabled>Clear</button></div></div><div class="tb-stage is-grid" data-skin-keep><canvas class="tb-canvas" aria-label="Sketchpad for explaining your thinking"></canvas></div><div class="tb-footer"><p class="tb-summary" aria-live="polite">Draw or place counters to show your strategy.</p><div class="tb-footer-actions"><button type="button" class="tb-btn" data-wb-action="insert" disabled>Add to notes</button><button type="button" class="tb-btn" data-wb-action="voice" aria-pressed="false">Read aloud</button></div></div></div><textarea id="reason-'+strand+'" rows="3" placeholder="Write words, equations, or describe your strategy..."></textarea><details class="worked-solution"><summary>Study a worked solution</summary><p>'+escape(item.solution)+'</p><p>Close this solution, choose New, and test the method independently.</p></details></div>';
+      var quickKeysHtml=item.integerMeta?'<div class="int-quick-keys" role="group" aria-label="Sign and fraction quick keys"><button type="button" class="int-quick-key" data-int-key="neg" aria-label="Toggle negative sign">±</button><button type="button" class="int-quick-key" data-int-key="/" aria-label="Insert fraction slash">/</button><button type="button" class="int-quick-key" data-int-key="." aria-label="Insert decimal point">.</button></div>':'';
+      station.querySelector('.workbench').innerHTML='<p class="problem">'+escape(prompt)+'</p><button type="button" class="model-toggle" aria-expanded="'+(mode==='explore')+'">'+(mode==='explore'?'Hide model':'Inspect model')+'</button><div class="model" '+(mode==='explore'?'':'hidden')+'>'+item.visual+'</div><div class="response"><input type="text" aria-label="Answer: '+escape(item.goal)+'" aria-describedby="answer-format-'+strand+'" placeholder="Your answer"/><button class="check-btn" type="button">Check</button><button class="new-btn" type="button">New</button>'+quickKeysHtml+'<button class="hint-btn" type="button" aria-expanded="false">Need a hint?</button><p class="hint" hidden>'+escape(item.hint)+'</p><p class="feedback" aria-live="polite"></p></div><p class="answer-format" id="answer-format-'+strand+'">'+(item.answer==='blue'?'Enter a color word.':'Enter a number or an exact fraction such as 3/5. Equivalent fractions and decimals are accepted.')+(item.unit?' Report in '+escape(item.unit)+'.':'')+'</p><div class="reasoning" data-present="off"><div class="reasoning-head"><label for="reason-'+strand+'">Explain your thinking</label></div><p>'+escape(item.reason)+'</p><div class="thinking-board" data-wb-strand="'+strand+'" data-wb-tool="pen"><div class="tb-toolbar" role="toolbar" aria-label="Show your work tools"><div class="tb-group"><button type="button" class="tb-btn is-active" data-wb-tool="pen" aria-pressed="true">Pen</button><button type="button" class="tb-btn" data-wb-tool="counter" aria-pressed="false">Counter</button><button type="button" class="tb-btn" data-wb-tool="eraser" aria-pressed="false">Erase</button></div><div class="tb-group"><button type="button" class="tb-btn" data-wb-action="paper" aria-label="Paper style: Grid">Grid</button><button type="button" class="tb-btn" data-wb-action="undo" disabled>Undo</button><button type="button" class="tb-btn" data-wb-action="clear" disabled>Clear</button></div></div><div class="tb-stage is-grid" data-skin-keep><canvas class="tb-canvas" aria-label="Sketchpad for explaining your thinking"></canvas></div><div class="tb-footer"><p class="tb-summary" aria-live="polite">Draw or place counters to show your strategy.</p><div class="tb-footer-actions"><button type="button" class="tb-btn" data-wb-action="insert" disabled>Add to notes</button><button type="button" class="tb-btn" data-wb-action="voice" aria-pressed="false">Read aloud</button></div></div></div><textarea id="reason-'+strand+'" rows="3" placeholder="Write words, equations, or describe your strategy..."></textarea><details class="worked-solution"><summary>Study a worked solution</summary><p>'+escape(item.solution)+'</p><p>Close this solution, choose New, and test the method independently.</p></details></div>';
       var modelEl=station.querySelector('.model');
-      if(window.MathWorksheetViz&&modelEl&&modelEl.querySelector('.dot-expression,.array,.sequence,.place-model,.fraction-visual,.shape,.bars,.numberline,.balance,.machine')){window.MathWorksheetViz.render(modelEl,{prompt:prompt});}
+      if(item.integerMeta&&window.MathIntegersLab&&modelEl){
+        station.integerLab=window.MathIntegersLab.mount(modelEl,item,{
+          mode:mode,
+          onUseValue:function(valStr){
+            var inp=station.querySelector('.response input');
+            if(inp){inp.value=valStr;inp.focus();}
+          }
+        });
+      }else if(window.MathWorksheetViz&&modelEl&&modelEl.querySelector('.dot-expression,.array,.sequence,.place-model,.fraction-visual,.shape,.bars,.numberline,.balance,.machine')){window.MathWorksheetViz.render(modelEl,{prompt:prompt});}
       station.querySelector('.new-btn').textContent='Next';station.querySelector('.new-btn').disabled=Boolean(session&&!session.answered);
       setupThinkingBoard(station,prompt);
-      station.querySelector('.worked-solution').addEventListener('toggle',function(){if(this.open){assisted.add(strand);updateScore();}});
+      station.querySelector('.worked-solution').addEventListener('toggle',function(){if(this.open){assisted.add(strand);if(station.integerLab)station.integerLab.revealSolution();updateScore();}});
     }
     function updateRoute(){var g=Number(level),p=FoundationTasks.profiles[g];document.getElementById('route-title').textContent=(g===0?'Kindergarten':'Grade '+g)+' · '+p[1];document.getElementById('route-focus').textContent=p[2];document.getElementById('route-prerequisite').textContent=g===0?'Start with objects: pair each spoken number with one object. An adult can read prompts and record oral explanations.':'Prerequisite check: explain one task from '+(g===1?'Kindergarten':'Grade '+(g-1))+', then return here. Choose a model when a method stops making sense.';}
     function revealActiveActivity(){
@@ -550,10 +565,29 @@
         return;
       }
       var station=e.target.closest('.station');if(!station)return;var strand=station.dataset.strand;
-      if(e.target.closest('.new-btn')){if(session&&!session.answered)return;if(session&&session.index===session.items.length){finishSet();return;}if(session){reviewItem=session.items[session.index];session.answered=false;}attempted.delete(strand);solved.delete(strand);assisted.delete(strand);render(station);focusAnswer(station);updateScore();return}
+      var quickBtn=e.target.closest('.int-quick-key');
+      if(quickBtn){
+        var inp=station.querySelector('.response input');
+        if(inp){
+          var k=quickBtn.dataset.intKey;
+          if(k==='neg'){
+            var cur=inp.value;
+            if(cur.startsWith('-'))inp.value=cur.slice(1);
+            else if(cur.startsWith('\u2212'))inp.value=cur.slice(1);
+            else inp.value='-'+cur;
+          }else{
+            if(k==='.'&&inp.value.includes('.')){}
+            else if(k==='/'&&inp.value.includes('/')){}
+            else inp.value+=k;
+          }
+          inp.focus();
+        }
+        return;
+      }
+      if(e.target.closest('.new-btn')){if(session&&!session.answered)return;if(session&&session.index===session.items.length){finishSet();return;}if(session){reviewItem=session.items[session.index];session.answered=false;}else{variantCounters[strand]=(variantCounters[strand]||0)+1;}attempted.delete(strand);solved.delete(strand);assisted.delete(strand);render(station);focusAnswer(station);updateScore();return}
       if(e.target.closest('.model-toggle')){var model=station.querySelector('.model');model.hidden=!model.hidden;e.target.textContent=model.hidden?'Inspect model':'Hide model';e.target.setAttribute('aria-expanded',String(!model.hidden));return}
       if(e.target.closest('.hint-btn')){var hint=station.querySelector('.hint');hint.hidden=!hint.hidden;e.target.textContent=hint.hidden?'Need a hint?':'Hide hint';e.target.setAttribute('aria-expanded',String(!hint.hidden));return}
-      if(e.target.closest('.check-btn')){var input=station.querySelector('.response input'),feedback=station.querySelector('.feedback'),actual=input.value.trim(),expected=current[strand].answer;if(!actual){feedback.textContent='Enter an answer first.';return;}if(session&&session.answered)return;var correct=FoundationTasks.check(actual,expected);recordAttempt(strand,correct);if(correct){feedback.textContent='Correct. Explain your method, then choose Next question.';feedback.className='feedback good';solved.add(strand)}else{feedback.textContent=actual?'Not yet. '+current[strand].hint+' Check your units and calculation, then try again.':'Enter an answer first. Use a number, fraction, or the requested word.';feedback.className='feedback try';solved.delete(strand)}updateScore()}
+      if(e.target.closest('.check-btn')){var input=station.querySelector('.response input'),feedback=station.querySelector('.feedback'),actual=input.value.trim(),expected=current[strand].answer;if(!actual){feedback.textContent='Enter an answer first.';return;}if(session&&session.answered)return;var correct=FoundationTasks.check(actual,expected);recordAttempt(strand,correct);if(station.integerLab&&window.MathIntegersEngine){station.integerLab.showResult({studentValue:window.MathIntegersEngine.parseNumber(actual),correct:correct});}if(correct){feedback.textContent='Correct. Explain your method, then choose Next question.';feedback.className='feedback good';solved.add(strand)}else{var diag=(current[strand].integerMeta&&window.MathIntegersEngine)?window.MathIntegersEngine.diagnoseIntegerError(current[strand],actual):null;feedback.textContent=diag?('Not yet. '+diag.message):('Not yet. '+current[strand].hint+' Check your units and calculation, then try again.');feedback.className='feedback try';solved.delete(strand)}updateScore()}
     });
     document.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.matches('.response input'))e.target.closest('.response').querySelector('.check-btn').click()});
   }());
