@@ -403,7 +403,8 @@ html[data-theme="lavalamp"] {
 
 .cos-fx-symbol-pill sub,
 .cos-fx-panel sub {
-  font-size: 0.72em;
+  /* Never below ~11px: v₁ in a small card note must still read from the back of the room. */
+  font-size: max(0.72em, 0.7rem);
   line-height: 0;
 }
 
@@ -907,3 +908,18 @@ html[data-theme="lavalamp"] {
   .cos-fx-next-card { overflow-wrap: break-word; }
 }
 .cos-fx-head-actions { flex-wrap: wrap; max-width: 100%; }
+
+/* Lesson boxes laid out as a flex row or grid: the hint bar and panel take a full row
+   (set by formula-explainer.js as data-fx-flow). */
+.cos-fx-box[data-fx-flow="row"] { flex-wrap: wrap; }
+.cos-fx-box[data-fx-flow="row"] > .cos-fx-hint,
+.cos-fx-box[data-fx-flow="row"] > .cos-fx-panel { flex: 0 0 100%; width: 100%; }
+.cos-fx-box[data-fx-flow="grid"] > .cos-fx-hint,
+.cos-fx-box[data-fx-flow="grid"] > .cos-fx-panel { grid-column: 1 / -1; }
+
+/* Phones: lesson cards nest the box 3–4 paddings deep (steam-machines left the panel 240px wide).
+   Tighter panel padding, and the panel spreads into the box's own side padding. */
+@media (max-width: 480px) {
+  .cos-fx-panel { padding: 0.7rem; }
+  .cos-fx-box:not([data-fx-flow]) > .cos-fx-panel { margin-inline: -0.6rem; max-width: calc(100% + 1.2rem); }
+}

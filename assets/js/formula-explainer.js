@@ -612,6 +612,8 @@
 
   var PHYSICS_MATCH = {};
   function physics(def) {
+    // Entries without a named output (y) still need a readable key: "Raises the result".
+    if (!def.y) def.y = 'the result';
     var tokens = {};
     var vars = [], seenParam = {};
     Object.keys(def.tokens).forEach(function (key) {
@@ -633,7 +635,7 @@
         meta.calcParam = t.s[0];
         if (!seenParam[t.s[0]]) {
           seenParam[t.s[0]] = 1;
-          vars.push({ param: t.s[0], sym: t.x || bare, title: t.t, min: t.s[1], max: t.s[2], step: t.s[3], unit: unit, nudge: t.nudge || 0 });
+          vars.push({ param: t.s[0], sym: t.x || bare, title: sliderTitle(t.t), min: t.s[1], max: t.s[2], step: t.s[3], unit: unit, nudge: t.nudge || 0 });
         }
         meta.caption = 'The graph is this formula worked out for every slider value, with the other quantities held still.';
         meta.plot = { param: t.s[0], min: t.s[1], max: t.s[2], f: def.f, x: t.x || bare, xu: unit, y: def.out[0], yu: def.out[1] };
@@ -5567,7 +5569,21 @@
     o[param] = value;
     return o;
   }
-  function labUnit(text, unit) { return text + (unit ? ' ' + unit : ''); }
+  // "1 years" → "1 year": a plural word unit (years, Earth years, days, moles) after exactly one.
+  function labUnit(text, unit) {
+    if (!unit) return text;
+    if (/^[−-]?1$/.test(text) && /(^|\s)[A-Za-z]{3,}s$/.test(unit)) unit = unit.slice(0, -1);
+    return text + ' ' + unit;
+  }
+  // The same fix for hand-written result lines ("T = 1 years"), never touching 11, 0.1 or 2.1.
+  // A slider on a² or a³ sets a itself, so its name drops the "squared" / "cubed".
+  function sliderTitle(title) { return String(title || '').replace(/,?\s+(squared|cubed)$/i, ''); }
+  var PLURAL_UNITS = /^(?:Earth )?(?:years|months|weeks|days|hours|minutes|seconds|moles|atoms|molecules|cells|metres|meters|kilometres|kilometers|grams|kilograms|litres|liters|joules|watts|volts|amps|ohms|newtons|degrees|radians|cycles|turns|steps|units|dollars|cents|points|bits|bytes|photons|electrons|generations|light-years)$/;
+  function singularOne(text) {
+    return String(text).replace(/(^|[^\d.,])([−-]?1) ((?:Earth )?[A-Za-z-]{2,}s)\b/g, function (m, pre, one, word) {
+      return PLURAL_UNITS.test(word) ? pre + one + ' ' + word.slice(0, -1) : m;
+    });
+  }
 
   /* Scenes. Each is { label, draw(ctx, w, h, env), caption(env) }.
      env: { calc, st, focus, color(param), low, high } where low/high are the values the
@@ -5596,10 +5612,18 @@
         ctx.fillStyle = '#214552';
         ctx.beginPath();
         ctx.arc(0, 0, radius, 0, 2 * Math.PI);
-        if (id !== 'circumference') ctx.fill();
+        if (id === 'circumference') {
+          // The rim is the answer here, so it is drawn thick and bright over a faint disk.
+          ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1;
+          ctx.lineWidth = 4; ctx.strokeStyle = '#7ff0f2';
+        } else {
+          ctx.fill();
+          ctx.lineWidth = 2;
+        }
         ctx.stroke();
+        ctx.lineWidth = 2;
         if (sphere) {
-          ctx.font = '9px monospace';
+          ctx.font = '11px monospace';
           ctx.textAlign = 'center';
           for (var band = -5; band <= 5; band++) {
             var angle = band * Math.PI / 12;
@@ -5625,9 +5649,13 @@
           }
         }
         ctx.strokeStyle = '#ffd485';
+        ctx.lineWidth = 2.5;
         ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(radius, 0); ctx.stroke();
+        ctx.fillStyle = '#ffd485';
+        ctx.beginPath(); ctx.arc(0, 0, 3, 0, 2 * Math.PI); ctx.fill();
         ctx.restore();
         plotNote(ctx, 'r = ' + fmtNum(env.st.r) + ' ' + env.focus.unit, 12, h - 8, '#ffd485');
+        if (id === 'circumference') plotNote(ctx, 'rim: C = ' + labUnit(fmtNum(env.calc.f(env.st)), env.calc.out[1]), 12, 20, '#7ff0f2');
       }
     });
   });
@@ -6327,6 +6355,11 @@
       if (keyEl) container.appendChild(keyEl);
       container.appendChild(hintBar);
       container.appendChild(panel);
+      // A lesson box laid out as a flex row or a grid would squeeze the panel into one narrow
+      // column (Newton's F = ma box crushed it to 34px). Give the hint bar and panel a full row.
+      var hostStyle = window.getComputedStyle(container);
+      if (/flex$/.test(hostStyle.display) && hostStyle.flexDirection.indexOf('row') === 0) container.setAttribute('data-fx-flow', 'row');
+      else if (/grid$/.test(hostStyle.display)) container.setAttribute('data-fx-flow', 'grid');
     }
 
     var activeIndex = 0;
@@ -6382,7 +6415,7 @@
         vars.forEach(function (v) {
           if (calc.init && calc.init[v.param] !== undefined) simState[v.param] = calc.init[v.param];
           if (simState[v.param] === undefined) simState[v.param] = v.min;
-          if (!v.title) v.title = atomTokens[tokenOf[v.param]].meta.title || '';
+          if (!v.title) v.title = sliderTitle(atomTokens[tokenOf[v.param]].meta.title || '');
         });
         Object.keys(simState).forEach(function (k) { start[k] = simState[k]; });
         var focus = vars[0];
@@ -6458,7 +6491,7 @@
             row.querySelector('output').innerHTML = mathHtml(labUnit(fmtNum(simState[v.param]), v.unit));
           });
           var now = calc.f(simState);
-          resultEl.innerHTML = calc.work ? outHtml + ' = ' + mathHtml(calc.work(simState)) : mathHtml(calc.line ? calc.line(simState) : calc.out[0] + ' = ' + outText(now));
+          resultEl.innerHTML = calc.work ? outHtml + ' = ' + mathHtml(calc.work(simState)) : mathHtml(calc.line ? singularOne(calc.line(simState)) : calc.out[0] + ' = ' + outText(now));
           nextEl.innerHTML = card(-1, e) +
             '<div class="cos-fx-next-card is-now"><span class="cos-fx-next-do">Now: ' + nameHtml(focus) + ' = ' + mathHtml(labUnit(fmtNum(simState[focus.param]), focus.unit)) + '</span>' +
             '<span class="cos-fx-next-out">' + outHtml + ' = ' + mathHtml(outText(now)) + '</span></div>' +
@@ -6679,7 +6712,9 @@
 
       if (shouldOpen !== false && !isOpen) {
         isOpen = true;
+        var movedOutNow = placePanel();
         panel.hidden = false;
+        if (movedOutNow && panel.scrollIntoView) panel.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' });
         toggleBtn.setAttribute('aria-expanded', 'true');
         toggleBtn.textContent = 'Hide explorer';
       }
@@ -6687,9 +6722,32 @@
       if (isOpen) ensureRender();
     }
 
+    // A formula in a narrow sidebar (A*'s 280px "How A* chooses" card) can't hold the panel's
+    // text, sliders and picture, so the panel opens below the first ancestor wide enough for it.
+    function placePanel() {
+      if (inline) return false;
+      // On a phone the thresholds shrink with the screen (Euler's two-column card grid left 148px).
+      var vw = window.innerWidth || 1280;
+      if (container.getBoundingClientRect().width < Math.min(360, vw * 0.6)) {
+        var wide = Math.min(480, vw * 0.75);
+        var host = container.parentElement;
+        while (host && host !== document.body && host.getBoundingClientRect().width < wide) host = host.parentElement;
+        if (host && host !== document.body && host.parentElement && !/^(MAIN|BODY)$/.test(host.tagName)) {
+          if (panel.previousElementSibling !== host) host.insertAdjacentElement('afterend', panel);
+          panel.classList.add('cos-fx-panel-detached');
+          return true;
+        }
+      }
+      if (panel.parentElement !== container) container.appendChild(panel);
+      panel.classList.remove('cos-fx-panel-detached');
+      return false;
+    }
+
     function setOpen(openState) {
       isOpen = !!openState;
+      var movedOut = isOpen && placePanel();
       panel.hidden = !isOpen;
+      if (movedOut && panel.scrollIntoView) panel.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' });
       toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       toggleBtn.textContent = isOpen ? 'Hide explorer' : 'Explore formula';
       if (isOpen) {

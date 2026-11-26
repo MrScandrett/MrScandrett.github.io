@@ -609,6 +609,7 @@ test('The lab: beat rate, absolute values, word names and plain arithmetic formu
       <div class="equation-box" id="no-times-x">f = n / (2L) x sqrt(T / m)</div>
       <div class="equation-box" id="auto-squared">E<sup>2</sup> = (pc)<sup>2</sup> + (mc<sup>2</sup>)<sup>2</sup></div>
       <div class="equation-box" id="two">v = g·t | y = ½·g·t²</div>
+      <div class="equation-box" id="kepler">T² / a³ = constant</div>
     </body></html>`);
     await page.addStyleTag({ path: CSS_PATH });
     await page.addScriptTag({ path: SCRIPT_PATH });
@@ -684,6 +685,13 @@ test('The lab: beat rate, absolute values, word names and plain arithmetic formu
     await set('auto-words', 1, '0');
     assert.match(await result('auto-words'), /no answer/);
     assert.doesNotMatch(await page.locator('#auto-words .cos-fx-panel').textContent(), /NaN|Infinity/);
+
+    // A slider on a³ sets a, so it is named for a; and exactly one unit reads in the singular.
+    await page.locator('#kepler .cos-fx-toggle-btn').click();
+    assert.equal(await page.locator('#kepler .cos-fx-lab-name').first().textContent(), 'Semi-major axis');
+    await set('kepler', 0, '1');
+    assert.match(await result('kepler'), /T = 1 year$/);
+    assert.doesNotMatch((await cards('kepler')).join(' | '), /\b1 (Earth )?years/);
 
     // Nothing is guessed: unknown angle units, "a / b × c", relations and multi-equation boxes get no lab.
     for (const id of ['no-trig', 'no-ambiguous', 'no-relation', 'no-times-x', 'two']) {
