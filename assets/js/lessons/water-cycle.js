@@ -171,7 +171,8 @@ function initSimulation() {
         explanation: document.getElementById('weather-explanation'),
         comparison: document.getElementById('weather-comparison'),
         btnDiagram: document.getElementById('wc-mode-diagram'),
-        btnParticle: document.getElementById('wc-mode-particle')
+        btnParticle: document.getElementById('wc-mode-particle'),
+        particleBadge: document.getElementById('wc-particle-badge')
     };
 
     const PRESETS = {
@@ -188,24 +189,63 @@ function initSimulation() {
     let saved = null;
     let wcCloudSim = null;
     let particleStageVisible = false;
+    let stormFlash = 0;
+    let lightningTimer = 3.5;
 
     const liquidLake = window.LiquidEngine?.createSurface({
         material: 'water',
         width: 260,
         restY: 0,
-        columns: 44,
+        columns: 52,
         maxColumns: 64
     });
 
-    const precipDrops = Array.from({ length: 75 }, () => ({
+    const precipDrops = Array.from({ length: 120 }, (_, i) => ({
         active: false,
         x: 0,
         y: 0,
         vx: 0,
         vy: 0,
         size: 1,
+        depth: 0.5 + (i % 3) * 0.25,
         snow: false,
+        sleet: false,
         phase: Math.random() * Math.PI * 2
+    }));
+
+    const splashes = Array.from({ length: 32 }, () => ({
+        active: false,
+        x: 0,
+        y: 0,
+        age: 0,
+        life: 0.38,
+        maxR: 9
+    }));
+
+    const fallLeaves = Array.from({ length: 10 }, (_, i) => ({
+        xFrac: 0.39 + (i * 0.017) % 0.18,
+        phase: i * 1.1,
+        speed: 14 + (i % 4) * 4,
+        hue: i % 2 === 0 ? '#d97706' : '#c2410c'
+    }));
+
+    // Deterministic seeded pebbles & sediment grains for zero-flicker subsurface geology
+    const sedimentGrains = Array.from({ length: 85 }, (_, i) => {
+        const s1 = Math.sin(i * 12.9898) * 43758.5453;
+        const s2 = Math.sin(i * 78.233 + 1.5) * 43758.5453;
+        const s3 = Math.sin(i * 39.425 + 4.1) * 43758.5453;
+        return {
+            u: 0.33 + (s1 - Math.floor(s1)) * 0.65,
+            v: 0.725 + (s2 - Math.floor(s2)) * 0.23,
+            r: 1.1 + (s3 - Math.floor(s3)) * 2.2,
+            tone: i % 3 === 0 ? 'rgba(92, 72, 50, 0.35)' : i % 3 === 1 ? 'rgba(225, 205, 175, 0.35)' : 'rgba(65, 52, 38, 0.25)'
+        };
+    });
+
+    const seepageDrops = Array.from({ length: 24 }, (_, i) => ({
+        u: 0.38 + ((i * 0.137) % 0.38),
+        progress: (i * 0.23) % 1,
+        speed: 0.28 + (i % 4) * 0.06
     }));
 
     function makeMolecule(index) {
@@ -218,11 +258,17 @@ function initSimulation() {
             lane: 0.18 + ((index * 0.37) % 0.72),
             x: 100,
             y: 250,
-            tag: 'Evaporating'
+            tag: 'Evaporating',
+            trail: []
         };
     }
 
     const molecules = Array.from({ length: 24 }, (_, idx) => makeMolecule(idx));
+
+    function lerpRGB(c1, c2, t) {
+        const k = Math.max(0, Math.min(1, t));
+        return `rgb(${Math.round(c1[0] + (c2[0] - c1[0]) * k)}, ${Math.round(c1[1] + (c2[1] - c1[1]) * k)}, ${Math.round(c1[2] + (c2[2] - c1[2]) * k)})`;
+    }
 
     function computeAtmosphere() {
         const T = state.temperature;
@@ -317,43 +363,93 @@ function initSimulation() {
     }
 
     function syncCloudSim() {
-        if (!wcCloudSim) return;
         const atmo = computeAtmosphere();
+        if (el.particleBadge) {
+            const precipLabel = atmo.precipKind === 'none' ? 'Dry air (no rain)' : atmo.precipKind === 'snow' ? 'Snowfall active' : atmo.precipKind === 'sleet' ? 'Wintry mix active' : 'Rainfall active';
+            el.particleBadge.textContent = `LCL ~${atmo.lclMeters.toLocaleString()} m (${Math.round(atmo.lclMeters * 3.28084).toLocaleString()} ft) · ${precipLabel} · Click/drag sky or ocean to launch a thermal updraft.`;
+        }
+        if (!wcCloudSim) return;
         const tempF = Math.round(state.temperature * 1.8 + 32);
         const dewF = Math.round(atmo.dewC * 1.8 + 32);
         wcCloudSim.setThermodynamics({ tempF, dewPointF: dewF });
         wcCloudSim.setTurbulence(0.35 + (state.sun / 100) * 0.95);
+        wcCloudSim.setAtmosphere?.({
+            sunStrength: state.sun / 100,
+            humidity: state.humidity,
+            precipRate: atmo.precipRate,
+            precipKind: atmo.precipKind,
+            evapScale: 0.35 + (atmo.tendency / 100) * 1.4,
+            season: state.season
+        });
     }
 
+    let diagramReady = false;
     const canvasHelper = window.SimKit?.canvas2d(canvas, {
         box: diagramStage,
         onResize: (_, w, h) => {
             simW = w;
             simH = h;
-            liquidLake?.configure(w * 0.34, 0, 44);
+            liquidLake?.configure(w * 0.34, 0, 52);
+            if (diagramReady && state.mode === 'diagram') renderDiagram();
         }
     });
     const ctx = canvasHelper?.ctx || canvas.getContext('2d');
+    diagramReady = true;
+
+    // Interactive ocean ripples when clicking/dragging on the water surface
+    let pointerDown = false;
+    function triggerOceanRipple(clientX, clientY) {
+        if (!liquidLake) return;
+        const rect = canvas.getBoundingClientRect();
+        const px = clientX - rect.left;
+        const py = clientY - rect.top;
+        if (px <= simW * 0.35 && py >= simH * 0.56) {
+            liquidLake.impulse(px, -16, 22);
+        }
+    }
+    canvas.addEventListener('pointerdown', (e) => {
+        pointerDown = true;
+        triggerOceanRipple(e.clientX, e.clientY);
+    });
+    canvas.addEventListener('pointermove', (e) => {
+        if (pointerDown) triggerOceanRipple(e.clientX, e.clientY);
+    });
+    window.addEventListener('pointerup', () => { pointerDown = false; });
 
     function terrainY(x, w, h) {
         const u = x / w;
         if (u <= 0.32) return 0.70 * h;
         if (u <= 0.62) {
             const k = (u - 0.32) / 0.30;
-            return (0.69 - Math.sin(k * Math.PI) * 0.03) * h;
+            return (0.69 - Math.sin(k * Math.PI) * 0.032) * h;
         }
         if (u <= 0.80) {
             const k = (u - 0.62) / 0.18;
-            return (0.68 - Math.pow(k, 1.2) * 0.37) * h;
+            return (0.68 - Math.pow(k, 1.25) * 0.38) * h;
         }
         const k = (u - 0.80) / 0.20;
-        return (0.31 + k * 0.26) * h;
+        return (0.30 + k * 0.25) * h;
     }
 
     function riverPoint(t, w, h) {
-        const x = (0.78 - t * 0.46) * w;
+        const x = (0.79 - t * 0.47) * w;
         const baseY = terrainY(x, w, h);
-        return { x, y: baseY + Math.sin(t * Math.PI * 2) * 3 };
+        return { x, y: baseY + Math.sin(t * Math.PI * 2.5) * 2.6 };
+    }
+
+    function spawnSplash(x, y, maxR = 8) {
+        for (let i = 0; i < splashes.length; i++) {
+            const s = splashes[i];
+            if (!s.active) {
+                s.active = true;
+                s.x = x;
+                s.y = y;
+                s.age = 0;
+                s.life = 0.34;
+                s.maxR = maxR;
+                break;
+            }
+        }
     }
 
     function stepParticles(dt, atmo) {
@@ -363,18 +459,37 @@ function initSimulation() {
         const lclNorm = Math.min(1, Math.max(0, (atmo.lclMeters - 120) / 2600));
         const lclY = (0.42 - lclNorm * 0.23) * h;
 
-        const spawnProb = atmo.precipRate > 0 ? dt * (10 + atmo.precipRate * 38) : 0;
-        for (let i = 0; i < precipDrops.length; i++) {
-            const d = precipDrops[i];
-            if (!d.active && Math.random() < spawnProb) {
-                d.active = true;
-                d.snow = atmo.precipKind === 'snow' || (atmo.precipKind === 'sleet' && i % 2 === 0);
-                d.x = (0.37 + Math.random() * 0.42) * w;
-                d.y = lclY + 14 + Math.random() * 10;
-                d.vx = d.snow ? (Math.random() - 0.5) * 18 : -16;
-                d.vy = d.snow ? 44 + Math.random() * 28 : 220 + Math.random() * 90;
-                d.size = d.snow ? 2.4 + Math.random() * 2 : 1.4;
-                break;
+        // Occasional storm lightning
+        if (state.humidity >= 88 && atmo.T > 8 && atmo.precipRate > 0.55) {
+            if (stormFlash > 0) {
+                stormFlash = Math.max(0, stormFlash - dt * 3.2);
+            } else {
+                lightningTimer -= dt;
+                if (lightningTimer <= 0) {
+                    stormFlash = 1.0;
+                    lightningTimer = 4.5 + Math.random() * 6;
+                }
+            }
+        } else {
+            stormFlash = 0;
+        }
+
+        const spawnProb = atmo.precipRate > 0 ? dt * (14 + atmo.precipRate * 55) : 0;
+        for (let n = 0; n < 3; n++) {
+            if (Math.random() >= spawnProb) continue;
+            for (let i = 0; i < precipDrops.length; i++) {
+                const d = precipDrops[i];
+                if (!d.active) {
+                    d.active = true;
+                    d.snow = atmo.precipKind === 'snow' || (atmo.precipKind === 'sleet' && i % 2 === 0);
+                    d.sleet = atmo.precipKind === 'sleet' && !d.snow;
+                    d.x = (0.34 + Math.random() * 0.45) * w;
+                    d.y = lclY + 12 + Math.random() * 14;
+                    d.vx = d.snow ? (Math.random() - 0.5) * 18 : -18 * d.depth;
+                    d.vy = d.snow ? (38 + Math.random() * 26) * d.depth : (210 + Math.random() * 110) * d.depth;
+                    d.size = d.snow ? (2.0 + Math.random() * 2.1) * d.depth : (8 + d.depth * 6);
+                    break;
+                }
             }
         }
 
@@ -385,8 +500,27 @@ function initSimulation() {
             d.y += d.vy * dt;
             const ground = Math.min(waterY, terrainY(d.x, w, h));
             if (d.y >= ground) {
+                if (!d.snow && Math.random() < 0.35) {
+                    spawnSplash(d.x, ground, d.x < 0.34 * w ? 9 : 6);
+                    if (d.x < 0.33 * w && liquidLake && atmo.T > 0) {
+                        liquidLake.impulse(d.x, -4.5, 10);
+                    }
+                }
                 d.active = false;
             }
+        }
+
+        for (let i = 0; i < splashes.length; i++) {
+            const s = splashes[i];
+            if (!s.active) continue;
+            s.age += dt;
+            if (s.age >= s.life) s.active = false;
+        }
+
+        for (let i = 0; i < seepageDrops.length; i++) {
+            const sp = seepageDrops[i];
+            const infRate = atmo.T <= -3 ? 0.03 : 0.1 + atmo.precipRate * 0.45;
+            sp.progress = (sp.progress + dt * sp.speed * infRate) % 1;
         }
 
         const speedScale = 0.12 + (atmo.tendency / 100) * 0.22 + atmo.precipRate * 0.14;
@@ -472,120 +606,185 @@ function initSimulation() {
                 m.y = (0.86 + Math.sin(m.t * Math.PI) * 0.02) * h;
                 m.tag = 'Groundwater';
             }
+
+            if (i === 0) {
+                m.trail.push({ x: m.x, y: m.y });
+                if (m.trail.length > 16) m.trail.shift();
+            }
         }
     }
 
-    function drawTree(x, groundY, scale, season, temp) {
+    function drawTree(x, groundY, scale, season, temp, sunStrength) {
+        const sway = Math.sin(simTime * 1.4 + x * 0.04) * (1.5 + sunStrength * 1.2) * scale;
         const trunkH = 26 * scale;
+
+        // Subtle root tendrils extending into topsoil
+        ctx.save();
+        ctx.strokeStyle = 'rgba(72, 48, 28, 0.55)';
+        ctx.lineWidth = 1.6 * scale;
+        ctx.beginPath();
+        ctx.moveTo(x - 2 * scale, groundY + 1);
+        ctx.quadraticCurveTo(x - 10 * scale, groundY + 10 * scale, x - 16 * scale, groundY + 18 * scale);
+        ctx.moveTo(x + 2 * scale, groundY + 1);
+        ctx.quadraticCurveTo(x + 9 * scale, groundY + 12 * scale, x + 15 * scale, groundY + 19 * scale);
+        ctx.stroke();
+
+        // Tapered trunk
         ctx.fillStyle = '#5c4028';
-        ctx.fillRect(x - 3 * scale, groundY - trunkH, 6 * scale, trunkH);
+        ctx.beginPath();
+        ctx.moveTo(x - 4 * scale, groundY + 2);
+        ctx.lineTo(x - 2.2 * scale + sway * 0.35, groundY - trunkH);
+        ctx.lineTo(x + 2.2 * scale + sway * 0.35, groundY - trunkH);
+        ctx.lineTo(x + 4 * scale, groundY + 2);
+        ctx.closePath();
+        ctx.fill();
 
         if (season === 'Winter') {
             ctx.strokeStyle = '#5c4028';
-            ctx.lineWidth = 2.2 * scale;
+            ctx.lineWidth = 2.1 * scale;
+            ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.moveTo(x, groundY - trunkH * 0.7);
-            ctx.lineTo(x - 14 * scale, groundY - trunkH * 1.25);
-            ctx.moveTo(x, groundY - trunkH * 0.75);
-            ctx.lineTo(x + 13 * scale, groundY - trunkH * 1.2);
-            ctx.moveTo(x, groundY - trunkH);
-            ctx.lineTo(x - 3 * scale, groundY - trunkH * 1.45);
+            ctx.moveTo(x + sway * 0.25, groundY - trunkH * 0.7);
+            ctx.lineTo(x - 14 * scale + sway * 0.65, groundY - trunkH * 1.25);
+            ctx.moveTo(x + sway * 0.28, groundY - trunkH * 0.75);
+            ctx.lineTo(x + 13 * scale + sway * 0.65, groundY - trunkH * 1.2);
+            ctx.moveTo(x + sway * 0.35, groundY - trunkH);
+            ctx.lineTo(x - 3 * scale + sway * 0.85, groundY - trunkH * 1.48);
             ctx.stroke();
             if (temp <= 2) {
-                ctx.fillStyle = 'rgba(241, 245, 249, 0.9)';
+                ctx.fillStyle = 'rgba(241, 245, 249, 0.92)';
                 ctx.beginPath();
-                ctx.ellipse(x - 10 * scale, groundY - trunkH * 1.22, 6 * scale, 2.5 * scale, -0.3, 0, Math.PI * 2);
-                ctx.ellipse(x + 9 * scale, groundY - trunkH * 1.18, 6 * scale, 2.5 * scale, 0.3, 0, Math.PI * 2);
+                ctx.ellipse(x - 10 * scale + sway * 0.6, groundY - trunkH * 1.23, 6.5 * scale, 2.4 * scale, -0.3, 0, Math.PI * 2);
+                ctx.ellipse(x + 9 * scale + sway * 0.6, groundY - trunkH * 1.19, 6.5 * scale, 2.4 * scale, 0.3, 0, Math.PI * 2);
                 ctx.fill();
             }
+            ctx.restore();
             return;
         }
 
         const palettes = {
-            Spring: ['#4eb56b', '#6ad084'],
-            Summer: ['#247a45', '#34995a'],
-            Fall: ['#c96420', '#e59a24']
+            Spring: ['#389a56', '#56be74', '#86e09c'],
+            Summer: ['#1c6438', '#2a844b', '#44aa68'],
+            Fall: ['#a14315', '#d97706', '#f59e0b']
         };
-        const [darkCol, lightCol] = palettes[season] || palettes.Summer;
-        ctx.fillStyle = darkCol;
-        ctx.beginPath();
-        ctx.ellipse(x, groundY - trunkH - 16 * scale, 20 * scale, 24 * scale, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = lightCol;
-        ctx.beginPath();
-        ctx.ellipse(x - 5 * scale, groundY - trunkH - 22 * scale, 13 * scale, 16 * scale, 0, 0, Math.PI * 2);
-        ctx.fill();
+        const [shadowCol, midCol, lightCol] = palettes[season] || palettes.Summer;
+        const cx = x + sway * 0.85;
+        const cy = groundY - trunkH - 16 * scale;
+
+        const lobes = [
+            [-11, 4, 13, 14, shadowCol],
+            [11, 5, 13, 14, shadowCol],
+            [0, -4, 17, 19, midCol],
+            [-7, -11, 11, 12, lightCol],
+            [7, -9, 10, 11, lightCol]
+        ];
+        lobes.forEach(([ox, oy, rx, ry, col]) => {
+            ctx.fillStyle = col;
+            ctx.beginPath();
+            ctx.ellipse(cx + ox * scale, cy + oy * scale, rx * scale, ry * scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+        });
 
         if (season === 'Spring') {
             ctx.fillStyle = '#fde2e4';
-            [[-8, -18], [7, -26], [-2, -32], [9, -12]].forEach(([dx, dy]) => {
+            [[-10, -4], [7, -14], [-3, -18], [10, 2], [-14, 5]].forEach(([dx, dy]) => {
                 ctx.beginPath();
-                ctx.arc(x + dx * scale, groundY - trunkH + dy * scale, 2.2 * scale, 0, Math.PI * 2);
+                ctx.arc(cx + dx * scale, cy + dy * scale, 2.2 * scale, 0, Math.PI * 2);
                 ctx.fill();
             });
         }
+        ctx.restore();
     }
 
     function drawCloudBank(w, h, lclY, atmo) {
         if (state.humidity < 15) return;
         const cloudDensity = Math.min(1, (state.humidity - 15) / 85);
         const cx = 0.56 * w;
-        const spread = (0.14 + cloudDensity * 0.15) * w;
-        const puffScale = 0.72 + cloudDensity * 0.52;
-        const darkTone = Math.round(228 - atmo.precipRate * 95);
-        const midTone = Math.round(245 - atmo.precipRate * 65);
-        const topTone = Math.round(255 - atmo.precipRate * 32);
+        const spread = (0.19 + cloudDensity * 0.23) * w;
+        const cloudH = (42 + cloudDensity * 52);
 
-        ctx.save();
-        ctx.globalAlpha = 0.35 + cloudDensity * 0.62;
-
-        // Flat condensation base (LCL)
-        ctx.fillStyle = `rgb(${darkTone - 20}, ${darkTone - 12}, ${darkTone + 4})`;
-        ctx.beginPath();
-        ctx.ellipse(cx, lclY + 4, spread, 15 * puffScale, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Mid cumulus lobes
-        ctx.fillStyle = `rgb(${midTone - 8}, ${midTone}, ${midTone + 8})`;
-        const lobes = [
-            [-0.58, -6, 0.42, 24],
-            [-0.22, -16, 0.46, 32],
-            [0.20, -14, 0.48, 30],
-            [0.58, -5, 0.38, 22]
-        ];
-        lobes.forEach(([ox, oy, rxFrac, ry]) => {
+        // Soft virga / rain-curtain atmospheric haze beneath precipitating clouds
+        if (atmo.precipRate > 0) {
+            const curtainGrad = ctx.createLinearGradient(0, lclY + 6, 0, 0.68 * h);
+            curtainGrad.addColorStop(0, `rgba(92, 124, 152, ${0.18 + atmo.precipRate * 0.25})`);
+            curtainGrad.addColorStop(1, 'rgba(92, 124, 152, 0)');
+            ctx.fillStyle = curtainGrad;
             ctx.beginPath();
-            ctx.ellipse(cx + ox * spread, lclY + oy * puffScale, spread * rxFrac, ry * puffScale, 0, 0, Math.PI * 2);
+            ctx.moveTo(cx - spread * 0.72, lclY + 10);
+            ctx.lineTo(cx + spread * 0.72, lclY + 10);
+            ctx.lineTo(cx + spread * 0.58, 0.68 * h);
+            ctx.lineTo(cx - spread * 0.85, 0.68 * h);
+            ctx.closePath();
             ctx.fill();
-        });
+        }
 
-        // Sunlit top crowns
-        ctx.fillStyle = `rgb(${topTone}, ${topTone}, 255)`;
-        ctx.beginPath();
-        ctx.ellipse(cx - 0.15 * spread, lclY - 28 * puffScale, spread * 0.34, 24 * puffScale, 0, 0, Math.PI * 2);
-        ctx.ellipse(cx + 0.18 * spread, lclY - 24 * puffScale, spread * 0.30, 21 * puffScale, 0, 0, Math.PI * 2);
-        ctx.fill();
+        // Volumetric 3D cloud bank via CloudEngine
+        if (window.CloudEngine?.renderCloudCluster) {
+            const isStorm = atmo.precipRate > 0.32;
+            const isGolden = state.temperature >= 29 && state.humidity < 50;
+            window.CloudEngine.renderCloudCluster(ctx, cx, lclY - cloudH * 0.28, spread * 1.4, cloudH, {
+                storm: isStorm,
+                golden: isGolden,
+                darkBase: true,
+                opacity: 0.45 + cloudDensity * 0.55,
+                time: simTime
+            });
+
+            // Secondary drifting cumulus puff over coastal foothills
+            const driftX = ((0.35 + (simTime * 0.008) % 0.12) * w);
+            window.CloudEngine.renderCloudCluster(ctx, driftX, lclY - cloudH * 0.18, spread * 0.65, cloudH * 0.62, {
+                storm: isStorm,
+                golden: isGolden,
+                darkBase: cloudDensity > 0.4,
+                opacity: (0.28 + cloudDensity * 0.45),
+                time: simTime + 3.1
+            });
+        } else {
+            ctx.fillStyle = 'rgba(245, 250, 255, 0.85)';
+            ctx.beginPath();
+            ctx.ellipse(cx, lclY - 12, spread * 0.7, 26, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Internal storm lightning glow inside cloud core
+        if (stormFlash > 0.05) {
+            const flashGrad = ctx.createRadialGradient(cx, lclY - cloudH * 0.3, 4, cx, lclY - cloudH * 0.3, spread * 0.55);
+            flashGrad.addColorStop(0, `rgba(255, 252, 224, ${stormFlash * 0.85})`);
+            flashGrad.addColorStop(1, 'rgba(186, 230, 253, 0)');
+            ctx.fillStyle = flashGrad;
+            ctx.beginPath();
+            ctx.arc(cx, lclY - cloudH * 0.3, spread * 0.55, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // LCL dashed guide line
-        ctx.strokeStyle = 'rgba(14, 74, 110, 0.42)';
-        ctx.lineWidth = 1.2;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(14, 74, 110, 0.48)';
+        ctx.lineWidth = 1.25;
         ctx.setLineDash([5, 5]);
         ctx.beginPath();
-        ctx.moveTo(0.35 * w, lclY + 12);
-        ctx.lineTo(0.80 * w, lclY + 12);
+        ctx.moveTo(0.32 * w, lclY + 10);
+        ctx.lineTo(0.84 * w, lclY + 10);
         ctx.stroke();
-        ctx.setLineDash([]);
         ctx.restore();
-        drawLabel(`Cloud base (LCL) ~${atmo.lclMeters.toLocaleString()} m`, 14, Math.max(20, lclY + 14));
+        drawLabel(`Cloud base (LCL) ~${atmo.lclMeters.toLocaleString()} m`, 14, Math.max(22, lclY + 14));
     }
 
     function drawLabel(text, x, y, align = 'left') {
         ctx.save();
-        ctx.font = '700 12px system-ui, sans-serif';
+        ctx.font = '700 11.5px system-ui, sans-serif';
         ctx.textAlign = align;
-        ctx.lineWidth = 3.5;
-        ctx.strokeStyle = 'rgba(248, 252, 255, 0.9)';
-        ctx.strokeText(text, x, y);
+        const padX = 7;
+        const tw = ctx.measureText(text).width;
+        const bx = align === 'center' ? x - tw / 2 - padX : align === 'right' ? x - tw - padX : x - padX;
+        ctx.fillStyle = 'rgba(248, 252, 255, 0.82)';
+        ctx.strokeStyle = 'rgba(15, 53, 72, 0.16)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bx, y - 13, tw + padX * 2, 18, 9);
+        else ctx.rect(bx, y - 13, tw + padX * 2, 18);
+        ctx.fill();
+        ctx.stroke();
         ctx.fillStyle = '#0f3548';
         ctx.fillText(text, x, y);
         ctx.restore();
@@ -598,100 +797,175 @@ function initSimulation() {
         const waterY = 0.70 * h;
         const lclNorm = Math.min(1, Math.max(0, (atmo.lclMeters - 120) / 2600));
         const lclY = (0.42 - lclNorm * 0.23) * h;
+        const sunStrength = state.sun / 100;
 
         ctx.clearRect(0, 0, w, h);
 
-        // 1. Sky Gradient (responds to temperature, humidity, season)
-        const sky = ctx.createLinearGradient(0, 0, 0, h * 0.72);
-        if (atmo.precipRate > 0.35) {
-            sky.addColorStop(0, '#5f7d95');
-            sky.addColorStop(1, '#c3d7e4');
-        } else if (atmo.T <= 0) {
-            sky.addColorStop(0, '#85b3d1');
-            sky.addColorStop(1, '#e6f3fa');
-        } else if (atmo.T >= 29) {
-            sky.addColorStop(0, '#4ca6df');
-            sky.addColorStop(1, '#ffe9c6');
-        } else {
-            sky.addColorStop(0, '#4aa3df');
-            sky.addColorStop(1, '#dff4ff');
+        // 1. Continuous Smooth RGB Sky Gradient
+        const warmMix = Math.max(0, Math.min(1, (atmo.T - 4) / 30));
+        const coldMix = Math.max(0, Math.min(1, (4 - atmo.T) / 14));
+        const stormMix = Math.min(1, atmo.precipRate * 1.15);
+
+        let topBase = [64, 158, 224];
+        let botBase = [214, 242, 255];
+        if (coldMix > 0) {
+            topBase = [64 + 45 * coldMix, 158 + 20 * coldMix, 224 - 12 * coldMix];
+            botBase = [214 + 22 * coldMix, 242, 255];
+        } else if (warmMix > 0.5) {
+            const k = (warmMix - 0.5) * 2;
+            botBase = [214 + 40 * k, 242 - 14 * k, 255 - 56 * k];
         }
+        const topSky = lerpRGB(topBase, [78, 102, 124], stormMix);
+        const botSky = lerpRGB(botBase, [182, 202, 218], stormMix);
+
+        const sky = ctx.createLinearGradient(0, 0, 0, h * 0.74);
+        sky.addColorStop(0, topSky);
+        sky.addColorStop(1, botSky);
         ctx.fillStyle = sky;
         ctx.fillRect(0, 0, w, h);
 
-        // 2. Sun (altitude varies by season, glow varies by sun strength)
-        const sunAltMap = { Summer: 0.12, Spring: 0.15, Fall: 0.18, Winter: 0.21 };
+        // Subtle high-altitude cirrus wisps in fair/moderate weather
+        const cirrusSpr = window.CloudEngine?.getSprite?.('cirrus');
+        if (cirrusSpr && state.humidity >= 18 && state.humidity <= 78 && atmo.precipRate < 0.25) {
+            ctx.save();
+            ctx.globalAlpha = 0.34 * (1 - atmo.precipRate * 2);
+            const cx1 = ((0.18 + (simTime * 0.006) % 0.8) * w);
+            const cx2 = ((0.58 + (simTime * 0.005) % 0.8) * w) % (w + 100) - 50;
+            ctx.drawImage(cirrusSpr, cx1, 0.07 * h, 140, 46);
+            ctx.drawImage(cirrusSpr, cx2, 0.12 * h, 120, 38);
+            ctx.restore();
+        }
+
+        // 2. Multi-layered Sun + Volumetric God-Ray Shafts
+        const sunAltMap = { Summer: 0.12, Spring: 0.15, Fall: 0.18, Winter: 0.22 };
         const sunX = 0.90 * w;
         const sunY = (sunAltMap[state.season] || 0.15) * h;
         const sunColors = { Summer: '#ffd54f', Spring: '#ffe066', Fall: '#ffb74d', Winter: '#fff0a6' };
-        const sunStrength = state.sun / 100;
 
-        if (sunStrength > 0.08) {
-            const halo = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 35 + sunStrength * 55);
-            halo.addColorStop(0, `rgba(255, 224, 102, ${0.45 * sunStrength})`);
-            halo.addColorStop(1, 'rgba(255, 224, 102, 0)');
+        if (sunStrength > 0.06) {
+            const dim = 1 - atmo.precipRate * 0.72;
+            const halo = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, 44 + sunStrength * 74);
+            halo.addColorStop(0, `rgba(255, 245, 185, ${0.72 * sunStrength * dim})`);
+            halo.addColorStop(0.35, `rgba(255, 218, 92, ${0.34 * sunStrength * dim})`);
+            halo.addColorStop(1, 'rgba(255, 218, 92, 0)');
             ctx.fillStyle = halo;
             ctx.beginPath();
-            ctx.arc(sunX, sunY, 35 + sunStrength * 55, 0, Math.PI * 2);
+            ctx.arc(sunX, sunY, 44 + sunStrength * 74, 0, Math.PI * 2);
             ctx.fill();
 
-            // Subtle solar rays toward ocean
+            // Volumetric translucent solar shafts toward ocean & valley
             ctx.save();
-            ctx.strokeStyle = `rgba(255, 223, 110, ${0.18 * sunStrength * (1 - atmo.precipRate * 0.65)})`;
-            ctx.lineWidth = 2;
-            ctx.setLineDash([8, 8]);
-            [0.14, 0.22, 0.45].forEach((targetFrac) => {
+            const shafts = [
+                [0.08, 0.22],
+                [0.24, 0.38],
+                [0.44, 0.56]
+            ];
+            shafts.forEach(([leftFrac, rightFrac]) => {
+                const shaftGrad = ctx.createLinearGradient(sunX, sunY, ((leftFrac + rightFrac) / 2) * w, waterY);
+                shaftGrad.addColorStop(0, `rgba(255, 238, 168, ${0.14 * sunStrength * dim})`);
+                shaftGrad.addColorStop(1, 'rgba(255, 238, 168, 0)');
+                ctx.fillStyle = shaftGrad;
                 ctx.beginPath();
-                ctx.moveTo(sunX - 24, sunY + 18);
-                ctx.lineTo(targetFrac * w, waterY - 12);
-                ctx.stroke();
+                ctx.moveTo(sunX - 18, sunY + 12);
+                ctx.lineTo(leftFrac * w, waterY);
+                ctx.lineTo(rightFrac * w, waterY);
+                ctx.closePath();
+                ctx.fill();
             });
             ctx.restore();
         }
+        ctx.save();
         ctx.fillStyle = sunColors[state.season] || '#ffd54f';
         ctx.globalAlpha = 0.35 + sunStrength * 0.65;
         ctx.beginPath();
-        ctx.arc(sunX, sunY, 22 + sunStrength * 10, 0, Math.PI * 2);
+        ctx.arc(sunX, sunY, 20 + sunStrength * 9, 0, Math.PI * 2);
         ctx.fill();
-        ctx.globalAlpha = 1;
-
-        // 3. Distant atmospheric haze / hills behind mountain
-        ctx.fillStyle = 'rgba(130, 165, 185, 0.35)';
+        ctx.fillStyle = `rgba(255, 253, 235, ${0.55 * sunStrength})`;
         ctx.beginPath();
-        ctx.moveTo(0.42 * w, 0.70 * h);
-        ctx.lineTo(0.64 * w, 0.44 * h);
-        ctx.lineTo(0.76 * w, 0.56 * h);
-        ctx.lineTo(w, 0.40 * h);
+        ctx.arc(sunX, sunY, 12 + sunStrength * 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 3. Atmospheric-Perspective Distant Mountain Ranges
+        ctx.fillStyle = atmo.T <= 0 ? 'rgba(138, 174, 198, 0.42)' : 'rgba(116, 158, 182, 0.34)';
+        ctx.beginPath();
+        ctx.moveTo(0.32 * w, 0.71 * h);
+        ctx.lineTo(0.49 * w, 0.49 * h);
+        ctx.lineTo(0.61 * w, 0.57 * h);
+        ctx.lineTo(0.75 * w, 0.38 * h);
+        ctx.lineTo(0.88 * w, 0.48 * h);
+        ctx.lineTo(w, 0.36 * h);
         ctx.lineTo(w, 0.72 * h);
         ctx.closePath();
         ctx.fill();
 
-        // 4. Mountain & Coastal Terrain + Subsurface Strata
-        ctx.fillStyle = atmo.T <= 0 ? '#8fa1ad' : '#8a745c';
+        ctx.fillStyle = atmo.T <= 0 ? 'rgba(115, 146, 168, 0.52)' : 'rgba(98, 134, 152, 0.44)';
+        ctx.beginPath();
+        ctx.moveTo(0.38 * w, 0.71 * h);
+        ctx.lineTo(0.56 * w, 0.53 * h);
+        ctx.lineTo(0.68 * w, 0.43 * h);
+        ctx.lineTo(0.80 * w, 0.52 * h);
+        ctx.lineTo(w, 0.42 * h);
+        ctx.lineTo(w, 0.72 * h);
+        ctx.closePath();
+        ctx.fill();
+
+        // Fair-weather seabirds gliding gracefully
+        if (atmo.precipRate < 0.15 && atmo.T > 2) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(20, 52, 74, 0.55)';
+            ctx.lineWidth = 1.4;
+            [[0.16, 0.24, 0], [0.22, 0.28, 1.4], [0.28, 0.21, 2.7]].forEach(([bx, by, ph]) => {
+                const birdX = ((bx * w + simTime * 11) % (w * 0.65)) + 0.04 * w;
+                const birdY = by * h + Math.sin(simTime * 2.2 + ph) * 3;
+                const flap = Math.sin(simTime * 5.2 + ph) * 2.5;
+                ctx.beginPath();
+                ctx.moveTo(birdX - 6, birdY - flap);
+                ctx.quadraticCurveTo(birdX - 3, birdY - 3, birdX, birdY);
+                ctx.quadraticCurveTo(birdX + 3, birdY - 3, birdX + 6, birdY - flap);
+                ctx.stroke();
+            });
+            ctx.restore();
+        }
+
+        // 4. Main Coastal Mountain & Faceted Rock Shading
+        const mtnGrad = ctx.createLinearGradient(0.62 * w, 0.30 * h, w, 0.72 * h);
+        if (atmo.T <= 0) {
+            mtnGrad.addColorStop(0, '#7c8e9c');
+            mtnGrad.addColorStop(1, '#9fb0bd');
+        } else {
+            mtnGrad.addColorStop(0, '#6d5b49');
+            mtnGrad.addColorStop(0.55, '#8c745c');
+            mtnGrad.addColorStop(1, '#a58a6d');
+        }
+        ctx.fillStyle = mtnGrad;
         ctx.beginPath();
         ctx.moveTo(0.32 * w, h);
         ctx.lineTo(0.32 * w, terrainY(0.32 * w, w, h));
-        for (let px = 0.33 * w; px <= w + 6; px += 8) {
+        for (let px = 0.33 * w; px <= w + 6; px += 6) {
             ctx.lineTo(Math.min(w, px), terrainY(Math.min(w, px), w, h));
         }
         ctx.lineTo(w, h);
         ctx.closePath();
         ctx.fill();
 
-        // Surface grass / winter snow cover along coastal plain
-        ctx.strokeStyle = atmo.T <= 0 ? '#eef6fb' : state.season === 'Fall' ? '#8c9445' : '#4a8f49';
-        ctx.lineWidth = 7;
+        // Mountain shaded western ridge facet
+        ctx.save();
+        ctx.fillStyle = 'rgba(24, 34, 48, 0.16)';
         ctx.beginPath();
-        for (let px = 0.32 * w; px <= 0.68 * w; px += 6) {
-            const py = terrainY(px, w, h);
-            if (px === 0.32 * w) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
+        ctx.moveTo(0.62 * w, terrainY(0.62 * w, w, h));
+        for (let px = 0.62 * w; px <= 0.80 * w; px += 6) {
+            ctx.lineTo(px, terrainY(px, w, h));
         }
-        ctx.stroke();
+        ctx.lineTo(0.79 * w, 0.71 * h);
+        ctx.lineTo(0.62 * w, 0.71 * h);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
 
-        // Mountain snowcap (descends dynamically below 8°C)
-        const snowFrac = Math.max(0.14, Math.min(0.95, (8 - atmo.T) / 14));
-        const snowLineY = (0.29 + snowFrac * 0.37) * h;
+        // Dynamic jagged mountain snowpack (descends below 10°C)
+        const snowFrac = Math.max(0.14, Math.min(0.95, (10 - atmo.T) / 16));
+        const snowLineY = (0.29 + snowFrac * 0.38) * h;
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(0.62 * w, terrainY(0.62 * w, w, h));
@@ -702,57 +976,223 @@ function initSimulation() {
         ctx.lineTo(0.62 * w, h);
         ctx.closePath();
         ctx.clip();
-        ctx.fillStyle = '#f3f8fc';
-        ctx.fillRect(0.60 * w, 0.24 * h, 0.42 * w, snowLineY - 0.24 * h);
+
+        ctx.fillStyle = '#f2f8fc';
+        ctx.beginPath();
+        ctx.moveTo(0.60 * w, 0.24 * h);
+        ctx.lineTo(w + 10, 0.24 * h);
+        ctx.lineTo(w + 10, snowLineY + 6);
+        for (let px = w; px >= 0.60 * w; px -= 12) {
+            const jag = Math.sin(px * 0.14) * 5 + Math.cos(px * 0.08) * 3;
+            ctx.lineTo(px, snowLineY + jag);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // Subtle cool shadow on left slope of snowpack
+        ctx.fillStyle = 'rgba(148, 192, 224, 0.32)';
+        ctx.fillRect(0.60 * w, 0.24 * h, 0.195 * w, snowLineY - 0.20 * h);
         ctx.restore();
 
-        // Subsurface porous sediment layer
-        ctx.fillStyle = '#b99f79';
+        // Coastal beach & grassy valley turf
+        ctx.fillStyle = '#d6be96';
         ctx.beginPath();
-        ctx.moveTo(0.32 * w, 0.72 * h);
-        ctx.lineTo(w, 0.72 * h);
+        ctx.ellipse(0.325 * w, 0.702 * h, 18, 6, -0.1, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = atmo.T <= 0 ? '#eef6fb' : state.season === 'Fall' ? '#95913c' : state.season === 'Spring' ? '#58a852' : '#3d8643';
+        ctx.lineWidth = 7.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        for (let px = 0.33 * w; px <= 0.67 * w; px += 6) {
+            const py = terrainY(px, w, h);
+            if (px === 0.33 * w) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Spring wildflowers or lush grass tufts
+        if (atmo.T > 2) {
+            ctx.save();
+            for (let gx = 0.36 * w; gx <= 0.63 * w; gx += 18) {
+                const gy = terrainY(gx, w, h) - 3;
+                const sway = Math.sin(simTime * 1.8 + gx * 0.1) * 1.8;
+                ctx.strokeStyle = state.season === 'Fall' ? '#8c7e2c' : '#35783a';
+                ctx.lineWidth = 1.4;
+                ctx.beginPath();
+                ctx.moveTo(gx, gy + 2);
+                ctx.lineTo(gx + sway, gy - 5);
+                ctx.stroke();
+                if (state.season === 'Spring' && Math.round(gx) % 36 < 18) {
+                    ctx.fillStyle = '#fef08a';
+                    ctx.beginPath();
+                    ctx.arc(gx + sway, gy - 5, 1.8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.restore();
+        }
+
+        // Subsurface Geological Cross-Section:
+        // 4a. Dark organic topsoil band
+        ctx.fillStyle = '#5c4632';
+        ctx.beginPath();
+        ctx.moveTo(0.32 * w, 0.705 * h);
+        for (let px = 0.33 * w; px <= w + 6; px += 12) {
+            ctx.lineTo(Math.min(w, px), terrainY(Math.min(w, px), w, h) + 5);
+        }
+        ctx.lineTo(w, 0.74 * h);
+        ctx.lineTo(0.32 * w, 0.74 * h);
+        ctx.closePath();
+        ctx.fill();
+
+        // 4b. Porous vadose soil & sandstone layer
+        const soilGrad = ctx.createLinearGradient(0, 0.72 * h, 0, 0.96 * h);
+        soilGrad.addColorStop(0, '#b99b72');
+        soilGrad.addColorStop(0.65, '#9d7f59');
+        soilGrad.addColorStop(1, '#786147');
+        ctx.fillStyle = soilGrad;
+        ctx.beginPath();
+        ctx.moveTo(0.32 * w, 0.73 * h);
+        ctx.lineTo(w, 0.73 * h);
         ctx.lineTo(w, h);
         ctx.lineTo(0.32 * w, h);
         ctx.closePath();
         ctx.fill();
 
-        // Deep Groundwater Aquifer (water table rises gently with humidity)
+        // Seeded pebbles & porous sediment texture
+        for (let i = 0; i < sedimentGrains.length; i++) {
+            const g = sedimentGrains[i];
+            ctx.fillStyle = g.tone;
+            ctx.beginPath();
+            ctx.arc(g.u * w, g.v * h, g.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Animated infiltration seepage trickles from rain/snowmelt
+        if (atmo.precipRate > 0.05 || atmo.T > 2) {
+            ctx.save();
+            const alpha = atmo.precipRate > 0 ? 0.42 + atmo.precipRate * 0.45 : 0.22;
+            ctx.fillStyle = `rgba(56, 189, 248, ${alpha})`;
+            for (let i = 0; i < seepageDrops.length; i++) {
+                const sp = seepageDrops[i];
+                const sx = sp.u * w + Math.sin(sp.progress * Math.PI * 4 + i) * 3;
+                const topY = terrainY(sx, w, h) + 8;
+                const sy = topY + (0.85 * h - topY) * sp.progress;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // 4c. Deep Groundwater Aquifer + animated subterranean flow streamlines
         const aqLift = (state.humidity / 100) * 0.03 * h;
         const aqTop = 0.84 * h - aqLift;
-        const aqGrad = ctx.createLinearGradient(0, aqTop, 0, 0.96 * h);
-        aqGrad.addColorStop(0, 'rgba(49, 152, 224, 0.78)');
-        aqGrad.addColorStop(1, 'rgba(18, 86, 138, 0.92)');
+        const aqGrad = ctx.createLinearGradient(0, aqTop, 0, 0.955 * h);
+        aqGrad.addColorStop(0, 'rgba(56, 168, 238, 0.80)');
+        aqGrad.addColorStop(1, 'rgba(16, 76, 128, 0.94)');
         ctx.fillStyle = aqGrad;
         ctx.beginPath();
         ctx.moveTo(0.31 * w, waterY + 12);
         ctx.quadraticCurveTo(0.55 * w, aqTop, 0.96 * w, aqTop - 8);
-        ctx.lineTo(0.96 * w, 0.95 * h);
-        ctx.lineTo(0.31 * w, 0.96 * h);
+        ctx.lineTo(0.96 * w, 0.955 * h);
+        ctx.lineTo(0.31 * w, 0.955 * h);
         ctx.closePath();
         ctx.fill();
 
-        // River flowing from mountain down to ocean
-        ctx.strokeStyle = atmo.T <= -4 ? '#bde3f7' : '#2f9df4';
-        ctx.lineWidth = 4.5 + atmo.precipRate * 3.5;
+        // Shimmering water-table rim + flow lines discharging toward coast
+        ctx.save();
+        ctx.strokeStyle = 'rgba(186, 230, 253, 0.65)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(0.31 * w, waterY + 12);
+        ctx.quadraticCurveTo(0.55 * w, aqTop, 0.96 * w, aqTop - 8);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(224, 247, 255, 0.35)';
+        ctx.lineWidth = 1.4;
+        ctx.setLineDash([8, 12]);
+        ctx.lineDashOffset = simTime * 16;
+        [0.885, 0.92].forEach((yFrac) => {
+            ctx.beginPath();
+            ctx.moveTo(0.92 * w, yFrac * h);
+            ctx.quadraticCurveTo(0.62 * w, yFrac * h + 3, 0.32 * w, (yFrac - 0.04) * h);
+            ctx.stroke();
+        });
+        ctx.restore();
+
+        // 4d. Dark fractured impermeable bedrock base
+        ctx.fillStyle = '#3c3b42';
+        ctx.fillRect(0.315 * w, 0.955 * h, 0.685 * w, 0.045 * h);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 1;
+        for (let bx = 0.34 * w; bx < w; bx += 42) {
+            ctx.beginPath();
+            ctx.moveTo(bx, 0.955 * h);
+            ctx.lineTo(bx - 12, h);
+            ctx.stroke();
+        }
+
+        // Mountain River + Whitewater Shimmer + Delta Plume
+        ctx.save();
+        ctx.strokeStyle = 'rgba(60, 44, 28, 0.38)';
+        ctx.lineWidth = 8.5 + atmo.precipRate * 4;
         ctx.lineCap = 'round';
         ctx.beginPath();
-        for (let i = 0; i <= 24; i++) {
-            const pt = riverPoint(i / 24, w, h);
+        for (let i = 0; i <= 26; i++) {
+            const pt = riverPoint(i / 26, w, h);
+            if (i === 0) ctx.moveTo(pt.x, pt.y + 1.5);
+            else ctx.lineTo(pt.x, pt.y + 1.5);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = atmo.T <= -4 ? '#bde3f7' : '#2a9cf2';
+        ctx.lineWidth = 5 + atmo.precipRate * 3.5;
+        ctx.beginPath();
+        for (let i = 0; i <= 26; i++) {
+            const pt = riverPoint(i / 26, w, h);
             if (i === 0) ctx.moveTo(pt.x, pt.y + 1);
             else ctx.lineTo(pt.x, pt.y + 1);
         }
         ctx.stroke();
 
-        // 5. Ocean / Lake with LiquidEngine surface waves + ice cover below 0°C
+        if (atmo.T > -4) {
+            ctx.strokeStyle = 'rgba(224, 247, 255, 0.68)';
+            ctx.lineWidth = 1.6;
+            ctx.setLineDash([6, 12]);
+            ctx.lineDashOffset = -simTime * (28 + atmo.precipRate * 24);
+            ctx.beginPath();
+            for (let i = 0; i <= 26; i++) {
+                const pt = riverPoint(i / 26, w, h);
+                if (i === 0) ctx.moveTo(pt.x, pt.y + 0.5);
+                else ctx.lineTo(pt.x, pt.y + 0.5);
+            }
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // 5. Lifelike Ocean / Lake: Sloped Seabed, Caustics, Waves, Glints & Sea Ice
+        // 5a. Seabed visible in shallow coastal margin
+        ctx.fillStyle = '#9a8466';
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        ctx.lineTo(0, 0.94 * h);
+        ctx.quadraticCurveTo(0.24 * w, 0.89 * h, 0.34 * w, waterY + 2);
+        ctx.lineTo(0.34 * w, h);
+        ctx.closePath();
+        ctx.fill();
+
         const lakeGrad = ctx.createLinearGradient(0, waterY, 0, h);
-        lakeGrad.addColorStop(0, '#3bb5d8');
-        lakeGrad.addColorStop(1, '#104968');
+        lakeGrad.addColorStop(0, atmo.T <= 0 ? 'rgba(56, 152, 198, 0.88)' : 'rgba(56, 189, 228, 0.86)');
+        lakeGrad.addColorStop(0.45, 'rgba(18, 114, 168, 0.92)');
+        lakeGrad.addColorStop(1, 'rgba(12, 62, 98, 0.97)');
         ctx.fillStyle = lakeGrad;
         ctx.beginPath();
         ctx.moveTo(0, h);
         ctx.lineTo(0, waterY);
+        const waveScale = atmo.T <= 0 ? 0.14 : 1;
         if (liquidLake) {
-            const waveScale = atmo.T <= 0 ? 0.15 : 1;
             liquidLake.columns.forEach((col, idx) => {
                 const lx = (idx / (liquidLake.columns.length - 1)) * 0.34 * w;
                 const ly = waterY + col.y * waveScale;
@@ -765,25 +1205,76 @@ function initSimulation() {
         ctx.closePath();
         ctx.fill();
 
-        // Surface ripple highlight
-        ctx.strokeStyle = 'rgba(220, 247, 255, 0.72)';
+        // 5b. Animated underwater sunlight caustics
+        if (sunStrength > 0.12 && atmo.T > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, waterY + 4, 0.33 * w, h - waterY - 8);
+            ctx.clip();
+            const causticAlpha = 0.14 * sunStrength * (1 - atmo.precipRate * 0.65);
+            ctx.strokeStyle = `rgba(186, 243, 255, ${causticAlpha})`;
+            ctx.lineWidth = 1.6;
+            for (let b = 0; b < 4; b++) {
+                const cy = waterY + 18 + b * 22;
+                ctx.beginPath();
+                for (let cx = 4; cx < 0.32 * w; cx += 28) {
+                    const wob = Math.sin(cx * 0.05 + simTime * 1.8 + b * 1.4) * 3.5;
+                    ctx.moveTo(cx, cy + wob);
+                    ctx.quadraticCurveTo(cx + 9, cy + wob - 3, cx + 18, cy + wob + 1);
+                }
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 5c. Surface ripple meniscus highlight + whitecap foam crests + sun glints
+        ctx.strokeStyle = 'rgba(228, 250, 255, 0.82)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         if (liquidLake) {
-            const waveScale = atmo.T <= 0 ? 0.15 : 1;
             liquidLake.columns.forEach((col, idx) => {
                 const lx = (idx / (liquidLake.columns.length - 1)) * 0.34 * w;
                 const ly = waterY + col.y * waveScale;
                 if (idx === 0) ctx.moveTo(lx, ly);
                 else ctx.lineTo(lx, ly);
             });
-        }
-        ctx.stroke();
+            ctx.stroke();
 
-        // Ice crust when freezing
+            // Sunlit sparkles & whitecap foam on steeper wave crests
+            if (atmo.T > 0) {
+                for (let idx = 2; idx < liquidLake.columns.length - 2; idx++) {
+                    const yC = liquidLake.columns[idx].y;
+                    if (yC < liquidLake.columns[idx - 1].y - 0.55 && yC < liquidLake.columns[idx + 1].y - 0.55) {
+                        const lx = (idx / (liquidLake.columns.length - 1)) * 0.34 * w;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.78)';
+                        ctx.lineWidth = 2.2;
+                        ctx.beginPath();
+                        ctx.moveTo(lx - 5, waterY + yC);
+                        ctx.lineTo(lx + 5, waterY + yC);
+                        ctx.stroke();
+                    }
+                }
+            }
+        } else {
+            ctx.stroke();
+        }
+
+        // Sun glitter path on ocean surface
+        if (sunStrength > 0.15 && atmo.T > 0) {
+            ctx.save();
+            ctx.fillStyle = `rgba(255, 248, 210, ${0.42 * sunStrength * (1 - atmo.precipRate * 0.6)})`;
+            for (let g = 0; g < 6; g++) {
+                const gx = (0.12 + 0.17 * ((Math.sin(simTime * 1.4 + g * 1.9) + 1) * 0.5)) * w;
+                const gy = waterY + 4 + g * 7;
+                ctx.fillRect(gx, gy, 10 - g * 0.8, 1.4);
+            }
+            ctx.restore();
+        }
+
+        // 5d. Crystalline Ice Crust when freezing (<= 0°C)
         if (atmo.T <= 0) {
-            const iceThick = Math.min(14, 4 + Math.abs(atmo.T) * 1.0);
-            ctx.fillStyle = 'rgba(224, 247, 255, 0.88)';
+            const iceThick = Math.min(15, 5 + Math.abs(atmo.T) * 1.0);
+            ctx.fillStyle = 'rgba(224, 247, 255, 0.86)';
             ctx.fillRect(0, waterY - 2, 0.33 * w, iceThick);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
             ctx.lineWidth = 1.5;
@@ -791,63 +1282,152 @@ function initSimulation() {
             ctx.moveTo(0, waterY - 2);
             ctx.lineTo(0.33 * w, waterY - 2);
             ctx.stroke();
-        }
-
-        // 6. Seasonal Trees (coastal valley)
-        drawTree(0.41 * w, terrainY(0.41 * w, w, h), 0.92, state.season, atmo.T);
-        drawTree(0.47 * w, terrainY(0.47 * w, w, h), 1.12, state.season, atmo.T);
-        drawTree(0.53 * w, terrainY(0.53 * w, w, h), 0.85, state.season, atmo.T);
-
-        // 7. Clouds at LCL
-        drawCloudBank(w, h, lclY, atmo);
-
-        // 8. Precipitation under clouds
-        for (let i = 0; i < precipDrops.length; i++) {
-            const d = precipDrops[i];
-            if (!d.active) continue;
-            if (d.snow) {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+            ctx.strokeStyle = 'rgba(125, 200, 232, 0.65)';
+            ctx.lineWidth = 1;
+            for (let ix = 18; ix < 0.30 * w; ix += 36) {
                 ctx.beginPath();
-                ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
-                ctx.fill();
-            } else {
-                ctx.strokeStyle = 'rgba(220, 245, 255, 0.85)';
-                ctx.lineWidth = 1.8;
-                ctx.beginPath();
-                ctx.moveTo(d.x, d.y);
-                ctx.lineTo(d.x - 2, d.y + 9);
+                ctx.moveTo(ix, waterY - 1);
+                ctx.lineTo(ix + 10, waterY + iceThick - 3);
+                ctx.lineTo(ix + 18, waterY + 2);
                 ctx.stroke();
             }
         }
 
-        // 9. Labels
-        drawLabel(atmo.T <= 0 ? 'Frozen Ocean / Lake' : 'Ocean / Lake', 18, h - 18);
-        drawLabel('Evaporation ↑', 0.14 * w, 0.57 * h);
-        drawLabel('Transpiration ↑', 0.42 * w, 0.53 * h);
-        drawLabel('Runoff ↓', 0.62 * w, 0.52 * h);
-        drawLabel('Groundwater Aquifer', 0.47 * w, 0.91 * h);
+        // 5e. Delicate curling evaporation mist wisps above ocean
+        if (atmo.tendency > 18 && atmo.T > 0) {
+            ctx.save();
+            const mistAlpha = Math.min(0.34, 0.08 + (atmo.tendency / 100) * 0.28);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${mistAlpha})`;
+            ctx.lineWidth = 2.4;
+            ctx.lineCap = 'round';
+            for (let e = 0; e < 5; e++) {
+                const ex = (0.06 + e * 0.06) * w;
+                const rise = (simTime * 16 + e * 11) % 44;
+                const ey = waterY - 6 - rise;
+                ctx.globalAlpha = Math.max(0, 1 - rise / 44);
+                ctx.beginPath();
+                ctx.moveTo(ex, ey + 14);
+                ctx.bezierCurveTo(
+                    ex + Math.sin(simTime * 2 + e) * 7, ey + 8,
+                    ex - Math.cos(simTime * 1.8 + e) * 7, ey + 2,
+                    ex + Math.sin(simTime * 1.4 + e) * 4, ey - 6
+                );
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
 
-        // 10. Branching water-cycle molecules
+        // 6. Seasonal Trees (coastal valley) + Autumn Falling Leaves + Transpiration Plumes
+        drawTree(0.41 * w, terrainY(0.41 * w, w, h), 0.92, state.season, atmo.T, sunStrength);
+        drawTree(0.47 * w, terrainY(0.47 * w, w, h), 1.12, state.season, atmo.T, sunStrength);
+        drawTree(0.53 * w, terrainY(0.53 * w, w, h), 0.85, state.season, atmo.T, sunStrength);
+
+        if (state.season === 'Fall') {
+            ctx.save();
+            fallLeaves.forEach((lf) => {
+                const ly = (0.52 * h) + ((simTime * lf.speed + lf.phase * 15) % (0.16 * h));
+                const lx = lf.xFrac * w + Math.sin(simTime * 2.1 + lf.phase) * 9;
+                ctx.fillStyle = lf.hue;
+                ctx.beginPath();
+                ctx.ellipse(lx, ly, 2.5, 1.4, simTime * 2 + lf.phase, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
+        if (state.season !== 'Winter' && atmo.tendency > 15 && atmo.T > 2) {
+            ctx.save();
+            ctx.strokeStyle = `rgba(220, 248, 255, ${Math.min(0.28, (atmo.tendency / 100) * 0.25)})`;
+            ctx.lineWidth = 2;
+            [0.41, 0.47, 0.53].forEach((tx, idx) => {
+                const rise = (simTime * 14 + idx * 14) % 34;
+                const y0 = terrainY(tx * w, w, h) - 48 - rise;
+                ctx.globalAlpha = Math.max(0, 1 - rise / 34);
+                ctx.beginPath();
+                ctx.moveTo(tx * w, y0 + 10);
+                ctx.quadraticCurveTo(tx * w + Math.sin(simTime * 2 + idx) * 6, y0 + 2, tx * w, y0 - 6);
+                ctx.stroke();
+            });
+            ctx.restore();
+        }
+
+        // 7. Volumetric Clouds at LCL
+        drawCloudBank(w, h, lclY, atmo);
+
+        // 8. Multi-depth Precipitation + Splash Crowns
+        for (let i = 0; i < precipDrops.length; i++) {
+            const d = precipDrops[i];
+            if (!d.active) continue;
+            if (d.snow) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + d.depth * 0.32})`;
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (d.sleet) {
+                ctx.fillStyle = 'rgba(210, 242, 255, 0.9)';
+                ctx.fillRect(d.x, d.y, 2, 4);
+            } else {
+                ctx.strokeStyle = `rgba(218, 244, 255, ${0.42 + d.depth * 0.42})`;
+                ctx.lineWidth = 1.1 + d.depth * 0.8;
+                ctx.beginPath();
+                ctx.moveTo(d.x, d.y);
+                ctx.lineTo(d.x - 2.2 * d.depth, d.y + d.size);
+                ctx.stroke();
+            }
+        }
+
+        for (let i = 0; i < splashes.length; i++) {
+            const s = splashes[i];
+            if (!s.active) continue;
+            const k = s.age / s.life;
+            ctx.save();
+            ctx.strokeStyle = `rgba(228, 248, 255, ${(1 - k) * 0.78})`;
+            ctx.lineWidth = 1.3;
+            ctx.beginPath();
+            ctx.ellipse(s.x, s.y, 2 + k * s.maxR, 1 + k * (s.maxR * 0.34), 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 9. Clean Field-Guide Pill Labels
+        drawLabel(atmo.T <= 0 ? 'Frozen Ocean / Lake' : 'Ocean / Lake', 16, h - 16);
+        drawLabel('Evaporation ↑', 0.14 * w, 0.57 * h);
+        drawLabel('Transpiration ↑', 0.42 * w, 0.52 * h);
+        drawLabel('Runoff ↓', 0.62 * w, 0.51 * h);
+        drawLabel('Groundwater Aquifer', 0.47 * w, 0.915 * h);
+
+        // 10. Branching Water-Cycle Molecules + Comet Trail on Tracked Drop
         for (let i = molecules.length - 1; i >= 0; i--) {
             const m = molecules[i];
             const isVapor = m.phase === 'evaporate' || m.phase === 'transpire' || m.phase === 'cloud';
             const isIce = m.tag === 'Snowing';
             const isTracked = state.trackDrop && i === 0;
 
+            if (isTracked && m.trail.length > 1) {
+                for (let ti = 0; ti < m.trail.length - 1; ti++) {
+                    const pt = m.trail[ti];
+                    const frac = (ti + 1) / m.trail.length;
+                    ctx.fillStyle = `rgba(246, 201, 76, ${frac * 0.45})`;
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, 1.8 + frac * 3.2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
             if (isTracked) {
                 ctx.save();
-                ctx.fillStyle = 'rgba(246, 201, 76, 0.35)';
+                ctx.fillStyle = 'rgba(246, 201, 76, 0.38)';
                 ctx.beginPath();
-                ctx.arc(m.x, m.y, 12, 0, Math.PI * 2);
+                ctx.arc(m.x, m.y, 12.5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
 
-            ctx.fillStyle = isTracked ? '#f6c94c' : isIce ? '#e0f2fe' : isVapor ? '#ffffff' : '#1e90ff';
-            ctx.strokeStyle = isTracked ? '#082c42' : '#0a4a79';
-            ctx.lineWidth = isTracked ? 2.2 : 1.3;
+            ctx.fillStyle = isTracked ? '#f6c94c' : isIce ? '#e0f2fe' : isVapor ? 'rgba(255, 255, 255, 0.88)' : '#1e90ff';
+            ctx.strokeStyle = isTracked ? '#082c42' : isVapor ? 'rgba(14, 116, 174, 0.65)' : '#0a4a79';
+            ctx.lineWidth = isTracked ? 2.2 : 1.2;
             ctx.beginPath();
-            ctx.arc(m.x, m.y, isTracked ? 6.5 : 4.4, 0, Math.PI * 2);
+            ctx.arc(m.x, m.y, isTracked ? 6.5 : isVapor ? 3.8 : 4.4, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
@@ -858,9 +1438,10 @@ function initSimulation() {
                 const tw = ctx.measureText(labelText).width;
                 const bx = Math.min(w - tw - 18, Math.max(8, m.x + 10));
                 const by = Math.max(20, m.y - 10);
-                ctx.fillStyle = 'rgba(8, 44, 66, 0.9)';
+                ctx.fillStyle = 'rgba(8, 44, 66, 0.92)';
                 ctx.beginPath();
-                ctx.roundRect(bx - 6, by - 12, tw + 12, 18, 9);
+                if (ctx.roundRect) ctx.roundRect(bx - 6, by - 12, tw + 12, 18, 9);
+                else ctx.rect(bx - 6, by - 12, tw + 12, 18);
                 ctx.fill();
                 ctx.fillStyle = '#f8e299';
                 ctx.fillText(labelText, bx, by + 1);
@@ -875,8 +1456,8 @@ function initSimulation() {
         const atmo = computeAtmosphere();
         simTime += safeDt;
         liquidLake?.update(safeDt);
-        if (liquidLake && Math.random() < safeDt * (atmo.T <= 0 ? 0.1 : 0.7 + atmo.precipRate)) {
-            liquidLake.impulse(40 + Math.random() * (simW * 0.24), -8 - atmo.precipRate * 8, 24);
+        if (liquidLake && atmo.T > 0 && Math.random() < safeDt * (0.9 + atmo.precipRate * 1.4)) {
+            liquidLake.impulse(32 + Math.random() * (simW * 0.28), -7 - atmo.precipRate * 7, 24);
         }
         stepParticles(safeDt, atmo);
         renderDiagram();
@@ -1009,6 +1590,7 @@ function initSimulation() {
             particleStage.hidden = false;
             particleStageVisible = true;
 
+            let createdCloudSim = false;
             if (!wcCloudSim && window.CloudEngine) {
                 wcCloudSim = window.CloudEngine.attach('wc-particle-canvas', {
                     preset: 'water_cycle_evaporation',
@@ -1016,10 +1598,15 @@ function initSimulation() {
                     showAltitudeGuide: true,
                     interactive: true
                 });
+                createdCloudSim = true;
             } else if (wcCloudSim?.simKitHelper?.resize) {
                 wcCloudSim.simKitHelper.resize();
             }
             syncCloudSim();
+            if (createdCloudSim && wcCloudSim) {
+                for (let k = 0; k < 55; k++) wcCloudSim.update(0.05);
+                wcCloudSim.render();
+            }
             syncEnginePlayback();
         });
     }
@@ -1027,6 +1614,7 @@ function initSimulation() {
     if (!state.playing && el.toggle) el.toggle.textContent = 'Resume Cycle';
     el.toggle?.setAttribute('aria-pressed', String(state.playing));
     updateReadouts();
+    syncCloudSim();
     renderDiagram();
     syncEnginePlayback();
 }
@@ -1287,26 +1875,38 @@ function initStatesLab() {
     let molRunning = !prefersReduced;
     let molW = 360;
     let molH = 240;
+    let molTime = 0;
     let themeColors = window.SimKit?.theme?.colors?.() || { text: '#1d1d1f', textMuted: '#6e6e73', accent: '#0071e3' };
 
-    // Hexagonal lattice targets (open rings) for ice below 0°C
+    // 28-site open hexagonal ice crystal lattice (normalized coordinates)
     const hexPts = [
-        [0.24, 0.42], [0.36, 0.34], [0.48, 0.42], [0.48, 0.57], [0.36, 0.65], [0.24, 0.57],
-        [0.60, 0.34], [0.72, 0.42], [0.72, 0.57], [0.60, 0.65],
-        [0.24, 0.74], [0.36, 0.82], [0.48, 0.74], [0.60, 0.82], [0.72, 0.74],
-        [0.14, 0.50], [0.82, 0.50], [0.48, 0.22]
+        [0.18, 0.34], [0.27, 0.25], [0.37, 0.34], [0.37, 0.49], [0.27, 0.58], [0.18, 0.49],
+        [0.47, 0.25], [0.57, 0.34], [0.57, 0.49], [0.47, 0.58],
+        [0.67, 0.25], [0.77, 0.34], [0.77, 0.49], [0.67, 0.58],
+        [0.18, 0.67], [0.27, 0.76], [0.37, 0.67], [0.47, 0.76], [0.57, 0.67], [0.67, 0.76], [0.77, 0.67],
+        [0.09, 0.42], [0.09, 0.57], [0.86, 0.42], [0.86, 0.57],
+        [0.37, 0.17], [0.57, 0.17], [0.47, 0.85]
     ];
 
-    const h2o = Array.from({ length: 18 }, (_, i) => ({
-        x: (0.18 + (i % 6) * 0.13) * 360,
-        y: (0.48 + Math.floor(i / 6) * 0.16) * 240,
-        vx: (Math.random() - 0.5) * 60,
-        vy: (Math.random() - 0.5) * 60,
-        angle: Math.random() * Math.PI * 2,
+    const h2o = Array.from({ length: 28 }, (_, i) => ({
+        x: (0.14 + (i % 7) * 0.12) * 360,
+        y: (0.50 + Math.floor(i / 7) * 0.12) * 240,
+        vx: (Math.random() - 0.5) * 65,
+        vy: (Math.random() - 0.5) * 65,
+        angle: (i * 1.1) % (Math.PI * 2),
         omega: (Math.random() - 0.5) * 2.4,
-        vaporTimer: 0,
-        evaporating: i < 2
+        isVapor: i < 2,
+        trail: []
     }));
+
+    const bubbles = Array.from({ length: 14 }, (_, i) => ({
+        xFrac: 0.12 + ((i * 0.068) % 0.78),
+        yFrac: 0.96 - ((i * 0.19) % 0.45),
+        r: 2 + (i % 3) * 1.4,
+        speed: 0.32 + (i % 4) * 0.08
+    }));
+
+    let swirlPulse = { active: false, x: 0, y: 0, age: 0 };
 
     function drawHeatingCurve() {
         const ink = themeColors.text || '#1d1d1f';
@@ -1320,7 +1920,6 @@ function initStatesLab() {
         const yBot = 266;
         const toY = (c) => yBot - ((c + 25) / 150) * (yBot - yTop);
 
-        // Evaporation Zone highlight (0°C to 100°C)
         const y100 = toY(100);
         const y0 = toY(0);
         curveSvg.appendChild(svg('rect', {
@@ -1332,9 +1931,8 @@ function initStatesLab() {
         }, 'Evaporation Zone (0–100°C):'));
         curveSvg.appendChild(svg('text', {
             x: x0 + 14, y: y100 + 40, 'text-anchor': 'start', 'font-size': 11, 'font-weight': 600, fill: muted
-        }, 'vapor escapes liquid at any temp'));
+        }, 'click or drag curve to set temperature'));
 
-        // Grid lines at 0°C and 100°C
         [0, 100].forEach((deg) => {
             const yy = toY(deg);
             curveSvg.appendChild(svg('line', {
@@ -1346,13 +1944,11 @@ function initStatesLab() {
             }, `${deg}°C`));
         });
 
-        // Axes
         curveSvg.appendChild(svg('line', { x1: x0, y1: yTop, x2: x0, y2: yBot, stroke: ink, 'stroke-width': 2 }));
         curveSvg.appendChild(svg('line', { x1: x0, y1: yBot, x2: x1, y2: yBot, stroke: ink, 'stroke-width': 2 }));
         curveSvg.appendChild(svg('text', { x: (x0 + x1) / 2, y: 296, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: ink }, 'Thermal Energy Added →'));
         curveSvg.appendChild(svg('text', { x: 18, y: (yTop + yBot) / 2, transform: `rotate(-90 18 ${(yTop + yBot) / 2})`, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: ink }, 'Temp (°C)'));
 
-        // Curve coordinates
         const pStart = [x0 + 18, toY(-25)];
         const pMeltA = [x0 + 88, toY(0)];
         const pMeltB = [x0 + 168, toY(0)];
@@ -1360,17 +1956,26 @@ function initStatesLab() {
         const pBoilB = [x0 + 468, toY(100)];
         const pEnd = [x0 + 528, toY(125)];
 
-        const d = `M ${pStart[0]} ${pStart[1]} L ${pMeltA[0]} ${pMeltA[1]} L ${pMeltB[0]} ${pMeltB[1]} L ${pBoilA[0]} ${pBoilA[1]} L ${pBoilB[0]} ${pBoilB[1]} L ${pEnd[0]} ${pEnd[1]}`;
-        curveSvg.appendChild(svg('path', { d, fill: 'none', stroke: accent, 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+        const segments = [
+            [pStart, pMeltA, '#38bdf8'],
+            [pMeltA, pMeltB, '#f59e0b'],
+            [pMeltB, pBoilA, '#0284c7'],
+            [pBoilA, pBoilB, '#ea580c'],
+            [pBoilB, pEnd, '#a855f7']
+        ];
+        segments.forEach(([a, b, stroke]) => {
+            curveSvg.appendChild(svg('line', {
+                x1: a[0], y1: a[1], x2: b[0], y2: b[1],
+                stroke, 'stroke-width': 4.5, 'stroke-linecap': 'round'
+            }));
+        });
 
-        // Labels along curve segments
         curveSvg.appendChild(svg('text', { x: x0 + 38, y: toY(-15), 'font-size': 11, 'font-weight': 700, fill: ink }, 'Ice'));
         curveSvg.appendChild(svg('text', { x: (pMeltA[0] + pMeltB[0]) / 2, y: toY(0) + 17, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: muted }, 'Melt ↔ Freeze'));
         curveSvg.appendChild(svg('text', { x: (pMeltB[0] + pBoilA[0]) / 2 + 12, y: toY(52), 'font-size': 12, 'font-weight': 700, fill: ink }, 'Liquid Water'));
         curveSvg.appendChild(svg('text', { x: (pBoilA[0] + pBoilB[0]) / 2, y: toY(100) - 10, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: muted }, 'Boil ↔ Condense'));
         curveSvg.appendChild(svg('text', { x: x0 + 522, y: toY(112), 'font-size': 11, 'font-weight': 700, fill: ink }, 'Vapor'));
 
-        // Sublimation ↔ Deposition arc in open lower-right area
         curveSvg.appendChild(svg('path', {
             d: `M ${x0 + 70} ${toY(-8)} Q ${x0 + 380} ${toY(-6)} ${x0 + 510} ${toY(106)}`,
             fill: 'none', stroke: '#d97706', 'stroke-width': 2, 'stroke-dasharray': '5 5'
@@ -1379,7 +1984,6 @@ function initStatesLab() {
             x: x0 + 390, y: toY(18), 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: '#b45309'
         }, 'Sublimation ↔ Deposition (skips liquid)'));
 
-        // Active temperature point on heating curve
         let mx;
         let my;
         if (tempC < 0) {
@@ -1402,17 +2006,48 @@ function initStatesLab() {
             my = toY(tempC);
         }
 
-        curveSvg.appendChild(svg('circle', { cx: mx, cy: my, r: 11, fill: 'rgba(246, 201, 76, 0.38)' }));
-        curveSvg.appendChild(svg('circle', { cx: mx, cy: my, r: 6, fill: '#f6c94c', stroke: '#082c42', 'stroke-width': 2 }));
+        curveSvg.appendChild(svg('circle', { cx: mx, cy: my, r: 12, fill: 'rgba(246, 201, 76, 0.38)' }));
+        curveSvg.appendChild(svg('circle', { cx: mx, cy: my, r: 6.5, fill: '#f6c94c', stroke: '#082c42', 'stroke-width': 2 }));
     }
+
+    // Scrub temperature directly along the heating curve SVG
+    let curveDragging = false;
+    function scrubCurve(clientX, clientY) {
+        const rect = curveSvg.getBoundingClientRect();
+        const svgX = ((clientX - rect.left) / rect.width) * 640;
+        const svgY = ((clientY - rect.top) / rect.height) * 310;
+        const x0 = 62;
+        const yTop = 28;
+        const yBot = 266;
+        let nextT;
+        if (svgX >= x0 + 84 && svgX <= x0 + 172 && Math.abs(svgY - 226) < 26) {
+            nextT = 0;
+        } else if (svgX >= x0 + 334 && svgX <= x0 + 472 && Math.abs(svgY - 68) < 26) {
+            nextT = 100;
+        } else {
+            nextT = Math.round(((yBot - svgY) / (yBot - yTop)) * 150 - 25);
+        }
+        tempC = Math.max(-25, Math.min(125, nextT));
+        slider.value = String(tempC);
+        updatePhaseUI();
+    }
+    curveSvg.addEventListener('pointerdown', (e) => {
+        curveDragging = true;
+        curveSvg.setPointerCapture?.(e.pointerId);
+        scrubCurve(e.clientX, e.clientY);
+    });
+    curveSvg.addEventListener('pointermove', (e) => {
+        if (curveDragging) scrubCurve(e.clientX, e.clientY);
+    });
+    window.addEventListener('pointerup', () => { curveDragging = false; });
 
     function drawH2OMolecule(ctx, x, y, angle, scale = 1, isVapor = false) {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(angle);
-        const rO = 7.2 * scale;
-        const rH = 4.2 * scale;
-        const bond = 9.5 * scale;
+        const rO = 6.2 * scale;
+        const rH = 3.6 * scale;
+        const bond = 8.4 * scale;
         const halfAngle = (104.5 / 2) * (Math.PI / 180);
 
         const h1x = Math.cos(-halfAngle) * bond;
@@ -1420,8 +2055,8 @@ function initStatesLab() {
         const h2x = Math.cos(halfAngle) * bond;
         const h2y = Math.sin(halfAngle) * bond;
 
-        ctx.strokeStyle = 'rgba(226, 244, 255, 0.7)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(226, 244, 255, 0.78)';
+        ctx.lineWidth = 2 * scale;
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(h1x, h1y);
@@ -1429,118 +2064,286 @@ function initStatesLab() {
         ctx.lineTo(h2x, h2y);
         ctx.stroke();
 
-        ctx.fillStyle = isVapor ? '#7dd3fc' : '#0284c7';
-        ctx.strokeStyle = '#e0f2fe';
-        ctx.lineWidth = 1.2;
+        // 3D-shaded oxygen sphere
+        const oGrad = ctx.createRadialGradient(-rO * 0.35, -rO * 0.35, 1, 0, 0, rO);
+        oGrad.addColorStop(0, isVapor ? '#bae6fd' : '#38bdf8');
+        oGrad.addColorStop(0.65, isVapor ? '#0284c7' : '#0369a1');
+        oGrad.addColorStop(1, '#082f49');
+        ctx.fillStyle = oGrad;
+        ctx.strokeStyle = 'rgba(224, 242, 254, 0.75)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.arc(0, 0, rO, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = '#f8fafc';
-        ctx.beginPath();
-        ctx.arc(h1x, h1y, rH, 0, Math.PI * 2);
-        ctx.arc(h2x, h2y, rH, 0, Math.PI * 2);
-        ctx.fill();
+        // 3D-shaded hydrogen spheres
+        [[h1x, h1y], [h2x, h2y]].forEach(([hx, hy]) => {
+            const hGrad = ctx.createRadialGradient(hx - 1, hy - 1, 0.5, hx, hy, rH);
+            hGrad.addColorStop(0, '#ffffff');
+            hGrad.addColorStop(1, '#94a3b8');
+            ctx.fillStyle = hGrad;
+            ctx.beginPath();
+            ctx.arc(hx, hy, rH, 0, Math.PI * 2);
+            ctx.fill();
+        });
         ctx.restore();
     }
 
+    let molReady = false;
     const molHelper = window.SimKit?.canvas2d(molCanvas, {
         box: molCanvas.parentElement,
         onResize: (_, w, h) => {
             molW = w;
             molH = h;
+            if (molReady) renderMolecules(0);
         }
     });
     const mCtx = molHelper?.ctx || molCanvas.getContext('2d');
+    molReady = true;
+
+    molCanvas.addEventListener('pointerdown', (e) => {
+        const rect = molCanvas.getBoundingClientRect();
+        swirlPulse = { active: true, x: e.clientX - rect.left, y: e.clientY - rect.top, age: 0 };
+        h2o.forEach((p) => {
+            const dx = p.x - swirlPulse.x;
+            const dy = p.y - swirlPulse.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 75 && dist > 1) {
+                p.vx += (dx / dist) * 55;
+                p.vy += (dy / dist) * 55;
+            }
+        });
+    });
 
     function renderMolecules(dt) {
         const w = molW;
         const h = molH;
+        molTime += dt;
         mCtx.clearRect(0, 0, w, h);
 
         const bg = mCtx.createLinearGradient(0, 0, 0, h);
-        bg.addColorStop(0, '#0b1e2e');
-        bg.addColorStop(1, '#102d42');
+        bg.addColorStop(0, tempC >= 100 ? '#1b1628' : '#081826');
+        bg.addColorStop(1, tempC >= 100 ? '#271722' : '#0e2b40');
         mCtx.fillStyle = bg;
         mCtx.fillRect(0, 0, w, h);
 
-        const surfaceY = 0.44 * h;
+        const surfaceY = 0.43 * h;
 
-        if (tempC > 0 && tempC < 100) {
-            mCtx.fillStyle = 'rgba(14, 116, 174, 0.25)';
-            mCtx.fillRect(0, surfaceY, w, h - surfaceY);
-            mCtx.strokeStyle = 'rgba(125, 211, 252, 0.45)';
-            mCtx.lineWidth = 1.5;
-            mCtx.beginPath();
-            mCtx.moveTo(0, surfaceY);
-            mCtx.lineTo(w, surfaceY);
-            mCtx.stroke();
-            mCtx.fillStyle = 'rgba(224, 242, 254, 0.72)';
-            mCtx.font = '600 11px system-ui, sans-serif';
-            mCtx.fillText('Surface evaporation (vapor)', 10, 18);
-            mCtx.fillText('Liquid water', 10, surfaceY + 18);
-        } else if (tempC <= 0) {
-            mCtx.fillStyle = 'rgba(224, 242, 254, 0.78)';
-            mCtx.font = '600 11px system-ui, sans-serif';
-            mCtx.fillText(tempC === 0 ? 'Melting crystal lattice (0°C)' : 'Open hexagonal ice crystal', 10, 18);
-        } else {
-            mCtx.fillStyle = 'rgba(224, 242, 254, 0.8)';
-            mCtx.font = '600 11px system-ui, sans-serif';
-            mCtx.fillText('Water vapor gas (high kinetic energy)', 10, 18);
+        // Ambient frost vignette below 0°C
+        if (tempC < 0) {
+            const frost = mCtx.createRadialGradient(w / 2, h / 2, w * 0.25, w / 2, h / 2, w * 0.7);
+            frost.addColorStop(0, 'rgba(186, 230, 253, 0)');
+            frost.addColorStop(1, 'rgba(186, 230, 253, 0.16)');
+            mCtx.fillStyle = frost;
+            mCtx.fillRect(0, 0, w, h);
         }
 
-        const speedBoost = 0.4 + Math.max(0, (tempC + 25) / 150) * 1.8;
-        const vaporSlots = tempC <= 0 ? 0 : tempC >= 100 ? h2o.length : 1 + Math.floor((tempC / 100) * 4);
+        // Liquid volume & undulating meniscus for 0..100°C
+        if (tempC >= 0 && tempC <= 100) {
+            const liqGrad = mCtx.createLinearGradient(0, surfaceY, 0, h);
+            liqGrad.addColorStop(0, 'rgba(14, 116, 174, 0.34)');
+            liqGrad.addColorStop(1, 'rgba(7, 59, 98, 0.56)');
+            mCtx.fillStyle = liqGrad;
+            mCtx.beginPath();
+            mCtx.moveTo(0, h);
+            for (let px = 0; px <= w + 10; px += 10) {
+                const wave = Math.sin(px * 0.04 + molTime * (tempC === 100 ? 6 : 2.2)) * (tempC === 100 ? 4 : 2);
+                mCtx.lineTo(px, surfaceY + wave);
+            }
+            mCtx.lineTo(w, h);
+            mCtx.closePath();
+            mCtx.fill();
 
-        if (tempC < 0) {
-            // Draw faint hydrogen-bond lattice lines between nearby crystal nodes
+            mCtx.strokeStyle = 'rgba(125, 211, 252, 0.6)';
+            mCtx.lineWidth = 1.6;
+            mCtx.beginPath();
+            for (let px = 0; px <= w + 10; px += 10) {
+                const wave = Math.sin(px * 0.04 + molTime * (tempC === 100 ? 6 : 2.2)) * (tempC === 100 ? 4 : 2);
+                if (px === 0) mCtx.moveTo(px, surfaceY + wave);
+                else mCtx.lineTo(px, surfaceY + wave);
+            }
+            mCtx.stroke();
+        }
+
+        // Glowing thermal base + nucleating boiling bubbles at 100°C
+        if (tempC === 100) {
+            const heatGlow = mCtx.createLinearGradient(0, h - 26, 0, h);
+            heatGlow.addColorStop(0, 'rgba(249, 115, 22, 0)');
+            heatGlow.addColorStop(1, 'rgba(249, 115, 22, 0.48)');
+            mCtx.fillStyle = heatGlow;
+            mCtx.fillRect(0, h - 26, w, 26);
+
             mCtx.save();
-            mCtx.strokeStyle = 'rgba(147, 197, 253, 0.35)';
-            mCtx.setLineDash([4, 4]);
-            mCtx.lineWidth = 1.2;
-            const ringPairs = [
-                [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0],
-                [2, 6], [6, 7], [7, 8], [8, 9], [9, 3],
-                [5, 10], [10, 11], [11, 12], [12, 3], [12, 13], [13, 14], [14, 9]
-            ];
-            ringPairs.forEach(([a, b]) => {
+            bubbles.forEach((b) => {
+                if (dt > 0) {
+                    b.yFrac -= dt * b.speed;
+                    if (b.yFrac < 0.44) b.yFrac = 0.97;
+                }
+                const bx = b.xFrac * w + Math.sin(molTime * 4 + b.r) * 3;
+                const by = b.yFrac * h;
+                const br = b.r * (1 + (0.97 - b.yFrac) * 1.4);
+                mCtx.strokeStyle = 'rgba(224, 247, 255, 0.65)';
+                mCtx.lineWidth = 1.1;
                 mCtx.beginPath();
-                mCtx.moveTo(hexPts[a][0] * w, hexPts[a][1] * h);
-                mCtx.lineTo(hexPts[b][0] * w, hexPts[b][1] * h);
+                mCtx.arc(bx, by, br, 0, Math.PI * 2);
                 mCtx.stroke();
             });
             mCtx.restore();
         }
 
-        h2o.forEach((p, idx) => {
-            if (tempC <= 0) {
-                const targetX = hexPts[idx][0] * w;
-                const targetY = hexPts[idx][1] * h;
-                const amp = tempC === 0 ? 4.8 : 1.2 + ((tempC + 25) / 25) * 1.8;
-                p.x = targetX + Math.sin(performance.now() * 0.015 + idx * 1.7) * amp;
-                p.y = targetY + Math.cos(performance.now() * 0.017 + idx * 2.1) * amp;
-                if (tempC === 0 && idx < 4) {
-                    p.y -= 6 + Math.sin(performance.now() * 0.005 + idx) * 6;
-                }
-                p.angle = (idx % 6) * (Math.PI / 3);
-            } else {
-                const isVapor = idx < vaporSlots;
-                const minY = isVapor ? 24 : surfaceY + 14;
-                const maxY = isVapor ? (tempC >= 100 ? h - 18 : surfaceY - 12) : h - 18;
-                if (dt > 0) {
-                    const velScale = (isVapor ? 1.55 : 0.72) * speedBoost;
+        const speedBoost = 0.42 + Math.max(0, (tempC + 25) / 150) * 1.95;
+        const targetVapor = tempC < 0 ? 0 : tempC === 0 ? 1 : tempC >= 100 ? h2o.length : 1 + Math.floor((tempC / 100) * 7);
+
+        // Physics step
+        if (dt > 0) {
+            for (let i = 0; i < h2o.length; i++) {
+                const p = h2o[i];
+                if (tempC < 0) {
+                    const tx = hexPts[i][0] * w;
+                    const ty = hexPts[i][1] * h;
+                    p.x += (tx - p.x) * Math.min(1, dt * 8);
+                    p.y += (ty - p.y) * Math.min(1, dt * 8);
+                    p.angle = (i % 6) * (Math.PI / 3);
+                } else if (tempC === 0 && i < 12) {
+                    // Floating melting hexagonal ice cluster near top of liquid pool
+                    const tx = (0.24 + (i % 4) * 0.14) * w + Math.sin(molTime * 0.6) * 10;
+                    const ty = (0.37 + Math.floor(i / 4) * 0.11) * h + Math.cos(molTime * 0.8 + i) * 2;
+                    p.x += (tx - p.x) * Math.min(1, dt * 6);
+                    p.y += (ty - p.y) * Math.min(1, dt * 6);
+                    p.angle = (i % 6) * (Math.PI / 3) + Math.sin(molTime + i) * 0.15;
+                } else {
+                    const isVapor = i < targetVapor;
+                    p.isVapor = isVapor;
+                    const minY = isVapor ? 28 : surfaceY + 14;
+                    const maxY = isVapor ? (tempC >= 100 ? h - 18 : surfaceY - 12) : h - 18;
+                    const velScale = (isVapor ? 1.65 : 0.78) * speedBoost;
+
                     p.x += p.vx * velScale * dt;
                     p.y += p.vy * velScale * dt;
                     p.angle += p.omega * speedBoost * dt;
+
                     if (p.x < 18) { p.x = 18; p.vx = Math.abs(p.vx); }
                     if (p.x > w - 18) { p.x = w - 18; p.vx = -Math.abs(p.vx); }
                     if (p.y < minY) { p.y = minY; p.vy = Math.abs(p.vy); }
                     if (p.y > maxY) { p.y = maxY; p.vy = -Math.abs(p.vy); }
+
+                    if (tempC > 100) {
+                        p.trail.push({ x: p.x, y: p.y });
+                        if (p.trail.length > 5) p.trail.shift();
+                    } else if (p.trail.length) {
+                        p.trail.length = 0;
+                    }
                 }
             }
-            drawH2OMolecule(mCtx, p.x, p.y, p.angle, 0.92, tempC >= 100 || (tempC > 0 && idx < vaporSlots));
+
+            // Soft-sphere pairwise repulsion in liquid/gas so molecules jostle instead of overlapping
+            if (tempC >= 0) {
+                const minDist = tempC > 100 ? 22 : 24;
+                for (let i = 0; i < h2o.length; i++) {
+                    if (tempC === 0 && i < 12) continue;
+                    for (let j = i + 1; j < h2o.length; j++) {
+                        if (tempC === 0 && j < 12) continue;
+                        const a = h2o[i];
+                        const b = h2o[j];
+                        const dx = b.x - a.x;
+                        const dy = b.y - a.y;
+                        const dist = Math.hypot(dx, dy);
+                        if (dist > 0.5 && dist < minDist) {
+                            const push = (minDist - dist) * 1.4;
+                            const nx = dx / dist;
+                            const ny = dy / dist;
+                            a.vx -= nx * push;
+                            a.vy -= ny * push;
+                            b.vx += nx * push;
+                            b.vy += ny * push;
+                        }
+                    }
+                    // Cap velocity so speeds stay smooth
+                    const p = h2o[i];
+                    const spd = Math.hypot(p.vx, p.vy);
+                    if (spd > 95) {
+                        p.vx = (p.vx / spd) * 95;
+                        p.vy = (p.vy / spd) * 95;
+                    }
+                }
+            }
+        }
+
+        // Dynamic proximity-based hydrogen bonds (H···O)
+        const hBondDist = tempC < 0 ? 58 : tempC <= 100 ? 34 : 0;
+        let activeHBonds = 0;
+        if (hBondDist > 0) {
+            mCtx.save();
+            mCtx.setLineDash([3, 3]);
+            mCtx.lineWidth = tempC < 0 ? 1.5 : 1.1;
+            for (let i = 0; i < h2o.length; i++) {
+                for (let j = i + 1; j < h2o.length; j++) {
+                    const a = h2o[i];
+                    const b = h2o[j];
+                    if ((tempC > 0 && (a.isVapor || b.isVapor)) && tempC < 100) continue;
+                    const dist = Math.hypot(b.x - a.x, b.y - a.y);
+                    if (dist < hBondDist) {
+                        activeHBonds++;
+                        const alpha = tempC < 0 ? 0.55 : (1 - dist / hBondDist) * 0.45;
+                        mCtx.strokeStyle = `rgba(147, 197, 253, ${alpha})`;
+                        mCtx.beginPath();
+                        mCtx.moveTo(a.x, a.y);
+                        mCtx.lineTo(b.x, b.y);
+                        mCtx.stroke();
+                    }
+                }
+            }
+            mCtx.restore();
+        }
+
+        // Draw molecules (+ vibration jitter for frozen crystal & trails for hot steam)
+        const jitterAmp = tempC < 0 ? 1.0 + ((tempC + 25) / 25) * 1.6 : 0;
+        h2o.forEach((p, idx) => {
+            if (p.trail.length > 1 && tempC > 100) {
+                mCtx.strokeStyle = 'rgba(125, 211, 252, 0.28)';
+                mCtx.lineWidth = 2;
+                mCtx.beginPath();
+                p.trail.forEach((pt, ti) => (ti === 0 ? mCtx.moveTo(pt.x, pt.y) : mCtx.lineTo(pt.x, pt.y)));
+                mCtx.stroke();
+            }
+            const jx = jitterAmp ? Math.sin(molTime * 16 + idx * 1.9) * jitterAmp : 0;
+            const jy = jitterAmp ? Math.cos(molTime * 18 + idx * 2.3) * jitterAmp : 0;
+            const vaporDraw = tempC >= 100 || (tempC > 0 && idx < targetVapor);
+            drawH2OMolecule(mCtx, p.x + jx, p.y + jy, p.angle, 0.9, vaporDraw);
         });
+
+        // Pointer thermal ripple ring
+        if (swirlPulse.active) {
+            swirlPulse.age += dt;
+            const k = swirlPulse.age / 0.55;
+            if (k >= 1) swirlPulse.active = false;
+            else {
+                mCtx.strokeStyle = `rgba(246, 201, 76, ${1 - k})`;
+                mCtx.lineWidth = 2;
+                mCtx.beginPath();
+                mCtx.arc(swirlPulse.x, swirlPulse.y, 10 + k * 48, 0, Math.PI * 2);
+                mCtx.stroke();
+            }
+        }
+
+        // Clean HUD badge inside molecule chamber
+        mCtx.save();
+        mCtx.fillStyle = 'rgba(7, 22, 34, 0.74)';
+        mCtx.fillRect(0, 0, w, 24);
+        mCtx.fillStyle = '#e0f2fe';
+        mCtx.font = '600 11px system-ui, sans-serif';
+        const hudText = tempC < 0
+            ? `Hexagonal Ice Lattice · ${activeHBonds} H-bonds locked (floats ~9% less dense)`
+            : tempC === 0
+            ? `0°C Melting/Freezing · Ice cluster floats on liquid water`
+            : tempC < 100
+            ? `Liquid (${activeHBonds} fleeting H-bonds) + ${targetVapor} surface vapor escaping`
+            : tempC === 100
+            ? `100°C Boiling · Vapor bubbles nucleating throughout volume`
+            : `Gas Vapor · H-bonds broken, rapid thermal motion`;
+        mCtx.fillText(hudText, 10, 16);
+        mCtx.restore();
     }
 
     const molLoop = window.SimKit?.loop((dt) => {
@@ -1559,13 +2362,13 @@ function initStatesLab() {
             note = 'Below 0°C, H₂O locks into open hexagonal rings held by hydrogen bonds — leaving extra space so solid ice is ~9% less dense than liquid water and floats.';
         } else if (tempC === 0) {
             badge = 'Melting / Freezing · 0°C';
-            note = 'At 0°C, added thermal energy breaks crystal bonds without raising temperature until all ice melts.';
+            note = 'At 0°C, added thermal energy breaks crystal bonds without raising temperature until all ice melts. Notice the ice cluster floating near the top!';
         } else if (tempC < 100) {
             badge = tempC >= 30 ? 'Warm Liquid · Fast Evaporation' : 'Liquid · Water';
-            note = `At ${tempC}°C, liquid molecules flow freely in the lower pool while ${1 + Math.floor((tempC / 100) * 4)} high-energy molecules escape into the air as vapor.`;
+            note = `At ${tempC}°C, transient hydrogen bonds break and reform while ${1 + Math.floor((tempC / 100) * 7)} high-energy molecules escape into the air as vapor.`;
         } else if (tempC === 100) {
             badge = 'Boiling / Condensing · 100°C';
-            note = 'At 100°C (sea level), thermal energy turns liquid into vapor throughout the entire volume, not just the surface.';
+            note = 'At 100°C (sea level), thermal energy turns liquid into vapor throughout the entire volume, forming rising bubbles.';
         } else {
             badge = 'Gas · Water Vapor';
             note = 'Above 100°C, H₂O molecules overcome intermolecular attractions completely, moving rapidly and filling the entire space.';
@@ -1628,7 +2431,10 @@ function initDropJourney() {
     const currentPill = document.getElementById('journey-current-pill');
     const reflection = document.getElementById('journey-reflection');
     const trail = document.getElementById('journey-trail');
+    const jCanvas = document.getElementById('journey-canvas');
     if (!startSelect || !stepBtn || !trail) return;
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const POOL_NAMES = {
         ocean: 'Ocean',
@@ -1640,43 +2446,77 @@ function initDropJourney() {
         groundwater: 'Groundwater Aquifer'
     };
 
+    const POOL_STATES = {
+        ocean: 'Liquid saltwater',
+        atmosphere: 'Vapor & cloud droplets',
+        glacier: 'Solid snow & ice',
+        river: 'Liquid freshwater',
+        soil: 'Capillary soil water',
+        plant: 'Sap in roots & leaves',
+        groundwater: 'Deep aquifer water'
+    };
+
+    const POOL_POS = {
+        ocean: { x: 0.14, y: 0.68 },
+        atmosphere: { x: 0.48, y: 0.19 },
+        glacier: { x: 0.86, y: 0.31 },
+        river: { x: 0.67, y: 0.56 },
+        soil: { x: 0.44, y: 0.72 },
+        plant: { x: 0.38, y: 0.54 },
+        groundwater: { x: 0.62, y: 0.87 }
+    };
+
     const TRANSITIONS = {
         ocean: [
-            { to: 'atmosphere', process: 'Evaporation', driver: '☀️ Solar heat', weight: 0.65 },
-            { to: 'ocean', process: 'Circulates in ocean currents', driver: '☀️ Wind & currents', weight: 0.35 }
+            { to: 'atmosphere', process: 'Evaporation', driver: '☀️ Solar heat', weight: 0.65, days: 1100, mode: 'vapor' },
+            { to: 'ocean', process: 'Circulates in ocean currents', driver: '☀️ Wind & currents', weight: 0.35, days: 365 * 400, mode: 'loop' }
         ],
         atmosphere: [
-            { to: 'ocean', process: 'Precipitation over sea', driver: '⬇️ Gravity', weight: 0.45 },
-            { to: 'river', process: 'Rain onto streams/lakes', driver: '⬇️ Gravity', weight: 0.25 },
-            { to: 'soil', process: 'Rain soaking topsoil', driver: '⬇️ Gravity', weight: 0.18 },
-            { to: 'glacier', process: 'Snowfall on high peaks', driver: '⬇️ Gravity', weight: 0.12 }
+            { to: 'ocean', process: 'Precipitation over sea', driver: '⬇️ Gravity', weight: 0.45, days: 9, mode: 'rain' },
+            { to: 'river', process: 'Rain onto streams/lakes', driver: '⬇️ Gravity', weight: 0.25, days: 9, mode: 'rain' },
+            { to: 'soil', process: 'Rain soaking topsoil', driver: '⬇️ Gravity', weight: 0.18, days: 9, mode: 'rain' },
+            { to: 'glacier', process: 'Snowfall on high peaks', driver: '⬇️ Gravity', weight: 0.12, days: 10, mode: 'snow' }
         ],
         glacier: [
-            { to: 'river', process: 'Spring snowmelt runoff', driver: '☀️ Melt + ⬇️ Gravity', weight: 0.72 },
-            { to: 'atmosphere', process: 'Sublimation into dry air', driver: '☀️ Solar energy', weight: 0.28 }
+            { to: 'river', process: 'Spring snowmelt runoff', driver: '☀️ Melt + ⬇️ Gravity', weight: 0.72, days: 365 * 45, mode: 'water' },
+            { to: 'atmosphere', process: 'Sublimation into dry air', driver: '☀️ Solar energy', weight: 0.28, days: 365 * 18, mode: 'vapor' }
         ],
         river: [
-            { to: 'ocean', process: 'Streamflow to coast', driver: '⬇️ Gravity', weight: 0.55 },
-            { to: 'atmosphere', process: 'Surface evaporation', driver: '☀️ Solar energy', weight: 0.25 },
-            { to: 'soil', process: 'Riverbank seepage', driver: '⬇️ Gravity', weight: 0.20 }
+            { to: 'ocean', process: 'Streamflow to coast', driver: '⬇️ Gravity', weight: 0.55, days: 14, mode: 'water' },
+            { to: 'atmosphere', process: 'Surface evaporation', driver: '☀️ Solar energy', weight: 0.25, days: 10, mode: 'vapor' },
+            { to: 'soil', process: 'Riverbank seepage', driver: '⬇️ Gravity', weight: 0.20, days: 16, mode: 'seep' }
         ],
         soil: [
-            { to: 'plant', process: 'Root absorption', driver: '🌱 Osmosis & xylem pull', weight: 0.36 },
-            { to: 'groundwater', process: 'Deep percolation', driver: '⬇️ Gravity', weight: 0.34 },
-            { to: 'atmosphere', process: 'Soil evaporation', driver: '☀️ Solar energy', weight: 0.30 }
+            { to: 'plant', process: 'Root absorption', driver: '🌱 Osmosis & xylem pull', weight: 0.36, days: 22, mode: 'capillary' },
+            { to: 'groundwater', process: 'Deep percolation', driver: '⬇️ Gravity', weight: 0.34, days: 90, mode: 'seep' },
+            { to: 'atmosphere', process: 'Soil evaporation', driver: '☀️ Solar energy', weight: 0.30, days: 14, mode: 'vapor' }
         ],
         plant: [
-            { to: 'atmosphere', process: 'Transpiration through stomata', driver: '☀️ Solar energy', weight: 1.0 }
+            { to: 'atmosphere', process: 'Transpiration through stomata', driver: '☀️ Solar energy', weight: 1.0, days: 2, mode: 'vapor' }
         ],
         groundwater: [
-            { to: 'river', process: 'Spring discharge to stream', driver: '⬇️ Gravity & pressure', weight: 0.45 },
-            { to: 'ocean', process: 'Submarine coastal discharge', driver: '⬇️ Gravity', weight: 0.30 },
-            { to: 'groundwater', process: 'Stored slowly in aquifer', driver: '⬇️ Deep rock pores', weight: 0.25 }
+            { to: 'river', process: 'Spring discharge to stream', driver: '⬇️ Gravity & pressure', weight: 0.45, days: 365 * 160, mode: 'water' },
+            { to: 'ocean', process: 'Submarine coastal discharge', driver: '⬇️ Gravity', weight: 0.30, days: 365 * 450, mode: 'seep' },
+            { to: 'groundwater', process: 'Stored slowly in aquifer', driver: '⬇️ Deep rock pores', weight: 0.25, days: 365 * 850, mode: 'loop' }
         ]
     };
 
     let currentPool = startSelect.value;
     let steps = [];
+    let elapsedDays = 0;
+    let jW = 680;
+    let jH = 290;
+    let jTime = 0;
+    let activeAnim = null;
+    let autoTimer = null;
+    let arrivalSplash = null;
+
+    function formatElapsed(days) {
+        if (days <= 0) return '0 days';
+        if (days < 60) return `${Math.round(days)} days`;
+        if (days < 365) return `${Math.round(days / 30)} months`;
+        return `${Math.round(days / 365).toLocaleString()} yrs`;
+    }
 
     function pickTransition(pool) {
         const list = TRANSITIONS[pool] || TRANSITIONS.ocean;
@@ -1691,7 +2531,7 @@ function initDropJourney() {
 
     function renderJourney() {
         const label = POOL_NAMES[currentPool] || currentPool;
-        if (currentPill) currentPill.textContent = `Step ${steps.length} · In ${label}`;
+        if (currentPill) currentPill.textContent = `Step ${steps.length} · In ${label} (${formatElapsed(elapsedDays)})`;
 
         trail.replaceChildren();
         if (!steps.length) {
@@ -1712,31 +2552,368 @@ function initDropJourney() {
 
         const visited = new Set([steps[0].from, ...steps.map((s) => s.to)]);
         if (reflection) {
-            reflection.textContent = `After ${steps.length} step${steps.length === 1 ? '' : 's'}, this drop visited ${visited.size} unique pool${visited.size === 1 ? '' : 's'} — proving real water cycles through branching shortcuts rather than one fixed circle.`;
+            reflection.textContent = `After ${steps.length} step${steps.length === 1 ? '' : 's'} (~${formatElapsed(elapsedDays)} simulated), this drop visited ${visited.size} unique pool${visited.size === 1 ? '' : 's'} — proving real water cycles through branching shortcuts rather than one fixed circle.`;
         }
     }
 
-    function advanceOne() {
+    function bezierCurvePoint(p0, p1, mode, t) {
+        const isSelf = Math.hypot(p1.x - p0.x, p1.y - p0.y) < 0.02;
+        if (isSelf) {
+            const angle = t * Math.PI * 2;
+            return { x: p0.x + Math.cos(angle) * 0.045, y: p0.y + Math.sin(angle) * 0.055 };
+        }
+        const mx = (p0.x + p1.x) * 0.5;
+        let my = (p0.y + p1.y) * 0.5;
+        if (mode === 'vapor') my -= 0.14;
+        else if (mode === 'rain' || mode === 'snow') my -= 0.04;
+        else if (mode === 'seep') my += 0.08;
+        else my -= 0.07;
+
+        const inv = 1 - t;
+        return {
+            x: inv * inv * p0.x + 2 * inv * t * mx + t * t * p1.x,
+            y: inv * inv * p0.y + 2 * inv * t * my + t * t * p1.y
+        };
+    }
+
+    function advanceOne(instant = false) {
         const choice = pickTransition(currentPool);
-        steps.push({ from: currentPool, to: choice.to, process: choice.process, driver: choice.driver });
+        const fromPool = currentPool;
+        steps.push({ from: fromPool, to: choice.to, process: choice.process, driver: choice.driver, mode: choice.mode });
+        elapsedDays += choice.days;
         currentPool = choice.to;
+
+        if (!prefersReduced && !instant && jCanvas) {
+            activeAnim = {
+                from: fromPool,
+                to: choice.to,
+                mode: choice.mode,
+                process: choice.process,
+                progress: 0,
+                duration: 0.92
+            };
+        } else {
+            activeAnim = null;
+        }
         renderJourney();
+        drawJourneyScene();
+    }
+
+    function stopAuto() {
+        if (autoTimer) {
+            window.clearTimeout(autoTimer);
+            autoTimer = null;
+        }
+        if (autoBtn) autoBtn.textContent = 'Auto 8-Step Trip';
     }
 
     function resetJourney() {
+        stopAuto();
         currentPool = startSelect.value;
         steps = [];
+        elapsedDays = 0;
+        activeAnim = null;
+        arrivalSplash = null;
         renderJourney();
+        drawJourneyScene();
     }
 
-    stepBtn.addEventListener('click', advanceOne);
+    let jReady = false;
+    const jHelper = jCanvas ? window.SimKit?.canvas2d(jCanvas, {
+        box: jCanvas.parentElement,
+        onResize: (_, w, h) => {
+            jW = w;
+            jH = h;
+            if (jReady) drawJourneyScene();
+        }
+    }) : null;
+    const jCtx = jHelper?.ctx || jCanvas?.getContext('2d');
+    jReady = true;
+
+    function drawJourneyScene() {
+        if (!jCtx) return;
+        const w = jW;
+        const h = jH;
+        jCtx.clearRect(0, 0, w, h);
+
+        // Sky
+        const sky = jCtx.createLinearGradient(0, 0, 0, h * 0.72);
+        sky.addColorStop(0, '#3e9ad6');
+        sky.addColorStop(1, '#d7f1fe');
+        jCtx.fillStyle = sky;
+        jCtx.fillRect(0, 0, w, h);
+
+        // Sun glow
+        const sunGrad = jCtx.createRadialGradient(0.14 * w, 0.16 * h, 4, 0.14 * w, 0.16 * h, 46);
+        sunGrad.addColorStop(0, '#fff7cc');
+        sunGrad.addColorStop(0.4, 'rgba(255, 224, 102, 0.75)');
+        sunGrad.addColorStop(1, 'rgba(255, 224, 102, 0)');
+        jCtx.fillStyle = sunGrad;
+        jCtx.beginPath();
+        jCtx.arc(0.14 * w, 0.16 * h, 46, 0, Math.PI * 2);
+        jCtx.fill();
+
+        // Distant ridges
+        jCtx.fillStyle = 'rgba(104, 146, 170, 0.35)';
+        jCtx.beginPath();
+        jCtx.moveTo(0.28 * w, 0.68 * h);
+        jCtx.lineTo(0.62 * w, 0.42 * h);
+        jCtx.lineTo(0.84 * w, 0.25 * h);
+        jCtx.lineTo(w, 0.36 * h);
+        jCtx.lineTo(w, 0.72 * h);
+        jCtx.closePath();
+        jCtx.fill();
+
+        // Land & mountain mass
+        jCtx.fillStyle = '#8b7359';
+        jCtx.beginPath();
+        jCtx.moveTo(0.27 * w, h);
+        jCtx.lineTo(0.27 * w, 0.65 * h);
+        jCtx.quadraticCurveTo(0.50 * w, 0.60 * h, 0.66 * w, 0.55 * h);
+        jCtx.lineTo(0.86 * w, 0.24 * h);
+        jCtx.lineTo(w, 0.38 * h);
+        jCtx.lineTo(w, h);
+        jCtx.closePath();
+        jCtx.fill();
+
+        // Alpine glacier cap
+        jCtx.fillStyle = '#f2f9fe';
+        jCtx.beginPath();
+        jCtx.moveTo(0.75 * w, 0.39 * h);
+        jCtx.lineTo(0.86 * w, 0.24 * h);
+        jCtx.lineTo(0.97 * w, 0.35 * h);
+        jCtx.quadraticCurveTo(0.86 * w, 0.42 * h, 0.75 * w, 0.39 * h);
+        jCtx.fill();
+
+        // Green plain & soil layer
+        jCtx.strokeStyle = '#3d8b47';
+        jCtx.lineWidth = 6;
+        jCtx.beginPath();
+        jCtx.moveTo(0.27 * w, 0.65 * h);
+        jCtx.quadraticCurveTo(0.50 * w, 0.60 * h, 0.66 * w, 0.55 * h);
+        jCtx.stroke();
+
+        jCtx.fillStyle = '#a88a63';
+        jCtx.fillRect(0.27 * w, 0.69 * h, 0.73 * w, 0.31 * h);
+
+        // Deep Aquifer
+        const aqGrad = jCtx.createLinearGradient(0, 0.82 * h, 0, 0.96 * h);
+        aqGrad.addColorStop(0, 'rgba(56, 168, 238, 0.82)');
+        aqGrad.addColorStop(1, 'rgba(15, 76, 129, 0.94)');
+        jCtx.fillStyle = aqGrad;
+        jCtx.beginPath();
+        jCtx.moveTo(0.27 * w, 0.78 * h);
+        jCtx.quadraticCurveTo(0.60 * w, 0.80 * h, 0.94 * w, 0.78 * h);
+        jCtx.lineTo(0.94 * w, 0.95 * h);
+        jCtx.lineTo(0.27 * w, 0.95 * h);
+        jCtx.closePath();
+        jCtx.fill();
+
+        // River & Lake (connects seamlessly into ocean edge)
+        jCtx.strokeStyle = '#2d9cf2';
+        jCtx.lineWidth = 5;
+        jCtx.lineCap = 'round';
+        jCtx.beginPath();
+        jCtx.moveTo(0.79 * w, 0.38 * h);
+        jCtx.quadraticCurveTo(0.71 * w, 0.51 * h, 0.66 * w, 0.56 * h);
+        jCtx.quadraticCurveTo(0.48 * w, 0.62 * h, 0.25 * w, 0.65 * h);
+        jCtx.stroke();
+
+        // Ocean
+        const ocGrad = jCtx.createLinearGradient(0, 0.63 * h, 0, h);
+        ocGrad.addColorStop(0, '#38b6de');
+        ocGrad.addColorStop(1, '#0d4c73');
+        jCtx.fillStyle = ocGrad;
+        jCtx.beginPath();
+        jCtx.moveTo(0, h);
+        jCtx.lineTo(0, 0.64 * h);
+        for (let px = 0; px <= 0.28 * w; px += 10) {
+            jCtx.lineTo(px, 0.64 * h + Math.sin(px * 0.05 + jTime * 2.2) * 2.2);
+        }
+        jCtx.lineTo(0.28 * w, h);
+        jCtx.closePath();
+        jCtx.fill();
+
+        // Living Plant
+        const pxPlant = POOL_POS.plant.x * w;
+        const pyPlant = POOL_POS.plant.y * h + 22;
+        jCtx.fillStyle = '#5c4028';
+        jCtx.fillRect(pxPlant - 3, pyPlant - 24, 6, 24);
+        jCtx.fillStyle = '#2c8a4b';
+        jCtx.beginPath();
+        jCtx.ellipse(pxPlant, pyPlant - 32, 16, 18, 0, 0, Math.PI * 2);
+        jCtx.fill();
+        jCtx.fillStyle = '#47ab68';
+        jCtx.beginPath();
+        jCtx.ellipse(pxPlant - 4, pyPlant - 36, 10, 11, 0, 0, Math.PI * 2);
+        jCtx.fill();
+
+        // Volumetric Cloud in Atmosphere
+        if (window.CloudEngine?.renderCloudCluster) {
+            window.CloudEngine.renderCloudCluster(jCtx, POOL_POS.atmosphere.x * w, POOL_POS.atmosphere.y * h, 145, 50, {
+                darkBase: true,
+                opacity: 0.92,
+                time: jTime
+            });
+        } else {
+            jCtx.fillStyle = '#ffffff';
+            jCtx.beginPath();
+            jCtx.ellipse(POOL_POS.atmosphere.x * w, POOL_POS.atmosphere.y * h, 52, 20, 0, 0, Math.PI * 2);
+            jCtx.fill();
+        }
+
+        // Persistent branching pathway ribbons for visited hops
+        steps.forEach((step, idx) => {
+            const isActiveHop = activeAnim && idx === steps.length - 1;
+            const p0 = POOL_POS[step.from];
+            const p1 = POOL_POS[step.to];
+            const ageFade = Math.max(0.24, 1 - (steps.length - 1 - idx) * 0.11);
+            jCtx.save();
+            jCtx.strokeStyle = `rgba(246, 201, 76, ${ageFade * 0.72})`;
+            jCtx.lineWidth = isActiveHop ? 2.6 : 1.8;
+            jCtx.setLineDash([5, 4]);
+            jCtx.beginPath();
+            const maxT = isActiveHop ? activeAnim.progress : 1;
+            for (let k = 0; k <= 18; k++) {
+                const pt = bezierCurvePoint(p0, p1, step.mode, (k / 18) * maxT);
+                if (k === 0) jCtx.moveTo(pt.x * w, pt.y * h);
+                else jCtx.lineTo(pt.x * w, pt.y * h);
+            }
+            jCtx.stroke();
+            jCtx.restore();
+        });
+
+        // Pool anchor nodes & subtle labels
+        Object.entries(POOL_POS).forEach(([id, pos]) => {
+            const x = pos.x * w;
+            const y = pos.y * h;
+            const isCurrent = !activeAnim && currentPool === id;
+            jCtx.fillStyle = isCurrent ? 'rgba(246, 201, 76, 0.92)' : 'rgba(255, 255, 255, 0.85)';
+            jCtx.strokeStyle = isCurrent ? '#082c42' : 'rgba(15, 53, 72, 0.45)';
+            jCtx.lineWidth = isCurrent ? 2 : 1.2;
+            jCtx.beginPath();
+            jCtx.arc(x, y, isCurrent ? 7 : 4.5, 0, Math.PI * 2);
+            jCtx.fill();
+            jCtx.stroke();
+
+            jCtx.font = '700 10.5px system-ui, sans-serif';
+            const lbl = POOL_NAMES[id].split(' & ')[0];
+            jCtx.lineWidth = 3;
+            jCtx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+            jCtx.strokeText(lbl, x + 9, y + 3.5);
+            jCtx.fillStyle = '#082c42';
+            jCtx.fillText(lbl, x + 9, y + 3.5);
+        });
+
+        // Animated active drop with state-specific visual rendering
+        const targetPos = activeAnim
+            ? bezierCurvePoint(POOL_POS[activeAnim.from], POOL_POS[activeAnim.to], activeAnim.mode, activeAnim.progress)
+            : POOL_POS[currentPool];
+        const dx = targetPos.x * w;
+        const dy = targetPos.y * h;
+
+        jCtx.save();
+        const halo = jCtx.createRadialGradient(dx, dy, 2, dx, dy, 18);
+        halo.addColorStop(0, 'rgba(246, 201, 76, 0.65)');
+        halo.addColorStop(1, 'rgba(246, 201, 76, 0)');
+        jCtx.fillStyle = halo;
+        jCtx.beginPath();
+        jCtx.arc(dx, dy, 18, 0, Math.PI * 2);
+        jCtx.fill();
+
+        if (activeAnim?.mode === 'vapor') {
+            jCtx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            jCtx.strokeStyle = '#d97706';
+        } else if (activeAnim?.mode === 'snow' || currentPool === 'glacier') {
+            jCtx.fillStyle = '#e0f2fe';
+            jCtx.strokeStyle = '#0369a1';
+        } else {
+            jCtx.fillStyle = '#f6c94c';
+            jCtx.strokeStyle = '#082c42';
+        }
+        jCtx.lineWidth = 2.2;
+        jCtx.beginPath();
+        jCtx.arc(dx, dy, 7.5, 0, Math.PI * 2);
+        jCtx.fill();
+        jCtx.stroke();
+        jCtx.restore();
+
+        // Arrival splash ring
+        if (arrivalSplash) {
+            const k = arrivalSplash.age / 0.45;
+            jCtx.strokeStyle = `rgba(246, 201, 76, ${1 - k})`;
+            jCtx.lineWidth = 2;
+            jCtx.beginPath();
+            jCtx.ellipse(arrivalSplash.x * w, arrivalSplash.y * h, 6 + k * 18, 3 + k * 8, 0, 0, Math.PI * 2);
+            jCtx.stroke();
+        }
+
+        // HUD status bar
+        jCtx.save();
+        jCtx.fillStyle = 'rgba(8, 34, 52, 0.84)';
+        jCtx.beginPath();
+        if (jCtx.roundRect) jCtx.roundRect(10, 10, Math.min(w - 20, 395), 24, 12);
+        else jCtx.rect(10, 10, Math.min(w - 20, 395), 24);
+        jCtx.fill();
+        jCtx.fillStyle = '#f8fafc';
+        jCtx.font = '700 11px system-ui, sans-serif';
+        const hudLabel = activeAnim
+            ? `${activeAnim.process} → ${POOL_NAMES[activeAnim.to]}`
+            : `In ${POOL_NAMES[currentPool]} · ${POOL_STATES[currentPool]} · ${formatElapsed(elapsedDays)}`;
+        jCtx.fillText(hudLabel, 20, 26);
+        jCtx.restore();
+    }
+
+    if (jCanvas) {
+        window.SimKit?.loop((dt) => {
+            const safeDt = Math.min(dt, 0.05);
+            jTime += safeDt;
+            if (activeAnim) {
+                activeAnim.progress += safeDt / activeAnim.duration;
+                if (activeAnim.progress >= 1) {
+                    arrivalSplash = { x: POOL_POS[activeAnim.to].x, y: POOL_POS[activeAnim.to].y, age: 0 };
+                    activeAnim = null;
+                }
+            }
+            if (arrivalSplash) {
+                arrivalSplash.age += safeDt;
+                if (arrivalSplash.age >= 0.45) arrivalSplash = null;
+            }
+            drawJourneyScene();
+        }, { el: window.SimKit?.stage(jCanvas), maxDt: 0.05 });
+    }
+
+    stepBtn.addEventListener('click', () => {
+        stopAuto();
+        advanceOne(false);
+    });
     autoBtn?.addEventListener('click', () => {
         resetJourney();
-        for (let i = 0; i < 8; i++) advanceOne();
+        if (prefersReduced) {
+            for (let i = 0; i < 8; i++) advanceOne(true);
+            return;
+        }
+        let remaining = 8;
+        autoBtn.textContent = 'Running trip…';
+        function tickTrip() {
+            if (remaining <= 0) {
+                stopAuto();
+                return;
+            }
+            advanceOne(false);
+            remaining -= 1;
+            if (remaining > 0) {
+                autoTimer = window.setTimeout(tickTrip, 980);
+            } else {
+                stopAuto();
+            }
+        }
+        tickTrip();
     });
     resetBtn?.addEventListener('click', resetJourney);
     startSelect.addEventListener('change', resetJourney);
     renderJourney();
+    drawJourneyScene();
 }
 
 /* ============================================================================
@@ -1824,6 +3001,188 @@ function initDistributionChart() {
 
     let levelIndex = 0;
     let selectedSliceIndex = 0;
+    const bucketCanvas = document.getElementById('bucket-canvas');
+    let bW = 360;
+    let bH = 185;
+    let bTime = 0;
+    let bucketInk = window.SimKit?.theme?.colors?.().text || '#0c436b';
+
+    let bucketReady = false;
+    const bucketHelper = bucketCanvas ? window.SimKit?.canvas2d(bucketCanvas, {
+        box: bucketCanvas.parentElement,
+        onResize: (_, w, h) => {
+            bW = w;
+            bH = h;
+            if (bucketReady) drawBucketScene();
+        }
+    }) : null;
+    const bCtx = bucketHelper?.ctx || bucketCanvas?.getContext('2d');
+    bucketReady = true;
+
+    window.SimKit?.theme?.onChange?.((colors) => {
+        bucketInk = colors?.text || '#0c436b';
+        drawBucketScene();
+    });
+
+    function drawBucketScene() {
+        if (!bCtx) return;
+        const w = bW;
+        const h = bH;
+        const level = LEVELS[levelIndex];
+        const activeSlice = level?.slices[selectedSliceIndex];
+        const activeLabel = activeSlice ? activeSlice.label.toLowerCase() : '';
+        bCtx.clearRect(0, 0, w, h);
+
+        // Glass beaker dimensions on the left
+        const bx = w * 0.10;
+        const by = 18;
+        const bw = Math.min(115, w * 0.34);
+        const bh = h - 32;
+        const waterTop = by + 18;
+        const waterH = bh - 18;
+        const slosh = Math.sin(bTime * 1.9) * 2.2;
+
+        // Ocean 9,650 mL body (96.5%)
+        const oceanH = waterH * 0.965;
+        const oceanY = by + bh - oceanH;
+        const ocGrad = bCtx.createLinearGradient(bx, oceanY, bx + bw, by + bh);
+        ocGrad.addColorStop(0, '#1282c4');
+        ocGrad.addColorStop(1, '#083f6b');
+        bCtx.fillStyle = ocGrad;
+        bCtx.beginPath();
+        bCtx.moveTo(bx + 3, by + bh - 4);
+        bCtx.lineTo(bx + 3, oceanY);
+        bCtx.quadraticCurveTo(bx + bw * 0.5, oceanY + slosh, bx + bw - 3, oceanY);
+        bCtx.lineTo(bx + bw - 3, by + bh - 4);
+        bCtx.closePath();
+        bCtx.fill();
+
+        // Subtle saline groundwater band (90 mL)
+        bCtx.fillStyle = 'rgba(124, 107, 196, 0.78)';
+        bCtx.fillRect(bx + 3, oceanY - 2, bw - 6, 3);
+
+        // Floating glacier ice cap + groundwater layer (250 mL freshwater = 2.5%)
+        const freshH = Math.max(5, waterH * 0.025);
+        bCtx.fillStyle = '#38bdf8';
+        bCtx.fillRect(bx + 3, oceanY - 2 - freshH, bw - 6, freshH);
+        // Floating crystalline glacier cubes at the top rim
+        bCtx.fillStyle = 'rgba(224, 247, 255, 0.92)';
+        bCtx.fillRect(bx + 10, oceanY - 6 + slosh * 0.4, 24, 6);
+        bCtx.fillRect(bx + 42, oceanY - 5 - slosh * 0.4, 20, 5);
+
+        // Glass rim, highlight & graduated mL tick marks
+        bCtx.strokeStyle = 'rgba(15, 74, 114, 0.55)';
+        bCtx.lineWidth = 2;
+        bCtx.beginPath();
+        bCtx.roundRect ? bCtx.roundRect(bx, by, bw, bh, 8) : bCtx.rect(bx, by, bw, bh);
+        bCtx.stroke();
+
+        bCtx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+        bCtx.fillRect(bx + 8, by + 6, 7, bh - 12);
+
+        bCtx.strokeStyle = 'rgba(224, 247, 255, 0.55)';
+        bCtx.lineWidth = 1;
+        for (let m = 1; m <= 4; m++) {
+            const ty = by + bh - (waterH * m) / 5;
+            bCtx.beginPath();
+            bCtx.moveTo(bx + bw - 14, ty);
+            bCtx.lineTo(bx + bw - 4, ty);
+            bCtx.stroke();
+        }
+
+        // Highlight ring around active portion
+        if (activeLabel.includes('ocean')) {
+            bCtx.strokeStyle = '#f6c94c';
+            bCtx.lineWidth = 2.4;
+            bCtx.strokeRect(bx + 1, oceanY, bw - 2, oceanH - 1);
+        } else if (activeLabel.includes('fresh') || activeLabel.includes('glacier') || activeLabel.includes('groundwater')) {
+            bCtx.strokeStyle = '#f6c94c';
+            bCtx.lineWidth = 2.4;
+            bCtx.strokeRect(bx + 1, oceanY - 8, bw - 2, 10);
+        }
+
+        // Beaker caption (reacts live to day/night lighting)
+        const isNight = document.documentElement.dataset.lighting === 'night' ||
+            (!document.documentElement.dataset.lighting && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        const labelInk = isNight ? '#bae6fd' : '#0c436b';
+        bCtx.fillStyle = labelInk;
+        bCtx.font = '700 10.5px system-ui, sans-serif';
+        bCtx.fillText('10 L Total', bx + 4, by - 5);
+
+        // Magnified dropper & ~14 accessible surface-freshwater drops on the right
+        const lensX = Math.max(bx + bw + 85, w * 0.68);
+        const lensY = h * 0.54;
+        const lensR = Math.min(54, h * 0.30);
+
+        // Leader dashed line from top freshwater sliver to magnified lens
+        bCtx.save();
+        bCtx.strokeStyle = 'rgba(8, 145, 178, 0.55)';
+        bCtx.setLineDash([4, 4]);
+        bCtx.lineWidth = 1.4;
+        bCtx.beginPath();
+        bCtx.moveTo(bx + bw, oceanY - 4);
+        bCtx.lineTo(lensX - lensR, lensY - 12);
+        bCtx.stroke();
+        bCtx.restore();
+
+        // Lens disc
+        const lensBg = bCtx.createRadialGradient(lensX - 10, lensY - 10, 4, lensX, lensY, lensR);
+        lensBg.addColorStop(0, '#ffffff');
+        lensBg.addColorStop(1, '#dff4ff');
+        bCtx.fillStyle = lensBg;
+        bCtx.beginPath();
+        bCtx.arc(lensX, lensY, lensR, 0, Math.PI * 2);
+        bCtx.fill();
+
+        bCtx.strokeStyle = (activeLabel.includes('lake') || activeLabel.includes('river') || activeLabel.includes('surface') || activeLabel.includes('swamp')) ? '#f6c94c' : '#0891b2';
+        bCtx.lineWidth = 2.5;
+        bCtx.stroke();
+
+        // Glass pipette tip + 14 sparkling drops inside lens
+        bCtx.fillStyle = 'rgba(148, 163, 184, 0.45)';
+        bCtx.beginPath();
+        bCtx.moveTo(lensX - 5, lensY - lensR + 4);
+        bCtx.lineTo(lensX + 5, lensY - lensR + 4);
+        bCtx.lineTo(lensX + 1.5, lensY - lensR + 20);
+        bCtx.lineTo(lensX - 1.5, lensY - lensR + 20);
+        bCtx.closePath();
+        bCtx.fill();
+
+        const dropPhase = (bTime * 1.4) % 1;
+        for (let i = 0; i < 14; i++) {
+            const row = Math.floor(i / 5);
+            const col = i % 5;
+            const dx = lensX - 24 + col * 12 + (row % 2) * 5;
+            const dy = lensY - 4 + row * 12 + Math.sin(bTime * 2.5 + i) * 1.2;
+            const dGrad = bCtx.createRadialGradient(dx - 1, dy - 1, 0.5, dx, dy, 3.6);
+            dGrad.addColorStop(0, '#e0f7ff');
+            dGrad.addColorStop(1, '#0284c7');
+            bCtx.fillStyle = dGrad;
+            bCtx.beginPath();
+            bCtx.arc(dx, dy, 3.4, 0, Math.PI * 2);
+            bCtx.fill();
+        }
+
+        // Falling drop from pipette tip
+        const fallY = (lensY - lensR + 22) + dropPhase * 16;
+        bCtx.fillStyle = '#0ea5e9';
+        bCtx.beginPath();
+        bCtx.arc(lensX, fallY, 2.8, 0, Math.PI * 2);
+        bCtx.fill();
+
+        bCtx.fillStyle = labelInk;
+        bCtx.font = '700 10.5px system-ui, sans-serif';
+        bCtx.textAlign = 'center';
+        bCtx.fillText('Lakes & rivers: ~0.7 mL (~14 drops!)', lensX, by - 5);
+        bCtx.textAlign = 'left';
+    }
+
+    if (bucketCanvas) {
+        window.SimKit?.loop((dt) => {
+            bTime += Math.min(dt, 0.05);
+            drawBucketScene();
+        }, { el: window.SimKit?.stage(bucketCanvas), maxDt: 0.05 });
+    }
 
     function renderDetail() {
         const level = LEVELS[levelIndex];
@@ -1831,6 +3190,7 @@ function initDistributionChart() {
         if (tooltip) {
             tooltip.textContent = `${slice.label}: ${slice.value}% ${level.unitLabel} (${slice.earthPct} of all Earth water).`;
         }
+        drawBucketScene();
         if (!detail) return;
         detail.replaceChildren();
         const heading = document.createElement('h4');
@@ -1867,6 +3227,16 @@ function initDistributionChart() {
         const level = LEVELS[levelIndex];
         const legend = document.getElementById('distribution-legend');
         canvas.innerHTML = '';
+
+        const defs = svg('defs');
+        level.slices.forEach((slice, idx) => {
+            const grad = svg('linearGradient', { id: `dist-grad-${levelIndex}-${idx}`, x1: '0%', y1: '0%', x2: '100%', y2: '100%' });
+            grad.appendChild(svg('stop', { offset: '0%', 'stop-color': slice.color, 'stop-opacity': '0.92' }));
+            grad.appendChild(svg('stop', { offset: '100%', 'stop-color': slice.color, 'stop-opacity': '1' }));
+            defs.appendChild(grad);
+        });
+        canvas.appendChild(defs);
+
         const cx = 210;
         const cy = 160;
         const radius = 108;
@@ -1884,7 +3254,7 @@ function initDistributionChart() {
 
             const node = svg('path', {
                 d: describeArcSlice(cx + ox, cy + oy, radius, startAngle, endAngle),
-                fill: slice.color,
+                fill: `url(#dist-grad-${levelIndex}-${idx})`,
                 stroke: isSelected ? '#082c42' : '#ffffff',
                 'stroke-width': isSelected ? 2.5 : 1.5,
                 class: 'distribution-chart-slice',
@@ -1967,7 +3337,7 @@ function initDistributionChart() {
 }
 
 /* ============================================================================
-   TRANSPIRATION EXPLORER (#transpiration-explorer)
+   TRANSPIRATION EXPLORER (#transpiration-explorer — Live Biological Canvas)
    ============================================================================ */
 
 function initTranspirationExplorer() {
@@ -1978,65 +3348,60 @@ function initTranspirationExplorer() {
     const soil = root.querySelector('#transpiration-soil');
     const stomata = root.querySelector('#transpiration-stomata');
 
-    canvas.innerHTML = `<title id="transpiration-title">Inside a plant: the transpiration pathway</title>
-        <desc id="transpiration-desc">A rooted plant connects to a magnified xylem tube and a leaf cross-section. Liquid water enters roots, rises through xylem, evaporates inside the leaf, and diffuses out through a stomatal pore.</desc>
-        <defs>
-          <linearGradient id="tp-sky" x2="0" y2="1"><stop stop-color="#e0eff0"/><stop offset="1" stop-color="#f7faf4"/></linearGradient>
-          <linearGradient id="tp-leaf"><stop stop-color="#276e4d"/><stop offset=".5" stop-color="#65a86c"/><stop offset="1" stop-color="#3d8056"/></linearGradient>
-          <pattern id="tp-soil" width="44" height="28" patternUnits="userSpaceOnUse"><rect width="44" height="28" fill="#d6bf98"/><path d="M0 9q11 -4 22 0t22 0M6 22h5m20 -3h4" stroke="#aa8d62" fill="none" opacity=".5"/></pattern>
-          <marker id="tp-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#136e9b"/></marker>
-        </defs>
-        <rect width="900" height="520" rx="16" fill="url(#tp-sky)"/>
-        <g data-tp-region="0" tabindex="0" role="button" aria-label="Step 1: Roots absorb soil water">
-          <path d="M0 347Q135 334 292 347V520H0Z" fill="url(#tp-soil)"/>
-          <path d="M155 348V139" stroke="#8d6945" stroke-width="22" stroke-linecap="round"/>
-          <g fill="url(#tp-leaf)" stroke="#276447" stroke-width="2">
-            <path d="M153 266Q53 249 47 160Q140 158 153 266Z"/><path d="M158 220Q174 111 267 119Q268 199 158 220Z"/><path d="M155 168Q98 113 135 57Q194 101 155 168Z"/>
-          </g>
-          <g stroke="#add1a0" fill="none" stroke-width="2"><path d="M151 258L66 179m32 25l-5 -27m29 48l-2 -28M162 215L249 135m-48 44l29 -3m-51 23l5 -32M155 156L138 78"/></g>
-          <path d="M155 346Q105 398 48 460M155 346Q192 401 267 469M155 354V492M106 400L83 484M201 417L219 491" stroke="#8d6945" stroke-width="7" fill="none" stroke-linecap="round"/>
-          <g stroke="#8d6945" stroke-width="1.5"><path d="M67 441l-19 -2m26 -8l-5 -14m41 41l15 11m117 -21l17 -3m-65 -31l-3 16m-30 36l-12 9m9 -29l12 6"/></g>
-          <g id="transpiration-soil-drops" fill="#329dc5" opacity=".75"><circle cx="39" cy="421" r="5"/><circle cx="95" cy="480" r="5"/><circle cx="244" cy="439" r="5"/><circle cx="180" cy="475" r="5"/><circle cx="62" cy="390" r="4"/><circle cx="215" cy="392" r="4"/></g>
-          <text x="24" y="32" class="tp-title">01 · Roots absorb</text><text x="24" y="320" class="tp-small">Root hairs contact soil water</text>
-        </g>
-        <path d="M168 260L315 225M257 145L561 121" stroke="#81978d" stroke-dasharray="4 5" fill="none"/>
-        <g data-tp-region="1" tabindex="0" role="button" aria-label="Step 2: Xylem pulls water upward">
-          <rect x="311" y="51" width="206" height="437" rx="14" fill="#fff" stroke="#b4cdc4"/>
-          <text x="330" y="83" class="tp-title">02 · Xylem pulls</text>
-          <path d="M373 139V400M452 139V400" stroke="#b2956c" stroke-width="13"/>
-          <path d="M389 139V400H437V139Z" fill="#d9f1fa"/>
-          <g fill="#59b4d8" stroke="#16749b" stroke-width="1.5"><circle cx="413" cy="179" r="11"/><circle cx="413" cy="220" r="11"/><circle cx="413" cy="261" r="11"/><circle cx="413" cy="302" r="11"/><circle cx="413" cy="343" r="11"/></g>
-          <path id="transpiration-xylem" stroke-dasharray="8 10" d="M413 344V152" stroke="#136e9b" stroke-width="3" fill="none" marker-end="url(#tp-arrow)"/>
-          <text x="329" y="435" class="tp-small">Cohesion holds water</text><text x="329" y="457" class="tp-small">together under tension</text>
-        </g>
-        <g data-tp-region="2" tabindex="0" role="button" aria-label="Step 3: Leaf releases water vapor">
-          <rect x="546" y="51" width="336" height="437" rx="14" fill="#fff" stroke="#b4cdc4"/>
-          <text x="565" y="83" class="tp-title">03 · Leaf releases</text>
-          <text x="565" y="115" class="tp-small">Leaf cross-section · magnified</text>
-          <path d="M563 143H865V170H563ZM563 301H681V323H563ZM749 301H865V323H749Z" fill="#78ad70" stroke="#3c7950"/>
-          <g fill="#a6c78b" stroke="#5e965f" stroke-width="2"><ellipse cx="593" cy="204" rx="23" ry="25"/><ellipse cx="649" cy="205" rx="23" ry="25"/><ellipse cx="711" cy="204" rx="23" ry="25"/><ellipse cx="775" cy="206" rx="23" ry="25"/><ellipse cx="840" cy="203" rx="20" ry="25"/><ellipse cx="605" cy="260" rx="29" ry="20"/><ellipse cx="668" cy="258" rx="22" ry="21"/><ellipse cx="789" cy="258" rx="29" ry="20"/><ellipse cx="849" cy="260" rx="18" ry="20"/></g>
-          <path d="M675 230Q714 253 739 279" fill="none" stroke="#329dc5" stroke-width="4"/>
-          <text x="572" y="354" class="tp-small">Guard cells</text><path d="M650 348L690 315" stroke="#58766a" fill="none"/>
-          <ellipse id="transpiration-guard-left" cx="692" cy="309" rx="19" ry="13" fill="#3e8d59"/><ellipse id="transpiration-guard-right" cx="738" cy="309" rx="19" ry="13" fill="#3e8d59"/>
-          <ellipse id="transpiration-pore" cx="715" cy="309" rx="10" ry="10" fill="#173f35"/>
-          <path id="transpiration-vapor" d="M715 282V414M725 335L764 413M704 336L669 413" stroke="#136e9b" stroke-width="3" stroke-dasharray="3 9" fill="none" marker-end="url(#tp-arrow)"/>
-          <text x="567" y="452" class="tp-small">Evaporation inside → diffusion out</text>
-        </g>
-        <path id="transpiration-liquid" d="M48 460Q106 400 155 346V220Q210 173 250 138" fill="none" stroke="#136e9b" stroke-width="4" stroke-dasharray="8 10"/>
-        <text x="24" y="507" class="tp-small">LIQUID WATER</text><text x="594" y="507" class="tp-small">INVISIBLE VAPOR IN AIR</text>`;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let tpRunning = !prefersReduced;
+    let selectedStep = 0;
+    let tpTime = 0;
+    let tpW = 900;
+    let tpH = 520;
+
+    // Seeded soil grains (deterministic so zero flicker)
+    const soilGrains = Array.from({ length: 48 }, (_, i) => {
+        const s1 = Math.sin(i * 19.37 + 1.2) * 43758.5453;
+        const s2 = Math.sin(i * 43.11 + 2.8) * 43758.5453;
+        return {
+            x: 16 + (s1 - Math.floor(s1)) * 260,
+            y: 356 + (s2 - Math.floor(s2)) * 144,
+            r: 4.5 + (i % 4) * 2.1
+        };
+    });
+
+    const osmosisDrops = Array.from({ length: 12 }, (_, i) => ({
+        t: (i * 0.17) % 1,
+        branch: i % 4
+    }));
+
+    const leafVapor = Array.from({ length: 18 }, (_, i) => ({
+        x: 660 + ((i * 29) % 110),
+        y: 200 + ((i * 19) % 85),
+        vx: ((i % 2 === 0 ? 1 : -1) * (12 + (i % 3) * 6)),
+        vy: 14 + (i % 4) * 7,
+        escaped: i < 5
+    }));
+
+    const ambientAirVapor = Array.from({ length: 24 }, (_, i) => ({
+        x: 560 + ((i * 41) % 300),
+        y: 345 + ((i * 23) % 125),
+        vx: (i % 2 === 0 ? 1 : -1) * (10 + (i % 4) * 5),
+        vy: (i % 3 === 0 ? 1 : -1) * (6 + (i % 3) * 4)
+    }));
+
+    const co2Molecules = Array.from({ length: 8 }, (_, i) => ({
+        x: 590 + i * 32,
+        y: 440 - (i % 3) * 24,
+        phase: i * 0.9
+    }));
 
     const explanations = [
-        ['Roots · liquid water enters', 'Root hairs absorb water from soil. Connected roots deliver it to the plant’s water-carrying tissue.'],
-        ['Xylem · a continuous water pathway', 'Water travels through xylem in roots, stems, and leaf veins. Evaporation from leaves creates tension that pulls water upward; cohesion helps hold the water column together.'],
-        ['Leaves · liquid becomes gas', 'Water evaporates from moist cell surfaces inside the leaf. Vapor then diffuses through stomata into the surrounding air. Water vapor is invisible, unlike mist droplets.']
+        ['Roots · liquid water enters', 'Root hairs absorb water from moist soil films by osmosis. Connected roots deliver it to the plant’s water-carrying tissue.'],
+        ['Xylem · a continuous water pathway', 'Water travels through lignified xylem vessels in roots, stems, and leaf veins. Evaporation from leaves creates tension that pulls water upward while hydrogen-bond cohesion holds the column together.'],
+        ['Leaves · liquid becomes gas', 'Water evaporates from moist spongy mesophyll cell surfaces inside the leaf. Vapor diffuses through stomatal guard-cell pores into surrounding air, while CO₂ enters for photosynthesis.']
     ];
 
     function selectStep(index) {
+        selectedStep = index;
         root.querySelectorAll('[data-transpiration-step]').forEach((button) => {
             button.setAttribute('aria-pressed', String(Number(button.dataset.transpirationStep) === index));
-        });
-        canvas.querySelectorAll('[data-tp-region]').forEach((region) => {
-            region.classList.toggle('tp-selected', Number(region.dataset.tpRegion) === index);
         });
         const panel = root.querySelector('#transpiration-explanation');
         panel.replaceChildren();
@@ -2045,27 +3410,493 @@ function initTranspirationExplorer() {
         const description = document.createElement('span');
         description.textContent = explanations[index][1];
         panel.append(title, description);
+        drawTranspiration(0);
     }
 
     root.querySelectorAll('[data-transpiration-step]').forEach((button) => {
         button.addEventListener('click', () => selectStep(Number(button.dataset.transpirationStep)));
     });
-    canvas.querySelectorAll('[data-tp-region]').forEach((region) => {
-        region.addEventListener('click', () => selectStep(Number(region.dataset.tpRegion)));
-        region.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                selectStep(Number(region.dataset.tpRegion));
-            }
-        });
+
+    canvas.addEventListener('pointerdown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const lx = ((e.clientX - rect.left) / rect.width) * 900;
+        if (lx < 302) selectStep(0);
+        else if (lx < 528) selectStep(1);
+        else selectStep(2);
     });
 
-    let savedFlow = null;
-    function render() {
+    let tpReady = false;
+    const tpHelper = window.SimKit?.canvas2d(canvas, {
+        box: canvas.parentElement,
+        onResize: (_, w, h) => {
+            tpW = w;
+            tpH = h;
+            if (tpReady) drawTranspiration(0);
+        }
+    });
+    const ctx = tpHelper?.ctx || canvas.getContext('2d');
+    tpReady = true;
+
+    function getParams() {
         const h = Number(humidity.value);
         const water = Number(soil.value);
         const opening = Number(stomata.value);
         const rate = Math.round((1 - h / 100) * water * opening);
+        return { h, water, opening, rate };
+    }
+
+    function drawTranspiration(dt) {
+        if (!ctx) return;
+        const { h, water, opening, rate } = getParams();
+        tpTime += dt;
+        const flowSpeed = rate / 100;
+        const wilt = Math.max(0, (35 - water) / 35); // 0 healthy -> 1 severely wilted
+
+        ctx.save();
+        ctx.clearRect(0, 0, tpW, tpH);
+        ctx.scale(tpW / 900, tpH / 520);
+
+        // Backdrop sky reacting to outside humidity
+        const sky = ctx.createLinearGradient(0, 0, 0, 520);
+        sky.addColorStop(0, '#d8ecec');
+        sky.addColorStop(1, '#f4f9f1');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, 900, 520);
+
+        if (h > 45) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${(h - 45) / 140})`;
+            ctx.fillRect(0, 0, 300, 345);
+        }
+
+        // === PANEL 1: ROOTS & LIVING PLANT (0..298) ===
+        ctx.save();
+        ctx.globalAlpha = selectedStep === 0 ? 1 : 0.88;
+
+        // Soil cross-section
+        const soilGrad = ctx.createLinearGradient(0, 342, 0, 520);
+        soilGrad.addColorStop(0, water < 20 ? '#c4aa82' : '#9c7e54');
+        soilGrad.addColorStop(1, water < 20 ? '#9c8360' : '#634c32');
+        ctx.fillStyle = soilGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 348);
+        ctx.quadraticCurveTo(145, 334, 296, 348);
+        ctx.lineTo(296, 520);
+        ctx.lineTo(0, 520);
+        ctx.closePath();
+        ctx.fill();
+
+        // Dry drought cracks when soil <= 20%
+        if (water <= 20) {
+            ctx.strokeStyle = 'rgba(72, 52, 32, 0.55)';
+            ctx.lineWidth = 2;
+            [[48, 350, 58, 392], [218, 346, 206, 388]].forEach(([x1, y1, x2, y2]) => {
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo((x1 + x2) / 2 - 4, (y1 + y2) / 2);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            });
+        }
+
+        // Soil grains + glistening blue capillary water films
+        const waterAlpha = (water / 100) * 0.72;
+        soilGrains.forEach((g) => {
+            if (water > 5) {
+                ctx.fillStyle = `rgba(56, 189, 248, ${waterAlpha})`;
+                ctx.beginPath();
+                ctx.arc(g.x, g.y, g.r + 2.2 * (water / 100), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillStyle = '#8b6f4a';
+            ctx.beginPath();
+            ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Root network + fine root hairs
+        ctx.strokeStyle = '#7c5a38';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 7;
+        ctx.beginPath();
+        ctx.moveTo(154, 346); ctx.quadraticCurveTo(104, 398, 48, 464);
+        ctx.moveTo(154, 346); ctx.quadraticCurveTo(192, 401, 264, 472);
+        ctx.moveTo(154, 352); ctx.lineTo(154, 492);
+        ctx.moveTo(106, 400); ctx.lineTo(82, 484);
+        ctx.moveTo(202, 417); ctx.lineTo(220, 490);
+        ctx.stroke();
+
+        // Animated osmosis droplets entering roots
+        if (water > 0) {
+            osmosisDrops.forEach((od) => {
+                if (dt > 0) od.t = (od.t + dt * (0.2 + flowSpeed * 0.75)) % 1;
+                const paths = [
+                    [48, 464, 154, 346],
+                    [264, 472, 154, 346],
+                    [82, 484, 154, 346],
+                    [220, 490, 154, 346]
+                ];
+                const [x1, y1, x2, y2] = paths[od.branch];
+                const px = x1 + (x2 - x1) * od.t;
+                const py = y1 + (y2 - y1) * od.t;
+                ctx.fillStyle = `rgba(14, 165, 233, ${0.4 + (water / 100) * 0.55})`;
+                ctx.beginPath();
+                ctx.arc(px, py, 3.4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Plant stem (curves slightly when wilted)
+        const sway = Math.sin(tpTime * 1.4) * (1 - wilt * 0.7) * 3;
+        ctx.strokeStyle = wilt > 0.5 ? '#6d7c4c' : '#4a7c44';
+        ctx.lineWidth = 18;
+        ctx.beginPath();
+        ctx.moveTo(154, 348);
+        ctx.quadraticCurveTo(154 + wilt * 8, 240, 154 + sway + wilt * 18, 138 + wilt * 16);
+        ctx.stroke();
+
+        // Botanical veined leaves (droop physically under drought wilt!)
+        const leafCol = wilt > 0.5 ? '#7ca15e' : '#3a8c56';
+        const leafHighlight = wilt > 0.5 ? '#9ab878' : '#65ad6e';
+        function drawPlantLeaf(bx, by, angle, len) {
+            ctx.save();
+            ctx.translate(bx, by);
+            ctx.rotate(angle + wilt * (angle < 0 ? -0.45 : 0.45));
+            const lg = ctx.createLinearGradient(0, 0, len, 0);
+            lg.addColorStop(0, leafCol);
+            lg.addColorStop(1, leafHighlight);
+            ctx.fillStyle = lg;
+            ctx.strokeStyle = '#255c3c';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(len * 0.48, -32, len, 0);
+            ctx.quadraticCurveTo(len * 0.48, 32, 0, 0);
+            ctx.fill();
+            ctx.stroke();
+            ctx.strokeStyle = 'rgba(210, 242, 198, 0.72)';
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.moveTo(4, 0);
+            ctx.lineTo(len * 0.86, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+        drawPlantLeaf(148, 260, -2.55, 108);
+        drawPlantLeaf(160, 214, -0.45, 112);
+        drawPlantLeaf(154 + sway * 0.5, 155 + wilt * 8, -1.68, 92);
+
+        // Subtle vapor wisps rising from plant leaves when transpiring
+        if (rate > 5) {
+            ctx.strokeStyle = `rgba(19, 110, 155, ${0.15 + flowSpeed * 0.35})`;
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                const rise = (tpTime * (15 + flowSpeed * 30) + i * 16) % 45;
+                const vx = 78 + i * 72 + Math.sin(tpTime * 2 + i) * 6;
+                const vy = 150 - rise;
+                ctx.globalAlpha = Math.max(0, 1 - rise / 45) * 0.7;
+                ctx.beginPath();
+                ctx.moveTo(vx, vy + 10);
+                ctx.quadraticCurveTo(vx + 5, vy + 3, vx - 3, vy - 5);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        ctx.fillStyle = '#1b4332';
+        ctx.font = '700 17px system-ui, sans-serif';
+        ctx.fillText('01 · Roots absorb', 22, 34);
+        ctx.font = '600 13.5px system-ui, sans-serif';
+        ctx.fillStyle = '#34584b';
+        ctx.fillText('Root hairs', 18, 308);
+        ctx.fillText('absorb soil water', 18, 326);
+        ctx.restore();
+
+        // Dashed sightlines linking Plant -> Xylem & Leaf -> Cross-section
+        ctx.save();
+        ctx.strokeStyle = 'rgba(92, 128, 114, 0.65)';
+        ctx.setLineDash([4, 5]);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(162, 260); ctx.lineTo(312, 224);
+        ctx.moveTo(255, 145); ctx.lineTo(542, 118);
+        ctx.stroke();
+        ctx.restore();
+
+        // === PANEL 2: MAGNIFIED XYLEM VESSEL (310..518) ===
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = selectedStep === 1 ? '#136e9b' : '#b4cdc4';
+        ctx.lineWidth = selectedStep === 1 ? 3 : 1.5;
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(310, 48, 208, 440, 14) : ctx.rect(310, 48, 208, 440);
+        ctx.fill();
+        ctx.stroke();
+
+        // Lignified xylem walls with helical secondary thickenings
+        ctx.fillStyle = '#d9f1fa';
+        ctx.fillRect(386, 134, 56, 268);
+        ctx.fillStyle = '#b2956c';
+        ctx.fillRect(370, 134, 16, 268);
+        ctx.fillRect(442, 134, 16, 268);
+
+        ctx.strokeStyle = '#8b6e48';
+        ctx.lineWidth = 2;
+        for (let py = 148; py < 395; py += 26) {
+            ctx.beginPath();
+            ctx.moveTo(386, py);
+            ctx.lineTo(442, py - 10);
+            ctx.stroke();
+        }
+
+        // Cohesive water column rising under tension
+        const stepPx = 42;
+        const offsetPx = rate > 0 ? (tpTime * (22 + flowSpeed * 70)) % stepPx : 0;
+        const colX = 414;
+        const dropletsY = [];
+        for (let y = 392 - offsetPx; y >= 146; y -= stepPx) {
+            dropletsY.push(y);
+        }
+
+        // Hydrogen-bond cohesion bridges between water droplets
+        ctx.strokeStyle = 'rgba(19, 110, 155, 0.45)';
+        ctx.setLineDash([3, 3]);
+        ctx.lineWidth = 2.4;
+        for (let i = 0; i < dropletsY.length - 1; i++) {
+            ctx.beginPath();
+            ctx.moveTo(colX, dropletsY[i]);
+            ctx.lineTo(colX, dropletsY[i + 1]);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        // Droplets + adhesion menisci clinging to vessel walls
+        dropletsY.forEach((dy) => {
+            const dg = ctx.createRadialGradient(colX - 3, dy - 3, 1, colX, dy, 11);
+            dg.addColorStop(0, '#e0f7ff');
+            dg.addColorStop(0.6, '#38bdf8');
+            dg.addColorStop(1, '#0369a1');
+            ctx.fillStyle = dg;
+            ctx.beginPath();
+            ctx.arc(colX, dy, 10.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Wall adhesion curves
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
+            ctx.lineWidth = 1.3;
+            ctx.beginPath();
+            ctx.moveTo(386, dy - 6); ctx.quadraticCurveTo(395, dy, 386, dy + 6);
+            ctx.moveTo(442, dy - 6); ctx.quadraticCurveTo(433, dy, 442, dy + 6);
+            ctx.stroke();
+        });
+
+        // Cavitation bubbles if soil is 0% and stomata open
+        if (water === 0 && opening > 0) {
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 1.6;
+            [220, 290, 340].forEach((cy, idx) => {
+                ctx.beginPath();
+                ctx.arc(colX + (idx % 2 === 0 ? -10 : 10), cy, 5, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+        }
+
+        // Tension pull arrow
+        ctx.strokeStyle = '#136e9b';
+        ctx.fillStyle = '#136e9b';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(414, 130);
+        ctx.lineTo(414, 105);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(414, 98); ctx.lineTo(408, 109); ctx.lineTo(420, 109); ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#1b4332';
+        ctx.font = '700 17px system-ui, sans-serif';
+        ctx.fillText('02 · Xylem pulls', 328, 80);
+        ctx.font = '500 14px system-ui, sans-serif';
+        ctx.fillStyle = '#34584b';
+        ctx.fillText('Cohesion holds water', 328, 434);
+        ctx.fillText('together under tension', 328, 456);
+        ctx.restore();
+
+        // === PANEL 3: MAGNIFIED LEAF CROSS-SECTION & STOMATA (540..884) ===
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = selectedStep === 2 ? '#136e9b' : '#b4cdc4';
+        ctx.lineWidth = selectedStep === 2 ? 3 : 1.5;
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(540, 48, 344, 440, 14) : ctx.rect(540, 48, 344, 440);
+        ctx.fill();
+        ctx.stroke();
+
+        // Upper epidermis & waxy cuticle
+        ctx.fillStyle = '#78ad70';
+        ctx.strokeStyle = '#3c7950';
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(560, 142, 304, 26);
+        ctx.strokeRect(560, 142, 304, 26);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.fillRect(560, 138, 304, 4);
+
+        // Palisade mesophyll cells with chloroplasts
+        for (let px = 576; px <= 848; px += 44) {
+            ctx.fillStyle = '#8ec27b';
+            ctx.strokeStyle = '#4e8a52';
+            ctx.beginPath();
+            ctx.roundRect ? ctx.roundRect(px, 174, 34, 48, 8) : ctx.rect(px, 174, 34, 48);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#2d6a3e';
+            [184, 198, 211].forEach((cy, ci) => {
+                ctx.beginPath();
+                ctx.arc(px + 11 + (ci % 2) * 12, cy, 3.2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Spongy mesophyll cells + glistening liquid evaporation film
+        const spongy = [
+            [600, 260, 27, 20], [656, 254, 22, 20], [780, 256, 27, 20], [842, 260, 20, 20]
+        ];
+        spongy.forEach(([sx, sy, rx, ry]) => {
+            if (water > 5) {
+                ctx.strokeStyle = `rgba(56, 189, 248, ${0.25 + (water / 100) * 0.55})`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.ellipse(sx, sy, rx + 2, ry + 2, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.fillStyle = '#a6c78b';
+            ctx.strokeStyle = '#5e965f';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(sx, sy, rx, ry, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        // Lower epidermis flanking the stomatal pore
+        const poreHalf = 11 * opening;
+        const leftGuardX = 712 - poreHalf - 16;
+        const rightGuardX = 712 + poreHalf + 16;
+        ctx.fillStyle = '#78ad70';
+        ctx.strokeStyle = '#3c7950';
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(560, 300, leftGuardX - 560, 22);
+        ctx.strokeRect(560, 300, leftGuardX - 560, 22);
+        ctx.fillRect(rightGuardX, 300, 864 - rightGuardX, 22);
+        ctx.strokeRect(rightGuardX, 300, 864 - rightGuardX, 22);
+
+        // Stomatal pore opening
+        if (poreHalf > 0.5) {
+            ctx.fillStyle = '#153a30';
+            ctx.beginPath();
+            ctx.ellipse(712, 311, poreHalf + 1, 11, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Turgid / flaccid bean-shaped guard cells
+        [leftGuardX, rightGuardX].forEach((gx, side) => {
+            ctx.fillStyle = opening > 0 ? '#3e8d59' : '#658569';
+            ctx.strokeStyle = '#1d4d31';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.ellipse(gx, 311, 18, 12 + opening * 2, side === 0 ? -0.1 * opening : 0.1 * opening, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        // Micro-particle physics inside substomatal air cavity & outside air
+        leafVapor.forEach((vp) => {
+            if (dt > 0) {
+                const spd = 0.35 + flowSpeed * 1.4;
+                vp.x += vp.vx * spd * dt;
+                vp.y += vp.vy * spd * dt;
+                if (vp.x < 670 || vp.x > 754) vp.vx *= -1;
+                if (!vp.escaped) {
+                    if (vp.y < 235) vp.vy = Math.abs(vp.vy);
+                    if (vp.y > 296) {
+                        if (opening > 0 && Math.abs(vp.x - 712) < poreHalf + 4 && rate > 0) {
+                            vp.escaped = true;
+                        } else {
+                            vp.vy = -Math.abs(vp.vy);
+                        }
+                    }
+                } else if (vp.y > 432) {
+                    vp.escaped = false;
+                    vp.x = 678 + Math.random() * 68;
+                    vp.y = 248;
+                }
+            }
+            ctx.fillStyle = water > 0 ? 'rgba(14, 165, 233, 0.85)' : 'rgba(148, 163, 184, 0.45)';
+            ctx.beginPath();
+            ctx.arc(vp.x, vp.y, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Outside ambient humidity vapor particles (more crowded when humidity is high!)
+        const activeAmbient = Math.round((h / 100) * ambientAirVapor.length);
+        for (let i = 0; i < activeAmbient; i++) {
+            const av = ambientAirVapor[i];
+            if (dt > 0) {
+                av.x += av.vx * dt;
+                av.y += av.vy * dt;
+                if (av.x < 556 || av.x > 868) av.vx *= -1;
+                if (av.y < 335 || av.y > 435) av.vy *= -1;
+            }
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.48)';
+            ctx.beginPath();
+            ctx.arc(av.x, av.y, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Tiny golden CO2 molecules diffusing inward when stomata are open
+        if (opening > 0) {
+            co2Molecules.forEach((cm, ci) => {
+                const cycle = ((tpTime * 0.25 * opening + cm.phase) % 1);
+                const cx = 712 + Math.sin(ci * 2.1 + tpTime) * (8 + (1 - cycle) * 45);
+                const cy = 420 - cycle * 155;
+                ctx.fillStyle = 'rgba(217, 119, 6, 0.82)';
+                ctx.beginPath();
+                ctx.arc(cx, cy, 2.6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        ctx.fillStyle = '#1b4332';
+        ctx.font = '700 17px system-ui, sans-serif';
+        ctx.fillText('03 · Leaf releases', 562, 80);
+        ctx.font = '500 14px system-ui, sans-serif';
+        ctx.fillStyle = '#34584b';
+        ctx.fillText('Leaf cross-section · magnified', 562, 114);
+        ctx.fillText('Guard cells', 564, 354);
+        ctx.fillText('Evaporation inside → vapor out (CO₂ in)', 562, 464);
+        ctx.restore();
+
+        // Bottom caption strip
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.86)';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(14, 492, 120, 22, 8);
+        else ctx.rect(14, 492, 120, 22);
+        ctx.fill();
+        ctx.fillStyle = '#1b4332';
+        ctx.font = '700 12.5px system-ui, sans-serif';
+        ctx.fillText('LIQUID WATER', 24, 507);
+        ctx.fillStyle = '#34584b';
+        ctx.fillText('INVISIBLE VAPOR IN AIR', 602, 507);
+        ctx.restore();
+    }
+
+    const tpLoop = window.SimKit?.loop((dt) => {
+        if (!tpRunning) return;
+        drawTranspiration(Math.min(dt, 0.05));
+    }, { el: window.SimKit?.stage(canvas), maxDt: 0.05 });
+
+    let savedFlow = null;
+    function render() {
+        const { h, water, opening, rate } = getParams();
         root.querySelector('#transpiration-humidity-value').textContent = `${h}%`;
         root.querySelector('#transpiration-soil-value').textContent = `${water}%`;
         root.querySelector('#transpiration-rate').textContent = `Relative flow: ${rate} / 100`;
@@ -2080,16 +3911,7 @@ function initTranspirationExplorer() {
             water <= 20 ? 'Water supply limits flow. Real plants often close stomata during drought.' :
             h >= 70 ? 'Humid air reduces the difference in water vapor concentration between leaf and air.' :
             'Drier air favors vapor loss when soil water and open stomata support the flow.';
-
-        canvas.querySelector('#transpiration-pore')?.setAttribute('rx', String(10 * opening));
-        const guardShift = (1 - opening) * 7;
-        canvas.querySelector('#transpiration-guard-left')?.setAttribute('cx', String(692 + guardShift));
-        canvas.querySelector('#transpiration-guard-right')?.setAttribute('cx', String(738 - guardShift));
-        const soilDrops = canvas.querySelector('#transpiration-soil-drops');
-        if (soilDrops) soilDrops.style.opacity = String(0.1 + (water / 100) * 0.85);
-        canvas.querySelector('#transpiration-vapor').style.opacity = String(rate === 0 ? 0 : 0.25 + rate / 100);
-        canvas.style.setProperty('--transpiration-duration', `${rate > 0 ? 120 / rate : 4}s`);
-        canvas.classList.toggle('transpiration-flowing', rate > 0);
+        drawTranspiration(0);
     }
 
     root.querySelector('#transpiration-save')?.addEventListener('click', () => {
@@ -2117,11 +3939,20 @@ function initTranspirationExplorer() {
         });
     });
 
-    root.querySelector('#transpiration-motion')?.addEventListener('click', (event) => {
-        const paused = canvas.classList.toggle('transpiration-paused');
-        event.currentTarget.setAttribute('aria-pressed', String(paused));
-        event.currentTarget.textContent = paused ? 'Resume flow animation' : 'Pause flow animation';
+    const motionBtn = root.querySelector('#transpiration-motion');
+    motionBtn?.addEventListener('click', (event) => {
+        tpRunning = !tpRunning;
+        event.currentTarget.setAttribute('aria-pressed', String(!tpRunning));
+        event.currentTarget.textContent = tpRunning ? 'Pause flow animation' : 'Resume flow animation';
+        if (tpRunning) tpLoop?.resume();
+        else tpLoop?.pause();
     });
+
+    if (!tpRunning && motionBtn) {
+        motionBtn.setAttribute('aria-pressed', 'true');
+        motionBtn.textContent = 'Resume flow animation';
+        tpLoop?.pause();
+    }
 
     selectStep(0);
     render();

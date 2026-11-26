@@ -629,6 +629,8 @@
       this.sprite = 'cumulus';
       this.isEmber = false;
       this.isRain = false;
+      this.isSnow = false;
+      this.phase = 0;
       this.condensed = false;
       this.tint = null;
     }
@@ -650,6 +652,11 @@
       this.dewPointF = options.dewPointF != null ? options.dewPointF : 55;
       this.maxAltitudeFt = options.maxAltitudeFt || DEFAULT_MAX_ALTITUDE_FT;
       this.lclFeet = calculateLCL(this.surfaceTempF, this.dewPointF);
+      this.precipScale = 1;
+      this.precipType = 'rain';
+      this.evapScale = 1;
+      this.sunStrength = 0.65;
+      this.season = 'Summer';
 
       // Active Preset
       this.preset = PRESETS[options.preset] || PRESETS.cumulus;
@@ -938,6 +945,17 @@
       this.turbulence = Math.max(0, Number(val));
     }
 
+    setAtmosphere({ sunStrength, humidity, precipRate, precipKind, evapScale, season } = {}) {
+      if (sunStrength != null) this.sunStrength = Math.max(0, Math.min(1, Number(sunStrength)));
+      if (humidity != null) this.humidity = Math.max(0, Math.min(100, Number(humidity)));
+      if (precipRate != null) this.precipScale = Math.max(0, Number(precipRate));
+      if (precipKind != null) {
+        this.precipType = (precipKind === 'snow' || precipKind === 'sleet') ? precipKind : 'rain';
+      }
+      if (evapScale != null) this.evapScale = Math.max(0.15, Number(evapScale));
+      if (season != null) this.season = season;
+    }
+
     triggerLightning() {
       this.lightningFlash = 1.0;
     }
@@ -980,7 +998,8 @@
     spawnParticles(dt) {
       const p = this.preset;
       const groundY = this.height - 25;
-      const count = Math.ceil(p.spawnRate * dt * 25);
+      const spawnScale = p.waterSurface ? Math.max(0.2, this.evapScale) : 1;
+      const count = Math.ceil(p.spawnRate * spawnScale * dt * 25);
 
       for (let s = 0; s < count; s++) {
         let spawnX = 0;
@@ -1012,7 +1031,8 @@
         particle.x = spawnX;
         particle.y = spawnY;
         particle.vx = (Math.random() - 0.5) * 0.4;
-        particle.vy = p.buoyancy ? (p.buoyancy * (0.8 + Math.random() * 0.4)) : -0.2;
+        const buoyScale = p.waterSurface ? (0.7 + this.sunStrength * 0.6) : 1;
+        particle.vy = p.buoyancy ? (p.buoyancy * buoyScale * (0.8 + Math.random() * 0.4)) : -0.2;
         particle.size = p.initialSize * (0.8 + Math.random() * 0.4);
         particle.growth = p.growthRate;
         particle.maxSize = p.maxSize * (0.8 + Math.random() * 0.4);
@@ -1064,22 +1084,34 @@
         }
       }
 
-      // Spawning rain in Cumulonimbus or Water Cycle
-      if (p.hasRain) {
-        const rainDrops = Math.ceil((p.rainIntensity || 20) * dt * 8);
+      // Spawning rain/snow in Cumulonimbus or Water Cycle
+      const effectivePrecipScale = p.waterSurface ? this.precipScale : 1;
+      if (p.hasRain && effectivePrecipScale > 0.01) {
+        const rainDrops = Math.ceil((p.rainIntensity || 20) * effectivePrecipScale * dt * 8);
         const lclY = this.altitudeToY(this.lclFeet);
         for (let r = 0; r < rainDrops; r++) {
           const drop = this.allocRainDrop();
           if (!drop) break;
-          // Rain falls from under the cloud base
-          drop.x = this.width * 0.25 + Math.random() * (this.width * 0.5);
-          drop.y = lclY + 10 + Math.random() * 30;
-          drop.vx = (this.windSpeed * 0.2);
-          drop.vy = 12 + Math.random() * 6; // High terminal velocity
-          drop.size = 24;
-          drop.life = 2.0;
+          const isSnow = p.waterSurface && (this.precipType === 'snow' || (this.precipType === 'sleet' && (r % 2 === 0)));
+          drop.isSnow = isSnow;
+          drop.phase = Math.random() * Math.PI * 2;
+          // Rain/snow falls from under the cloud base
+          drop.x = this.width * 0.18 + Math.random() * (this.width * 0.64);
+          drop.y = lclY + 8 + Math.random() * 24;
+          if (isSnow) {
+            drop.vx = (this.windSpeed * 0.08) + (Math.random() - 0.5) * 0.4;
+            drop.vy = 2.4 + Math.random() * 1.6;
+            drop.size = 3 + Math.random() * 3;
+            drop.life = 5.0;
+            drop.alpha = 0.88;
+          } else {
+            drop.vx = (this.windSpeed * 0.2);
+            drop.vy = 12 + Math.random() * 6; // High terminal velocity
+            drop.size = 24;
+            drop.life = 2.0;
+            drop.alpha = 0.6;
+          }
           drop.age = 0;
-          drop.alpha = 0.6;
           drop.sprite = 'rain';
         }
       }
@@ -1209,13 +1241,14 @@
         }
       }
 
-      // Update rain particles
+      // Update rain & snow particles
       for (let r = 0; r < this.maxRain; r++) {
         const drop = this.rainPool[r];
         if (!drop.active) continue;
 
         drop.age += dt;
-        drop.x += (baseWindX * 0.4 + drop.vx) * dt * 50;
+        const drift = drop.isSnow ? Math.sin(this.simTime * 2.5 + drop.phase) * 0.7 : 0;
+        drop.x += (baseWindX * (drop.isSnow ? 0.2 : 0.4) + drop.vx + drift) * dt * 50;
         drop.y += drop.vy * dt * 50;
 
         if (drop.y >= groundY) {
@@ -1239,12 +1272,42 @@
 
       // 1. Sky Background Gradient
       const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
-      const colors = this.preset.skyGradient || ['#0a192f', '#1e293b', '#334155'];
+      let colors = this.preset.skyGradient || ['#0a192f', '#1e293b', '#334155'];
+      if (this.preset.waterSurface) {
+        if (this.precipScale > 0.35) {
+          colors = ['#1e3246', '#33526e', '#597a96', '#9bb5c7'];
+        } else if (this.surfaceTempF <= 32) {
+          colors = ['#0d3a5c', '#1a6091', '#5ea6d4', '#cfeaf7'];
+        } else {
+          colors = ['#065a96', '#0c82c4', '#4ab8ea', '#c7ebfc'];
+        }
+      }
       for (let i = 0; i < colors.length; i++) {
         skyGrad.addColorStop(i / (colors.length - 1), colors[i]);
       }
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, w, h);
+
+      // Sun halo & warm sky radiance for waterSurface
+      if (this.preset.waterSurface && this.sunStrength > 0.05) {
+        const sunX = w * 0.86;
+        const sunY = h * 0.14;
+        const haloRadius = 40 + this.sunStrength * 85;
+        const halo = ctx.createRadialGradient(sunX, sunY, 4, sunX, sunY, haloRadius);
+        const dim = 1 - Math.min(0.65, this.precipScale * 0.6);
+        halo.addColorStop(0, `rgba(255, 248, 204, ${0.85 * this.sunStrength * dim})`);
+        halo.addColorStop(0.3, `rgba(255, 224, 118, ${0.42 * this.sunStrength * dim})`);
+        halo.addColorStop(1, 'rgba(255, 224, 118, 0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, haloRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = `rgba(255, 245, 195, ${0.45 + 0.55 * this.sunStrength * dim})`;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, 12 + this.sunStrength * 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // Lightning screen flash
       if (this.lightningFlash > 0) {
@@ -1258,20 +1321,44 @@
       }
 
       if (this.showLCL && (this.preset.cloudBaseFollowsLCL || this.preset.phaseChange)) {
+        if (this.preset.waterSurface) {
+          const lclBand = ctx.createLinearGradient(0, lclY - 26, 0, lclY + 18);
+          lclBand.addColorStop(0, 'rgba(255, 255, 255, 0)');
+          lclBand.addColorStop(0.6, 'rgba(186, 230, 253, 0.14)');
+          lclBand.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.fillStyle = lclBand;
+          ctx.fillRect(0, lclY - 26, w, 44);
+        }
         this.renderLCLIndicator(ctx, w, lclY);
       }
 
       // 3. Emitter Graphics (Chimney, Volcano caldera, or Ocean water)
       this.renderLandscape(ctx, w, h, groundY);
 
-      // 4. Render Rain Droplets
+      // 4. Render Rain Droplets & Snowflakes
       if (this.preset.hasRain && cache && cache.rain) {
         ctx.save();
         for (let r = 0; r < this.maxRain; r++) {
           const drop = this.rainPool[r];
           if (!drop.active) continue;
           ctx.globalAlpha = drop.alpha;
-          ctx.drawImage(cache.rain, drop.x, drop.y, 2, drop.size);
+          if (drop.isSnow) {
+            const grad = ctx.createRadialGradient(drop.x, drop.y, 0, drop.x, drop.y, drop.size);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 0.96)');
+            grad.addColorStop(0.6, 'rgba(224, 242, 254, 0.65)');
+            grad.addColorStop(1, 'rgba(224, 242, 254, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(drop.x, drop.y, drop.size, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.strokeStyle = 'rgba(219, 244, 255, 0.78)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(drop.x, drop.y);
+            ctx.lineTo(drop.x - (this.windSpeed * 0.25 + 1.5), drop.y + drop.size * 0.65);
+            ctx.stroke();
+          }
         }
         ctx.restore();
       }
@@ -1324,11 +1411,13 @@
         }
       }
 
-      // 6. Terrain Foreground Bar
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, groundY, w, 25);
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(0, groundY, w, 3);
+      // 6. Terrain Foreground Bar (skip opaque dark bar for waterSurface so ocean fills cleanly)
+      if (!this.preset.waterSurface) {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, groundY, w, 25);
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(0, groundY, w, 3);
+      }
     }
 
     renderAltitudeGuides(ctx, w, h, groundY) {
@@ -1422,23 +1511,82 @@
         ctx.fillRect(emX - 30, groundY - 55, 60, 6);
         ctx.restore();
       } else if (this.preset.waterSurface) {
-        // Ocean / Lake water body
+        // Multi-layered undulating ocean/lake water body + vapor wisps + optional sea ice
         ctx.save();
-        const waterGrad = ctx.createLinearGradient(0, groundY - 8, 0, groundY + 25);
-        waterGrad.addColorStop(0, '#0284c7');
-        waterGrad.addColorStop(1, '#0369a1');
-        ctx.fillStyle = waterGrad;
-        ctx.fillRect(0, groundY - 8, w, 33);
+        const frozen = this.surfaceTempF <= 32;
+        const amp = frozen ? 1.1 : 3.2;
+        const waterTop = groundY - 10;
 
-        // Gentle surface shimmer
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 8; i++) {
-          const sx = (this.simTime * 20 + i * 110) % w;
+        // Subtle rising evaporation mist ribbons near the surface
+        if (this.evapScale > 0.25 && !frozen) {
+          ctx.save();
+          ctx.strokeStyle = `rgba(235, 249, 255, ${Math.min(0.24, 0.08 + this.evapScale * 0.09)})`;
+          ctx.lineWidth = 2.2;
+          for (let i = 0; i < 6; i++) {
+            const wx = ((i + 0.5) / 6) * w + Math.sin(this.simTime * 0.8 + i) * 14;
+            const rise = (this.simTime * 18 + i * 9) % 36;
+            const wy = waterTop - rise;
+            ctx.globalAlpha = Math.max(0, 1 - rise / 36) * 0.55;
+            ctx.beginPath();
+            ctx.moveTo(wx, wy + 12);
+            ctx.quadraticCurveTo(wx + Math.sin(this.simTime * 2 + i) * 8, wy + 4, wx - Math.cos(this.simTime * 1.7 + i) * 6, wy - 6);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        const waterGrad = ctx.createLinearGradient(0, waterTop, 0, h);
+        waterGrad.addColorStop(0, frozen ? '#3a8bb8' : '#0ea5e9');
+        waterGrad.addColorStop(0.45, '#0369a1');
+        waterGrad.addColorStop(1, '#082f49');
+        ctx.fillStyle = waterGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        for (let px = 0; px <= w + 12; px += 12) {
+          const wy = waterTop + Math.sin(px * 0.024 + this.simTime * 2.1) * amp + Math.cos(px * 0.055 - this.simTime * 1.5) * (amp * 0.45);
+          ctx.lineTo(px, wy);
+        }
+        ctx.lineTo(w, h);
+        ctx.closePath();
+        ctx.fill();
+
+        // Crisp surface highlight meniscus
+        ctx.strokeStyle = frozen ? 'rgba(224, 242, 254, 0.78)' : 'rgba(224, 247, 255, 0.75)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        for (let px = 0; px <= w + 12; px += 12) {
+          const wy = waterTop + Math.sin(px * 0.024 + this.simTime * 2.1) * amp + Math.cos(px * 0.055 - this.simTime * 1.5) * (amp * 0.45);
+          if (px === 0) ctx.moveTo(px, wy);
+          else ctx.lineTo(px, wy);
+        }
+        ctx.stroke();
+
+        // Sunlit specular glints
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.22 + this.sunStrength * 0.35})`;
+        ctx.lineWidth = 1.2;
+        for (let i = 0; i < 9; i++) {
+          const sx = ((this.simTime * (16 + (i % 3) * 5) + i * (w / 7)) % (w + 40)) - 20;
+          const sy = waterTop + 6 + (i % 3) * 5 + Math.sin(this.simTime * 2 + i) * 1.5;
           ctx.beginPath();
-          ctx.moveTo(sx, groundY - 4);
-          ctx.lineTo(sx + 25, groundY - 4);
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(sx + 18 + (i % 2) * 10, sy);
           ctx.stroke();
+        }
+
+        // Translucent sea ice crust when freezing (<= 32°F)
+        if (frozen) {
+          const iceThick = Math.min(13, 5 + (32 - this.surfaceTempF) * 0.35);
+          ctx.fillStyle = 'rgba(224, 247, 255, 0.72)';
+          ctx.fillRect(0, waterTop - 2, w, iceThick);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+          ctx.lineWidth = 1;
+          for (let fx = 30; fx < w; fx += 78) {
+            ctx.beginPath();
+            ctx.moveTo(fx, waterTop - 1);
+            ctx.lineTo(fx + 14, waterTop + iceThick - 3);
+            ctx.lineTo(fx + 28, waterTop + 2);
+            ctx.stroke();
+          }
         }
         ctx.restore();
       }

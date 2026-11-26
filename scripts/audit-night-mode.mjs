@@ -18,6 +18,7 @@
 //   node scripts/audit-night-mode.mjs --save-baseline      write data/night-audit-baseline.json
 //   node scripts/audit-night-mode.mjs --check              fail if a lesson is worse than the baseline
 //   --base=URL  --root=DIR  --concurrency=N  --out=report.json  --keep-lighting (do not force the theme)
+//   --page-timeout=MS (default 45000: a lesson that takes longer is reported as failed, not waited on)
 
 import fs from "node:fs";
 import path from "node:path";
@@ -187,26 +188,52 @@ if (!flag("keep-lighting")) {
 
 const results = {};
 let next = 0;
+let done = 0;
+// page.evaluate() has no timeout of its own, and a heavy WebGL lesson can wedge its renderer under SwiftShader,
+// which used to hang a worker (and the whole run) forever. Every lesson gets one deadline; a lesson that misses
+// it is recorded as an error and its tab is thrown away, so the next lesson starts in a fresh renderer.
+const pageDeadline = Number(arg("page-timeout", 45000));
+const withDeadline = (promise, ms, what) => {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${what} timed out after ${ms} ms`)), ms); }),
+  ]).finally(() => clearTimeout(timer));
+};
+async function auditOne(page, file) {
+  await page.goto(`${base}/${file}`, { waitUntil: "domcontentloaded", timeout: 25000 });
+  await page.addStyleTag({ content: "*,*::before,*::after{transition:none!important;animation:none!important}" });
+  await page.waitForTimeout(Number(arg("wait", 2800)));
+  // On a busy machine a heavy lesson can still be loading contrast-guard.js after the wait; measuring then
+  // reports the panels it was about to darken. Give it time to arrive, and say so if it never does.
+  // (A theme-independent page never installs the guard, by design, so there is nothing to wait for.)
+  const independent = await page.evaluate(() => document.documentElement.dataset.themeScope === "independent");
+  const guard = independent ? null : await page.waitForFunction(() => window.ClassroomOSContrastGuard?.runNow, null, { timeout: 15000 })
+    .then(() => true, () => false);
+  // Settle the guard now, as the a11y audit does: helpers that land at idle (related-lesson links) would
+  // otherwise be measured in the half second before its throttled pass reaches them.
+  if (guard) await page.evaluate(() => window.ClassroomOSContrastGuard.runNow());
+  return { ...(await page.evaluate(measure)), guard };
+}
 async function worker() {
-  const page = await context.newPage();
+  let page = await context.newPage();
   while (next < files.length) {
     const file = files[next++];
     try {
-      await page.goto(`${base}/${file}`, { waitUntil: "domcontentloaded", timeout: 25000 });
-      await page.addStyleTag({ content: "*,*::before,*::after{transition:none!important;animation:none!important}" });
-      await page.waitForTimeout(Number(arg("wait", 2800)));
-      // Settle the guard now, as the a11y audit does: helpers that land at idle (related-lesson links) would
-      // otherwise be measured in the half second before its throttled pass reaches them.
-      await page.evaluate(() => window.ClassroomOSContrastGuard?.runNow?.());
-      results[file] = await page.evaluate(measure);
+      results[file] = await withDeadline(auditOne(page, file), pageDeadline, file);
     } catch (error) {
-      results[file] = { error: String(error).slice(0, 120) };
+      results[file] = { error: String(error).slice(0, 160) };
+      process.stderr.write(`  ! ${file}: ${results[file].error}\n`);
+      // The tab may be wedged: don't wait on it, start over in a new one.
+      withDeadline(page.close(), 5000, "close").catch(() => {});
+      page = await context.newPage();
     }
+    if (++done % 50 === 0) process.stderr.write(`  ${done}/${files.length} lessons\n`);
   }
-  await page.close();
+  await withDeadline(page.close(), 5000, "close").catch(() => {});
 }
 await Promise.all(Array.from({ length: Math.min(concurrency, files.length) }, worker));
-await browser.close();
+await withDeadline(browser.close(), 15000, "browser close").catch(() => {});
 
 const rows = Object.entries(results);
 const ok = rows.filter(([, r]) => !r.error);
@@ -222,6 +249,8 @@ const independent = ok.filter(([, r]) => r.independent).map(([f]) => f);
 if (independent.length) console.log(`  theme-independent : ${independent.length} lessons (data-theme-scope="independent"; panels not judged, text still checked): ${independent.join(", ")}`);
 const notDark = ok.filter(([, r]) => !r.independent && r.lighting !== "night").map(([f]) => f);
 if (notDark.length) console.log(`  NOT in a dark theme: ${notDark.join(", ")}`);
+const noGuard = ok.filter(([, r]) => r.guard === false).map(([f]) => f);
+if (noGuard.length) console.log(`  contrast guard never loaded (measured raw): ${noGuard.join(", ")}`);
 
 const worst = (key) => ok.filter(([, r]) => r[key]).sort((a, b) => b[1][key] - a[1][key]).slice(0, 12);
 if (sum("lowCount")) {
@@ -239,7 +268,17 @@ if (out) fs.writeFileSync(out, JSON.stringify(results, null, 1));
 const slim = Object.fromEntries(ok.slice().sort(([a], [b]) => (a < b ? -1 : 1)).map(([f, r]) => [f, { low: r.lowCount, bright: r.brightCount }]));
 if (flag("save-baseline")) {
   fs.mkdirSync(path.dirname(baselinePath), { recursive: true });
-  fs.writeFileSync(baselinePath, JSON.stringify({ theme, lessons: slim }, null, 1) + "\n");
+  // A lesson that failed to load this run keeps its previous entry rather than silently leaving the baseline.
+  let lessons = slim;
+  const failed = rows.filter(([, r]) => r.error).map(([f]) => f);
+  if (failed.length && fs.existsSync(baselinePath)) {
+    const saved = JSON.parse(fs.readFileSync(baselinePath, "utf8")).lessons || {};
+    const carried = failed.filter((f) => saved[f]);
+    for (const f of carried) slim[f] = saved[f];
+    lessons = Object.fromEntries(Object.entries(slim).sort(([a], [b]) => a.localeCompare(b)));
+    if (carried.length) console.log(`\nKept the previous baseline for ${carried.length} lesson(s) that failed this run: ${carried.join(", ")}`);
+  }
+  fs.writeFileSync(baselinePath, JSON.stringify({ theme, lessons }, null, 1) + "\n");
   console.log(`\nSaved ${path.relative(root, baselinePath)}`);
 }
 if (flag("check")) {
