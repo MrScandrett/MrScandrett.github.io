@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Perspective City: Draw a Plan, Raise a Skyline · ClassroomOS</title>
+  <meta name="description" content="Draw building footprints on a plan and watch them rise into a one-point-perspective skyline of geometric skyscrapers, then walk around your city in 3D.">
+  <link rel="icon" href="../../assets/images/favicon.svg">
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css">
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css">
+  <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print">
+  <link rel="stylesheet" href="../../assets/css/lessons/perspective-city.css">
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html#module-design2d" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../library.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="pc-page">
+    <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+      <a href="../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+      <a href="../../steam-lessons.html#module-design2d">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+      <a href="2d-design.html">2D Design</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+      <span class="ll-crumb-current" aria-current="page">Perspective City</span>
+    </nav>
+
+    <header class="pc-hero">
+      <p class="pc-kicker">2D Design · One-Point Perspective · Grades 5–12 · 45 minutes</p>
+      <h1>Perspective City</h1>
+      <p class="pc-lede">Draw shapes flat on the plan. Each one rises into a skyscraper, and every edge races toward one vanishing point.</p>
+    </header>
+
+    <section class="pc-studio" data-perspective-city data-present aria-label="Perspective City studio" data-memory-ignore>
+      <div class="pc-toolbar" role="toolbar" aria-label="Drawing tools">
+        <div class="pc-group" aria-label="Tool">
+          <button type="button" data-tool="select" aria-pressed="false" title="Select and move (V)">↖ Select</button>
+          <button type="button" data-tool="rect" aria-pressed="true" title="Draw a box (R)">▭ Box</button>
+          <button type="button" data-tool="poly" aria-pressed="false" title="Draw any shape (P)">⬠ Shape</button>
+          <button type="button" data-tool="stamp" aria-pressed="false" title="Stamp a footprint (S)">◈ Stamp</button>
+          <button type="button" data-tool="word" aria-pressed="false" title="Block letters (T)">A Letters</button>
+        </div>
+        <div class="pc-group">
+          <label>Stamp
+            <select id="pc-stamp">
+              <option value="box">Box</option><option value="slab">Slab</option><option value="ell">L</option>
+              <option value="tee">T</option><option value="plus">Plus</option><option value="tri">Triangle</option>
+              <option value="wedge">Wedge</option><option value="hex">Hexagon</option><option value="round">Round tower</option>
+              <option value="ring">Courtyard</option><option value="star">Star</option>
+            </select>
+          </label>
+          <label>Size <output id="pc-size-out">4</output>
+            <input id="pc-size" type="range" min="1" max="5" step="0.5" value="2">
+          </label>
+          <label>Word <input id="pc-word" type="text" maxlength="8" value="CITY" autocomplete="off" spellcheck="false"></label>
+        </div>
+        <div class="pc-group">
+          <button type="button" id="pc-undo" title="Undo (Ctrl+Z)">↶ Undo</button>
+          <button type="button" id="pc-sample">Sample</button>
+          <button type="button" id="pc-random">Random</button>
+          <button type="button" id="pc-clear">Clear</button>
+        </div>
+      </div>
+
+      <div class="pc-panes">
+        <div class="pc-pane pc-plan-pane" data-night-keep>
+          <p class="pc-pane-label"><strong>1 · Plan</strong> <span>draw footprints here</span></p>
+          <canvas id="pc-plan" tabindex="0" aria-label="Plan view: a 24 by 24 grid. Draw footprints with the chosen tool. Keys: V select, R box, P shape, S stamp, T letters, N next tower, arrows move, [ and ] change height, Delete removes."></canvas>
+        </div>
+        <div class="pc-pane pc-view-pane" data-night-keep>
+          <div class="pc-pane-label pc-tabs" role="tablist" aria-label="Skyline view">
+            <button type="button" role="tab" data-view="sketch" aria-selected="true">2 · Sketch (one-point)</button>
+            <button type="button" role="tab" data-view="3d" aria-selected="false">3D walk-around</button>
+          </div>
+          <canvas id="pc-sketch" tabindex="0" aria-label="Skyline drawn in one-point perspective from above. Drag anywhere, or use the arrow keys, to move the vanishing point."></canvas>
+          <canvas id="pc-3d" hidden aria-label="3D model of the city. Drag to orbit, scroll to zoom."></canvas>
+          <div id="pc-3d-tools" class="pc-3d-tools" hidden>
+            <button type="button" id="pc-match">Match the sketch camera</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pc-controls">
+        <fieldset class="pc-props">
+          <legend id="pc-props-title">Next tower</legend>
+          <label>Height <output id="pc-height-out">8</output>
+            <input id="pc-height" type="range" min="0.5" max="20" step="0.5" value="8">
+          </label>
+          <div class="pc-inks" role="group" aria-label="Marker colour">
+            <button type="button" data-ink="ink" style="--ink:#1f2328" aria-label="Black marker" aria-pressed="true"></button>
+            <button type="button" data-ink="green" style="--ink:#1f9d55" aria-label="Green marker" aria-pressed="false"></button>
+            <button type="button" data-ink="orange" style="--ink:#ef7d22" aria-label="Orange marker" aria-pressed="false"></button>
+            <button type="button" data-ink="red" style="--ink:#d7342b" aria-label="Red marker" aria-pressed="false"></button>
+            <button type="button" data-ink="blue" style="--ink:#2563eb" aria-label="Blue marker" aria-pressed="false"></button>
+            <button type="button" data-ink="purple" style="--ink:#7c3aed" aria-label="Purple marker" aria-pressed="false"></button>
+            <button type="button" data-ink="brown" style="--ink:#8a4b2a" aria-label="Brown marker" aria-pressed="false"></button>
+          </div>
+          <label>Fill
+            <select id="pc-fill"><option value="paper">White paper</option><option value="tint">Light tint</option><option value="solid">Coloured in</option></select>
+          </label>
+          <label>Setbacks
+            <select id="pc-tiers"><option value="1">None</option><option value="2">2 tiers</option><option value="3">3 tiers</option><option value="4">4 tiers</option></select>
+          </label>
+          <label>Roof
+            <select id="pc-roof"><option value="flat">Flat</option><option value="spire">Pyramid spire</option></select>
+          </label>
+          <div class="pc-sel-actions">
+            <button type="button" id="pc-duplicate">Copy</button>
+            <button type="button" id="pc-delete">Delete</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="pc-camera">
+          <legend>Camera &amp; marker</legend>
+          <label>Camera height <output id="pc-camera-out">44</output>
+            <input id="pc-camera" type="range" min="26" max="120" step="1" value="44">
+          </label>
+          <label>Marker weight
+            <input id="pc-weight" type="range" min="1.5" max="7" step="0.5" value="4">
+          </label>
+          <label class="pc-check"><input id="pc-ortho" type="checkbox" checked> Construction lines to the VP</label>
+          <label class="pc-check"><input id="pc-shade" type="checkbox"> Shade the walls</label>
+          <label class="pc-check"><input id="pc-wobble" type="checkbox" checked> Hand-drawn wobble</label>
+          <div class="pc-sel-actions">
+            <button type="button" id="pc-fly" aria-pressed="false">▶ Fly over</button>
+            <button type="button" id="pc-center">Centre VP</button>
+            <button type="button" id="pc-shuffle">New heights</button>
+          </div>
+          <div class="pc-sel-actions">
+            <button type="button" id="pc-png">Download PNG</button>
+            <button type="button" id="pc-save">Save city</button>
+            <button type="button" id="pc-open">Open city</button>
+            <input id="pc-file" type="file" accept=".json,application/json" hidden aria-label="Open a saved city file">
+          </div>
+        </fieldset>
+      </div>
+      <p id="pc-status" class="pc-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="pc-read" aria-labelledby="pc-how">
+      <h2 id="pc-how">How one point makes a whole city</h2>
+      <figure data-zoomable class="pc-exemplar">
+        <img src="../../assets/images/lessons/perspective-city/sketchbook-city.jpg" alt="Marker drawing in a sketchbook: dozens of boxes, prisms, block letters, a cylinder and a record player, all with their depth lines aimed at one point in the middle of the page." width="1100" height="1532" loading="lazy" decoding="async">
+        <figcaption><strong>The sketchbook city that started this lesson.</strong> Find the vanishing point near the centre of the page: every depth line on every box, letter and prism aims at it. The big outer shapes are the near faces; they keep their true shape, only bigger. Drawing by Mr. Scandrett.</figcaption>
+      </figure>
+      <p>Imagine hovering in a helicopter straight above the city. Every <strong>vertical edge</strong> of every building points at your eye, so in the drawing they all aim at one spot: the <strong>vanishing point (VP)</strong>, the point on the ground right under you. The lines that run toward it are called <strong>orthogonals</strong>.</p>
+      <p>A roof is parallel to the paper, so it keeps its <strong>true shape</strong>. It only gets bigger, because it is closer to you. How much bigger? If your eye is <em>D</em> above the ground and a roof is <em>h</em> high, the roof is drawn <em>D ÷ (D − h)</em> times as far from the VP as its footprint. That is similar triangles, and it is the exact rule the sketch view uses.</p>
+      <ul class="pc-facts">
+        <li><strong>Taller leans farther.</strong> A tower of height 22 under a camera at 44 is drawn twice as far from the VP as its base.</li>
+        <li><strong>Lower camera, wilder city.</strong> Bring the camera down and <em>D − h</em> shrinks fast: walls stretch like a fisheye.</li>
+        <li><strong>Hidden walls.</strong> You only see a wall when the VP is on its outside. A tower right under the VP shows only its roof.</li>
+        <li><strong>Setbacks.</strong> New York's 1916 Zoning Resolution made tall buildings step back as they rose so light could reach the street, giving the city its "wedding cake" towers. Try the Setbacks menu.</li>
+      </ul>
+      <p>Filippo Brunelleschi showed linear perspective with a painted panel of the Florence Baptistery around 1415, and Leon Battista Alberti wrote the method down in 1435. Raphael built <a href="../humanities/school-of-athens.html">The School of Athens</a> on a single vanishing point; <a href="pioneers/pablo-picasso.html">Picasso</a> later broke the rule on purpose.</p>
+    </section>
+
+    <section class="pc-read" aria-labelledby="pc-try">
+      <h2 id="pc-try">Four experiments</h2>
+      <ol>
+        <li><strong>Drag the VP</strong> (the orange target) into a corner. Which walls appear, and which disappear? Write the rule in your own words.</li>
+        <li><strong>Two equal towers.</strong> Stamp two identical boxes, one near the VP and one near the edge. Why does the far one show more wall?</li>
+        <li><strong>Camera height.</strong> Set it to 26, then 120. Which looks like a fisheye lens, and which looks almost like a flat map?</li>
+        <li><strong>Letters as buildings.</strong> Type your initials in the Letters tool and stamp them. Holes in A, B, O and R become courtyards.</li>
+      </ol>
+      <h2>Now draw it by hand</h2>
+      <ol>
+        <li>Draw your footprints flat, scattered around the page. Leave the middle mostly open.</li>
+        <li>Mark one dot near the centre: the VP.</li>
+        <li>With a ruler and a light pencil, draw an orthogonal from every corner toward the VP.</li>
+        <li>Choose how tall each building is: draw a smaller copy of its shape on those lines, closer to the VP. Keep its edges parallel to the original.</li>
+        <li>Erase the lines hidden behind nearer buildings, ink the rest with marker, then colour a few faces. Turn the page upside down: is it now a worm's-eye view, looking up?</li>
+      </ol>
+      <p>Tip: in the studio, turn on <em>Construction lines</em>, press Download PNG, and print it as a tracing guide.</p>
+    </section>
+
+    <section class="pc-read" aria-labelledby="pc-reflect">
+      <h2 id="pc-reflect">Reflection</h2>
+      <label for="pc-notes">Where did you put your vanishing point and why? Which tower looks tallest, and what made it look that way?</label>
+      <textarea id="pc-notes" rows="5" maxlength="6000"></textarea>
+      <p class="pc-finish"><strong>Finish when:</strong> your city has at least eight towers, including one letter and one setback tower; you have saved a PNG from two different vanishing points; and your hand drawing uses one VP for every orthogonal.</p>
+      <p><strong>For younger designers:</strong> use Stamp and Random, then just drag the VP and describe what changes. <strong>Extend:</strong> place the VP outside the plan entirely. What happens to a city seen from off to one side?</p>
+    </section>
+  </main>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
+  <script type="module" src="../../assets/js/lessons/perspective-city.mjs"></script>
+</body>
+</html>

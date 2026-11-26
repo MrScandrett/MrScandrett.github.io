@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 518 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 519 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -269,7 +269,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 118 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 119 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -402,26 +402,27 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **D2D-06** — Drawing Foundations: Shape, Line & Value
 - **D2D-07** — Vector Drawing Studio
 - **D2D-08** — Composition & Layout Studio
-- **D2D-09** — Poster Design Project
+- **D2D-09** — Perspective City: Draw a Plan, Raise a Skyline
+- **D2D-10** — Poster Design Project
 
 ### Studios · Raster Editing & Stick-Figure Animation
 
-- **D2D-10** — Photo Editing Workshop
-- **D2D-11** — Pivot Stick Figure Studio: 2D Rigging & Keyframes
+- **D2D-11** — Photo Editing Workshop
+- **D2D-12** — Pivot Stick Figure Studio: 2D Rigging & Keyframes
 
 ### Make It Play · 2D Game Developer Pathway
 
-- **D2D-12** — 2D Game Developer Pathway
-- **D2D-13** — Pixel Art & Sprites
-- **D2D-14** — Sprite Sheets & Animation
-- **D2D-15** — Tilesets & Tilemaps
-- **D2D-16** — Game Loop & Rendering
-- **D2D-17** — Movement & Jump Feel
-- **D2D-18** — Collision & Response
-- **D2D-19** — Cameras, Layers & Parallax
-- **D2D-20** — Animation State Machines
-- **D2D-21** — Level Design & Game Feel
-- **D2D-22** — Menus, Saving & Shipping
+- **D2D-13** — 2D Game Developer Pathway
+- **D2D-14** — Pixel Art & Sprites
+- **D2D-15** — Sprite Sheets & Animation
+- **D2D-16** — Tilesets & Tilemaps
+- **D2D-17** — Game Loop & Rendering
+- **D2D-18** — Movement & Jump Feel
+- **D2D-19** — Collision & Response
+- **D2D-20** — Cameras, Layers & Parallax
+- **D2D-21** — Animation State Machines
+- **D2D-22** — Level Design & Game Feel
+- **D2D-23** — Menus, Saving & Shipping
 
 ## 3D Design (D3D)
 
