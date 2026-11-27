@@ -29,6 +29,8 @@ notation retains that licence; guides are ClassroomOS teaching annotations.
 | Air, BWV 1068 | BWV1068 | 242 | jeff covey | CC BY-SA 3.0 |
 | Goldberg Aria, BWV 988 | BWV988 | 979 | JD Erickson | CC BY-SA 3.0 |
 | Toccata and Fugue, BWV 565 | BWV565 | 1780 | Anonymous | Public domain |
+| Sheep May Safely Graze, BWV 208 | BWV208 | 1794 | Jeremy Visser | Public domain |
+| Minuet in G, BWV Anh. 114 (Petzold) | BWVAnh114 | 75 | Allen Garvin | Public domain |
 
 Source pages use `https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=ID`.
 [CC BY-SA 3.0 licence](https://creativecommons.org/licenses/by-sa/3.0/).
@@ -96,3 +98,12 @@ voices. Preserve the source's independent voices and written ties.
 
 The Toccata's 18 sixty-fourth notes require the added `/64` parser, four-beam
 engraving and import support. They are not rounded or replaced by slower notes.
+
+## Later additions (2026-11-27)
+
+Sheep May Safely Graze (BWV208/Sheep.ly) and the Minuet in G (BWVAnh114/anna-magdalena-04.ly)
+were imported unchanged with `import.sh`. MIDI check: Sheep 1045/1045 notes, with 2 duration
+differences on tied notes; Minuet 203/204, the missing note being the grace note in bar 8. In the
+library the soprano staff plays with the clarinet sound and the continuo with the cello; the
+aria's Da Capo is described in the guide rather than written as `@Fine`/`@DC`, because its Fine
+falls on beat 1 of bar 21, in the middle of a bar.

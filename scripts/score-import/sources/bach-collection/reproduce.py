@@ -18,6 +18,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 python = os.environ.get('PYTHON', sys.executable)
 labels = {'bach-air-score': 'Violin I,Violin II,Viola,Continuo',
           'ToccataFugue': 'Manual I,Manual II,Pedal',
+          'Sheep': 'Flute 1,Flute 2,Soprano (Pales),Continuo',
           'crab': 'Violin I · forwards,Violin II · backwards',
           'jesu': 'Soprano and alto,Tenor and bass,Keyboard right hand,Keyboard left hand'}
 entries = sorted(p for p in HERE.rglob('*.ly') if p.stem not in
