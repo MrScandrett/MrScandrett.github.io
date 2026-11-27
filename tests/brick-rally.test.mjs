@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WebSocketServer, WebSocket } from 'ws';
+import { WebSocket } from 'ws';
 import * as Car from '../assets/js/brick-rally/car-model.mjs';
 import { carveCar, segment, nearestPalette } from '../assets/js/brick-rally/scan.mjs';
 import { TRACKS, buildTrack, locate, gridSlot, pointAt } from '../assets/js/brick-rally/track.mjs';
 import { newCar, stepCar, botInput, collideCars, DT } from '../assets/js/brick-rally/physics.mjs';
-import { encodeLength, readPackets, publishPacket, parsePublish, topicMatches, connectPacket, subscribePacket } from '../assets/js/brick-rally/mqtt.mjs';
+import { encodeLength, readPackets, publishPacket, parsePublish, topicMatches, connectPacket, subscribePacket } from '../assets/js/lan-play/mqtt.mjs';
+import { fakeBroker, until } from './helpers/fake-mqtt-broker.mjs';
 import { Bus, HostSession, GuestSession, watchLobbies, networkOf, publicIpsFromCandidates, cleanCode, makeCode, cleanName } from '../assets/js/brick-rally/net.mjs';
 
 // ---------------------------------------------------------------- car model
@@ -208,47 +209,6 @@ test('network helpers', () => {
   assert.equal(cleanName('<script>Al'), 'scriptAl');
   assert.equal(cleanName(''), 'Racer');
 });
-
-/** A minimal MQTT broker (QoS 0) so the sessions can be tested end to end. */
-function fakeBroker() {
-  const wss = new WebSocketServer({ port: 0, handleProtocols: () => 'mqtt' });
-  const clients = new Set();
-  wss.on('connection', (ws) => {
-    const c = { ws, subs: new Set(), buf: new Uint8Array(0) };
-    clients.add(c);
-    ws.on('close', () => clients.delete(c));
-    ws.on('message', (data) => {
-      const merged = new Uint8Array([...c.buf, ...new Uint8Array(data)]);
-      const { packets, rest } = readPackets(merged);
-      c.buf = rest;
-      for (const p of packets) {
-        if (p.type === 1) ws.send(new Uint8Array([0x20, 2, 0, 0]));
-        else if (p.type === 8) {
-          let i = 2;
-          while (i < p.body.length) {
-            const l = (p.body[i] << 8) | p.body[i + 1];
-            c.subs.add(new TextDecoder().decode(p.body.slice(i + 2, i + 2 + l)));
-            i += 3 + l;
-          }
-          ws.send(new Uint8Array([0x90, 3, p.body[0], p.body[1], 0]));
-        } else if (p.type === 3) {
-          const m = parsePublish(p);
-          const out = publishPacket(m.topic, m.payload);
-          for (const o of clients) if ([...o.subs].some(f => topicMatches(f, m.topic))) o.ws.send(out);
-        } else if (p.type === 12) ws.send(new Uint8Array([0xd0, 0]));
-      }
-    });
-  });
-  return new Promise(res => wss.on('listening', () => res({ url: `ws://127.0.0.1:${wss.address().port}`, close: () => { for (const c of clients) c.ws.terminate(); wss.close(); } })));
-}
-
-const until = async (fn, ms = 3000) => {
-  const t0 = Date.now();
-  while (!fn()) {
-    if (Date.now() - t0 > ms) throw new Error('timed out');
-    await new Promise(r => setTimeout(r, 20));
-  }
-};
 
 test('host and guest find each other on the same WiFi and trade messages over the relay', async () => {
   const broker = await fakeBroker();

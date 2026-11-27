@@ -7,6 +7,8 @@ import {
   OutputPass,
   RoomEnvironment
 } from "./vendor/three-game-bundle.min.js";
+// Same-WiFi play: the class site's shared lobby (esbuild bundles it into app.min.js).
+import { mountLobbyPanel, joinCodeFromHash } from "../../../assets/js/lan-play/lobby-panel.mjs";
 
 (() => {
   "use strict";
@@ -481,7 +483,10 @@ import {
     winSub: document.getElementById("winSub"),
     playAgainBtn: document.getElementById("playAgainBtn"),
     rulesBtn: document.getElementById("rulesBtn"),
-    restartBtn: document.getElementById("restartBtn")
+    restartBtn: document.getElementById("restartBtn"),
+    onlineBtn: document.getElementById("onlineBtn"),
+    online: document.getElementById("onlineOverlay"),
+    onlineCard: document.getElementById("onlineCard")
   };
 
   let playerCount = 2;
@@ -497,6 +502,13 @@ import {
   let gameOver = false;
   let flowVersion = 0;
   let aiTimer = null;
+  // Online play (null when playing alone). The host is the referee: it checks every move and
+  // publishes the whole board; guests only ask for moves and draw the boards that arrive.
+  let online = null;        // { role: "host" | "guest", room, mySeat }
+  let sending = false;      // a guest's move is on its way to the host
+  let hostMoves = [];       // guests' moves that arrived while a marble was still hopping
+  let guestStates = [];     // boards from the host waiting for the current animation
+  let boardLive = false;    // a game is on the table (the HUD can be hidden by the rules card)
 
   function cancelPendingFlow() {
     flowVersion++;
@@ -509,15 +521,40 @@ import {
 
   function keyOf(c) { return key(c); }
 
-  function setupPlayers(count) {
+  // kind: "local" (this device), "remote" (a classmate), "cpu". Alone, you are always seat 0.
+  function setupPlayers(count, seats = null, mySeat = 0) {
     const pts = PRESETS[count];
-    players = pts.map((p, i) => ({
-      pointIdx: p,
-      color: POINT_COLORS[p],
-      name: POINT_NAMES[p],
-      isHuman: i === 0
-    }));
+    players = pts.map((p, i) => {
+      const seat = seats && seats[i];
+      const kind = !seats ? (i === 0 ? "local" : "cpu")
+        : i === mySeat ? "local"
+        : seat && seat.kind !== "cpu" ? "remote" : "cpu";
+      return {
+        pointIdx: p,
+        color: POINT_COLORS[p],
+        name: POINT_NAMES[p],
+        who: seat && seat.kind !== "cpu" ? seat.name : null,
+        away: !!(seat && seat.away),
+        kind,
+        isHuman: kind === "local"
+      };
+    });
     turnOrder = players.map((_, i) => i);
+  }
+
+  function labelOf(pl) {
+    let s = pl.name;
+    if (pl.who && !pl.isHuman) s += " · " + pl.who;
+    if (pl.isHuman) s += " (you)";
+    else if (online && (pl.kind === "cpu" || pl.away)) s += " (computer)";
+    return s;
+  }
+
+  // Only the host (or a solo game) runs the computer players.
+  function isComputer(i) {
+    if (!online) return players[i].kind === "cpu";
+    if (online.role !== "host") return false;
+    return online.room.isComputer(i);
   }
 
   function clearPegs() {
@@ -556,7 +593,7 @@ import {
       dot.style.background = "#" + pl.color.toString(16).padStart(6, "0");
       dot.style.boxShadow = "0 0 6px #" + pl.color.toString(16).padStart(6, "0");
       const label = document.createElement("span");
-      label.textContent = pl.name + (pl.isHuman ? " (you)" : "") + ": 0/10";
+      label.textContent = labelOf(pl) + ": 0/10";
       div.appendChild(dot);
       div.appendChild(label);
       els.legend.appendChild(div);
@@ -580,7 +617,7 @@ import {
       const div = document.getElementById("legend-" + i);
       if (!div) return;
       const n = homeCountForTarget(i);
-      div.lastChild.textContent = pl.name + (pl.isHuman ? " (you)" : "") + ": " + n + "/10";
+      div.lastChild.textContent = labelOf(pl) + ": " + n + "/10";
       div.classList.toggle("active-turn", turnOrder[turnIdx] === i && !gameOver);
     });
   }
@@ -712,38 +749,70 @@ import {
   function updateTurnUI() {
     const pl = players[currentPlayerIdx()];
     els.turnCard.style.setProperty("--turn-color", "#" + pl.color.toString(16).padStart(6, "0"));
-    els.turnText.textContent = pl.isHuman ? "Your move — " + pl.name : pl.name + " is thinking…";
+    if (pl.isHuman) els.turnText.textContent = "Your move — " + pl.name;
+    else if (online && pl.kind === "remote" && !pl.away) els.turnText.textContent = "Waiting for " + pl.who + " (" + pl.name + ")…";
+    else els.turnText.textContent = pl.name + " is thinking…";
     if (pl.isHuman) els.hint.textContent = "Tap one of your marbles to begin.";
+    else if (online && !players.some((p) => p.isHuman)) els.hint.textContent = "You're watching this game.";
+    else if (online) els.hint.textContent = "Watch the board — you'll move when it's your turn.";
     refreshLegend();
   }
 
-  function checkWin(playerIdx) {
-    if (homeCountForTarget(playerIdx) === 10) {
-      gameOver = true;
-      const pl = players[playerIdx];
-      els.winTitle.textContent = pl.isHuman ? "You win! 🎉" : pl.name + " wins";
-      els.winSub.textContent = pl.isHuman
-        ? "Every one of your marbles made it across the board."
-        : pl.name + " filled their point first. Give it another go!";
-      els.win.hidden = false;
-      return true;
-    }
-    return false;
+  function showWin(playerIdx) {
+    gameOver = true;
+    const pl = players[playerIdx];
+    const who = pl.who && !pl.isHuman ? pl.who + " (" + pl.name + ")" : pl.name;
+    els.winTitle.textContent = pl.isHuman ? "You win! 🎉" : who + " wins";
+    els.winSub.textContent = pl.isHuman
+      ? "Every one of your marbles made it across the board."
+      : who + " filled their point first. Give it another go!";
+    // online, only the host starts the next game
+    const guest = online && online.role === "guest";
+    els.playAgainBtn.hidden = guest;
+    if (guest) els.winSub.textContent += " Waiting for the host to start the next game…";
+    els.win.hidden = false;
   }
 
-  function advanceTurn() {
-    turnIdx = (turnIdx + 1) % turnOrder.length;
+  // The whole game in a few hundred bytes: where every marble is (by peg id), whose turn, who won.
+  function snapshot(winner) {
+    return { count: players.length, pos: pegs.map((p) => keyOf(p.cube)), turn: turnIdx, win: winner };
+  }
+
+  // Every move goes through here: yours, the computer's, and (on the host) a classmate's.
+  // The board changes at once; the marble then hops there on screen.
+  function playMove(peg, destCube, path) {
+    commitMove(peg, destCube);
+    const winner = homeCountForTarget(peg.playerIdx) === 10 ? peg.playerIdx : -1;
+    if (winner >= 0) gameOver = true;
+    else turnIdx = (turnIdx + 1) % turnOrder.length;
+    if (online && online.role === "host") online.room.publish(snapshot(winner), { peg: peg.id, path: path.map(keyOf) });
+    showMove(peg, path, () => afterMove(winner));
+  }
+
+  function showMove(peg, path, done) {
+    const pl = players[peg.playerIdx];
+    deselect();
+    // other players' moves leave a glowing trail so you can follow what happened
+    if (!pl.isHuman) for (let i = 0; i < path.length - 1; i++) addArc(path[i], path[i + 1], pl.color);
+    animatePathMove(peg, path, () => { clearArcs(); done(); });
+  }
+
+  function afterMove(winner) {
+    if (winner >= 0) { showWin(winner); refreshLegend(); return; }
     updateTurnUI();
     maybeRunAI();
+    drainHostMoves();
   }
 
   function finishHumanMove(peg, destCube, path) {
-    animatePathMove(peg, path, () => {
-      commitMove(peg, destCube);
-      deselect();
-      if (!checkWin(peg.playerIdx)) advanceTurn();
-      else refreshLegend();
-    });
+    if (online && online.role === "guest") {
+      // ask the host; the marble moves when the host's new board comes back
+      sending = true;
+      els.hint.textContent = "Sending your move…";
+      online.room.move({ peg: peg.id, to: keyOf(destCube) });
+      return;
+    }
+    playMove(peg, destCube, path);
   }
 
   // -------- simple AI: score every legal destination, favor progress toward target
@@ -791,25 +860,25 @@ import {
   }
 
   function maybeRunAI() {
-    if (gameOver) return;
+    if (gameOver || animating || aiTimer !== null) return;
     const pl = players[currentPlayerIdx()];
-    if (pl.isHuman) return;
+    if (!isComputer(currentPlayerIdx())) return;
     const version = flowVersion;
     animating = true;
     aiTimer = setTimeout(() => {
       aiTimer = null;
       if (version !== flowVersion || gameOver) return;
+      animating = false;
+      if (!isComputer(currentPlayerIdx())) return; // a classmate came back while we waited
       const move = pickAIMove(currentPlayerIdx());
-      if (!move) { animating = false; advanceTurn(); return; }
-      const color = pl.color;
-      clearArcs();
-      for (let i = 0; i < move.path.length - 1; i++) addArc(move.path[i], move.path[i + 1], color);
-      animatePathMove(move.peg, move.path, () => {
-        commitMove(move.peg, move.cube);
-        clearArcs();
-        if (!checkWin(currentPlayerIdx())) advanceTurn();
-        else refreshLegend();
-      });
+      if (!move) {
+        // no legal move: pass (on the host, tell everyone whose turn it is now)
+        turnIdx = (turnIdx + 1) % turnOrder.length;
+        if (online && online.role === "host") online.room.publish(snapshot(-1), null);
+        afterMove(-1);
+        return;
+      }
+      playMove(move.peg, move.cube, move.path);
     }, 550);
   }
 
@@ -837,7 +906,7 @@ import {
   }
 
   function onPointerDown(ev) {
-    if (animating || gameOver || els.boot.hidden === false || els.tutorial.hidden === false) return;
+    if (animating || sending || gameOver || els.boot.hidden === false || els.tutorial.hidden === false || els.online.hidden === false) return;
     const pl = players[currentPlayerIdx()];
     if (!pl.isHuman) return;
     const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
@@ -915,7 +984,7 @@ import {
     els.tutSkip.hidden = tutorialMode === "rules";
 
     const focus = TUTORIAL_STEPS[tutStep].focus;
-    const humanIdx = tutPlayers.findIndex((p) => p.isHuman);
+    const humanIdx = Math.max(0, tutPlayers.findIndex((p) => p.isHuman)); // 0 when only watching
     const redPoint = tutPlayers[humanIdx].pointIdx;
     const greenPoint = (redPoint + 3) % 6;
     // demo off real peg positions so a mid-game "rules" reopen never floats a halo over an empty hole
@@ -1000,34 +1069,251 @@ import {
   els.skipBtn.addEventListener("click", () => { els.boot.hidden = true; startGame(bootCount); });
   els.rulesBtn.addEventListener("click", openRulesMidGame);
 
-  els.restartBtn.addEventListener("click", () => {
+  function stopBoard() {
     cancelPendingFlow();
     deselect();
     clearArcs();
     pointGlows.forEach((g) => (g.visible = false));
     els.hud.hidden = true;
     els.win.hidden = true;
+    boardLive = false;
+  }
+
+  els.restartBtn.addEventListener("click", () => {
+    stopBoard();
+    if (online && online.role === "host") {
+      // back to the lobby: same room and code, the host can change seats and start again
+      online.room.toLobby();
+      openOnline("lobby");
+      return;
+    }
+    if (online) {
+      if (!confirm("Leave this game? The computer will play your marbles until you rejoin.")) { els.hud.hidden = false; return; }
+      panel.leave();
+    }
     els.boot.hidden = false;
   });
   els.playAgainBtn.addEventListener("click", () => {
+    if (online && online.role === "host") { beginOnlineGame(online.room); return; }
     startGame(bootCount);
   });
 
-  function startGame(count) {
+  // seats/mySeat: from the online room. Without them it's you (Red) against the computer.
+  function startGame(count, { seats = null, mySeat = 0 } = {}) {
     cancelPendingFlow();
     gameOver = false;
+    sending = false;
+    hostMoves = [];
+    guestStates = [];
     deselect();
     pointGlows.forEach((g) => (g.visible = false));
-    setupPlayers(count);
+    setupPlayers(count, seats, mySeat);
     setupPegs();
     buildLegend();
     turnIdx = 0;
+    boardLive = true;
     els.hud.hidden = false;
     els.win.hidden = true;
     els.boot.hidden = true;
     els.tutorial.hidden = true;
+    els.online.hidden = true;
+    els.restartBtn.title = online ? (online.role === "host" ? "Back to the lobby" : "Leave the game") : "Restart game";
+    if (online) faceSeat(players[mySeat] ? players[mySeat].pointIdx : 0);
     updateTurnUI();
     maybeRunAI();
+  }
+
+  // Turn the table so your own point is nearest you.
+  function faceSeat(pointIdx) {
+    let sx = 0, sz = 0;
+    for (const c of pointCells(pointIdx)) { const [x, z] = cubeToWorld(c); sx += x; sz -= z; }
+    const len = Math.hypot(sx, sz) || 1;
+    const r = Math.hypot(camera.position.x, camera.position.z) || 27;
+    camera.position.set((sx / len) * r, camera.position.y, (sz / len) * r);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  }
+
+  // ============================================================== play with classmates
+  // The lobby (names, codes, seats) is the shared lan-play panel; this part is the board.
+
+  function seatColor(i, count) {
+    const p = PRESETS[count][i];
+    return { name: POINT_NAMES[p], color: "#" + POINT_COLORS[p].toString(16).padStart(6, "0") };
+  }
+
+  const panel = mountLobbyPanel(els.onlineCard, {
+    app: "chinese-checkers",
+    game: "Chinese Checkers",
+    seatCounts: [2, 3, 4, 6],
+    seatCount: bootCount,
+    seatLabel: seatColor,
+    onRoom: (room, role) => {
+      online = { role, room, mySeat: role === "host" ? 0 : -1 };
+      if (role === "host") wireHost(room);
+      else wireGuest(room);
+    },
+    onHostStart: (host, { resume } = {}) => {
+      if (resume) { els.online.hidden = true; els.hud.hidden = false; return; }
+      beginOnlineGame(host);
+    },
+    onClose: () => { els.online.hidden = true; els.boot.hidden = false; },
+    onLeave: (room) => {
+      if (!online || online.room !== room) return;
+      online = null;
+      stopBoard();
+    }
+  });
+
+  function openOnline(view) {
+    els.boot.hidden = true;
+    els.win.hidden = true;
+    els.online.hidden = false;
+    if (view === "lobby") panel.showLobby();
+    else panel.open();
+  }
+  els.onlineBtn.addEventListener("click", () => openOnline("menu"));
+
+  function beginOnlineGame(host) {
+    online.mySeat = 0;
+    startGame(host.seats.length, { seats: host.seats, mySeat: 0 });
+    host.begin(snapshot(-1));
+  }
+
+  // ---- host: the referee
+  function wireHost(host) {
+    host.on("move", (move, seat) => {
+      hostMoves.push({ move, seat, from: host.seats[seat] && host.seats[seat].id });
+      drainHostMoves();
+    });
+    const relabel = () => {
+      if (!boardLive || players.length !== host.seats.length) return;
+      host.seats.forEach((s, i) => { players[i].away = !!s.away; if (s.kind !== "cpu") players[i].who = s.name; });
+      refreshLegend();
+      updateTurnUI();
+      maybeRunAI(); // someone dropped out on their turn: the computer takes it
+    };
+    host.on("leave", (i, name) => { relabel(); if (!els.hud.hidden) els.hint.textContent = name + " dropped out. The computer plays for them until they're back."; });
+    host.on("back", (i, name) => { relabel(); if (!els.hud.hidden) els.hint.textContent = name + " is back."; });
+    host.on("join", (i, name) => { if (!els.online.hidden) return; els.hint.textContent = name + " joined the lobby."; });
+  }
+
+  // A classmate's move is checked with the same rules as a tap on this screen.
+  function drainHostMoves() {
+    while (hostMoves.length && !animating && !gameOver) {
+      const { move, seat, from } = hostMoves.shift();
+      const why = checkRemoteMove(move, seat);
+      if (why) { online.room.reject(from, why); continue; }
+      const peg = pegs[move.peg];
+      const dest = BOARD.get(move.to).c;
+      const path = remotePath(peg, dest);
+      playMove(peg, dest, path);
+    }
+  }
+
+  function remotePath(peg, dest) {
+    const k = keyOf(dest);
+    if (getStepMoves(peg.cube).some((c) => keyOf(c) === k)) return [peg.cube, dest];
+    const { results, parent } = getHopMoves(peg.cube);
+    return results.some((c) => keyOf(c) === k) ? reconstructPath(dest, parent, peg.cube) : null;
+  }
+
+  function checkRemoteMove(move, seat) {
+    if (!online || online.role !== "host") return "No game running.";
+    if (seat !== currentPlayerIdx()) return "It isn't your turn.";
+    if (!move || !Number.isInteger(move.peg) || typeof move.to !== "string") return "That move didn't make sense.";
+    const peg = pegs[move.peg];
+    if (!peg || peg.playerIdx !== seat) return "That's not your marble.";
+    if (!BOARD.has(move.to) || !remotePath(peg, BOARD.get(move.to).c)) return "That hole isn't a legal move.";
+    return null;
+  }
+
+  // ---- guest: draw what the host says
+  function wireGuest(guest) {
+    const startFrom = (info, st) => {
+      online.mySeat = info.mySeat;
+      startGame(st.count, { seats: info.seats, mySeat: info.mySeat });
+      snapTo(st);
+    };
+    guest.on("start", (info) => {
+      const st = cleanState(info.state);
+      if (st) startFrom(info, st);
+    });
+    guest.on("state", (info) => {
+      const st = cleanState(info.state);
+      if (!st) return;
+      // a board for a game we never saw start (we joined late, or missed it): start from it
+      if (!boardLive || st.count !== players.length) { startFrom(info, st); return; }
+      guestStates.push({ st, last: info.skipped ? null : info.last });
+      drainGuestStates();
+    });
+    guest.on("lobby", (lobby) => {
+      if (!boardLive || players.length !== lobby.seats.length) return;
+      lobby.seats.forEach((s, i) => { players[i].away = !!s.away; if (s.kind !== "cpu") players[i].who = s.name; });
+      refreshLegend();
+      if (!animating) updateTurnUI();
+    });
+    guest.on("backToLobby", () => { stopBoard(); openOnline("lobby"); });
+    guest.on("reject", (reason) => {
+      sending = false;
+      deselect();
+      els.hint.textContent = reason || "The host didn't accept that move.";
+    });
+    guest.on("end", () => {
+      if (!online || online.room !== guest) return;
+      online = null;
+      stopBoard();
+      els.online.hidden = false; // the panel says why
+    });
+  }
+
+  // The host could be anyone on the relay, so its board is checked before it's drawn.
+  function cleanState(st) {
+    if (!st || !PRESETS[st.count] || !Array.isArray(st.pos) || st.pos.length !== st.count * 10) return null;
+    const seen = new Set();
+    for (const k of st.pos) {
+      if (typeof k !== "string" || !BOARD.has(k) || seen.has(k)) return null;
+      seen.add(k);
+    }
+    const turn = Number.isInteger(st.turn) && st.turn >= 0 && st.turn < st.count ? st.turn : 0;
+    const win = Number.isInteger(st.win) && st.win >= 0 && st.win < st.count ? st.win : -1;
+    return { count: st.count, pos: st.pos, turn, win };
+  }
+
+  function snapTo(st) {
+    occupied = new Map();
+    pegs.forEach((peg, i) => {
+      peg.cube = BOARD.get(st.pos[i]).c;
+      const [px, pz] = cubeToWorld(peg.cube);
+      peg.mesh.position.set(px, 0.34, -pz);
+      occupied.set(st.pos[i], peg);
+    });
+    turnIdx = st.turn;
+    gameOver = st.win >= 0;
+    sending = false;
+    deselect();
+    if (gameOver) showWin(st.win);
+    updateTurnUI();
+  }
+
+  function drainGuestStates() {
+    if (animating || !guestStates.length) return;
+    const { st, last } = guestStates.shift();
+    // animate the hop when we can see where it started; otherwise just jump to the new board
+    const peg = last && Number.isInteger(last.peg) ? pegs[last.peg] : null;
+    const path = peg && Array.isArray(last.path) && last.path.length >= 2 && last.path.length <= 40 &&
+      last.path.every((k) => typeof k === "string" && BOARD.has(k)) &&
+      last.path[0] === keyOf(peg.cube) && last.path[last.path.length - 1] === st.pos[peg.id]
+      ? last.path.map((k) => BOARD.get(k).c) : null;
+    if (!path) { snapTo(st); drainGuestStates(); return; }
+    showMove(peg, path, () => { snapTo(st); drainGuestStates(); });
+  }
+
+  // a shared link (…#join=BKZT) opens the lobby and joins
+  const linkCode = joinCodeFromHash();
+  if (linkCode) {
+    openOnline("menu");
+    panel.join(linkCode);
   }
 
   // ============================================================== render loop

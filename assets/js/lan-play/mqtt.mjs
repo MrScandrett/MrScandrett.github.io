@@ -1,4 +1,4 @@
-// A tiny MQTT 3.1.1 client over WebSocket (QoS 0 only), so Brick Rally can use free public
+// A tiny MQTT 3.1.1 client over WebSocket (QoS 0 only), so the class's same-WiFi games can use free public
 // brokers as a meeting point without a server of our own. The packet codec is pure and
 // tested; MqttClient takes any WebSocket constructor (the browser's, or `ws` in tests).
 

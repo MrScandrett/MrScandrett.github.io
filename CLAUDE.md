@@ -852,15 +852,34 @@ send audio to the browser maker), so it stays off until the teacher accepts the 
 
 `lessons/computer-science/graphics-and-games/brick-rally.html` + `assets/js/brick-rally/`: build a voxel brick car
 (or scan a real one from side/front/top photos by space carving, `scan.mjs`), then race bots or other people.
-Pure, tested modules: `car-model.mjs` (grid, stats, `v1:` RLE encoding, mesh), `scan.mjs`, `track.mjs`, `physics.mjs`,
-`mqtt.mjs` (hand-rolled MQTT 3.1.1 over WebSocket, QoS 0). `net.mjs` is the networking: GitHub Pages has no server, so
-STUN's server-reflexive address (hashed, never sent) names "this WiFi", hosts beacon lobbies on public MQTT brokers
-(`BROKERS`, all used at once and de-duplicated) under that hash, a 4-letter code joins from anywhere, and each guest then
-opens a WebRTC data channel to the host (star topology; host relays positions at 20 Hz and runs the bots), falling back to
-the broker if P2P is blocked. `?relay=ws://<private-ip>:<port>` swaps in a LAN broker (private addresses only).
-Tests: `node --test tests/brick-rally.test.mjs` (includes an in-process fake broker that runs host + guest sessions).
-Public relays aren't reachable from the dev container, so drive the page in Chromium with `?relay=` pointed at a local
-broker like the one in that test.
+Pure, tested modules: `car-model.mjs` (grid, stats, `v1:` RLE encoding, mesh), `scan.mjs`, `track.mjs`, `physics.mjs`.
+Its networking is the shared same-WiFi layer below; `brick-rally/net.mjs` is only Brick Rally's view of it (its channel,
+"Racer", track in the lobby beacon). The host relays car positions at 20 Hz and runs the bots.
+Tests: `node --test tests/brick-rally.test.mjs`.
+
+## Same-WiFi multiplayer (`assets/js/lan-play/`)
+
+Any game can let classmates play together with no server. `mqtt.mjs` is a hand-rolled MQTT 3.1.1 client over WebSocket
+(QoS 0). `net.mjs`: GitHub Pages has no server, so STUN's server-reflexive address (hashed, never sent) names "this WiFi",
+hosts beacon lobbies on public MQTT brokers (`BROKERS`, all used at once and de-duplicated) under that hash, a 4-letter
+code joins from anywhere, and each guest then opens a WebRTC data channel to the host (star topology), falling back to the
+broker if P2P is blocked. `new Bus({ app })` is required: each game's topics live under `classroomos/<app>/v1/`, so one
+game's lobbies never show in another's. Guests heartbeat every 3 s (the host drops anyone silent for 12 s).
+`?relay=ws://<private-ip>:<port>` swaps in a LAN broker (private addresses only).
+
+- **Turn-based games** use `turn-room.mjs` (`TurnHost` / `TurnGuest`) and the `lobby-panel.mjs` UI (name, Host, games on
+  this WiFi, join by code or `#join=CODE` link, seat list). The host is the referee: guests send a move, the game checks it
+  on the host (`'move'` event → `publish(state, last)` or `reject`), and every state is the whole game with a number, repeated
+  every 3 s, so a dropped relay message heals itself. Empty seats are `cpu`; a guest who drops out mid-game is `away` and
+  the host's computer plays for them until they rejoin (same id, kept per game in localStorage); newcomers mid-game watch.
+  Guests must validate the host's state before drawing it (anyone can publish on a public broker).
+- Worked example: Chinese Checkers (`student-projects/Mr. Scandrett/chinese-checkers/script.js`, "play with classmates").
+  Student projects import it by relative path and esbuild bundles it into `app.min.js`. The panel injects its own CSS
+  (inherited colours only), so it sits inside a game's card.
+- Tests: `node --test tests/lan-play.test.mjs` (seats, referee, dropout/rejoin, watchers, per-game channels) over the
+  in-process broker in `tests/helpers/fake-mqtt-broker.mjs`. Public relays aren't reachable from the dev container, so
+  drive pages in Chromium with `?relay=` pointed at that broker, and use two origins (`localhost` and `127.0.0.1`) for
+  two players: same-origin tabs share the saved player id.
 
 ## ELEGOO robot car (Robot Car Pilot lesson)
 
