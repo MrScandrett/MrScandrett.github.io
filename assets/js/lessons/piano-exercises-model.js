@@ -116,6 +116,20 @@
   function runFingers(table, count) {
     return Array.from({ length: count }, (_, i) => i === 0 ? table.first : i === count - 1 ? table.top : table.d[i % 7]);
   }
+  /* Thumb-tuck groups: five keys in the direction of travel (up for the right hand, down
+     for the left). Each fingering has one thumb passing under inside the group; the first
+     whose thumb notes are all white wins. The key's own scale fingering for those keys
+     comes second, so a moved crossing is the one the scale itself uses. */
+  const THUMB_TUCK = [
+    [1, 2, 3, 1, 2], [2, 3, 1, 2, 3], [3, 1, 2, 3, 4],
+    [1, 2, 3, 4, 1], [2, 3, 4, 1, 2], [3, 4, 1, 2, 3], [4, 1, 2, 3, 4],
+    [1, 2, 1, 2, 3], [2, 1, 2, 3, 4],
+  ];
+  function thumbTuckFingers(notes, scaleFingers) {
+    const tucks = f => f.some((x, i) => i > 0 && x === 1 && f[i - 1] > 1);
+    const ok = f => tucks(f) && f.every((x, i) => x !== 1 || isWhite(notes[i].midi));
+    return [THUMB_TUCK[0], scaleFingers].concat(THUMB_TUCK.slice(1)).find(ok) || null;
+  }
   const pickTier = (tier, list) => list[Math.max(0, Math.min(list.length, tier) - 1)];
 
   /* ---- Chords --------------------------------------------------------------------------- */
@@ -485,18 +499,30 @@
         const cfg = pickTier(tier, [{ n: 2, d: 1, tempo: 66 }, { n: 4, d: 1, tempo: 76 }, { n: 4, d: 0.5, tempo: 72 }, { n: 4, d: 0.5, tempo: 96 }]);
         const semis = SCALES[defaultScale(key)];
         const rh = new Track(), lh = new Track();
-        const CELL = [0, 1, 2, 3, 4, 3, 2, 1], F = [1, 2, 3, 1, 2, 1, 3, 2];
-        for (let k = 0; k < cfg.n; k++) CELL.forEach((d, i) => {
-          rh.add([spell(key, semis, d + k, 4)], cfg.d, { f: [F[i]] });
-          lh.add([spell(key, semis, -d - k, 3)], cfg.d, { f: [F[i]] });
-        });
-        rh.finish([spell(key, semis, 0, 4)], { f: [1] }); lh.finish([spell(key, semis, 0, 3)], { f: [1] });
+        /* Each group climbs five keys and comes back (CELL = positions in the group). Its
+           fingering is chosen per group so the thumb never lands on a black key. */
+        const CELL = [0, 1, 2, 3, 4, 3, 2, 1];
+        let moved = false, unfingered = false;
+        for (let k = 0; k < cfg.n; k++) {
+          [['rh', rh, 1, 4], ['lh', lh, -1, 3]].forEach(([h, tr, dir, oc]) => {
+            const degs = [0, 1, 2, 3, 4].map(p => dir * (p + k));
+            const win = thumbTuckFingers(degs.map(d => spell(key, semis, d, oc)), degs.map(d => key[h].d[mod(d, 7)]));
+            if (!win) unfingered = true;
+            else if (win.join() !== THUMB_TUCK[0].join()) moved = true;
+            CELL.forEach(p => tr.add([spell(key, semis, degs[p], oc)], cfg.d, { f: win ? [win[p]] : null }));
+          });
+        }
+        const endF = n => ({ f: [isWhite(n.midi) ? 1 : 2] });
+        const rEnd = spell(key, semis, 0, 4), lEnd = spell(key, semis, 0, 3);
+        rh.finish([rEnd], endF(rEnd)); lh.finish([lEnd], endF(lEnd));
         return {
           title: 'Thumb tuck in ' + key.label + ' · contrary motion',
           tempo: cfg.tempo, rh: rh.ev, lh: lh.ev,
           how: ['Right hand climbs: after finger 3, the thumb passes under to the next key.', 'Left hand mirrors it going down: thumb under as the hand moves left.', 'Coming back, finger 3 crosses over the thumb.'],
           check: 'You can\'t hear where the thumb crossed: the line sounds like five fingers playing it.',
-          tip: 'Start moving the thumb under while finger 2 is still playing, so it arrives early.',
+          tip: unfingered ? 'Some groups have no good place for the thumb in this key: plan a fingering that keeps the thumb on white keys and write it in.'
+            : moved ? 'The black keys in ' + key.label + ' move the crossing in some groups, so the thumb always lands on a white key. Follow the numbers.'
+            : 'Start moving the thumb under while finger 2 is still playing, so it arrives early.',
         };
       },
     },

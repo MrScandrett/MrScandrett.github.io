@@ -170,3 +170,25 @@ test('engraving: key signature instead of repeated accidentals, and a natural wh
   assert.match(X.engrave(X.build('pedal', 'C', 2), MN).svg, /Ped\./);
   assert.match(X.engrave(X.build('hands', 'C', 4), MN).svg, /class="pxs-tup"[^>]*>3</);
 });
+
+test('the thumb-tuck drill never puts the thumb on a black key, and every group has a tuck', () => {
+  const black = ev => /[#b]/.test(ev.ps[0]) && !/^(E#|B#|Cb|Fb)/.test(ev.ps[0]);
+  for (const key of X.KEYS) for (let tier = 1; tier <= 4; tier++) {
+    const ex = X.build('thumb', key.id, tier);
+    for (const h of ['rh', 'lh']) {
+      const notes = ex[h].filter(e => !e.rest);
+      for (const e of notes) if (e.f) assert.notEqual(e.f[0] === 1 && black(e), true, `thumb ${key.id} L${tier} ${h}: thumb on ${e.ps[0]}`);
+      for (let g = 0; g + 8 < notes.length; g += 8) {
+        const f = notes.slice(g, g + 5).map(e => e.f && e.f[0]);
+        assert.ok(f.every(Boolean), `thumb ${key.id} L${tier} ${h}: group ${g / 8 + 1} is fingered`);
+        assert.ok(f.some((x, i) => i > 0 && x === 1 && f[i - 1] > 1), `thumb ${key.id} L${tier} ${h}: group ${g / 8 + 1} has a thumb tuck`);
+        assert.deepEqual(notes.slice(g + 5, g + 8).map(e => e.f[0]), [f[3], f[2], f[1]], `thumb ${key.id} ${h}: same finger on each key coming back`);
+      }
+    }
+  }
+  // C keeps the classic 1-2-3-1-2 drill; G moves only the groups that hit F#, matching the G scale.
+  assert.deepEqual(fingers(X.build('thumb', 'C', 4).rh).slice(0, 32).join(' '), '1 2 3 1 2 1 3 2 '.repeat(4).trim());
+  const g = X.build('thumb', 'G', 4);
+  assert.deepEqual(fingers(g.rh).slice(24, 29), ['1', '2', '3', '4', '1']);
+  assert.deepEqual(fingers(g.lh).slice(8, 13), ['2', '3', '1', '2', '3']);
+});
