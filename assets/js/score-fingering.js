@@ -271,6 +271,13 @@
         var tip = other.tipY == null ? head : other.tipY;
         var pad = other.tuplet ? 3.2 * S : 1.8 * S;
         edge = above ? Math.min(edge, head - pad, tip - pad) : Math.max(edge, head + pad, tip + pad);
+        // Trills, mordents and turns sit above the note (drawOrnaments in score-engine.js): go over them.
+        var signs = above && Math.abs(other.x - ev.x) < 1.5 * S && other.orn ? other.orn.filter(function (o) { return /^(tr|mord|turn)$/.test(o); }).length : 0;
+        if (signs) {
+          var top = Math.min(other.bottom - 4.5 * S, head - 1.4 * S, other.up && other.tipY != null ? other.tipY - 0.8 * S : Infinity);
+          if (other.fermata) top -= 2 * S;
+          edge = Math.min(edge, top - (signs - 1) * 1.6 * S - 1.5 * S);
+        }
       });
       var review = detail.reviews[ev.i];
       // Stack from high pitch to low pitch, like the chord itself. Consolidate

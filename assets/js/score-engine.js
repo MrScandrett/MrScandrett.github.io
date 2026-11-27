@@ -2021,16 +2021,27 @@
     // 1.7mm, a little under the 1.75mm of most printed music, never below.
     var widths = [base].concat([2.2, 2, 1.85, 1.7].map(function (mm) { return Math.round(190.5 * largePrint.S / mm); })
       .filter(function (width) { return width > base * 1.03; }));
-    var layout = null, groups = null;
+    var layout = null, groups = null, chosen = null, last = null;
     widths.some(function (width, k) {
       var trial = k === 0 && !wide ? largePrint : engrave(model, width, true, false, wide);
+      last = trial;
       if (!trial.systems.length) return true;
       trial.printWidth = wide ? width : trial.width;
       var trialGroups = packPrintSystems(trial, caps);
-      if (!groups || trialGroups.length < groups.length) { layout = trial; groups = trialGroups; }
+      if (!groups || trialGroups.length < groups.length) { layout = trial; groups = trialGroups; chosen = { width: width, k: k }; }
       return groups.length === 1;
     });
     if (!layout || !layout.systems.length) return false;
+    // engrave() writes positions (x, sys, bottom, stem tips) onto the model's shared event objects, so
+    // after a later, rejected trial layout.events describe that trial, not the chosen one. Anything that
+    // decorates the edition from layout.events (finger numbers) would land on the wrong bar and system.
+    // Engrave the chosen width once more so the events match the SVG that prints.
+    if (layout !== last) {
+      var printWidth = layout.printWidth;
+      layout = chosen.k === 0 && !wide ? engrave(model, 1085, true) : engrave(model, chosen.width, true, false, wide);
+      layout.printWidth = printWidth;
+      groups = packPrintSystems(layout, caps);
+    }
     var ns = 'http://www.w3.org/2000/svg';
     var portal = el('main', { class: 'se-print-score-pages', 'aria-hidden': 'true', 'data-contrast-guard-skip': '' });
     // Every browser gets the same 0.5in sheet. Safari ignores the named se-score-page, and the lesson's
