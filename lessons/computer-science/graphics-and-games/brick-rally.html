@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Brick Rally · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Build a brick car or scan a real one from three photos, then race it against bots or against anyone on the same WiFi. Learn how space carving turns photos into 3D, and how browsers find each other on a network with no server." />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
+  <link rel="stylesheet" href="../../../assets/css/brick-rally.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="br-page">
+        <div class="creation-app" data-creation-app data-creation-fit>
+          <section class="br-app" data-brick-rally data-creation-primary data-night-keep data-skin-keep data-present="off" data-memory-ignore aria-label="Brick Rally">
+            <div class="br-stage">
+              <canvas class="br-canvas" tabindex="0" aria-label="3D view: your car in the garage, or the race track while racing"></canvas>
+
+              <div class="br-hud" data-br-hud hidden>
+                <div class="br-hud-row">
+                  <div><span>Position</span><b data-br-hud-pos>1st</b></div>
+                  <div><span>Lap</span><b data-br-hud-lap>1 / 3</b></div>
+                  <div><span>Time</span><b data-br-hud-time>0:00.00</b></div>
+                  <div><span>km/h</span><b data-br-hud-speed>0</b></div>
+                </div>
+                <canvas class="br-minimap" width="150" height="150" aria-hidden="true"></canvas>
+                <div class="br-hud-actions">
+                  <button type="button" data-br-respawn title="Back on the road (R)">↺ Reset car</button>
+                  <button type="button" data-br-exit-race>Exit race</button>
+                </div>
+                <div class="br-pads" aria-hidden="true">
+                  <div><button type="button" data-br-pad="left" tabindex="-1">◀</button><button type="button" data-br-pad="right" tabindex="-1">▶</button></div>
+                  <div><button type="button" data-br-pad="brake" tabindex="-1">Brake</button><button type="button" data-br-pad="gas" tabindex="-1">Gas</button></div>
+                </div>
+              </div>
+              <div class="br-countdown" data-br-count aria-live="assertive" hidden></div>
+
+              <div class="br-results" data-br-results role="dialog" aria-label="Race results" hidden>
+                <h2>Results</h2>
+                <table><thead><tr><th scope="col">Place</th><th scope="col">Driver</th><th scope="col">Time</th></tr></thead><tbody></tbody></table>
+                <p class="br-muted" data-br-results-note></p>
+                <div class="br-row">
+                  <button type="button" class="br-primary" data-br-again>Race again</button>
+                  <button type="button" data-br-quit>Back</button>
+                </div>
+              </div>
+
+              <div class="br-toast" data-br-toast role="status" aria-live="polite"></div>
+            </div>
+
+            <aside class="br-panel" aria-label="Brick Rally controls">
+              <!-- Garage -->
+              <section data-br-screen="garage">
+                <header class="br-head">
+                  <h2 tabindex="-1">Brick Rally</h2>
+                  <label class="br-namefield"><span>Driver name</span><input type="text" data-br-name maxlength="16" autocomplete="off" spellcheck="false" placeholder="Your name" /></label>
+                </header>
+                <div class="br-tabs" role="tablist" aria-label="Get a car">
+                  <button type="button" role="tab" data-br-tab="presets">Pick</button>
+                  <button type="button" role="tab" data-br-tab="build">Build</button>
+                  <button type="button" role="tab" data-br-tab="scan">Scan</button>
+                </div>
+
+                <div data-br-pane="presets" role="tabpanel">
+                  <p class="br-muted">Start from a car, then change it in <b>Build</b>.</p>
+                  <div class="br-presets" data-br-presets></div>
+                </div>
+
+                <div data-br-pane="build" role="tabpanel" hidden>
+                  <div class="br-seg" role="group" aria-label="Tool">
+                    <button type="button" data-br-tool="add" aria-pressed="true">＋ Add</button>
+                    <button type="button" data-br-tool="paint" aria-pressed="false">🖌 Paint</button>
+                    <button type="button" data-br-tool="remove" aria-pressed="false">✕ Remove</button>
+                  </div>
+                  <div class="br-swatches" data-br-swatches role="group" aria-label="Brick colour"></div>
+                  <div class="br-row">
+                    <label class="br-check"><input type="checkbox" data-br-mirror /> Mirror left/right</label>
+                    <button type="button" data-br-undo disabled aria-label="Undo">↶</button>
+                    <button type="button" data-br-redo disabled aria-label="Redo">↷</button>
+                    <button type="button" data-br-clear>Start over</button>
+                  </div>
+                  <p class="br-muted">Click a brick face to build on it. Drag to turn the car.</p>
+                </div>
+
+                <div data-br-pane="scan" role="tabpanel" hidden>
+                  <p class="br-muted">Put your real brick car on a plain table or sheet of paper and take three photos. Fill the frame, keep the camera level.</p>
+                  <div class="br-shots">
+                    <div class="br-shot" data-br-shot="side">
+                      <canvas aria-hidden="true"></canvas>
+                      <strong>Side</strong><small>Nose pointing right</small>
+                      <span class="br-shot-note">Needed</span>
+                      <label class="br-filebtn">Choose photo<input type="file" accept="image/*" capture="environment" /></label>
+                      <button type="button" data-br-webcam>Camera</button>
+                    </div>
+                    <div class="br-shot" data-br-shot="front">
+                      <canvas aria-hidden="true"></canvas>
+                      <strong>Front</strong><small>Look at the nose</small>
+                      <span class="br-shot-note">Optional</span>
+                      <label class="br-filebtn">Choose photo<input type="file" accept="image/*" capture="environment" /></label>
+                      <button type="button" data-br-webcam>Camera</button>
+                    </div>
+                    <div class="br-shot" data-br-shot="top">
+                      <canvas aria-hidden="true"></canvas>
+                      <strong>Top</strong><small>Nose pointing up</small>
+                      <span class="br-shot-note">Optional</span>
+                      <label class="br-filebtn">Choose photo<input type="file" accept="image/*" capture="environment" /></label>
+                      <button type="button" data-br-webcam>Camera</button>
+                    </div>
+                  </div>
+                  <button type="button" class="br-primary br-wide" data-br-carve disabled>Build my car from the photos</button>
+                  <p class="br-muted" data-br-scan-status role="status"></p>
+                  <div class="br-cam" data-br-cam hidden>
+                    <video playsinline muted></video>
+                    <p data-br-cam-label></p>
+                    <div class="br-row"><button type="button" class="br-primary" data-br-snap>Snap</button><button type="button" data-br-cam-close>Close camera</button></div>
+                  </div>
+                </div>
+
+                <div class="br-stats" data-br-stats></div>
+                <button type="button" class="br-primary br-wide br-big" data-br-go-play>Race this car →</button>
+              </section>
+
+              <!-- Play menu -->
+              <section data-br-screen="play" hidden>
+                <header class="br-head"><h2 tabindex="-1">Race</h2><button type="button" data-br-back-garage>← Garage</button></header>
+
+                <div class="br-card">
+                  <h3>On this WiFi</h3>
+                  <p class="br-muted" data-br-net-status>…</p>
+                  <ul class="br-lobbies" data-br-nearby aria-live="polite"></ul>
+                  <button type="button" class="br-primary br-wide" data-br-host>Host a race</button>
+                  <form class="br-join" data-br-join-form>
+                    <label for="br-code">Join with a code</label>
+                    <div class="br-row"><input id="br-code" type="text" data-br-code maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="BRKZ" /><button type="submit">Join</button></div>
+                  </form>
+                </div>
+
+                <div class="br-card">
+                  <h3>Solo</h3>
+                  <div class="br-fields">
+                    <label>Track <select data-br-track data-br-solo-track></select></label>
+                    <label>Laps <select data-br-solo-laps><option>1</option><option>2</option><option selected>3</option><option>5</option></select></label>
+                    <label>Bots <select data-br-solo-bots><option>0</option><option>1</option><option>3</option><option selected>5</option><option>7</option></select></label>
+                  </div>
+                  <button type="button" class="br-wide" data-br-solo>Race the bots</button>
+                </div>
+              </section>
+
+              <!-- Lobby -->
+              <section data-br-screen="lobby" hidden>
+                <header class="br-head"><h2 tabindex="-1">Lobby</h2><button type="button" data-br-leave>Leave</button></header>
+                <div class="br-code-card">
+                  <span>Race code</span>
+                  <b data-br-room-code>····</b>
+                  <div class="br-row"><input type="text" data-br-room-link readonly aria-label="Join link" /><button type="button" data-br-copy-link>Copy link</button></div>
+                </div>
+                <ul class="br-players" data-br-players aria-live="polite"></ul>
+                <div data-br-host-controls hidden>
+                  <div class="br-fields">
+                    <label>Track <select data-br-track data-br-lobby-track></select></label>
+                    <label>Laps <select data-br-lobby-laps><option>1</option><option>2</option><option>3</option><option>5</option></select></label>
+                    <label>Bots <select data-br-lobby-bots><option>0</option><option>1</option><option>2</option><option>3</option><option>5</option><option>7</option></select></label>
+                  </div>
+                  <p class="br-muted" data-br-link-note></p>
+                  <button type="button" class="br-primary br-wide br-big" data-br-start>Start race</button>
+                </div>
+                <p class="br-wait" data-br-guest-wait hidden></p>
+              </section>
+
+              <section data-br-screen="race" hidden><h2 tabindex="-1" class="sr-only">Racing</h2></section>
+            </aside>
+          </section>
+        </div>
+
+        <section class="br-intro">
+          <h2>Build it, scan it, race it</h2>
+          <p>Pick a car or build one brick by brick, or photograph a real brick car and let the game rebuild it. Then race the bots, or press <b>Host a race</b> and everyone on the same WiFi sees your race appear in their list. Arrow keys or WASD drive, Space brakes, R puts you back on the road. Phones get on-screen pedals, and a game controller works too.</p>
+        </section>
+
+        <section class="br-section">
+          <h2>How the scanner works: space carving</h2>
+          <div class="br-cards">
+            <article><h3>Find the car</h3><p>The scanner reads the colour around the photo's edge as "background", measures how different every pixel is from it, and picks the cut-off automatically (Otsu's method). The biggest blob that's left is the car.</p></article>
+            <article><h3>Each photo is a stencil</h3><p>The side photo says which cells, looking from the side, have car in them. So do the front and top photos. A brick survives only if <em>all three</em> stencils cover it. Computer vision calls this shape the <em>visual hull</em>.</p></article>
+            <article><h3>Colour from whoever sees it</h3><p>Every pixel colour is matched to the nearest real brick colour. Roof bricks take their colour from the top photo, the nose from the front, the rest from the side.</p></article>
+            <article><h3>What it can't see</h3><p>A hollow no photo looks into (a cockpit seen only from the side) comes out solid. That's why the game drops you into <b>Build</b> afterwards: the scanner gets the shape, you fix the details.</p></article>
+          </div>
+        </section>
+
+        <section class="br-section">
+          <h2>How phones on the same WiFi find each other</h2>
+          <div class="br-cards">
+            <article><h3>No server of our own</h3><p>This site is just files. So the game borrows three free public things: a STUN server, a few public MQTT "message boards", and WebRTC, which is built into every browser.</p></article>
+            <article><h3>"Which WiFi am I on?"</h3><p>STUN tells a browser what address the internet sees it coming from. Every device behind one WiFi router shares that address (that's NAT). The game hashes it into a channel name, so the address itself is never posted, and listens there for races.</p></article>
+            <article><h3>Hosting</h3><p>A host posts a small "race here, code BRKZ" note to that channel every two seconds. Anyone else on the WiFi sees it within a moment. The 4-letter code works from anywhere, even on a different network.</p></article>
+            <article><h3>Then go direct</h3><p>Once you're in, your browser opens a WebRTC data channel straight to the host's. Car positions fly 20 times a second without leaving the building. If the network blocks that, the game quietly carries on through the message board.</p></article>
+          </div>
+          <p class="br-muted br-privacy">Driver names and car designs travel through public relays, so use a nickname, never a full name. Nothing is saved anywhere except your own browser.</p>
+        </section>
+
+        <section class="br-section">
+          <h2>Challenges</h2>
+          <ol class="br-steps">
+            <li><b>Read the stats.</b> Build the fastest car you can. What did you give up? Why does a tall car lose grip?</li>
+            <li><b>Beat the hull.</b> Build a real car whose scan comes out wrong. Which photo would you add to fix it?</li>
+            <li><b>Network detective.</b> Host a race and watch the lobby: does each player say "direct" or "via relay"? Try it on a phone hotspot. What changed?</li>
+            <li><b>Lag lab.</b> The game draws other cars where they <em>probably</em> are now, guessing from their last speed. When does that guess look wrong?</li>
+          </ol>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+<script src="../../../assets/js/creation-app.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script>
+<script type="module">
+  import { mount } from '../../../assets/js/brick-rally/app.mjs';
+  mount(document.querySelector('[data-brick-rally]'));
+</script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 519 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 520 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -471,7 +471,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 89 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 90 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -590,30 +590,31 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **GAM-07** — Tool Rosetta: One Idea, Every Engine & 3D App
 - **GAM-08** — Rosetta 2D: Our Own Game Engine
 - **GAM-09** — Pinball Construction Set
-- **GAM-10** — Python & Pygame: The Game Loop
+- **GAM-10** — Brick Rally
+- **GAM-11** — Python & Pygame: The Game Loop
 
 ### Build a Classic
 
-- **GAM-11** — Trail Game Builder: Make Your Own Oregon Trail
-- **GAM-12** — Lemonade Tycoon Builder: Make Your Own Business Game
-- **GAM-13** — Text Adventure Builder: Make Your Own Zork
-- **GAM-14** — Roguelike Builder: Make Your Own Rogue
+- **GAM-12** — Trail Game Builder: Make Your Own Oregon Trail
+- **GAM-13** — Lemonade Tycoon Builder: Make Your Own Business Game
+- **GAM-14** — Text Adventure Builder: Make Your Own Zork
+- **GAM-15** — Roguelike Builder: Make Your Own Rogue
 
 ### Game Jam Project
 
-- **GAM-15** — Game Jam Week: From Idea to Demo
+- **GAM-16** — Game Jam Week: From Idea to Demo
 
 ### Godot Engine Pathway
 
-- **GAM-16** — Godot Game Developer Pathway
-- **GAM-17** — Godot Basics: Your First 3D Room
-- **GAM-18** — GDScript Fundamentals
-- **GAM-19** — Player Controller & Camera
-- **GAM-20** — Collectibles, Signals & UI
-- **GAM-21** — Enemies & Simple AI
-- **GAM-22** — Animation & Game Feel
-- **GAM-23** — Levels & Game State
-- **GAM-24** — Export, Test & Publish
+- **GAM-17** — Godot Game Developer Pathway
+- **GAM-18** — Godot Basics: Your First 3D Room
+- **GAM-19** — GDScript Fundamentals
+- **GAM-20** — Player Controller & Camera
+- **GAM-21** — Collectibles, Signals & UI
+- **GAM-22** — Enemies & Simple AI
+- **GAM-23** — Animation & Game Feel
+- **GAM-24** — Levels & Game State
+- **GAM-25** — Export, Test & Publish
 
 # Volume VI — Visual Design, Communication & Human Systems
 

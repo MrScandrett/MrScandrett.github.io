@@ -848,6 +848,20 @@ download as one HTML page. The one exception is 🎤 voice, which uses the brows
 send audio to the browser maker), so it stays off until the teacher accepts the notice. From a lesson:
 `SmartBlackboardDock.ask('graph y = x^2 - 4')`, `.write('2x+5=15')`. Tests: `node --test tests/smart-board.test.mjs`.
 
+## Brick Rally (multiplayer racing on the same WiFi)
+
+`lessons/computer-science/graphics-and-games/brick-rally.html` + `assets/js/brick-rally/`: build a voxel brick car
+(or scan a real one from side/front/top photos by space carving, `scan.mjs`), then race bots or other people.
+Pure, tested modules: `car-model.mjs` (grid, stats, `v1:` RLE encoding, mesh), `scan.mjs`, `track.mjs`, `physics.mjs`,
+`mqtt.mjs` (hand-rolled MQTT 3.1.1 over WebSocket, QoS 0). `net.mjs` is the networking: GitHub Pages has no server, so
+STUN's server-reflexive address (hashed, never sent) names "this WiFi", hosts beacon lobbies on public MQTT brokers
+(`BROKERS`, all used at once and de-duplicated) under that hash, a 4-letter code joins from anywhere, and each guest then
+opens a WebRTC data channel to the host (star topology; host relays positions at 20 Hz and runs the bots), falling back to
+the broker if P2P is blocked. `?relay=ws://<private-ip>:<port>` swaps in a LAN broker (private addresses only).
+Tests: `node --test tests/brick-rally.test.mjs` (includes an in-process fake broker that runs host + guest sessions).
+Public relays aren't reachable from the dev container, so drive the page in Chromium with `?relay=` pointed at a local
+broker like the one in that test.
+
 ## ELEGOO robot car (Robot Car Pilot lesson)
 
 `lessons/computer-science/robotics/robot-car-pilot.html` drives the class ELEGOO Smart Robot Car
