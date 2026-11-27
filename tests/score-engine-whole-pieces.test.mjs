@@ -130,11 +130,12 @@ test('sixty-fourth-note runs retain their timing and four beams', () => {
 
 test('Bach collection includes all fifteen Inventions and every featured addition', () => {
   const ids = require('../data/composer-workspaces.json').bach.scores;
-  assert.equal(ids.length, 23);
+  assert.equal(ids.length, 25);
   for (const id of [
     ...Array.from({ length: 15 }, (_, i) => 'bach-invention-' + (i + 1)),
     'bach-fugue-c-major', 'bach-air', 'bach-goldberg-aria',
-    'bach-toccata-fugue-d-minor', 'bach-crab-canon', 'bach-jesu'
+    'bach-toccata-fugue-d-minor', 'bach-crab-canon', 'bach-jesu',
+    'bach-sheep-may-safely-graze', 'bach-minuet-g'
   ]) {
     assert.ok(ids.includes(id), id + ' is selectable');
     assert.equal(library[id].complete, true);
