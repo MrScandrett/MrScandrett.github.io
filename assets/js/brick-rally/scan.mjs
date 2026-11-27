@@ -127,7 +127,10 @@ export function carveCar(shots, segOpts = {}) {
  * (`style: 'mesh'`) or an editable Brick Rally voxel build (`style: 'bricks'`), along with
  * `.glb` and `.stl` bytes.
  */
-export function scanCar(input, { mode = 'views', style = 'mesh', segOpts = {}, maxDim = 32 } = {}) {
+export function scanCar(input, { mode = 'views', style = 'mesh', segOpts = {}, maxDim = null } = {}) {
+  // A smooth scan needs a finer hull than a brick car: at 32 voxels a car's cab, spoiler and
+  // wheel arches melt into one blob. Bricks are resampled to the 10×16×10 grid anyway.
+  maxDim ??= style === 'mesh' ? 56 : 32;
   const isTurntable = mode === 'turntable' || Array.isArray(input);
   const volume = carveVolume(input, {
     maxDim,

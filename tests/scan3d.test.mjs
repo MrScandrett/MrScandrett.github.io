@@ -200,3 +200,28 @@ test('orientation dots align +X (fish) and +Z (car) accurately', () => {
   const rotated = applyOrientationToMesh(mesh, dots, { forwardAxis: '+x' });
   assert.equal(rotated.positions.length, mesh.positions.length);
 });
+
+test('smooth scan colours come from the photos, so a two-tone side stays crisp', () => {
+  const bg = [240, 240, 236];
+  const red = [220, 30, 25], blue = [25, 50, 210];
+  // Side photo: nose to the right. Rear half blue, front half red.
+  const side = makePhoto(240, 120, bg, (x, y) => (x >= 20 && x < 220 && y >= 30 && y < 100 ? (x < 120 ? blue : red) : null));
+  const front = makePhoto(120, 100, bg, (x, y) => (x >= 25 && x < 95 && y >= 15 && y < 85 ? red : null));
+  const volume = carveVolume({ side, front }, { maxDim: 32 });
+  const mesh = volumeToMesh(volume, { style: 'smooth', forwardAxis: '+z' });
+  const halfLen = mesh.bounds.size[2] / 2;
+  let checked = 0, wrong = 0;
+  for (let k = 0; k < mesh.vertexCount; k++) {
+    if (Math.abs(mesh.normals[k * 3]) < 0.85) continue; // flat sides only
+    const z = mesh.positions[k * 3 + 2] / halfLen; // -1 rear .. +1 nose
+    if (Math.abs(z) < 0.08 || Math.abs(z) > 0.9) continue;
+    const r = mesh.colors[k * 3] * 255, b = mesh.colors[k * 3 + 2] * 255;
+    checked++;
+    const want = z > 0 ? red : blue;
+    if (Math.abs(r - want[0]) > 20 || Math.abs(b - want[2]) > 20) wrong++;
+  }
+  assert.ok(checked > 20, `expected side vertices, got ${checked}`);
+  assert.equal(wrong, 0, `${wrong} of ${checked} side vertices were smeared across the colour split`);
+  // colorAt is a helper, not data: the volume still clones cleanly.
+  assert.ok(structuredClone(volume).occ.length === volume.occ.length);
+});

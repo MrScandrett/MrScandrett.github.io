@@ -710,7 +710,7 @@ export function carveVolume(input, opts = {}) {
     }
   }
 
-  return {
+  const volume = {
     nx,
     ny,
     nz,
@@ -722,6 +722,42 @@ export function carveVolume(input, opts = {}) {
     mode: isTurntable ? 'turntable' : 'views',
     singleViewProfile: singleDist ? 'rounded' : (isSingleSide ? 'flat' : 'multi'),
   };
+
+  // Photo-resolution colour lookup for mesh vertices. The voxel `rgb` grid is only maxDim
+  // wide, so colouring a smooth mesh from it smears decals and stripes; projecting each
+  // vertex straight back into the photos keeps them sharp. Non-enumerable so volumes stay
+  // cloneable / JSON-able.
+  const kinds = new Set(views.map(v => v.kind));
+  const mirrorOf = { side: 'otherSide', otherSide: 'side', front: 'back', back: 'front' };
+  Object.defineProperty(volume, 'colorAt', {
+    enumerable: false,
+    value(px, py, pz, n) {
+      let r = 0, g = 0, b = 0, wSum = 0;
+      let best = null, bestScore = -Infinity;
+      for (const vw of views) {
+        let d = n[0] * vw.dir[0] + n[1] * vw.dir[1] + n[2] * vw.dir[2];
+        // A side or front photo with no opposite photo also stands in for the hidden side
+        // (cars and fish are roughly symmetric), at slightly lower weight.
+        if (d < 0 && mirrorOf[vw.kind] && !kinds.has(mirrorOf[vw.kind])) d = -d * 0.9;
+        if (d > bestScore) { bestScore = d; best = vw; }
+        if (d <= 0.08) continue;
+        const [u, v] = projectUV(vw, px, py, pz);
+        if (u < 0 || u > 1 || v < 0 || v > 1) continue;
+        const col = sampleColorWithFallback(vw, u, v);
+        if (!col) continue;
+        const w = d * d * d; // favour the photo that looks straight at this face
+        r += col[0] * w; g += col[1] * w; b += col[2] * w; wSum += w;
+      }
+      if (wSum > 0) return [r / wSum, g / wSum, b / wSum];
+      if (best) {
+        const [u, v] = projectUV(best, clamp(px, -0.5, 0.5), clamp(py, 0, 1), clamp(pz, -0.5, 0.5));
+        const col = sampleColorWithFallback(best, clamp(u, 0, 1), clamp(v, 0, 1));
+        if (col) return col;
+      }
+      return null;
+    },
+  });
+  return volume;
 }
 
 /* ── Volume → Brick Grid Quantizer ────────────────────────────────────── */
@@ -1108,18 +1144,33 @@ export function volumeToMesh(volume, opts = {}) {
 
     const nv = positions.length / 3;
     colors = new Float32Array(nv * 3);
+    // Un-pad by 1.0 voxel (field sample i sits at coordinate i; voxel x is field x + 1).
+    const grid = new Float32Array(positions.length);
+    for (let k = 0; k < positions.length; k += 3) {
+      grid[k] = positions[k] - 1.0;
+      grid[k + 1] = positions[k + 1] - 1.0;
+      grid[k + 2] = positions[k + 2] - 1.0;
+      positions[k] = grid[k] * ax;
+      positions[k + 1] = grid[k + 1] * ay;
+      positions[k + 2] = grid[k + 2] * az;
+    }
+    // Normals in physical (aspect-corrected) space, which is the space the photos' view
+    // directions live in.
+    const physNormals = typeof volume.colorAt === 'function' && rawIndices.length
+      ? computeSmoothNormals(positions, rawIndices)
+      : null;
     for (let k = 0; k < nv; k++) {
-      // Un-pad by 1.0 voxel (Surface Nets cell coordinates sit on [x..x+1])
-      const lx = positions[k * 3] - 1.0;
-      const ly = positions[k * 3 + 1] - 1.0;
-      const lz = positions[k * 3 + 2] - 1.0;
-      const c = sampleVolumeColor(volume, lx, ly, lz);
+      const lx = grid[k * 3], ly = grid[k * 3 + 1], lz = grid[k * 3 + 2];
+      let c = null;
+      if (physNormals) {
+        const n = [physNormals[k * 3], physNormals[k * 3 + 1], physNormals[k * 3 + 2]];
+        const rgb = volume.colorAt((lx + 0.5) / nx - 0.5, (ly + 0.5) / ny, (lz + 0.5) / nz - 0.5, n);
+        if (rgb) c = [rgb[0] / 255, rgb[1] / 255, rgb[2] / 255];
+      }
+      c ||= sampleVolumeColor(volume, lx, ly, lz);
       colors[k * 3] = c[0];
       colors[k * 3 + 1] = c[1];
       colors[k * 3 + 2] = c[2];
-      positions[k * 3] = lx * ax;
-      positions[k * 3 + 1] = ly * ay;
-      positions[k * 3 + 2] = lz * az;
     }
   }
 
