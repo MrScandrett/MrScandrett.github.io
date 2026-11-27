@@ -63,6 +63,24 @@
   var mysteryState = null;
   var runState = null;
   var ghostRuns = [];
+  var stage3D = null;
+  var latestStagePayload = null;
+
+  window.__psStageBridge = {
+    on3DReady: function (api) {
+      stage3D = api;
+      if (latestStagePayload) {
+        stage3D.render(
+          latestStagePayload.config,
+          latestStagePayload.trialData,
+          latestStagePayload.mode,
+          latestStagePayload.state
+        );
+      } else if (runState) {
+        stage3D.renderIdle(runState.config, runState);
+      }
+    }
+  };
 
   function formatPercent(value) {
     return (value * 100).toFixed(1) + '%';
@@ -204,6 +222,37 @@
     var hideExpected = Boolean(mysteryState && !mysteryState.revealed);
     var showSeBand = Boolean(seToggle && seToggle.checked && !hideExpected);
 
+    var defs = createSvgNode('defs', {});
+
+    var bgGrad = createSvgNode('linearGradient', { id: 'ps-graph-bg-grad', x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
+    bgGrad.appendChild(createSvgNode('stop', { offset: '0%', 'stop-color': 'rgba(12, 8, 2, 0.52)' }));
+    bgGrad.appendChild(createSvgNode('stop', { offset: '100%', 'stop-color': 'rgba(38, 24, 6, 0.24)' }));
+    defs.appendChild(bgGrad);
+
+    var funnelGrad = createSvgNode('linearGradient', { id: 'ps-funnel-grad', x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
+    funnelGrad.appendChild(createSvgNode('stop', { offset: '0%', 'stop-color': 'rgba(96,165,250,0.26)' }));
+    funnelGrad.appendChild(createSvgNode('stop', { offset: '50%', 'stop-color': 'rgba(96,165,250,0.12)' }));
+    funnelGrad.appendChild(createSvgNode('stop', { offset: '100%', 'stop-color': 'rgba(96,165,250,0.26)' }));
+    defs.appendChild(funnelGrad);
+
+    var areaGrad = createSvgNode('linearGradient', { id: 'ps-area-grad', x1: '0%', y1: '0%', x2: '0%', y2: '100%' });
+    areaGrad.appendChild(createSvgNode('stop', { offset: '0%', 'stop-color': 'rgba(245,158,11,0.34)' }));
+    areaGrad.appendChild(createSvgNode('stop', { offset: '100%', 'stop-color': 'rgba(245,158,11,0.0)' }));
+    defs.appendChild(areaGrad);
+
+    var lineGrad = createSvgNode('linearGradient', { id: 'ps-line-grad', x1: '0%', y1: '0%', x2: '100%', y2: '0%' });
+    lineGrad.appendChild(createSvgNode('stop', { offset: '0%', 'stop-color': '#f59e0b' }));
+    lineGrad.appendChild(createSvgNode('stop', { offset: '100%', 'stop-color': '#fde68a' }));
+    defs.appendChild(lineGrad);
+
+    graphNode.appendChild(defs);
+
+    // Recessed 3D chart well
+    graphNode.appendChild(createSvgNode('rect', {
+      x: padding.left, y: padding.top, width: chartWidth, height: chartHeight,
+      rx: 6, fill: 'url(#ps-graph-bg-grad)', stroke: 'rgba(255,255,255,0.06)', 'stroke-width': 1
+    }));
+
     [0, 0.25, 0.5, 0.75, 1].forEach(function (tick) {
       var y = padding.top + chartHeight - (tick * chartHeight);
       graphNode.appendChild(createSvgNode('line', {
@@ -267,8 +316,8 @@
       }
       graphNode.appendChild(createSvgNode('polygon', {
         points: upperPts.concat(lowerPts).join(' '),
-        fill: 'rgba(96,165,250,0.16)',
-        stroke: 'rgba(96,165,250,0.32)',
+        fill: 'url(#ps-funnel-grad)',
+        stroke: 'rgba(96,165,250,0.42)',
         'stroke-width': 1
       }));
     }
@@ -276,6 +325,10 @@
     // Expected probability line
     if (!hideExpected) {
       var expectedY = padding.top + chartHeight - (expectedProb * chartHeight);
+      graphNode.appendChild(createSvgNode('line', {
+        x1: padding.left, y1: expectedY, x2: width - padding.right, y2: expectedY,
+        stroke: 'rgba(96,165,250,0.28)', 'stroke-width': 5
+      }));
       graphNode.appendChild(createSvgNode('line', {
         x1: padding.left, y1: expectedY, x2: width - padding.right, y2: expectedY,
         stroke: '#60a5fa', 'stroke-width': 2, 'stroke-dasharray': '5 5'
@@ -305,26 +358,77 @@
     if (sampled.length === 1) {
       var cy = padding.top + chartHeight - sampled[0].observed * chartHeight;
       graphNode.appendChild(createSvgNode('circle', {
-        cx: padding.left, cy: cy, r: 5, fill: '#f59e0b'
+        cx: padding.left, cy: cy, r: 9, fill: 'rgba(245, 158, 11, 0.28)'
+      }));
+      graphNode.appendChild(createSvgNode('circle', {
+        cx: padding.left, cy: cy, r: 5, fill: '#fde68a', stroke: '#f59e0b', 'stroke-width': 2
       }));
       return;
     }
 
-    var points = sampled.map(function (point) {
-      return xForTrial(point.trial) + ',' + (padding.top + chartHeight - (point.observed * chartHeight));
-    }).join(' ');
+    var coords = sampled.map(function (point) {
+      return {
+        x: xForTrial(point.trial),
+        y: padding.top + chartHeight - (point.observed * chartHeight)
+      };
+    });
+    var points = coords.map(function (c) { return c.x + ',' + c.y; }).join(' ');
+    var baselineY = height - padding.bottom;
+    var areaPoints = coords[0].x + ',' + baselineY + ' ' + points + ' ' + coords[coords.length - 1].x + ',' + baselineY;
+
+    graphNode.appendChild(createSvgNode('polygon', {
+      points: areaPoints,
+      fill: 'url(#ps-area-grad)'
+    }));
+
+    // Soft outer glow stroke
+    graphNode.appendChild(createSvgNode('polyline', {
+      points: points,
+      fill: 'none',
+      stroke: 'rgba(245, 158, 11, 0.25)',
+      'stroke-width': 7.5,
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round'
+    }));
 
     graphNode.appendChild(createSvgNode('polyline', {
       points: points,
       fill: 'none',
-      stroke: '#f59e0b',
+      stroke: 'url(#ps-line-grad)',
       'stroke-width': 2.8,
       'stroke-linecap': 'round',
       'stroke-linejoin': 'round'
     }));
+
+    // Glowing terminal beacon
+    var lastPt = coords[coords.length - 1];
+    graphNode.appendChild(createSvgNode('circle', {
+      cx: lastPt.x, cy: lastPt.y, r: 8.5, fill: 'rgba(253, 230, 138, 0.24)'
+    }));
+    graphNode.appendChild(createSvgNode('circle', {
+      cx: lastPt.x, cy: lastPt.y, r: 4.5, fill: '#fde68a', stroke: '#b45309', 'stroke-width': 1.5
+    }));
+    graphNode.appendChild(createSvgNode('circle', {
+      cx: lastPt.x - 1.2, cy: lastPt.y - 1.2, r: 1.4, fill: '#ffffff'
+    }));
   }
 
   function renderAnimation(config, trialData, mode, state) {
+    latestStagePayload = { config: config, trialData: trialData, mode: mode, state: state };
+
+    var poolInfo = state.withoutReplacement
+      ? ' · Pool left: ' + state.totalRemaining + (state.reshuffles ? ' (reshuffled ' + state.reshuffles + '×)' : '')
+      : '';
+    stageStatusNode.textContent = (mode === 'watch' ? 'Single trial revealed' : 'Trial #' + state.trials.toLocaleString() + ' revealed') + poolInfo;
+    stageNoteNode.textContent = mode === 'watch'
+      ? 'This single reveal shows one random draw. Use +1 / +10 / +100 to watch the running average stabilize.'
+      : 'Cumulative trials update the distribution, ±2 SE funnel, and streak telemetry in real time.';
+
+    if (stage3D && stage3D.isReady()) {
+      stage3D.render(config, trialData, mode, state);
+      return;
+    }
+
     var outcome = config.outcomes[trialData.outcomeIndex];
     stageDisplayNode.innerHTML = '';
 
@@ -422,14 +526,6 @@
       scene.appendChild(marbleLabel);
       stageDisplayNode.appendChild(scene);
     }
-
-    var poolInfo = state.withoutReplacement
-      ? ' · Pool left: ' + state.totalRemaining + (state.reshuffles ? ' (reshuffled ' + state.reshuffles + '×)' : '')
-      : '';
-    stageStatusNode.textContent = (mode === 'watch' ? 'Single trial revealed' : 'Trial #' + state.trials.toLocaleString() + ' revealed') + poolInfo;
-    stageNoteNode.textContent = mode === 'watch'
-      ? 'This single reveal shows one random draw. Use +1 / +10 / +100 to watch the running average stabilize.'
-      : 'Cumulative trials update the distribution, ±2 SE funnel, and streak telemetry in real time.';
   }
 
   function renderResults(mode) {
@@ -497,7 +593,7 @@
       var fill = document.createElement('div');
       fill.className = 'ps-bar-fill';
       fill.style.width = state.trials ? ((count / state.trials) * 100).toFixed(1) + '%' : '0%';
-      fill.style.background = 'linear-gradient(90deg, ' + outcome.color + ', #fde68a)';
+      fill.style.setProperty('--bar-color', outcome.color);
       stack.appendChild(fill);
       track.appendChild(stack);
 
@@ -569,7 +665,12 @@
   }
 
   function renderEmptyState() {
-    stageDisplayNode.innerHTML = '';
+    latestStagePayload = null;
+    if (stage3D && stage3D.isReady()) {
+      stage3D.renderIdle(getActiveConfig(), runState);
+    } else {
+      stageDisplayNode.innerHTML = '';
+    }
     stageStatusNode.textContent = 'Ready';
     stageNoteNode.textContent = 'The engine decides the result first. The animation reveals that outcome.';
     renderResults('many');
