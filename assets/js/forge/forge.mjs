@@ -38,8 +38,9 @@ const el = {
   summary: $('forge-check-summary'), checkLabel: $('forge-check-label'), checkCount: $('forge-check-count'),
   readiness: $('forge-export-readiness'), quickStats: $('forge-quick-stats'),
   demo: $('forge-demo'), demoReport: $('forge-demo-report'),
-
+  showSize: $('forge-show-size'), dims: $('forge-dims'), png: $('forge-dl-png'), share: $('forge-share'),
 };
+const EXPORTS = () => [el.stl, el.glb, el.obj, el.partStls, el.sendPrint, el.png];
 
 /* ── state ────────────────────────────────────────────────────────────── */
 
@@ -244,7 +245,15 @@ function renderControls() {
     const label = document.createElement('label');
     label.htmlFor = id;
     label.textContent = spec.label;
-    top.append(label);
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'forge-param-reset';
+    reset.textContent = '↺';
+    const start = spec.type === 'toggle' ? (spec.default ? 'on' : 'off') : spec.type === 'select' ? (spec.options.find((o) => o.value === spec.default)?.label ?? spec.default) : spec.type === 'text' ? `“${spec.default}”` : fmt(spec.default, spec);
+    reset.title = `Back to ${start}`;
+    reset.setAttribute('aria-label', `Reset ${spec.label} to ${start}`);
+    reset.addEventListener('click', () => resetParam(spec.id));
+    top.append(label, reset);
     let input;
     if (spec.type === 'range') {
       const measure = document.createElement('span');
@@ -306,6 +315,29 @@ function renderControls() {
     el.params.append(field);
   }
   applyVisibility();
+  syncModified();
+}
+
+/* A dot on every measurement that differs from the part's start, and a ↺ that puts just that one back. */
+function syncModified() {
+  const params = currentParams();
+  for (const spec of currentPart().params) {
+    const field = el.params.querySelector(`[data-param="${spec.id}"]`);
+    if (!field) continue;
+    const changed = params[spec.id] !== spec.default;
+    field.toggleAttribute('data-modified', changed);
+    field.querySelector('.forge-param-reset').hidden = !changed;
+  }
+}
+
+function resetParam(id) {
+  const spec = currentPart().params.find((s) => s.id === id);
+  if (!spec) return;
+  historyKey = '';
+  update(id, spec.default, true);
+  renderControls();
+  const field = el.params.querySelector(`[data-param="${id}"]`);
+  field?.querySelector('input:not([type="number"]), select')?.focus();
 }
 
 function applyVisibility() {
@@ -323,6 +355,7 @@ function update(id, value, structural = false) {
   state.params[state.part] = { ...currentParams(), [id]: value };
   persist();
   if (structural) applyVisibility();
+  syncModified();
   schedule();
 }
 
@@ -394,13 +427,17 @@ function setupView() {
     root.add(edge);
     const parts = new THREE.Group();
     root.add(parts);
-    view = { scene, camera, renderer, syncSize, controls, parts };
+    const sizeBox = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0xf3e9a8, dashSize: 2, gapSize: 1.5, transparent: true, opacity: 0.9 }));
+    sizeBox.visible = false;
+    root.add(sizeBox);
+    view = { scene, camera, renderer, syncSize, controls, parts, root, sizeBox, box: null };
     controls.addEventListener('start', () => setCameraButtons(null));
     syncSize();
     window.SimKit.loop((dt) => {
       if (demoState) demoState.player.tick(Math.min(dt, 0.1));
       controls.update();
       syncSize();
+      placeDims();
       renderer.render(scene, camera);
     }, { el: el.canvas });
   } catch (error) {
@@ -408,6 +445,56 @@ function setupView() {
     el.canvas.hidden = true;
     el.nogl.hidden = false;
   }
+}
+
+/* Show size: a dashed box around everything on the bed, with its width, depth and height
+   pinned to the middle of three edges. Labels are HTML so they stay sharp and readable. */
+function measureBodies() {
+  if (!view || !result?.bodies.length) { if (view) view.box = null; return; }
+  const { min, max } = bounds(concat(result.bodies.map((b) => b.positions)));
+  view.box = { min, max };
+}
+
+const dimLabels = () => [...el.dims.querySelectorAll('[data-dim]')];
+function syncSizeBox() {
+  if (!view) return;
+  const on = el.showSize.checked && Boolean(view.box) && !demoState;
+  view.sizeBox.visible = on;
+  el.dims.hidden = !on;
+  if (!on) return;
+  const { min, max } = view.box;
+  const size = [0, 1, 2].map((k) => max[k] - min[k]);
+  // a fresh box each time (not a scaled unit box) so the dashes stay the same length on any part
+  view.sizeBox.geometry.dispose();
+  view.sizeBox.geometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(...size.map((v) => Math.max(v, 0.01))));
+  view.sizeBox.position.set(...[0, 1, 2].map((k) => (min[k] + max[k]) / 2));
+  view.sizeBox.computeLineDistances();
+  const mm = (v) => `${v < 100 ? Math.round(v * 10) / 10 : Math.round(v)} mm`;
+  const [w, d, h] = dimLabels();
+  w.textContent = `W ${mm(size[0])}`; d.textContent = `D ${mm(size[1])}`; h.textContent = `H ${mm(size[2])}`;
+}
+
+const dimPoint = new THREE.Vector3();
+function placeDims() {
+  if (!view || el.dims.hidden || !view.box) return;
+  const { min, max } = view.box;
+  // width on the bottom edge nearest the camera, depth on the near side edge, and height on the
+  // vertical edge at the far end of the width, so the three labels never pile into one corner
+  view.root.updateMatrixWorld();
+  const local = view.root.worldToLocal(view.camera.position.clone());
+  const fx = local.x < (min[0] + max[0]) / 2 ? min[0] : max[0];
+  const fy = local.y < (min[1] + max[1]) / 2 ? min[1] : max[1];
+  const cx = (min[0] + max[0]) / 2, cy = (min[1] + max[1]) / 2, cz = (min[2] + max[2]) / 2;
+  const hx = fx === min[0] ? max[0] : min[0];
+  const spots = [[cx, fy, min[2]], [fx, cy, min[2]], [hx, fy, cz]];
+  const rect = el.canvas.getBoundingClientRect();
+  dimLabels().forEach((label, i) => {
+    dimPoint.set(...spots[i]);
+    view.root.localToWorld(dimPoint).project(view.camera);
+    const behind = dimPoint.z > 1;
+    label.hidden = behind;
+    if (!behind) label.style.transform = `translate(${((dimPoint.x + 1) / 2) * rect.width}px, ${((1 - dimPoint.y) / 2) * rect.height}px) translate(-50%, -50%)`;
+  });
 }
 
 function showBodies() {
@@ -423,6 +510,8 @@ function showBodies() {
     view.parts.add(mesh);
   }
   paint();
+  measureBodies();
+  syncSizeBox();
   if (!framed) { frame(cameraView); framed = true; }
   if (demoState) startDemo(true);
 }
@@ -448,6 +537,7 @@ function startDemo(restart = false) {
   const player = createDemoPlayer(THREE, { group: view.parts, meshes, bodies: result.bodies, demo: result.demo });
   meshes.forEach((mesh, i) => { const g = Boolean(result.demo.ghost?.includes(i)); mesh.material.transparent = g; mesh.material.opacity = g ? 0.35 : 1; mesh.material.depthWrite = !g; mesh.material.needsUpdate = true; });
   demoState = { player, hits: new Set() };
+  syncSizeBox();
   paint();
   syncDemoButton();
   if (!restart) frame(cameraView);
@@ -487,6 +577,7 @@ function stopDemo() {
   demoState = null;
   if (view) for (const mesh of view.parts.children) { mesh.material.transparent = false; mesh.material.opacity = 1; mesh.material.depthWrite = true; mesh.material.needsUpdate = true; }
   el.demoReport.hidden = true;
+  syncSizeBox();
   paint();
   syncDemoButton();
   if (view && result?.layout) frame(cameraView);
@@ -541,7 +632,7 @@ function frame(name = 'iso') {
 let pending = 0;
 function schedule() {
   clearTimeout(pending);
-  [el.stl, el.glb, el.obj, el.partStls, el.sendPrint].forEach((b) => { b.disabled = true; });
+  EXPORTS().forEach((b) => { b.disabled = true; });
   el.readiness.textContent = 'Updating your model…';
   el.checkLabel.textContent = 'Updating print checks…';
   el.status.textContent = 'Updating model…';
@@ -561,7 +652,8 @@ function rebuild() {
   el.status.textContent = result.error ? 'This design could not be built.' : `Built in ${ms} ms`;
   el.status.hidden = !result.error;
   const disabled = Boolean(result.error) || !result.bodies.length;
-  [el.stl, el.glb, el.obj, el.partStls, el.sendPrint].forEach((b) => { b.disabled = disabled; });
+  EXPORTS().forEach((b) => { b.disabled = disabled; });
+  el.png.disabled = disabled || !view;
   el.partStls.hidden = result.bodies.length < 2;
   syncDemoButton();
   const summary = result.verdicts.map((v) => `${v.tag}: ${v.text}`).join(' ');
@@ -669,6 +761,42 @@ async function sendToPrintPrep() {
   } catch (error) { notify(error.message); }
 }
 
+/* The 3D view as a PNG. The canvas keeps no copy of its last frame, so draw one and read it in the same task. */
+function exportPng() {
+  if (!view || !result?.bodies.length) return;
+  view.syncSize();
+  view.renderer.render(view.scene, view.camera);
+  el.canvas.toBlob((blob) => {
+    if (!blob) { notify('This browser could not save the picture.'); return; }
+    download(blob, `${slug()}.png`, 'image/png');
+    notify(`Saved ${slug()}.png.`);
+  }, 'image/png');
+}
+
+/* A link that rebuilds this exact part: every measurement goes in the address, which loadState() already reads. */
+function shareUrl() {
+  const url = new URL(location.href);
+  url.search = '';
+  url.hash = '';
+  url.searchParams.set('part', state.part);
+  const params = currentParams();
+  for (const spec of currentPart().params) {
+    const v = params[spec.id];
+    url.searchParams.set(spec.id, spec.type === 'toggle' ? (v ? '1' : '0') : String(v));
+  }
+  return url.toString();
+}
+
+async function copyShareLink() {
+  const link = shareUrl();
+  try {
+    await navigator.clipboard.writeText(link);
+    notify('Link copied. Anyone who opens it gets this part with your measurements.');
+  } catch {
+    window.prompt('Copy this link:', link);
+  }
+}
+
 function saveProject() {
   const project = {
     format: FORMAT, version: 1, name: state.name, part: state.part,
@@ -767,11 +895,19 @@ async function start() {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? travelHistory(future, past) : travelHistory(past, future); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') { event.preventDefault(); travelHistory(future, past); }
     if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase() === 'f') { event.preventDefault(); frame(); }
+    if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase() === 's') { event.preventDefault(); el.showSize.checked = !el.showSize.checked; el.showSize.dispatchEvent(new Event('change')); }
   });
   $('forge-library-disclosure').open = !window.matchMedia('(max-width: 900px)').matches;
   persist();
-  if (linkedFromLesson) notify('Opened with the settings from the lesson. Check the plate, then export STL or send it to Print Prep to line it up on the bed.');
+  if (linkedFromLesson) notify('Opened with the measurements from the link. Check the plate, then export STL or send it to Print Prep to line it up on the bed.');
   el.showOverhangs.addEventListener('change', paint);
+  el.showSize.checked = localStorage.getItem('classroomos:forge:show-size') === '1';
+  el.showSize.addEventListener('change', () => {
+    try { localStorage.setItem('classroomos:forge:show-size', el.showSize.checked ? '1' : '0'); } catch { /* private mode */ }
+    syncSizeBox();
+  });
+  el.png.addEventListener('click', exportPng);
+  el.share.addEventListener('click', copyShareLink);
   el.resetView.addEventListener('click', frame);
   el.demo.addEventListener('click', () => (demoState ? stopDemo() : startDemo()));
   el.stl.addEventListener('click', exportStl);
@@ -782,7 +918,7 @@ async function start() {
   el.save.addEventListener('click', saveProject);
   el.open.addEventListener('click', () => el.openFile.click());
   el.openFile.addEventListener('change', () => { const f = el.openFile.files[0]; if (f) openProject(f); el.openFile.value = ''; });
-  [el.stl, el.glb, el.obj, el.partStls, el.sendPrint].forEach((b) => { b.disabled = true; });
+  EXPORTS().forEach((b) => { b.disabled = true; });
   setupView();
   try {
     const font = await fetch(new URL('../../vendor/fonts/droid-sans-bold.typeface.json', import.meta.url)).then((r) => r.json());
