@@ -12,6 +12,27 @@
     .gear-3d { position: relative; aspect-ratio: 16 / 9; width: 100%; margin-top: .6rem; border-radius: 12px; overflow: hidden; background: #16202b; }
     .gear-3d .pv-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     .gear-3d .pv-caption { position: absolute; left: 10px; right: 10px; bottom: 10px; margin: 0; padding: .4rem .6rem; border-radius: 8px; background: rgba(12, 21, 32, .82); color: #e6eef5; font-size: .85rem; }
+    .gear-bench-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .7rem 0 .4rem; }
+    .gear-bench-tabs button { padding: .4rem .75rem; border: 1px solid #9fb6c4; border-radius: 999px; background: #fff; color: #204f78; font: inherit; font-size: .88rem; font-weight: 700; cursor: pointer; }
+    .gear-bench-tabs button[aria-pressed="true"] { background: #204f78; border-color: #204f78; color: #fff; }
+    .gear-bench-note { margin: .3rem 0 0; font-size: .95rem; }
+    .gear-bench-bar { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: .8rem 1.2rem; align-items: start; margin-top: .7rem; }
+    .gear-bench-controls { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .5rem .9rem; }
+    .gear-bench-controls label { display: grid; gap: .2rem; font-size: .84rem; font-weight: 700; color: #2d4152; }
+    .gear-bench-controls label span { display: flex; justify-content: space-between; gap: .4rem; }
+    .gear-bench-controls output { font-family: ui-monospace, monospace; color: #204f78; }
+    .gear-bench-controls select { font: inherit; font-size: .85rem; padding: .25rem; }
+    .gear-bench-controls .gear-bench-follow { grid-column: 1 / -1; margin: 0; font-size: .88rem; color: #4a5d6c; }
+    .gear-bench-stats { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .7rem; margin: 0; font-size: .86rem; }
+    .gear-bench-stats dt { color: #4a5d6c; }
+    .gear-bench-stats dd { margin: 0; text-align: right; white-space: nowrap; font-weight: 700; font-family: ui-monospace, monospace; }
+    .gear-bench-actions { display: grid; gap: .45rem; justify-items: stretch; }
+    .gear-bench-play { padding: .45rem .9rem; border: 1px solid #9fb6c4; border-radius: 10px; background: #fff; color: #204f78; font: inherit; font-weight: 700; cursor: pointer; }
+    .gear-bench-forge { display: inline-block; padding: .55rem .95rem; border-radius: 10px; background: #e8792a; color: #1d1206; font-weight: 800; text-decoration: none; text-align: center; }
+    .gear-bench-forge:hover { background: #f08c43; }
+    .gear-show-3d { margin-left: .35rem; padding: .15rem .55rem; border: 1px solid #9fb6c4; border-radius: 999px; background: #fff; color: #204f78; font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    @media (max-width: 760px) { .gear-bench-bar { grid-template-columns: 1fr; } .gear-3d { aspect-ratio: 1 / 1; } .gear-3d .pv-caption { left: 6px; right: 6px; bottom: 6px; padding: .3rem .45rem; font-size: .74rem; line-height: 1.35; } }
+    @media print { .gear-bench-tabs, .gear-bench-actions, .gear-bench-controls, .gear-show-3d { display: none; } }
     .gear-qa details { padding: .55rem .75rem; border: 1px solid rgba(32, 79, 120, .2); border-radius: 10px; margin-bottom: .45rem; }
     .gear-qa summary { font-weight: 700; cursor: pointer; }
     .gear-qa details > div { margin-top: .45rem; line-height: 1.6; }
@@ -997,9 +1018,29 @@
       </section>
 
       <section class="gear-card" id="gear-3d-card">
-        <h2>Your gear pair as printable parts</h2>
-        <p>This is the gear pair from the lab, built by <a href="../../../forge.html?part=gears" style="color:#204f78;font-weight:700;">Forge</a> exactly as it would print, on its peg board and turning. Change the driver and driven sliders above and it rebuilds. Watch the orange driver and the blue driven gear: the driven one turns the other way, and slower.</p>
+        <h2>Every example in 3D, ready to print</h2>
+        <p>Each model below is built by <a href="../../../forge.html?part=gears" style="color:#204f78;font-weight:700;">Forge</a> exactly as it would print, assembled and turning. Pick an example, drag to look around, change its teeth, then press <strong>Open in Forge</strong>: Forge opens with the same settings, lays the pieces flat on the print bed and checks them before you export.</p>
+        <div class="gear-bench-tabs" role="group" aria-label="Choose a 3D model">
+          <button type="button" data-bench="lab" aria-pressed="true">Your lab pair</button>
+          <button type="button" data-bench="idler" aria-pressed="false">Idler gear</button>
+          <button type="button" data-bench="compound" aria-pressed="false">Compound 9 : 1</button>
+          <button type="button" data-bench="mission" aria-pressed="false">900 kg compound</button>
+          <button type="button" data-bench="worm" aria-pressed="false">Worm gear</button>
+          <button type="button" data-bench="planetary" aria-pressed="false">Planetary</button>
+          <button type="button" data-bench="bevel" aria-pressed="false">Bevel (a corner)</button>
+          <button type="button" data-bench="rack" aria-pressed="false">Rack and pinion</button>
+          <button type="button" data-bench="leadscrew" aria-pressed="false">Lead screw</button>
+        </div>
+        <p class="gear-bench-note" id="gear-bench-note">The gear pair from the lab. Change the driver and driven sliders above and it rebuilds. Watch the orange driver and the blue driven gear: the driven one turns the other way, and slower.</p>
         <div class="gear-3d" id="gear-3d" data-present></div>
+        <div class="gear-bench-bar" data-memory-ignore>
+          <div class="gear-bench-controls" id="gear-bench-controls" aria-label="Model settings"></div>
+          <dl class="gear-bench-stats" id="gear-bench-stats" aria-live="polite"></dl>
+          <div class="gear-bench-actions">
+            <button type="button" class="gear-bench-play" id="gear-bench-play" aria-pressed="true">Pause</button>
+            <a class="gear-bench-forge" id="gear-bench-forge" href="../../../forge.html?part=gears">Open in Forge to print →</a>
+          </div>
+        </div>
       </section>
 
       <section class="gear-card">
@@ -1031,11 +1072,11 @@
         <div class="gear-principle-grid">
           <article class="gear-principle-card">
             <strong>Idler gear</strong>
-            <small>A gear between the driver and driven changes <em>direction</em> but not the ratio: its teeth cancel out (A→I→B: I/A × B/I = B/A). Use one when the output must turn the same way as the motor.</small>
+            <small>A gear between the driver and driven changes <em>direction</em> but not the ratio: its teeth cancel out (A→I→B: I/A × B/I = B/A). Use one when the output must turn the same way as the motor. <button type="button" class="gear-show-3d" data-show-3d="idler">See it in 3D</button></small>
           </article>
           <article class="gear-principle-card">
             <strong>Compound train</strong>
-            <small>Two gears fixed on one shaft turn together, so the stage ratios <em>multiply</em>: 12→36 then 12→36 is 3 × 3 = 9 : 1, from gears that fit in your hand.</small>
+            <small>Two gears fixed on one shaft turn together, so the stage ratios <em>multiply</em>: 12→36 then 12→36 is 3 × 3 = 9 : 1, from gears that fit in your hand. <button type="button" class="gear-show-3d" data-show-3d="compound">See it in 3D</button></small>
           </article>
           <article class="gear-principle-card">
             <strong>Efficiency multiplies too</strong>
@@ -1047,7 +1088,7 @@
           </article>
         </div>
         <p class="gear-formula gear-mono" style="margin-top:.8rem" data-formula="gear-compound">Total ratio = (driven₁ ÷ driver₁) × (driven₂ ÷ driver₂) × …</p>
-        <p><strong>Worked example.</strong> The crate needs 883 Nm at the drum, the motor gives 420 Nm, and the efficiency is 92 %. The ratio must be at least 883 ÷ (420 × 0.92) ≈ 2.29 : 1. One 12→28 pair (2.33 : 1) just does it. For the 900 kg mission (1589 Nm) you need about 4.1 : 1: a single 8→36 pair, or a compound 12→24 then 12→28 (2 × 2.33 = 4.67 : 1).</p>
+        <p><strong>Worked example.</strong> The crate needs 883 Nm at the drum, the motor gives 420 Nm, and the efficiency is 92 %. The ratio must be at least 883 ÷ (420 × 0.92) ≈ 2.29 : 1. One 12→28 pair (2.33 : 1) just does it. For the 900 kg mission (1589 Nm) you need about 4.1 : 1: a single 8→36 pair, or a compound 12→24 then 12→28 (2 × 2.33 = 4.67 : 1). <button type="button" class="gear-show-3d" data-show-3d="mission">See the compound in 3D</button></p>
       </section>
 
       <section class="gear-card" id="gear-other-drives" style="border-left: 5px solid #1f6585;">
@@ -1056,11 +1097,11 @@
         <div class="gear-tip-grid">
           <article class="gear-tip-card">
             <strong><a href="mechanical-drives.html#drive-worm" style="color:#204f78;">Worm gear</a></strong>
-            <small>40 : 1 in one stage, and many hold the load when the motor stops. A real hoist would likely use one, so the crate cannot fall.</small>
+            <small>40 : 1 in one stage, and many hold the load when the motor stops. A real hoist would likely use one, so the crate cannot fall. <button type="button" class="gear-show-3d" data-show-3d="worm">See it in 3D</button></small>
           </article>
           <article class="gear-tip-card">
             <strong><a href="mechanical-drives.html#drive-planetary" style="color:#204f78;">Planetary gears</a></strong>
-            <small>Sun, planets and ring share the load in a small round box, with input and output on one line. Inside every cordless drill.</small>
+            <small>Sun, planets and ring share the load in a small round box, with input and output on one line. Inside every cordless drill. <button type="button" class="gear-show-3d" data-show-3d="planetary">See it in 3D</button></small>
           </article>
           <article class="gear-tip-card">
             <strong><a href="mechanical-drives.html#drive-chain" style="color:#204f78;">Chain</a> and <a href="mechanical-drives.html#drive-timing" style="color:#204f78;">timing belt</a></strong>
@@ -1068,7 +1109,7 @@
           </article>
           <article class="gear-tip-card">
             <strong><a href="mechanical-drives.html#drive-rack" style="color:#204f78;">Rack and pinion</a> and <a href="mechanical-drives.html#drive-leadscrew" style="color:#204f78;">screws</a></strong>
-            <small>Turn rotation into a straight line: steering racks, 3D printer axes, car jacks.</small>
+            <small>Turn rotation into a straight line: steering racks, 3D printer axes, car jacks. <button type="button" class="gear-show-3d" data-show-3d="rack">Rack in 3D</button> <button type="button" class="gear-show-3d" data-show-3d="leadscrew">Screw in 3D</button></small>
           </article>
         </div>
         <p style="margin-top:.8rem">Next lesson: <a href="mechanical-drives.html" style="color:#204f78;font-weight:700;">Mechanical Drives: how motors move things →</a></p>
@@ -1122,15 +1163,15 @@
 
       <section class="gear-card gear-qa" id="gear-check">
         <h2>Check your understanding</h2>
-        <details><summary>1. A 10-tooth driver turns a 40-tooth driven gear. What is the ratio, and which way does the output turn?</summary><div>40 ÷ 10 = <strong>4 : 1</strong> reduction. The output turns the <strong>opposite</strong> way at a quarter of the speed, with about four times the torque (less friction).</div></details>
-        <details><summary>2. You add a 25-tooth idler between them. What changes?</summary><div>Only the direction: the output now turns the <strong>same</strong> way as the motor. The ratio is still 4 : 1, because the idler's 25 teeth cancel out.</div></details>
-        <details><summary>3. A compound train has stages 12→36 and 15→45. Find the total ratio and the output speed from a 1800 rpm motor.</summary><div>3 × 3 = <strong>9 : 1</strong>. 1800 ÷ 9 = <strong>200 rpm</strong>.</div></details>
+        <details><summary>1. A 10-tooth driver turns a 40-tooth driven gear. What is the ratio, and which way does the output turn?</summary><div>40 ÷ 10 = <strong>4 : 1</strong> reduction. The output turns the <strong>opposite</strong> way at a quarter of the speed, with about four times the torque (less friction). <button type="button" class="gear-show-3d" data-show-3d="q1">See 10 → 40 in 3D</button></div></details>
+        <details><summary>2. You add a 25-tooth idler between them. What changes?</summary><div>Only the direction: the output now turns the <strong>same</strong> way as the motor. The ratio is still 4 : 1, because the idler's 25 teeth cancel out. <button type="button" class="gear-show-3d" data-show-3d="q2">See it in 3D</button></div></details>
+        <details><summary>3. A compound train has stages 12→36 and 15→45. Find the total ratio and the output speed from a 1800 rpm motor.</summary><div>3 × 3 = <strong>9 : 1</strong>. 1800 ÷ 9 = <strong>200 rpm</strong>. <button type="button" class="gear-show-3d" data-show-3d="q3">See it in 3D</button></div></details>
         <details><summary>4. Why might a real crane designer choose a worm gear instead of this gear pair?</summary><div>A single-start worm gives a big reduction in one stage and is often <strong>self-locking</strong>: if power fails, the crate cannot drive the motor backwards and fall. The cost is efficiency (often 50–70 %). Try the hold test in the <a href="mechanical-drives.html#drive-worm">Drive Explorer</a>.</div></details>
       </section>
 
       <section class="gear-card" style="border-left: 5px solid #f39a4d;">
         <h2>Fabricate your gears: 3D Print in Forge</h2>
-        <p>Ready to test real gear meshing on the physical workbench? Open <a href="../../../forge.html?part=gears" style="color:#204f78;font-weight:700;">Forge</a> to generate a 3D printable involute gear pair with an exact mounting peg board spaced to the gears' real centre distance. Adjust backlash, tooth counts, and module live, and export the STL plate ready for the MakerBot.</p>
+        <p>Ready to test real gear meshing on the physical workbench? Pick any model in <a href="#gear-3d-card" style="color:#204f78;font-weight:700;">the 3D bench</a> and press <strong>Open in Forge</strong>. Forge opens that exact design, lays every piece flat on the print bed with pegs spaced to the gears' real centre distances, and checks walls, overhangs and fit. Tune the clearance for your printer, then export the STL plate (or send it to Print Prep) ready for the MakerBot. Start with the <a href="../../../forge.html?part=gear-train&amp;layout=idler&amp;teethA=12&amp;teethI=20&amp;teethB=36" style="color:#204f78;font-weight:700;">idler train</a>: three gears, one plate, and you can feel the direction flip.</p>
       </section>
     </div>
 

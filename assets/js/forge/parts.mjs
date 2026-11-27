@@ -395,6 +395,133 @@ const gears = {
   },
 };
 
+/* Three shafts on one peg board: an idler train (A → idler → B, all in one layer) or a compound train
+   (A → B, with C fused on top of B, then C → D one layer up). The Mechanisms & Gears lesson's
+   "Beyond one pair" examples, printable. */
+const meshTurn = (a, zA, zB) => 180 - 180 / zB - (a * zA) / zB;
+
+const gearTrain = {
+  id: 'gear-train',
+  name: 'Gear train: idler or compound',
+  group: 'Fidgets',
+  blurb: 'Three shafts on one peg board. An idler flips the direction without changing the ratio; a compound pair on one shaft multiplies two ratios.',
+  lesson: { href: 'lessons/engineering/mechanical-and-civil-design/mechanisms-gears.html#gear-trains', label: 'Mechanisms & gears' },
+  params: [
+    { id: 'layout', label: 'Train', type: 'select', default: 'compound', options: [
+      { value: 'compound', label: 'Compound — two gears fixed on the middle shaft' },
+      { value: 'idler', label: 'Idler — one gear between driver and driven' },
+    ] },
+    { id: 'module', label: 'Module (tooth size)', type: 'select', default: '1.5', options: ['1', '1.5', '2', '2.5'].map((v) => ({ value: v, label: `${v} mm` })), help: 'Every gear in a train must share one module.' },
+    { id: 'teethA', label: 'Driver A (motor)', type: 'range', min: 8, max: 48, step: 1, default: 12 },
+    { id: 'teethI', label: 'Idler', type: 'range', min: 8, max: 48, step: 1, default: 20, showIf: (p) => p.layout === 'idler', help: 'Try any size: the output ratio does not change.' },
+    { id: 'teethB', label: 'Gear B', type: 'range', min: 8, max: 60, step: 1, default: 36, help: 'Idler train: the output. Compound: the big gear on the middle shaft.' },
+    { id: 'teethC', label: 'Gear C (on B\'s shaft)', type: 'range', min: 8, max: 48, step: 1, default: 12, showIf: (p) => p.layout === 'compound', help: 'Fused to B, so it turns at B\'s speed.' },
+    { id: 'teethD', label: 'Output D', type: 'range', min: 8, max: 60, step: 1, default: 36, showIf: (p) => p.layout === 'compound' },
+    { id: 'thickness', label: 'Gear thickness', type: 'range', min: 3, max: 12, step: 0.5, default: 5, unit: 'mm' },
+    { id: 'bore', label: 'Bore', type: 'range', min: 3, max: 8, step: 0.5, default: 5, unit: 'mm' },
+    { id: 'board', label: 'Print a peg board', type: 'toggle', default: true },
+  ],
+  build(ctx, p) {
+    const { Manifold: M, CrossSection: CS } = ctx;
+    const m = Number(p.module), t = p.thickness, c = ctx.settings.clearance;
+    const hubGap = 0.6;                         // air between the two layers of a compound train
+    const outline = (z) => spurGearOutline({ module: m, teeth: z, backlash: c / 2 });
+    const boreCut = (h) => M.cylinder(h + 2, p.bore / 2, p.bore / 2, 48).translate([0, 0, -1]);
+    const plain = (g) => CS.ofPolygons([g.points]).extrude(t).subtract(boreCut(t));
+    const compound = p.layout === 'compound';
+    const zA = p.teethA, zB = p.teethB, zI = p.teethI, zC = p.teethC, zD = p.teethD;
+    const gA = outline(zA), gB = outline(zB);
+    const verdicts = [], bodies = [];
+    let shafts, ratio, meshes, gOut;
+    if (compound) {
+      const gC = outline(zC), gD = outline(zD);
+      const d1 = centerDistance(m, zA, zB), d2 = centerDistance(m, zC, zD);
+      shafts = [0, d1, d1 + d2];
+      ratio = (zB / zA) * (zD / zC);
+      meshes = 2; gOut = gD;
+      // C stands straight on B and is hubGap taller than D, so D clears B's top face
+      const bc = M.union([
+        CS.ofPolygons([gB.points]).extrude(t),
+        CS.ofPolygons([gC.points]).extrude(t + hubGap).translate([0, 0, t - 0.01]),
+      ]).subtract(boreCut(2 * t + hubGap));
+      bodies.push({ name: `Driver A (${zA} teeth)`, manifold: plain(gA) });
+      bodies.push({ name: `Compound gear B + C (${zB} + ${zC} teeth)`, manifold: bc });
+      bodies.push({ name: `Output D (${zD} teeth)`, manifold: plain(gD) });
+      if (gC.tipRadius > gB.tipRadius) verdicts.push({ tone: 'warn', tag: 'OVERHANG', text: `C (${zC} teeth) is bigger than B, so its teeth hang out over nothing when B prints on the bed. Swap them so the bigger gear is at the bottom, or print with supports.` });
+      if (gB.tipRadius + 0.6 > d2 - (p.bore / 2 - c + 2)) verdicts.push({ tone: 'bad', tag: 'CLASH', text: `Gear B (${zB} teeth) reaches the raised washer under D. Give C or D more teeth, or B fewer.` });
+      if (gC.tipRadius + 0.6 > d1 - p.bore / 2) verdicts.push({ tone: 'bad', tag: 'CLASH', text: `Gear C reaches driver A's peg. Give C fewer teeth or B more.` });
+      verdicts.push({ tone: 'ok', tag: 'COMPOUND', text: `B and C print as one piece, so they turn together: (${zB} ÷ ${zA}) × (${zD} ÷ ${zC}) = ${round(zB / zA, 2)} × ${round(zD / zC, 2)} = ${round(ratio, 2)} : 1.` });
+    } else {
+      const gI = outline(zI);
+      const d1 = centerDistance(m, zA, zI), d2 = centerDistance(m, zI, zB);
+      shafts = [0, d1, d1 + d2];
+      ratio = zB / zA;
+      meshes = 2; gOut = gB;
+      bodies.push({ name: `Driver A (${zA} teeth)`, manifold: plain(gA) });
+      bodies.push({ name: `Idler (${zI} teeth)`, manifold: plain(gI) });
+      bodies.push({ name: `Output B (${zB} teeth)`, manifold: plain(gB) });
+      verdicts.push({ tone: 'ok', tag: 'IDLER', text: `(${zI} ÷ ${zA}) × (${zB} ÷ ${zI}) = ${zB} ÷ ${zA}: the idler's teeth cancel, so the ratio stays ${round(ratio, 2)} : 1 and only the direction flips.` });
+    }
+    const all = compound ? [gA, gB, gOut] : [gA, outline(zI), gB];
+    const plateT = 3, pad = 6;
+    let seat = { x0: 0, z: 0 };
+    if (p.board) {
+      const first = all[0].tipRadius, last = all[2].tipRadius;
+      const len = shafts[2] + first + last + 2 * pad;
+      const wid = 2 * Math.max(...all.map((g) => g.tipRadius)) + 2 * pad;
+      const x0 = -len / 2 + pad + first;
+      const pegR = p.bore / 2 - c;
+      const peg = (x, h) => M.cylinder(h, pegR, pegR * 0.8, 40).translate([x, 0, plateT - 0.01]);
+      const washer = (x, h) => M.cylinder(h, pegR + 2, pegR + 2, 40).translate([x, 0, plateT - 0.01]);
+      const tall = 2 * t + hubGap + 2;
+      const pieces = [roundedRect(CS, len, wid, 4).extrude(plateT)];
+      pieces.push(peg(x0 + shafts[0], t + 2), washer(x0 + shafts[0], 0.6));
+      pieces.push(peg(x0 + shafts[1], compound ? tall : t + 2), washer(x0 + shafts[1], 0.6));
+      // a compound output sits one layer up, on a raised washer
+      pieces.push(peg(x0 + shafts[2], compound ? tall : t + 2), washer(x0 + shafts[2], compound ? 0.6 + t + hubGap : 0.6));
+      bodies.push({ name: 'Peg board (3 shafts)', manifold: M.union(pieces) });
+      seat = { x0, z: plateT + 0.8 };
+    }
+    const nozzle = ctx.settings.nozzle;
+    const thinTip = Math.min(...all.map((g) => g.tipThickness));
+    if (thinTip < nozzle * 1.5) verdicts.push({ tone: 'warn', tag: 'SHARP TEETH', text: `Tooth tips are ${round(thinTip, 2)} mm wide — under 1.5 nozzle widths. Use a bigger module.` });
+    const fewest = compound ? Math.min(zA, zB, zC, zD) : Math.min(zA, zI, zB);
+    if (fewest < 12) verdicts.push({ tone: 'warn', tag: 'UNDERCUT', text: 'Gears under about 12 teeth get thin at the root. They still turn, but go gently.' });
+    if (p.bore / 2 + 1.2 > Math.min(...all.map((g) => g.rootRadius))) verdicts.push({ tone: 'bad', tag: 'BORE', text: 'The bore cuts into the tooth roots of the smallest gear. Make the bore smaller or add teeth.' });
+    verdicts.push({ tone: 'ok', tag: 'MESH', text: `One ${m} mm module throughout, shafts ${round(shafts[1], 2)} and ${round(shafts[2] - shafts[1], 2)} mm apart. Print flat, no supports.` });
+    const sameWay = meshes % 2 === 0;
+    const up = seat.z + t + hubGap;
+    return {
+      bodies,
+      verdicts,
+      demo: {
+        mode: 'spin', input: 'Turn driver A', turns: ratio,
+        note: compound
+          ? `B and C turn together ${round(zB / zA, 2)}× slower than A; D turns ${round(ratio, 2)}× slower, the same way as A (two meshes).`
+          : `The idler turns the other way; B turns ${round(ratio, 2)}× slower, the same way as A (two meshes).`,
+        pose: (u) => {
+          const a = 360 * u;
+          const mid = meshTurn(a, zA, compound ? zB : zI);
+          const out = compound ? meshTurn(mid, zC, zD) : meshTurn(mid, zI, zB);
+          const poses = [
+            [['z', a], ['t', seat.x0 + shafts[0], 0, seat.z]],
+            [['z', mid], ['t', seat.x0 + shafts[1], 0, seat.z]],
+            [['z', out], ['t', seat.x0 + shafts[2], 0, compound ? up : seat.z]],
+          ];
+          if (p.board) poses.push([]);
+          return poses;
+        },
+      },
+      stats: [
+        { label: 'Total ratio', value: `${round(ratio, 2)} : 1` },
+        { label: 'Output turns', value: sameWay ? 'same way as A' : 'opposite to A' },
+        { label: 'Shaft spacing', value: `${round(shafts[1], 2)} + ${round(shafts[2] - shafts[1], 2)} mm` },
+        { label: 'Output speed / torque', value: `${round(1 / ratio, 3)}× / ${round(ratio, 2)}×` },
+      ],
+    };
+  },
+};
+
 /* ── print-in-place fidgets ───────────────────────────────────────────── */
 
 /* A polygon in either winding, as a filled cross-section. */
@@ -1285,6 +1412,6 @@ const rollingTool = {
   },
 };
 
-export const PARTS = [rollingTool, wheelAxle, caseCase, captured, spinner, hinge, rings, gears, ...DRIVE_PARTS, spiral, tag, storage, stand, clip, comb];
+export const PARTS = [rollingTool, wheelAxle, caseCase, captured, spinner, hinge, rings, gears, gearTrain, ...DRIVE_PARTS, spiral, tag, storage, stand, clip, comb];
 export const PART_GROUPS = ['Mechanisms', 'Drives', 'Electronics housings', 'Fidgets', 'Everyday', 'Calibration'];
 export const partById = (id) => PARTS.find((p) => p.id === id);

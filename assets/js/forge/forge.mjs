@@ -43,6 +43,7 @@ const el = {
 
 /* ── state ────────────────────────────────────────────────────────────── */
 
+let linkedFromLesson = false;
 const state = loadState();
 let result = null;
 let engine = null;
@@ -50,10 +51,31 @@ let engine = null;
 function loadState() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch { saved = {}; }
-  const fromUrl = new URLSearchParams(location.search).get('part');
+  const query = new URLSearchParams(location.search);
+  const fromUrl = query.get('part');
+  const params = typeof saved.params === 'object' && saved.params ? saved.params : {};
+  // A lesson can link straight to its example: forge.html?part=gears&teethA=12&teethB=28.
+  // Those settings are applied once and dropped from the address, so a reload keeps the student's edits.
+  const linked = partById(fromUrl);
+  if (linked) {
+    const given = {};
+    for (const spec of linked.params) {
+      if (!query.has(spec.id)) continue;
+      const raw = query.get(spec.id);
+      given[spec.id] = spec.type === 'toggle' ? !['0', 'false', 'off', ''].includes(raw) : spec.type === 'range' ? Number(raw) : raw;
+      query.delete(spec.id);
+    }
+    if (Object.keys(given).length) {
+      params[fromUrl] = { ...resolveParams(linked, params[fromUrl] || {}), ...given };
+      linkedFromLesson = true;
+      const url = new URL(location.href);
+      url.search = query.toString();
+      history.replaceState(null, '', url);
+    }
+  }
   return {
-    part: partById(fromUrl) ? fromUrl : (partById(saved.part) ? saved.part : PARTS[0].id),
-    params: typeof saved.params === 'object' && saved.params ? saved.params : {},
+    part: linked ? fromUrl : (partById(saved.part) ? saved.part : PARTS[0].id),
+    params,
     settings: { ...DEFAULT_SETTINGS, ...pickSettings(saved.settings || {}) },
     color: COLORS.some((c) => c.value === saved.color) ? saved.color : COLORS[0].value,
     name: typeof saved.name === 'string' ? saved.name : '',
@@ -139,6 +161,7 @@ const PART_ICONS = {
   spinner: '<path d="M12 13L9 6Q16 0 20 7L19 12L26 14Q30 22 22 25L17 21L11 26Q2 25 5 17Z"/><circle cx="16" cy="16" r="3"/>',
   hinge: '<path d="M4 7H14V26H4ZM18 7H28V26H18ZM14 9H18M14 15H18M14 22H18"/>',
   rings: '<path d="M16 3L20 11L29 12L23 19L24 28L16 24L8 28L9 19L3 12L12 11ZM16 10L18 15L23 16L19 20L16 18L12 20L13 16L9 15L14 14Z"/>',
+  'gear-train': '<circle cx="7" cy="17" r="5"/><circle cx="17" cy="17" r="5"/><circle cx="27" cy="17" r="5"/><circle cx="7" cy="17" r="1.5"/><circle cx="17" cy="17" r="1.5"/><circle cx="27" cy="17" r="1.5"/>',
   gears: '<circle cx="11" cy="12" r="7"/><circle cx="23" cy="23" r="6"/><circle cx="11" cy="12" r="2"/><circle cx="23" cy="23" r="2"/><path d="M11 2V5M1 12H4M11 19V22M18 12H21M23 14V17M29 23H32"/>',
   tag: '<path d="M3 12L11 5H28V26H11L3 19Z"/><circle cx="9" cy="16" r="2"/><path d="M15 12H24M15 16H22M15 20H24"/>',
   box: '<path d="M4 12L16 6L28 12V25L16 30L4 25ZM4 12L16 18L28 12M16 18V30M7 5L16 1L25 5"/>',
@@ -747,6 +770,7 @@ async function start() {
   });
   $('forge-library-disclosure').open = !window.matchMedia('(max-width: 900px)').matches;
   persist();
+  if (linkedFromLesson) notify('Opened with the settings from the lesson. Check the plate, then export STL or send it to Print Prep to line it up on the bed.');
   el.showOverhangs.addEventListener('change', paint);
   el.resetView.addEventListener('click', frame);
   el.demo.addEventListener('click', () => (demoState ? stopDemo() : startDemo()));

@@ -650,35 +650,184 @@
   SimKit.frame('#gearCanvas', render);
 }());
 
-/* The lab's gear pair as Forge would print it, assembled and turning (assets/js/forge/part-viewer.mjs).
-   The 3D engine is about 1.4 MB, so it loads only when the panel comes near the screen. */
+/* The 3D bench: every example in the lesson as Forge would print it, assembled and turning
+   (assets/js/forge/part-viewer.mjs), with its own settings and an "Open in Forge" link that carries them
+   (forge.html?part=<id>&<param>=<value>). The 3D engine is about 1.4 MB, so it loads only when the panel
+   comes near the screen, or when a "See it in 3D" button asks for it. */
 (function () {
   'use strict';
   const host = document.getElementById('gear-3d');
   const script = document.currentScript && document.currentScript.src;
-  if (!host || !script || !('IntersectionObserver' in window)) return;
+  if (!host || !script) return;
   const driver = document.getElementById('gear-driver-slider');
   const driven = document.getElementById('gear-driven-slider');
-  const params = () => ({ module: '2', teethA: Number(driver.value), teethB: Number(driven.value), board: true });
-  let viewer = null, timer = 0, key = '';
-  const refresh = () => {
+  const controlsEl = document.getElementById('gear-bench-controls');
+  const statsEl = document.getElementById('gear-bench-stats');
+  const noteEl = document.getElementById('gear-bench-note');
+  const forgeLink = document.getElementById('gear-bench-forge');
+  const playBtn = document.getElementById('gear-bench-play');
+  const tabs = [...document.querySelectorAll('[data-bench]')];
+  const FORGE = '../../../forge.html';
+
+  /* Each model: the Forge part, its settings, which of them students can change here, and what to notice. */
+  const MODELS = {
+    lab: { part: 'gears', tab: 'lab', follow: true, params: () => ({ module: '2', teethA: Number(driver.value), teethB: Number(driven.value), board: true }),
+      note: 'The gear pair from the lab. Change the driver and driven sliders above and it rebuilds. Watch the orange driver and the blue driven gear: the driven one turns the other way, and slower.' },
+    idler: { part: 'gear-train', tab: 'idler', params: { layout: 'idler', module: '1.5', teethA: 12, teethI: 20, teethB: 36 }, edit: ['teethA', 'teethI', 'teethB'],
+      note: 'An idler between the driver (orange) and the output. Change the idler’s teeth: the output speed never changes, but it now turns the same way as the driver.' },
+    compound: { part: 'gear-train', tab: 'compound', params: { layout: 'compound', module: '1.5', teethA: 12, teethB: 36, teethC: 12, teethD: 36 }, edit: ['teethA', 'teethB', 'teethC', 'teethD'],
+      note: '12→36 then 12→36. The middle gears B and C print as one piece, so they turn together, and the two 3 : 1 stages multiply to 9 : 1.' },
+    mission: { part: 'gear-train', tab: 'mission', params: { layout: 'compound', module: '1.5', teethA: 12, teethB: 24, teethC: 12, teethD: 28 }, edit: ['teethA', 'teethB', 'teethC', 'teethD'],
+      note: 'The 900 kg mission’s compound train: 12→24 then 12→28, 2 × 2.33 = 4.67 : 1, more than the 4.1 : 1 the crate needs.' },
+    worm: { part: 'worm', tab: 'worm', params: { teeth: 30, starts: '1' }, edit: ['teeth', 'starts'],
+      note: 'A single-start worm advances the wheel one tooth per turn, so a 30-tooth wheel gives 30 : 1 in one stage. Shallow threads make many worms self-locking.' },
+    planetary: { part: 'planetary', tab: 'planetary', params: { sun: 12, planet: 18 }, edit: ['sun', 'planet'],
+      note: 'The sun drives three planets inside a ring. Hold the ring and the planet carrier is the output: input and output share one axis.' },
+    bevel: { part: 'bevel', tab: 'bevel', params: { teethA: 15, teethB: 30 }, edit: ['teethA', 'teethB'],
+      note: 'Cone-shaped teeth turn the drive through a right angle. The ratio maths is the same tooth count rule: 30 ÷ 15 = 2 : 1.' },
+    rack: { part: 'rack', tab: 'rack', params: { pinion: 16, rackTeeth: 18 }, edit: ['pinion', 'rackTeeth'],
+      note: 'The pinion turns and the rack slides. Each pinion turn moves the rack by its circumference: teeth × π × module.' },
+    leadscrew: { part: 'leadscrew', tab: 'leadscrew', params: { pitch: 4, starts: '1' }, edit: ['pitch', 'starts'],
+      note: 'Each turn of the screw moves the nut one lead (pitch × starts). A fine pitch is a huge force multiplier: a car jack lifts a car by hand.' },
+    q1: { part: 'gears', tab: 'lab', params: { module: '2', teethA: 10, teethB: 40, board: true }, edit: ['teethA', 'teethB'],
+      note: 'Question 1: a 10-tooth driver and a 40-tooth driven gear, 4 : 1. The output turns the opposite way at a quarter of the speed.' },
+    q2: { part: 'gear-train', tab: 'idler', params: { layout: 'idler', module: '1.5', teethA: 10, teethI: 25, teethB: 40 }, edit: ['teethA', 'teethI', 'teethB'],
+      note: 'Question 2: the same 10 → 40 pair with a 25-tooth idler. Still 4 : 1, but now the output turns the same way as the driver.' },
+    q3: { part: 'gear-train', tab: 'compound', params: { layout: 'compound', module: '1.5', teethA: 12, teethB: 36, teethC: 15, teethD: 45 }, edit: ['teethA', 'teethB', 'teethC', 'teethD'],
+      note: 'Question 3: 12→36 then 15→45. 3 × 3 = 9 : 1, so an 1800 rpm motor gives 200 rpm.' },
+  };
+
+  let viewer = null, partById = null, current = 'lab', values = {}, loading = null, timer = 0, key = '';
+
+  const paramsFor = (name) => {
+    const m = MODELS[name];
+    return { ...(typeof m.params === 'function' ? m.params() : m.params), ...(values[name] || {}) };
+  };
+
+  function forgeHref(partId, params) {
+    const q = new URLSearchParams({ part: partId });
+    for (const [k, v] of Object.entries(params)) q.set(k, typeof v === 'boolean' ? (v ? '1' : '0') : String(v));
+    return `${FORGE}?${q}`;
+  }
+
+  function renderStats(result) {
+    statsEl.textContent = '';
+    for (const s of (result && result.stats) || []) {
+      const dt = document.createElement('dt'); dt.textContent = s.label;
+      const dd = document.createElement('dd'); dd.textContent = s.value;
+      statsEl.append(dt, dd);
+    }
+  }
+
+  function renderControls() {
+    const m = MODELS[current];
+    controlsEl.textContent = '';
+    if (m.follow) {
+      const p = document.createElement('p');
+      p.className = 'gear-bench-follow';
+      p.textContent = 'Follows the lab: set the driver and driven gears with the sliders in the Mechanical Advantage Studio.';
+      controlsEl.append(p);
+      return;
+    }
+    if (!partById) return;
+    const part = partById(m.part);
+    const now = paramsFor(current);
+    for (const id of m.edit || []) {
+      const spec = part.params.find((s) => s.id === id);
+      if (!spec) continue;
+      const label = document.createElement('label');
+      const head = document.createElement('span');
+      head.textContent = spec.label;
+      label.append(head);
+      let input;
+      if (spec.type === 'select') {
+        input = document.createElement('select');
+        for (const o of spec.options) input.append(new Option(o.label, o.value));
+        input.value = String(now[id]);
+      } else {
+        input = document.createElement('input');
+        input.type = 'range';
+        input.min = spec.min; input.max = spec.max; input.step = spec.step;
+        input.value = now[id];
+        const out = document.createElement('output');
+        out.textContent = `${now[id]}${spec.unit ? ' ' + spec.unit : ''}`;
+        head.append(out);
+        input.addEventListener('input', () => { out.textContent = `${input.value}${spec.unit ? ' ' + spec.unit : ''}`; });
+      }
+      input.addEventListener(spec.type === 'select' ? 'change' : 'input', () => {
+        values[current] = { ...(values[current] || {}), [id]: spec.type === 'select' ? input.value : Number(input.value) };
+        update();
+      });
+      label.append(input);
+      controlsEl.append(label);
+    }
+  }
+
+  function update(now = false) {
+    const m = MODELS[current];
+    const p = paramsFor(current);
+    forgeLink.href = forgeHref(m.part, p);
     if (!viewer) return;
-    const p = params(), k = JSON.stringify(p);
+    const k = m.part + JSON.stringify(p);
     if (k === key) return;
     key = k;
     clearTimeout(timer);
-    timer = setTimeout(() => viewer.show('gears', p), 250);
-  };
-  const io = new IntersectionObserver((entries) => {
-    if (!entries.some((e) => e.isIntersecting)) return;
-    io.disconnect();
-    import(new URL('../forge/part-viewer.mjs', script).href)
-      .then(({ mountPartViewer }) => mountPartViewer(host, { partId: 'gears', params: params() }))
-      .then((v) => { viewer = v; key = JSON.stringify(params()); })
-      .catch(() => { host.textContent = 'The 3D view could not start in this browser.'; });
-  }, { rootMargin: '200px' });
-  io.observe(host);
-  driver.addEventListener('input', refresh);
-  driven.addEventListener('input', refresh);
-  document.querySelectorAll('[data-gear-preset]').forEach((b) => b.addEventListener('click', () => setTimeout(refresh, 0)));
+    timer = setTimeout(() => renderStats(viewer.show(m.part, p)), now ? 0 : 250);
+  }
+
+  function select(name) {
+    if (!MODELS[name]) return;
+    current = name;
+    const m = MODELS[name];
+    tabs.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.bench === m.tab)));
+    noteEl.textContent = m.note;
+    renderControls();
+    update(true);
+  }
+
+  function load() {
+    if (loading) return loading;
+    loading = Promise.all([
+      import(new URL('../forge/part-viewer.mjs', script).href),
+      import(new URL('../forge/parts.mjs', script).href),
+    ]).then(([{ mountPartViewer }, parts]) => {
+      partById = parts.partById;
+      const m = MODELS[current];
+      return mountPartViewer(host, { partId: m.part, params: paramsFor(current), onReport: renderStats });
+    }).then((v) => {
+      viewer = v;
+      key = MODELS[current].part + JSON.stringify(paramsFor(current));
+      renderControls();
+      update();
+    }).catch(() => { host.textContent = 'The 3D view could not start in this browser.'; });
+    return loading;
+  }
+
+  tabs.forEach((b) => b.addEventListener('click', () => select(b.dataset.bench)));
+  document.querySelectorAll('[data-show-3d]').forEach((b) => b.addEventListener('click', () => {
+    select(b.getAttribute('data-show-3d'));
+    load();
+    document.getElementById('gear-3d-card').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }));
+  playBtn.addEventListener('click', () => {
+    if (!viewer) return;
+    const on = !viewer.playing;
+    viewer.setPlaying(on);
+    playBtn.textContent = on ? 'Pause' : 'Play';
+    playBtn.setAttribute('aria-pressed', String(on));
+  });
+  const followLab = () => { if (MODELS[current].follow) update(); };
+  driver.addEventListener('input', followLab);
+  driven.addEventListener('input', followLab);
+  document.querySelectorAll('[data-gear-preset]').forEach((b) => b.addEventListener('click', () => setTimeout(followLab, 0)));
+
+  forgeLink.href = forgeHref('gears', paramsFor('lab'));
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      io.disconnect();
+      load();
+    }, { rootMargin: '200px' });
+    io.observe(host);
+  } else load();
 }());

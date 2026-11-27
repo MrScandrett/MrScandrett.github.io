@@ -13,7 +13,7 @@ const font = JSON.parse(await readFile(new URL('../assets/vendor/fonts/droid-san
 const engine = await createEngine(Module, { font });
 globalThis.FidgetRings = createRequire(import.meta.url)('../assets/js/lessons/fidget-rings.js');
 
-const MOVING = ['wheel-axle', 'captured', 'spinner', 'hinge', 'rings', 'gears', 'helical', 'bevel', 'worm', 'planetary', 'rack', 'cycloidal', 'leadscrew', 'spiral'];
+const MOVING = ['wheel-axle', 'captured', 'spinner', 'hinge', 'rings', 'gears', 'gear-train', 'helical', 'bevel', 'worm', 'planetary', 'rack', 'cycloidal', 'leadscrew', 'spiral'];
 
 test('every part with moving pieces has a demo with one pose per body', () => {
   for (const id of MOVING) {
