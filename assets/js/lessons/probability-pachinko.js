@@ -28,6 +28,11 @@
   var streamBtn = document.getElementById('pk-stream');
   var resetBtn = document.getElementById('pk-reset');
   var clearPegsBtn = document.getElementById('pk-clear-pegs');
+  var pinRunBtn = document.getElementById('pk-pin-run');
+  var clearPinBtn = document.getElementById('pk-clear-pin');
+  var fitBadge = document.getElementById('pk-fit-badge');
+  var missionPill = document.getElementById('pk-mission-pill');
+  var missionsList = document.getElementById('pk-missions');
 
   var bellToggle = document.getElementById('pk-bell');
   var expectedToggle = document.getElementById('pk-expected-toggle');
@@ -89,6 +94,14 @@
     hoveredPeg: null,
     hoveredBin: null,
     lastTrace: null,
+    pinnedSnapshot: null,
+    missions: {
+      predicted: false,
+      traced: false,
+      tilted: false,
+      largeSample: false,
+      testedEv: false
+    },
     needsRender: true,
     uiDirty: true
   };
@@ -250,6 +263,7 @@
     }
 
     if (totalBalls === 1) {
+      state.missions.traced = true;
       var res = spawnBall({ trace: true, weight: 1 });
       state.lastTrace = {
         bin: res.bin,
@@ -519,6 +533,7 @@
     // Draw bins & histogram bars
     var barW = Math.max(10, g.stepX * 0.68);
     var modeCount = maxCount;
+    var snap = state.pinnedSnapshot && state.pinnedSnapshot.rows === g.rows ? state.pinnedSnapshot : null;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -533,6 +548,20 @@
       // Subtle bin slot guide
       ctx.fillStyle = isHovered ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.03)';
       ctx.fillRect(bx - barW / 2, g.binTopY, barW, g.barMaxH + 8);
+
+      // Ghost comparison outline when pinned
+      if (snap) {
+        var ghostCount = (total > 0 ? total : 1) * (snap.probs[bin] || 0);
+        var ghostH = ghostCount > 0 ? Math.max(2, g.barMaxH * (ghostCount / scaleMax)) : 0;
+        if (ghostH > 0) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(192,132,252,0.85)';
+          ctx.setLineDash([3, 3]);
+          ctx.lineWidth = 1.6;
+          ctx.strokeRect(bx - barW / 2 + 1, g.binBaseY - ghostH, Math.max(2, barW - 2), ghostH);
+          ctx.restore();
+        }
+      }
 
       if (barH > 0) {
         var barGrad = ctx.createLinearGradient(0, g.binBaseY - barH, 0, g.binBaseY);
@@ -811,6 +840,32 @@
     if (pCenter) pCenter.textContent = centerText;
     if (pSigma1) pSigma1.textContent = sig1Text;
 
+    if (summary.total >= 1000) state.missions.largeSample = true;
+    if (Object.keys(state.pegOverrides).length > 0) state.missions.tilted = true;
+    if (state.evMode !== 'off') state.missions.testedEv = true;
+    if (state.predictedBin !== null) state.missions.predicted = true;
+
+    if (fitBadge) {
+      fitBadge.textContent = summary.chi2PerDf !== null
+        ? summary.fitLabel + ' (χ²/df = ' + summary.chi2PerDf.toFixed(2) + ')'
+        : summary.fitLabel;
+    }
+
+    if (missionPill && missionsList && Core.evaluateMissions) {
+      var mRes = Core.evaluateMissions(state.missions);
+      missionPill.textContent = 'Missions: ' + mRes.doneCount + '/' + mRes.total;
+      missionsList.innerHTML = mRes.items.map(function (m) {
+        return '<div class="pk-mission-chip' + (m.done ? ' is-done' : '') + '">' +
+          '<span class="pk-mission-mark">' + (m.done ? '✓' : '') + '</span>' +
+          '<span>' + m.label + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    if (clearPinBtn) {
+      clearPinBtn.hidden = !state.pinnedSnapshot;
+    }
+
     // EV Strip
     if (evStrip) {
       if (state.binValues) {
@@ -824,23 +879,27 @@
       }
     }
 
-    // Bars list
+    // Bars list (with keyboard-accessible bin prediction buttons & ghost comparison)
     if (barsNode) {
+      var snap = state.pinnedSnapshot && state.pinnedSnapshot.rows === state.rows ? state.pinnedSnapshot : null;
       var maxRate = 0.01;
       for (var i = 0; i < state.counts.length; i += 1) {
         var obsRate = summary.total ? state.counts[i] / summary.total : 0;
         if (obsRate > maxRate) maxRate = obsRate;
         if (showExpected && (probs[i] || 0) > maxRate) maxRate = probs[i];
+        if (snap && (snap.probs[i] || 0) > maxRate) maxRate = snap.probs[i];
       }
       barsNode.innerHTML = state.counts.map(function (count, index) {
         var obs = summary.total ? count / summary.total : 0;
         var expRate = probs[index] || 0;
+        var ghostRate = snap ? (snap.probs[index] || 0) : 0;
         var evBadge = state.binValues ? ' · ' + (state.binValues[index] > 0 ? '+' : '') + state.binValues[index] + 'pt' : '';
         var star = state.predictedBin === index ? ' ★' : '';
         return '<div class="pk-bar-row' + (state.predictedBin === index ? ' is-predicted' : '') + '">' +
-          '<span>Bin ' + index + star + '</span>' +
+          '<button type="button" class="pk-bin-predict-btn" data-bin="' + index + '" aria-pressed="' + (state.predictedBin === index ? 'true' : 'false') + '" title="Predict Bin ' + index + '">Bin ' + index + star + '</button>' +
           '<span class="pk-bar-track">' +
             '<span class="pk-bar-fill" style="width:' + (obs / maxRate * 100).toFixed(1) + '%"></span>' +
+            (snap ? '<span class="pk-bar-ghost" style="left:' + (ghostRate / maxRate * 100).toFixed(1) + '%" title="Pinned run: ' + formatPercent(ghostRate) + '"></span>' : '') +
             (showExpected ? '<span class="pk-bar-expected" style="left:' + (expRate / maxRate * 100).toFixed(1) + '%"></span>' : '') +
           '</span>' +
           '<span>' + count + ' / ' + formatPercent(obs) + evBadge + '</span>' +
@@ -1099,6 +1158,35 @@
       state.pegOverrides = {};
       recomputeModel();
       renderAll();
+    });
+  }
+  if (pinRunBtn) {
+    pinRunBtn.addEventListener('click', function () {
+      var sc = Core.SCENARIOS[state.scenario] || Core.SCENARIOS.fair;
+      var snap = Core.buildNormalizedSnapshot(state.counts, state.rows, sc.shortLabel);
+      if (!snap) return;
+      state.pinnedSnapshot = snap;
+      state.needsRender = true;
+      renderStatsAndBars();
+    });
+  }
+  if (clearPinBtn) {
+    clearPinBtn.addEventListener('click', function () {
+      state.pinnedSnapshot = null;
+      state.needsRender = true;
+      renderStatsAndBars();
+    });
+  }
+  if (barsNode) {
+    barsNode.addEventListener('click', function (e) {
+      var btn = e.target.closest('.pk-bin-predict-btn');
+      if (!btn) return;
+      var binIdx = Number(btn.dataset.bin);
+      if (!isFinite(binIdx)) return;
+      state.predictedBin = state.predictedBin === binIdx ? null : binIdx;
+      updateTraceBanner();
+      renderStatsAndBars();
+      state.needsRender = true;
     });
   }
 

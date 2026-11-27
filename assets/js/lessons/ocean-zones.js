@@ -276,8 +276,103 @@ outer.tabIndex = 0;
   /* ══════════════════════════════════════════
      STATE + PARTICLES
   ══════════════════════════════════════════ */
-  const state = { depth: 0, diving: false };
+  const state = { depth: 0, diving: false, lightMode: 'white', diveSpeed: 1 };
   let spotlightCreature = null;
+  let hasInitialized = false;
+
+  function syncRangeFill(el) {
+    if (!el) return;
+    const min = parseFloat(el.min) || 0;
+    const max = parseFloat(el.max) || 100;
+    const val = parseFloat(el.value) || 0;
+    const pct = max === min ? 0 : clamp(((val - min) / (max - min)) * 100, 0, 100);
+    el.style.setProperty('--cos-range-progress', pct.toFixed(3) + '%');
+  }
+
+  /* Opt-in Web Audio hydrophone & sonar (initialized only on user toggle) */
+  const OceanAudio = {
+    ctx: null, filter: null, gain: null, enabled: false,
+    init() {
+      if (this.ctx) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      const ctx = new AC();
+      const len = ctx.sampleRate * 2;
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
+        last = (last + 0.03 * w) / 1.03;
+        data[i] = last * 2.2;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 950;
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      src.start();
+      this.ctx = ctx; this.filter = filter; this.gain = gain;
+    },
+    toggle() {
+      this.enabled = !this.enabled;
+      if (this.enabled) {
+        this.init();
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+        this.updateDepth(state.depth);
+      } else if (this.gain && this.ctx) {
+        this.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.08);
+      }
+      return this.enabled;
+    },
+    updateDepth(depth) {
+      if (!this.enabled || !this.ctx || !this.filter || !this.gain) return;
+      const t = this.ctx.currentTime;
+      const cutoff = 110 + 1150 * Math.exp(-depth / 750);
+      this.filter.frequency.setTargetAtTime(cutoff, t, 0.15);
+      this.gain.gain.setTargetAtTime(document.hidden ? 0 : 0.05, t, 0.15);
+    },
+    pingZone() {
+      if (!this.enabled || !this.ctx || document.hidden) return;
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(740, t);
+      osc.frequency.exponentialRampToValueAtTime(520, t + 0.35);
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(0.055, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      osc.connect(g); g.connect(this.ctx.destination);
+      osc.start(t); osc.stop(t + 0.56);
+    },
+    chimeDiscovery() {
+      if (!this.enabled || !this.ctx || document.hidden) return;
+      [523.25, 783.99].forEach((freq, i) => {
+        const t = this.ctx.currentTime + i * 0.09;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0.001, t);
+        g.gain.linearRampToValueAtTime(0.045, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
+        osc.connect(g); g.connect(this.ctx.destination);
+        osc.start(t); osc.stop(t + 0.4);
+      });
+    }
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (OceanAudio.enabled && OceanAudio.gain && OceanAudio.ctx) {
+      OceanAudio.gain.gain.setTargetAtTime(document.hidden ? 0 : 0.05, OceanAudio.ctx.currentTime, 0.1);
+    }
+  });
 
   class Snow { constructor() { this.reset(true); } reset(initY) {
     this.x = Math.random() * W; this.y = initY ? Math.random() * H : -4;
@@ -320,62 +415,79 @@ outer.tabIndex = 0;
   /* ══════════════════════════════════════════
      AMBIENT OCEAN FAUNA
   ══════════════════════════════════════════ */
+  function seafloorY(x, depth, now) {
+    if (!H) return 0;
+    const base = H * 0.84;
+    const trench = clamp((depth - 6000) / 4500, 0, 1);
+    const dip = trench * Math.exp(-Math.pow((x - W * 0.55) / (W * 0.24), 2)) * H * 0.12;
+    return base + dip + Math.sin(x * 0.035 + now * 0.00005) * 5;
+  }
+
   class AmbientFaunaManager {
     constructor() {
+      this._laidOut = false;
       this.fauna = [
         // SUNLIGHT TIER (0 - 200 m)
-        { id:'school_sun', type:'school', isLantern:false, x: 260, y: 140, vx: -38, depthMin: 0, depthMax: 190, count: 14,
+        { id:'school_sun', type:'school', isLantern:false, xFrac: 0.36, yFrac: 0.31, vx: -38, depthMin: 0, depthMax: 190, count: 14,
           members: Array.from({length: 14}, (_, i) => ({ ox: (i % 5) * 16 - 32 + (i * 3) % 7, oy: Math.floor(i / 5) * 11 - 11, phase: i * 0.7, size: 7 + (i % 3) * 2 })) },
-        { id:'tuna_sun', type:'tuna', x: 120, y: 210, vx: 58, vy: -1.5, depthMin: 15, depthMax: 200, size: 38, phase: 0 },
-        { id:'turtle_sun', type:'turtle', x: 520, y: 110, vx: -22, vy: 1, depthMin: 0, depthMax: 160, size: 38, phase: 1.2 },
-        { id:'manta_sun', type:'manta', x: 70, y: 130, vx: 26, vy: 1.2, depthMin: 0, depthMax: 140, size: 48, phase: 2.1 },
-        { id:'jelly_sun1', type:'jelly', isCrown:false, x: 300, y: 160, vx: 7, vy: -7, depthMin: 0, depthMax: 220, size: 19, phase: 0.4 },
-        { id:'jelly_sun2', type:'jelly', isCrown:false, x: 440, y: 250, vx: -6, vy: -6, depthMin: 20, depthMax: 210, size: 15, phase: 1.8 },
+        { id:'tuna_sun', type:'tuna', xFrac: 0.18, yFrac: 0.48, vx: 58, vy: -1.5, depthMin: 15, depthMax: 200, size: 38, phase: 0 },
+        { id:'turtle_sun', type:'turtle', xFrac: 0.72, yFrac: 0.25, vx: -22, vy: 1, depthMin: 0, depthMax: 160, size: 38, phase: 1.2 },
+        { id:'manta_sun', type:'manta', xFrac: 0.12, yFrac: 0.30, vx: 26, vy: 1.2, depthMin: 0, depthMax: 140, size: 48, phase: 2.1 },
+        { id:'jelly_sun1', type:'jelly', isCrown:false, xFrac: 0.44, yFrac: 0.36, vx: 7, vy: -7, depthMin: 0, depthMax: 220, size: 19, phase: 0.4 },
+        { id:'jelly_sun2', type:'jelly', isCrown:false, xFrac: 0.64, yFrac: 0.58, vx: -6, vy: -6, depthMin: 20, depthMax: 210, size: 15, phase: 1.8 },
 
         // TWILIGHT TIER (200 - 1000 m)
-        { id:'lantern_school', type:'school', isLantern:true, x: 480, y: 180, vx: -32, depthMin: 200, depthMax: 1000, count: 10,
+        { id:'lantern_school', type:'school', isLantern:true, xFrac: 0.68, yFrac: 0.42, vx: -32, depthMin: 200, depthMax: 1000, count: 10,
           members: Array.from({length: 10}, (_, i) => ({ ox: (i % 4) * 18 - 27, oy: Math.floor(i / 4) * 13 - 13, phase: i * 0.6, size: 9 + (i % 3) * 2 })) },
-        { id:'hatchet_tw1', type:'hatchet', x: 260, y: 210, vx: 18, vy: -1, depthMin: 220, depthMax: 880, size: 18, phase: 0.9 },
-        { id:'hatchet_tw2', type:'hatchet', x: 400, y: 140, vx: -16, vy: 1, depthMin: 260, depthMax: 920, size: 16, phase: 2.4 },
-        { id:'comb_jelly', type:'combjelly', x: 340, y: 200, vx: 11, vy: -5, depthMin: 200, depthMax: 1200, size: 22, phase: 3.1 },
-        { id:'siphonophore_col', type:'siphonophore', x: 180, y: 160, vx: 13, vy: 3, depthMin: 250, depthMax: 1600, size: 75, phase: 1.5 },
-        { id:'viper_tw', type:'viperfish', x: 520, y: 260, vx: -25, vy: 0, depthMin: 320, depthMax: 1100, size: 30, phase: 4.2 },
+        { id:'hatchet_tw1', type:'hatchet', xFrac: 0.36, yFrac: 0.48, vx: 18, vy: -1, depthMin: 220, depthMax: 880, size: 18, phase: 0.9 },
+        { id:'hatchet_tw2', type:'hatchet', xFrac: 0.56, yFrac: 0.31, vx: -16, vy: 1, depthMin: 260, depthMax: 920, size: 16, phase: 2.4 },
+        { id:'comb_jelly', type:'combjelly', xFrac: 0.48, yFrac: 0.45, vx: 11, vy: -5, depthMin: 200, depthMax: 1200, size: 22, phase: 3.1 },
+        { id:'siphonophore_col', type:'siphonophore', xFrac: 0.25, yFrac: 0.36, vx: 13, vy: 3, depthMin: 250, depthMax: 1600, size: 75, phase: 1.5 },
+        { id:'viper_tw', type:'viperfish', xFrac: 0.75, yFrac: 0.62, vx: -25, vy: 0, depthMin: 320, depthMax: 1100, size: 30, phase: 4.2 },
 
         // MIDNIGHT TIER (1000 - 4000 m)
-        { id:'squid_mid', type:'squid', x: 560, y: 180, vx: -28, vy: -2, depthMin: 1000, depthMax: 3500, size: 66, phase: 0.8 },
-        { id:'angler_mid', type:'angler', x: 300, y: 240, vx: 15, vy: 1, depthMin: 1100, depthMax: 3800, size: 32, phase: 2.7 },
-        { id:'gulper_mid', type:'gulpereel', x: 150, y: 210, vx: 20, vy: -2, depthMin: 1200, depthMax: 3600, size: 75, phase: 1.1 },
-        { id:'prawn_mid', type:'prawn', x: 410, y: 280, vx: -13, vy: -3, depthMin: 1000, depthMax: 3300, size: 19, phase: 3.8 },
-        { id:'dumbo_mid', type:'dumbo', x: 470, y: 220, vx: 14, vy: 2, depthMin: 1400, depthMax: 4100, size: 25, phase: 5.0 },
+        { id:'squid_mid', type:'squid', xFrac: 0.78, yFrac: 0.41, vx: -28, vy: -2, depthMin: 1000, depthMax: 3500, size: 66, phase: 0.8 },
+        { id:'angler_mid', type:'angler', xFrac: 0.42, yFrac: 0.56, vx: 15, vy: 1, depthMin: 1100, depthMax: 3800, size: 32, phase: 2.7 },
+        { id:'gulper_mid', type:'gulpereel', xFrac: 0.22, yFrac: 0.48, vx: 20, vy: -2, depthMin: 1200, depthMax: 3600, size: 75, phase: 1.1 },
+        { id:'prawn_mid', type:'prawn', xFrac: 0.58, yFrac: 0.65, vx: -13, vy: -3, depthMin: 1000, depthMax: 3300, size: 19, phase: 3.8 },
+        { id:'dumbo_mid', type:'dumbo', xFrac: 0.66, yFrac: 0.50, vx: 14, vy: 2, depthMin: 1400, depthMax: 4100, size: 25, phase: 5.0 },
 
         // ABYSS TIER (4000 - 6000 m)
-        { id:'tripod_aby', type:'tripod', x: 380, y: 310, vx: 0, vy: 0, depthMin: 3900, depthMax: 6000, size: 40, phase: 0 },
-        { id:'seapig_aby1', type:'seapig', x: 240, y: 322, vx: 7, vy: 0, depthMin: 4000, depthMax: 6000, size: 26, phase: 1.4 },
-        { id:'seapig_aby2', type:'seapig', x: 530, y: 325, vx: -6, vy: 0, depthMin: 4100, depthMax: 6000, size: 23, phase: 3.2 },
-        { id:'grenadier_aby', type:'grenadier', x: 180, y: 260, vx: 22, vy: -1.5, depthMin: 3800, depthMax: 5900, size: 44, phase: 2.1 },
-        { id:'crown_jelly_aby', type:'jelly', isCrown:true, x: 450, y: 190, vx: -10, vy: -4, depthMin: 3600, depthMax: 5800, size: 25, phase: 4.5 },
+        { id:'tripod_aby', type:'tripod', xFrac: 0.54, yFrac: 0.80, vx: 0, vy: 0, depthMin: 3900, depthMax: 6000, size: 40, phase: 0 },
+        { id:'seapig_aby1', type:'seapig', xFrac: 0.34, yFrac: 0.83, vx: 7, vy: 0, depthMin: 4000, depthMax: 6000, size: 26, phase: 1.4 },
+        { id:'seapig_aby2', type:'seapig', xFrac: 0.74, yFrac: 0.83, vx: -6, vy: 0, depthMin: 4100, depthMax: 6000, size: 23, phase: 3.2 },
+        { id:'grenadier_aby', type:'grenadier', xFrac: 0.28, yFrac: 0.60, vx: 22, vy: -1.5, depthMin: 3800, depthMax: 5900, size: 44, phase: 2.1 },
+        { id:'crown_jelly_aby', type:'jelly', isCrown:true, xFrac: 0.64, yFrac: 0.43, vx: -10, vy: -4, depthMin: 3600, depthMax: 5800, size: 25, phase: 4.5 },
 
         // TRENCH TIER (6000 - 11000 m)
-        { id:'snailfish_tr1', type:'snailfish', x: 320, y: 230, vx: 18, vy: 1.5, depthMin: 6000, depthMax: 8400, size: 32, phase: 0.5 },
-        { id:'snailfish_tr2', type:'snailfish', x: 510, y: 190, vx: -17, vy: -1.5, depthMin: 6300, depthMax: 8400, size: 27, phase: 2.8 },
-        { id:'amphipod_swarm_tr', type:'amphipods', x: 420, y: 270, vx: -12, vy: 2, depthMin: 6000, depthMax: 11000, size: 9,
+        { id:'snailfish_tr1', type:'snailfish', xFrac: 0.45, yFrac: 0.52, vx: 18, vy: 1.5, depthMin: 6000, depthMax: 8400, size: 32, phase: 0.5 },
+        { id:'snailfish_tr2', type:'snailfish', xFrac: 0.72, yFrac: 0.42, vx: -17, vy: -1.5, depthMin: 6300, depthMax: 8400, size: 27, phase: 2.8 },
+        { id:'amphipod_swarm_tr', type:'amphipods', xFrac: 0.59, yFrac: 0.62, vx: -12, vy: 2, depthMin: 6000, depthMax: 11000, size: 9,
           members: Array.from({length: 12}, (_, i) => ({ ox: (i % 4) * 9 - 13, oy: Math.floor(i / 4) * 7 - 7, phase: i * 0.9 })) },
-        { id:'hadal_worm_tr', type:'polychaete', x: 230, y: 290, vx: 15, vy: -1, depthMin: 6400, depthMax: 11000, size: 36, phase: 1.9 },
-        { id:'hadal_cuc_tr', type:'hadalcucumber', x: 490, y: 326, vx: 5, vy: 0, depthMin: 6800, depthMax: 11000, size: 28, phase: 3.5 }
+        { id:'hadal_worm_tr', type:'polychaete', xFrac: 0.34, yFrac: 0.68, vx: 15, vy: -1, depthMin: 6400, depthMax: 11000, size: 36, phase: 1.9 },
+        { id:'hadal_cuc_tr', type:'hadalcucumber', xFrac: 0.68, yFrac: 0.83, vx: 5, vy: 0, depthMin: 6800, depthMax: 11000, size: 28, phase: 3.5 }
       ];
     }
 
     update(dt, now, depth) {
       if (!W || !H) return;
+      if (!this._laidOut) {
+        this.fauna.forEach(c => { c.x = c.xFrac * W; c.y = c.yFrac * H; });
+        this._laidOut = true;
+      }
       this.fauna.forEach(c => {
         c.x += c.vx * dt;
-        c.y += (c.vy || 0) * dt;
+        c.yFrac = clamp(c.yFrac + ((c.vy || 0) * dt) / Math.max(H, 1), 0.16, 0.78);
 
-        // Keep seafloor-dwellers anchored on the seafloor boundary
+        // Keep seafloor-dwellers anchored on the shared seafloor contour
         if (c.type === 'tripod') {
-          c.y = H * 0.81;
-        } else if (c.type === 'seapig' || c.type === 'hadalcucumber') {
-          c.y = H * 0.835;
+          c.y = seafloorY(c.x, depth, now) - c.size * 0.9;
+        } else if (c.type === 'seapig') {
+          c.y = seafloorY(c.x, depth, now) - c.size * 0.45;
+        } else if (c.type === 'hadalcucumber') {
+          c.y = seafloorY(c.x, depth, now) - c.size * 0.24;
+        } else {
+          c.y = c.yFrac * H;
         }
 
         // Horizontal screen wrap
@@ -387,7 +499,10 @@ outer.tabIndex = 0;
     draw(ctx, depth, light, now) {
       if (!W || !H) return;
       const subX = W * 0.17, subY = H * 0.66;
+      const subR = Math.min(W, H) * 0.085;
+      const lampX = subX + subR * 1.45, lampY = subY - subR * 0.25;
       const lightRatio = lightPct(depth) / 100;
+      const lm = state.lightMode;
 
       this.fauna.forEach(c => {
         // Depth-tier visibility window with smooth fade
@@ -395,12 +510,14 @@ outer.tabIndex = 0;
         const depthAlpha = clamp(Math.min((depth - (c.depthMin - 150)) / 150, ((c.depthMax + 150) - depth) / 150), 0, 1);
         if (depthAlpha <= 0.01) return;
 
-        // Headlight beam illumination calculation
-        const dx = c.x - subX, dy = c.y - subY;
+        // Volumetric headlight beam illumination calculation
+        const dx = c.x - lampX, dy = c.y - lampY;
         const dist = Math.hypot(dx, dy);
         const angle = Math.atan2(dy, dx);
-        const inBeam = lightRatio < 0.55 && dx > -20 && dist < W * 0.44 && Math.abs(angle) < 0.62;
-        const beamIntensity = inBeam ? clamp(1 - dist / (W * 0.44), 0, 1) * clamp((0.55 - lightRatio) * 2.2, 0, 1) : 0;
+        const inCone = lm !== 'off' && lightRatio < 0.7 && dx > -10 && dist < W * 0.54 && Math.abs(angle) < 0.46;
+        const rawBeam = inCone ? clamp(1 - dist / (W * 0.54), 0, 1) * clamp((0.7 - lightRatio) * 1.9, 0, 1) : 0;
+        const isRedTarget = c.isCrown || c.type === 'prawn' || c.type === 'squid';
+        const beamIntensity = lm === 'red' ? (isRedTarget ? rawBeam * 0.95 : rawBeam * 0.22) : rawBeam;
 
         ctx.save();
         const waveY = (c.type === 'tripod' || c.type === 'seapig' || c.type === 'hadalcucumber') ? 0 : Math.sin(now * 0.0018 + c.phase) * 5;
@@ -922,9 +1039,79 @@ outer.tabIndex = 0;
 
   function drawSeafloor(depth, now) {
     if (depth < 3800) return;
-    const y=H*.84, trench=clamp((depth-6000)/4500,0,1);ctx.fillStyle=depth>6000?'#080b12':'#10151b';ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(0,y);
-    for(let x=0;x<=W;x+=W/8){const dip=trench*Math.exp(-Math.pow((x-W*.55)/(W*.24),2))*H*.12;ctx.lineTo(x,y+dip+Math.sin(x*.035+now*.00005)*5);}ctx.lineTo(W,H);ctx.fill();
-    ctx.strokeStyle='rgba(130,155,160,.12)';ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle = depth > 6000 ? '#080b12' : '#10151b';
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += W / 12) {
+      ctx.lineTo(x, seafloorY(x, depth, now));
+    }
+    ctx.lineTo(W, H);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(130,155,160,.14)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function drawVents(depth, now) {
+    if (depth < 2100 || depth > 2950) return;
+    const peak = 1 - Math.abs(depth - 2500) / 450;
+    const alpha = clamp(peak * 1.4, 0, 1);
+    if (alpha <= 0.02) return;
+    const baseY = H * 0.87;
+    const chimneys = [
+      { x: W * 0.69, h: H * 0.22, w: 22 },
+      { x: W * 0.77, h: H * 0.28, w: 28 },
+      { x: W * 0.84, h: H * 0.17, w: 18 }
+    ];
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    // Mineral mound
+    ctx.fillStyle = '#0c1016';
+    ctx.beginPath();
+    ctx.moveTo(W * 0.56, H);
+    ctx.quadraticCurveTo(W * 0.76, baseY - 26, W * 0.96, H);
+    ctx.fill();
+
+    chimneys.forEach((ch, idx) => {
+      // Rising black-smoker plume puffs
+      for (let p = 0; p < 7; p++) {
+        const phase = ((now * 0.00028 + p / 7 + idx * 0.2) % 1);
+        const py = baseY - ch.h - phase * H * 0.34;
+        const px = ch.x + Math.sin(now * 0.0014 + p + idx) * (6 + phase * 18);
+        const r = 6 + phase * 24;
+        ctx.fillStyle = 'rgba(18,22,28,' + ((1 - phase) * 0.42).toFixed(2) + ')';
+        ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
+      }
+      // Sulfide spire
+      ctx.fillStyle = '#181c22';
+      ctx.beginPath();
+      ctx.moveTo(ch.x - ch.w * 0.55, baseY);
+      ctx.lineTo(ch.x - ch.w * 0.22, baseY - ch.h);
+      ctx.lineTo(ch.x + ch.w * 0.22, baseY - ch.h);
+      ctx.lineTo(ch.x + ch.w * 0.55, baseY);
+      ctx.closePath();
+      ctx.fill();
+      // Superheated vent orifice glow
+      const og = ctx.createRadialGradient(ch.x, baseY - ch.h, 0, ch.x, baseY - ch.h, ch.w * 0.9);
+      og.addColorStop(0, 'rgba(255,148,64,0.85)');
+      og.addColorStop(0.45, 'rgba(220,75,32,0.28)');
+      og.addColorStop(1, 'rgba(220,75,32,0)');
+      ctx.fillStyle = og;
+      ctx.beginPath(); ctx.arc(ch.x, baseY - ch.h, ch.w * 0.9, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // Tube-worm cluster at the vent base
+    for (let t = 0; t < 10; t++) {
+      const tx = W * 0.66 + t * (W * 0.022);
+      const ty = baseY - 6;
+      const sway = Math.sin(now * 0.0018 + t) * 3;
+      ctx.strokeStyle = 'rgba(210,218,224,0.65)';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(tx, ty + 14); ctx.quadraticCurveTo(tx + sway * 0.5, ty, tx + sway, ty - 14 - (t % 3) * 5); ctx.stroke();
+      ctx.fillStyle = 'rgba(225,58,68,0.88)';
+      ctx.beginPath(); ctx.arc(tx + sway, ty - 15 - (t % 3) * 5, 2.4, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
   }
 
   // Optical cues are deliberately additive. The photographic/depth plates are
@@ -1038,12 +1225,13 @@ outer.tabIndex = 0;
     });
     ctx.globalAlpha = 1;
 
-    // Bioluminescence glow (fades in from twilight zone onward)
-    const bioAmt = clamp((depth - 150) / 700, 0, 1);
+    // Bioluminescence glow (fades in from twilight zone onward; boosted when lights are off)
+    const bioBoost = state.lightMode === 'off' ? 1.25 : 1;
+    const bioAmt = clamp((depth - 150) / 700, 0, 1) * bioBoost;
     if (bioAmt > 0.02) {
       glows.forEach(gl => {
         gl.step(dt, now * 0.001);
-        const a = gl.blink * bioAmt * 0.9;
+        const a = Math.min(1, gl.blink * bioAmt * 0.9);
         ctx.beginPath();
         const rg = ctx.createRadialGradient(gl.x, gl.y, 0, gl.x, gl.y, gl.r * 5);
         rg.addColorStop(0, 'rgba(' + gl.hue[0] + ',' + gl.hue[1] + ',' + gl.hue[2] + ',' + a + ')');
@@ -1053,23 +1241,51 @@ outer.tabIndex = 0;
       });
     }
 
+    drawVents(depth, now);
     drawSeafloor(depth, now);
 
     // Ambient Ocean Fauna
     ambientFauna.update(dt, now, depth);
     ambientFauna.draw(ctx, depth, light, now);
 
-    // Submersible + headlight cone (fixed at vertical center)
+    // Submersible + directional volumetric headlight cone
     const subX = W * 0.17, subY = H * 0.66;
-    if (light < 0.5) {
-      const coneA = (0.5 - light) * 0.9;
-      const cone = ctx.createRadialGradient(subX, subY, 4, subX, subY, W * 0.42);
-      cone.addColorStop(0, 'rgba(255,244,210,' + coneA + ')');
-      cone.addColorStop(1, 'rgba(255,244,210,0)');
-      ctx.fillStyle = cone;
-      ctx.beginPath(); ctx.arc(subX, subY, W * 0.42, 0, Math.PI * 2); ctx.fill();
+    const subR = Math.min(W, H) * 0.085;
+    const lampX = subX + subR * 1.45, lampY = subY - subR * 0.25;
+    if (state.lightMode !== 'off' && (light < 0.72 || state.lightMode === 'red')) {
+      const strength = state.lightMode === 'red' ? 0.42 : clamp((0.72 - light) * 0.75, 0.08, 0.56);
+      const coneLen = W * 0.56;
+      const spread = H * 0.26;
+      const beamRGB = state.lightMode === 'red' ? '220,42,58' : '240,248,255';
+      const coneGrad = ctx.createLinearGradient(lampX, lampY, lampX + coneLen, lampY);
+      coneGrad.addColorStop(0, 'rgba(' + beamRGB + ',' + strength.toFixed(2) + ')');
+      coneGrad.addColorStop(0.5, 'rgba(' + beamRGB + ',' + (strength * 0.35).toFixed(2) + ')');
+      coneGrad.addColorStop(1, 'rgba(' + beamRGB + ',0)');
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = coneGrad;
+      ctx.beginPath();
+      ctx.moveTo(lampX, lampY - 4);
+      ctx.lineTo(lampX + coneLen, lampY - spread);
+      ctx.lineTo(lampX + coneLen, lampY + spread);
+      ctx.lineTo(lampX, lampY + 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
     }
-    const subR=Math.min(W,H)*.085;
+    // Subtle thruster bubbles behind submersible while descending
+    if (state.diving) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(200,242,255,0.45)';
+      for (let b = 0; b < 5; b++) {
+        const bp = ((now * 0.0014 + b * 0.2) % 1);
+        const bx = subX - subR * 1.6 - bp * 26 + Math.sin(now * 0.008 + b) * 4;
+        const by = subY + subR * 0.1 - bp * 38;
+        ctx.globalAlpha = (1 - bp) * 0.55;
+        ctx.beginPath(); ctx.arc(bx, by, 1.5 + bp * 2, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
     if(subImage.complete && subImage.naturalWidth) drawResearchSub(subX,subY,subR,now);
     else drawSub(subX, subY, subR, now);
 
@@ -1082,11 +1298,15 @@ outer.tabIndex = 0;
 
   function drawResearchSub(x,y,r,now) {
     const bob=Math.sin(now*.0012)*r*.1, width=r*4.35, height=width*(subImage.naturalHeight/subImage.naturalWidth);
-    ctx.save();ctx.translate(x,y+bob);ctx.rotate(Math.sin(now*.00055)*.018);
+    const tilt = state.diving ? 0.065 : Math.sin(now*.00055)*.018;
+    ctx.save();ctx.translate(x,y+bob);ctx.rotate(tilt);
     ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=r*.35;ctx.shadowOffsetY=r*.12;
     ctx.drawImage(subImage,-width/2,-height/2,width,height);ctx.restore();
+    if (state.lightMode === 'off') return;
     const lampX=x+width*.42,lampY=y+bob-height*.12;
-    ctx.save();ctx.globalCompositeOperation='screen';ctx.fillStyle='rgba(255,246,205,.9)';ctx.shadowColor='#fff1b5';ctx.shadowBlur=r*.35;
+    ctx.save();ctx.globalCompositeOperation='screen';
+    ctx.fillStyle=state.lightMode==='red'?'rgba(255,70,85,.95)':'rgba(255,246,205,.9)';
+    ctx.shadowColor=state.lightMode==='red'?'#ff3b4e':'#fff1b5';ctx.shadowBlur=r*.35;
     ctx.beginPath();ctx.arc(lampX,lampY,Math.max(2,r*.055),0,Math.PI*2);ctx.fill();ctx.restore();
   }
 
@@ -1122,16 +1342,36 @@ outer.tabIndex = 0;
      RULER
   ══════════════════════════════════════════ */
   const rulerEl = document.getElementById('oz-ruler');
+  const RULER_TICKS = { sunlight: '0m', twilight: '200', midnight: '1k', abyss: '4k', trench: '6k' };
   ZONES.forEach(z => {
     const seg = document.createElement('div');
     seg.className = 'oz-ruler-seg';
     seg.style.flexGrow = (z.max - z.min);
     seg.style.background = rgbStr(z.color);
+    const tick = document.createElement('span');
+    tick.className = 'oz-ruler-tick';
+    tick.textContent = RULER_TICKS[z.id] || '';
+    seg.appendChild(tick);
     rulerEl.appendChild(seg);
   });
   const marker = document.createElement('div');
   marker.className = 'oz-ruler-marker';
   rulerEl.appendChild(marker);
+
+  function scrubRuler(ev) {
+    const rect = rulerEl.getBoundingClientRect();
+    if (!rect.height) return;
+    const frac = clamp((ev.clientY - rect.top) / rect.height, 0, 1);
+    stopDive();
+    setDepth(Math.round((frac * 11000) / 10) * 10);
+  }
+  rulerEl.addEventListener('pointerdown', ev => {
+    rulerEl.setPointerCapture && rulerEl.setPointerCapture(ev.pointerId);
+    scrubRuler(ev);
+  });
+  rulerEl.addEventListener('pointermove', ev => {
+    if (ev.buttons === 1) scrubRuler(ev);
+  });
 
   function updateRulerMarker() {
     const frac = clamp(state.depth / 11000, 0, 1);
@@ -1197,14 +1437,19 @@ outer.tabIndex = 0;
     document.getElementById('total-discovery-count').textContent=discoveredLifeforms.size+'/'+TOTAL_LIFEFORMS;
     document.getElementById('oz-discovery-fill').style.width=(100*discoveredLifeforms.size/TOTAL_LIFEFORMS).toFixed(1)+'%';
   }
+  const discoveryListeners = [];
   function recordDiscovery(zone,c,bubble) {
     const key=discoveryKey(zone,c);
     if(discoveredLifeforms.has(key))return;
     discoveredLifeforms.add(key);
     try { sessionStorage.setItem('ocean-zone-discoveries',JSON.stringify([...discoveredLifeforms])); } catch(e) {}
-    bubble.classList.add('discovered','just-discovered');
-    setTimeout(()=>bubble.classList.remove('just-discovered'),800);
+    if(bubble){
+      bubble.classList.add('discovered','just-discovered');
+      setTimeout(()=>bubble.classList.remove('just-discovered'),800);
+    }
     updateDiscoveryHud(zone);
+    OceanAudio.chimeDiscovery();
+    discoveryListeners.forEach(fn=>fn(zone.id,c.kind,discoveredLifeforms));
     const zoneDone=(CREATURES[zone.id]||[]).every(item=>discoveredLifeforms.has(discoveryKey(zone,item)));
     const toast=document.getElementById('oz-discovery-toast');
     toast.textContent=zoneDone?'Zone catalogued · all six lifeforms logged':'New discovery logged · '+discoveredLifeforms.size+' of '+TOTAL_LIFEFORMS;
@@ -1320,7 +1565,7 @@ outer.tabIndex = 0;
       '<div class="bio-detail-head"><strong>' + sp.name + '</strong><span class="bio-detail-latin">' + sp.latin + '</span></div>' +
       '<div class="bio-detail-tags"><span class="bio-tag role">' + sp.role + '</span><span class="bio-tag depth">' + sp.depth + '</span></div>' +
       '<p class="bio-detail-fact">' + sp.fact + '</p>' +
-      '<button type="button" class="bio-detail-dive" data-dive="' + sp.dive + '">Dive to ' + sp.name + ' (' + sp.dive.toLocaleString() + ' m) ↑</button>' +
+      '<button type="button" class="bio-detail-dive" data-bio-dive="' + sp.dive + '">Dive to ' + sp.name + ' (' + sp.dive.toLocaleString() + ' m) ↑</button>' +
       '</div>';
     const diveBtn = detailEl.querySelector('.bio-detail-dive');
     if (diveBtn) {
@@ -1385,16 +1630,24 @@ outer.tabIndex = 0;
     const zone = zoneAt(depth);
 
     document.getElementById('v-depth').textContent = Math.round(depth).toLocaleString() + ' m';
-    document.getElementById('s-depth').value = depth;
+    const depthSlider = document.getElementById('s-depth');
+    depthSlider.value = depth;
+    syncRangeFill(depthSlider);
     document.getElementById('depth-badge').textContent = Math.round(depth).toLocaleString() + ' m';
     document.getElementById('zone-name-badge').textContent = zone.icon + ' ' + zone.name;
 
     document.getElementById('out-depth').textContent = Math.round(depth).toLocaleString() + ' m';
-    const pAtm=pressureAtm(depth);
-    document.getElementById('out-pressure').textContent = Math.round(pAtm).toLocaleString() + ' atm';
-    document.getElementById('out-temp').textContent = tempC(depth).toFixed(1) + ' °C';
-    const light=lightPct(depth);
-    document.getElementById('out-light').textContent = depth >= 1000 ? '0%' : light < .001 ? '<0.001%' : light.toFixed(depth > 100 ? 2 : 0) + '%';
+    const pAtm = pressureAtm(depth);
+    const pText = Math.round(pAtm).toLocaleString() + ' atm';
+    const tText = tempC(depth).toFixed(1) + ' °C';
+    const light = lightPct(depth);
+    const lText = depth >= 1000 ? '0%' : light < .001 ? '<0.001%' : light.toFixed(depth > 100 ? 2 : 0) + '%';
+    document.getElementById('out-pressure').textContent = pText;
+    document.getElementById('out-temp').textContent = tText;
+    document.getElementById('out-light').textContent = lText;
+    const barP = document.getElementById('bar-pressure'); if (barP) barP.textContent = pText;
+    const barT = document.getElementById('bar-temp'); if (barT) barT.textContent = tText;
+    const barL = document.getElementById('bar-light'); if (barL) barL.textContent = lText;
 
     const condition = depth < 200
       ? '<strong>Photic water</strong> · Enough sunlight remains for photosynthesis; visibility varies greatly with plankton and sediment.'
@@ -1408,6 +1661,7 @@ outer.tabIndex = 0;
     document.getElementById('oz-condition').innerHTML=condition;
 
     document.querySelectorAll('.zn-card').forEach(c => c.classList.toggle('active', c.dataset.id === zone.id));
+    document.querySelectorAll('[data-quick-zone]').forEach(b => b.classList.toggle('active', b.dataset.quickZone === zone.id));
 
     if (zone.id !== currentZoneId) {
       currentZoneId = zone.id;
@@ -1418,9 +1672,13 @@ outer.tabIndex = 0;
       document.getElementById('fact-card').innerHTML = '<strong>' + zone.name + ' (' + zone.latin + ') · ' +
         (zone.max >= 11000 ? zone.min.toLocaleString() + '+ m' : zone.min.toLocaleString() + '–' + zone.max.toLocaleString() + ' m') +
         '</strong>' + zone.desc;
-      showLayerBriefing(zone,true);
+      if (hasInitialized && state.diving) {
+        showLayerBriefing(zone, true);
+        OceanAudio.pingZone();
+      }
     }
 
+    OceanAudio.updateDepth(depth);
     updateJourney(depth,zone);
     updateRulerMarker();
     depthListeners.forEach(fn => fn(depth, zone));
@@ -1434,8 +1692,28 @@ outer.tabIndex = 0;
     creatures: CREATURES,
     pressureAtm, tempC, lightPct,
     get depth() { return state.depth; },
+    get lightMode() { return state.lightMode; },
     setDepth(d) { stopDive(); setDepth(d); },
     onDepth(fn) { depthListeners.push(fn); fn(state.depth, zoneAt(state.depth)); },
+    isDiscovered(zoneId, kind) { return discoveredLifeforms.has(zoneId + ':' + kind); },
+    onDiscovery(fn) { discoveryListeners.push(fn); },
+    inspectCreature(zoneId, kind) {
+      const z = ZONES.find(item => item.id === zoneId);
+      const c = (CREATURES[zoneId] || []).find(item => item.kind === kind);
+      if (!z || !c) return;
+      stopDive();
+      setDepth(z.jump);
+      const bubble = document.querySelector('#lifeform-field .lifeform-bubble[data-kind="' + kind + '"]');
+      if (bubble) {
+        document.querySelectorAll('#lifeform-field .lifeform-bubble').forEach(x => x.classList.remove('active'));
+        bubble.classList.add('active');
+        recordDiscovery(z, c, bubble);
+      } else {
+        recordDiscovery(z, c, null);
+      }
+      showModel(c);
+      document.getElementById('fact-card').innerHTML = '<strong><em>' + c.latin + '</em> · ' + c.length + '</strong>' + c.fact;
+    },
   };
 
   function setDepth(d) {
@@ -1447,6 +1725,38 @@ outer.tabIndex = 0;
     stopDive();
     setDepth(parseFloat(this.value));
   });
+
+  document.querySelectorAll('[data-quick-zone]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const z = ZONES.find(item => item.id === btn.dataset.quickZone);
+      if (z) { stopDive(); setDepth(z.jump); }
+    });
+  });
+
+  document.querySelectorAll('[data-sub-light]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.lightMode = btn.dataset.subLight;
+      document.querySelectorAll('[data-sub-light]').forEach(b => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+    });
+  });
+
+  const speedBtn = document.getElementById('dive-speed-btn');
+  if (speedBtn) {
+    speedBtn.addEventListener('click', () => {
+      state.diveSpeed = state.diveSpeed === 1 ? 2 : 1;
+      speedBtn.textContent = state.diveSpeed + '× Speed';
+      speedBtn.setAttribute('aria-label', 'Descent speed ' + state.diveSpeed + 'x');
+    });
+  }
+
+  const audioBtn = document.getElementById('oz-audio-btn');
+  if (audioBtn) {
+    audioBtn.addEventListener('click', () => {
+      const on = OceanAudio.toggle();
+      audioBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      audioBtn.textContent = on ? '🔊 Sound' : '🔇 Sound';
+    });
+  }
 
   window.addEventListener('keydown', function(ev){
     if(ev.key==='Escape'){
@@ -1464,7 +1774,7 @@ outer.tabIndex = 0;
   /* ══════════════════════════════════════════
      DIVE ANIMATION
   ══════════════════════════════════════════ */
-  let diveRAF=null, diveLegs=[], diveLegIndex=0, legStart=0, legFromDepth=0, holdUntil=0;
+  let diveRAF=null, diveLegs=[], diveLegIndex=0, legElapsed=0, lastDiveTs=0, legFromDepth=0, holdUntil=0;
   const DIVE_PLAN=[
     {end:200,duration:8000},
     {end:1000,duration:9000},
@@ -1487,26 +1797,28 @@ outer.tabIndex = 0;
     document.getElementById('dive-btn').textContent = '🤿 Start the Dive';
     document.getElementById('dive-btn').classList.remove('active');
     if (diveRAF) cancelAnimationFrame(diveRAF);
-    diveRAF=null;legStart=0;holdUntil=0;
+    diveRAF=null;legElapsed=0;lastDiveTs=0;holdUntil=0;
     updateJourney(state.depth,zoneAt(state.depth));
   }
 
   function diveTick(ts) {
     if (!state.diving) return;
     if(holdUntil) {
-      if(ts<holdUntil){diveRAF=requestAnimationFrame(diveTick);return;}
-      holdUntil=0;legStart=0;legFromDepth=state.depth;
+      if(ts<holdUntil){lastDiveTs=ts;diveRAF=requestAnimationFrame(diveTick);return;}
+      holdUntil=0;legElapsed=0;lastDiveTs=ts;legFromDepth=state.depth;
     }
     const leg=diveLegs[diveLegIndex];
     if(!leg){stopDive();return;}
-    if (!legStart) { legStart=ts;legFromDepth=state.depth; }
-    const t=clamp((ts-legStart)/leg.duration,0,1);
+    if (!lastDiveTs) { lastDiveTs=ts;legElapsed=0;legFromDepth=state.depth; }
+    legElapsed += (ts - lastDiveTs) * state.diveSpeed;
+    lastDiveTs = ts;
+    const t=clamp(legElapsed/leg.duration,0,1);
     const eased=t*t*(3-2*t);
     setDepth(lerp(legFromDepth,leg.end,eased));
     if(t>=1){
       diveLegIndex++;
       if(diveLegIndex>=diveLegs.length){stopDive();return;}
-      holdUntil=ts+900;
+      holdUntil=ts+(900/state.diveSpeed);
     }
     diveRAF = requestAnimationFrame(diveTick);
   }
@@ -1514,7 +1826,7 @@ outer.tabIndex = 0;
   document.getElementById('dive-btn').addEventListener('click', function () {
     if (state.diving) { stopDive(); return; }
     if (state.depth >= 10900) setDepth(0);
-    state.diving=true;diveLegs=buildDiveLegs(state.depth);diveLegIndex=0;legStart=0;holdUntil=0;
+    state.diving=true;diveLegs=buildDiveLegs(state.depth);diveLegIndex=0;legElapsed=0;lastDiveTs=0;holdUntil=0;
     this.textContent = '⏸ Pause Dive';
     this.classList.add('active');
     diveRAF = requestAnimationFrame(diveTick);
@@ -1524,4 +1836,5 @@ outer.tabIndex = 0;
      INIT
   ══════════════════════════════════════════ */
   setDepth(0);
+  hasInitialized = true;
 })();

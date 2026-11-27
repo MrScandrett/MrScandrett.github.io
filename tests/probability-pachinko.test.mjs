@@ -98,4 +98,14 @@ test('buildBinValues and summarizeCounts compute EV, center share, sigma coverag
   assert.ok(Math.abs(summary.observedEV - 50) < 1e-10);
   assert.ok(summary.within1Sd > 0.65 && summary.within1Sd < 0.80);
   assert.equal(summary.fitLabel, 'Close match to model');
+  assert.ok(summary.chi2PerDf !== null && summary.chi2PerDf < 1.0);
+
+  const snap = Core.buildNormalizedSnapshot(exactCounts, 10, 'Fair 1024');
+  assert.equal(snap.rows, 10);
+  assert.equal(snap.total, 1024);
+  assert.ok(Math.abs(snap.probs[5] - exp.probs[5]) < 0.01);
+
+  const missions = Core.evaluateMissions({ predicted: true, traced: true, tilted: false, largeSample: true, testedEv: false });
+  assert.equal(missions.doneCount, 3);
+  assert.equal(missions.total, 5);
 });

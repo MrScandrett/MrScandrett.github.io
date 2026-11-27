@@ -841,15 +841,59 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var MODE_ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th'];
 
-  /* Every key (0..KEY_SPAN) whose pitch class is in the scale, not just one
-     octave — the pattern should visibly repeat across the two-octave keyboard. */
+  /* ---- Spelling: which tonic name and key signature a scale is written in ----
+     The root picker gives a pitch class; the scale is spelled from whichever
+     enharmonic tonic (C♯ or D♭) needs fewer accidentals in its key signature,
+     so A♭ major is written with four flats rather than G♯ major's eight sharps.
+     Pentatonic, blues and the minor variants borrow the key signature of their
+     parent major / natural minor, the way they are written in real music. */
+  var MN_ = window.MusicNotation;
+  var SIG_PARENT = { majorPent: 'ionian', minorPent: 'aeolian', blues: 'aeolian', harmonicMinor: 'aeolian', melodicMinor: 'aeolian' };
+  function scaleTypeByKey(key) { return PT.SCALE_TYPES.filter(function (t) { return t.key === key; })[0]; }
+  function sigScaleType(type) { return SIG_PARENT[type.key] ? scaleTypeByKey(SIG_PARENT[type.key]) : type; }
+  function letterOffsets(type) { return type.degrees.map(function (d) { return Number(d.replace(/[^0-9]/g, '')) - 1; }); }
+  function spellFrom(tonic, type) { return MN_.spellPattern(tonic, type.intervals, letterOffsets(type)); }
+  function accidentalCount(tonic, type) {
+    try { return spellFrom(tonic, type).reduce(function (n, name) { return n + Math.abs(MN_.parsePitch(name).a); }, 0); }
+    catch (e) { return Infinity; }
+  }
+  function scaleTonic(rootPC, type) {
+    var sharp = MN_.fromMidi(60 + rootPC, false);
+    if (!sharp.a) return sharp;
+    var flat = MN_.fromMidi(60 + rootPC, true), ref = sigScaleType(type);
+    /* Ties (F♯ / G♭ major, D♯ / E♭ minor) go to the flat name, except F♯. */
+    var s = accidentalCount(sharp, ref), f = accidentalCount(flat, ref);
+    return s < f || (s === f && rootPC === 6) ? sharp : flat;
+  }
+  /* Key signature as { letterIndex: accidental }, from the parent 7-note scale. */
+  function scaleKeySignature(rootPC, type) {
+    var sig = {};
+    spellFrom(scaleTonic(rootPC, type), sigScaleType(type)).forEach(function (name) {
+      var p = MN_.parsePitch(name);
+      if (p.a) sig[p.l] = p.a;
+    });
+    return sig;
+  }
+  /* One octave, tonic to tonic, spelled: ['A♭4', 'B♭4', ..., 'A♭5']. */
+  function spelledScale(rootPC, type) {
+    var tonic = scaleTonic(rootPC, type);
+    var names = spellFrom(tonic, type);
+    names.push(MN_.pitchName(tonic) + (tonic.o + 1));
+    return names;
+  }
+  function scaleDisplayName(rootPC, type) { return MN_.pitchName(scaleTonic(rootPC, type)) + ' ' + type.name; }
+
+  /* The keys of one octave run, tonic to tonic, starting on the tonic nearest the
+     left of the two-octave keyboard — the same notes the staff below shows and the
+     Play buttons sound. Each key carries its spelled name (an E♯ sits on the F key). */
   function buildScaleToneMap(rootPC, scaleType) {
     var map = {};
-    for (var idx = 0; idx <= PT.KEY_SPAN; idx++) {
-      var offset = PT.mod12(idx - rootPC);
-      var pos = scaleType.intervals.indexOf(offset);
-      if (pos !== -1) map[idx] = { label: scaleType.degrees[pos], isRoot: offset === 0, iv: offset };
-    }
+    var names = spelledScale(rootPC, scaleType);
+    var degrees = scaleType.degrees.concat([scaleType.degrees[0]]);
+    var intervals = scaleType.intervals.concat([12]);
+    intervals.forEach(function (iv, i) {
+      map[rootPC + iv] = { label: degrees[i], name: MN_.pitchName(names[i]), isRoot: iv % 12 === 0, iv: iv % 12 };
+    });
     return map;
   }
 
@@ -861,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     container.innerHTML = '';
     var kb = document.createElement('div');
-    kb.className = 'pc-keyboard' + (playable ? ' is-playable' : '');
+    kb.className = 'pc-keyboard pc-scale-keyboard' + (playable ? ' is-playable' : '');
 
     var whiteRow = document.createElement('div');
     whiteRow.className = 'pc-white-row';
@@ -877,13 +921,11 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.setAttribute('data-quality', PT.degreeQuality(tone.label));
         btn.style.setProperty('--pc-hue', rainbowHue(tone.iv));
       }
-      btn.setAttribute('aria-label', PT.noteLabel(k.absIndex) + (tone ? ', scale degree ' + tone.label : ''));
-      if (k.isC) {
-        var tag = document.createElement('span');
-        tag.className = 'pc-key-tag';
-        tag.textContent = 'C' + (4 + k.octave);
-        btn.appendChild(tag);
-      }
+      btn.setAttribute('aria-label', (tone ? tone.name : PT.noteLabel(k.absIndex)) + (tone ? ', scale degree ' + tone.label : ''));
+      var nameTag = document.createElement('span');
+      nameTag.className = 'pc-key-name';
+      nameTag.textContent = tone ? tone.name : 'CDEFGAB'.charAt([0, 2, 4, 5, 7, 9, 11].indexOf(k.pc));
+      btn.appendChild(nameTag);
       if (tone) {
         var dw = document.createElement('span');
         dw.className = 'pc-degree-num pc-degree-white';
@@ -917,7 +959,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.setAttribute('data-quality', PT.degreeQuality(tone.label));
         btn.style.setProperty('--pc-hue', rainbowHue(tone.iv));
       }
-      btn.setAttribute('aria-label', PT.noteLabel(k.absIndex) + (tone ? ', scale degree ' + tone.label : ''));
+      btn.setAttribute('aria-label', (tone ? tone.name : PT.noteLabel(k.absIndex)) + (tone ? ', scale degree ' + tone.label : ''));
       btn.style.left = ((k.leftWhiteIdx + 1) * whiteWidth - blackWidth / 2) + '%';
       btn.style.width = blackWidth + '%';
       if (playable && tone) {
@@ -933,6 +975,10 @@ document.addEventListener('DOMContentLoaded', function () {
         db.className = 'pc-degree-num pc-degree-black';
         db.textContent = tone.label;
         btn.appendChild(db);
+        var bn = document.createElement('span');
+        bn.className = 'pc-key-name pc-key-name-black';
+        bn.textContent = tone.name;
+        btn.appendChild(bn);
       }
       blackLayer.appendChild(btn);
     });
@@ -947,7 +993,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'pc-pick-btn';
-        btn.textContent = name;
+        var flatName = MN_.pitchName(MN_.fromMidi(60 + idx, true));
+        btn.textContent = flatName === MN_.pitchName(MN_.fromMidi(60 + idx)) ? flatName : MN_.pitchName(MN_.fromMidi(60 + idx)) + '/' + flatName;
         if (idx === scaleCurrentRoot) btn.classList.add('is-active');
         btn.addEventListener('click', function () {
           scaleCurrentRoot = idx;
@@ -976,24 +1023,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  function spelledScale(root, type) {
-    return window.MusicNotation.spellPattern(window.MusicNotation.fromMidi(60+root),type.intervals,type.degrees.map(function(d){return Number(d.replace(/[^0-9]/g,''))-1;}));
-  }
   function renderScales() {
     if (!scaleBoard) return;
     var toneMap = buildScaleToneMap(scaleCurrentRoot, scaleCurrentType);
     renderScaleKeyboard(scaleBoard, { toneMap: toneMap });
 
     if (scaleMeta) {
-      var name = PT.PITCHES[scaleCurrentRoot] + ' ' + scaleCurrentType.name;
-      var noteNames = spelledScale(scaleCurrentRoot, scaleCurrentType).map(function(n){return n.replace(/-?\d+$/, '');});
+      var name = scaleDisplayName(scaleCurrentRoot, scaleCurrentType);
+      var noteNames = spelledScale(scaleCurrentRoot, scaleCurrentType).slice(0, -1).map(function (n) { return MN_.pitchName(n); });
+      var sig = scaleKeySignature(scaleCurrentRoot, scaleCurrentType);
+      var sigLetters = Object.keys(sig);
+      var sigText = sigLetters.length ? sigLetters.length + ' ' + (sig[sigLetters[0]] > 0 ? 'sharp' : 'flat') + (sigLetters.length > 1 ? 's' : '') : 'no sharps or flats';
       var html = '<h3>' + name + '</h3>';
       html += '<p class="pc-enc-notes">' + scaleCurrentType.degrees.length + '-note scale</p>';
       html += '<p class="pc-enc-notes">Notes: ' + noteNames.join(' – ') + '</p>';
       html += '<p class="pc-enc-notes">Scale degrees: ' + scaleCurrentType.degrees.join(' – ') + '</p>';
+      html += '<p class="pc-enc-notes">Key signature: ' + sigText + (sigScaleType(scaleCurrentType) !== scaleCurrentType ? ' (borrowed from ' + MN_.pitchName(scaleTonic(scaleCurrentRoot, scaleCurrentType)) + ' ' + sigScaleType(scaleCurrentType).name.replace(/ \(.*\)/, '').toLowerCase() + ')' : '') + '</p>';
       if (scaleCurrentType.mode) {
-        var parentRoot = PT.mod12(scaleCurrentRoot - PT.SCALE_TYPES[0].intervals[scaleCurrentType.mode - 1]);
-        html += '<p class="pc-enc-notes">' + MODE_ORDINALS[scaleCurrentType.mode] + ' mode of the major scale — the same seven notes as <strong>' + PT.PITCHES[parentRoot] + ' Major</strong>, just starting from ' + PT.PITCHES[scaleCurrentRoot] + '.</p>';
+        var parentName = MN_.pitchName(spellFrom(scaleTonic(scaleCurrentRoot, scaleCurrentType), scaleCurrentType)[(8 - scaleCurrentType.mode) % 7]);
+        html += '<p class="pc-enc-notes">' + MODE_ORDINALS[scaleCurrentType.mode] + ' mode of the major scale — the same seven notes as <strong>' + parentName + ' Major</strong>, just starting from ' + MN_.pitchName(scaleTonic(scaleCurrentRoot, scaleCurrentType)) + '.</p>';
       }
       html += '<p class="pc-enc-formula">' + scaleCurrentType.desc + '</p>';
       scaleMeta.innerHTML = html;
@@ -1643,13 +1691,14 @@ document.addEventListener('DOMContentLoaded', function () {
     var MN = window.MusicNotation, space = 14, hs = space / 2;
     var cellW = Math.max(42, opts.cellWidth || 54);
     var spelled = notes.map(function(n) { return n.spelling ? MN.parsePitch(n.spelling) : MN.fromMidi(n.absIndex + 60); });
-    var steps = spelled.map(function(n){return n.diatonic - MN.clefs.treble.bottom;});
+    var clefName = opts.clef === 'bass' ? 'bass' : 'treble';
+    var steps = spelled.map(function(n){return n.diatonic - MN.clefs[clefName].bottom;});
     var top = Math.max(14, Math.max.apply(null, steps)) * hs + 12;
     var bottom = Math.max(5, -Math.min.apply(null, steps)) * hs + 34;
     var height = top + bottom, width = Math.max(220, 86 + notes.length * cellW + 30);
-    var svg = '<svg class="pc-staff-svg" viewBox="0 0 ' + width + ' ' + height + '" width="' + width + '" height="' + height + '" role="img" aria-label="Treble staff: ' + MN.escape(notes.map(function(n,i){return n.spelling || PT.noteLabel(n.absIndex);}).join(', ')) + '">';
+    var svg = '<svg class="pc-staff-svg" viewBox="0 0 ' + width + ' ' + height + '" width="' + width + '" height="' + height + '" role="img" aria-label="' + (clefName === 'bass' ? 'Bass' : 'Treble') + ' staff: ' + MN.escape(notes.map(function(n,i){return n.spelling || PT.noteLabel(n.absIndex);}).join(', ')) + '">';
     for(var li=0;li<5;li++) svg += '<line class="pc-staff-line" x1="8" x2="' + (width-8) + '" y1="' + (top-li*space) + '" y2="' + (top-li*space) + '"/>';
-    svg += MN.clef('treble', 16, top, hs);
+    svg += MN.clef(clefName, 16, top, hs);
     notes.forEach(function(n,i) {
       var x=84+i*cellW, step=steps[i], y=top-step*hs, pitch=spelled[i];
       svg += '<g class="pc-note-group' + (opts.currentIndex===i?' is-current':'') + (opts.onNoteClick?' is-clickable':'') + '" data-index="' + i + '">';
@@ -1743,16 +1792,58 @@ document.addEventListener('DOMContentLoaded', function () {
   if (quizNextBtn) quizNextBtn.addEventListener('click', nextQuizNote);
   nextQuizNote();
 
-  /* ---------- Scales on the staff (companion to the keyboard view above) ---------- */
+  /* ---------- Scales on the staff (companion to the keyboard view above) ----------
+     Written the way a method book prints a scale: treble clef, the key signature,
+     one whole note per scale step (no stems, no rhythm to read), and the note's
+     name in large type under each note. Accidentals appear only where a note
+     differs from the key signature (C harmonic minor's B♮, the blues scale's G♭
+     then G♮), carried through the octave like a single bar. */
+  var SHARP_ORDER = [3, 0, 4, 1, 5, 2, 6]; /* F C G D A E B */
+  var FLAT_ORDER = [6, 2, 5, 1, 4, 0, 3];  /* B E A D G C F */
+  function renderScaleStaff(container, rootPC, type) {
+    var MN = window.MusicNotation, space = 14, hs = space / 2, treble = MN.clefs.treble;
+    var names = spelledScale(rootPC, type);
+    var pitches = names.map(function (n) { return MN.parsePitch(n); });
+    var steps = pitches.map(function (p) { return p.diatonic - treble.bottom; });
+    var sig = scaleKeySignature(rootPC, type);
+    var sigLetters = Object.keys(sig).map(Number);
+    var sigSharp = sigLetters.length && sig[sigLetters[0]] > 0;
+    var order = sigSharp ? SHARP_ORDER : FLAT_ORDER;
+    var sigList = order.filter(function (l) { return sig[l]; });
+    var top = Math.max(14, Math.max.apply(null, steps) + 4) * hs; /* y of the bottom staff line */
+    var lowest = Math.min.apply(null, steps);
+    var labelY = top + Math.max(0, -lowest) * hs + 36;
+    var sigX = 62, sigW = sigList.length * space * 0.95;
+    var firstX = sigX + sigW + 40, cellW = 62;
+    var width = firstX + (pitches.length - 1) * cellW + 46, height = labelY + 16;
+    var label = scaleDisplayName(rootPC, type) + ' on the treble staff: ' + names.map(function (n) { return MN.pitchName(n); }).join(', ');
+    var svg = '<svg class="pc-staff-svg pc-scale-staff-svg" viewBox="0 0 ' + width + ' ' + height + '" width="' + width + '" height="' + height + '" role="img" aria-label="' + MN.escape(label) + '">';
+    for (var li = 0; li < 5; li++) svg += '<line class="pc-staff-line" x1="8" x2="' + (width - 8) + '" y1="' + (top - li * space) + '" y2="' + (top - li * space) + '"/>';
+    svg += MN.clef('treble', 16, top, hs);
+    sigList.forEach(function (l, i) {
+      var pos = (sigSharp ? treble.sharp : treble.flat)[order.indexOf(l)];
+      svg += '<g class="pc-key-sig">' + MN.accidental(sig[l], sigX + i * space * 0.95, top - pos * hs, space) + '</g>';
+    });
+    var current = {};
+    pitches.forEach(function (p, i) {
+      var x = firstX + i * cellW, y = top - steps[i] * hs, slot = p.l + ':' + p.o;
+      var inForce = Object.prototype.hasOwnProperty.call(current, slot) ? current[slot] : (sig[p.l] || 0);
+      svg += '<g class="pc-note-group" data-index="' + i + '">';
+      MN.ledgerSteps(steps[i]).forEach(function (st) { svg += '<line class="pc-staff-ledger" x1="' + (x - 15) + '" x2="' + (x + 15) + '" y1="' + (top - st * hs) + '" y2="' + (top - st * hs) + '"/>'; });
+      if (p.a !== inForce) svg += MN.accidental(p.a, x - 27, y, space);
+      current[slot] = p.a;
+      svg += '<g class="mn-note">' + MN.note(x, y, space, 4, false, true, '', steps[i] % 2 === 0) + '</g>';
+      svg += '<text class="pc-note-label pc-scale-note-name" x="' + x + '" y="' + labelY + '">' + MN.escape(MN.pitchName(p)) + '</text>';
+      svg += '</g>';
+    });
+    container.innerHTML = svg + '</svg>';
+  }
+
   var scaleStaffEl = document.getElementById('pcScaleStaff');
   var renderScalesBase = renderScales;
   renderScales = function () {
     renderScalesBase();
-    if (!scaleStaffEl) return;
-    var names = spelledScale(scaleCurrentRoot, scaleCurrentType);
-    var notes = scaleCurrentType.intervals.map(function(iv,i){return {absIndex:scaleCurrentRoot+iv,dur:1,spelling:names[i]};});
-    notes.push({absIndex:scaleCurrentRoot+12,dur:2,spelling:window.MusicNotation.spellPattern(window.MusicNotation.fromMidi(60+scaleCurrentRoot),[12],[7])[0]});
-    renderStaff(scaleStaffEl, notes, { showLabels: true, cellWidth: 46 });
+    if (scaleStaffEl) renderScaleStaff(scaleStaffEl, scaleCurrentRoot, scaleCurrentType);
   };
   renderScales();
 

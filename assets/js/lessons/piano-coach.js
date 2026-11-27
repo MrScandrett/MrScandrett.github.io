@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const notes = d.notes;
       const model = notes.concat(notes.slice(0,-1).reverse());
-      content.innerHTML = `<h3>${d.scale}</h3><div class="pc-coach-line"><p>${d.goal}</p></div><p>Ascending fingering · RH: ${d.rh} · LH: ${d.lh}</p><div class="coach-anchor"></div><div class="pc-builder-controls pc-recall-bar"><strong>Recall</strong><label>Notes per minute <input data-tempo type="number" min="40" max="120" value="${d.tempo}"></label><button class="pc-btn" type="button" data-model>Hear model</button><button class="pc-btn" type="button" data-stop>Stop</button><button class="pc-btn" type="button" data-restart>Restart</button></div><div class="pc-builder-controls pc-recall-keys" data-note-buttons><span role="status" aria-live="polite" data-feedback>Tap the notes in order, up and back down: note 1 of ${model.length}.</span></div>`;
+      content.innerHTML = `<h3>${d.scale}</h3><div class="pc-coach-line"><p>${d.goal}</p></div><p>Ascending fingering · RH: ${d.rh} · LH: ${d.lh}</p><div class="coach-anchor"></div><div class="pc-builder-controls pc-recall-bar"><strong>Recall</strong><label>Notes per minute <input data-tempo type="number" min="40" max="120" value="${d.tempo}"></label><button class="pc-btn" type="button" data-model>Hear model</button><button class="pc-btn" type="button" data-restart>Restart</button></div><div class="pc-builder-controls pc-recall-keys" data-note-buttons><span role="status" aria-live="polite" data-feedback>Tap the notes in order, up and back down: note 1 of ${model.length}.</span></div>`;
       const fingerControl = document.createElement('label');
       const fingerToggle = document.createElement('input'); fingerToggle.type = 'checkbox'; fingerToggle.checked = showFingers;
       fingerControl.append(fingerToggle, ' Show finger numbers (1 = thumb, 5 = little finger)');
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const handNotes = i ? notes.map(note => note.replace(/\d$/, octave => Number(octave) - 1)) : notes;
         const sequence = handNotes.concat(handNotes.slice(0, -1).reverse());
         const route = fingers.concat(fingers.slice(0, -1).reverse());
-        window.PianoTheory.renderStaff(staff, sequence.map((note, j) => ({ spelling: note, absIndex: window.MusicNotation.parsePitch(note).midi - 60, finger: showFingers ? route[j] : null })), {showLabels: true});
+        window.PianoTheory.renderStaff(staff, sequence.map((note, j) => ({ spelling: note, absIndex: window.MusicNotation.parsePitch(note).midi - 60, finger: showFingers ? route[j] : null })), {showLabels: true, clef: i ? 'bass' : 'treble'});
       });
       let position = 0;
       const feedback = content.querySelector('[data-feedback]');
@@ -75,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         input.value = Math.max(40, Math.min(120, Number(input.value) || d.tempo));
         play(model, Number(input.value));
       };
-      content.querySelector('[data-stop]').onclick = () => window.PianoAudio.stop();
       content.querySelector('[data-restart]').onclick = () => { position = 0; feedback.textContent = `Tap the notes in order: note 1 of ${model.length}.`; };
     }
     section.querySelectorAll('[data-coach-level]').forEach(button => button.addEventListener('click', () => render(button.dataset.coachLevel)));

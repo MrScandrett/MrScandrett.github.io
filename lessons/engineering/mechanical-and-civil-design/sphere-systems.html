@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Engineering an Immersive Sphere · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Use sphere geometry to estimate display area and volume, then follow the mathematics of images, air, sound, and data through a real venue case study." />
+  <meta name="description" content="Explore sphere geometry and 3D geodesic meshes, visual acuity on curved LED canvases, acoustic phased-array beamforming, and Shannon-Hartley channel capacity in an interactive venue systems studio." />
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
@@ -13,35 +13,319 @@
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header"><div class="nav-wrap"><a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a><nav class="site-nav" aria-label="Primary"><ul><li><a href="../../../index.html">Home</a></li><li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../../paths.html">Paths</a></li><li><a href="../../../showcase.html">Showcase</a></li><li><a href="../../../applications.html">Apps</a></li><li><a href="../../../library.html">Library</a></li><li><a href="../../../about.html">About</a></li></ul></nav></div></header>
-  <main id="main-content" class="ss-page">
-    <section class="ss-hero">
-      <div><p class="ss-kicker">Engineering · Math in a real venue</p><h1>Engineering an immersive sphere</h1><p class="ss-lede">Imagine designing a curved display big enough to surround an audience. How much surface must you cover? How much room is inside? Then how do images, air, and sound reach people in the seats?</p><p class="ss-source">Case study: <a href="https://www.thesphere.com/science">Sphere's “The Science”</a> and <a href="https://www.thesphere.com/studios-proxy/spherestudios/canvases">Sphere Studios' canvas descriptions</a>. Venue figures below are the company's published figures. Our simulator is an ideal sphere, not a scale model or construction drawing.</p></div>
-      <aside class="ss-mission"><span class="ss-step">Start here · 3 minutes</span><h2>Make a prediction</h2><p>If a sphere's radius doubles, what happens to its surface area? What happens to its volume?</p><div class="ss-predictions" role="group" aria-label="Prediction choices"><button type="button" data-predict="2">Both double</button><button type="button" data-predict="4">Area ×4; volume ×8</button><button type="button" data-predict="8">Both ×8</button></div><p id="ss-prediction-feedback" role="status" aria-live="polite">Choose, then use the lab to test your idea.</p></aside>
-    </section>
 
-    <section class="ss-panel" aria-labelledby="ss-lab-title">
-      <div class="ss-heading"><div><p class="ss-kicker">Lab 1 · Geometry</p><h2 id="ss-lab-title">Size the canvas</h2></div><span class="ss-tag">Grades 4–12</span></div>
-      <p>Change the radius and the share of the outside covered by a display. Compare the whole mathematical sphere with a partial curved canvas.</p>
-      <div class="ss-lab">
-        <div class="ss-controls">
-          <label for="ss-radius">Ideal sphere radius <strong><output id="ss-radius-value" for="ss-radius">60 m</output></strong></label><input id="ss-radius" type="range" min="20" max="120" value="60" step="5" />
-          <label for="ss-coverage">Illustrative display coverage <strong><output id="ss-coverage-value" for="ss-coverage">60%</output></strong></label><input id="ss-coverage" type="range" min="10" max="100" value="60" step="5" />
-          <label for="ss-detail">Triangle detail <strong><output id="ss-detail-value" for="ss-detail">8 bands</output></strong></label><input id="ss-detail" type="range" min="4" max="16" value="8" step="2" />
-          <button id="ss-double" type="button">Double the radius</button><button id="ss-reset" type="button" class="ss-quiet">Reset model</button>
-          <p class="ss-note">The drawing rescales to fit; its highlighted arc is symbolic, not an area measurement. The triangles suggest a surface mesh. They do not calculate loads or replace finite element analysis.</p>
-        </div>
-        <div class="ss-visual"><svg id="ss-graphic" viewBox="0 0 440 340" role="img" aria-labelledby="ss-graphic-title ss-graphic-desc"><title id="ss-graphic-title">Illustrative sphere with a triangular surface mesh</title><desc id="ss-graphic-desc">A wireframe sphere with its display coverage highlighted. Radius, coverage, and triangle detail follow the controls.</desc><defs><clipPath id="ss-clip"><circle cx="220" cy="166" r="125"/></clipPath><radialGradient id="ss-fill"><stop stop-color="#225a77"/><stop offset="1" stop-color="#10283f"/></radialGradient></defs><circle cx="220" cy="166" r="125" fill="url(#ss-fill)"/><g id="ss-mesh" clip-path="url(#ss-clip)"></g><path id="ss-cover" fill="none" stroke="#f8bf67" stroke-width="12" stroke-linecap="round"/><circle cx="220" cy="166" r="125" fill="none" stroke="#a4d5e4" stroke-width="2"/><line x1="220" y1="166" x2="345" y2="166" stroke="#fff" stroke-width="2"/><text x="270" y="154" fill="#fff" font-size="14">r</text><text x="220" y="322" text-anchor="middle" fill="#c8e4ea" font-size="13">idealized cross-section · mesh is illustrative</text></svg></div>
+  <nav class="ss-topbar" aria-label="Lesson navigation">
+    <div class="ss-topbar-inner">
+      <a class="ss-back-link" href="../../../steam-lessons.html#module-engineering">← Engineering</a>
+      <div class="ss-subnav">
+        <a href="#predict">Predict</a>
+        <a href="#lab-geometry">Geometry</a>
+        <a href="#lab-optics">Optics</a>
+        <a href="#lab-acoustics">Acoustics</a>
+        <a href="#lab-channel">Channel</a>
+        <a href="#systems-map">Systems Map</a>
+        <a href="#quiz">Quiz</a>
       </div>
-      <div class="ss-results" aria-live="polite"><div><span>Whole surface · 4πr²</span><strong id="ss-area"></strong></div><div><span>Selected share of surface</span><strong id="ss-covered"></strong></div><div><span>Whole volume · ⁴⁄₃πr³</span><strong id="ss-volume"></strong></div></div>
-      <div data-formula="sphere-area">A = 4πr²</div>
-      <div data-formula="sphere-volume">V = (4/3)πr³</div>
-      <p class="ss-note"><strong>Units check:</strong> surface area is in m²; volume is in m³. Sphere's published <strong>580,000 ft² exterior</strong> and <strong>160,000 ft² interior screen</strong> describe different surfaces. Neither value is the volume of the venue, and neither can be found from this ideal sphere without actual geometry and coverage data.</p>
-      <details class="ss-teacher"><summary>Compare, explain, extend</summary><ol><li>Set radius to 40 m and record area and volume. Double it to 80 m. Which ratio matches your prediction?</li><li>Keep radius fixed and halve coverage. Which output changes? Why?</li><li>Sketch why triangles are useful for approximating a curved surface. What information would an engineer need before claiming it is strong?</li></ol><p><strong>Teacher route:</strong> Grades 4–6 compare doubling and square/cube units; grades 7–9 calculate with π; grades 10–12 discuss discretization, error, and the gap between geometry and a finite element stress model.</p></details>
+      <span class="ss-mission-pill" id="ss-mission-pill" aria-live="polite">Missions: 0/5</span>
+    </div>
+  </nav>
+
+  <main id="main-content" class="ss-shell" data-glossary-root>
+    <section class="ss-hero" id="predict" aria-labelledby="ss-title">
+      <div class="ss-hero-copy">
+        <p class="ss-kicker">Engineering · Systems Design · Real Venue Case Study</p>
+        <h1 id="ss-title">Engineering an immersive sphere</h1>
+        <p class="ss-lede">Imagine designing a curved display big enough to surround an audience. How much surface must you tile? How close can seats get before pixels show? How do you aim sound cleanly and stream massive video feeds?</p>
+        <div class="ss-meta-row">
+          <span class="ss-meta-badge">Grades 4–12</span>
+          <span class="ss-meta-badge">4 Interactive Labs</span>
+          <span class="ss-meta-badge">35–50 minutes</span>
+        </div>
+        <p class="ss-source">Case study: <a href="https://www.thesphere.com/science">Sphere's “The Science”</a> and <a href="https://www.thesphere.com/studios-proxy/spherestudios/canvases">Sphere Studios' canvas descriptions</a>. Venue figures below are the company's published figures. Our simulators model idealized physics and geometry, not construction drawings or proprietary calculations.</p>
+      </div>
+
+      <aside class="ss-mission" aria-labelledby="ss-predict-heading">
+        <div>
+          <span class="ss-step">Start here · 3 minutes</span>
+          <h2 id="ss-predict-heading">Make a prediction</h2>
+          <p>If a sphere's radius doubles, what happens to its surface area? What happens to its interior volume?</p>
+          <div class="ss-predictions" role="group" aria-label="Prediction choices">
+            <button type="button" data-predict="2">Both double (×2)</button>
+            <button type="button" data-predict="4">Area ×4; volume ×8</button>
+            <button type="button" data-predict="8">Both ×8</button>
+          </div>
+        </div>
+        <p id="ss-prediction-feedback" role="status" aria-live="polite">Choose a prediction, then test it in Lab 1.</p>
+      </aside>
     </section>
 
-    <section class="ss-panel" aria-labelledby="ss-data-title"><div class="ss-heading"><div><p class="ss-kicker">Lab 2 · Information</p><h2 id="ss-data-title">How much can one channel carry?</h2></div><span class="ss-tag">Grades 9–12</span></div><p>Shannon–Hartley sets a theoretical capacity for a noisy channel: <strong>C = B log₂(1 + S/N)</strong>. Here B is bandwidth and S/N is the signal-to-noise power ratio. Try doubling bandwidth, then doubling the ratio.</p><div class="ss-channel"><div class="ss-controls"><label for="ss-bandwidth">Bandwidth <strong><output id="ss-bandwidth-value" for="ss-bandwidth">10 MHz</output></strong></label><input id="ss-bandwidth" type="range" min="1" max="40" value="10" step="1"/><label for="ss-snr">Signal-to-noise ratio <strong><output id="ss-snr-value" for="ss-snr">10:1</output></strong></label><input id="ss-snr" type="range" min="1" max="40" value="10" step="1"/><button id="ss-data-reset" type="button" class="ss-quiet">Reset channel</button></div><div class="ss-channel-readout"><span>Ideal upper bound</span><strong id="ss-capacity" aria-live="polite"></strong><div class="ss-bar-track"><div id="ss-capacity-bar"></div></div><p>At fixed S/N, doubling bandwidth doubles this bound. Doubling S/N gives a smaller gain because the ratio sits inside a logarithm.</p></div></div><p class="ss-note">This models one idealized channel with additive white Gaussian noise. It does not predict a venue's Wi-Fi throughput, number of simultaneous users, or latency. Formula reference: <a href="https://ntrs.nasa.gov/api/citations/20150002090/downloads/20150002090.pdf">NASA technical report, equation 1</a>.</p></section>
+    <section class="ss-missions" id="ss-mission-strip" aria-label="Engineering discovery missions"></section>
 
-    <section class="ss-panel" aria-labelledby="ss-map-title"><div class="ss-heading"><div><p class="ss-kicker">Choose the next investigation</p><h2 id="ss-map-title">Where the other formulas belong</h2></div></div><p>Each route groups formulas around a question students can investigate. The named formulas come from <a href="https://www.thesphere.com/science">Sphere's overview</a>; the explanations here describe what the mathematics models, without claiming access to its engineering calculations.</p>
+    <!-- ═════════ Lab 1: Geometry & 3D Geodesic Shell ═════════ -->
+    <section class="ss-panel" id="lab-geometry" aria-labelledby="ss-lab-title">
+      <div class="ss-heading">
+        <div>
+          <p class="ss-kicker">Lab 1 · Geometry &amp; Geodesic Shell</p>
+          <h2 id="ss-lab-title">Size the sphere and triangulate the shell</h2>
+        </div>
+        <span class="ss-tag">Grades 4–12</span>
+      </div>
+      <p>Spin the 3D geodesic shell, adjust the radius and spherical-cap display coverage, and raise the subdivision frequency to see how flat triangles converge toward a smooth mathematical sphere.</p>
+
+      <div class="ss-lab-grid">
+        <div class="ss-controls">
+          <div class="ss-control-group">
+            <span class="ss-group-label">Scale Presets</span>
+            <div class="ss-chip-row" role="group" aria-label="Venue scale presets">
+              <button type="button" class="ss-chip" data-venue="classroom-dome">Planetarium (10 m)</button>
+              <button type="button" class="ss-chip" data-venue="imax-dome">Dome Theater (25 m)</button>
+              <button type="button" class="ss-chip" data-venue="sphere-ideal">Ideal Arena (68 m)</button>
+              <button type="button" class="ss-chip" data-venue="mega-dome">Mega Shell (110 m)</button>
+            </div>
+          </div>
+
+          <div class="ss-control-group">
+            <span class="ss-group-label">3D View &amp; Units</span>
+            <div class="ss-chip-row" role="group" aria-label="3D view mode">
+              <button type="button" class="ss-chip" data-view="exosphere" aria-pressed="true">Exosphere</button>
+              <button type="button" class="ss-chip" data-view="interior" aria-pressed="false">Interior Bowl</button>
+              <button type="button" class="ss-chip" data-view="cutaway" aria-pressed="false">Cross-Section</button>
+            </div>
+            <div class="ss-chip-row" role="group" aria-label="Measurement units">
+              <button type="button" class="ss-chip" data-unit="metric" aria-pressed="true">Metric (m / m²)</button>
+              <button type="button" class="ss-chip" data-unit="imperial" aria-pressed="false">Imperial (ft / ft²)</button>
+            </div>
+          </div>
+
+          <label for="ss-radius">Ideal sphere radius <output id="ss-radius-value" for="ss-radius">60 m</output></label>
+          <input id="ss-radius" type="range" min="10" max="120" value="60" step="5" />
+
+          <label for="ss-coverage">Display spherical-cap coverage <output id="ss-coverage-value" for="ss-coverage">60%</output></label>
+          <input id="ss-coverage" type="range" min="10" max="100" value="60" step="5" />
+
+          <label for="ss-detail">Geodesic subdivision <output id="ss-detail-value" for="ss-detail">Freq 3 (180 Δ)</output></label>
+          <input id="ss-detail" type="range" min="1" max="5" value="3" step="1" />
+
+          <div class="ss-btn-row">
+            <button id="ss-double" type="button" class="ss-btn ss-btn-primary">Double the radius</button>
+            <button id="ss-spin" type="button" class="ss-btn" aria-pressed="true">Pause spin</button>
+            <button id="ss-reset" type="button" class="ss-btn ss-btn-quiet">Reset model</button>
+          </div>
+          <p class="ss-note">Drag or use arrow keys on the 3D shell to orbit. Geodesic triangulation measures geometric chord approximation only—it does not compute structural loads or replace finite element analysis.</p>
+        </div>
+
+        <div class="ss-sim-frame" data-night-keep>
+          <canvas id="ss-sphere-canvas" width="620" height="400" tabindex="0" role="img" aria-label="Interactive 3D geodesic sphere mesh with spherical-cap display highlighting and radius vector. Drag or use arrow keys to rotate."></canvas>
+          <canvas id="ss-scaling-canvas" width="620" height="170" role="img" aria-label="Square-cube scaling curves comparing r squared surface area growth and r cubed interior volume growth."></canvas>
+          <div class="ss-sim-caption">
+            <span id="ss-mesh-caption">180 faces · 272 struts · geometric chord error 4.6%</span>
+            <span>Drag 3D shell or press ← ↑ → ↓ to orbit</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ss-double-banner" id="ss-double-banner" hidden aria-live="polite"></div>
+
+      <div class="ss-results" aria-live="polite">
+        <div class="ss-result-card"><span>Whole surface · 4πr²</span><strong id="ss-area"></strong><small id="ss-diameter-note"></small></div>
+        <div class="ss-result-card"><span>Active spherical cap</span><strong id="ss-covered"></strong><small id="ss-cap-angle"></small></div>
+        <div class="ss-result-card"><span>Whole volume · ⁴⁄₃πr³</span><strong id="ss-volume"></strong><small>Scales with r³</small></div>
+        <div class="ss-result-card"><span>Geodesic approximation</span><strong id="ss-mesh-stats"></strong><small id="ss-strut-note"></small></div>
+      </div>
+
+      <div class="ss-formula-row">
+        <div data-formula="sphere-area">A = 4πr²</div>
+        <div data-formula="sphere-volume">V = (4/3)πr³</div>
+      </div>
+
+      <p class="ss-note"><strong>Units check:</strong> surface area is in m² (or ft²); volume is in m³ (or ft³). Sphere's published <strong>580,000 ft² exterior</strong> and <strong>160,000 ft² interior screen</strong> describe different surfaces. Neither value is the volume of the venue, and neither can be found from this ideal sphere without actual geometry and coverage data.</p>
+
+      <details class="ss-teacher">
+        <summary>Compare, explain, extend</summary>
+        <ol>
+          <li>Set radius to 40 m and note area and volume. Click <strong>Double the radius</strong> (to 80 m). Verify that area jumps ×4 while volume jumps ×8.</li>
+          <li>Keep radius fixed and halve coverage from 80% to 40%. Which outputs change and which stay constant? Why?</li>
+          <li>Compare geodesic frequency 1 (20 triangles) with frequency 5 (500 triangles). Watch the geometric chord error shrink, then explain what additional engineering inputs (steel grade, wind/seismic loads, nodal joint stiffness) are still missing before building.</li>
+        </ol>
+        <p><strong>Teacher route:</strong> Grades 4–6 compare doubling and square/cube units; grades 7–9 calculate with π and spherical caps; grades 10–12 analyze mesh discretization error and finite element modeling boundaries.</p>
+      </details>
+    </section>
+
+    <!-- ═════════ Lab 2: Optics & Visual Acuity ═════════ -->
+    <section class="ss-panel" id="lab-optics" aria-labelledby="ss-optics-title">
+      <div class="ss-heading">
+        <div>
+          <p class="ss-kicker">Lab 2 · Optics &amp; Visual Acuity</p>
+          <h2 id="ss-optics-title">When do LED pixels disappear to the eye?</h2>
+        </div>
+        <span class="ss-tag">Grades 7–12</span>
+      </div>
+      <p>A 20/20 human eye resolves details down to about <strong>1 arcminute</strong> (1/60 of a degree). Adjust seat distance and LED pixel pitch to see whether a viewer sees an invisible continuous canvas or a visible pixel grid.</p>
+
+      <div class="ss-lab-grid">
+        <div class="ss-controls">
+          <div class="ss-control-group">
+            <span class="ss-group-label">Screen Pitch Presets</span>
+            <div class="ss-chip-row" role="group" aria-label="Display pitch presets">
+              <button type="button" class="ss-chip" data-display="fine-interior">Fine Indoor (4 mm)</button>
+              <button type="button" class="ss-chip" data-display="sphere-interior">Curved Venue (9 mm)</button>
+              <button type="button" class="ss-chip" data-display="arena-board">Arena Wall (16 mm)</button>
+              <button type="button" class="ss-chip" data-display="exosphere-grid">Exterior (35 mm)</button>
+            </div>
+          </div>
+
+          <label for="ss-distance">Seat viewing distance <output id="ss-distance-value" for="ss-distance">35 m</output></label>
+          <input id="ss-distance" type="range" min="5" max="80" value="35" step="1" />
+
+          <label for="ss-pitch">LED pixel pitch <output id="ss-pitch-value" for="ss-pitch">10 mm</output></label>
+          <input id="ss-pitch" type="range" min="2" max="40" value="10" step="1" />
+
+          <label for="ss-fov">Horizontal screen wrap <output id="ss-fov-value" for="ss-fov">160°</output></label>
+          <input id="ss-fov" type="range" min="90" max="200" value="160" step="5" />
+
+          <div class="ss-btn-row">
+            <button id="ss-optics-reset" type="button" class="ss-btn ss-btn-quiet">Reset optics</button>
+          </div>
+          <p class="ss-note">Angular pixel size follows θ = 2 arctan(p / 2d). Real cinema camera lenses also rely on refraction (Snell's law) and dispersion models to avoid distortion at wide fields of view.</p>
+        </div>
+
+        <div class="ss-sim-frame" data-night-keep>
+          <canvas id="ss-acuity-canvas" width="700" height="300" role="img" aria-label="Seating geometry diagram on the left and simulated human-eye LED pixel perception on the right."></canvas>
+          <div class="ss-sim-caption">
+            <span id="ss-optics-caption">Seamless threshold: 1.00 arcmin (60 pixels per degree)</span>
+            <span>Simulated RGB pitch response at seat distance</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ss-results" aria-live="polite">
+        <div class="ss-result-card"><span>Angular pixel size</span><strong id="ss-arcmin"></strong><small id="ss-ppd"></small></div>
+        <div class="ss-result-card"><span>Visual acuity verdict</span><strong id="ss-acuity-verdict"></strong><small>20/20 limit ≈ 1.0 arcmin</small></div>
+        <div class="ss-result-card"><span>Min seamless distance</span><strong id="ss-min-dist"></strong><small>To reach 1.0 arcmin</small></div>
+        <div class="ss-result-card"><span>Est. active canvas</span><strong id="ss-megapixels"></strong><small>Uses Lab 1 active surface</small></div>
+      </div>
+
+      <p class="ss-eq-inline">Angular pixel pitch: θ = 2 · arctan(p / 2d) · (180/π) · 60 arcmin</p>
+      <div class="ss-formula-row">
+        <div data-formula="snells-law">n₁ sin θ₁ = n₂ sin θ₂</div>
+      </div>
+    </section>
+
+    <!-- ═════════ Lab 3: Acoustics & Phased-Array Beamforming ═════════ -->
+    <section class="ss-panel" id="lab-acoustics" aria-labelledby="ss-acoustics-title">
+      <div class="ss-heading">
+        <div>
+          <p class="ss-kicker">Lab 3 · Acoustics &amp; Wavefront Control</p>
+          <h2 id="ss-acoustics-title">How do you aim sound inside a curved dome?</h2>
+        </div>
+        <span class="ss-tag">Grades 8–12</span>
+      </div>
+      <p>A bare concave sphere focuses echoes back toward the center ("whispering gallery" effect). Switch from unfocused reflection to a <strong>phased speaker array</strong> that delays drivers to steer coherent wavefronts toward target seats.</p>
+
+      <div class="ss-lab-grid">
+        <div class="ss-controls">
+          <div class="ss-control-group">
+            <span class="ss-group-label">Acoustic Mode</span>
+            <div class="ss-chip-row" role="group" aria-label="Acoustic propagation mode">
+              <button type="button" class="ss-chip" data-acoustic-mode="whispering" aria-pressed="false">Concave Echo</button>
+              <button type="button" class="ss-chip" data-acoustic-mode="steered" aria-pressed="true">Steered Beam</button>
+              <button type="button" class="ss-chip" data-acoustic-mode="dual" aria-pressed="false">Dual-Zone Split</button>
+            </div>
+          </div>
+
+          <label for="ss-steer">Target beam angle <output id="ss-steer-value" for="ss-steer">0°</output></label>
+          <input id="ss-steer" type="range" min="-50" max="50" value="0" step="5" />
+
+          <label for="ss-drivers">Active array drivers <output id="ss-drivers-value" for="ss-drivers">10 drivers</output></label>
+          <input id="ss-drivers" type="range" min="2" max="16" value="10" step="1" />
+
+          <label for="ss-freq">Signal frequency <output id="ss-freq-value" for="ss-freq">850 Hz</output></label>
+          <input id="ss-freq" type="range" min="250" max="2000" value="850" step="50" />
+
+          <div class="ss-btn-row">
+            <button id="ss-wave-play" type="button" class="ss-btn ss-btn-primary" aria-pressed="true">Pause waves</button>
+            <button id="ss-acoustics-reset" type="button" class="ss-btn ss-btn-quiet">Reset acoustics</button>
+          </div>
+          <p class="ss-note">Wave interference uses speed of sound v = 343 m/s across a 6 m array aperture. When driver spacing exceeds half a wavelength (λ/2), extra side lobes (spatial aliasing) appear.</p>
+        </div>
+
+        <div class="ss-sim-frame" data-night-keep>
+          <canvas id="ss-acoustics-canvas" width="700" height="340" role="img" aria-label="2D Huygens-Fresnel acoustic wavefront interference map inside a curved auditorium and angular beam response curve."></canvas>
+          <div class="ss-sim-caption">
+            <span id="ss-acoustics-caption">Constructive wavefronts align at target angle θ₀</span>
+            <span>Bright amber/cyan = constructive pressure; dark = cancellation</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ss-results ss-results-3" aria-live="polite">
+        <div class="ss-result-card"><span>Wavelength · λ = v / f</span><strong id="ss-wavelength"></strong><small>Half-wavelength limit λ/2</small></div>
+        <div class="ss-result-card"><span>Main beamwidth</span><strong id="ss-beamwidth"></strong><small>Half-power (-3 dB) cone</small></div>
+        <div class="ss-result-card"><span>Array discipline</span><strong id="ss-array-status"></strong><small id="ss-spacing-note"></small></div>
+      </div>
+
+      <div class="ss-formula-row">
+        <div data-formula="wave-frequency">v = fλ</div>
+      </div>
+    </section>
+
+    <!-- ═════════ Lab 4: Information & Shannon-Hartley Channel ═════════ -->
+    <section class="ss-panel" id="lab-channel" aria-labelledby="ss-data-title">
+      <div class="ss-heading">
+        <div>
+          <p class="ss-kicker">Lab 4 · Information &amp; Bandwidth</p>
+          <h2 id="ss-data-title">How much can one channel carry?</h2>
+        </div>
+        <span class="ss-tag">Grades 9–12</span>
+      </div>
+      <p>Shannon–Hartley sets a theoretical upper bound for a noisy channel: <strong>C = B log₂(1 + S/N)</strong>. Here B is bandwidth and S/N is the signal-to-noise power ratio. Compare doubling bandwidth against doubling S/N.</p>
+
+      <div class="ss-lab-grid">
+        <div class="ss-controls">
+          <label for="ss-bandwidth">Bandwidth (B) <output id="ss-bandwidth-value" for="ss-bandwidth">10 MHz</output></label>
+          <input id="ss-bandwidth" type="range" min="1" max="40" value="10" step="1" />
+
+          <label for="ss-snr">Signal-to-noise ratio (S/N) <output id="ss-snr-value" for="ss-snr">10:1</output></label>
+          <input id="ss-snr" type="range" min="1" max="40" value="10" step="1" />
+
+          <div class="ss-btn-row">
+            <button id="ss-compare-b" type="button" class="ss-btn">Test 2× Bandwidth</button>
+            <button id="ss-compare-snr" type="button" class="ss-btn">Test 2× S/N</button>
+            <button id="ss-data-reset" type="button" class="ss-btn ss-btn-quiet">Reset channel</button>
+          </div>
+          <p class="ss-note">At fixed S/N, doubling bandwidth doubles this upper bound (+100%). Doubling S/N gives a much smaller gain because S/N sits inside a logarithm.</p>
+        </div>
+
+        <div class="ss-sim-frame" data-night-keep>
+          <canvas id="ss-channel-canvas" width="640" height="250" role="img" aria-label="Shannon-Hartley curve comparing linear capacity growth with bandwidth versus logarithmic diminishing returns from higher signal-to-noise ratio."></canvas>
+          <div class="ss-channel-meter">
+            <div class="ss-channel-meter-head">
+              <span>Ideal upper bound (C)</span>
+              <strong id="ss-capacity" aria-live="polite">34.6 Mb/s</strong>
+            </div>
+            <div class="ss-bar-track"><div id="ss-capacity-bar"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ss-results ss-results-3" aria-live="polite">
+        <div class="ss-result-card"><span>SNR in decibels</span><strong id="ss-snr-db"></strong><small>10 · log₁₀(S/N)</small></div>
+        <div class="ss-result-card"><span>Spectral efficiency</span><strong id="ss-spectral-eff"></strong><small>bits / s / Hz</small></div>
+        <div class="ss-result-card"><span>2× B vs. 2× S/N gain</span><strong id="ss-double-compare"></strong><small id="ss-streams-note"></small></div>
+      </div>
+
+      <p class="ss-note">This models one idealized channel with additive white Gaussian noise (AWGN). It does not predict a venue's Wi-Fi throughput, number of simultaneous users, or latency. Formula reference: <a href="https://ntrs.nasa.gov/api/citations/20150002090/downloads/20150002090.pdf">NASA technical report, equation 1</a>.</p>
+    </section>
+
+    <!-- ═════════ Systems Architecture & Formula Map ═════════ -->
+    <section class="ss-panel" id="systems-map" aria-labelledby="ss-map-title">
+      <div class="ss-heading">
+        <div>
+          <p class="ss-kicker">Choose the next investigation</p>
+          <h2 id="ss-map-title">Where the other formulas belong</h2>
+        </div>
+      </div>
+      <p>Each route groups formulas around a question students can investigate. The named formulas come from <a href="https://www.thesphere.com/science">Sphere's overview</a>; the explanations here describe what the mathematics models, without claiming access to its engineering calculations.</p>
       <div class="ss-routes">
         <article><span>01 · Structure</span><h3>Will the shell stand?</h3><p><strong>Area, volume, π</strong> set the geometric scale. <strong>Geodesic triangulation</strong> approximates a curved skin; the <strong>law of sines</strong> helps solve triangle angles. A <strong>finite element model</strong> divides a structure into pieces to estimate displacement and stress under specified loads. A <strong>constitutive stress–strain relation</strong> supplies material behavior; it is not an airflow limit.</p><a href="bridge-over-troubled-water.html">Test a structure →</a></article>
         <article><span>02 · Image</span><h3>How does an image wrap?</h3><p><strong>Stereographic projection</strong> and other lens projections map directions to a flat image; spherical coordinates map that image to a curved screen. <strong>Visual acuity</strong> helps judge whether pixels are resolvable at a seat. <strong>Snell's law</strong> describes refraction through lens surfaces, the <strong>Sellmeier equation</strong> models how refractive index changes with wavelength in a material, and a <strong>Laplacian</strong> highlights rapid image changes such as edges. Focusing also needs lens geometry and distance.</p><a href="../../applied-physics-materials/optics.html">Explore refraction →</a></article>
@@ -50,9 +334,40 @@
       </div>
       <p class="ss-note">For deeper study: <a href="../../technical-elements/audio-engineering/room-acoustics.html">room acoustics</a>, <a href="../../physics/waves-and-sound/digital-signal-processing.html">digital signal processing</a>, <a href="../../mathematics/geometry-and-trigonometry/pi.html">π and circles</a>, and <a href="../../mathematics/geometry-and-trigonometry/soh-cah-toa.html">trigonometry</a>.</p>
     </section>
-    <section class="ss-panel ss-exit"><h2>Exit ticket</h2><p>A design team doubles the radius of its ideal shell but keeps display coverage at 60%. Explain what happens to display area and interior volume. Name one reason your prediction might differ from an actual venue.</p><button id="ss-reveal" type="button" aria-expanded="false" aria-controls="ss-answer">Show reasoning</button><p id="ss-answer" hidden>Area becomes four times as large because radius is squared; volume becomes eight times as large because radius is cubed. A real venue is not a complete mathematical sphere, and actual display coverage and structural dimensions must be measured.</p></section>
+
+    <!-- ═════════ Engineering Mastery Check ═════════ -->
+    <section class="ss-panel" id="quiz" aria-labelledby="ss-quiz-title">
+      <div class="ss-heading">
+        <div>
+          <p class="ss-kicker">Check your thinking</p>
+          <h2 id="ss-quiz-title">Engineering mastery check</h2>
+        </div>
+        <span class="ss-tag">6 Questions</span>
+      </div>
+      <p>Use what you measured in Labs 1–4 to answer each question, then check your score.</p>
+      <div class="ss-quiz-grid" id="ss-quiz-list"></div>
+      <div class="ss-quiz-actions">
+        <button id="ss-check-quiz" type="button" class="ss-btn ss-btn-primary">Check answers</button>
+        <button id="ss-reset-quiz" type="button" class="ss-btn ss-btn-quiet">Reset quiz</button>
+        <span id="ss-quiz-feedback" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <!-- ═════════ Exit Ticket ═════════ -->
+    <section class="ss-panel ss-exit" id="exit-ticket">
+      <h2>Exit ticket</h2>
+      <p>A design team doubles the radius of its ideal shell but keeps display coverage at 60%. Explain what happens to display area and interior volume. Name one reason your prediction might differ from an actual venue.</p>
+      <button id="ss-reveal" type="button" aria-expanded="false" aria-controls="ss-answer">Show reasoning</button>
+      <p id="ss-answer" hidden>Area becomes four times as large because radius is squared; volume becomes eight times as large because radius is cubed. A real venue is not a complete mathematical sphere, and actual display coverage and structural dimensions must be measured.</p>
+    </section>
   </main>
-  <script src="../../../assets/js/theme-registry.js"></script><script src="../../../assets/js/nav-mobile.js"></script><script src="../../../assets/js/photo-lightbox.js"></script><script src="../../../assets/js/lesson-print-button.js"></script><script src="../../../assets/js/lessons/sphere-systems.js"></script>
+
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/lessons/sphere-systems-model.js"></script>
+  <script src="../../../assets/js/lessons/sphere-systems.js"></script>
   <script src="../../../assets/js/formula-explainer.js"></script>
 </body>
 </html>

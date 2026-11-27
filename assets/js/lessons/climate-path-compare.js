@@ -4,16 +4,18 @@
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const status = document.getElementById('climate-p3-status');
+  const hoverEl = document.getElementById('climate-p3-hover');
 
   const paths = {
-    preindustrial: { name: 'Pre-industrial reference', start: 0.0, end: 0.15, color: '#9fb7c8', unc: 0.15, tau: 2.2 },
-    today:         { name: 'Current trajectory',       start: 1.25, end: 2.7, color: '#ffb454', unc: 0.45, tau: 2.0 },
+    preindustrial: { name: 'Pre-industrial reference', start: 0.0,  end: 0.15, color: '#9fb7c8', unc: 0.15, tau: 2.2 },
+    today:         { name: 'Current trajectory',       start: 1.25, end: 2.7,  color: '#ffb454', unc: 0.45, tau: 2.0 },
     paris:         { name: 'Paris-aligned',            start: 1.25, end: 1.55, color: '#59d4ff', unc: 0.28, tau: 2.6 },
-    bau:           { name: 'High emissions',           start: 1.25, end: 4.4, color: '#ff667d', unc: 0.70, tau: 1.6 }
+    bau:           { name: 'High emissions',           start: 1.25, end: 4.4,  color: '#ff667d', unc: 0.70, tau: 1.6 }
   };
 
   let selected = 'today';
-  let customLive = null; // { anomaly, ocean, isCustom }
+  let customLive = null; // { anomaly, ocean, isCustom, label }
+  let hoverT = null; // 0..1 across 2020..2100
 
   function curve(start, end, t, tau) {
     const rate = tau || 2.1;
@@ -21,9 +23,17 @@
     return start + (end - start) * lag;
   }
 
-  function yForTemp(degC, h, pad) {
-    // Map -0.5°C .. 5.0°C onto chart vertical span
-    const minT = 0, maxT = 5;
+  function getBounds() {
+    let minT = 0;
+    let maxT = 5;
+    if (customLive && customLive.isCustom) {
+      if (customLive.anomaly < 0) minT = Math.min(-3, Math.floor(customLive.anomaly - 0.5));
+      if (customLive.anomaly > 4.6) maxT = Math.min(12, Math.ceil(customLive.anomaly + 0.8));
+    }
+    return { minT, maxT };
+  }
+
+  function yForTemp(degC, h, pad, minT, maxT) {
     return h - pad - ((degC - minT) / (maxT - minT)) * (h - pad * 2);
   }
 
@@ -42,9 +52,20 @@
     return { w: cssW, h: cssH };
   }
 
+  function customCurveParams() {
+    if (!customLive || !customLive.isCustom) return null;
+    const customEnd = Math.max(-10, Math.min(10, customLive.anomaly));
+    const customStart = customEnd < 0 || selected === 'preindustrial' ? 0.0 : 1.25;
+    const customTau = 2.8 - (customLive.ocean / 100) * 1.4;
+    return { start: customStart, end: customEnd, tau: customTau };
+  }
+
   function draw() {
     const { w, h } = updateDimensions();
-    const p = paths[selected], pad = 42;
+    const p = paths[selected];
+    const pad = 44;
+    const { minT, maxT } = getBounds();
+
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#040b18';
     ctx.fillRect(0, 0, w, h);
@@ -54,22 +75,34 @@
     ctx.fillStyle = '#b9ccdf';
     ctx.font = '12px system-ui, sans-serif';
     ctx.lineWidth = 1;
-    for (let i = 0; i <= 5; i++) {
-      const tempVal = 5 - i;
-      const y = yForTemp(tempVal, h, pad);
+    const step = maxT - minT > 7 ? 2 : 1;
+    for (let tempVal = Math.ceil(minT); tempVal <= Math.floor(maxT); tempVal += step) {
+      const y = yForTemp(tempVal, h, pad, minT, maxT);
       ctx.beginPath();
       ctx.moveTo(pad, y);
       ctx.lineTo(w - pad, y);
       ctx.stroke();
-      ctx.fillText(tempVal + '°C', 6, y + 4);
+      ctx.fillText((tempVal > 0 ? '+' : '') + tempVal + '°C', 4, y + 4);
+    }
+
+    if (minT < 0) {
+      const y0 = yForTemp(0, h, pad, minT, maxT);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.beginPath();
+      ctx.moveTo(pad, y0);
+      ctx.lineTo(w - pad, y0);
+      ctx.stroke();
+      ctx.restore();
     }
 
     // Paris 1.5°C & 2.0°C threshold guide lines
     [
-      { temp: 1.5, label: '1.5°C Paris goal', color: 'rgba(89, 212, 255, 0.38)' },
-      { temp: 2.0, label: '2.0°C guardband',  color: 'rgba(255, 209, 102, 0.35)' }
+      { temp: 1.5, label: '1.5°C Paris goal', color: 'rgba(89, 212, 255, 0.42)' },
+      { temp: 2.0, label: '2.0°C guardband',  color: 'rgba(255, 209, 102, 0.38)' }
     ].forEach(ref => {
-      const ry = yForTemp(ref.temp, h, pad);
+      if (ref.temp < minT || ref.temp > maxT) return;
+      const ry = yForTemp(ref.temp, h, pad, minT, maxT);
       ctx.save();
       ctx.setLineDash([4, 4]);
       ctx.strokeStyle = ref.color;
@@ -90,20 +123,38 @@
       ctx.fillText(String(2020 + i * 20), pad + (w - pad * 2) * i / 4 - 14, h - 12);
     }
 
+    // Faint reference context lines for all non-selected paths
+    Object.entries(paths).forEach(([key, path]) => {
+      if (key === selected) return;
+      ctx.save();
+      ctx.globalAlpha = 0.28;
+      ctx.strokeStyle = path.color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i = 0; i <= 80; i++) {
+        const t = i / 80;
+        const x = pad + t * (w - pad * 2);
+        const y = yForTemp(curve(path.start, path.end, t, path.tau), h, pad, minT, maxT);
+        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    });
+
     // Shaded uncertainty plume for selected scenario
     ctx.beginPath();
     for (let i = 0; i <= 80; i++) {
       const t = i / 80;
       const x = pad + t * (w - pad * 2);
       const val = curve(p.start, p.end, t, p.tau) + p.unc * (0.35 + 0.65 * t);
-      const y = yForTemp(val, h, pad);
+      const y = yForTemp(val, h, pad, minT, maxT);
       if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
     }
     for (let i = 80; i >= 0; i--) {
       const t = i / 80;
       const x = pad + t * (w - pad * 2);
       const val = curve(p.start, p.end, t, p.tau) - p.unc * (0.35 + 0.65 * t);
-      const y = yForTemp(val, h, pad);
+      const y = yForTemp(val, h, pad, minT, maxT);
       ctx.lineTo(x, y);
     }
     ctx.closePath();
@@ -115,26 +166,22 @@
     for (let i = 0; i <= 80; i++) {
       const t = i / 80;
       const x = pad + t * (w - pad * 2);
-      const y = yForTemp(curve(p.start, p.end, t, p.tau), h, pad);
+      const y = yForTemp(curve(p.start, p.end, t, p.tau), h, pad, minT, maxT);
       if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
     }
     ctx.strokeStyle = p.color;
     ctx.lineWidth = 3.5;
     ctx.stroke();
 
-    // If the user adjusted sliders to a custom state, overlay the live custom trajectory
-    if (customLive && customLive.isCustom) {
-      const customEnd = Math.max(-0.4, Math.min(5.2, customLive.anomaly));
-      const customStart = selected === 'preindustrial' ? 0.0 : 1.25;
-      // Higher ocean heat absorption increases thermal lag (slower approach to equilibrium)
-      const customTau = 2.8 - (customLive.ocean / 100) * 1.4;
+    const custom = customCurveParams();
+    if (custom) {
       ctx.save();
       ctx.setLineDash([6, 4]);
       ctx.beginPath();
       for (let i = 0; i <= 80; i++) {
         const t = i / 80;
         const x = pad + t * (w - pad * 2);
-        const y = yForTemp(curve(customStart, customEnd, t, customTau), h, pad);
+        const y = yForTemp(curve(custom.start, custom.end, t, custom.tau), h, pad, minT, maxT);
         if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
       }
       ctx.strokeStyle = '#ffffff';
@@ -142,9 +189,49 @@
       ctx.stroke();
       ctx.restore();
 
-      status.textContent = `${p.name} (${p.end.toFixed(1)}°C ±${p.unc.toFixed(2)}°C) vs. Live slider path (${customEnd >= 0 ? '+' : ''}${customEnd.toFixed(1)}°C by 2100, dashed white). Ocean thermal inertia bends the response curve.`;
+      const customLabel = customLive.label || 'Live slider path';
+      status.textContent = `${p.name} (${p.end.toFixed(1)}°C ±${p.unc.toFixed(2)}°C) vs. ${customLabel} (${custom.end >= 0 ? '+' : ''}${custom.end.toFixed(1)}°C, dashed white). Ocean thermal inertia bends the response curve.`;
     } else {
       status.textContent = `${p.name}: illustrative 2100 anomaly ${p.end.toFixed(1)}°C, uncertainty ±${p.unc.toFixed(2)}°C. Ocean lag bends the line instead of jumping instantly.`;
+    }
+
+    // Hover / keyboard crosshair marker
+    if (hoverT !== null) {
+      const hx = pad + hoverT * (w - pad * 2);
+      const year = Math.round(2020 + hoverT * 80);
+      const baseVal = curve(p.start, p.end, hoverT, p.tau);
+      const hy = yForTemp(baseVal, h, pad, minT, maxT);
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(220, 238, 255, 0.45)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(hx, pad * 0.5);
+      ctx.lineTo(hx, h - pad + 4);
+      ctx.stroke();
+
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      let hoverText = `Year ${year} · ${p.name}: ${baseVal >= 0 ? '+' : ''}${baseVal.toFixed(2)}°C (±${(p.unc * (0.35 + 0.65 * hoverT)).toFixed(2)}°C)`;
+      if (custom) {
+        const cVal = curve(custom.start, custom.end, hoverT, custom.tau);
+        const cy = yForTemp(cVal, h, pad, minT, maxT);
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(hx, cy, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        hoverText += ` · ${customLive.label || 'Live sliders'}: ${cVal >= 0 ? '+' : ''}${cVal.toFixed(2)}°C`;
+      }
+      ctx.restore();
+      if (hoverEl) hoverEl.textContent = hoverText;
+    } else if (hoverEl) {
+      hoverEl.textContent = 'Hover or press ←/→ over the chart to inspect a year (2020–2100).';
     }
   }
 
@@ -154,6 +241,32 @@
     selected = b.dataset.climatePath;
     document.querySelectorAll('[data-climate-path]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
     draw();
+  });
+
+  function setHoverFromClientX(clientX) {
+    const rect = canvas.getBoundingClientRect();
+    const pad = 44;
+    const x = clientX - rect.left;
+    hoverT = Math.max(0, Math.min(1, (x - pad) / Math.max(1, rect.width - pad * 2)));
+    draw();
+  }
+
+  canvas.addEventListener('pointermove', e => setHoverFromClientX(e.clientX));
+  canvas.addEventListener('pointerdown', e => setHoverFromClientX(e.clientX));
+  canvas.addEventListener('pointerleave', () => {
+    hoverT = null;
+    draw();
+  });
+  canvas.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (hoverT === null) hoverT = 0.5;
+      hoverT = Math.max(0, Math.min(1, hoverT + (e.key === 'ArrowRight' ? 0.05 : -0.05)));
+      draw();
+    } else if (e.key === 'Escape') {
+      hoverT = null;
+      draw();
+    }
   });
 
   window.addEventListener('climate:update', e => {
@@ -169,7 +282,8 @@
       customLive = {
         anomaly: d.climate.tempAnomaly,
         ocean: d.state.ocean,
-        isCustom: true
+        isCustom: true,
+        label: d.preset === 'iceage' ? 'Ice Age (LGM)' : 'Live sliders'
       };
     }
     draw();

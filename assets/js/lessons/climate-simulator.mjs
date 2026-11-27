@@ -1,5 +1,14 @@
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
+import {
+  PRESETS,
+  MISSIONS,
+  computeClimate,
+  computeEnergyBudget,
+  computeLocalProbe,
+  evaluateMissions,
+} from './climate-model.mjs';
+
 (function () {
   'use strict';
 
@@ -11,21 +20,30 @@ import { createScene } from '../sim-kit-three.mjs';
      EARTH TEXTURES & SHADER
   ══════════════════════════════════════════ */
   let earthMesh, cloudMesh, atmMesh, atmUniforms, earthUniforms, auroraUniforms;
+  let meltFrontVisibility = 1.0;
 
   // Accurate Natural Earth land is available immediately, even offline.
   function makeFallbackDayTex() {
-    const cnv = EarthEngine.landCanvas(1024, 512, { ocean: '#0b2e6b', land: '#3b6e38' });
+    const cnv = EarthEngine.landCanvas(512, 256, { ocean: '#0b2e6b', land: '#3b6e38' });
     const tex = new THREE.CanvasTexture(cnv);
     tex.wrapS = THREE.RepeatWrapping;
     return tex;
   }
 
-  // Binary land/ocean mask from Natural Earth 50m so shaders distinguish continents from ocean
+  // Binary land/ocean mask from Natural Earth 50m so shaders and Click-to-Probe distinguish continents from ocean
+  const landMaskCanvas = EarthEngine.landCanvas(720, 360, { ocean: '#000000', land: '#ffffff' });
+  const landMaskCtx = landMaskCanvas.getContext('2d', { willReadFrequently: true });
   function makeLandMaskTex() {
-    const cnv = EarthEngine.landCanvas(1024, 512, { ocean: '#000000', land: '#ffffff' });
-    const tex = new THREE.CanvasTexture(cnv);
+    const tex = new THREE.CanvasTexture(landMaskCanvas);
     tex.wrapS = THREE.RepeatWrapping;
     return tex;
+  }
+
+  function sampleIsLand(lon, lat) {
+    const uv = EarthEngine.lonLatToUV(lon, lat);
+    const px = clamp(Math.floor(uv.u * landMaskCanvas.width), 0, landMaskCanvas.width - 1);
+    const py = clamp(Math.floor(uv.v * landMaskCanvas.height), 0, landMaskCanvas.height - 1);
+    return landMaskCtx.getImageData(px, py, 1, 1).data[0] > 128;
   }
 
   // No invented lights when the historical NASA night composite is absent.
@@ -47,8 +65,10 @@ import { createScene } from '../sim-kit-three.mjs';
     return tex;
   }
 
+  const cloudCanvasCache = new Map();
   function buildCloudTexture(month = 9) {
-    const W = 1024, H = 512;
+    if (cloudCanvasCache.has(month)) return cloudCanvasCache.get(month);
+    const W = 512, H = 256;
     const cnv = document.createElement('canvas');
     cnv.width = W; cnv.height = H;
     const ctx = cnv.getContext('2d');
@@ -58,19 +78,15 @@ import { createScene } from '../sim-kit-three.mjs';
       const ny = py / H;
       const lat = (0.5 - ny) * 180;
       const absLat = Math.abs(lat);
-      // Atmospheric circulation bands: ITCZ, mid-latitude baroclinic storm tracks, polar fronts, subtropical dry highs
-      // The tropical rain belt follows the warmer hemisphere through the year.
       const itczCenter = 7 * Math.sin((month - 3) * Math.PI / 6);
       const itcz       = Math.exp(-Math.pow((lat - itczCenter) / 7.5, 2)) * 0.42;
       const stormTrack = Math.exp(-Math.pow((absLat - 50) / 11, 2)) * 0.34;
       const polarFront = Math.exp(-Math.pow((absLat - 67) /  7, 2)) * 0.22;
       const dryBelt    = Math.exp(-Math.pow((absLat - 26) /  7, 2)) * 0.32;
       const latBias = (itcz + stormTrack + polarFront) * (1 - dryBelt) + 0.04;
-      // Zonal Coriolis wind-shear warp for mid-latitude comma cloud streaks
       const zonalShear = Math.sin(lat * Math.PI / 60) * 0.08;
       for (let px = 0; px < W; px++) {
         const nx = px / W;
-        // 2π-periodic cylindrical coordinates so nx=0 and nx=1 are identical (zero UV seam)
         const theta = (nx + zonalShear) * Math.PI * 2;
         const cx = Math.cos(theta);
         const sx = Math.sin(theta);
@@ -79,11 +95,11 @@ import { createScene } from '../sim-kit-three.mjs';
         const alpha = clamp((v + detail - 0.50 + latBias * 0.22) / 0.22 * (0.68 + latBias * 0.65), 0, 1);
         const lum = Math.round(alpha * 255);
         const idx = (py * W + px) * 4;
-        // Three.js alphaMap reads the green channel (d[idx + 1])
         d[idx] = lum; d[idx + 1] = lum; d[idx + 2] = lum; d[idx + 3] = 255;
       }
     }
     ctx.putImageData(img, 0, 0);
+    cloudCanvasCache.set(month, cnv);
     return cnv;
   }
 
@@ -97,7 +113,7 @@ import { createScene } from '../sim-kit-three.mjs';
     THREE, fov: 42, near: 0.1, far: 1000, maxDpr: 2, antialias: true, alpha: true
   });
   const camDist = 5.2;
-  camera.position.set(0, 0, camDist);
+  camera.position.set(0, 1.05, camDist);
   camera.lookAt(0, 0, 0);
 
   // Stars — multiple groups with varying sizes and warm/cool color tints
@@ -132,8 +148,8 @@ import { createScene } from '../sim-kit-three.mjs';
   scene.add(fillLight);
 
   // Earth — GPU ShaderMaterial with landMask, ocean sun-glint, Rayleigh-Bénard convection,
-  // polar/land amplified GISTEMP anomaly heat map, and distinct sea/continental ice
-  const earthGeo = new THREE.SphereGeometry(2, 96, 48);
+  // polar/land amplified GISTEMP anomaly heat map, uniformLit mode, and distinct sea/continental ice
+  const earthGeo = new THREE.SphereGeometry(2, 64, 32);
   earthUniforms = {
     dayMap:       { value: makeFallbackDayTex() },
     nightMap:     { value: makeFallbackNightTex() },
@@ -145,10 +161,11 @@ import { createScene } from '../sim-kit-three.mjs';
     sunIntensity: { value: 0.88 },
     sunColor:     { value: new THREE.Color(1.0, 0.96, 0.91) },
     iceLevel:     { value: 0.60 },
-    tempAnomaly:  { value: 1.28 },
+    tempAnomaly:  { value: 1.34 },
     deforest:     { value: 0.30 },
     oceanHeat:    { value: 0.70 },
     heatMap:      { value: 0.0 },
+    uniformLit:   { value: 0.0 },
   };
   const earthMat = new THREE.ShaderMaterial({
     uniforms: earthUniforms,
@@ -180,6 +197,7 @@ import { createScene } from '../sim-kit-three.mjs';
       uniform float deforest;
       uniform float oceanHeat;
       uniform float heatMap;
+      uniform float uniformLit;
       varying vec2 vUv;
       varying vec3 vWorldNormal;
       varying vec3 vWorldPos;
@@ -206,7 +224,7 @@ import { createScene } from '../sim-kit-three.mjs';
         vec3  norm   = normalize(vWorldNormal);
         vec3  viewDir= normalize(cameraPosition - vWorldPos);
         float sunDot = dot(norm, sunDir);
-        float dayMix = smoothstep(-0.16, 0.22, sunDot);
+        float dayMix = mix(smoothstep(-0.16, 0.22, sunDot), 1.0, uniformLit);
 
         vec4  dayTex   = texture2D(dayMap,   vUv);
         vec4  nightTex = texture2D(nightMap, vUv);
@@ -233,29 +251,28 @@ import { createScene } from '../sim-kit-three.mjs';
         float pole       = abs(latNorm);
         float vegBelt    = smoothstep(0.72, 0.15, pole); // tropical & temperate forests
         float heatStress = clamp(max(0.0, tempAnomaly - 0.8) / 4.5, 0.0, 1.0);
-        // Favor pixels that are land (and especially vegetated land)
         float greenness  = clamp((dayRgb.g - dayRgb.r * 0.65) * 3.0, 0.25, 1.0);
         float dfShift    = land * vegBelt * greenness * clamp(deforest * 0.85 + heatStress * 0.40, 0.0, 1.0) * 0.42;
         dayRgb.r = min(1.0, dayRgb.r + dfShift * 0.58);
         dayRgb.g = max(0.0, dayRgb.g - dfShift * 0.30);
         dayRgb.b = max(0.0, dayRgb.b - dfShift * 0.22);
 
-        // Lambertian diffuse + twilight terminator warm Rayleigh scatter (use x*x, never pow(negative, 2.0))
+        // Lambertian diffuse + twilight terminator warm Rayleigh scatter
         float NdotL      = max(0.0, sunDot);
-        float shade      = clamp(NdotL * sunIntensity + 0.09, 0.0, 1.0);
+        float shadeBase  = clamp(NdotL * sunIntensity + 0.09, 0.0, 1.0);
+        float shadeFlat  = clamp(0.76 + NdotL * 0.24 * sunIntensity, 0.68, 1.0);
+        float shade      = mix(shadeBase, shadeFlat, uniformLit);
         float termArg    = (sunDot - 0.02) / 0.14;
-        float terminator = exp(-(termArg * termArg)) * 0.16;
+        float terminator = exp(-(termArg * termArg)) * 0.16 * (1.0 - uniformLit);
         vec3  twilightCol= vec3(1.0, 0.52, 0.22) * terminator * sunIntensity;
 
         // Cryosphere: Continental ice sheets vs. Polar sea-ice pack with coastline/fracture detail
         float lonRad     = vUv.x * 6.2831853;
         float waveMod    = (sin(lonRad * 5.0 + 1.2) * 0.022 + cos(lonRad * 11.0 - 0.7) * 0.014 + sin(lonRad * 23.0) * 0.008);
-        // Continental snow/glaciers extend slightly further equatorward than sea ice
         float landIceBias= land * 0.045;
         float iceLatDeg  = 75.0 - iceLevel * 25.0 + tempAnomaly * 3.5;
         float iceEdge    = clamp(iceLatDeg / 90.0 - landIceBias + waveMod, 0.05, 0.985);
         float iceMask    = smoothstep(iceEdge - 0.055, iceEdge + 0.035, pole);
-        // Subtle sea-ice lead fractures near the pack-ice margin
         float packLeads  = (1.0 - land) * smoothstep(iceEdge + 0.06, iceEdge - 0.02, pole) * (0.85 + 0.15 * sin(lonRad * 31.0 + pole * 40.0));
         float finalIce   = clamp(iceMask * mix(1.0, packLeads, 0.35), 0.0, 1.0);
 
@@ -268,31 +285,26 @@ import { createScene } from '../sim-kit-three.mjs';
         vec3  glintCol   = sunColor * specGlint * sunIntensity * 0.65;
 
         vec3  litDay     = dayRgb * sunColor * shade + twilightCol + glintCol;
-        // Night lights fade out under polar ice caps
         vec3  litNight   = nightTex.rgb * (1.15 * (1.0 - finalIce * 0.85)) + dayRgb * 0.035;
         vec3  baseRgb    = mix(litNight, litDay, dayMix);
 
-        // Apply polar ice albedo across both day and night hemispheres (with ambient night starlight)
-        float iceLit     = clamp(NdotL * sunIntensity * 1.06 + 0.12, 0.08, 1.0);
+        // Apply polar ice albedo across both day and night hemispheres
+        float iceLit     = mix(clamp(NdotL * sunIntensity * 1.06 + 0.12, 0.08, 1.0), 0.95, uniformLit);
         vec3  iceTint    = mix(vec3(0.83, 0.92, 1.0), vec3(0.95, 0.98, 1.0), land);
         vec3  iceCol     = iceTint * iceLit;
         baseRgb          = mix(baseRgb, iceCol, finalIce);
 
         // Heat Map mode — NASA GISTEMP diverging anomaly scale with Arctic & Continental Amplification
         if (heatMap > 0.5) {
-          // Arctic amplification (strongest in northern high latitudes) + Antarctic amplification
           float northPolar = smoothstep(0.35, 0.92, latNorm) * 1.05;
           float southPolar = smoothstep(0.45, 0.92, -latNorm) * 0.55;
           float polarAmp   = 0.82 + northPolar + southPolar;
-          // Land surfaces warm ~35% faster than oceans due to lower thermal inertia
           float landAmp    = mix(0.88, 1.24, land);
-          // Spatial wave + Rayleigh-Bénard ocean modulation
           float spatialMod = 1.0 + 0.10 * sin(lonRad * 3.0 + latNorm * 4.0) + (rbSample - 0.5) * rbActive * 0.35;
           float localDegC  = tempAnomaly * polarAmp * landAmp * spatialMod;
 
           vec3  anomCol    = gistempColor(localDegC);
           float anomWeight = clamp(abs(localDegC) / 3.2, 0.18, 0.78);
-          // Preserve terrain luminance and coastline legibility underneath the anomaly overlay
           float lum        = dot(baseRgb, vec3(0.299, 0.587, 0.114));
           vec3  shadedAnom = anomCol * (0.42 + 0.68 * clamp(lum + 0.18, 0.0, 1.0));
           baseRgb          = mix(baseRgb, shadedAnom, anomWeight);
@@ -333,9 +345,9 @@ import { createScene } from '../sim-kit-three.mjs';
     }, undefined, () => {}
   );
 
-  // Clouds — aligned with Earth's rotational axis (no artificial X-tilt)
+  // Clouds — aligned with Earth's rotational axis
   const cloudGeo = new THREE.SphereGeometry(2.026, 64, 32);
-  const cloudTex = new THREE.CanvasTexture(buildCloudTexture());
+  const cloudTex = new THREE.CanvasTexture(buildCloudTexture(9));
   cloudTex.wrapS = THREE.RepeatWrapping;
   const cloudMat = new THREE.MeshPhongMaterial({
     color: 0xffffff,
@@ -348,7 +360,6 @@ import { createScene } from '../sim-kit-three.mjs';
   scene.add(cloudMesh);
 
   // CloudEngine billows painted into a transparent satellite-style storm atlas.
-  // This is a fixed teaching illustration for each favored basin, not live imagery.
   const stormCanvas = document.createElement('canvas');
   stormCanvas.width = 2048;
   stormCanvas.height = 1024;
@@ -356,7 +367,7 @@ import { createScene } from '../sim-kit-three.mjs';
   stormTexture.wrapS = THREE.RepeatWrapping;
   stormTexture.minFilter = THREE.LinearMipmapLinearFilter;
   const stormMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(2.041, 96, 64),
+    new THREE.SphereGeometry(2.041, 64, 32),
     new THREE.MeshPhongMaterial({ map: stormTexture, transparent: true, opacity: 0.94, depthWrite: false })
   );
   scene.add(stormMesh);
@@ -382,8 +393,6 @@ import { createScene } from '../sim-kit-three.mjs';
       const radius = 56 + basin.season * 12;
       const spin = basin.hemisphere === 'north' ? -1 : 1;
       const phase = index * 1.73 + 0.4;
-      // Broad, fragmented rainbands around a dense eyewall. Uneven billows
-      // keep the result closer to a satellite cloud field than a line icon.
       for (let arm = 0; arm < 3; arm++) {
         for (let step = 0; step < 63; step++) {
           const t = step / 62;
@@ -399,7 +408,6 @@ import { createScene } from '../sim-kit-three.mjs';
           if (step % 3 === 0) drawPuff(highlight, x - 2, y - 2, width * 0.75, opacity * 0.42);
         }
       }
-      // Bright, nearly continuous eyewall and a small cloud-free eye.
       for (let i = 0; i < 34; i++) {
         const a = i * Math.PI * 2 / 34;
         drawPuff(body, cx + Math.cos(a) * 9, cy + Math.sin(a) * 9, 16, 0.87 * basin.season);
@@ -421,6 +429,7 @@ import { createScene } from '../sim-kit-three.mjs';
     atmColor:    { value: new THREE.Color(0x2870ff) },
     sunDir:      { value: new THREE.Vector3(5, 2, 4).normalize() },
     rimStrength: { value: 0.74 },
+    uniformLit:  { value: 0.0 },
   };
   const atmMat = new THREE.ShaderMaterial({
     uniforms: atmUniforms,
@@ -440,6 +449,7 @@ import { createScene } from '../sim-kit-three.mjs';
       uniform vec3  atmColor;
       uniform vec3  sunDir;
       uniform float rimStrength;
+      uniform float uniformLit;
       varying vec3  vNormal;
       varying vec3  vViewDir;
       varying vec3  vWorldNormal;
@@ -447,9 +457,9 @@ import { createScene } from '../sim-kit-three.mjs';
         float rim = 1.0 - abs(dot(vNormal, vViewDir));
         rim = pow(clamp(rim, 0.0, 1.0), 3.0);
         float sDot = dot(vWorldNormal, sunDir);
-        float sunFacing = smoothstep(-0.35, 0.65, sDot);
+        float sunFacing = mix(smoothstep(-0.35, 0.65, sDot), 1.0, uniformLit);
         float twArg = sDot / 0.25;
-        float twilight  = exp(-(twArg * twArg)) * 0.35;
+        float twilight  = exp(-(twArg * twArg)) * 0.35 * (1.0 - uniformLit);
         vec3  col = mix(atmColor * 0.35, atmColor, sunFacing) + vec3(1.0, 0.45, 0.15) * twilight;
         gl_FragColor = vec4(col * rimStrength, rim * (0.45 + 0.55 * sunFacing));
       }
@@ -462,8 +472,7 @@ import { createScene } from '../sim-kit-three.mjs';
   atmMesh = new THREE.Mesh(atmGeo, atmMat);
   scene.add(atmMesh);
 
-  // Polar Auroral Curtains — vertical ribbon cylinders around the ~67° geomagnetic ovals,
-  // driven by Solar Irradiance (solar wind magnetospheric excitation, 557.7 nm O / 630 nm N2+)
+  // Polar Auroral Curtains — vertical ribbon cylinders around ~67° geomagnetic ovals
   auroraUniforms = {
     uTime:     { value: 0.0 },
     intensity: { value: 0.35 },
@@ -491,7 +500,6 @@ import { createScene } from '../sim-kit-three.mjs';
           float rays  = 0.5 + 0.5 * sin(angle * 18.0 + uTime * 1.4 + sin(angle * 5.0 - uTime * 0.7) * 2.5);
           rays *= 0.5 + 0.5 * sin(angle * 31.0 - uTime * 2.1);
           float vert  = smoothstep(0.0, 0.22, vUv.y) * pow(clamp(1.0 - vUv.y, 0.0, 1.0), 1.5);
-          // 557.7 nm atomic oxygen green at lower edge -> 630 nm red/violet at high altitude
           vec3  lowCol  = vec3(0.10, 1.00, 0.55);
           vec3  highCol = vec3(0.55, 0.25, 0.95);
           vec3  col     = mix(lowCol, highCol, clamp(vUv.y * 1.15, 0.0, 1.0));
@@ -506,7 +514,6 @@ import { createScene } from '../sim-kit-three.mjs';
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(0, isNorth ? 1.92 : -1.92, 0);
-    // Slight geomagnetic dipole offset (~4°)
     mesh.rotation.z = isNorth ? 0.06 : -0.06;
     scene.add(mesh);
     return mesh;
@@ -514,9 +521,7 @@ import { createScene } from '../sim-kit-three.mjs';
   makeAuroraCurtain(true);
   makeAuroraCurtain(false);
 
-  // Ice melt-front — a thin pulsing ring sitting right at each hemisphere's mean ice
-  // edge latitude (same iceLatDeg math as the earthMat fragment shader above),
-  // so retreat/advance reads as an active process rather than a static line.
+  // Ice melt-front — thin pulsing ring at each hemisphere's mean ice edge latitude
   const meltFrontGeo = new THREE.TorusGeometry(1, 0.007, 6, 80);
   const meltFrontNorth = new THREE.Mesh(meltFrontGeo, new THREE.MeshBasicMaterial({
     color: 0xcdeaff, transparent: true, opacity: 0.42, depthWrite: false, blending: THREE.AdditiveBlending
@@ -529,6 +534,7 @@ import { createScene } from '../sim-kit-three.mjs';
 
   function updateMeltFront(iceLevel01, tempAnomaly) {
     const iceLatDeg = clamp(75 - iceLevel01 * 25 + tempAnomaly * 3.5, 5, 89);
+    meltFrontVisibility = clamp((88 - iceLatDeg) / 6, 0, 1);
     const latRad = iceLatDeg * Math.PI / 180;
     const ringR = 2.008 * Math.cos(latRad);
     const y = 2.008 * Math.sin(latRad);
@@ -536,10 +542,12 @@ import { createScene } from '../sim-kit-three.mjs';
     meltFrontNorth.position.y = y;
     meltFrontSouth.scale.set(ringR, ringR, 1);
     meltFrontSouth.position.y = -y;
+    meltFrontNorth.visible = meltFrontVisibility > 0.02;
+    meltFrontSouth.visible = meltFrontVisibility > 0.02;
   }
 
-  // Sun glow — radial gradient sprite at the light source position
-  (function () {
+  // Sun glow — radial gradient sprite positioned along seasonal solar declination
+  const sunSprite = (function () {
     const cnv = document.createElement('canvas');
     cnv.width = 64; cnv.height = 64;
     const ctx2d = cnv.getContext('2d');
@@ -554,12 +562,27 @@ import { createScene } from '../sim-kit-three.mjs';
     const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false });
     const sprite = new THREE.Sprite(mat);
     sprite.scale.set(7, 7, 1);
-    sprite.position.copy(new THREE.Vector3(5, 2, 4).normalize().multiplyScalar(88));
     scene.add(sprite);
+    return sprite;
   })();
 
+  function updateSolarDeclination(monthNum) {
+    // 23.44° axial tilt: ~+23.4° in June (month 6), ~-23.4° in December (month 12)
+    const declRad = (23.44 * Math.PI / 180) * Math.sin((monthNum - 3) * Math.PI / 6);
+    const sunVec = new THREE.Vector3(
+      Math.cos(declRad) * 0.78,
+      Math.sin(declRad),
+      Math.cos(declRad) * 0.62
+    ).normalize();
+    sunLight.position.copy(sunVec).multiplyScalar(8);
+    earthUniforms.sunDir.value.copy(sunVec);
+    atmUniforms.sunDir.value.copy(sunVec);
+    sunSprite.position.copy(sunVec).multiplyScalar(88);
+  }
+  updateSolarDeclination(9);
+
   /* ══════════════════════════════════════════
-     ORBIT CONTROLS (shared three-bundle helper)
+     ORBIT CONTROLS & CAMERA PRESETS
   ══════════════════════════════════════════ */
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
@@ -572,6 +595,33 @@ import { createScene } from '../sim-kit-three.mjs';
   controls.autoRotate = true;
   controls.autoRotateSpeed = 0.55;
   controls.target.set(0, 0, 0);
+
+  let camAnim = null;
+  const CAM_PRESETS = {
+    global:     { lat: 12,  dist: 5.2 },
+    arctic:     { lat: 74,  dist: 4.3 },
+    tropics:    { lat: 4,   dist: 4.6 },
+    antarctica: { lat: -74, dist: 4.3 },
+  };
+  controls.addEventListener('start', () => { camAnim = null; });
+
+  function animateCameraTo(presetKey) {
+    const cfg = CAM_PRESETS[presetKey];
+    if (!cfg) return;
+    const curSph = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+    const targetPhi = clamp((90 - cfg.lat) * Math.PI / 180, controls.minPolarAngle, controls.maxPolarAngle);
+    camAnim = {
+      startPhi: curSph.phi,
+      startDist: curSph.radius,
+      targetPhi,
+      targetDist: cfg.dist,
+      progress: 0,
+      duration: 0.55,
+    };
+    document.querySelectorAll('[data-cam]').forEach(b => {
+      b.classList.toggle('active', b.dataset.cam === presetKey);
+    });
+  }
 
   canvas.addEventListener('keydown', e => {
     const rotateStep = 0.12, zoomStep = 0.4;
@@ -589,6 +639,7 @@ import { createScene } from '../sim-kit-three.mjs';
     }
     if (!handled) return;
     e.preventDefault();
+    camAnim = null;
     spherical.makeSafe();
     offset.setFromSpherical(spherical);
     camera.position.copy(controls.target).add(offset);
@@ -596,68 +647,19 @@ import { createScene } from '../sim-kit-three.mjs';
   });
 
   /* ══════════════════════════════════════════
-     CLIMATE MODEL (Calibrated to IPCC AR6 & NOAA/GISTEMP)
-  ══════════════════════════════════════════ */
-  // Baseline reference: 1850 Pre-industrial (CO2 = 280 ppm, CH4 = 722 ppb, Solar = 100%, Ice = 100%, Deforest = 0%)
-  // produces ΔF = 0.0 W/m², ΔT = +0.0°C, Sea Level = +0.00 m, Ocean pH = 8.18, Storm Index = 1.0×.
-  // Today (2026: CO2 = 429 ppm, CH4 = 1930 ppb, Ice = 60%, Deforest = 30%, Ocean = 70%)
-  // produces ΔF = +2.7 W/m², ΔT = +1.3°C, Sea Level = +0.25 m, Ocean pH = 8.06, Storm Index = 1.2×.
-  function computeClimate(co2, solar, ice, deforest, ch4, ocean) {
-    const C0 = 280;
-    const M0 = 722;
-    // Myhre et al. (1998) / IPCC radiative forcing for CO2 and CH4 (with indirect H2O/O3 factor)
-    const co2Force    = 5.35 * Math.log(co2 / C0);
-    const ch4Force    = 0.036 * (Math.sqrt(ch4) - Math.sqrt(M0));
-    // Solar irradiance forcing (~0.30 W/m² per 1% TSI change around 100%)
-    const solarForce  = (solar - 100) * 0.30;
-    // Cryosphere surface-albedo feedback relative to pre-industrial 100% ice cover
-    const albedoForce = (100 - ice) * 0.012;
-    // Land-use / deforestation carbon-sink & biophysical forcing
-    const defoForce   = deforest * 0.008;
-
-    const rawForcing = co2Force + ch4Force + solarForce + albedoForce + defoForce;
-
-    // Ocean heat uptake & aerosol/cloud buffering:
-    // Oceans absorb ~90% of Earth's energy imbalance, damping transient surface forcing.
-    // At ocean=70% (modern baseline), effective radiative forcing is ~75% of raw GHG+albedo forcing.
-    const oceanDamping = 1 - 0.25 * (ocean / 70);
-    const totalForcing = rawForcing * clamp(oceanDamping, 0.55, 1.0);
-
-    // Two-layer energy balance temperature response:
-    // Equilibrium sensitivity ~0.78 K/(W/m²) (~2.9°C per 2×CO2), buffered by transient ocean thermal inertia,
-    // with positive water-vapor/cloud/carbon-sink feedback amplification at high radiative forcing (>4 W/m²).
-    const inertiaFactor = 1.0 - 0.50 * Math.pow(ocean / 100, 0.85);
-    const feedbackAmp   = 1.0 + 0.068 * Math.max(0, rawForcing - 4.0);
-    const tempAnomaly   = totalForcing * 0.78 * inertiaFactor * feedbackAmp;
-
-    // Sea level rise (m): thermosteric ocean expansion + nonlinear glacier/ice-sheet melt above +1.1°C
-    const posTemp     = Math.max(0, tempAnomaly);
-    const stericRise  = posTemp * 0.14 * (0.65 + 0.35 * (ocean / 70));
-    const meltRise    = posTemp * 0.055 + Math.pow(Math.max(0, posTemp - 1.1), 1.65) * 0.16;
-    const seaLevel    = clamp(stericRise + meltRise, 0, 12);
-
-    // Surface ocean pH: carbonate buffer logarithmic dependence on pCO2
-    // 8.18 in 1850 (280 ppm) -> 8.06 today (429 ppm) -> 7.91 at 700 ppm
-    const oceanPH = 8.18 - 0.66 * Math.log10(Math.max(180, co2) / C0);
-
-    // Remaining polar sea/land ice percentage after thermal retreat
-    const iceLeft = clamp(ice - Math.max(0, tempAnomaly) * 3.2 - Math.min(0, tempAnomaly) * 2.0, 0, 100);
-
-    return { totalForcing, tempAnomaly, seaLevel, oceanPH, iceLeft };
-  }
-
-  /* ══════════════════════════════════════════
-     SVG PARTICLE & CIRCULATION SYSTEM
+     SVG PARTICLE & PROBE SYSTEM
   ══════════════════════════════════════════ */
   const pRoot = document.getElementById('particle-root');
+  const probeRoot = document.getElementById('probe-root');
   const svg = document.getElementById('particle-svg');
   let svgW = Math.max(1, globe.clientWidth || 800);
   let svgH = Math.max(1, globe.clientHeight || 600);
   let mode = 'weather';
+  let showLabels = true;
   let persistentParticles = [];
   let transientParticles = [];
+  let activeProbe = null; // { lat, lon, isLand, el }
 
-  // Geographically accurate anchors [lat, lon]
   const geoPoints = {
     industry: [
       { lat: 35, lon: 115, label: 'East Asia' },
@@ -673,31 +675,30 @@ import { createScene } from '../sim-kit-three.mjs';
       { lat: 64, lon: 152, label: 'Kolyma Basin' },
     ],
     sinks: [
-      { lat: -4, lon: -62, kind: 'forest', label: 'Amazon Basin' },
-      { lat:  1, lon:  22, kind: 'forest', label: 'Congo Basin' },
+      { lat: -4, lon: -62, kind: 'forest', label: 'Amazon Sink' },
+      { lat:  1, lon:  22, kind: 'forest', label: 'Congo Sink' },
       { lat: 58, lon:  98, kind: 'forest', label: 'Boreal Taiga' },
-      { lat: -1, lon: 114, kind: 'forest', label: 'Maritime SE Asia' },
-      { lat: 54, lon: -32, kind: 'ocean',  label: 'N. Atlantic Sink' },
-      { lat: -52, lon:  20, kind: 'ocean', label: 'Southern Ocean Sink' },
+      { lat: -1, lon: 114, kind: 'forest', label: 'SE Asia' },
+      { lat: 54, lon: -32, kind: 'ocean',  label: 'N. Atlantic' },
+      { lat: -52, lon:  20, kind: 'ocean', label: 'Southern Ocean' },
     ],
     currents: [
-      { lat: 34, lon: -66, dLat: 10, dLon: 22, name: 'Gulf Stream / AMOC' },
-      { lat: 30, lon: 142, dLat:  8, dLon: 24, name: 'Kuroshio Current' },
-      { lat:  8, lon: -135, dLat: 0, dLon: -26, name: 'Pacific Trade Drift' },
-      { lat: -12, lon:  75, dLat: -2, dLon: -24, name: 'Indian South Equatorial' },
-      { lat: -54, lon: -45, dLat:  0, dLon: 28, name: 'Antarctic Circumpolar' },
+      { lat: 34, lon: -66, dLat: 10, dLon: 22, name: 'Gulf Stream' },
+      { lat: 30, lon: 142, dLat:  8, dLon: 24, name: 'Kuroshio' },
+      { lat:  8, lon: -135, dLat: 0, dLon: -26, name: 'Trade Drift' },
+      { lat: -12, lon:  75, dLat: -2, dLon: -24, name: 'S. Equatorial' },
+      { lat: -54, lon: -45, dLat:  0, dLon: 28, name: 'Circumpolar' },
     ],
     heat: [
-      { lat: 74, lon:  40, polar: true },  // Barents-Kara Arctic Amplification
-      { lat: 72, lon: -110, polar: true }, // Canadian Archipelago
-      { lat: 24, lon:  46, polar: false }, // Arabian Peninsula
-      { lat: -4, lon: -58, polar: false }, // Amazonia
-      { lat: 15, lon:  20, polar: false }, // Sahel
-      { lat: -25, lon: 134, polar: false },// Central Australia
+      { lat: 74, lon:  40, polar: true,  label: 'Barents-Kara' },
+      { lat: 72, lon: -110, polar: true, label: 'Can. Arctic' },
+      { lat: 24, lon:  46, polar: false, label: 'Arabia' },
+      { lat: -4, lon: -58, polar: false, label: 'Amazonia' },
+      { lat: 15, lon:  20, polar: false, label: 'Sahel' },
+      { lat: -25, lon: 134, polar: false, label: 'Australia' },
     ]
   };
 
-  // Project lat/lon on rotating globe to SVG screen coords
   function geoToSVG(lat, lon) {
     const position = EarthEngine.lonLatToVector(lon, lat, 2);
     const vec = new THREE.Vector3(position.x, position.y, position.z);
@@ -707,10 +708,9 @@ import { createScene } from '../sim-kit-three.mjs';
     const camDir = camera.position.clone().normalize();
     const surfNorm = vec.clone().normalize();
     const facing = surfNorm.dot(camDir);
-    if (facing < 0.08) return null; // behind globe limb
+    if (facing < 0.08) return null;
 
     vec.project(camera);
-
     return {
       x: (vec.x + 1) * svgW / 2,
       y: (-vec.y + 1) * svgH / 2,
@@ -722,6 +722,18 @@ import { createScene } from '../sim-kit-three.mjs';
     const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
     for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
     return el;
+  }
+
+  function appendLabel(parent, text, offsetX = 11, offsetY = 3) {
+    if (!text) return null;
+    const lg = svgEl('g', { class: 'p-label-group' });
+    const w = Math.max(38, text.length * 5.7 + 10);
+    lg.innerHTML = `
+      <rect x="${offsetX}" y="${offsetY - 10}" width="${w.toFixed(0)}" height="14" rx="4" class="p-label-bg"/>
+      <text x="${offsetX + 5}" y="${offsetY}" class="p-label-txt">${text}</text>
+    `;
+    parent.appendChild(lg);
+    return lg;
   }
 
   function makeCO2Particle(x, y, size = 1, isMethane = false) {
@@ -755,7 +767,7 @@ import { createScene } from '../sim-kit-three.mjs';
     `;
   }
 
-  function makeHeatRing(x, y, scale, isPolar = false) {
+  function makeHeatRing(x, y, scale, isPolar = false, label = '') {
     const g = svgEl('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
     const dur = 1.5 + Math.random() * 0.8;
     const delay = Math.random() * 1.5;
@@ -768,10 +780,11 @@ import { createScene } from '../sim-kit-three.mjs';
               style="animation:heatRing ${(dur+0.4).toFixed(2)}s ease-in-out ${(delay+0.2).toFixed(2)}s infinite"/>
       ${reticleMarkup(9 * scale, isPolar ? 'rgba(255,120,150,0.48)' : 'rgba(255,140,70,0.42)', false)}
     `;
-    return g;
+    const labelEl = appendLabel(g, label, 12, 3);
+    return { el: g, labelEl };
   }
 
-  function makeCarbonSink(x, y, scale, kind = 'forest', health = 1) {
+  function makeCarbonSink(x, y, scale, kind = 'forest', health = 1, label = '') {
     const g = svgEl('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})`, filter: 'url(#glow)' });
     if (kind === 'ocean') {
       g.innerHTML = `
@@ -791,20 +804,31 @@ import { createScene } from '../sim-kit-three.mjs';
         ${reticleMarkup(9 * scale, 'rgba(100,220,120,0.35)', false)}
       `;
     }
-    return g;
+    const labelEl = appendLabel(g, label, 11, 3);
+    return { el: g, labelEl };
   }
 
-  function makeOceanCurrent(x, y, angleDeg = 0, vigor = 1) {
-    const g = svgEl('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${angleDeg.toFixed(1)})` });
+  function makeOceanCurrent(x, y, angleDeg = 0, vigor = 1, label = '') {
+    const g = svgEl('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
+    const arrow = svgEl('g', { transform: `rotate(${angleDeg.toFixed(1)})` });
     const w = 32;
     const dur = (2.6 - vigor * 1.1).toFixed(2);
-    g.innerHTML = `
+    arrow.innerHTML = `
       <path d="M-${w/2},0 Q-${w/4},-6 0,0 T${w/2},0" fill="none"
             stroke="rgba(95,195,255,0.62)" stroke-width="1.6" stroke-dasharray="6,6"
             style="animation:streamFlow ${dur}s linear infinite"/>
       <polygon points="${w/2},0 ${w/2-5},-3 ${w/2-5},3" fill="rgba(120,210,255,0.72)"/>
     `;
-    return g;
+    g.appendChild(arrow);
+    const labelEl = appendLabel(g, label, 12, -8);
+    return { el: g, arrowEl: arrow, labelEl };
+  }
+
+  function makeBasinMarker(x, y, label = '') {
+    const g = svgEl('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
+    g.innerHTML = `<circle r="3" fill="rgba(125,211,252,0.75)" stroke="rgba(255,255,255,0.6)" stroke-width="0.9"/>`;
+    const labelEl = appendLabel(g, label, 8, 3);
+    return { el: g, labelEl };
   }
 
   function clearParticles() {
@@ -813,69 +837,86 @@ import { createScene } from '../sim-kit-three.mjs';
     transientParticles = [];
   }
 
-  function spawnPersistent(climate) {
+  function spawnPersistent() {
     clearParticles();
 
     if (mode === 'weather') {
       const vigor = clamp(state.ocean / 100, 0.2, 1);
       geoPoints.currents.forEach(pt => {
         const pos = geoToSVG(pt.lat, pt.lon);
-        const el = makeOceanCurrent(pos ? pos.x : 0, pos ? pos.y : 0, 0, vigor);
+        const { el, arrowEl, labelEl } = makeOceanCurrent(pos ? pos.x : 0, pos ? pos.y : 0, 0, vigor, pt.name);
         if (!pos) el.style.opacity = '0';
         pRoot.appendChild(el);
-        persistentParticles.push({ el, lat: pt.lat, lon: pt.lon, dLat: pt.dLat, dLon: pt.dLon, type: 'current' });
+        persistentParticles.push({ el, arrowEl, labelEl, lat: pt.lat, lon: pt.lon, dLat: pt.dLat, dLon: pt.dLon, type: 'current' });
+      });
+      weather.basins.forEach(basin => {
+        const pos = geoToSVG(basin.lat, basin.lon);
+        const { el, labelEl } = makeBasinMarker(pos ? pos.x : 0, pos ? pos.y : 0, basin.name);
+        if (!pos) el.style.opacity = '0';
+        pRoot.appendChild(el);
+        persistentParticles.push({ el, labelEl, lat: basin.lat, lon: basin.lon, type: 'basin' });
       });
 
     } else if (mode === 'carbon') {
       const forestHealth = clamp(1 - state.deforest / 100, 0.1, 1);
       geoPoints.sinks.forEach(pt => {
         const pos = geoToSVG(pt.lat, pt.lon);
-        const el = makeCarbonSink(pos ? pos.x : 0, pos ? pos.y : 0, pos ? (0.7 + pos.depth * 0.45) : 0.85, pt.kind, forestHealth);
+        const { el, labelEl } = makeCarbonSink(pos ? pos.x : 0, pos ? pos.y : 0, pos ? (0.7 + pos.depth * 0.45) : 0.85, pt.kind, forestHealth, pt.label);
         if (!pos) el.style.opacity = '0';
         pRoot.appendChild(el);
-        persistentParticles.push({ el, lat: pt.lat, lon: pt.lon, type: 'sink' });
+        persistentParticles.push({ el, labelEl, lat: pt.lat, lon: pt.lon, type: 'sink' });
       });
 
     } else if (mode === 'temperature') {
       geoPoints.heat.forEach(pt => {
         const pos = geoToSVG(pt.lat, pt.lon);
-        const el = makeHeatRing(pos ? pos.x : 0, pos ? pos.y : 0, pos ? (0.7 + pos.depth * 0.55) : 0.85, pt.polar);
+        const { el, labelEl } = makeHeatRing(pos ? pos.x : 0, pos ? pos.y : 0, pos ? (0.7 + pos.depth * 0.55) : 0.85, pt.polar, pt.label);
         if (!pos) el.style.opacity = '0';
         pRoot.appendChild(el);
-        persistentParticles.push({ el, lat: pt.lat, lon: pt.lon, type: 'heat' });
+        persistentParticles.push({ el, labelEl, lat: pt.lat, lon: pt.lon, type: 'heat' });
       });
       geoPoints.industry.forEach(pt => {
         const pos = geoToSVG(pt.lat, pt.lon);
-        const el = makeHeatRing(pos ? pos.x : 0, pos ? pos.y : 0, 0.52, false);
+        const { el, labelEl } = makeHeatRing(pos ? pos.x : 0, pos ? pos.y : 0, 0.52, false, '');
         if (!pos) el.style.opacity = '0';
         pRoot.appendChild(el);
-        persistentParticles.push({ el, lat: pt.lat, lon: pt.lon, type: 'heat' });
+        persistentParticles.push({ el, labelEl, lat: pt.lat, lon: pt.lon, type: 'heat' });
       });
     }
   }
 
-  // Update persistent particle positions each frame (including those that rotate into view)
   function updatePersistentPositions() {
     persistentParticles.forEach(p => {
       const pos = geoToSVG(p.lat, p.lon);
       if (pos) {
-        if (p.type === 'current' && (p.dLat || p.dLon)) {
+        p.el.setAttribute('transform', `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)})`);
+        if (p.type === 'current' && p.arrowEl && (p.dLat || p.dLon)) {
           const p2 = geoToSVG(p.lat + p.dLat * 0.35, p.lon + p.dLon * 0.35);
           const deg = p2 ? Math.atan2(p2.y - pos.y, p2.x - pos.x) * 180 / Math.PI : 0;
-          p.el.setAttribute('transform', `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)}) rotate(${deg.toFixed(1)})`);
-        } else {
-          p.el.setAttribute('transform', `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)})`);
+          p.arrowEl.setAttribute('transform', `rotate(${deg.toFixed(1)})`);
         }
         p.el.style.opacity = (pos.depth * 0.9 + 0.1).toFixed(2);
+        if (p.labelEl) {
+          p.labelEl.style.display = showLabels && pos.depth > 0.35 ? '' : 'none';
+        }
       } else {
         p.el.style.opacity = '0';
       }
     });
+
+    if (activeProbe && activeProbe.el) {
+      const pos = geoToSVG(activeProbe.lat, activeProbe.lon);
+      if (pos) {
+        activeProbe.el.setAttribute('transform', `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)})`);
+        activeProbe.el.style.opacity = '1';
+      } else {
+        activeProbe.el.style.opacity = '0';
+      }
+    }
   }
 
-  // Spawn transient particles (CO2/CH4 plumes, rain) and clean up expired ones via loop dt
   let spawnTimer = 0;
-  function spawnTransient(climate, dt) {
+  function spawnTransient(climateObj, dt) {
     for (let i = transientParticles.length - 1; i >= 0; i--) {
       const tp = transientParticles[i];
       tp.age += dt;
@@ -900,10 +941,9 @@ import { createScene } from '../sim-kit-three.mjs';
           transientParticles.push({ el, age: 0, maxAge });
         }
       }
-      // Methane / Arctic permafrost outgassing plumes when CH4 or warming is elevated
       const ch4Rate = clamp((state.ch4 - 722) / 2500, 0, 1);
-      if ((state.ch4 > 1400 || climate.tempAnomaly > 1.8) && Math.random() < ch4Rate * 0.65) {
-        const pool = climate.tempAnomaly > 1.8 ? geoPoints.permafrost : geoPoints.industry;
+      if ((state.ch4 > 1400 || climateObj.tempAnomaly > 1.8) && Math.random() < ch4Rate * 0.65) {
+        const pool = climateObj.tempAnomaly > 1.8 ? geoPoints.permafrost : geoPoints.industry;
         const src = pool[Math.floor(Math.random() * pool.length)];
         const pos = geoToSVG(src.lat + (Math.random() - 0.5) * 4, src.lon + (Math.random() - 0.5) * 4);
         if (pos) {
@@ -916,7 +956,7 @@ import { createScene } from '../sim-kit-three.mjs';
   }
 
   /* ══════════════════════════════════════════
-     RESIZE (ResizeObserver keeps globe & SVG in sync with drawer toggles)
+     RESIZE
   ══════════════════════════════════════════ */
   function onResize() {
     syncSize();
@@ -933,13 +973,18 @@ import { createScene } from '../sim-kit-three.mjs';
   /* ══════════════════════════════════════════
      UI STATE & BINDINGS
   ══════════════════════════════════════════ */
-  const state = { co2: 429, solar: 100, ice: 60, deforest: 30, ch4: 1930, ocean: 70 };
-  let climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
+  const state = { ...PRESETS.today };
+  delete state.label;
+  let climate = computeClimate(state);
   let month = 9;
   let weather = ClimateWeather.conditions(month, climate.tempAnomaly);
   paintStormAtlas();
   let feedbackDriftEnabled = false;
   let activePreset = 'today';
+  let userInteracted = false;
+  let probedArctic = false;
+  let probedTropics = false;
+  let completedMissions = new Set();
 
   const labels = {
     co2: document.getElementById('v-co2'),
@@ -963,6 +1008,13 @@ import { createScene } from '../sim-kit-three.mjs';
   const heatmapLegend = document.getElementById('heatmap-legend');
   const feedbackToggleBtn = document.getElementById('feedback-toggle');
   const feedbackStateLbl = document.getElementById('feedback-state');
+  const feedbackRatesEl = document.getElementById('feedback-rates');
+  const probeCard = document.getElementById('probe-card');
+  const missionListEl = document.getElementById('mission-list');
+  const missionBadgeEl = document.getElementById('mission-badge');
+
+  function fmt(n, dec = 1) { return n.toFixed(dec); }
+  function fmtSign(n, dec = 1) { return (n >= 0 ? '+' : '') + n.toFixed(dec); }
 
   function setAlert(cls, label, detail) {
     alertBar.className = 'alert-bar ' + cls;
@@ -976,7 +1028,7 @@ import { createScene } from '../sim-kit-three.mjs';
   function updateStatusPanel(c) {
     const lines = [];
 
-    if (c.iceLeft > 70) lines.push(statusLine('Ice', 'blue', 'Polar ice sheets and seasonal sea-ice pack stable.'));
+    if (c.iceLeft > 70) lines.push(statusLine('Ice', 'blue', 'Polar ice sheets and seasonal sea-ice pack stable or expanding.'));
     else if (c.iceLeft > 40) lines.push(statusLine('Ice', 'warm', 'Arctic sea ice retreating; polar amplification accelerating.'));
     else if (c.iceLeft > 15) lines.push(statusLine('Ice', 'hot', 'Major cryosphere loss — summer Arctic sea ice near collapse.'));
     else lines.push(statusLine('Ice', 'critical', 'Greenland and West Antarctic ice sheets in critical decline.'));
@@ -993,15 +1045,133 @@ import { createScene } from '../sim-kit-three.mjs';
     else if (bioStress < 60) lines.push(statusLine('Biome', 'warm', 'Deforestation and heat stress weakening tropical carbon sinks.'));
     else lines.push(statusLine('Biome', 'hot', 'Severe forest dieback and permafrost thaw — land sinks flipping to source.'));
 
-    if (c.seaLevel < 0.35) lines.push(statusLine('Coast', 'blue', 'Thermosteric and meltwater sea level rise within adaptive range.'));
+    if (c.seaLevel < 0) lines.push(statusLine('Coast', 'blue', `Glacial ice sheets locking ocean water (${fmtSign(c.seaLevel, 1)} m sea level drop).`));
+    else if (c.seaLevel < 0.35) lines.push(statusLine('Coast', 'blue', 'Thermosteric and meltwater sea level rise within adaptive range.'));
     else if (c.seaLevel < 1.0) lines.push(statusLine('Coast', 'warm', 'Chronic king-tide flooding and coastal erosion accelerating.'));
     else lines.push(statusLine('Coast', 'critical', 'Multi-meter sea level commitment — low-lying coastlines inundated.'));
 
     statusLinesEl.innerHTML = lines.join('');
   }
 
-  function fmt(n, dec = 1) { return n.toFixed(dec); }
-  function fmtSign(n, dec = 1) { return (n >= 0 ? '+' : '') + n.toFixed(dec); }
+  function updateEnergyBudgetUI() {
+    const eb = computeEnergyBudget(state, climate);
+    const incEl = document.getElementById('eb-incoming');
+    if (!incEl) return;
+
+    incEl.textContent = `${eb.incomingSolar.toFixed(1)} W/m²`;
+    document.getElementById('eb-albedo').textContent = `${Math.round(eb.albedo * 100)}%`;
+    document.getElementById('eb-reflected').textContent = `${eb.reflectedSolar.toFixed(1)} W/m²`;
+    document.getElementById('eb-absorbed').textContent = `${eb.absorbedSolar.toFixed(1)} W/m²`;
+    document.getElementById('eb-surface-ir').textContent = `${eb.surfaceIR.toFixed(1)} W/m²`;
+    document.getElementById('eb-backrad').textContent = `${eb.backRadiation.toFixed(1)} W/m²`;
+    document.getElementById('eb-outgoing').textContent = `${eb.outgoingIR.toFixed(1)} W/m²`;
+
+    const imbEl = document.getElementById('eb-imbalance');
+    imbEl.textContent = `Net Imbalance: ${fmtSign(eb.netImbalance, 1)} W/m²`;
+    imbEl.className = 'eb-imbalance ' + (eb.netImbalance > 0.25 ? 'warming' : eb.netImbalance < -0.25 ? 'cooling' : '');
+
+    const fillEl = document.getElementById('eb-meter-fill');
+    const pct = clamp(Math.abs(eb.netImbalance) / 8.0, 0, 1) * 50;
+    if (eb.netImbalance >= 0) {
+      fillEl.style.left = '50%';
+      fillEl.style.width = `${pct.toFixed(1)}%`;
+      fillEl.style.backgroundColor = eb.netImbalance > 3.5 ? '#ef4444' : '#fb923c';
+    } else {
+      fillEl.style.left = `${(50 - pct).toFixed(1)}%`;
+      fillEl.style.width = `${pct.toFixed(1)}%`;
+      fillEl.style.backgroundColor = '#38bdf8';
+    }
+
+    const sumEl = document.getElementById('eb-summary');
+    if (Math.abs(eb.netImbalance) < 0.25) {
+      sumEl.textContent = 'Planetary radiative equilibrium: absorbed solar energy closely balances outgoing thermal infrared radiation.';
+    } else if (eb.netImbalance > 0) {
+      sumEl.textContent = `Earth absorbs ${eb.netImbalance.toFixed(1)} W/m² more energy than it radiates to space, driving warming until outgoing IR catches up.`;
+    } else {
+      sumEl.textContent = `Earth radiates ${Math.abs(eb.netImbalance).toFixed(1)} W/m² more energy than it absorbs, cooling the surface and expanding ice cover.`;
+    }
+  }
+
+  function updateProbeCard() {
+    if (!activeProbe || !probeCard) return;
+    const p = computeLocalProbe({
+      lat: activeProbe.lat,
+      lon: activeProbe.lon,
+      isLand: activeProbe.isLand,
+      state,
+      climate,
+    });
+    const latStr = `${Math.abs(p.lat).toFixed(1)}°${p.lat >= 0 ? 'N' : 'S'}`;
+    const lonStr = `${Math.abs(p.lon).toFixed(1)}°${p.lon >= 0 ? 'E' : 'W'}`;
+    document.getElementById('probe-coords').textContent = `${latStr}, ${lonStr}`;
+    document.getElementById('probe-surface').textContent = p.surfaceType;
+    document.getElementById('probe-temp').textContent = `${fmtSign(p.localAnomaly, 1)}°C`;
+    document.getElementById('probe-amp').textContent = `${p.multiplier.toFixed(2)}×`;
+    document.getElementById('probe-albedo').textContent = `${Math.round(p.localAlbedo * 100)}%`;
+    document.getElementById('probe-note').textContent = p.note;
+    probeCard.hidden = false;
+  }
+
+  function renderMissions() {
+    if (!missionListEl || !missionBadgeEl) return;
+    missionBadgeEl.textContent = `${completedMissions.size}/${MISSIONS.length}`;
+    missionListEl.innerHTML = MISSIONS.map(m => {
+      const done = completedMissions.has(m.id);
+      return `
+        <article class="mission-card${done ? ' done' : ''}" data-mission="${m.id}">
+          <div class="mission-head">
+            <h4 class="mission-title">${m.title}</h4>
+            <span class="mission-status">${done ? '✓ Complete' : 'In Progress'}</span>
+          </div>
+          <p class="mission-goal">${m.goal}</p>
+          <p class="mission-hint"><strong>Tip:</strong> ${m.hint}</p>
+        </article>
+      `;
+    }).join('');
+  }
+
+  function refreshMissions() {
+    const next = evaluateMissions({
+      state,
+      climate,
+      mode,
+      feedbackDriftEnabled,
+      probedArctic,
+      probedTropics,
+      userInteracted,
+      completedIds: completedMissions,
+    });
+    const changed = next.size !== completedMissions.size;
+    completedMissions = next;
+    if (changed || !missionListEl.children.length) {
+      renderMissions();
+    }
+  }
+
+  function updateFeedbackRatesUI() {
+    if (!feedbackRatesEl) return;
+    if (!feedbackDriftEnabled) {
+      feedbackRatesEl.hidden = true;
+      return;
+    }
+    feedbackRatesEl.hidden = false;
+    const parts = [];
+    if (state.deforest > 35 && state.co2 < 700) {
+      const rate = ((state.deforest - 35) / 65) * 4.5;
+      parts.push(`CO₂ +${rate.toFixed(1)} ppm/s`);
+    }
+    if (climate.tempAnomaly > 1.6 && state.ch4 < 4000) {
+      const rate = (climate.tempAnomaly - 1.6) * 18.0;
+      parts.push(`CH₄ +${rate.toFixed(0)} ppb/s`);
+    }
+    if (climate.tempAnomaly > 1.3 && state.ice > 5) {
+      const rate = (climate.tempAnomaly - 1.3) * 0.55;
+      parts.push(`Ice −${rate.toFixed(2)}%/s`);
+    }
+    feedbackRatesEl.textContent = parts.length
+      ? `Active drift: ${parts.join(' · ')}`
+      : 'Holding steady — raise Deforestation >35% or ΔT >1.3°C to trigger drift.';
+  }
 
   function updateReadouts() {
     const c = climate;
@@ -1014,14 +1184,16 @@ import { createScene } from '../sim-kit-three.mjs';
     outs.forcing.textContent = fmtSign(c.totalForcing, 1) + ' W/m²';
     outs.icecover.textContent = fmt(c.iceLeft, 0) + '%';
 
-    const tempClass = t < 1.5 ? 'neutral' : t < 2.5 ? 'warm' : t < 4 ? 'hot' : 'critical';
+    const tempClass = t < 0 ? 'blue' : t < 1.5 ? 'neutral' : t < 2.5 ? 'warm' : t < 4 ? 'hot' : 'critical';
     outs.temp.className = 'readout-val ' + tempClass;
     outs.ph.className   = 'readout-val ' + (c.oceanPH > 8.05 ? 'neutral' : c.oceanPH > 7.93 ? 'warm' : 'acid');
     outs.storm.className = 'readout-val ' + (weather.moistureFactor < 1.15 ? 'neutral' : weather.moistureFactor < 1.3 ? 'warm' : 'hot');
     outs.icecover.className = 'readout-val ' + (c.iceLeft > 50 ? 'blue' : c.iceLeft > 25 ? 'warm' : 'hot');
-    outs.forcing.className  = 'readout-val ' + (c.totalForcing < 2.2 ? 'neutral' : c.totalForcing < 4.2 ? 'warm' : 'hot');
+    outs.forcing.className  = 'readout-val ' + (c.totalForcing < 0 ? 'blue' : c.totalForcing < 2.2 ? 'neutral' : c.totalForcing < 4.2 ? 'warm' : 'hot');
 
-    if (t < 1.5) {
+    if (t < -1.0) {
+      setAlert('safe', 'Threat Level: Glacial', 'Ice-albedo cooling locks water in continental ice sheets.');
+    } else if (t < 1.5) {
       setAlert('safe', 'Threat Level: Nominal', 'Within the 1.5°C Paris guardband — rapid decarbonization can stabilize warming.');
     } else if (t < 2.5) {
       setAlert('warning', 'Threat Level: Elevated', 'Exceeding 1.5°C — coral reef die-off, glacier retreat, and extreme heat waves.');
@@ -1032,6 +1204,10 @@ import { createScene } from '../sim-kit-three.mjs';
     }
 
     updateStatusPanel(c);
+    updateEnergyBudgetUI();
+    updateProbeCard();
+    updateFeedbackRatesUI();
+    refreshMissions();
 
     window.dispatchEvent(new CustomEvent('climate:update', {
       detail: { state: { ...state }, climate: { ...climate }, preset: activePreset }
@@ -1044,27 +1220,26 @@ import { createScene } from '../sim-kit-three.mjs';
     earthUniforms.deforest.value    = state.deforest / 100;
     earthUniforms.oceanHeat.value   = state.ocean / 100;
 
-    // Atmosphere limb shifts subtly from clean Rayleigh blue toward hazy amber at extreme warming
     const t = clamp(climate.tempAnomaly / 6, 0, 1);
     atmUniforms.atmColor.value.setRGB(lerp(0.16, 0.65, t), lerp(0.44, 0.24, t), lerp(1.0, 0.12, t));
     atmUniforms.rimStrength.value = lerp(0.72, 1.12, t);
 
     updateMeltFront(state.ice / 100, climate.tempAnomaly);
-    cloudMat.opacity = cloudOpacityFor(climate, state.ocean);
+    cloudMat.opacity = cloudOpacityFor(state.ocean);
+  }
+
+  function cloudOpacityFor(ocean) {
+    const moisture = clamp((weather.moistureFactor - 1) / 0.5, 0, 1);
+    return clamp(0.38 + moisture * 0.13 + (ocean / 100) * 0.07, 0.3, 0.62);
   }
 
   function onParamChange(rebuildParticles = true) {
-    climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
+    climate = computeClimate(state);
     weather = ClimateWeather.conditions(month, climate.tempAnomaly);
     document.getElementById('weather-explainer').textContent = `${weather.basins.map(b => b.name).join(', ') || 'No featured tropical basin'}: seasonally favored examples. Warm water alone cannot produce a cyclone; wind shear and a disturbance matter. These are not active storms.`;
     updateReadouts();
     syncVisualUniforms();
-    if (rebuildParticles) spawnPersistent(climate);
-  }
-
-  function cloudOpacityFor(climate, ocean) {
-    const moisture = clamp((weather.moistureFactor - 1) / 0.5, 0, 1);
-    return clamp(0.38 + moisture * 0.13 + (ocean / 100) * 0.07, 0.3, 0.62);
+    if (rebuildParticles) spawnPersistent();
   }
 
   function setActivePresetButton(presetName) {
@@ -1088,6 +1263,7 @@ import { createScene } from '../sim-kit-three.mjs';
     const el = document.getElementById('s-' + id);
     const lbl = labels[id];
     el.addEventListener('input', () => {
+      userInteracted = true;
       state[key] = parseFloat(el.value);
       lbl.textContent = SLIDER_FORMATTERS[key](state[key]);
       if (!applyingPreset) {
@@ -1109,27 +1285,21 @@ import { createScene } from '../sim-kit-three.mjs';
     month = Number(e.target.value);
     cloudTex.image = buildCloudTexture(month);
     cloudTex.needsUpdate = true;
+    updateSolarDeclination(month);
     document.getElementById('v-month').textContent = monthNames[month - 1];
     weather = ClimateWeather.conditions(month, climate.tempAnomaly);
     paintStormAtlas();
     document.getElementById('weather-explainer').textContent = `${weather.basins.map(b => b.name).join(', ') || 'No featured tropical basin'}: seasonally favored examples. Warm water alone cannot produce a cyclone; wind shear and a disturbance matter. These are not active storms.`;
     updateReadouts();
-    spawnPersistent(climate);
+    spawnPersistent();
   });
-
-  // Scenario presets
-  const PRESETS = {
-    preindustrial: { co2: 280, solar: 100, ice: 100, deforest: 0,  ch4: 722,  ocean: 70 },
-    today:         { co2: 429, solar: 100, ice: 60,  deforest: 30, ch4: 1930, ocean: 70 },
-    paris:         { co2: 450, solar: 100, ice: 50,  deforest: 40, ch4: 2000, ocean: 70 },
-    bau:           { co2: 700, solar: 100, ice: 20,  deforest: 70, ch4: 3200, ocean: 55 },
-  };
 
   function applyPreset(presetKey, syncCompareChart = true) {
     const preset = PRESETS[presetKey];
     if (!preset) return;
+    userInteracted = true;
     applyingPreset = true;
-    Object.keys(preset).forEach(id => {
+    Object.keys(SLIDER_FORMATTERS).forEach(id => {
       const el = document.getElementById('s-' + id);
       el.value = preset[id];
       state[id] = preset[id];
@@ -1151,7 +1321,6 @@ import { createScene } from '../sim-kit-three.mjs';
     applyPreset(btn.dataset.preset, true);
   });
 
-  // Listen for clicks on the "Compare climate paths through 2100" buttons below
   const compareActions = document.getElementById('climate-p3-actions');
   if (compareActions) {
     compareActions.addEventListener('click', e => {
@@ -1164,12 +1333,14 @@ import { createScene } from '../sim-kit-three.mjs';
     });
   }
 
-  // Coupled Feedback Drift toggle (opt-in so presets and manual slider tests don't self-mutate unexpectedly)
   if (feedbackToggleBtn) {
     feedbackToggleBtn.addEventListener('click', () => {
+      userInteracted = true;
       feedbackDriftEnabled = !feedbackDriftEnabled;
       feedbackToggleBtn.setAttribute('aria-pressed', String(feedbackDriftEnabled));
       feedbackStateLbl.textContent = feedbackDriftEnabled ? 'Active' : 'Hold Steady';
+      updateFeedbackRatesUI();
+      refreshMissions();
     });
   }
 
@@ -1188,8 +1359,99 @@ import { createScene } from '../sim-kit-three.mjs';
     if (heatmapLegend) heatmapLegend.classList.toggle('visible', mode === 'temperature');
 
     earthUniforms.heatMap.value = mode === 'temperature' ? 1.0 : 0.0;
-    spawnPersistent(climate);
+    spawnPersistent();
+    refreshMissions();
   });
+
+  // Globe HUD controls (Spin, Lighting, Labels, Camera Presets)
+  const btnSpin = document.getElementById('btn-spin');
+  const btnLighting = document.getElementById('btn-lighting');
+  const btnLabels = document.getElementById('btn-labels');
+
+  if (btnSpin) {
+    btnSpin.addEventListener('click', () => {
+      controls.autoRotate = !controls.autoRotate;
+      btnSpin.setAttribute('aria-pressed', String(controls.autoRotate));
+      btnSpin.textContent = controls.autoRotate ? '⏸ Pause' : '▶ Spin';
+    });
+  }
+  if (btnLighting) {
+    btnLighting.addEventListener('click', () => {
+      const next = earthUniforms.uniformLit.value < 0.5 ? 1.0 : 0.0;
+      earthUniforms.uniformLit.value = next;
+      atmUniforms.uniformLit.value = next;
+      btnLighting.setAttribute('aria-pressed', String(next > 0.5));
+      btnLighting.textContent = next > 0.5 ? '☀ Full Sun' : '☀ Day/Night';
+    });
+  }
+  if (btnLabels) {
+    btnLabels.addEventListener('click', () => {
+      showLabels = !showLabels;
+      btnLabels.setAttribute('aria-pressed', String(showLabels));
+      updatePersistentPositions();
+    });
+  }
+
+  document.querySelectorAll('[data-cam]').forEach(btn => {
+    btn.addEventListener('click', () => animateCameraTo(btn.dataset.cam));
+  });
+
+  // Click-to-Probe 3D Earth Raycaster
+  const raycaster = new THREE.Raycaster();
+  const pointerNDC = new THREE.Vector2();
+  let downPos = null;
+
+  function placeProbePin(lat, lon) {
+    while (probeRoot.firstChild) probeRoot.removeChild(probeRoot.firstChild);
+    const g = svgEl('g', {});
+    g.innerHTML = `
+      <circle r="6" fill="none" stroke="#38bdf8" stroke-width="1.6" class="p-probe-ring" style="animation:probePulse 1.6s ease-in-out infinite"/>
+      <circle r="3.2" fill="#7dd3fc" stroke="#082f49" stroke-width="1.2"/>
+    `;
+    probeRoot.appendChild(g);
+    const isLand = sampleIsLand(lon, lat);
+    activeProbe = { lat, lon, isLand, el: g };
+
+    if (lat >= 60) probedArctic = true;
+    if (Math.abs(lat) <= 25) probedTropics = true;
+
+    updateProbeCard();
+    updatePersistentPositions();
+    refreshMissions();
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    downPos = { x: e.clientX, y: e.clientY };
+  });
+  canvas.addEventListener('pointerup', e => {
+    if (!downPos) return;
+    const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+    downPos = null;
+    if (dist > 6) return; // ignore orbit drags
+
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(pointerNDC, camera);
+    earthMesh.updateMatrixWorld();
+    const hits = raycaster.intersectObject(earthMesh, false);
+    if (!hits.length) return;
+
+    const localPt = earthMesh.worldToLocal(hits[0].point.clone());
+    const [lon, lat] = EarthEngine.vectorToLonLat(localPt);
+    placeProbePin(lat, lon);
+  });
+
+  const probeCloseBtn = document.getElementById('probe-close');
+  if (probeCloseBtn) {
+    probeCloseBtn.addEventListener('click', () => {
+      activeProbe = null;
+      while (probeRoot.firstChild) probeRoot.removeChild(probeRoot.firstChild);
+      if (probeCard) probeCard.hidden = true;
+    });
+  }
 
   /* ══════════════════════════════════════════
      ANIMATION LOOP
@@ -1198,6 +1460,19 @@ import { createScene } from '../sim-kit-three.mjs';
   function animate(dtRaw, ts) {
     const dt = Math.min(dtRaw, 0.05);
     const sec = ts * 0.001;
+
+    if (camAnim) {
+      const camDt = Math.min(dtRaw, 0.25);
+      camAnim.progress = Math.min(1, camAnim.progress + camDt / camAnim.duration);
+      const ease = 1 - Math.pow(1 - camAnim.progress, 3);
+      const curSph = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+      curSph.phi = lerp(camAnim.startPhi, camAnim.targetPhi, ease);
+      curSph.radius = lerp(camAnim.startDist, camAnim.targetDist, ease);
+      curSph.makeSafe();
+      camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(curSph));
+      if (camAnim.progress >= 1) camAnim = null;
+    }
+
     controls.update();
 
     // Weather cloud layers share Earth's rotation, keeping basin examples aligned.
@@ -1215,19 +1490,16 @@ import { createScene } from '../sim-kit-three.mjs';
     earthUniforms.sunIntensity.value = 0.88 * solarFactor;
     earthUniforms.sunColor.value.setHSL(0.1, sunSat, 0.95);
 
-    // Polar aurora intensity driven by Solar Irradiance (solar wind magnetospheric coupling)
+    // Polar aurora intensity driven by Solar Irradiance
     const solarActivity = clamp((state.solar - 94) / 11, 0.15, 1.0);
     auroraUniforms.intensity.value = solarActivity * (0.28 + 0.14 * Math.sin(sec * 1.3));
 
-    // Melt-front ring — slow pulse so the ice edge reads as an active phase boundary
-    const meltPulse = 0.28 + 0.22 * Math.sin(sec * 1.8);
+    // Melt-front ring — slow pulse scaled by visibility so ice-free poles have no phantom ring
+    const meltPulse = (0.28 + 0.22 * Math.sin(sec * 1.8)) * meltFrontVisibility;
     meltFrontNorth.material.opacity = meltPulse;
     meltFrontSouth.material.opacity = meltPulse * 0.85;
 
-    // Coupled Earth-system feedback loop (when enabled by the student):
-    // 1) High deforestation reduces carbon sink uptake -> atmospheric CO2 rises
-    // 2) Warming > +1.6°C thaws Arctic permafrost -> CH4 rises
-    // 3) Warming > +1.2°C melts sea/land ice -> ice cover retreats
+    // Coupled Earth-system feedback loop
     if (feedbackDriftEnabled) {
       let changed = false;
       if (state.deforest > 35 && state.co2 < 700) {
@@ -1254,7 +1526,7 @@ import { createScene } from '../sim-kit-three.mjs';
       if (changed) {
         setActivePresetButton(null);
         feedbackSyncAccum += dt;
-        climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
+        climate = computeClimate(state);
         weather = ClimateWeather.conditions(month, climate.tempAnomaly);
         syncVisualUniforms();
         if (feedbackSyncAccum > 0.25) {
@@ -1264,7 +1536,6 @@ import { createScene } from '../sim-kit-three.mjs';
       }
     }
 
-    // Particles
     updatePersistentPositions();
     spawnTransient(climate, dt);
 
@@ -1275,6 +1546,7 @@ import { createScene } from '../sim-kit-three.mjs';
      INIT
   ══════════════════════════════════════════ */
   onResize();
+  renderMissions();
   onParamChange(true);
   SimKit.loop(animate, { el: document.getElementById('earth-canvas') });
 

@@ -95,6 +95,7 @@
     [/^fingerings$/i, { kind: 'quick', icon: '🎷', short: 'Fingerings', blurb: 'Pick a note, see the keys.' }],
     [/^fingerboard$/i, { kind: 'quick', icon: '🎻', short: 'Fingerboard', blurb: 'Notes on the strings.' }],
     [/build a beat/i, { kind: 'quick', icon: '🥁', short: 'Build a beat', blurb: 'Draw a groove, hear it.' }],
+    [/practice exercises/i, { icon: '🏋️', blurb: 'Tiered drills in any key.' }],
     [/scale learning/i, { icon: '🎯', blurb: 'Learn a scale, then recall it.' }],
     [/hanon/i, { icon: '🖐️', blurb: 'Short patterns for even fingers.' }],
     [/repertoire/i, { icon: '🎶', blurb: 'A path of pieces, easier to harder.' }],
@@ -136,14 +137,28 @@
     panel.setAttribute('role', 'region');
     panel.setAttribute('aria-label', 'Instrument home');
     app.append(panel);
-    // Compact on purpose: one row of tool tiles, then one line each for practice and chapters.
+    // Two labelled grids of identical tiles (practice activities, then reference tools), then one
+    // line of chapter links. Every activity is the same size and shape, so none hides as a chip.
     panel.append(el('h2', 'iw-sr', 'Instrument home'));
-    const row = el('div', 'iw-tiles');
-    row.setAttribute('aria-label', 'Quick start');
-    row.setAttribute('role', 'group');
-    if (start) row.append(tile(start, { icon: '🌱', short: start.label, blurb: 'New here? Start here.' }, 'iw-tile iw-start'));
-    quick.forEach(i => row.append(tile(i, i.info, 'iw-tile')));
-    panel.append(row);
+    function grid(name, entries) {
+      if (!entries.length) return;
+      const wrap = el('div', 'iw-group');
+      wrap.setAttribute('role', 'group');
+      wrap.setAttribute('aria-label', name);
+      wrap.append(el('span', 'iw-row-label', name));
+      const row = el('div', 'iw-tiles');
+      entries.forEach(entry => row.append(entry));
+      wrap.append(row);
+      panel.append(wrap);
+    }
+    grid('Practice', [
+      start && tile(start, { icon: '🌱', short: start.label, blurb: 'New here? Start here.' }, 'iw-tile iw-start'),
+      ...modules.map(i => tile(i, i.info, 'iw-tile')),
+    ].filter(Boolean));
+    grid('Tools', [
+      ...quick.map(i => tile(i, i.info, 'iw-tile')),
+      ...helps.map(i => tile(i, { icon: '❓', short: i.label, blurb: 'How this works.' }, 'iw-tile')),
+    ]);
     function line(name, entries) {
       if (!entries.length) return;
       const wrap = el('div', 'iw-row');
@@ -160,11 +175,7 @@
       });
       panel.append(wrap);
     }
-    line('Practice', [
-      ...modules.map(i => [i.info.icon, i.label, i.info.blurb, () => show(i.panel)]),
-      ...helps.map(i => ['❓', i.label, '', () => show(i.panel)]),
-    ]);
-    line('Chapters', [...document.querySelectorAll('main details.instrument-chapter[id^="unit-"]')].map(ch => {
+    line('Lesson chapters', [...document.querySelectorAll('main details.instrument-chapter[id^="unit-"]')].map(ch => {
       const sum = ch.querySelector(':scope > summary');
       const name = sum.querySelector('.instrument-chapter-title')?.textContent || sum.textContent.trim();
       return [sum.querySelector('.instrument-chapter-emoji')?.textContent || '📖', name,

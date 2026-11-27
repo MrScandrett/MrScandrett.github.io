@@ -5,394 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mean, Median &amp; Mode · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Mathematics lesson on mean, median, and mode with a draggable dot-plot dataset, worked examples, guided practice, and an interactive answer checker." />
+  <meta name="description" content="Mathematics lesson on mean, median, and mode with a draggable dot-plot fulcrum, real-world scenario explorer, worked examples, guided practice, and an interactive answer checker." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
-  <style>
-    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #db2777; --ll-tab-active: #db2777; --ll-tab-active-bg: rgba(219,39,119,0.12); }
-    .mmm-page { padding-bottom: 3.5rem; }
-    .mmm-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
-    .mmm-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
-    .mmm-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-    .mmm-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
-    .mmm-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .mmm-lede,
-    [data-theme="vaporwave"] .mmm-lede,
-    [data-theme="bark"] .mmm-lede { color: rgba(245,245,247,0.72); }
-
-    .mmm-card {
-      background: var(--white, #fff);
-      border: 1px solid var(--line, #d2d2d7);
-      border-left: 3.5px solid var(--card-accent, #db2777);
-      border-radius: var(--radius, 18px);
-      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
-      padding: 1.2rem 1.4rem;
-      margin-bottom: 1rem;
-    }
-    [data-lighting="night"] .mmm-card,
-    [data-theme="vaporwave"] .mmm-card,
-    [data-theme="bark"] .mmm-card { background: var(--white, #2c2c2e); }
-    .mmm-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .mmm-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; letter-spacing: -0.01em; }
-    .mmm-card p { margin: 0 0 0.62rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    .mmm-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .mmm-card p,
-    [data-theme="vaporwave"] .mmm-card p,
-    [data-theme="bark"] .mmm-card p { color: rgba(245,245,247,0.72); }
-
-    .mmm-rule {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.8rem;
-      margin-top: 0.85rem;
-    }
-    .mmm-rule-box {
-      border: 1px solid var(--line, #d2d2d7);
-      border-top: 3px solid var(--rule-color, #db2777);
-      border-radius: 10px;
-      padding: 0.9rem;
-      background: rgba(0,0,0,0.03);
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-    [data-lighting="night"] .mmm-rule-box,
-    [data-theme="vaporwave"] .mmm-rule-box,
-    [data-theme="bark"] .mmm-rule-box { background: rgba(255,255,255,0.04); }
-    .mmm-rule-box strong { display: flex; align-items: center; justify-content: space-between; font-size: 0.92rem; }
-    .mmm-rule-badge {
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 0.14rem 0.45rem;
-      border-radius: 999px;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    .mmm-rule-formula {
-      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 0.32rem 0.5rem;
-      border-radius: 6px;
-      background: rgba(0,0,0,0.045);
-      color: var(--text, #1d1d1f);
-    }
-    [data-lighting="night"] .mmm-rule-formula,
-    [data-theme="vaporwave"] .mmm-rule-formula,
-    [data-theme="bark"] .mmm-rule-formula { background: rgba(255,255,255,0.07); color: #f5f5f7; }
-    .mmm-rule-box span { color: var(--text-muted, #64748b); font-size: 0.8rem; line-height: 1.5; display: block; }
-
-    .mmm-example {
-      margin-top: 0.85rem;
-      border: 1px solid rgba(219,39,119,0.22);
-      border-radius: 12px;
-      overflow: hidden;
-      background: rgba(219,39,119,0.045);
-    }
-    .mmm-example-row {
-      display: grid;
-      grid-template-columns: 1.25fr 2fr;
-      gap: 1rem;
-      padding: 0.72rem 0.9rem;
-      border-bottom: 1px solid rgba(219,39,119,0.16);
-      align-items: start;
-    }
-    .mmm-example-row:last-child { border-bottom: 0; }
-    .mmm-math {
-      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: var(--text, #1d1d1f);
-      letter-spacing: 0;
-    }
-    .mmm-note { color: var(--text-secondary, #3f4f65); font-size: 0.82rem; line-height: 1.5; }
-    [data-lighting="night"] .mmm-note,
-    [data-theme="vaporwave"] .mmm-note,
-    [data-theme="bark"] .mmm-note { color: rgba(245,245,247,0.72); }
-
-    .mmm-workspace {
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 12px;
-      padding: 1rem;
-      background: rgba(0,0,0,0.03);
-      margin-top: 0.85rem;
-    }
-    [data-lighting="night"] .mmm-workspace,
-    [data-theme="vaporwave"] .mmm-workspace,
-    [data-theme="bark"] .mmm-workspace { background: rgba(255,255,255,0.04); }
-
-    .mmm-plot { width: 100%; height: auto; touch-action: none; user-select: none; display: block; }
-    .mmm-plot .axis-line { stroke: var(--text-muted, #64748b); stroke-width: 2; }
-    .mmm-plot .tick-line { stroke: var(--line, #cbd5e1); stroke-width: 1.2; }
-    [data-lighting="night"] .mmm-plot .tick-line,
-    [data-theme="vaporwave"] .mmm-plot .tick-line,
-    [data-theme="bark"] .mmm-plot .tick-line { stroke: rgba(255,255,255,0.18); }
-    .mmm-plot .tick-label { font: 600 11px "IBM Plex Mono", ui-monospace, monospace; fill: var(--text-muted, #64748b); }
-    .mmm-plot .mmm-dot { fill: #db2777; stroke: #fff; stroke-width: 2; cursor: grab; transition: r 0.12s ease; }
-    .mmm-plot .mmm-dot:hover { r: 11; }
-    .mmm-plot .mmm-dot:active { cursor: grabbing; }
-    .mmm-plot .mmm-dot.is-median { stroke: #0ea5e9; stroke-width: 2.6; }
-    .mmm-plot .mmm-dot-label { font: 700 9.5px "IBM Plex Mono", ui-monospace, monospace; fill: #fff; pointer-events: none; }
-    .mmm-plot .mmm-mean-line { stroke: #16a34a; stroke-width: 2.2; stroke-dasharray: 5 4; }
-    .mmm-plot .mmm-median-line { stroke: #0ea5e9; stroke-width: 2.2; stroke-dasharray: 2 3; }
-    .mmm-plot .mmm-mode-line { stroke: #f59e0b; stroke-width: 2; stroke-dasharray: 4 3; }
-    .mmm-plot .mmm-flag-text { font: 700 10.5px "IBM Plex Mono", ui-monospace, monospace; fill: #fff; }
-    .mmm-plot .mmm-beam-line { stroke: var(--text-muted, #64748b); stroke-width: 1.5; stroke-dasharray: 3 3; }
-    .mmm-plot .mmm-torque-label { font: 600 10px "IBM Plex Mono", ui-monospace, monospace; fill: var(--text-muted, #64748b); }
-    [data-lighting="night"] .mmm-plot .mmm-dot,
-    [data-theme="vaporwave"] .mmm-plot .mmm-dot,
-    [data-theme="bark"] .mmm-plot .mmm-dot { stroke: #1c1c1e; }
-    [data-lighting="night"] .mmm-plot .mmm-dot.is-median,
-    [data-theme="vaporwave"] .mmm-plot .mmm-dot.is-median,
-    [data-theme="bark"] .mmm-plot .mmm-dot.is-median { stroke: #38bdf8; }
-
-    .mmm-legend-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-      margin-top: 0.55rem;
-    }
-    .mmm-legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-muted, #64748b); }
-    .mmm-legend span { display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600; }
-    .mmm-legend .swatch { width: 16px; height: 3.5px; border-radius: 2px; display: inline-block; }
-
-    .mmm-sorted-strip {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-top: 0.75rem;
-      padding: 0.55rem 0.75rem;
-      border-radius: 9px;
-      border: 1px dashed var(--line, #d2d2d7);
-      background: rgba(255,255,255,0.45);
-      font-size: 0.8rem;
-    }
-    [data-lighting="night"] .mmm-sorted-strip,
-    [data-theme="vaporwave"] .mmm-sorted-strip,
-    [data-theme="bark"] .mmm-sorted-strip { background: rgba(0,0,0,0.2); }
-    .mmm-sorted-label { font-weight: 700; color: var(--text-muted, #64748b); margin-right: 0.25rem; }
-    .mmm-chip {
-      font-family: "IBM Plex Mono", ui-monospace, monospace;
-      font-size: 0.82rem;
-      font-weight: 700;
-      padding: 0.16rem 0.48rem;
-      border-radius: 6px;
-      border: 1.5px solid var(--line, #d2d2d7);
-      background: var(--white, #fff);
-      color: var(--text, #1d1d1f);
-    }
-    [data-lighting="night"] .mmm-chip,
-    [data-theme="vaporwave"] .mmm-chip,
-    [data-theme="bark"] .mmm-chip { background: rgba(255,255,255,0.06); color: #f5f5f7; }
-    .mmm-chip.is-median { border-color: #0ea5e9; background: rgba(14,165,233,0.14); color: #0284c7; }
-    [data-lighting="night"] .mmm-chip.is-median,
-    [data-theme="vaporwave"] .mmm-chip.is-median,
-    [data-theme="bark"] .mmm-chip.is-median { color: #38bdf8; }
-    .mmm-chip.is-mode { box-shadow: 0 0 0 2px rgba(245,158,11,0.35); }
-
-    .mmm-readout {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.55rem;
-      margin-top: 0.8rem;
-    }
-    .mmm-readout-item {
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 9px;
-      padding: 0.55rem 0.65rem;
-      background: rgba(219,39,119,0.06);
-      text-align: center;
-    }
-    [data-lighting="night"] .mmm-readout-item,
-    [data-theme="vaporwave"] .mmm-readout-item,
-    [data-theme="bark"] .mmm-readout-item { background: rgba(255,255,255,0.045); }
-    .mmm-readout-item span { display: block; font-size: 0.72rem; color: var(--text-muted, #64748b); margin-bottom: 0.15rem; font-weight: 600; }
-    .mmm-readout-item strong { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 1.12rem; display: block; }
-    .mmm-readout-item small { display: block; font-size: 0.7rem; color: var(--text-muted, #64748b); margin-top: 0.15rem; font-family: "IBM Plex Mono", ui-monospace, monospace; }
-
-    .mmm-tools { display: flex; gap: 0.45rem; justify-content: center; margin-top: 0.8rem; flex-wrap: wrap; }
-    .mmm-tool-btn {
-      border: 1.5px solid var(--line, #d2d2d7);
-      border-radius: 8px;
-      padding: 0.42rem 0.72rem;
-      background: var(--white, #fff);
-      color: var(--text, #1d1d1f);
-      font: 700 0.78rem var(--font-sans);
-      cursor: pointer;
-      transition: border-color 0.15s ease, transform 0.1s ease;
-    }
-    [data-lighting="night"] .mmm-tool-btn,
-    [data-theme="vaporwave"] .mmm-tool-btn,
-    [data-theme="bark"] .mmm-tool-btn { background: rgba(255,255,255,0.04); color: #f5f5f7; }
-    .mmm-tool-btn:hover:not(:disabled) { border-color: #db2777; }
-    .mmm-tool-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .mmm-tool-btn.active { border-color: #0ea5e9; background: rgba(14,165,233,0.12); }
-
-    /* Lab 2: Real-World Scenario Explorer */
-    .mmm-scenario-tabs {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.5rem;
-      margin-bottom: 0.85rem;
-    }
-    .mmm-scenario-tab {
-      border: 1.5px solid var(--line, #d2d2d7);
-      border-radius: 10px;
-      padding: 0.55rem 0.65rem;
-      background: var(--white, #fff);
-      color: var(--text, #1d1d1f);
-      font: 700 0.78rem var(--font-sans);
-      text-align: left;
-      cursor: pointer;
-    }
-    [data-lighting="night"] .mmm-scenario-tab,
-    [data-theme="vaporwave"] .mmm-scenario-tab,
-    [data-theme="bark"] .mmm-scenario-tab { background: rgba(255,255,255,0.04); color: #f5f5f7; }
-    .mmm-scenario-tab small { display: block; font-weight: 500; font-size: 0.7rem; color: var(--text-muted, #64748b); margin-top: 0.15rem; }
-    .mmm-scenario-tab.active {
-      border-color: #8b5cf6;
-      background: rgba(139,92,246,0.12);
-    }
-    .mmm-scenario-grid {
-      display: grid;
-      grid-template-columns: 1.25fr 1fr;
-      gap: 1rem;
-      align-items: start;
-    }
-    .mmm-scenario-decision {
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 10px;
-      padding: 0.85rem;
-      background: var(--white, #fff);
-    }
-    [data-lighting="night"] .mmm-scenario-decision,
-    [data-theme="vaporwave"] .mmm-scenario-decision,
-    [data-theme="bark"] .mmm-scenario-decision { background: rgba(255,255,255,0.03); }
-    .mmm-scenario-choices {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.45rem;
-      margin-top: 0.6rem;
-    }
-
-    .mmm-activity {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 260px;
-      gap: 1rem;
-      align-items: start;
-      margin-top: 0.85rem;
-    }
-    .mmm-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
-    .mmm-choice {
-      border: 1.5px solid var(--line, #d2d2d7);
-      border-radius: 9px;
-      padding: 0.62rem 0.7rem;
-      background: var(--white, #fff);
-      color: var(--text, #1d1d1f);
-      font: 700 0.9rem var(--font-sans);
-      cursor: pointer;
-      text-align: left;
-    }
-    [data-lighting="night"] .mmm-choice,
-    [data-theme="vaporwave"] .mmm-choice,
-    [data-theme="bark"] .mmm-choice { background: rgba(255,255,255,0.04); color: #f5f5f7; }
-    .mmm-choice:hover, .mmm-choice:focus { border-color: #db2777; outline: none; }
-    .mmm-choice.correct { border-color: #16a34a; background: rgba(22,163,74,0.12); }
-    .mmm-choice.wrong { border-color: #dc2626; background: rgba(220,38,38,0.1); }
-    .mmm-question { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.7rem; }
-    .mmm-feedback {
-      min-height: 2.2rem;
-      margin-top: 0.8rem;
-      color: var(--text-secondary, #3f4f65);
-      font-size: 0.86rem;
-      line-height: 1.5;
-    }
-    [data-lighting="night"] .mmm-feedback,
-    [data-theme="vaporwave"] .mmm-feedback,
-    [data-theme="bark"] .mmm-feedback { color: rgba(245,245,247,0.72); }
-    .mmm-side { display: grid; gap: 0.7rem; }
-    .mmm-score {
-      border-radius: 12px;
-      border: 1px solid rgba(219,39,119,0.22);
-      background: rgba(219,39,119,0.08);
-      padding: 0.9rem;
-    }
-    .mmm-score strong { display: block; font-size: 1.55rem; line-height: 1; }
-    .mmm-score span { color: var(--text-muted, #64748b); font-size: 0.8rem; }
-    .mmm-next {
-      border: 0;
-      border-radius: 9px;
-      padding: 0.68rem 0.8rem;
-      background: #db2777;
-      color: #fff;
-      font: 800 0.86rem var(--font-sans);
-      cursor: pointer;
-    }
-    .mmm-next:hover { filter: brightness(0.96); }
-
-    .mmm-practice { display: grid; gap: 0.72rem; margin-top: 0.85rem; }
-    .mmm-practice-item {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto auto;
-      gap: 0.55rem;
-      align-items: center;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 10px;
-      padding: 0.75rem;
-      background: rgba(0,0,0,0.03);
-    }
-    [data-lighting="night"] .mmm-practice-item,
-    [data-theme="vaporwave"] .mmm-practice-item,
-    [data-theme="bark"] .mmm-practice-item { background: rgba(255,255,255,0.04); }
-    .mmm-practice-prompt small {
-      display: block;
-      font-size: 0.75rem;
-      color: var(--text-muted, #64748b);
-      margin-top: 0.15rem;
-    }
-    .mmm-practice-item input {
-      width: 86px;
-      border: 1.5px solid var(--line, #d2d2d7);
-      border-radius: 8px;
-      padding: 0.42rem 0.55rem;
-      background: var(--white, #fff);
-      color: var(--text, #1d1d1f);
-      font: 700 0.88rem var(--font-sans);
-    }
-    [data-lighting="night"] .mmm-practice-item input,
-    [data-theme="vaporwave"] .mmm-practice-item input,
-    [data-theme="bark"] .mmm-practice-item input { background: rgba(255,255,255,0.04); color: #f5f5f7; }
-    .mmm-check {
-      border: 0;
-      border-radius: 8px;
-      padding: 0.47rem 0.7rem;
-      background: #334155;
-      color: #fff;
-      font: 800 0.8rem var(--font-sans);
-      cursor: pointer;
-    }
-    .mmm-mini-feedback { min-width: 7ch; font-size: 0.8rem; font-weight: 800; }
-    .mmm-mini-feedback.ok { color: #16a34a; }
-    .mmm-mini-feedback.no { color: #dc2626; }
-
-    .mmm-exit ul { margin: 0.65rem 0 0; padding-left: 1.15rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
-    [data-lighting="night"] .mmm-exit ul,
-    [data-theme="vaporwave"] .mmm-exit ul,
-    [data-theme="bark"] .mmm-exit ul { color: rgba(245,245,247,0.72); }
-
-    @media (max-width: 900px) {
-      .mmm-activity, .mmm-scenario-grid { grid-template-columns: 1fr; }
-      .mmm-scenario-tabs, .mmm-readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 640px) {
-      .mmm-rule, .mmm-options, .mmm-readout, .mmm-scenario-tabs { grid-template-columns: 1fr; }
-      .mmm-example-row, .mmm-practice-item { grid-template-columns: 1fr; }
-      .mmm-practice-item input { width: 100%; }
-    }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/lessons/mean-median-mode.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -426,54 +42,17 @@
             <span>Median = the middle position</span><span class="dot"></span>
             <span>Mode = the most frequent value</span>
           </div>
-          <p class="mmm-lede">Mean, median, and mode all try to describe a "typical" value in a dataset, but they respond very differently to skewness and outliers. In this lesson, you will drag points on a number-line balance beam, test how odd and even counts change the median, and explore when a headline "average" is telling the truth &mdash; or hiding an outlier.</p>
+          <p class="mmm-lede">Mean, median, and mode all describe a "typical" value in a dataset, but they respond very differently to skewness and outliers. Drag points on the number-line balance beam below, test how odd and even counts change the median, and discover when a headline "average" tells the truth &mdash; or hides an outlier.</p>
         </section>
 
-        <section class="mmm-card" style="--card-accent:#db2777;">
-          <h2>Learning Target</h2>
-          <p><strong>I can calculate the mean, median, and mode of a dataset, model the mean as a physical balance point, and justify which measure of center best represents a real-world distribution.</strong></p>
-          <p>By the end of the lesson, you will be able to compute all three measures for odd- and even-sized datasets and explain why the median is resistant to extreme outliers while the mean shifts toward them.</p>
-        </section>
-
-        <section class="mmm-card" style="--card-accent:#be185d;">
-          <h2>Three Measures of Center</h2>
-          <p>Each measure defines "center" differently, and each answers a different question about the same numbers.</p>
-          <div class="mmm-rule">
-            <div class="mmm-rule-box" style="--rule-color:#16a34a;">
-              <strong>Mean (x&#772;) <span class="mmm-rule-badge" style="background:rgba(22,163,74,0.14);color:#16a34a;">Balance Point</span></strong>
-              <div class="mmm-rule-formula" data-formula="arithmetic-mean">Mean = (x₁ + x₂ + … + xₙ) / n</div>
-              <span>Add every value and divide by the count <em>n</em>. Physical fulcrum where signed deviations cancel out: &Sigma;(x<sub>i</sub> &minus; x&#772;) = 0. <strong>Sensitive to outliers.</strong></span>
-            </div>
-            <div class="mmm-rule-box" style="--rule-color:#0ea5e9;">
-              <strong>Median <span class="mmm-rule-badge" style="background:rgba(14,165,233,0.14);color:#0284c7;">Middle Rank</span></strong>
-              <div class="mmm-rule-formula">Odd n: middle · Even n: avg of 2 middle</div>
-              <span>Sort from least to greatest and take the middle value (or average the two middle values when <em>n</em> is even). <strong>Resistant to outliers.</strong></span>
-            </div>
-            <div class="mmm-rule-box" style="--rule-color:#f59e0b;">
-              <strong>Mode <span class="mmm-rule-badge" style="background:rgba(245,158,11,0.16);color:#d97706;">Most Common</span></strong>
-              <div class="mmm-rule-formula">Value(s) with highest frequency</div>
-              <span>The value that occurs most often. A dataset can have no mode, one mode (unimodal), or multiple modes (bimodal/multimodal).</span>
-            </div>
+        <section class="mmm-card" id="mmm-lab" data-present data-memory-ignore style="--card-accent:#0ea5e9;">
+          <div class="mmm-lab-head">
+            <h2>Lab 1 · Drag the Dots &amp; Fulcrum Balance</h2>
+            <span class="mmm-mission-pill" id="mmm-mission-pill">Missions: 0/4</span>
           </div>
-        </section>
-
-        <section class="mmm-card" style="--card-accent:#7c3aed;">
-          <h2>Worked Example</h2>
-          <p>Find the mean, median, and mode of the 5-value dataset <span class="mmm-math">4, 7, 7, 9, 3</span> &mdash; and see what happens if a 6th value (<span class="mmm-math">12</span>) joins.</p>
-          <div class="mmm-example">
-            <div class="mmm-example-row"><div class="mmm-math">Step 1 · Sort first: 3, 4, 7, 7, 9</div><div class="mmm-note">Sorting immediately reveals repeated values and prevents taking the middle of an unsorted list!</div></div>
-            <div class="mmm-example-row"><div class="mmm-math">Mean = (3 + 4 + 7 + 7 + 9) / 5 = 30 / 5 = 6</div><div class="mmm-note">Sum all 5 values (30) and divide by <em>n</em> = 5 to get the balance point x&#772; = 6.</div></div>
-            <div class="mmm-example-row"><div class="mmm-math">Median (odd n = 5) = 7</div><div class="mmm-note">With 5 sorted values, the 3rd value (<span class="mmm-math">3, 4, [7], 7, 9</span>) sits dead center.</div></div>
-            <div class="mmm-example-row"><div class="mmm-math">Mode = 7</div><div class="mmm-note">The number 7 appears twice; every other number appears once.</div></div>
-            <div class="mmm-example-row"><div class="mmm-math">Even-Count Check (n = 6): 3, 4, [7, 7], 9, 12</div><div class="mmm-note">When <em>n</em> is even, average the two middle numbers: (7 + 7) / 2 = 7. (For <span class="mmm-math">3, 4, 6, 8, 9, 12</span>, Median = (6 + 8) / 2 = 7).</div></div>
-          </div>
-        </section>
-
-        <section class="mmm-card" style="--card-accent:#0ea5e9;">
-          <h2>Lab 1 · Drag the Dots &amp; Fulcrum Balance</h2>
-          <p>Drag any dot left or right along the number line. Watch the <strong>Mean fulcrum (x&#772;, green)</strong> slide to keep the left and right deviations in exact physical balance (&Sigma;(x<sub>i</sub> &minus; x&#772;) = 0), while the <strong>Median (blue)</strong> tracks only the middle-ranked dot(s).</p>
+          <p>Drag any dot left or right along the number line (or tab to a dot and use arrow keys). Watch the <strong>Mean fulcrum (x&#772;, green)</strong> slide so the left and right deviations stay in exact physical balance (&Sigma;(x<sub>i</sub> &minus; x&#772;) = 0), while the <strong>Median (blue)</strong> tracks only the middle-ranked dot(s).</p>
           <div class="mmm-workspace">
-            <svg class="mmm-plot" id="mmm-plot" viewBox="0 0 600 225" aria-label="Interactive draggable dot plot and mean fulcrum balance"></svg>
+            <svg class="mmm-plot" id="mmm-plot" viewBox="0 0 600 245" aria-label="Interactive draggable dot plot and mean fulcrum balance"></svg>
 
             <div class="mmm-legend-bar">
               <div class="mmm-legend">
@@ -485,6 +64,8 @@
                 <span id="mmm-count-badge">n = 5 points (odd)</span>
               </div>
             </div>
+
+            <div class="mmm-dot-inspect" id="mmm-dot-inspect" aria-live="polite"></div>
 
             <div class="mmm-sorted-strip" id="mmm-sorted-strip" aria-live="polite"></div>
 
@@ -507,7 +88,12 @@
               <div class="mmm-readout-item">
                 <span>Deviation Balance</span>
                 <strong id="mmm-balance">0</strong>
-                <small id="mmm-balance-work">Σ(xᵢ − x̄) = 0</small>
+                <small id="mmm-balance-work">&Sigma;(xᵢ &minus; x&#772;) = 0</small>
+              </div>
+              <div class="mmm-readout-item">
+                <span>Skew (Mean &minus; Med)</span>
+                <strong id="mmm-skew">&minus;0.2</strong>
+                <small id="mmm-skew-work">Symmetric</small>
               </div>
             </div>
 
@@ -519,23 +105,63 @@
               <button class="mmm-tool-btn" type="button" id="mmm-add-pt">+ Add Point</button>
               <button class="mmm-tool-btn" type="button" id="mmm-rem-pt">&minus; Remove Point</button>
             </div>
+
+            <div class="mmm-missions" id="mmm-missions" aria-label="Discovery missions"></div>
           </div>
         </section>
 
-        <section class="mmm-card" style="--card-accent:#8b5cf6;">
+        <section class="mmm-card" style="--card-accent:#db2777;">
+          <h2>Learning Target &amp; Three Measures of Center</h2>
+          <p><strong>I can calculate the mean, median, and mode of a dataset, model the mean as a physical balance point, and justify which measure of center best represents a real-world distribution.</strong></p>
+          <div class="mmm-rule">
+            <div class="mmm-rule-box" style="--rule-color:#16a34a;">
+              <strong>Mean (x&#772;) <span class="mmm-rule-badge" style="background:rgba(22,163,74,0.14);color:#15803d;">Balance Point</span></strong>
+              <div class="mmm-rule-formula" data-formula="arithmetic-mean">Mean = (x₁ + x₂ + … + xₙ) / n</div>
+              <span>Add every value and divide by the count <em>n</em>. Physical fulcrum where signed deviations cancel out: &Sigma;(x<sub>i</sub> &minus; x&#772;) = 0. <strong>Sensitive to outliers.</strong></span>
+            </div>
+            <div class="mmm-rule-box" style="--rule-color:#0ea5e9;">
+              <strong>Median <span class="mmm-rule-badge" style="background:rgba(14,165,233,0.14);color:#0369a1;">Middle Rank</span></strong>
+              <div class="mmm-rule-formula">Odd n: middle · Even n: avg of 2 middle</div>
+              <span>Sort from least to greatest and take the middle value (or average the two middle values when <em>n</em> is even). <strong>Resistant to outliers.</strong></span>
+            </div>
+            <div class="mmm-rule-box" style="--rule-color:#f59e0b;">
+              <strong>Mode <span class="mmm-rule-badge" style="background:rgba(245,158,11,0.16);color:#b45309;">Most Common</span></strong>
+              <div class="mmm-rule-formula">Value(s) with highest frequency</div>
+              <span>The value that occurs most often. A dataset can have no mode, one mode (unimodal), or multiple modes (bimodal/multimodal).</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="mmm-card" style="--card-accent:#7c3aed;">
+          <h2>Worked Example</h2>
+          <p>Find the mean, median, and mode of the 5-value dataset <span class="mmm-math">4, 7, 7, 9, 3</span> &mdash; and see what happens if a 6th value (<span class="mmm-math">12</span>) joins.</p>
+          <div class="mmm-example">
+            <div class="mmm-example-row"><div class="mmm-math">Step 1 · Sort first: 3, 4, 7, 7, 9</div><div class="mmm-note">Sorting immediately reveals repeated values and prevents taking the middle of an unsorted list!</div></div>
+            <div class="mmm-example-row"><div class="mmm-math">Mean = (3 + 4 + 7 + 7 + 9) / 5 = 30 / 5 = 6</div><div class="mmm-note">Sum all 5 values (30) and divide by <em>n</em> = 5 to get the balance point x&#772; = 6.</div></div>
+            <div class="mmm-example-row"><div class="mmm-math">Median (odd n = 5) = 7</div><div class="mmm-note">With 5 sorted values, the 3rd value (<span class="mmm-math">3, 4, [7], 7, 9</span>) sits dead center.</div></div>
+            <div class="mmm-example-row"><div class="mmm-math">Mode = 7</div><div class="mmm-note">The number 7 appears twice; every other number appears once.</div></div>
+            <div class="mmm-example-row"><div class="mmm-math">Even-Count Check (n = 6): 3, 4, [7, 7], 9, 12</div><div class="mmm-note">When <em>n</em> is even, average the two middle numbers: (7 + 7) / 2 = 7. (For <span class="mmm-math">3, 4, 6, 8, 9, 12</span>, Median = (6 + 8) / 2 = 7).</div></div>
+          </div>
+        </section>
+
+        <section class="mmm-card" id="mmm-scenarios" data-memory-ignore style="--card-accent:#8b5cf6;">
           <h2>Lab 2 · Which "Average" Tells the Truth?</h2>
-          <p>In real life, people often say "average" without specifying whether they mean the mean, median, or mode. Switch between four real-world datasets below and decide which measure best answers the question.</p>
+          <p>In real life, people often say "average" without specifying mean, median, or mode. Switch between four real-world datasets below, decide which measure best answers the question, and toggle <strong>What if?</strong> to watch how one change shifts each measure.</p>
           <div class="mmm-workspace">
             <div class="mmm-scenario-tabs" id="mmm-scenario-tabs" role="tablist" aria-label="Real-world dataset scenarios"></div>
             <div class="mmm-scenario-grid">
               <div>
                 <h3 id="mmm-sc-title" style="margin-top:0;">Scenario</h3>
                 <p id="mmm-sc-desc"></p>
-                <svg class="mmm-plot" id="mmm-sc-plot" viewBox="0 0 520 135" aria-label="Scenario dot plot"></svg>
+                <svg class="mmm-plot" id="mmm-sc-plot" viewBox="0 0 520 140" aria-label="Scenario dot plot"></svg>
                 <div class="mmm-readout" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0.6rem;">
                   <div class="mmm-readout-item"><span>Mean</span><strong id="mmm-sc-mean">&mdash;</strong></div>
                   <div class="mmm-readout-item"><span>Median</span><strong id="mmm-sc-median">&mdash;</strong></div>
                   <div class="mmm-readout-item"><span>Mode</span><strong id="mmm-sc-mode">&mdash;</strong></div>
+                </div>
+                <div class="mmm-whatif-bar">
+                  <button class="mmm-tool-btn" type="button" id="mmm-sc-whatif" aria-pressed="false">What if?</button>
+                  <span class="mmm-whatif-note" id="mmm-sc-whatif-note" aria-live="polite"></span>
                 </div>
               </div>
               <div class="mmm-scenario-decision">
@@ -567,29 +193,29 @@
           <h2>Guided Practice</h2>
           <p>Find the requested measure for each dataset. Remember to sort before finding the median! Type the numeric value only.</p>
           <div class="mmm-practice">
-            <div class="mmm-practice-item" data-answer="5">
+            <div class="mmm-practice-item" data-answer="5" data-hint="Add 1 + 3 + 5 + 7 + 9 = 25, then divide by 5." data-explain="25 ÷ 5 = 5 (symmetry also centers it at 5).">
               <div class="mmm-practice-prompt"><span class="mmm-math">Mean of 1, 3, 5, 7, 9</span><small>Sum all 5 values and divide by 5.</small></div>
-              <input type="number" step="any" aria-label="Mean of 1, 3, 5, 7, 9" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback"></span>
+              <input type="number" step="any" aria-label="Mean of 1, 3, 5, 7, 9" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback" aria-live="polite"></span>
             </div>
-            <div class="mmm-practice-item" data-answer="6">
+            <div class="mmm-practice-item" data-answer="6" data-hint="Sort first: 2, 3, 6, 9, 12. Pick the 3rd value." data-explain="In sorted order (2, 3, 6, 9, 12), 6 sits in the middle.">
               <div class="mmm-practice-prompt"><span class="mmm-math">Median of 2, 6, 9, 12, 3</span><small>Trap check: sort the 5 numbers from least to greatest first!</small></div>
-              <input type="number" step="any" aria-label="Median of 2, 6, 9, 12, 3" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback"></span>
+              <input type="number" step="any" aria-label="Median of 2, 6, 9, 12, 3" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback" aria-live="polite"></span>
             </div>
-            <div class="mmm-practice-item" data-answer="8">
+            <div class="mmm-practice-item" data-answer="8" data-hint="Count how many times each value appears." data-explain="8 appears three times; every other value appears once.">
               <div class="mmm-practice-prompt"><span class="mmm-math">Mode of 8, 3, 8, 5, 8, 1</span><small>Which value appears with the highest frequency?</small></div>
-              <input type="number" step="any" aria-label="Mode of 8, 3, 8, 5, 8, 1" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback"></span>
+              <input type="number" step="any" aria-label="Mode of 8, 3, 8, 5, 8, 1" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback" aria-live="polite"></span>
             </div>
-            <div class="mmm-practice-item" data-answer="5.5">
+            <div class="mmm-practice-item" data-answer="5.5" data-hint="Average the 2nd and 3rd values: (4 + 7) ÷ 2." data-explain="(4 + 7) / 2 = 5.5, halfway between the two middle values.">
               <div class="mmm-practice-prompt"><span class="mmm-math">Median of 2, 4, 7, 9</span><small>Even count (n = 4): average the two middle values.</small></div>
-              <input type="number" step="any" aria-label="Median of 2, 4, 7, 9" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback"></span>
+              <input type="number" step="any" aria-label="Median of 2, 4, 7, 9" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback" aria-live="polite"></span>
             </div>
-            <div class="mmm-practice-item" data-answer="11">
+            <div class="mmm-practice-item" data-answer="11" data-hint="Sum 6 + 8 + 10 + 20 = 44, then divide by 4." data-explain="44 ÷ 4 = 11. Notice how 20 pulls the mean above the median (9).">
               <div class="mmm-practice-prompt"><span class="mmm-math">Mean of 6, 8, 10, 20</span><small>Notice how the high value 20 pulls the mean above the median (9).</small></div>
-              <input type="number" step="any" aria-label="Mean of 6, 8, 10, 20" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback"></span>
+              <input type="number" step="any" aria-label="Mean of 6, 8, 10, 20" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback" aria-live="polite"></span>
             </div>
-            <div class="mmm-practice-item" data-answer="14">
+            <div class="mmm-practice-item" data-answer="14" data-hint="Total sum must be 4 × 8.5 = 34. Subtract 4 + 7 + 9 = 20." data-explain="34 − (4 + 7 + 9) = 14.">
               <div class="mmm-practice-prompt"><span class="mmm-math">Missing Value: 4, 7, 9, x has Mean = 8.5</span><small>If 4 numbers have a mean of 8.5, their total sum must be 4 × 8.5 = 34.</small></div>
-              <input type="number" step="any" aria-label="Missing value x when 4, 7, 9, x has mean 8.5" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback"></span>
+              <input type="number" step="any" aria-label="Missing value x when 4, 7, 9, x has mean 8.5" /><button class="mmm-check" type="button">Check</button><span class="mmm-mini-feedback" aria-live="polite"></span>
             </div>
           </div>
         </section>
@@ -606,13 +232,41 @@
       </main>
     </div>
 
-    <aside class="ll-panel" aria-label="Lesson panel">
-      <div class="ll-panel-inner">
+    <aside class="ll-panel" aria-hidden="true">
+      <div class="ll-panel-head">
         <div class="ll-tabs" role="tablist" aria-label="Mean median mode panel tabs">
-          <button class="ll-tab active" type="button" data-ll-tab="guide">Guide</button>
-          <button class="ll-tab" type="button" data-ll-tab="controls">Teacher</button>
+          <button class="ll-tab" type="button" role="tab" aria-selected="true" data-pane="mmm-guide-pane">Guide</button>
+          <button class="ll-tab" type="button" role="tab" aria-selected="false" data-pane="mmm-teacher-pane">Teacher</button>
         </div>
-        <div class="ll-pane active" data-ll-panel="guide">
+        <button class="ll-panel-close" type="button" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="mmm-guide-pane" aria-hidden="false">
+          <span class="ll-label">Live Telemetry</span>
+          <div class="ll-readouts">
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Count (n)</span>
+              <span class="ll-readout-val" id="mmm-p-count">5 (odd)</span>
+            </div>
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Mean (x&#772;)</span>
+              <span class="ll-readout-val" id="mmm-p-mean">5.8</span>
+            </div>
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Median</span>
+              <span class="ll-readout-val" id="mmm-p-median">6</span>
+            </div>
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Mode</span>
+              <span class="ll-readout-val" id="mmm-p-mode">None</span>
+            </div>
+            <div class="ll-readout">
+              <span class="ll-readout-lbl">Skew Gap</span>
+              <span class="ll-readout-val" id="mmm-p-skew">&minus;0.2</span>
+            </div>
+          </div>
+
+          <hr class="ll-hr" />
           <span class="ll-label">Definitions</span>
           <div class="ll-info"><strong>Mean (x&#772;)</strong> sum of values divided by the count <em>n</em>. Acts as the center-of-mass balance fulcrum.</div>
           <div class="ll-info"><strong>Median</strong> the middle value in sorted order (or the mean of the two middle values when <em>n</em> is even).</div>
@@ -621,17 +275,17 @@
           <div class="ll-info"><strong>Forgetting to Sort</strong> Taking the middle number of an unsorted list gives a random position, not the median!</div>
           <div class="ll-info"><strong>Outlier Pull</strong> Outliers pull the mean toward the long tail, which is why household income and home-price reports use the median.</div>
         </div>
-        <div class="ll-pane" data-ll-panel="controls">
+        <div class="ll-pane" id="mmm-teacher-pane" aria-hidden="true">
           <span class="ll-label">Lesson Flow</span>
           <div class="ll-info"><strong>Warm-up</strong> Ask students what happens to the average net worth in a room if a billionaire walks in.</div>
           <div class="ll-info"><strong>Lab 1 · Fulcrum</strong> Click "Add Outlier Demo" and point out the bottom deviation bars: the long right bar requires the fulcrum to shift right to balance.</div>
           <div class="ll-info"><strong>Even vs. Odd</strong> Click "Even Count (6 pts)" so students see the median land halfway between the 3rd and 4th dots.</div>
-          <div class="ll-info"><strong>Lab 2 · Context</strong> Have groups debate which measure a shoe store vs. a salary survey should use.</div>
+          <div class="ll-info"><strong>Lab 2 · Context</strong> Use the "What if?" toggle to show how adding or removing one datum changes Mean vs. Median vs. Mode.</div>
         </div>
       </div>
     </aside>
 
-    <button class="ll-open-btn" aria-label="Open panel">
+    <button class="ll-open-btn" type="button" aria-label="Open panel">
       <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
     </button>
   </div>
@@ -643,556 +297,8 @@
 
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
-  <script>
-    (function () {
-      var svgns = 'http://www.w3.org/2000/svg';
-      function el(tag, attrs, text) {
-        var node = document.createElementNS(svgns, tag);
-        for (var key in attrs) node.setAttribute(key, attrs[key]);
-        if (text !== undefined) node.textContent = text;
-        return node;
-      }
-      function fmt(n) {
-        if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
-        return n.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
-      }
-
-      // ---- Lab 1: Draggable dot plot & Fulcrum Balance ----
-      var svg = document.getElementById('mmm-plot');
-      var W = 600, H = 225;
-      var MIN = 0, MAX = 20;
-      var padX = 36;
-      var axisY = 136;
-
-      function toScreenX(v) { return padX + (v - MIN) / (MAX - MIN) * (W - padX * 2); }
-      function toValue(sx) { return MIN + (sx - padX) / (W - padX * 2) * (MAX - MIN); }
-
-      var values = [3, 4, 6, 7, 9];
-      var draggingIdx = -1;
-
-      var meanEl = document.getElementById('mmm-mean');
-      var meanWorkEl = document.getElementById('mmm-mean-work');
-      var medianEl = document.getElementById('mmm-median');
-      var medianWorkEl = document.getElementById('mmm-median-work');
-      var modeEl = document.getElementById('mmm-mode');
-      var modeWorkEl = document.getElementById('mmm-mode-work');
-      var balanceEl = document.getElementById('mmm-balance');
-      var balanceWorkEl = document.getElementById('mmm-balance-work');
-      var countBadgeEl = document.getElementById('mmm-count-badge');
-      var sortedStripEl = document.getElementById('mmm-sorted-strip');
-      var addBtn = document.getElementById('mmm-add-pt');
-      var remBtn = document.getElementById('mmm-rem-pt');
-
-      function computeStats(vals) {
-        var n = vals.length;
-        var sum = vals.reduce(function (a, b) { return a + b; }, 0);
-        var mean = sum / n;
-        var indexed = vals.map(function (v, idx) { return { v: v, idx: idx }; });
-        indexed.sort(function (a, b) { return a.v - b.v || a.idx - b.idx; });
-        var sorted = indexed.map(function (o) { return o.v; });
-        var mid = Math.floor(n / 2);
-        var median = n % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-        var medianOrigIndices = n % 2 === 0
-          ? [indexed[mid - 1].idx, indexed[mid].idx]
-          : [indexed[mid].idx];
-        var medianSortedPositions = n % 2 === 0 ? [mid - 1, mid] : [mid];
-
-        var counts = {};
-        vals.forEach(function (v) {
-          var key = fmt(v);
-          counts[key] = (counts[key] || 0) + 1;
-        });
-        var maxFreq = 0;
-        for (var k in counts) if (counts[k] > maxFreq) maxFreq = counts[k];
-        var modeKeys = maxFreq > 1
-          ? Object.keys(counts).filter(function (k) { return counts[k] === maxFreq; }).sort(function (a, b) { return Number(a) - Number(b); })
-          : [];
-
-        return {
-          n: n,
-          sum: sum,
-          mean: mean,
-          sorted: sorted,
-          median: median,
-          medianOrigIndices: medianOrigIndices,
-          medianSortedPositions: medianSortedPositions,
-          maxFreq: maxFreq,
-          modeKeys: modeKeys
-        };
-      }
-
-      function drawFlag(group, x, y, text, color) {
-        var w = Math.max(66, text.length * 6.5 + 14);
-        var rx = Math.max(8, Math.min(W - w - 8, x - w / 2));
-        group.appendChild(el('rect', {
-          x: rx, y: y, width: w, height: 18, rx: 5, fill: color
-        }));
-        group.appendChild(el('text', {
-          class: 'mmm-flag-text',
-          x: rx + w / 2, y: y + 12.5,
-          'text-anchor': 'middle'
-        }, text));
-      }
-
-      function render() {
-        var st = computeStats(values);
-        svg.innerHTML = '';
-
-        // 1. Number line & ticks
-        svg.appendChild(el('line', { class: 'axis-line', x1: padX, y1: axisY, x2: W - padX, y2: axisY }));
-        for (var t = MIN; t <= MAX; t += 1) {
-          var sx = toScreenX(t);
-          var isMajor = (t % 2 === 0);
-          svg.appendChild(el('line', {
-            class: 'tick-line',
-            x1: sx, y1: axisY - (isMajor ? 6 : 3.5),
-            x2: sx, y2: axisY + (isMajor ? 6 : 3.5)
-          }));
-          if (isMajor) {
-            svg.appendChild(el('text', {
-              class: 'tick-label',
-              x: sx, y: axisY + 19,
-              'text-anchor': 'middle'
-            }, String(t)));
-          }
-        }
-
-        // 2. Vertical indicator lines & staggered top flags for Mode, Median, Mean
-        var markers = [];
-        if (st.modeKeys.length > 0) {
-          st.modeKeys.forEach(function (mk, mIdx) {
-            var mv = Number(mk);
-            var mx = toScreenX(mv);
-            svg.appendChild(el('line', { class: 'mmm-mode-line', x1: mx, y1: 30, x2: mx, y2: axisY - 6 }));
-            if (mIdx === 0) {
-              markers.push({ x: mx, label: 'Mode ' + st.modeKeys.join(','), color: '#d97706', row: 2 });
-            }
-          });
-        }
-
-        var medianX = toScreenX(st.median);
-        svg.appendChild(el('line', { class: 'mmm-median-line', x1: medianX, y1: 22, x2: medianX, y2: axisY - 6 }));
-        markers.push({ x: medianX, label: 'Med ' + fmt(st.median), color: '#0284c7', row: 1 });
-
-        var meanX = toScreenX(st.mean);
-        svg.appendChild(el('line', { class: 'mmm-mean-line', x1: meanX, y1: 12, x2: meanX, y2: axisY - 6 }));
-        markers.push({ x: meanX, label: 'Mean ' + fmt(st.mean), color: '#16a34a', row: 0 });
-
-        // Draw flags (staggered vertically if close in X, or compact at top if spread out)
-        var flagGroup = el('g', {});
-        markers.forEach(function (m) {
-          var flagY = 6 + m.row * 19;
-          drawFlag(flagGroup, m.x, flagY, m.label, m.color);
-        });
-        svg.appendChild(flagGroup);
-
-        // 3. Deviation balance zone below tick labels (y = 166..218)
-        var beamY = 186;
-        svg.appendChild(el('line', { class: 'mmm-beam-line', x1: padX, y1: beamY, x2: W - padX, y2: beamY }));
-
-        var negSum = 0, posSum = 0;
-        values.forEach(function (v) {
-          var dev = v - st.mean;
-          if (dev < -1e-9) negSum += dev;
-          else if (dev > 1e-9) posSum += dev;
-          if (Math.abs(dev) > 0.05) {
-            var x1 = Math.min(meanX, toScreenX(v));
-            var x2 = Math.max(meanX, toScreenX(v));
-            svg.appendChild(el('rect', {
-              x: x1, y: beamY - 9,
-              width: Math.max(2, x2 - x1), height: 5,
-              rx: 2.5,
-              fill: dev < 0 ? 'rgba(244,63,94,0.42)' : 'rgba(16,185,129,0.42)'
-            }));
-          }
-        });
-
-        // Fulcrum triangle at meanX
-        var triPoints = meanX + ',' + beamY + ' ' + (meanX - 11) + ',' + (beamY + 18) + ' ' + (meanX + 11) + ',' + (beamY + 18);
-        svg.appendChild(el('polygon', { points: triPoints, fill: '#16a34a' }));
-        svg.appendChild(el('text', {
-          class: 'mmm-torque-label',
-          x: meanX, y: beamY + 31,
-          'text-anchor': 'middle'
-        }, 'x̄ fulcrum = ' + fmt(st.mean)));
-
-        svg.appendChild(el('text', {
-          class: 'mmm-torque-label',
-          x: padX + 4, y: beamY + 16,
-          'text-anchor': 'start'
-        }, 'Left Σ(x−x̄): ' + (negSum < -1e-9 ? fmt(negSum) : '0')));
-
-        svg.appendChild(el('text', {
-          class: 'mmm-torque-label',
-          x: W - padX - 4, y: beamY + 16,
-          'text-anchor': 'end'
-        }, 'Right Σ(x−x̄): +' + fmt(posSum)));
-
-        // 4. Draggable dots stacked ABOVE the number line (never overlapping tick labels!)
-        var seen = {};
-        values.forEach(function (v, idx) {
-          var key = fmt(v);
-          var row = seen[key] || 0;
-          seen[key] = row + 1;
-          var cx = toScreenX(v);
-          var cy = axisY - 18 - row * 21;
-          var isMed = st.medianOrigIndices.indexOf(idx) !== -1;
-
-          var circle = el('circle', {
-            class: 'mmm-dot' + (isMed ? ' is-median' : ''),
-            r: 9.5,
-            cx: cx,
-            cy: cy,
-            'data-index': idx
-          });
-          circle.addEventListener('mousedown', function (evt) {
-            draggingIdx = idx;
-            evt.preventDefault();
-          });
-          circle.addEventListener('touchstart', function (evt) {
-            draggingIdx = idx;
-            evt.preventDefault();
-          }, { passive: false });
-
-          svg.appendChild(circle);
-          svg.appendChild(el('text', {
-            class: 'mmm-dot-label',
-            x: cx,
-            y: cy + 3.5,
-            'text-anchor': 'middle'
-          }, key));
-        });
-
-        // 5. Update readout cards & sorted strip
-        meanEl.textContent = fmt(st.mean);
-        meanWorkEl.textContent = 'Sum ' + fmt(st.sum) + ' ÷ ' + st.n;
-        medianEl.textContent = fmt(st.median);
-        medianWorkEl.textContent = st.n % 2 === 0
-          ? 'Avg of #' + (st.n / 2) + ' & #' + (st.n / 2 + 1)
-          : '#' + ((st.n + 1) / 2) + ' of ' + st.n + ' sorted';
-        modeEl.textContent = st.modeKeys.length ? st.modeKeys.join(', ') : '—';
-        modeWorkEl.textContent = st.modeKeys.length
-          ? 'Appears ' + st.maxFreq + '× each'
-          : 'All unique (freq 1)';
-        balanceEl.textContent = '0';
-        balanceWorkEl.textContent = fmt(negSum) + ' + ' + fmt(posSum) + ' = 0';
-        countBadgeEl.textContent = 'n = ' + st.n + ' points (' + (st.n % 2 === 0 ? 'even' : 'odd') + ')';
-
-        sortedStripEl.innerHTML = '<span class="mmm-sorted-label">Sorted order:</span>';
-        st.sorted.forEach(function (v, sIdx) {
-          var key = fmt(v);
-          var classes = ['mmm-chip'];
-          if (st.medianSortedPositions.indexOf(sIdx) !== -1) classes.push('is-median');
-          if (st.modeKeys.indexOf(key) !== -1) classes.push('is-mode');
-          var chip = document.createElement('span');
-          chip.className = classes.join(' ');
-          chip.textContent = key;
-          sortedStripEl.appendChild(chip);
-        });
-
-        addBtn.disabled = values.length >= 10;
-        remBtn.disabled = values.length <= 3;
-      }
-
-      function screenXFromEvent(evt) {
-        var rect = svg.getBoundingClientRect();
-        var clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-        return (clientX - rect.left) * (W / rect.width);
-      }
-
-      function handlePointerMove(evt) {
-        if (draggingIdx < 0) return;
-        var sx = screenXFromEvent(evt);
-        var v = Math.max(MIN, Math.min(MAX, Math.round(toValue(sx))));
-        if (values[draggingIdx] !== v) {
-          values[draggingIdx] = v;
-          render();
-        }
-      }
-
-      function handlePointerUp() {
-        draggingIdx = -1;
-      }
-
-      window.addEventListener('mousemove', handlePointerMove);
-      window.addEventListener('touchmove', handlePointerMove, { passive: false });
-      window.addEventListener('mouseup', handlePointerUp);
-      window.addEventListener('touchend', handlePointerUp);
-
-      render();
-
-      document.getElementById('mmm-reset').addEventListener('click', function () {
-        values = [3, 4, 6, 7, 9];
-        render();
-      });
-      document.getElementById('mmm-outlier').addEventListener('click', function () {
-        values = [3, 4, 6, 7, 20];
-        render();
-      });
-      document.getElementById('mmm-even').addEventListener('click', function () {
-        values = [2, 4, 5, 9, 11, 14];
-        render();
-      });
-      document.getElementById('mmm-bimodal').addEventListener('click', function () {
-        values = [4, 4, 4, 8, 13, 13, 13];
-        render();
-      });
-      addBtn.addEventListener('click', function () {
-        if (values.length < 10) {
-          var nextVal = [10, 6, 12, 8, 15][values.length % 5];
-          values.push(nextVal);
-          render();
-        }
-      });
-      remBtn.addEventListener('click', function () {
-        if (values.length > 3) {
-          values.pop();
-          render();
-        }
-      });
-
-      // ---- Lab 2: Real-World Scenario Explorer ----
-      var scenarios = [
-        {
-          tab: 'Cafe Incomes',
-          sub: 'Outlier skew ($k)',
-          title: 'Neighborhood Cafe Incomes (A Billionaire Walks In)',
-          desc: 'Six regular patrons at a local coffee shop earn $42k, $48k, $50k, $52k, $55k, and $58k per year. Then a tech billionaire ($1,195k/yr) sits down at table 7.',
-          unit: '$k',
-          data: [42, 48, 50, 52, 55, 58, 1195],
-          question: 'Which measure best describes what a typical customer in the cafe earns?',
-          best: 'Median',
-          explanations: {
-            Mean: 'Misleading! The single $1,195k outlier pulls the Mean up to $214.3k — more than 3× what 6 of the 7 people in the room actually make.',
-            Median: 'Correct! The Median ($52k) sits right in the middle of the sorted patrons and is completely unaffected by the billionaire outlier.',
-            Mode: 'Not helpful here — every patron has a slightly different salary, so there is no mode.'
-          }
-        },
-        {
-          tab: 'Shoe Restock',
-          sub: 'Inventory peak',
-          title: 'Sneaker Shop Restock Order',
-          desc: 'A manager records the last 9 sneaker sizes sold today: 7, 8, 9, 9, 9, 9, 10, 11, 12.',
-          unit: 'size',
-          data: [7, 8, 9, 9, 9, 9, 10, 11, 12],
-          question: 'Which measure tells the manager which specific shoe size to order the most boxes of?',
-          best: 'Mode',
-          explanations: {
-            Mean: 'Not ideal for inventory: the Mean is size 9.33, and factories do not manufacture a size 9.33 shoe!',
-            Median: 'While the Median happens to be 9 here, retailers care about the peak frequency (which size sells the most units).',
-            Mode: 'Correct! Mode (size 9, sold 4 times) directly identifies the highest-demand size for restocking.'
-          }
-        },
-        {
-          tab: 'Gymnast Scores',
-          sub: 'Rogue low judge',
-          title: 'Gymnastics Routine Judge Panel',
-          desc: 'Six judges score a floor routine: 8.9, 9.0, 9.0, 9.1, 9.2, and one harsh outlier judge scores 6.4.',
-          unit: 'pts',
-          data: [6.4, 8.9, 9.0, 9.0, 9.1, 9.2],
-          question: 'Which measure prevents a single rogue judge from unfairly tanking the gymnast\'s score?',
-          best: 'Median',
-          explanations: {
-            Mean: 'Unfair to the athlete! The single 6.4 score drags the Mean down to 8.6 — lower than 5 of the 6 judges\' scores.',
-            Median: 'Correct! Averaging the two middle sorted scores (9.0 and 9.0) gives a Median of 9.0, resisting the extreme low judge.',
-            Mode: 'Mode only looks for exact ties; if judges scored 8.9, 9.0, 9.1, 9.2, 9.3, Mode would fail completely.'
-          }
-        },
-        {
-          tab: 'Fleet Batteries',
-          sub: 'Symmetric total',
-          title: 'Delivery Drone Battery Runtime',
-          desc: 'Seven delivery drones have symmetric battery runtimes (in hours): 10, 11, 12, 12, 12, 13, 14.',
-          unit: 'hrs',
-          data: [10, 11, 12, 12, 12, 13, 14],
-          question: 'When data is symmetric with no outliers and you want to compute total fleet flight hours (Average × 7), which measure mathematically incorporates every drone?',
-          best: 'Mean',
-          explanations: {
-            Mean: 'Correct! Because Mean = Sum ÷ n, multiplying Mean (12 hrs) × 7 drones guarantees the exact total fleet runtime (84 hrs) and uses every measurement.',
-            Median: 'In symmetric data Median equals 12 too, but Median ignores the exact values of the outer points if you are budgeting total fleet energy.',
-            Mode: 'Mode only reflects the most common value and ignores the spread of the rest of the fleet.'
-          }
-        }
-      ];
-
-      var scTabsEl = document.getElementById('mmm-scenario-tabs');
-      var scTitleEl = document.getElementById('mmm-sc-title');
-      var scDescEl = document.getElementById('mmm-sc-desc');
-      var scPlotEl = document.getElementById('mmm-sc-plot');
-      var scMeanEl = document.getElementById('mmm-sc-mean');
-      var scMedianEl = document.getElementById('mmm-sc-median');
-      var scModeEl = document.getElementById('mmm-sc-mode');
-      var scQuestionEl = document.getElementById('mmm-sc-question');
-      var scChoicesEl = document.getElementById('mmm-sc-choices');
-      var scFeedbackEl = document.getElementById('mmm-sc-feedback');
-      var activeScenarioIdx = 0;
-
-      function renderScenario(idx) {
-        activeScenarioIdx = idx;
-        var sc = scenarios[idx];
-        var st = computeStats(sc.data);
-
-        Array.prototype.forEach.call(scTabsEl.children, function (btn, bIdx) {
-          btn.classList.toggle('active', bIdx === idx);
-        });
-
-        scTitleEl.textContent = sc.title;
-        scDescEl.textContent = sc.desc;
-        scMeanEl.textContent = fmt(st.mean) + ' ' + sc.unit;
-        scMedianEl.textContent = fmt(st.median) + ' ' + sc.unit;
-        scModeEl.textContent = st.modeKeys.length ? st.modeKeys.join(', ') + ' ' + sc.unit : 'None';
-        scQuestionEl.textContent = sc.question;
-        scFeedbackEl.textContent = 'Select Mean, Median, or Mode above to test your choice.';
-
-        // Draw mini SVG dot plot for scenario
-        scPlotEl.innerHTML = '';
-        var sW = 520, sPad = 34, sAxisY = 98;
-        var minV = Math.min.apply(null, sc.data);
-        var maxV = Math.max.apply(null, sc.data);
-        var span = Math.max(1, maxV - minV);
-        function sxOf(v) { return sPad + (v - minV) / span * (sW - sPad * 2); }
-
-        scPlotEl.appendChild(el('line', { class: 'axis-line', x1: sPad, y1: sAxisY, x2: sW - sPad, y2: sAxisY }));
-        scPlotEl.appendChild(el('text', { class: 'tick-label', x: sPad, y: sAxisY + 20, 'text-anchor': 'middle' }, fmt(minV)));
-        scPlotEl.appendChild(el('text', { class: 'tick-label', x: sW - sPad, y: sAxisY + 20, 'text-anchor': 'middle' }, fmt(maxV)));
-
-        var mX = sxOf(st.mean);
-        var medX = sxOf(st.median);
-        scPlotEl.appendChild(el('line', { class: 'mmm-mean-line', x1: mX, y1: 16, x2: mX, y2: sAxisY + 4 }));
-        scPlotEl.appendChild(el('line', { class: 'mmm-median-line', x1: medX, y1: 28, x2: medX, y2: sAxisY + 4 }));
-        drawFlag(scPlotEl, mX, 4, 'Mean ' + fmt(st.mean), '#16a34a');
-        drawFlag(scPlotEl, medX, 24, 'Med ' + fmt(st.median), '#0284c7');
-
-        var seen = {};
-        sc.data.forEach(function (v) {
-          var key = fmt(v);
-          var row = seen[key] || 0;
-          seen[key] = row + 1;
-          scPlotEl.appendChild(el('circle', {
-            cx: sxOf(v),
-            cy: sAxisY - 14 - row * 17,
-            r: 7.5,
-            fill: '#db2777',
-            stroke: '#fff',
-            'stroke-width': 1.5
-          }));
-        });
-
-        scChoicesEl.innerHTML = '';
-        ['Mean', 'Median', 'Mode'].forEach(function (choice) {
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'mmm-choice';
-          btn.style.textAlign = 'center';
-          btn.textContent = choice;
-          btn.addEventListener('click', function () {
-            Array.prototype.forEach.call(scChoicesEl.children, function (c) {
-              c.classList.remove('correct', 'wrong');
-            });
-            if (choice === sc.best) {
-              btn.classList.add('correct');
-            } else {
-              btn.classList.add('wrong');
-            }
-            scFeedbackEl.textContent = sc.explanations[choice];
-          });
-          scChoicesEl.appendChild(btn);
-        });
-      }
-
-      scenarios.forEach(function (sc, idx) {
-        var tab = document.createElement('button');
-        tab.type = 'button';
-        tab.className = 'mmm-scenario-tab' + (idx === 0 ? ' active' : '');
-        tab.innerHTML = sc.tab + '<small>' + sc.sub + '</small>';
-        tab.addEventListener('click', function () { renderScenario(idx); });
-        scTabsEl.appendChild(tab);
-      });
-      renderScenario(0);
-
-      // ---- Interactive Check ----
-      var questions = [
-        { q: 'What is the mean of 2, 4, 6, 8?', answer: 5, choices: [5, 6, 4, 20], feedback: 'Sum = 20, divided by 4 values gives a mean of 5.' },
-        { q: 'What is the median of 1, 3, 3, 9, 12?', answer: 3, choices: [3, 9, 5.6, 6], feedback: 'Sorted, the middle (3rd) value out of five is 3.' },
-        { q: 'What is the mode of 5, 5, 7, 8, 8, 8?', answer: 8, choices: [5, 7, 8, 6.8], feedback: '8 appears three times, more often than any other value.' },
-        { q: 'A dataset is 4, 5, 6, 7, 40. Which measure best describes a "typical" value?', answer: 'Median', choices: ['Mean', 'Median', 'Mode', 'Range'], feedback: 'The outlier 40 pulls the mean way up to 12.4, so the median (6) better represents a typical value.' },
-        { q: 'What is the median of 10, 20, 30, 40?', answer: 25, choices: [25, 30, 20, 15], feedback: 'With an even count (n = 4), average the two middle values: (20 + 30) / 2 = 25.' },
-        { q: 'What is the median of the UNSORTED list: 12, 2, 9, 4, 6?', answer: 6, choices: [6, 9, 4, 6.6], feedback: 'Always sort first (2, 4, 6, 9, 12)! The middle value of the sorted list is 6, not 9.' },
-        { q: 'Four test scores have a mean of 80. What must the sum of all four scores be?', answer: 320, choices: [320, 20, 84, 160], feedback: 'Since Mean = Sum ÷ 4 = 80, the total sum is 80 × 4 = 320.' }
-      ];
-
-      var questionEl = document.getElementById('mmm-question');
-      var options = document.getElementById('mmm-options');
-      var feedback = document.getElementById('mmm-feedback');
-      var score = document.getElementById('mmm-score');
-      var next = document.getElementById('mmm-next');
-      var qIndex = 0;
-      var correct = 0;
-      var attempted = 0;
-      var locked = false;
-
-      function renderQuestion() {
-        var item = questions[qIndex % questions.length];
-        locked = false;
-        questionEl.textContent = 'Q' + ((qIndex % questions.length) + 1) + ' of ' + questions.length + ' · ' + item.q;
-        options.innerHTML = '';
-        feedback.textContent = 'Think about how each measure is calculated.';
-        item.choices.forEach(function (choice) {
-          var button = document.createElement('button');
-          button.type = 'button';
-          button.className = 'mmm-choice';
-          button.textContent = choice;
-          button.addEventListener('click', function () {
-            if (locked) return;
-            locked = true;
-            attempted += 1;
-            if (choice === item.answer) {
-              correct += 1;
-              button.classList.add('correct');
-              feedback.textContent = 'Correct! ' + item.feedback;
-            } else {
-              button.classList.add('wrong');
-              Array.prototype.forEach.call(options.children, function (option) {
-                if (String(option.textContent) === String(item.answer)) option.classList.add('correct');
-              });
-              feedback.textContent = 'Not quite. ' + item.feedback;
-            }
-            score.textContent = correct + '/' + attempted;
-          });
-          options.appendChild(button);
-        });
-        score.textContent = correct + '/' + attempted;
-      }
-
-      next.addEventListener('click', function () {
-        qIndex += 1;
-        renderQuestion();
-      });
-      renderQuestion();
-
-      document.querySelectorAll('.mmm-practice-item').forEach(function (item) {
-        var input = item.querySelector('input');
-        var button = item.querySelector('.mmm-check');
-        var feedbackNode = item.querySelector('.mmm-mini-feedback');
-        button.addEventListener('click', function () {
-          var raw = input.value.trim();
-          var expected = Number(item.getAttribute('data-answer'));
-          var actual = Number(raw);
-          feedbackNode.className = 'mmm-mini-feedback';
-          if (raw !== '' && Math.abs(actual - expected) < 1e-6) {
-            feedbackNode.textContent = 'Correct';
-            feedbackNode.classList.add('ok');
-          } else {
-            feedbackNode.textContent = 'Try again';
-            feedbackNode.classList.add('no');
-          }
-        });
-        input.addEventListener('keydown', function (event) {
-          if (event.key === 'Enter') button.click();
-        });
-      });
-    })();
-  </script>
+  <script src="../../../assets/js/lessons/mean-median-mode-core.js"></script>
+  <script src="../../../assets/js/lessons/mean-median-mode.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
   <script src="../../../assets/js/math-pathway-nav.js"></script>

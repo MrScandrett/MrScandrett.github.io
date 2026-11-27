@@ -318,6 +318,7 @@
     }
 
     var fitLabel = 'Waiting for drops';
+    var chi2PerDf = null;
     if (total > 0 && total < 30) {
       fitLabel = 'Small sample (high scatter)';
     } else if (total >= 30 && expProbs.length === list.length) {
@@ -333,6 +334,7 @@
       }
       var df = Math.max(1, usedBins - 1);
       var ratio = chi2 / df;
+      chi2PerDf = ratio;
       if (ratio <= 1.35) fitLabel = 'Close match to model';
       else if (ratio <= 2.2) fitLabel = 'Moderate random scatter';
       else fitLabel = 'Noticeable gap from model';
@@ -352,7 +354,36 @@
       observedEV: observedEV,
       theoreticalEV: theoreticalEV,
       totalScore: totalScore,
-      fitLabel: fitLabel
+      fitLabel: fitLabel,
+      chi2PerDf: chi2PerDf
+    };
+  }
+
+  function buildNormalizedSnapshot(counts, rows, label) {
+    var list = Array.isArray(counts) ? counts : [];
+    var total = list.reduce(function (a, b) { return a + (Number(b) || 0); }, 0);
+    if (!total) return null;
+    return {
+      label: label || (total.toLocaleString() + ' balls'),
+      rows: rows,
+      total: total,
+      probs: list.map(function (c) { return (Number(c) || 0) / total; })
+    };
+  }
+
+  function evaluateMissions(flags) {
+    var f = flags || {};
+    var items = [
+      { id: 'predict', label: 'Lock a ★ bin prediction', done: Boolean(f.predicted) },
+      { id: 'trace', label: 'Drop a +1 Trace ball', done: Boolean(f.traced) },
+      { id: 'tilt', label: 'Tilt a peg on the board', done: Boolean(f.tilted) },
+      { id: 'large', label: 'Run ≥ 1,000 balls', done: Boolean(f.largeSample) },
+      { id: 'ev', label: 'Test an EV payout mode', done: Boolean(f.testedEv) }
+    ];
+    return {
+      items: items,
+      doneCount: items.filter(function (m) { return m.done; }).length,
+      total: items.length
     };
   }
 
@@ -368,6 +399,8 @@
     normalPdf: normalPdf,
     simulateBall: simulateBall,
     buildBinValues: buildBinValues,
-    summarizeCounts: summarizeCounts
+    summarizeCounts: summarizeCounts,
+    buildNormalizedSnapshot: buildNormalizedSnapshot,
+    evaluateMissions: evaluateMissions
   };
 }));

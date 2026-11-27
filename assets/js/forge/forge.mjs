@@ -14,6 +14,7 @@ import { sendAndOpen } from '../handoff.mjs';
 import { DEFAULT_SETTINGS, concat, createEngine, resolveParams } from './engine.mjs';
 import { PARTS, PART_GROUPS, partById } from './parts.mjs';
 import { createDemoPlayer } from './demo-player.mjs';
+import { CURA_TARGETS, writeCuraProfile } from './cura-profile.mjs';
 
 const STORE_KEY = 'classroomos:forge:v1';
 const FORMAT = 'classroomos-forge';
@@ -39,8 +40,9 @@ const el = {
   readiness: $('forge-export-readiness'), quickStats: $('forge-quick-stats'),
   demo: $('forge-demo'), demoReport: $('forge-demo-report'),
   showSize: $('forge-show-size'), dims: $('forge-dims'), png: $('forge-dl-png'), share: $('forge-share'),
+  cura: $('forge-dl-cura'), curaPrinter: $('forge-cura-printer'),
 };
-const EXPORTS = () => [el.stl, el.glb, el.obj, el.partStls, el.sendPrint, el.png];
+const EXPORTS = () => [el.stl, el.glb, el.obj, el.partStls, el.sendPrint, el.png, el.cura];
 
 /* ── state ────────────────────────────────────────────────────────────── */
 
@@ -716,6 +718,19 @@ function exportStl() {
   notify(`Saved ${slug()}.stl — ${result.bodies.length} part${result.bodies.length > 1 ? 's' : ''} on one plate.` + (red ? ` ${red} red check${red > 1 ? 's' : ''} still showing: review the Checks tab before printing.` : ' Slice at ' + state.settings.layer + ' mm layers.'));
 }
 
+/* A .curaprofile matched to this part (cura-profile.mjs says what each setting is for). */
+const CURA_KEY = 'classroomos:forge:cura-printer';
+function exportCuraProfile() {
+  if (!result?.bodies.length) return;
+  const target = el.curaPrinter.value;
+  try { localStorage.setItem(CURA_KEY, target); } catch { /* private mode */ }
+  const { bytes, values } = writeCuraProfile({ name: state.name || currentPart().name, result, settings: state.settings, group: currentPart().group, target });
+  download(bytes, `${slug()}-forge.curaprofile`, 'application/zip');
+  const red = result.verdicts.filter((v) => v.tone === 'bad').length;
+  notify(`Saved ${slug()}-forge.curaprofile: ${values.layer_height} mm layers, supports ${values.support_enable ? 'on' : 'off'}, ${values.adhesion_type}. Import it in Cura's Profiles, then slice ${slug()}.stl.`
+    + (red ? ` ${red} red check${red > 1 ? 's' : ''} still showing: fix those first.` : ''));
+}
+
 /* Each body as its own STL, e.g. for two filament colours. Every body keeps
    its place on the plate, so nested pieces load back inside each other. */
 function exportPartStls() {
@@ -915,6 +930,8 @@ async function start() {
   el.glb.addEventListener('click', exportGlb);
   el.obj.addEventListener('click', exportObj);
   el.sendPrint.addEventListener('click', sendToPrintPrep);
+  el.cura.addEventListener('click', exportCuraProfile);
+  try { const t = localStorage.getItem(CURA_KEY); if (CURA_TARGETS.some((c) => c.id === t)) el.curaPrinter.value = t; } catch { /* private mode */ }
   el.save.addEventListener('click', saveProject);
   el.open.addEventListener('click', () => el.openFile.click());
   el.openFile.addEventListener('change', () => { const f = el.openFile.files[0]; if (f) openProject(f); el.openFile.value = ''; });

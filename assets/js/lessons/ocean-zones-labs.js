@@ -9,6 +9,15 @@
   const fmt = n => Math.round(n).toLocaleString('en-US');
   const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  function syncRangeFill(el) {
+    if (!el) return;
+    const min = parseFloat(el.min) || 0;
+    const max = parseFloat(el.max) || 100;
+    const val = parseFloat(el.value) || 0;
+    const pct = max === min ? 0 : clamp(((val - min) / (max - min)) * 100, 0, 100);
+    el.style.setProperty('--cos-range-progress', pct.toFixed(3) + '%');
+  }
+
   function diveTo(depth) {
     if (!dive) return;
     dive.setDepth(depth);
@@ -107,15 +116,37 @@
     scaleSvg.appendChild(el('text', { x: colX + colW / 2, y: TOP - 6, 'text-anchor': 'middle', class: 'oz-svg-sun' }, 'Sunlight zone ↓'));
     const zoneLabels = [[600, 'Twilight'], [2500, 'Midnight'], [5000, 'Abyss'], [8500, 'Hadal']];
     zoneLabels.forEach(z => scaleSvg.appendChild(el('text', { x: colX + colW / 2, y: y(z[0]) + 4, 'text-anchor': 'middle', class: 'oz-svg-zone' }, z[1])));
-    const markers = LANDMARKS.map(l => {
-      const g = el('g', { class: 'oz-scale-mark' });
+    const markers = LANDMARKS.map((l, i) => {
+      const g = el('g', { class: 'oz-scale-mark', 'data-i': String(i) });
+      g.appendChild(el('rect', { x: colX, y: y(l.d) - 6, width: colW + 40, height: 12, fill: 'transparent' }));
       g.appendChild(el('line', { x1: colX, x2: colX + colW + 18, y1: y(l.d), y2: y(l.d) }));
       g.appendChild(el('circle', { cx: colX + colW + 18, cy: y(l.d), r: 4 }));
       const label = el('text', { x: colX + colW + 28, y: y(l.d) + 4, class: 'oz-svg-label' }, l.name + ' · ' + fmt(l.d) + ' m');
       g.appendChild(label);
+      g.addEventListener('click', () => selectLandmark(i));
       scaleSvg.appendChild(g);
       return g;
     });
+    const subGroup = el('g', { class: 'oz-scale-sub' });
+    const subLine = el('line', { x1: colX - 4, x2: colX + colW + 6, y1: y(0), y2: y(0) });
+    const subTri = el('polygon', { points: `${colX + colW + 6},${y(0)} ${colX + colW + 14},${y(0) - 4} ${colX + colW + 14},${y(0) + 4}` });
+    const subLabel = el('text', { x: colX + colW + 18, y: y(0) + 4 }, 'Sub · 0 m');
+    subGroup.appendChild(subLine);
+    subGroup.appendChild(subTri);
+    subGroup.appendChild(subLabel);
+    scaleSvg.appendChild(subGroup);
+
+    if (dive) {
+      dive.onDepth(d => {
+        const yy = y(clamp(d, 0, MAX));
+        subLine.setAttribute('y1', yy);
+        subLine.setAttribute('y2', yy);
+        subTri.setAttribute('points', `${colX + colW + 6},${yy} ${colX + colW + 14},${yy - 4} ${colX + colW + 14},${yy + 4}`);
+        subLabel.setAttribute('y', yy + 4);
+        subLabel.textContent = 'Sub · ' + fmt(d) + ' m';
+      });
+    }
+
     const list = $('oz-scale-list');
     list.innerHTML = LANDMARKS.map((l, i) => '<button type="button" role="listitem" class="oz-scale-item" data-i="' + i + '"><span>' + l.name + '</span><strong>' + fmt(l.d) + ' m</strong></button>').join('');
     function selectLandmark(i) {
@@ -138,9 +169,9 @@
     { name: 'Blue', nm: 475, css: '#3d8bff', rgb: [0, 0.45, 1], kd: { ocean: 0.018, coastal: 0.25 } },
     { name: 'Violet', nm: 425, css: '#9a6bff', rgb: [0.35, 0, 1], kd: { ocean: 0.022, coastal: 0.55 } },
   ];
-  const REFLECT = { red: [0.9, 0.5, 0.1, 0.04, 0.04, 0.04], yellow: [0.6, 0.7, 0.9, 0.6, 0.08, 0.05] };
+  const REFLECT = { red: [0.95, 0.4, 0.08, 0.04, 0.04, 0.04], yellow: [0.65, 0.75, 0.95, 0.6, 0.08, 0.05] };
   const CH_SUM = [0, 1, 2].map(ch => BANDS.reduce((s, b) => s + b.rgb[ch], 0));
-  let water = 'ocean';
+  let water = 'ocean', ltFlashOn = false;
   const ltDepth = $('lt-depth');
   if (ltDepth) {
     const bandsEl = $('lt-bands');
@@ -149,22 +180,41 @@
     const lin = (I, refl) => [0, 1, 2].map(ch => BANDS.reduce((s, b, i) => s + I[i] * (refl ? refl[i] : 1) * b.rgb[ch], 0) / CH_SUM[ch]);
     const toCss = (rgb, k) => 'rgb(' + rgb.map(v => Math.round(255 * Math.pow(clamp(v * k, 0, 1), 1 / 2.2))).join(',') + ')';
     const pctLabel = p => p >= 10 ? p.toFixed(0) + '%' : p >= 0.1 ? p.toFixed(1) + '%' : p >= 0.001 ? p.toFixed(3) + '%' : '<0.001%';
+    function photicDepth1Pct(w) {
+      let lo = 0, hi = 400;
+      for (let i = 0; i < 24; i++) {
+        const mid = (lo + hi) / 2;
+        const avg = BANDS.reduce((s, b) => s + Math.exp(-b.kd[w] * mid), 0) / BANDS.length;
+        if (avg > 0.01) lo = mid; else hi = mid;
+      }
+      return Math.round((lo + hi) / 2);
+    }
     function renderLight() {
       const z = Number(ltDepth.value);
       $('lt-depth-out').textContent = z + ' m';
+      syncRangeFill(ltDepth);
       const I = BANDS.map(b => Math.exp(-b.kd[water] * z));
       I.forEach((v, i) => { fills[i].style.width = (100 * v).toFixed(2) + '%'; pcts[i].textContent = pctLabel(100 * v); });
       const white = lin(I), total = I.reduce((a, b) => a + b, 0) / I.length;
-      // Eyes adapt to dim light, so show the hue normalized but still dimmer as light fades.
-      const k = clamp(1 + Math.log10(Math.max(total, 1e-6)) / 4, 0.12, 1) / Math.max(...white);
-      $('lt-white').style.background = toCss(white, k);
-      $('lt-red').style.background = toCss(lin(I, REFLECT.red), k);
-      $('lt-yellow').style.background = toCss(lin(I, REFLECT.yellow), k);
+      const k = clamp(1 + Math.log10(Math.max(total, 1e-6)) / 4, 0.14, 1) / Math.max(...white);
+      const bgWater = toCss(white, k * 0.68);
+      const lampI = ltFlashOn ? I.map(v => clamp(v + 0.85, 0, 1)) : I;
+      const lampWhite = lin(lampI);
+      const lampK = ltFlashOn ? 1 / Math.max(...lampWhite) : k;
+      $('lt-white').style.background = bgWater;
+      $('lt-white').style.color = toCss(lampWhite, lampK);
+      $('lt-red').style.background = bgWater;
+      $('lt-red').style.color = toCss(lin(lampI, REFLECT.red), lampK);
+      $('lt-yellow').style.background = bgWater;
+      $('lt-yellow').style.color = toCss(lin(lampI, REFLECT.yellow), lampK);
       const best = BANDS[I.indexOf(Math.max(...I))].name.toLowerCase();
+      const photic1 = photicDepth1Pct(water);
       $('lt-readout').textContent = z === 0
         ? 'At the surface every color is present, so objects show their true colors.'
         : 'At ' + z + ' m, ' + pctLabel(100 * I[0]) + ' of the red light is left, but ' + pctLabel(100 * Math.max(...I)) + ' of the ' + best + ' light. Overall about ' + pctLabel(100 * total) + ' of the sunlight remains' +
-          (total < 0.01 ? ' — below the roughly 1% that photosynthesis needs.' : '.');
+          (ltFlashOn ? ' — submersible white flashlight restores red reflection!' : (total < 0.01 ? ' — below the roughly 1% that photosynthesis needs.' : '.'));
+      const pNote = $('lt-photic-note');
+      if (pNote) pNote.textContent = (water === 'ocean' ? 'Clear open ocean' : 'Green coastal water') + ' reaches the 1% photosynthesis threshold near ' + photic1 + ' m depth.';
     }
     ltDepth.addEventListener('input', renderLight);
     document.querySelectorAll('[data-water]').forEach(btn => btn.addEventListener('click', () => {
@@ -172,6 +222,14 @@
       document.querySelectorAll('[data-water]').forEach(b => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
       renderLight();
     }));
+    const flashBtn = $('lt-flashlight');
+    if (flashBtn) {
+      flashBtn.addEventListener('click', () => {
+        ltFlashOn = !ltFlashOn;
+        flashBtn.setAttribute('aria-pressed', ltFlashOn ? 'true' : 'false');
+        renderLight();
+      });
+    }
     renderLight();
   }
 
@@ -179,8 +237,11 @@
   const prDepth = $('pr-depth');
   if (prDepth) {
     const PRESETS = [[10, '10 m'], [40, 'Scuba 40 m'], [200, '200 m'], [1000, '1,000 m'], [3800, 'Titanic'], [10935, 'Challenger Deep']];
-    $('pr-presets').innerHTML = PRESETS.map(p => '<button type="button" class="oz-chip" data-pr="' + p[0] + '">' + p[1] + '</button>').join('');
-    $('pr-presets').addEventListener('click', ev => { const b = ev.target.closest('[data-pr]'); if (b) { prDepth.value = b.dataset.pr; renderPressure(); } });
+    $('pr-presets').innerHTML = PRESETS.map(p => '<button type="button" class="oz-chip" data-pr="' + p[0] + '" aria-pressed="false">' + p[1] + '</button>').join('');
+    $('pr-presets').addEventListener('click', ev => {
+      const b = ev.target.closest('[data-pr]');
+      if (b) { prDepth.value = b.dataset.pr; renderPressure(); }
+    });
     function compare(kg) {
       if (kg >= 900) return 'about the weight of a small car balanced on your thumbnail';
       if (kg >= 300) return 'about the weight of a grand piano on your thumbnail';
@@ -190,6 +251,8 @@
     }
     function renderPressure() {
       const z = Number(prDepth.value), P = pressureAtm(z), kg = P * 1.0332, vol = 1000 / P;
+      syncRangeFill(prDepth);
+      document.querySelectorAll('[data-pr]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.pr) === z ? 'true' : 'false'));
       $('pr-depth-out').textContent = fmt(z) + ' m';
       $('pr-atm').textContent = (P < 10 ? P.toFixed(1) : fmt(P)) + ' atm';
       $('pr-kg').textContent = (kg < 10 ? kg.toFixed(1) : fmt(kg)) + ' kg';
@@ -197,6 +260,35 @@
       const r = Math.max(1.5, 80 * Math.cbrt(1 / P));
       $('pr-balloon').setAttribute('r', r.toFixed(2));
       $('pr-string').setAttribute('y1', (100 + r).toFixed(2));
+
+      // Foam cup shrinking as air pockets collapse
+      const cupScale = clamp(0.32 + 0.68 / Math.pow(P, 0.28), 0.36, 1);
+      const cupG = $('pr-cup-group');
+      if (cupG) cupG.setAttribute('transform', 'translate(60 70) scale(' + cupScale.toFixed(3) + ')');
+      const cupPct = $('pr-cup-pct');
+      if (cupPct) cupPct.textContent = Math.round(cupScale * 100) + '%';
+
+      // TMAO osmotic ceiling meter (0 -> 11,000 m, limit at 8,400 m)
+      const tmaoFill = $('pr-tmao-fill');
+      const tmaoBadge = $('pr-tmao-badge');
+      const tmaoNote = $('pr-tmao-note');
+      if (tmaoFill && tmaoBadge && tmaoNote) {
+        tmaoFill.style.width = clamp((z / 11000) * 100, 0, 100).toFixed(1) + '%';
+        tmaoBadge.classList.remove('warn', 'danger');
+        if (z > 8400) {
+          tmaoBadge.classList.add('danger');
+          tmaoBadge.textContent = 'Beyond fish limit';
+          tmaoNote.textContent = 'Above ~8,400 m, the TMAO needed to stabilize proteins draws in too much water.';
+        } else if (z > 4000) {
+          tmaoBadge.classList.add('warn');
+          tmaoBadge.textContent = 'High TMAO';
+          tmaoNote.textContent = 'Water compresses <2.5%, while TMAO rises steadily to shield deep-sea proteins.';
+        } else {
+          tmaoBadge.textContent = 'Safe zone';
+          tmaoNote.textContent = 'Water & tissue compress <1.5% here; TMAO protects proteins.';
+        }
+      }
+
       $('pr-readout').textContent = 'At ' + fmt(z) + ' m the water pushes with ' + (P < 10 ? P.toFixed(1) : fmt(P)) + ' atm — ' + compare(kg) + '. Surface air squeezes to 1/' + (P < 10 ? P.toFixed(1) : fmt(P)) + ' of its volume.';
     }
     prDepth.addEventListener('input', renderPressure);
@@ -205,13 +297,13 @@
 
   /* ══════════ 6 · Temperature profiles ══════════ */
   const PROFILES = {
-    tropical: { pts: [[0, 28], [50, 27.8], [75, 26], [100, 23], [150, 18], [200, 15], [300, 11.5], [500, 8], [700, 6], [1000, 4.5], [1500, 3.3], [2000, 2.6], [3000, 1.9]],
+    tropical: { label: 'Tropical', pts: [[0, 28], [50, 27.8], [75, 26], [100, 23], [150, 18], [200, 15], [300, 11.5], [500, 8], [700, 6], [1000, 4.5], [1500, 3.3], [2000, 2.6], [3000, 1.9]],
       mixed: 60, thermo: [60, 700], color: '#ffb060',
       note: 'Tropical seas have a warm, sunlit lid sitting on cold deep water. The sharp thermocline acts like a barrier: warm and cold water barely mix, so nutrients from below rarely reach the surface.' },
-    temperate: { pts: [[0, 19], [20, 18.8], [40, 15], [60, 12], [100, 11], [200, 10], [500, 7.5], [1000, 4.5], [2000, 2.8], [3000, 2.2]],
+    temperate: { label: 'Mid-latitude', pts: [[0, 19], [20, 18.8], [40, 15], [60, 12], [100, 11], [200, 10], [500, 7.5], [1000, 4.5], [2000, 2.8], [3000, 2.2]],
       mixed: 25, thermo: [25, 80], color: '#7ed0f5',
       note: 'In mid-latitudes the summer thermocline is shallow and seasonal. Winter storms cool the surface and stir the water, mixing nutrients up — which feeds a big spring plankton bloom.' },
-    polar: { pts: [[0, -1.8], [100, -1.7], [150, -0.5], [300, 0.8], [500, 0.9], [1000, 0.6], [2000, 0.2], [3000, -0.2]],
+    polar: { label: 'Polar', pts: [[0, -1.8], [100, -1.7], [150, -0.5], [300, 0.8], [500, 0.9], [1000, 0.6], [2000, 0.2], [3000, -0.2]],
       mixed: 120, thermo: null, color: '#c8b4ff',
       note: 'Polar water is cold from top to bottom — there is no strong thermocline. Salty, near-freezing surface water is dense enough to sink, which is how the deep ocean gets filled with cold water.' },
   };
@@ -221,7 +313,7 @@
     const x = t => L + (t - TMIN) / (TMAX - TMIN) * (R - L);
     const y = d => T + d / DMAX * (B - T);
     const tempAt = (pts, d) => { for (let i = 1; i < pts.length; i++) if (d <= pts[i][0]) { const a = pts[i - 1], b = pts[i], f = (d - a[0]) / (b[0] - a[0]); return a[1] + (b[1] - a[1]) * f; } return pts[pts.length - 1][1]; };
-    let profile = 'tropical', probe = 300;
+    let profile = 'tropical', probe = 300, subDepth = dive ? dive.depth : 0;
     tpSvg.setAttribute('tabindex', '0');
     function renderTemp() {
       const p = PROFILES[profile];
@@ -238,12 +330,32 @@
       h += '<polyline class="oz-tp-line" style="stroke:' + p.color + '" points="' + fine.join(' ') + '"/>';
       const tp = tempAt(p.pts, probe);
       h += '<line class="oz-tp-probe" x1="' + L + '" x2="' + R + '" y1="' + y(probe) + '" y2="' + y(probe) + '"/><circle cx="' + x(tp) + '" cy="' + y(probe) + '" r="6" fill="' + p.color + '" class="oz-tp-dot"/>';
-      // Label sits on whichever side of the dot has more room, just below the probe line.
       const right = x(tp) < (L + R) / 2;
       h += '<text x="' + (right ? x(tp) + 12 : x(tp) - 12) + '" y="' + (y(probe) + 20) + '" text-anchor="' + (right ? 'start' : 'end') + '" class="oz-tp-probe-label">' + fmt(probe) + ' m · ' + tp.toFixed(1) + ' °C</text>';
+
+      // Live submersible depth tick on axis
+      const subCapped = clamp(subDepth, 0, DMAX);
+      const sy = y(subCapped);
+      h += '<line x1="' + L + '" x2="' + (L + 14) + '" y1="' + sy + '" y2="' + sy + '" class="oz-tp-sub-tick"/>';
+      h += '<text x="' + (L + 18) + '" y="' + (sy + 4) + '" class="oz-tp-sub-text">Sub ' + (subDepth > DMAX ? '>3k m' : fmt(subDepth) + ' m') + '</text>';
+
+      // Compact color-coded legend bottom-right
+      const legKeys = ['tropical', 'temperate', 'polar'];
+      h += '<g transform="translate(' + (R - 140) + ',' + (B - 68) + ')">';
+      h += '<rect x="0" y="0" width="132" height="58" rx="8" fill="rgba(2,10,18,0.78)" stroke="rgba(120,200,240,0.2)"/>';
+      legKeys.forEach((k, idx) => {
+        const pr = PROFILES[k];
+        const yy = 16 + idx * 17;
+        const active = k === profile;
+        h += '<line x1="10" x2="28" y1="' + yy + '" y2="' + yy + '" stroke="' + (active ? pr.color : 'rgba(255,255,255,0.35)') + '" stroke-width="' + (active ? 3 : 1.5) + '" ' + (active ? '' : 'stroke-dasharray="3 3"') + '/>';
+        h += '<text x="34" y="' + (yy + 4) + '" class="oz-tp-legend" opacity="' + (active ? 1 : 0.65) + '">' + pr.label + '</text>';
+      });
+      h += '</g>';
+
       tpSvg.innerHTML = h;
       $('tp-readout').textContent = p.note;
     }
+    if (dive) dive.onDepth(d => { subDepth = d; renderTemp(); });
     function probeFromEvent(ev) {
       const r = tpSvg.getBoundingClientRect();
       const sy = (ev.clientY - r.top) / r.height * 360;
@@ -312,6 +424,34 @@
       ctx.font = '600 10px system-ui, sans-serif'; ctx.fillStyle = 'rgba(190,225,240,.6)'; ctx.textAlign = 'left';
       [100, 1000, 2000, 3000, 4000, 5000, 6000].forEach(d => { ctx.fillText(d === 100 ? '100 m' : fmt(d), 4, yOf(d) + 3); });
       const z = Number(snDepth.value), lineY = yOf(z);
+      // Plot Martin curve flux profile F(z) = (z/100)^-0.86
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(44, yOf(DTOP));
+      for (let md = DTOP; md <= DBOT; md += 120) {
+        const mx = 44 + flux(md) * (CW - 56);
+        ctx.lineTo(mx, yOf(md));
+      }
+      ctx.lineTo(44, yOf(DBOT));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(115, 223, 192, 0.09)';
+      ctx.fill();
+      ctx.beginPath();
+      for (let md = DTOP; md <= DBOT; md += 120) {
+        const mx = 44 + flux(md) * (CW - 56);
+        if (md === DTOP) ctx.moveTo(mx, yOf(md)); else ctx.lineTo(mx, yOf(md));
+      }
+      ctx.strokeStyle = 'rgba(115, 223, 192, 0.45)';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(155, 235, 212, 0.55)';
+      ctx.font = '600 9px system-ui, sans-serif';
+      [1, 0.5, 0.1].forEach(frac => {
+        const tx = 44 + frac * (CW - 56);
+        ctx.fillText(Math.round(frac * 100) + '%', tx - 10, 11);
+      });
+      ctx.restore();
+
       ctx.strokeStyle = 'rgba(115,223,192,.85)'; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(40, lineY); ctx.lineTo(CW, lineY); ctx.stroke(); ctx.setLineDash([]);
       // Visual speed is exaggerated: 100 m/day ≈ 800 m per second on screen.
       const step = reducedMotion ? 0 : Number(snSpeed.value) * 8 * dt;
@@ -326,6 +466,9 @@
       for (let sb = 0; sb < 4; sb++) {
         ctx.beginPath(); ctx.ellipse(salpX + sb * 11, salpY + Math.sin(now * 0.003 + sb) * 2, 6, 4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       }
+      ctx.fillStyle = 'rgba(205,240,255,0.75)';
+      ctx.font = '600 9px system-ui, sans-serif';
+      ctx.fillText('Salp chain', clamp(salpX + 42, 48, CW - 54), salpY + 3);
 
       // 2. Giant larvacean with glowing mucus filter house near 1,200 m
       const larvY = yOf(1200);
@@ -337,6 +480,8 @@
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.beginPath(); ctx.ellipse(larvX, larvY, 2.5, 1.8, 0, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.moveTo(larvX, larvY); ctx.quadraticCurveTo(larvX - 6, larvY + 4, larvX - 10, larvY + Math.sin(now * 0.01) * 3); ctx.stroke();
+      ctx.fillStyle = 'rgba(160,245,230,0.78)';
+      ctx.fillText('Larvacean', larvX - 64, larvY + 3);
 
       // 3. Pteropod (sea butterfly) flapping near 2,500 m
       const pterY = yOf(2500) + Math.sin(now * 0.002) * 5;
@@ -347,12 +492,16 @@
       ctx.fillStyle = 'rgba(200,180,255,0.5)';
       ctx.beginPath(); ctx.ellipse(pterX - 4, pterY + wingFlap * 0.5, 4, 2, -0.4, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.ellipse(pterX + 4, pterY - wingFlap * 0.5, 4, 2, 0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(225,200,255,0.78)';
+      ctx.fillText('Sea butterfly', pterX + 12, pterY + 3);
 
       // 4. Abyssal deposit feeder sweeping bottom sediment near 5,800 m
       const pigY = yOf(5800);
-      const pigX = ((now * 0.008) % (CW - 60)) + 30;
+      const pigX = ((now * 0.008) % (CW - 80)) + 48;
       ctx.fillStyle = 'rgba(255,190,215,0.7)';
       ctx.beginPath(); ctx.ellipse(pigX, pigY, 8, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,205,225,0.78)';
+      ctx.fillText('Sea pig', clamp(pigX + 12, 48, CW - 44), pigY + 3);
 
       parts.forEach((p, i) => {
         if (p.flash > 0) {
@@ -379,6 +528,7 @@
       time: 'Months 0–24 after sinking',
       actors: 'Sleeper sharks, hagfish, rattails, giant isopods, lysianassoid amphipods',
       depth: 4000,
+      tissue: 90, lipids: 100, diversity: 35,
       text: 'Within hours of a 40-tonne whale touching the abyssal plain, scent plumes attract hundreds of mobile scavengers. Sleeper sharks and jawless hagfish rasp soft tissue, while giant isopods tear at blubber. Up to 60 kg of flesh is stripped per day, removing 90% of the carcass in under two years.',
     },
     {
@@ -386,6 +536,7 @@
       time: 'Years 2–5 after sinking',
       actors: 'Polychaete bristle worms, cumaceans, snails, juvenile squat lobsters',
       depth: 4000,
+      tissue: 15, lipids: 85, diversity: 75,
       text: 'Once the big meat is gone, millions of small invertebrates colonize the stripped skeleton and surrounding mud. Invertebrate densities can reach 40,000 animals per square metre — among the highest biomass densities anywhere on Earth — feeding on leftover organic films and bacteria.',
     },
     {
@@ -393,6 +544,7 @@
       time: 'Years 5–50+ after sinking',
       actors: 'Osedax bone-eating worms, chemosynthetic bacteria, limpets, galatheid crabs',
       depth: 4000,
+      tissue: 0, lipids: 45, diversity: 100,
       text: 'Whale bones are up to 60% lipid by weight. Female Osedax ("bone-eating") worms drill green root-like networks into the bones, using bacterial symbionts to digest marrow collagen. Anaerobic microbes produce hydrogen sulfide (H₂S), feeding thick chemosynthetic bacterial mats.',
     },
     {
@@ -400,6 +552,7 @@
       time: 'Years 50–100+ after sinking',
       actors: 'Glass sponges, deep-sea anemones, stalked crinoids, brachiopods',
       depth: 4000,
+      tissue: 0, lipids: 5, diversity: 60,
       text: 'After all bone lipids are consumed, the bare mineralized calcium-phosphate bones remain as hard substrate on an otherwise muddy seafloor. Filter-feeding glass sponges, deep-sea anemones, and crinoids anchor into the skeleton, maintaining a biodiversity oasis for generations.',
     }
   ];
@@ -420,6 +573,11 @@
       '</div>' +
       '<p class="oz-wf-actors"><strong>Key ocean life:</strong> ' + stage.actors + '</p>' +
       '<p class="oz-wf-text">' + stage.text + '</p>' +
+      '<div class="oz-wf-bars">' +
+        '<div class="oz-wf-bar-row"><div class="oz-wf-bar-label"><span>Soft tissue</span><span>' + stage.tissue + '%</span></div><div class="oz-wf-bar-track"><div class="oz-wf-bar-fill" style="width:' + stage.tissue + '%"></div></div></div>' +
+        '<div class="oz-wf-bar-row"><div class="oz-wf-bar-label"><span>Bone lipids</span><span>' + stage.lipids + '%</span></div><div class="oz-wf-bar-track"><div class="oz-wf-bar-fill" style="width:' + stage.lipids + '%"></div></div></div>' +
+        '<div class="oz-wf-bar-row"><div class="oz-wf-bar-label"><span>Species diversity</span><span>' + stage.diversity + '%</span></div><div class="oz-wf-bar-track"><div class="oz-wf-bar-fill" style="width:' + stage.diversity + '%"></div></div></div>' +
+      '</div>' +
       diveButton(stage.depth, 'Dive to ' + fmt(stage.depth) + ' m (Abyssal Plain)') +
     '</div>';
   }
@@ -446,8 +604,10 @@
       const credit = c.model
         ? '3D model render by ' + c.author + ' on Sketchfab · ' + c.license
         : 'Field-guide illustration for ClassroomOS · Verified hadal specimen';
-      return '<article class="oz-creature-card" data-zone="' + zoneId + '">' +
+      const logged = dive.isDiscovered && dive.isDiscovered(zoneId, c.kind);
+      return '<article class="oz-creature-card" data-zone="' + zoneId + '" data-kind="' + c.kind + '" data-search="' + (c.name + ' ' + c.latin + ' ' + c.fact + ' ' + z.name).toLowerCase().replace(/"/g, '') + '">' +
         '<figure data-zoomable data-lightbox-group="ocean-life">' +
+          '<span class="oz-creature-logged"' + (logged ? '' : ' hidden') + '>✓ Logged</span>' +
           '<img src="../../assets/images/ocean-lifeforms/' + imageFile(c) + '" alt="' + c.name + ' (' + c.latin + ')" width="256" height="144" loading="lazy" decoding="async">' +
           '<figcaption>' +
             '<span class="oz-cap-kind">' + z.icon + ' ' + z.name + ' · ' + c.length + ' · ' + c.latin + '</span>' +
@@ -464,7 +624,7 @@
           '<p class="oz-creature-latin"><em>' + c.latin + '</em></p>' +
           '<p class="oz-creature-desc">' + c.fact + '</p>' +
           '<div class="oz-creature-foot">' +
-            diveButton(z.jump, 'Dive to ' + z.name) +
+            '<button type="button" class="oz-dive-here" data-inspect-zone="' + zoneId + '" data-inspect-kind="' + c.kind + '">Inspect in sub ↑</button>' +
           '</div>' +
         '</div>' +
       '</article>';
@@ -478,19 +638,48 @@
     });
     creatureGrid.innerHTML = allHtml;
 
+    let activeZoneFilter = 'all';
+    const searchEl = $('oz-guide-search');
+    const countEl = $('oz-guide-count');
+    function applyGuideFilters() {
+      const q = (searchEl ? searchEl.value : '').trim().toLowerCase();
+      let shown = 0;
+      creatureGrid.querySelectorAll('.oz-creature-card').forEach(card => {
+        const zoneMatch = activeZoneFilter === 'all' || card.dataset.zone === activeZoneFilter;
+        const textMatch = !q || card.dataset.search.indexOf(q) !== -1;
+        const match = zoneMatch && textMatch;
+        card.hidden = !match;
+        if (match) shown++;
+      });
+      if (countEl) countEl.textContent = shown === 30 ? '30 shown' : shown + ' of 30 shown';
+    }
+
     document.querySelectorAll('[data-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const filter = btn.dataset.filter;
+        activeZoneFilter = btn.dataset.filter;
         document.querySelectorAll('[data-filter]').forEach(b => {
           b.classList.toggle('active', b === btn);
           b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
         });
-        creatureGrid.querySelectorAll('.oz-creature-card').forEach(card => {
-          const match = filter === 'all' || card.dataset.zone === filter;
-          card.hidden = !match;
-        });
+        applyGuideFilters();
       });
     });
+    if (searchEl) searchEl.addEventListener('input', applyGuideFilters);
+
+    creatureGrid.addEventListener('click', ev => {
+      const btn = ev.target.closest('[data-inspect-zone]');
+      if (!btn || !dive.inspectCreature) return;
+      dive.inspectCreature(btn.dataset.inspectZone, btn.dataset.inspectKind);
+      $('oz-dive').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    });
+
+    if (dive.onDiscovery) {
+      dive.onDiscovery((zoneId, kind) => {
+        const card = creatureGrid.querySelector('.oz-creature-card[data-zone="' + zoneId + '"][data-kind="' + kind + '"]');
+        const badge = card && card.querySelector('.oz-creature-logged');
+        if (badge) badge.hidden = false;
+      });
+    }
   }
 
   /* ══════════ 9 · Adaptation matching ══════════ */
@@ -534,58 +723,72 @@
   let currentAdaptSet = 0;
   const animalsEl = $('ad-animals'), traitsEl = $('ad-traits');
   const matchTabs = document.querySelectorAll('.oz-match-tab');
+  const resetAdaptBtn = $('ad-reset');
+
+  function makeAdaptState(items) {
+    const order = items.map((_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    return { order, matched: new Set(), logHtml: '' };
+  }
+  const adaptStates = ADAPT_SETS.map(s => makeAdaptState(s.items));
 
   function renderAdaptSet(setIndex) {
     if (!animalsEl || !traitsEl) return;
     currentAdaptSet = setIndex;
     const currentSet = ADAPT_SETS[setIndex];
     const items = currentSet.items;
+    const st = adaptStates[setIndex];
 
     matchTabs.forEach((tab, i) => {
       tab.classList.toggle('active', i === setIndex);
+      tab.classList.toggle('done', adaptStates[i].matched.size === ADAPT_SETS[i].items.length);
       tab.setAttribute('aria-selected', i === setIndex ? 'true' : 'false');
     });
 
-    const order = items.map((_, i) => i);
-    for (let i = order.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [order[i], order[j]] = [order[j], order[i]];
+    animalsEl.innerHTML = '<p class="oz-match-head">Animal</p>' + items.map((a, i) => {
+      const done = st.matched.has(i);
+      return '<button type="button" class="oz-match-btn' + (done ? ' done' : '') + '" data-animal="' + i + '" aria-pressed="false"' + (done ? ' disabled' : '') + '><strong>' + a.animal + '</strong><small>' + a.zone + '</small></button>';
+    }).join('');
+
+    traitsEl.innerHTML = '<p class="oz-match-head">Adaptation</p>' + st.order.map(i => {
+      const done = st.matched.has(i);
+      return '<button type="button" class="oz-match-btn' + (done ? ' done' : '') + '" data-trait="' + i + '" aria-pressed="false"' + (done ? ' disabled' : '') + '>' + items[i].trait + '</button>';
+    }).join('');
+
+    $('ad-log').innerHTML = st.logHtml;
+    function updateAdaptReadout() {
+      if (st.matched.size === items.length) {
+        const nextSetBtn = (setIndex === 0 && adaptStates[1].matched.size < ADAPT_SETS[1].items.length)
+          ? ' <button type="button" class="oz-next-set-btn" id="oz-next-adapt-set">Advance to Set 2: Extreme Specialists →</button>'
+          : '';
+        $('ad-readout').innerHTML = 'All ' + items.length + ' matched! Every one of these is a solution to darkness, scarce food, or pressure.' + nextSetBtn;
+        const nextBtn = $('oz-next-adapt-set');
+        if (nextBtn) nextBtn.addEventListener('click', () => renderAdaptSet(1));
+      } else {
+        $('ad-readout').textContent = st.matched.size + ' of ' + items.length + ' matched.';
+      }
     }
+    updateAdaptReadout();
 
-    animalsEl.innerHTML = '<p class="oz-match-head">Animal</p>' + items.map((a, i) =>
-      '<button type="button" class="oz-match-btn" data-animal="' + i + '" aria-pressed="false"><strong>' + a.animal + '</strong><small>' + a.zone + '</small></button>'
-    ).join('');
-
-    traitsEl.innerHTML = '<p class="oz-match-head">Adaptation</p>' + order.map(i =>
-      '<button type="button" class="oz-match-btn" data-trait="' + i + '" aria-pressed="false">' + items[i].trait + '</button>'
-    ).join('');
-
-    $('ad-log').innerHTML = '';
-    $('ad-readout').textContent = '0 of ' + items.length + ' matched.';
-
-    let pickA = null, pickT = null, matched = 0;
+    let pickA = null, pickT = null;
     function check() {
       if (pickA == null || pickT == null) return;
       const a = animalsEl.querySelector('[data-animal="' + pickA + '"]'), t = traitsEl.querySelector('[data-trait="' + pickT + '"]');
       if (pickA === pickT) {
         [a, t].forEach(b => { b.classList.add('done'); b.disabled = true; b.setAttribute('aria-pressed', 'false'); });
-        matched++;
-        const log = document.createElement('p');
-        log.innerHTML = '✓ <em>' + items[pickA].animal + '</em> — ' + items[pickA].why;
-        $('ad-log').prepend(log);
-        if (matched === items.length) {
-          const nextSetBtn = (setIndex === 0)
-            ? ' <button type="button" class="oz-next-set-btn" id="oz-next-adapt-set">Advance to Set 2: Extreme Specialists →</button>'
-            : '';
-          $('ad-readout').innerHTML = 'All ' + items.length + ' matched! Every one of these is a solution to darkness, scarce food, or pressure.' + nextSetBtn;
-          const nextBtn = $('oz-next-adapt-set');
-          if (nextBtn) nextBtn.addEventListener('click', () => renderAdaptSet(1));
-        } else {
-          $('ad-readout').textContent = matched + ' of ' + items.length + ' matched.';
+        st.matched.add(pickA);
+        st.logHtml = '<p>✓ <em>' + items[pickA].animal + '</em> — ' + items[pickA].why + '</p>' + st.logHtml;
+        $('ad-log').innerHTML = st.logHtml;
+        if (st.matched.size === items.length && matchTabs[setIndex]) {
+          matchTabs[setIndex].classList.add('done');
         }
+        updateAdaptReadout();
       } else {
         [a, t].forEach(b => { b.classList.add('miss'); b.setAttribute('aria-pressed', 'false'); setTimeout(() => b.classList.remove('miss'), 600); });
-        $('ad-readout').textContent = 'Not that one — think about which problem (darkness, food, pressure) the trait solves. ' + matched + ' of ' + items.length + ' matched.';
+        $('ad-readout').textContent = 'Not that one — think about which problem (darkness, food, pressure) the trait solves. ' + st.matched.size + ' of ' + items.length + ' matched.';
       }
       pickA = pickT = null;
     }
@@ -604,6 +807,12 @@
 
   if (animalsEl && traitsEl) {
     matchTabs.forEach((tab, idx) => tab.addEventListener('click', () => renderAdaptSet(idx)));
+    if (resetAdaptBtn) {
+      resetAdaptBtn.addEventListener('click', () => {
+        adaptStates[currentAdaptSet] = makeAdaptState(ADAPT_SETS[currentAdaptSet].items);
+        renderAdaptSet(currentAdaptSet);
+      });
+    }
     renderAdaptSet(0);
   }
 
@@ -645,12 +854,19 @@
       why: 'Most deep creatures cannot see red light because no red sunlight reaches them. The loosejaw produces its own red searchlight and has specialized visual pigments to see it, illuminating prey without alerting them.' },
     { q: 'What sustains the rich communities of Osedax worms and chemosynthetic bacteria on a sunken whale fall for decades?', options: ['Sunlight filtered from the surface', 'Volcanic magma from seafloor vents', 'Dense lipids and marrow stored inside the whale bones', 'Cold air bubbles trapped in the blubber'], a: 2,
       why: 'Whale bones contain vast stores of lipids. Female Osedax ("bone-eating") worms drill root-like networks into the bones, using bacterial symbionts to digest bone marrow fats for up to 50 years.' },
+    { q: 'How does diel vertical migration help power the ocean’s biological carbon pump?', options: ['Animals swim to the surface at night to feed, then carry carbon downward when they return to depth by day', 'Seafloor volcanoes pump oxygen upward every midnight', 'Sunlight pushes plankton down into the abyss during storms', 'Whales carry carbon rocks from coastal beaches to trenches'], a: 0,
+      why: 'Billions of twilight-zone animals eat carbon-rich food near the surface at night and respire, excrete, or get eaten in deeper water by day, actively transporting carbon below the mixed layer.' },
   ];
   const quizEl = $('oz-quiz-list');
   if (quizEl) {
+    const scoreEl = $('oz-quiz-score');
     let answered = 0, correct = 0;
-    quizEl.innerHTML = QUIZ.map((item, qi) => '<div class="oz-q" data-q="' + qi + '"><p>' + (qi + 1) + '. ' + item.q + '</p><div class="oz-q-opts" role="group" aria-label="Question ' + (qi + 1) + ' choices">' +
-      item.options.map((o, oi) => '<button type="button" class="oz-q-opt" data-o="' + oi + '">' + o + '</button>').join('') + '</div><p class="oz-q-fb" aria-live="polite"></p></div>').join('');
+    function renderQuiz() {
+      answered = 0; correct = 0;
+      quizEl.innerHTML = QUIZ.map((item, qi) => '<div class="oz-q" data-q="' + qi + '"><p>' + (qi + 1) + '. ' + item.q + '</p><div class="oz-q-opts" role="group" aria-label="Question ' + (qi + 1) + ' choices">' +
+        item.options.map((o, oi) => '<button type="button" class="oz-q-opt" data-o="' + oi + '">' + o + '</button>').join('') + '</div><p class="oz-q-fb" aria-live="polite"></p></div>').join('');
+      scoreEl.textContent = '0 of ' + QUIZ.length + ' answered.';
+    }
     quizEl.addEventListener('click', ev => {
       const btn = ev.target.closest('.oz-q-opt'); if (!btn || btn.disabled) return;
       const box = btn.closest('.oz-q'), item = QUIZ[Number(box.dataset.q)], pick = Number(btn.dataset.o);
@@ -660,7 +876,14 @@
       const fb = box.querySelector('.oz-q-fb');
       fb.textContent = (pick === item.a ? 'Correct. ' : 'Not quite. ') + item.why;
       fb.classList.add(pick === item.a ? 'right' : 'wrong');
-      if (answered === QUIZ.length) $('oz-quiz-score').textContent = 'Score: ' + correct + ' of ' + QUIZ.length + '.';
+      if (answered === QUIZ.length) {
+        scoreEl.innerHTML = 'Score: ' + correct + ' of ' + QUIZ.length + '. <button type="button" class="oz-chip" id="oz-quiz-retry">Try again</button>';
+        const retry = $('oz-quiz-retry');
+        if (retry) retry.addEventListener('click', renderQuiz);
+      } else {
+        scoreEl.textContent = answered + ' of ' + QUIZ.length + ' answered · ' + correct + ' correct so far.';
+      }
     });
+    renderQuiz();
   }
 })();

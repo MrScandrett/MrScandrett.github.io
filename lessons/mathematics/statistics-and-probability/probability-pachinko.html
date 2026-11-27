@@ -8,804 +8,7 @@
   <meta name="description" content="Mathematics Lesson 05 - explore the Galton board and pachinko-style simulations, the bell curve, the central limit theorem, binomial distributions, sample size, bias, expected value, and the history of pachinko for K-12 STEM students." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
-  <style>
-    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #0ea5e9; --ll-tab-active: #0ea5e9; --ll-tab-active-bg: rgba(14,165,233,0.12); }
-
-    .pk-panel-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.45rem;
-      margin-bottom: 0.85rem;
-    }
-    .pk-panel-preset {
-      padding: 0.5rem 0.6rem;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 8px;
-      background: var(--white, #fff);
-      font-size: 0.76rem;
-      font-weight: 600;
-      color: var(--text-primary, #1d1d1f);
-      cursor: pointer;
-      text-align: left;
-      transition: background 0.15s, border-color 0.15s, transform 0.1s;
-    }
-    .pk-panel-preset:hover {
-      background: rgba(14,165,233,0.08);
-      border-color: #0ea5e9;
-      transform: translateY(-1px);
-    }
-    .pk-panel-preset small {
-      display: block;
-      font-size: 0.66rem;
-      font-weight: 400;
-      color: var(--text-muted, #64748b);
-      margin-top: 0.15rem;
-    }
-    [data-lighting="night"] .pk-panel-preset,
-    [data-theme="vaporwave"] .pk-panel-preset,
-    [data-theme="bark"] .pk-panel-preset {
-      background: #1c1c1e;
-      border-color: rgba(255,255,255,0.16);
-      color: #f5f5f7;
-    }
-    [data-lighting="night"] .pk-panel-preset small,
-    [data-theme="vaporwave"] .pk-panel-preset small,
-    [data-theme="bark"] .pk-panel-preset small {
-      color: rgba(245,245,247,0.68);
-    }
-    [data-lighting="night"] .pk-panel-preset:hover,
-    [data-theme="vaporwave"] .pk-panel-preset:hover,
-    [data-theme="bark"] .pk-panel-preset:hover {
-      background: rgba(14,165,233,0.22);
-      border-color: #38bdf8;
-    }
-    .pk-panel-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.4rem;
-      margin-bottom: 0.85rem;
-    }
-    .pk-panel-actions .pk-btn {
-      padding: 0.5rem 0.6rem;
-      font-size: 0.78rem;
-    }
-    .pk-panel-actions .pk-btn-neutral {
-      background: var(--surface, #f1f5f9);
-      color: var(--text-primary, #1d1d1f);
-      border: 1px solid var(--line, #cbd5e1);
-    }
-    [data-lighting="night"] .pk-panel-actions .pk-btn-neutral,
-    [data-theme="vaporwave"] .pk-panel-actions .pk-btn-neutral,
-    [data-theme="bark"] .pk-panel-actions .pk-btn-neutral {
-      background: rgba(255,255,255,0.08);
-      color: #f5f5f7;
-      border-color: rgba(255,255,255,0.18);
-    }
-    .pk-panel-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-primary, #1d1d1f);
-      margin-bottom: 0.85rem;
-      cursor: pointer;
-    }
-    .pk-panel-toggle input { width: 1rem; height: 1rem; accent-color: #0ea5e9; }
-    [data-lighting="night"] .pk-panel-toggle,
-    [data-theme="vaporwave"] .pk-panel-toggle,
-    [data-theme="bark"] .pk-panel-toggle {
-      color: #f5f5f7;
-    }
-
-    .pk-page { padding-bottom: 3.5rem; }
-
-    .pk-hero { padding: 0.4rem 0 1rem; text-align: left; }
-    .pk-hero h1 { max-width: 22ch; margin-left: 0; margin-right: 0; font-size: clamp(1.65rem, 3.8vw, 2.45rem); }
-    .pk-hero-meta {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem;
-      margin: 0.45rem 0 0.6rem; font-size: 0.82rem; color: var(--text-muted, #64748b);
-    }
-    .pk-hero-meta .dot {
-      width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45;
-      display: inline-block; vertical-align: middle;
-    }
-    .pk-lede { max-width: 76ch; margin: 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    .pk-back-link { display: inline-block; margin-top: 0.65rem; font-size: 0.84rem; font-weight: 700; color: #0369a1; text-decoration: none; }
-    .pk-back-link:hover { text-decoration: underline; }
-    .pk-lede .pk-back-link-inline { color: inherit; text-decoration: underline; font-weight: 700; }
-    [data-lighting="night"] .pk-hero-meta,
-    [data-lighting="night"] .pk-lede,
-    [data-theme="vaporwave"] .pk-lede,
-    [data-theme="bark"] .pk-lede { color: rgba(245,245,247,0.78); }
-    [data-lighting="night"] .pk-back-link,
-    [data-theme="vaporwave"] .pk-back-link,
-    [data-theme="bark"] .pk-back-link { color: #7dd3fc; }
-
-    .pk-card {
-      background: var(--white, #fff);
-      border: 1px solid var(--line, #d2d2d7);
-      border-left: 3.5px solid var(--card-accent, #0ea5e9);
-      border-radius: var(--radius, 18px);
-      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
-      padding: 1.2rem 1.4rem;
-      margin-bottom: 1rem;
-    }
-    .pk-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .pk-card h3 { margin: 0.95rem 0 0.3rem; font-size: 0.98rem; letter-spacing: -0.01em; }
-    .pk-card p { margin: 0 0 0.65rem; color: var(--text-secondary, #3f4f65); font-size: 0.89rem; line-height: 1.65; }
-    .pk-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .pk-card,
-    [data-theme="vaporwave"] .pk-card,
-    [data-theme="bark"] .pk-card {
-      background: var(--surface-1, #232326);
-      border-color: rgba(255,255,255,0.14);
-      color: #f5f5f7;
-    }
-    [data-lighting="night"] .pk-card h2,
-    [data-lighting="night"] .pk-card h3,
-    [data-theme="vaporwave"] .pk-card h2,
-    [data-theme="bark"] .pk-card h2 { color: #f5f5f7; }
-    [data-lighting="night"] .pk-card p,
-    [data-theme="vaporwave"] .pk-card p,
-    [data-theme="bark"] .pk-card p { color: rgba(245,245,247,0.8); }
-
-    @media (prefers-color-scheme: dark) {
-      :where(html:not([data-lighting])) .pk-card { background: var(--surface-1, #232326); color: #f5f5f7; }
-      :where(html:not([data-lighting])) .pk-card p { color: rgba(245,245,247,0.8); }
-      :where(html:not([data-lighting])) .pk-lede { color: rgba(245,245,247,0.78); }
-      :where(html:not([data-lighting])) .pk-back-link { color: #7dd3fc; }
-    }
-
-    .pk-grid,
-    .pk-band-grid,
-    .pk-sequence-grid,
-    .pk-scenario-grid,
-    .pk-vocab-grid,
-    .pk-question-grid {
-      display: grid;
-      gap: 0.8rem;
-      margin-top: 0.85rem;
-    }
-    .pk-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
-    .pk-band-grid,
-    .pk-sequence-grid,
-    .pk-scenario-grid,
-    .pk-vocab-grid,
-    .pk-question-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-    @media (max-width: 760px) {
-      .pk-grid { grid-template-columns: 1fr; }
-    }
-
-    .pk-panel,
-    .pk-mini-card,
-    .pk-question {
-      background: var(--surface, #f5f5f7);
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 14px;
-      padding: 0.95rem 1rem;
-      display: flex;
-      flex-direction: column;
-    }
-    [data-lighting="night"] .pk-panel,
-    [data-theme="vaporwave"] .pk-panel,
-    [data-theme="bark"] .pk-panel,
-    [data-lighting="night"] .pk-mini-card,
-    [data-theme="vaporwave"] .pk-mini-card,
-    [data-theme="bark"] .pk-mini-card,
-    [data-lighting="night"] .pk-question,
-    [data-theme="vaporwave"] .pk-question,
-    [data-theme="bark"] .pk-question {
-      background: rgba(255,255,255,0.055);
-      border-color: rgba(255,255,255,0.14);
-      color: #f5f5f7;
-    }
-    @media (prefers-color-scheme: dark) {
-      :where(html:not([data-lighting])) .pk-panel,
-      :where(html:not([data-lighting])) .pk-mini-card,
-      :where(html:not([data-lighting])) .pk-question {
-        background: rgba(255,255,255,0.055);
-        border-color: rgba(255,255,255,0.14);
-        color: #f5f5f7;
-      }
-    }
-
-    .pk-mini-title {
-      margin: 0 0 0.55rem;
-      font-size: 0.74rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #475569;
-    }
-    [data-lighting="night"] .pk-mini-title,
-    [data-theme="vaporwave"] .pk-mini-title,
-    [data-theme="bark"] .pk-mini-title { color: rgba(245,245,247,0.75); }
-    @media (prefers-color-scheme: dark) {
-      :where(html:not([data-lighting])) .pk-mini-title { color: rgba(245,245,247,0.75); }
-    }
-
-    .pk-checklist,
-    .pk-step-list {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.55rem;
-    }
-    .pk-checklist li,
-    .pk-step-list li {
-      display: flex;
-      gap: 0.6rem;
-      align-items: flex-start;
-      font-size: 0.88rem;
-      line-height: 1.55;
-      color: var(--text-secondary, #3f4f65);
-    }
-    [data-lighting="night"] .pk-checklist li,
-    [data-theme="vaporwave"] .pk-checklist li,
-    [data-theme="bark"] .pk-checklist li,
-    [data-lighting="night"] .pk-step-list li,
-    [data-theme="vaporwave"] .pk-step-list li,
-    [data-theme="bark"] .pk-step-list li { color: rgba(245,245,247,0.82); }
-    .pk-checklist li::before,
-    .pk-step-num {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      font-size: 0.72rem;
-      font-weight: 800;
-      color: #fff;
-      margin-top: 0.02rem;
-    }
-    .pk-checklist li::before { content: "\2713"; background: #0d9488; }
-    .pk-step-num { background: #0369a1; }
-
-    .pk-tag {
-      display: inline-flex;
-      align-items: center;
-      align-self: flex-start;
-      padding: 0.2rem 0.55rem;
-      border-radius: 999px;
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 0.45rem;
-      background: rgba(14,165,233,0.12);
-      color: #0369a1;
-    }
-    [data-lighting="night"] .pk-tag,
-    [data-theme="vaporwave"] .pk-tag,
-    [data-theme="bark"] .pk-tag {
-      background: rgba(56,189,248,0.18);
-      color: #7dd3fc;
-    }
-
-    .pk-mini-card strong {
-      display: block;
-      margin-bottom: 0.28rem;
-      font-size: 0.95rem;
-    }
-    .pk-mini-card p,
-    .pk-question {
-      margin: 0;
-      font-size: 0.85rem;
-      line-height: 1.6;
-      color: #3f4f65;
-    }
-    [data-lighting="night"] .pk-mini-card p,
-    [data-theme="vaporwave"] .pk-mini-card p,
-    [data-theme="bark"] .pk-mini-card p,
-    [data-lighting="night"] .pk-question,
-    [data-theme="vaporwave"] .pk-question,
-    [data-theme="bark"] .pk-question { color: rgba(245,245,247,0.8); }
-
-    .pk-scenario-launch {
-      margin-top: auto;
-      padding-top: 0.65rem;
-      align-self: flex-start;
-      border: 0;
-      background: transparent;
-      color: #0369a1;
-      font: inherit;
-      font-size: 0.78rem;
-      font-weight: 800;
-      cursor: pointer;
-      padding-left: 0;
-      padding-right: 0;
-    }
-    .pk-scenario-launch:hover { text-decoration: underline; }
-    [data-lighting="night"] .pk-scenario-launch,
-    [data-theme="vaporwave"] .pk-scenario-launch,
-    [data-theme="bark"] .pk-scenario-launch { color: #7dd3fc; }
-
-    .pk-callout {
-      background: linear-gradient(135deg, rgba(14,165,233,0.09), rgba(20,184,166,0.07));
-      border: 1px solid rgba(14,165,233,0.24);
-      border-radius: 14px;
-      padding: 0.9rem 1rem;
-      margin: 0.85rem 0;
-    }
-    .pk-callout strong {
-      display: block;
-      margin-bottom: 0.2rem;
-      font-size: 0.76rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #0369a1;
-    }
-    [data-lighting="night"] .pk-callout strong,
-    [data-theme="vaporwave"] .pk-callout strong,
-    [data-theme="bark"] .pk-callout strong { color: #7dd3fc; }
-    .pk-callout p { margin: 0; }
-
-    /* Interactive Lab */
-    .pk-lab {
-      background:
-        radial-gradient(circle at 18% 8%, rgba(45,212,191,0.16), transparent 28%),
-        radial-gradient(circle at 82% 0%, rgba(251,191,36,0.15), transparent 28%),
-        linear-gradient(135deg, #07111f 0%, #0f2036 52%, #0f3644 100%);
-      border-radius: 20px;
-      padding: 1.35rem 1.25rem;
-      margin-bottom: 1.1rem;
-      box-shadow: 0 22px 55px rgba(0,0,0,0.28);
-      border: 1px solid rgba(125,211,252,0.24);
-      color: #f0f9ff;
-    }
-    .pk-lab-head {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 0.6rem 1rem;
-      margin-bottom: 0.9rem;
-    }
-    .pk-lab h2 { color: #f0f9ff; margin: 0 0 0.2rem; font-size: 1.25rem; }
-    .pk-lab-sub { color: rgba(240,249,255,0.78); font-size: 0.85rem; margin: 0; line-height: 1.55; max-width: 72ch; }
-    .pk-lab-badge {
-      display: inline-flex; align-items: center; gap: 0.45rem;
-      background: rgba(14,165,233,0.18); border: 1px solid rgba(125,211,252,0.36);
-      border-radius: 999px; padding: 0.2rem 0.7rem; margin-bottom: 0.45rem;
-      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #bae6fd; font-weight: 700;
-    }
-    .pk-lab-grid {
-      display: grid;
-      grid-template-columns: minmax(255px, 320px) minmax(0, 1fr);
-      gap: 0.95rem;
-      align-items: start;
-    }
-    @media (max-width: 920px) {
-      .pk-lab-grid { grid-template-columns: 1fr; }
-    }
-    .pk-controls,
-    .pk-results {
-      background: rgba(255,255,255,0.055);
-      border: 1px solid rgba(255,255,255,0.14);
-      border-radius: 16px;
-      padding: 0.95rem;
-      backdrop-filter: blur(10px);
-    }
-    .pk-controls label,
-    .pk-results-label {
-      display: block;
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: rgba(240,249,255,0.72);
-      margin-bottom: 0.3rem;
-    }
-    .pk-select,
-    .pk-range { width: 100%; }
-    .pk-select {
-      padding: 0.52rem 0.68rem;
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 10px;
-      background: rgba(2,6,23,0.78);
-      color: #f8fafc;
-      font: inherit;
-      font-size: 0.84rem;
-      margin-bottom: 0.72rem;
-    }
-    .pk-control-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.65rem;
-    }
-    @media (max-width: 520px) {
-      .pk-control-row { grid-template-columns: 1fr; }
-    }
-    .pk-range-wrap { margin: 0.1rem 0 0.72rem; }
-    .pk-range { accent-color: #38bdf8; }
-    .pk-range-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-      color: rgba(240,249,255,0.68);
-      font-size: 0.72rem;
-    }
-    .pk-range-meta strong { color: #e0f2fe; font-size: 0.78rem; font-family: "IBM Plex Mono", monospace; }
-
-    .pk-button-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.45rem;
-      margin: 0.65rem 0;
-    }
-    .pk-btn {
-      border: 0;
-      border-radius: 10px;
-      padding: 0.56rem 0.78rem;
-      font-weight: 800;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: transform 0.14s ease, filter 0.14s ease, background 0.14s ease;
-    }
-    .pk-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
-    .pk-btn-primary { background: #38bdf8; color: #082f49; }
-    .pk-btn-secondary { background: rgba(255,255,255,0.11); color: #f8fafc; border: 1px solid rgba(255,255,255,0.18); }
-    .pk-btn-secondary.is-active { background: #22c55e; color: #052e16; border-color: #4ade80; }
-    .pk-btn-chip {
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.08);
-      color: rgba(240,249,255,0.92);
-      border-radius: 999px;
-      padding: 0.34rem 0.62rem;
-      font-weight: 700;
-      font-size: 0.73rem;
-      cursor: pointer;
-    }
-    .pk-btn-chip:hover { border-color: #38bdf8; background: rgba(56,189,248,0.18); }
-
-    .pk-toggles-box {
-      border-top: 1px solid rgba(255,255,255,0.12);
-      padding-top: 0.6rem;
-      margin-top: 0.6rem;
-      display: grid;
-      gap: 0.35rem;
-    }
-    .pk-controls .pk-toggle {
-      font-size: 0.8rem;
-      text-transform: none;
-      letter-spacing: 0;
-      color: rgba(240,249,255,0.92);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin: 0;
-      font-weight: 600;
-    }
-    .pk-toggle input { width: 1rem; height: 1rem; accent-color: #22c55e; flex-shrink: 0; }
-
-    .pk-model-note {
-      margin-top: 0.75rem;
-      border-radius: 12px;
-      padding: 0.72rem 0.8rem;
-      background: rgba(45,212,191,0.09);
-      border: 1px solid rgba(45,212,191,0.22);
-      color: rgba(240,249,255,0.85);
-      font-size: 0.8rem;
-      line-height: 1.5;
-    }
-    .pk-model-note strong {
-      display: block;
-      color: #99f6e4;
-      margin-bottom: 0.2rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-size: 0.68rem;
-    }
-
-    .pk-board-wrap {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 0.75rem;
-    }
-    .pk-canvas-shell {
-      position: relative;
-      overflow: hidden;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: #07111f;
-      height: min(60vh, 500px);
-      min-height: 360px;
-    }
-    .pk-canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-    .pk-hud-bar {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.45rem 0.8rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 10px;
-      background: rgba(2,6,23,0.5);
-      border: 1px solid rgba(255,255,255,0.12);
-      font-size: 0.76rem;
-      color: rgba(226,232,240,0.88);
-      font-family: "IBM Plex Mono", monospace;
-    }
-    .pk-trace-banner {
-      padding: 0.52rem 0.75rem;
-      border-radius: 10px;
-      background: rgba(250,204,21,0.12);
-      border: 1px solid rgba(250,204,21,0.28);
-      color: #fef08a;
-      font-size: 0.78rem;
-      font-family: "IBM Plex Mono", monospace;
-      line-height: 1.45;
-    }
-    .pk-ev-strip {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.55rem;
-      padding: 0.65rem 0.75rem;
-      border-radius: 12px;
-      background: rgba(34,197,94,0.1);
-      border: 1px solid rgba(74,222,128,0.26);
-    }
-    @media (max-width: 600px) {
-      .pk-ev-strip { grid-template-columns: 1fr; }
-    }
-    .pk-ev-cell span {
-      display: block;
-      font-size: 0.66rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #bbf7d0;
-      font-weight: 700;
-    }
-    .pk-ev-cell strong {
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 0.94rem;
-      color: #f0fdf4;
-    }
-    .pk-ev-note {
-      grid-column: 1 / -1;
-      font-size: 0.78rem;
-      color: rgba(220,252,231,0.9);
-      line-height: 1.45;
-    }
-
-    .pk-stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.55rem;
-    }
-    @media (max-width: 640px) {
-      .pk-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    .pk-stat {
-      border-radius: 12px;
-      padding: 0.62rem 0.72rem;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.12);
-    }
-    .pk-stat-label {
-      color: rgba(240,249,255,0.68);
-      font-size: 0.66rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 0.16rem;
-    }
-    .pk-stat-value {
-      color: #f8fafc;
-      font-size: 0.94rem;
-      font-weight: 800;
-      font-family: "IBM Plex Mono", monospace;
-    }
-
-    .pk-bars-details {
-      border-radius: 12px;
-      background: rgba(2,6,23,0.34);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 0.55rem 0.75rem;
-    }
-    .pk-bars-details summary {
-      cursor: pointer;
-      font-size: 0.74rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: rgba(240,249,255,0.8);
-      list-style: none;
-    }
-    .pk-bars-details summary::-webkit-details-marker { display: none; }
-    .pk-bars {
-      display: grid;
-      gap: 0.34rem;
-      margin-top: 0.55rem;
-    }
-    .pk-bar-row {
-      display: grid;
-      grid-template-columns: 68px minmax(0, 1fr) 118px;
-      gap: 0.5rem;
-      align-items: center;
-      color: rgba(240,249,255,0.85);
-      font-size: 0.73rem;
-      font-family: "IBM Plex Mono", monospace;
-    }
-    .pk-bar-row.is-predicted { color: #fde047; font-weight: 700; }
-    .pk-bar-track {
-      position: relative;
-      height: 12px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.09);
-      overflow: hidden;
-    }
-    .pk-bar-fill {
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 0%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, #38bdf8, #2dd4bf);
-    }
-    .pk-bar-expected {
-      position: absolute;
-      top: -2px;
-      bottom: -2px;
-      width: 2.5px;
-      background: #facc15;
-      box-shadow: 0 0 0 1px rgba(250,204,21,0.4);
-    }
-    .pk-insight {
-      border-radius: 12px;
-      padding: 0.72rem 0.85rem;
-      background: rgba(250,204,21,0.1);
-      border: 1px solid rgba(250,204,21,0.24);
-      color: #fef9c3;
-      font-size: 0.82rem;
-      line-height: 1.5;
-    }
-
-    /* Figures */
-    .pk-galton-figures {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 0.85rem;
-      margin: 1rem 0;
-    }
-    .pk-figure {
-      margin: 0;
-      background: rgba(255,255,255,0.7);
-      border: 1px solid rgba(15,23,42,0.12);
-      border-radius: 14px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .pk-figure img {
-      display: block;
-      width: 100%;
-      height: 220px;
-      object-fit: cover;
-      background: #fff;
-    }
-    .pk-figure img.pk-figure-contain { object-fit: contain; padding: 0.4rem; }
-    .pk-figure figcaption {
-      padding: 0.7rem 0.85rem 0.85rem;
-      font-size: 0.85rem;
-      line-height: 1.5;
-    }
-    .pk-figure figcaption strong { display: block; margin-bottom: 0.2rem; }
-    .pk-figure figcaption small {
-      display: block;
-      margin-top: 0.45rem;
-      font-size: 0.72rem;
-      color: var(--text-secondary, #3f4f65);
-    }
-    .pk-figure figcaption a { color: #0369a1; }
-    [data-lighting="night"] .pk-figure,
-    [data-theme="vaporwave"] .pk-figure,
-    [data-theme="bark"] .pk-figure {
-      background: rgba(15,23,42,0.62);
-      border-color: rgba(226,232,240,0.16);
-      color: #f5f5f7;
-    }
-    [data-lighting="night"] .pk-figure figcaption small,
-    [data-theme="vaporwave"] .pk-figure figcaption small,
-    [data-theme="bark"] .pk-figure figcaption small { color: rgba(245,245,247,0.74); }
-    [data-lighting="night"] .pk-figure figcaption a,
-    [data-theme="vaporwave"] .pk-figure figcaption a,
-    [data-theme="bark"] .pk-figure figcaption a { color: #7dd3fc; }
-
-    /* Practice Check Your Understanding */
-    .pk-practice-list {
-      display: grid;
-      gap: 0.65rem;
-      margin-top: 0.7rem;
-    }
-    .pk-practice-item {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 0.6rem;
-      align-items: center;
-      padding: 0.7rem 0.85rem;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 12px;
-      background: var(--surface, #f8fafc);
-    }
-    .pk-practice-item p { margin: 0; font-size: 0.87rem; }
-    .pk-practice-item input {
-      width: 6rem;
-      padding: 0.4rem 0.55rem;
-      border: 1px solid var(--line, #cbd5e1);
-      border-radius: 8px;
-      background: var(--white, #fff);
-      color: var(--text-primary, #1d1d1f);
-      font: 700 0.88rem "IBM Plex Mono", monospace;
-    }
-    .pk-practice-item button {
-      border: 0;
-      border-radius: 8px;
-      padding: 0.44rem 0.85rem;
-      background: #0369a1;
-      color: #fff;
-      font: 700 0.8rem var(--font-sans);
-      cursor: pointer;
-    }
-    .pk-practice-item button:hover { filter: brightness(1.08); }
-    .pk-practice-item .fb {
-      grid-column: 1 / -1;
-      font-size: 0.82rem;
-      font-weight: 700;
-      min-height: 1.1em;
-    }
-    .pk-practice-item .fb.ok { color: #15803d; }
-    .pk-practice-item .fb.no { color: #b45309; }
-    @media (max-width: 560px) {
-      .pk-practice-item { grid-template-columns: 1fr; }
-    }
-    [data-lighting="night"] .pk-practice-item,
-    [data-theme="vaporwave"] .pk-practice-item,
-    [data-theme="bark"] .pk-practice-item {
-      background: rgba(255,255,255,0.05);
-      border-color: rgba(255,255,255,0.16);
-    }
-    [data-lighting="night"] .pk-practice-item input,
-    [data-theme="vaporwave"] .pk-practice-item input,
-    [data-theme="bark"] .pk-practice-item input {
-      background: rgba(0,0,0,0.35);
-      border-color: rgba(255,255,255,0.22);
-      color: #f8fafc;
-    }
-    [data-lighting="night"] .pk-practice-item .fb.ok,
-    [data-theme="vaporwave"] .pk-practice-item .fb.ok,
-    [data-theme="bark"] .pk-practice-item .fb.ok { color: #4ade80; }
-    [data-lighting="night"] .pk-practice-item .fb.no,
-    [data-theme="vaporwave"] .pk-practice-item .fb.no,
-    [data-theme="bark"] .pk-practice-item .fb.no { color: #fbbf24; }
-
-    .pk-source-list {
-      margin: 0.65rem 0 0;
-      padding-left: 1.1rem;
-      color: var(--text-secondary, #3f4f65);
-      font-size: 0.84rem;
-      line-height: 1.65;
-    }
-    [data-lighting="night"] .pk-source-list,
-    [data-theme="vaporwave"] .pk-source-list,
-    [data-theme="bark"] .pk-source-list { color: rgba(245,245,247,0.78); }
-    .pk-source-list a { color: #0369a1; font-weight: 700; }
-    [data-lighting="night"] .pk-source-list a,
-    [data-theme="vaporwave"] .pk-source-list a,
-    [data-theme="bark"] .pk-source-list a { color: #7dd3fc; }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/lessons/probability-pachinko.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -849,13 +52,14 @@
             <a class="pk-back-link" href="../../../steam-lessons.html#module-math">&larr; Back to Mathematics</a>
           </section>
 
-          <section id="pk-lab" class="pk-lab" aria-labelledby="pk-lab-title">
+          <section id="pk-lab" class="pk-lab" data-present data-night-keep data-memory-ignore aria-labelledby="pk-lab-title">
             <div class="pk-lab-head">
               <div>
                 <div class="pk-lab-badge">Interactive Galton &amp; Pachinko Lab</div>
                 <h2 id="pk-lab-title">Drop Balls &amp; Test the Board</h2>
-                <p class="pk-lab-sub">Blue bars show experimental counts; yellow ticks mark the exact model; the green curve draws the normal approximation with &plusmn;1&sigma; and &plusmn;2&sigma; bands. Click any peg to tilt it or click any bin to lock a prediction.</p>
+                <p class="pk-lab-sub">Blue bars show experimental counts; yellow ticks mark the exact model; the green curve draws the normal approximation with &plusmn;1&sigma; and &plusmn;2&sigma; bands. Click any peg to tilt it or click any bin (or bin button below) to lock a prediction.</p>
               </div>
+              <span class="pk-mission-pill" id="pk-mission-pill">Missions: 0/5</span>
             </div>
 
             <div class="pk-lab-grid">
@@ -932,6 +136,11 @@
                   <button id="pk-reset" class="pk-btn pk-btn-secondary" type="button">Reset</button>
                 </div>
 
+                <div class="pk-button-row">
+                  <button id="pk-pin-run" class="pk-btn pk-btn-secondary" type="button">Pin comparison</button>
+                  <button id="pk-clear-pin" class="pk-btn pk-btn-secondary" type="button" hidden>Clear pin</button>
+                </div>
+
                 <button id="pk-clear-pegs" class="pk-btn pk-btn-secondary" type="button" hidden style="width:100%; margin-bottom:0.5rem;">Clear tilted pegs</button>
 
                 <div class="pk-button-row" aria-label="Quick investigations">
@@ -976,8 +185,9 @@
                     <canvas id="pk-canvas" class="pk-canvas" width="900" height="500" aria-label="Interactive Galton board and pachinko probability simulator"></canvas>
                   </div>
 
-                  <div id="pk-hover-info" class="pk-hud-bar" aria-live="polite">
-                    Tip: Click any peg to tilt it left/right, or click any bin below to lock a ★ prediction.
+                  <div class="pk-hud-bar">
+                    <span id="pk-hover-info" aria-live="polite">Tip: Click any peg to tilt it left/right, or click any bin below to lock a &starf; prediction.</span>
+                    <span id="pk-fit-badge" class="pk-fit-badge">Waiting for drops</span>
                   </div>
 
                   <div id="pk-trace-banner" class="pk-trace-banner" hidden aria-live="polite"></div>
@@ -1026,11 +236,13 @@
                   </div>
 
                   <details class="pk-bars-details" open>
-                    <summary>Bin Distribution Table (Observed vs Expected)</summary>
+                    <summary>Bin Distribution Table (click any Bin button to &starf; predict)</summary>
                     <div id="pk-bars" class="pk-bars" aria-live="polite"></div>
                   </details>
 
                   <div id="pk-insight" class="pk-insight">Click any bin to predict the winner, then launch balls to test the model.</div>
+
+                  <div id="pk-missions" class="pk-missions" aria-label="Investigation missions"></div>
                 </div>
               </div>
             </div>
@@ -1070,7 +282,7 @@
               <article class="pk-mini-card">
                 <span class="pk-tag">Sample Size</span>
                 <strong>Small Run vs. Large Run</strong>
-                <p>Compare 50 balls against 2,500 balls. Small runs look jagged and unpredictable; large runs lock onto the smooth bell curve.</p>
+                <p>Compare 50 balls against 2,500 balls (pin one run to overlay both). Small runs look jagged; large runs lock onto the bell curve.</p>
                 <button class="pk-scenario-launch" type="button" data-scenario="fair" data-rows="10" data-balls="50">Load 50-ball run &uarr;</button>
               </article>
               <article class="pk-mini-card">
@@ -1279,16 +491,16 @@
         </main>
       </div><!-- /.ll-sim -->
 
-      <aside class="ll-panel" aria-hidden="false">
+      <aside class="ll-panel" aria-hidden="true">
         <div class="ll-panel-head">
-          <div class="ll-tabs">
-            <button class="ll-tab" aria-selected="true" data-pane="pk-controls">Controls</button>
-            <button class="ll-tab" aria-selected="false" data-pane="pk-guide">Guide</button>
+          <div class="ll-tabs" role="tablist" aria-label="Galton board panel tabs">
+            <button class="ll-tab" type="button" role="tab" aria-selected="true" data-pane="pk-controls">Controls</button>
+            <button class="ll-tab" type="button" role="tab" aria-selected="false" data-pane="pk-guide">Guide</button>
           </div>
-          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+          <button class="ll-panel-close" type="button" aria-label="Close panel">&#x2715;</button>
         </div>
         <div class="ll-panel-body">
-          <div class="ll-pane ll-active" id="pk-controls">
+          <div class="ll-pane ll-active" id="pk-controls" aria-hidden="false">
             <span class="ll-label">Board Presets</span>
             <div class="pk-panel-grid" role="group" aria-label="Board Presets">
               <button type="button" class="pk-panel-preset" data-preset="fair">
@@ -1329,7 +541,7 @@
               Teacher hook: hide expected curve
             </label>
 
-            <hr class="ll-hr">
+            <hr class="ll-hr" />
             <span class="ll-label">Live Telemetry</span>
             <div class="ll-readouts">
               <div class="ll-readout">
@@ -1380,7 +592,7 @@
         </div>
       </aside>
 
-      <button class="ll-open-btn" aria-label="Open panel">&#x2630; Controls &amp; Guide</button>
+      <button class="ll-open-btn" type="button" aria-label="Open panel">&#x2630; Controls &amp; Guide</button>
     </div>
   </div>
 

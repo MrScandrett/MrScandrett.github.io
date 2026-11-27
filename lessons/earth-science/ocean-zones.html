@@ -96,12 +96,33 @@
 
         <div class="oz-dive-bar">
           <button class="oz-dive-btn" id="dive-btn" type="button">🤿 Start the Dive</button>
+          <button class="oz-dive-ctrl" id="dive-speed-btn" type="button" aria-label="Descent speed 1x">1× Speed</button>
           <div class="oz-dive-slider-wrap">
             <div class="oz-dive-label"><span>Depth</span><strong id="v-depth">0 m</strong></div>
             <input type="range" id="s-depth" min="0" max="11000" value="0" step="10" aria-label="Ocean depth in metres" />
           </div>
+          <div class="oz-seg oz-light-modes" role="group" aria-label="Submersible headlight mode">
+            <button type="button" class="oz-seg-btn" data-sub-light="white" aria-pressed="true" title="White floodlights">White</button>
+            <button type="button" class="oz-seg-btn" data-sub-light="red" aria-pressed="false" title="Red Stealth beam">Red</button>
+            <button type="button" class="oz-seg-btn" data-sub-light="off" aria-pressed="false" title="Lights off — view bioluminescence">Off (Bio)</button>
+          </div>
+          <button class="oz-dive-ctrl" id="oz-audio-btn" type="button" aria-pressed="false" title="Toggle hydrophone ambient sound and sonar pings">🔇 Sound</button>
         </div>
-        <p class="oz-sim-hint">Tap the floating lifeforms to log them in your expedition. The <strong>Dive log</strong> panel shows live readings. Click the ocean, then use <kbd>↑</kbd>/<kbd>↓</kbd> (hold <kbd>Shift</kbd> for big steps) and <kbd>Space</kbd>.</p>
+        <div class="oz-quick-strip" aria-label="Quick depth jump and live telemetry">
+          <div class="oz-quick-zones" role="group" aria-label="Jump to ocean zone">
+            <button type="button" class="oz-quick-pill active" data-quick-zone="sunlight">☀️ Sunlight</button>
+            <button type="button" class="oz-quick-pill" data-quick-zone="twilight">🌘 Twilight</button>
+            <button type="button" class="oz-quick-pill" data-quick-zone="midnight">🌑 Midnight</button>
+            <button type="button" class="oz-quick-pill" data-quick-zone="abyss">⚫ Abyss</button>
+            <button type="button" class="oz-quick-pill" data-quick-zone="trench">🔻 Trenches</button>
+          </div>
+          <div class="oz-quick-telemetry" aria-live="off">
+            <span class="oz-tel-pill"><small>Pressure</small><strong id="bar-pressure">1 atm</strong></span>
+            <span class="oz-tel-pill"><small>Temp</small><strong id="bar-temp">20.0 °C</strong></span>
+            <span class="oz-tel-pill"><small>Sunlight</small><strong id="bar-light">100%</strong></span>
+          </div>
+        </div>
+        <p class="oz-sim-hint">Tap the floating lifeforms to log them in your expedition. Drag the right-hand depth ruler or use the <strong>Dive log</strong> panel. Click the ocean, then use <kbd>↑</kbd>/<kbd>↓</kbd> (hold <kbd>Shift</kbd> for big steps) and <kbd>Space</kbd>.</p>
       </section>
 
       <!-- ═════════ 2 · Five zones ═════════ -->
@@ -142,16 +163,33 @@
               <button type="button" class="oz-seg-btn" data-water="ocean" aria-pressed="true">Clear open ocean</button>
               <button type="button" class="oz-seg-btn" data-water="coastal" aria-pressed="false">Green coastal water</button>
             </div>
+            <button type="button" class="oz-chip oz-flash-btn" id="lt-flashlight" aria-pressed="false">🔦 Submersible flashlight</button>
           </div>
           <div class="oz-light-grid">
             <div class="oz-bands" id="lt-bands" aria-label="Percent of each color of sunlight remaining"></div>
             <div class="oz-swatches">
-              <div class="oz-swatch"><div class="oz-swatch-chip" id="lt-white"></div><span>White sunlight looks…</span></div>
-              <div class="oz-swatch"><div class="oz-swatch-chip" id="lt-red"></div><span>A red shrimp looks…</span></div>
-              <div class="oz-swatch"><div class="oz-swatch-chip" id="lt-yellow"></div><span>A yellow fish looks…</span></div>
+              <div class="oz-swatch">
+                <div class="oz-swatch-chip" id="lt-white">
+                  <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="18" fill="currentColor"/><g stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="32" y1="6" x2="32" y2="11"/><line x1="32" y1="53" x2="32" y2="58"/><line x1="6" y1="32" x2="11" y2="32"/><line x1="53" y1="32" x2="58" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="50" y1="14" x2="46" y2="18"/><line x1="18" y1="46" x2="14" y2="50"/></g></svg>
+                </div>
+                <span>White sunlight looks…</span>
+              </div>
+              <div class="oz-swatch">
+                <div class="oz-swatch-chip" id="lt-red">
+                  <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M16 36c4-9 14-14 25-11 6 1 11 4 13 7-4 2-8 2-11 1 2 4 1 8-2 11-5-3-9-4-15-3-4 1-8 3-11 6-1-4 0-8 1-11z" fill="currentColor"/><path d="M52 29c5-4 8-8 9-12M52 31c6-2 10-3 11-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M16 37l-8-4 2 7-7 2 8 3" fill="currentColor"/></svg>
+                </div>
+                <span>A red shrimp looks…</span>
+              </div>
+              <div class="oz-swatch">
+                <div class="oz-swatch-chip" id="lt-yellow">
+                  <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 32c6-9 18-12 28-6 4 2 7 4 9 6-2 2-5 4-9 6-10 6-22 3-28-6z" fill="currentColor"/><path d="M19 32l-10-8v16z" fill="currentColor"/><circle cx="43" cy="30" r="2" fill="#06131f"/></svg>
+                </div>
+                <span>A yellow fish looks…</span>
+              </div>
             </div>
           </div>
           <p class="oz-readout" id="lt-readout" aria-live="polite"></p>
+          <p class="oz-note" id="lt-photic-note" style="margin:.45rem 0 0;"></p>
         </div>
         <div class="oz-callout">
           <strong>Why so many deep-sea animals are red.</strong> Below a few tens of metres, almost no red light is left to bounce off them, so red is camouflage. Many deep shrimp, jellies, and fishes are red or black for exactly this reason.
@@ -171,18 +209,35 @@
             <div class="oz-preset-row" id="pr-presets"></div>
           </div>
           <div class="oz-pressure-grid">
-            <div class="oz-balloon-box">
-              <svg viewBox="0 0 200 200" class="oz-balloon-svg" role="img" aria-label="An air balloon shrinking as pressure rises">
-                <circle cx="100" cy="100" r="80" class="oz-balloon-ghost" />
-                <circle cx="100" cy="100" r="80" class="oz-balloon" id="pr-balloon" />
-                <line x1="100" y1="180" x2="100" y2="198" class="oz-balloon-string" id="pr-string" />
-              </svg>
-              <span>A 1-litre balloon of surface air</span>
+            <div class="oz-pressure-visuals">
+              <div class="oz-balloon-box">
+                <svg viewBox="0 0 200 200" class="oz-balloon-svg" role="img" aria-label="An air balloon shrinking as pressure rises">
+                  <circle cx="100" cy="100" r="80" class="oz-balloon-ghost" />
+                  <circle cx="100" cy="100" r="80" class="oz-balloon" id="pr-balloon" />
+                  <line x1="100" y1="180" x2="100" y2="198" class="oz-balloon-string" id="pr-string" />
+                </svg>
+                <span>1 L air balloon</span>
+              </div>
+              <div class="oz-cup-box">
+                <svg viewBox="0 0 120 140" class="oz-cup-svg" role="img" aria-label="A foam cup shrinking as trapped air cells collapse">
+                  <polygon points="28,22 92,22 82,118 38,118" class="oz-cup-ghost" />
+                  <g id="pr-cup-group" transform="translate(60 70) scale(1)">
+                    <polygon points="-32,-48 32,-48 22,48 -22,48" class="oz-cup" />
+                    <ellipse cx="0" cy="-48" rx="32" ry="6" class="oz-cup-rim" />
+                  </g>
+                </svg>
+                <span>Foam cup (<strong id="pr-cup-pct">100%</strong>)</span>
+              </div>
             </div>
             <div class="oz-stat-col">
               <div class="oz-stat"><small>Absolute pressure</small><strong id="pr-atm">2 atm</strong></div>
               <div class="oz-stat"><small>Push on a thumbnail (1 cm²)</small><strong id="pr-kg">2 kg</strong></div>
               <div class="oz-stat"><small>Balloon volume (Boyle’s law)</small><strong id="pr-vol">500 mL</strong></div>
+              <div class="oz-stat oz-tmao-card">
+                <div class="oz-tmao-head"><small>Bony fish TMAO limit</small><span class="oz-tmao-badge" id="pr-tmao-badge">Safe zone</span></div>
+                <div class="oz-tmao-track"><div class="oz-tmao-fill" id="pr-tmao-fill"></div><div class="oz-tmao-limit" title="8,400 m biochemical limit"></div></div>
+                <span id="pr-tmao-note">Water &amp; tissue compress &lt;0.1% here; TMAO protects proteins.</span>
+              </div>
             </div>
           </div>
           <p class="oz-readout" id="pr-readout" aria-live="polite"></p>
@@ -272,14 +327,21 @@
       <section class="oz-section" id="oz-life-guide" style="--oz-accent:#5fd2ff">
         <p class="oz-kicker">Section 8</p>
         <h2>Ocean life field guide</h2>
-        <p>Explore verified specimens and field records from the sunlit surface to the bottom of the Mariana Trench. Click any photo to enlarge it in the classroom lightbox, or use <strong>Dive to zone</strong> to pilot the submersible directly into that creature’s habitat.</p>
-        <div class="oz-gallery-filter" role="group" aria-label="Filter lifeforms by ocean zone">
-          <button type="button" class="oz-filter-chip active" data-filter="all" aria-pressed="true">All zones (30)</button>
-          <button type="button" class="oz-filter-chip" data-filter="sunlight" aria-pressed="false">☀️ Sunlight (6)</button>
-          <button type="button" class="oz-filter-chip" data-filter="twilight" aria-pressed="false">🌘 Twilight (6)</button>
-          <button type="button" class="oz-filter-chip" data-filter="midnight" aria-pressed="false">🌑 Midnight (6)</button>
-          <button type="button" class="oz-filter-chip" data-filter="abyss" aria-pressed="false">⚫ Abyss (6)</button>
-          <button type="button" class="oz-filter-chip" data-filter="trench" aria-pressed="false">🔻 Trenches (6)</button>
+        <p>Explore verified specimens and field records from the sunlit surface to the bottom of the Mariana Trench. Click any photo to enlarge it in the classroom lightbox, or use <strong>Inspect in sub</strong> to pilot the submersible directly to that creature.</p>
+        <div class="oz-guide-toolbar">
+          <div class="oz-gallery-filter" role="group" aria-label="Filter lifeforms by ocean zone">
+            <button type="button" class="oz-filter-chip active" data-filter="all" aria-pressed="true">All zones (30)</button>
+            <button type="button" class="oz-filter-chip" data-filter="sunlight" aria-pressed="false">☀️ Sunlight (6)</button>
+            <button type="button" class="oz-filter-chip" data-filter="twilight" aria-pressed="false">🌘 Twilight (6)</button>
+            <button type="button" class="oz-filter-chip" data-filter="midnight" aria-pressed="false">🌑 Midnight (6)</button>
+            <button type="button" class="oz-filter-chip" data-filter="abyss" aria-pressed="false">⚫ Abyss (6)</button>
+            <button type="button" class="oz-filter-chip" data-filter="trench" aria-pressed="false">🔻 Trenches (6)</button>
+          </div>
+          <div class="oz-guide-search-wrap">
+            <label class="oz-visually-hidden" for="oz-guide-search">Search creatures by name or trait</label>
+            <input type="search" id="oz-guide-search" class="oz-guide-search" placeholder="Search species or trait…" autocomplete="off" />
+            <span class="oz-guide-count" id="oz-guide-count">30 shown</span>
+          </div>
         </div>
         <div class="oz-creature-grid" id="oz-creature-grid"></div>
       </section>
@@ -289,9 +351,12 @@
         <p class="oz-kicker">Section 9</p>
         <h2>Built for the dark</h2>
         <p>Deep-sea animals face darkness, scarce food, cold, and pressure. Many make their own light — <span data-glossary="bioluminescence">bioluminescence</span> — to hunt, hide, or signal; some even glow to hide their shadow, a trick called <span data-glossary="counterillumination">counterillumination</span>. Match each animal to the adaptation that helps it survive: pick an animal, then pick its adaptation.</p>
-        <div class="oz-match-nav" role="tablist" aria-label="Adaptation sets">
-          <button type="button" class="oz-match-tab active" data-set="0" aria-selected="true">Set 1 · Masters of Darkness</button>
-          <button type="button" class="oz-match-tab" data-set="1" aria-selected="false">Set 2 · Extreme Specialists</button>
+        <div class="oz-match-bar">
+          <div class="oz-match-nav" role="tablist" aria-label="Adaptation sets">
+            <button type="button" class="oz-match-tab active" data-set="0" aria-selected="true">Set 1 · Masters of Darkness</button>
+            <button type="button" class="oz-match-tab" data-set="1" aria-selected="false">Set 2 · Extreme Specialists</button>
+          </div>
+          <button type="button" class="oz-chip oz-match-reset" id="ad-reset">↺ Reset set</button>
         </div>
         <div class="oz-match" id="ad-match">
           <div class="oz-match-col" id="ad-animals" role="group" aria-label="Animals"></div>
