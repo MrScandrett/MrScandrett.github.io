@@ -59,6 +59,25 @@ const $ = (root, sel) => root.querySelector(sel);
 const $$ = (root, sel) => [...root.querySelectorAll(sel)];
 const ordinal = (n) => n + (['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th');
 const fmtTime = (ms) => { if (ms == null) return '—'; const s = ms / 1000; return `${Math.floor(s / 60)}:${(s % 60).toFixed(2).padStart(5, '0')}`; };
+/** A small side view of a car (nose to the right) for the preset buttons: the nearest brick in each column, plus wheels. */
+function sideView(cells) {
+  const CW = 5, CH = 6, R = Car.WHEEL_R / Car.CELL * CW;
+  const b = Car.bounds(cells) || { y1: 0, z0: 0, z1: Car.L - 1 };
+  let rects = '';
+  for (let y = 0; y < Car.H; y++) for (let z = 0; z < Car.L; z++) {
+    let c = 0;
+    for (let x = 0; x < Car.W && !c; x++) c = cells[Car.idx(x, y, z)];
+    if (c) rects += `<rect x="${z * CW}" y="${(Car.H - 1 - y) * CH}" width="${CW + .4}" height="${CH + .4}" fill="${Car.PALETTE[c].hex}"/>`;
+  }
+  const mid = (b.z0 + b.z1 + 1) / 2 * CW, half = (b.z1 - b.z0 + 1) * CW * 0.3;
+  const wy = Car.H * CH - CH / 2;
+  const wheels = [mid - half, mid + half].map(cx => `<circle cx="${cx}" cy="${wy}" r="${R}" fill="#111"/><circle cx="${cx}" cy="${wy}" r="${R * .45}" fill="#b9c2cf"/>`).join('');
+  // frame the car itself (wheels can poke past its ends), so short cars aren't drawn tiny
+  const top = (Car.H - 1 - b.y1) * CH;
+  const x0 = Math.min(b.z0 * CW, mid - half - R), x1 = Math.max((b.z1 + 1) * CW, mid + half + R);
+  return `<svg class="br-preset-art" viewBox="${x0 - 2} ${top - 2} ${x1 - x0 + 4} ${wy + R - top + 4}" aria-hidden="true" focusable="false">${rects}${wheels}</svg>`;
+}
+
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function load() { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } }
@@ -117,7 +136,8 @@ export function mount(root) {
   nameInput.addEventListener('input', () => { me.name = cleanName(nameInput.value); persist(); });
 
   const presetBox = $(root, '[data-br-presets]');
-  presetBox.innerHTML = Car.PRESETS.map(p => `<button type="button" data-preset="${p.id}">${esc(p.name)}</button>`).join('');
+  const presetCodes = new Map(Car.PRESETS.map(p => [p.id, Car.encodeCar(p.build())]));
+  presetBox.innerHTML = Car.PRESETS.map(p => `<button type="button" data-preset="${p.id}" aria-pressed="false">${sideView(p.build())}<span>${esc(p.name)}</span></button>`).join('');
   presetBox.addEventListener('click', (e) => {
     const b = e.target.closest('[data-preset]');
     if (!b) return;
@@ -153,8 +173,10 @@ export function mount(root) {
   const statsEl = $(root, '[data-br-stats]');
   function renderStats() {
     const st = Car.carStats(me.cells);
-    const bar = (label, v) => `<div class="br-stat"><span>${label}</span><meter min="0" max="10" value="${v}" aria-label="${label} ${v} of 10"></meter></div>`;
+    const bar = (label, v) => `<div class="br-stat"><span>${label}</span><meter min="0" max="10" value="${v}" aria-label="${label} ${v} of 10"></meter><b aria-hidden="true">${v}</b></div>`;
     statsEl.innerHTML = `${bar('Top speed', st.bars.speed)}${bar('Acceleration', st.bars.accel)}${bar('Grip', st.bars.grip)}${bar('Weight', st.bars.weight)}<p class="br-muted">${st.bricks} bricks</p>`;
+    const code = Car.encodeCar(me.cells);
+    $$(presetBox, '[data-preset]').forEach(b => b.setAttribute('aria-pressed', String(presetCodes.get(b.dataset.preset) === code)));
   }
 
   const scanBadge = $(root, '[data-br-scan-badge]');
