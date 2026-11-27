@@ -95,7 +95,7 @@
     [/^fingerings$/i, { kind: 'quick', icon: '🎷', short: 'Fingerings', blurb: 'Pick a note, see the keys.' }],
     [/^fingerboard$/i, { kind: 'quick', icon: '🎻', short: 'Fingerboard', blurb: 'Notes on the strings.' }],
     [/build a beat/i, { kind: 'quick', icon: '🥁', short: 'Build a beat', blurb: 'Draw a groove, hear it.' }],
-    [/practice exercises/i, { icon: '🏋️', blurb: 'Tiered drills in any key.' }],
+    [/practice exercises/i, { icon: '🏋️', blurb: 'Tiered drills, Beginner to Expert.' }],
     [/scale learning/i, { icon: '🎯', blurb: 'Learn a scale, then recall it.' }],
     [/hanon/i, { icon: '🖐️', blurb: 'Short patterns for even fingers.' }],
     [/repertoire/i, { icon: '🎶', blurb: 'A path of pieces, easier to harder.' }],

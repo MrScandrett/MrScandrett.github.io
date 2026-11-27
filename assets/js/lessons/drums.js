@@ -789,6 +789,10 @@
     if (editable) {
       tip.textContent = 'Watch the notation change as you add hits. Kick sits in the bottom space, snare in the middle space, hi-hat above the staff.';
     }
+    // drum-exercises.js keeps one player and swaps its pattern and tempo.
+    self.load = function (pattern) { patterns = [pattern]; choose(0); };
+    self.setTempo = function (t) { tempoIn.value = t; tempoIn.dispatchEvent(new Event('input')); };
+    self.tempo = function () { return tempo; };
     return self;
   }
 
@@ -1790,6 +1794,6 @@
     initKit(); initAnatomy(); initTuning(); initKey(); initFlashcards(); initQuiz(); initMeterTrainer(); initStudioBar(); initPractice(); initPerformance(); initFunkLadder(); initChapters(); openLinkedGroove();
   }
 
-  window.DrumLab = { renderStaff: renderStaff, SETS: SETS };
+  window.DrumLab = { renderStaff: renderStaff, SETS: SETS, createPlayer: createPlayer };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
