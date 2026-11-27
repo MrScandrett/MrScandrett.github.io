@@ -259,7 +259,11 @@
 (function () {
   'use strict';
 
-  var volume = 0.75, activeVoices = new Set(), generation = 0, warmPromise = null;
+  var volume = 0.75, activeVoices = new Set(), generation = 0, warmPromise = null, held = new Set();
+  /* AudioKit keeps at most 48 voices (20 on iPhone/iPad) and steals the oldest past that. Players
+     here schedule a whole exercise or piece at once, so a long one used to steal its own opening
+     notes before they sounded. Notes further ahead than this wait in a timer instead. */
+  var LOOKAHEAD = 0.6;
   function getContext() {
     var ctx = window.AudioKit && window.MusicSynth ? window.AudioKit.context() : null;
     if (ctx && !warmPromise && window.MusicSynth.prepare) {
@@ -277,6 +281,8 @@
   }
   function stop() {
     generation++;
+    held.forEach(clearTimeout);
+    held.clear();
     var ctx = window.AudioKit && window.AudioKit.peek ? window.AudioKit.peek() : null;
     var now = ctx ? ctx.currentTime : 0;
     activeVoices.forEach(function (v) { try { v.kill(now); } catch (e) { /* already stopped */ } });
@@ -295,13 +301,22 @@
       await warmPromise;
       if (token !== generation) return;
     }
+    var at = audioCtx.currentTime + (opts.delay || 0);
+    var wait = at - audioCtx.currentTime - LOOKAHEAD;
+    if (wait > 0) {
+      await new Promise(function (resolve) {
+        var id = setTimeout(function () { held.delete(id); resolve(); }, wait * 1000);
+        held.add(id);
+      });
+      if (token !== generation) return;
+    }
     var duration = opts.duration || 2.4;
     var vel = Math.max(0.1, Math.min(1, ((opts.gain != null ? opts.gain : 0.28) / 0.35) * volume));
     var voice = window.AudioKit.note({
       instrument: inst,
       hz: freq,
       velocity: vel,
-      delay: opts.delay || 0,
+      at: at,
       duration: duration,
       onEnded: function (v) { activeVoices.delete(v); }
     });

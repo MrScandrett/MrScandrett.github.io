@@ -211,6 +211,44 @@
     return { rh: rh.ev, lh: lh.ev };
   }
 
+  /* Rolling inversions: the tonic triad broken in root position, 1st and 2nd inversion, each
+     group starting on the next chord tone up (C-E-G · E-G-C · G-C-E · C), then back down. */
+  function rollingArpeggio(key, tier) {
+    const cfg = pickTier(tier, [null, { o: 1, d: 0.5, tempo: 72 }, { o: 2, d: 0.5, tempo: 80 }, { o: 2, d: 0.25, tempo: 69 }]);
+    const semis = SCALES[defaultScale(key)];
+    const oc = octaves(key, 7 * cfg.o + 2);
+    const NAMES = ['Root', '1st inv.', '2nd inv.'];
+    const groups = [];
+    for (let g = 0; g < 3 * cfg.o; g++) {
+      const shape = g % 3;
+      groups.push({ shape, degs: rotate([0, 2, 4], shape).map(d => d + 7 * Math.floor(g / 3)), label: g < 3 ? NAMES[shape] : null });
+    }
+    /* Each note: [degree, shape, position in the shape, starts a group, label]. Up: every group
+       bottom to top. The top root lands an octave up and starts the way down: each group below the
+       top one, top to bottom (C-G-E · G-E-C). */
+    const up = [];
+    groups.forEach(gr => gr.degs.forEach((d, j) => up.push([d, gr.shape, j, j === 0, j === 0 ? gr.label : null])));
+    const down = [];
+    groups.slice(0, -1).reverse().forEach(gr => gr.degs.slice().reverse().forEach((d, j) => down.push([d, gr.shape, 2 - j, j === 0, null])));
+    const seq = up.concat(down);
+    const rh = new Track(), lh = new Track();
+    [['rh', rh, INV_RH], ['lh', lh, INV_LH]].forEach(([h, tr, table]) => {
+      seq.forEach(([d, shape, j, first, label], i) => {
+        const n = spell(key, semis, d, oc[h]);
+        const extra = { f: i < 3 || first ? [table[shape][j]] : null };
+        if (h === 'rh' && label) extra.label = label;
+        if (i === seq.length - 1) tr.finish([n], extra); else tr.add([n], cfg.d, extra);
+      });
+    });
+    return {
+      title: key.label + ' rolling inversions, ' + cfg.o + ' octave' + (cfg.o > 1 ? 's' : ''),
+      tempo: cfg.tempo, rh: rh.ev, lh: lh.ev,
+      how: ['Block each shape first: root position, 1st inversion, 2nd inversion, then the root an octave up.', 'Break each shape bottom to top. The next group starts on the middle note of the one you just played, so the hand climbs one chord tone at a time.', 'Land on the root an octave up and roll back down, each shape top to bottom. Feel the groups of three, even though the beat is in four.'],
+      check: 'Each group starts with a fresh hand shape, and no note of the group is louder than the others.',
+      tip: 'Right hand fingers 1-3-5 · 1-2-5 · 1-3-5; left hand 5-3-1 · 5-3-1 · 5-2-1. The thumb starts each right-hand group on the way up.',
+    };
+  }
+
   /* ---- The exercises --------------------------------------------------------------------- */
   const CATEGORIES = [
     { id: 'keys', icon: '🎼', label: 'Scales & keys', blurb: 'Know every key by feel.' },
@@ -365,7 +403,9 @@
     {
       id: 'arpeggio', cat: 'chords', min: 2, icon: '🌈', title: 'Arpeggios',
       goal: 'Travel across octaves on the tonic chord with a level, travelling hand.',
-      build(key, tier) {
+      variants: () => [['straight', 'Up and down the chord'], ['rolling', 'Rolling inversions (groups of 3)']],
+      build(key, tier, variant) {
+        if (variant === 'rolling') return rollingArpeggio(key, tier);
         const cfg = pickTier(tier, [null, { o: 1, d: 0.5, tempo: 66, inv: [0] }, { o: 2, d: 0.5, tempo: 72, inv: [0] }, { o: 2, d: 0.25, tempo: 66, inv: [0, 1] }]);
         const semis = SCALES[defaultScale(key)];
         const oc = octaves(key, 7 * cfg.o + 2);
