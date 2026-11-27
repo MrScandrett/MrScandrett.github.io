@@ -848,10 +848,18 @@ download as one HTML page. The one exception is 🎤 voice, which uses the brows
 send audio to the browser maker), so it stays off until the teacher accepts the notice. From a lesson:
 `SmartBlackboardDock.ask('graph y = x^2 - 4')`, `.write('2x+5=15')`. Tests: `node --test tests/smart-board.test.mjs`.
 
+## Shared 3D Scanning Engine (`assets/js/scan3d/`)
+
+Website-wide image-based 3D scanning and dot-orientation calibration (`docs/scan3d-engine.md`), used by **Brick Rally** and the **Class Fish Tank** (`fish-upload.html` + `assets/js/fish-upload.mjs` + `assets/js/student-fishtank.mjs`).
+- `core.mjs` (pure): photo transforms, flood-fill Otsu segmentation + eyedropper bg picks, 3-View & 360° Turntable visual-hull `carveVolume()`, Naive Surface Nets + Taubin smoothing (`volumeToMesh()`), voxel-brick quantization (`volumeToBrickGrid()`), shared `computeOrientationMatrix()` dot calibration, and `encodeColoredGlb()` / `encodeStl()` exports.
+- `calibrator.mjs`: reusable Three.js preview + landmark dot placement (`FISH_LANDMARKS`, `CAR_LANDMARKS`) on `three-bundle.min.js`.
+- `widget.mjs` + `assets/css/components/scan3d.css`: `mountScan3D(container, opts)` capture UI (3-View, Turntable, camera snap, rotate/flip, sensitivity slider, `.glb`/`.stl`/Print Prep handoff).
+- Tests: `node --test tests/scan3d.test.mjs`.
+
 ## Brick Rally (multiplayer racing on the same WiFi)
 
 `lessons/computer-science/graphics-and-games/brick-rally.html` + `assets/js/brick-rally/`: build a voxel brick car
-(or scan a real one from side/front/top photos by space carving, `scan.mjs`), then race bots or other people.
+or 3D-scan a real creation using the shared `scan3d` engine (`scan.mjs`: 3-View or 360° Turntable into either a full-color 3D scanned car mesh or editable brick build, plus `.stl`/`.glb` dot-calibrated import), then race bots or other people.
 Pure, tested modules: `car-model.mjs` (grid, stats, `v1:` RLE encoding, mesh), `scan.mjs`, `track.mjs`, `physics.mjs`.
 Its networking is the shared same-WiFi layer below; `brick-rally/net.mjs` is only Brick Rally's view of it (its channel,
 "Racer", track in the lobby beacon). The host relays car positions at 20 Hz and runs the bots.

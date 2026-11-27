@@ -6,6 +6,7 @@
   <title>Add Your Fish 🐠 — Mr. Scandrett's Class Tank</title>
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="assets/css/components/scan3d.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -647,6 +648,50 @@
       margin-top: 8px;
     }
 
+    /* Scan vs Upload tabs inside 3D section */
+    .scan-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin: 12px 0 14px;
+      padding: 4px;
+      border-radius: 12px;
+      background: rgba(2, 13, 26, 0.72);
+      border: 1px solid rgba(125, 211, 252, 0.2);
+    }
+    .scan-tab {
+      padding: 8px 10px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #93c5fd;
+      font: 800 0.84rem/1.2 inherit;
+      cursor: pointer;
+    }
+    .scan-tab[aria-selected="true"] {
+      background: rgba(14, 165, 233, 0.25);
+      color: #f0f9ff;
+      box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.45);
+    }
+    .scan-tab:focus-visible { outline: 2.5px solid #7dd3fc; outline-offset: 2px; }
+    .s3d {
+      --s3d-bg: rgba(2, 13, 26, 0.65);
+      --s3d-surface: rgba(4, 22, 48, 0.9);
+      --s3d-raise: rgba(14, 165, 233, 0.14);
+      --s3d-line: rgba(125, 211, 252, 0.28);
+      --s3d-text: #e0f2fe;
+      --s3d-dim: #93c5fd;
+      --s3d-accent: #7dd3fc;
+      --s3d-accent-ink: #041630;
+      --s3d-good: #86efac;
+      --s3d-bad: #fca5a5;
+    }
+    .preview-clear-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
     /* Error */
     .error-msg {
       color: #fca5a5;
@@ -991,49 +1036,64 @@
       </div>
     </div>
 
-    <!-- 3D Model Upload -->
+    <!-- 3D Model Scan or Upload -->
     <details id="stl-section">
-      <summary>TinkerCAD STL / Sketchfab GLB (optional)</summary>
-      <div class="field">
-        <label class="field-label" for="stl-file">Upload Your 3D File</label>
-        <div class="file-drop" id="file-drop">
-          <input type="file" id="stl-file" accept=".stl,.glb" aria-label="Upload 3D model in STL or GLB format" />
-          <span class="file-drop-icon" aria-hidden="true">📁</span>
-          <span class="file-drop-text">Click or drag a .STL or .GLB file here</span>
-          <span class="file-drop-hint">STL max 500 KB · GLB max 2 MB</span>
-        </div>
-        <div class="file-chosen" id="file-chosen">
-          <span aria-hidden="true">✅</span>
-          <span class="file-chosen-name" id="file-name"></span>
-          <button class="file-clear-btn" type="button" onclick="clearSTL()">✕ Remove</button>
-        </div>
-        <div class="error-msg" id="stl-error" role="alert" aria-live="polite"></div>
-        <div class="stl-steps">
-          <strong>TinkerCAD (.STL):</strong> Open your design → <strong>Export</strong> → choose <strong>.STL</strong> → upload it here<br><br>
-          <strong>Sketchfab (.GLB):</strong> Find a model on <strong>sketchfab.com</strong> → <strong>Download</strong> → choose <strong>GLB</strong> → upload it here
-        </div>
+      <summary>3D Scan from Photos or Upload .STL / .GLB (optional)</summary>
+      <div class="scan-tabs" role="tablist" aria-label="3D creature source">
+        <button type="button" class="scan-tab" id="tab-scan" role="tab" aria-selected="true" aria-controls="pane-scan">📷 3D Scan Photos</button>
+        <button type="button" class="scan-tab" id="tab-file" role="tab" aria-selected="false" aria-controls="pane-file">📁 Upload .STL / .GLB</button>
+      </div>
 
-        <!-- 3D preview + dot placement -->
-        <div id="stl-preview-section">
-          <div id="stl-canvas-wrap">
-            <canvas id="stl-preview-canvas" role="img" aria-label="3D model orientation preview"></canvas>
-            <div id="dot-guide" class="dot-guide dot-guide-head" aria-live="polite">🔴 Click your fish's HEAD on the model above</div>
+      <div id="pane-scan" role="tabpanel" aria-labelledby="tab-scan">
+        <div id="fish-scan-mount"></div>
+      </div>
+
+      <div id="pane-file" role="tabpanel" aria-labelledby="tab-file" hidden>
+        <div class="field">
+          <label class="field-label" for="stl-file">Upload Your 3D File</label>
+          <div class="file-drop" id="file-drop">
+            <input type="file" id="stl-file" accept=".stl,.glb" aria-label="Upload 3D model in STL or GLB format" />
+            <span class="file-drop-icon" aria-hidden="true">📁</span>
+            <span class="file-drop-text">Click or drag a .STL or .GLB file here</span>
+            <span class="file-drop-hint">STL max 500 KB · GLB max 2 MB</span>
           </div>
-          <div id="dot-controls">
-            <button id="dot-btn-head"  class="dot-btn dot-btn-head active" type="button">🔴 Head</button>
-            <button id="dot-btn-tail"  class="dot-btn dot-btn-tail" type="button">🔵 Tail</button>
-            <button id="dot-btn-back"  class="dot-btn dot-btn-back" type="button">🔺 Back</button>
-            <button id="dot-btn-fin"   class="dot-btn dot-btn-fin" type="button">🟡 Fins</button>
-            <button id="dot-reset-btn" class="dot-btn dot-btn-reset" type="button">↺ Reset</button>
+          <div class="file-chosen" id="file-chosen">
+            <span aria-hidden="true">✅</span>
+            <span class="file-chosen-name" id="file-name"></span>
+            <button class="file-clear-btn" type="button" onclick="clearSTL()">✕ Remove</button>
           </div>
-          <div id="dot-status" aria-label="Dot calibration status">
-            <span class="dot-stat" id="dot-stat-head">🔴 Head</span>
-            <span class="dot-stat" id="dot-stat-tail">🔵 Tail</span>
-            <span class="dot-stat" id="dot-stat-back">🔺 Back</span>
-            <span class="dot-stat" id="dot-stat-fin">🟡 Fins</span>
+          <div class="stl-steps">
+            <strong>TinkerCAD (.STL):</strong> Open your design → <strong>Export</strong> → choose <strong>.STL</strong> → upload it here<br><br>
+            <strong>Sketchfab (.GLB):</strong> Find a model on <strong>sketchfab.com</strong> → <strong>Download</strong> → choose <strong>GLB</strong> → upload it here
           </div>
-          <p class="preview-tip">Drag to rotate · Scroll to zoom · Place all calibration dots, then submit</p>
         </div>
+      </div>
+
+      <div class="error-msg" id="stl-error" role="alert" aria-live="polite"></div>
+
+      <!-- 3D preview + dot placement (shared by scanned & uploaded models) -->
+      <div id="stl-preview-section">
+        <div id="stl-canvas-wrap">
+          <canvas id="stl-preview-canvas" role="img" aria-label="3D model orientation preview"></canvas>
+          <div id="dot-guide" class="dot-guide dot-guide-head" aria-live="polite">🔴 Click your fish's HEAD on the model above</div>
+        </div>
+        <div id="dot-controls">
+          <button id="dot-btn-head"  class="dot-btn dot-btn-head active" type="button">🔴 Head</button>
+          <button id="dot-btn-tail"  class="dot-btn dot-btn-tail" type="button">🔵 Tail</button>
+          <button id="dot-btn-back"  class="dot-btn dot-btn-back" type="button">🔺 Back</button>
+          <button id="dot-btn-fin"   class="dot-btn dot-btn-fin" type="button">🟡 Fins</button>
+          <button id="dot-reset-btn" class="dot-btn dot-btn-reset" type="button">↺ Reset</button>
+        </div>
+        <div id="dot-status" aria-label="Dot calibration status">
+          <span class="dot-stat" id="dot-stat-head">🔴 Head</span>
+          <span class="dot-stat" id="dot-stat-tail">🔵 Tail</span>
+          <span class="dot-stat" id="dot-stat-back">🔺 Back</span>
+          <span class="dot-stat" id="dot-stat-fin">🟡 Fins</span>
+        </div>
+        <div class="preview-clear-row">
+          <button class="file-clear-btn" type="button" onclick="clearSTL()">✕ Remove 3D model</button>
+        </div>
+        <p class="preview-tip">Drag to rotate · Scroll to zoom · Place calibration dots (auto-placed for scans), then submit</p>
       </div>
     </details>
 
@@ -1223,16 +1283,26 @@ fileInput.addEventListener('change', e => {
 
   const reader = new FileReader();
   reader.onload = ev => {
-    stlDataURL = ev.target.result;
-    modelFileType = isGLB ? 'glb' : 'stl';
     const sizeKb = Math.round(file.size / 1024);
-    fileNameEl.textContent = `${file.name} (${sizeKb} KB)`;
-    fileDrop.style.display = 'none';
-    fileChosen.classList.add('show');
-    document.dispatchEvent(new CustomEvent('model-loaded', { detail: { dataURL: stlDataURL, fileType: modelFileType } }));
+    window.__setFishModel({
+      dataURL: ev.target.result,
+      fileType: isGLB ? 'glb' : 'stl',
+      label: `${file.name} (${sizeKb} KB)`,
+    });
   };
   reader.readAsDataURL(file);
 });
+
+window.__setFishModel = function ({ dataURL, fileType, label, presetDots = null, mesh = null }) {
+  stlDataURL = dataURL;
+  modelFileType = fileType;
+  fileNameEl.textContent = label || '3D model';
+  fileDrop.style.display = 'none';
+  fileChosen.classList.add('show');
+  document.dispatchEvent(new CustomEvent('model-loaded', {
+    detail: { dataURL: stlDataURL, fileType: modelFileType, presetDots, mesh }
+  }));
+};
 
 // Drag-and-drop highlight
 fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('dragover'); });
@@ -1367,248 +1437,7 @@ function addAnother() {
 }
 </script>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
-  }
-}
-</script>
-
-<script type="module">
-import * as THREE from 'three';
-import { STLLoader }  from 'three/addons/loaders/STLLoader.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-const PREVIEW_TARGET = 2.5;
-
-const $section  = document.getElementById('stl-preview-section');
-const $canvas   = document.getElementById('stl-preview-canvas');
-const $guide    = document.getElementById('dot-guide');
-const $headBtn  = document.getElementById('dot-btn-head');
-const $tailBtn  = document.getElementById('dot-btn-tail');
-const $backBtn  = document.getElementById('dot-btn-back');
-const $finBtn   = document.getElementById('dot-btn-fin');
-const $resetBtn = document.getElementById('dot-reset-btn');
-const $statHead = document.getElementById('dot-stat-head');
-const $statTail = document.getElementById('dot-stat-tail');
-const $statBack = document.getElementById('dot-stat-back');
-const $statFin  = document.getElementById('dot-stat-fin');
-
-let renderer, scene, camera, controls;
-let stlMesh = null;
-const raycaster = new THREE.Raycaster();
-const pointer   = new THREE.Vector2();
-
-let dots      = { head: null, tail: null, back: null, fins: [] };
-let dotMeshes = { head: null, tail: null, back: null, fins: [] };
-let mode = 'head';
-
-const DOT_COLOR = { head: 0xff3333, tail: 0x2288ff, back: 0x34d399, fin: 0xffcc00 };
-
-const GUIDE = {
-  head: "🔴 Click your fish's HEAD on the model above",
-  tail: '🔵 Now click the TAIL end',
-  back: '🔺 Click the TOP / BACK of your fish (dorsal fin side — fixes the roll!)',
-  fin:  '🟡 Optional: click fins or animated parts (up to 2) — or scroll down when ready',
-  done: '✅ All set! Scroll down to submit your fish',
-};
-
-document.addEventListener('model-loaded', async e => {
-  if (!renderer) initRenderer();
-  document.getElementById('stl-section').open = true;
-  $section.style.display = 'block';
-  await new Promise(r => requestAnimationFrame(r));
-  onResize();
-  if (e.detail.fileType === 'glb') {
-    await loadGLB(e.detail.dataURL);
-  } else {
-    await loadSTL(e.detail.dataURL);
-  }
-  setMode('head');
-  setTimeout(() => $section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
-});
-
-document.addEventListener('stl-cleared', () => {
-  $section.style.display = 'none';
-  resetDots();
-  window.stlDotData = null;
-});
-
-function initRenderer() {
-  renderer = new THREE.WebGLRenderer({ canvas: $canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setClearColor(0x020d1a, 1);
-
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(48, 1, 0.01, 200);
-  camera.position.set(0, 1, 5.5);
-
-  controls = new OrbitControls(camera, $canvas);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.1;
-
-  scene.add(new THREE.AmbientLight(0x8ab4d4, 3.2));
-  const key = new THREE.DirectionalLight(0xffffff, 2.5);
-  key.position.set(5, 10, 8);
-  scene.add(key);
-  const fill = new THREE.DirectionalLight(0x2255cc, 1.0);
-  fill.position.set(-5, 2, -4);
-  scene.add(fill);
-
-  const grid = new THREE.GridHelper(8, 14, 0x0d2030, 0x081520);
-  grid.position.y = -1.8;
-  scene.add(grid);
-
-  onResize();
-  window.addEventListener('resize', onResize);
-  $canvas.addEventListener('click', onCanvasClick);
-
-  (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
-}
-
-function onResize() {
-  const w = $canvas.parentElement.clientWidth;
-  const h = 280;
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-}
-
-async function loadSTL(dataURL) {
-  const loader = new STLLoader();
-  const buf = await fetch(dataURL).then(r => r.arrayBuffer());
-  const geo = loader.parse(buf);
-
-  geo.computeBoundingBox();
-  const center = new THREE.Vector3();
-  geo.boundingBox.getCenter(center);
-  geo.translate(-center.x, -center.y, -center.z);
-
-  const sz = new THREE.Vector3();
-  geo.boundingBox.getSize(sz);
-  const s = PREVIEW_TARGET / Math.max(sz.x, sz.y, sz.z);
-  geo.scale(s, s, s);
-
-  if (stlMesh) scene.remove(stlMesh);
-  stlMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-    color: 0x4fc3f7, roughness: 0.4, metalness: 0.1, side: THREE.DoubleSide
-  }));
-  scene.add(stlMesh);
-  resetDots();
-}
-
-async function loadGLB(dataURL) {
-  const loader = new GLTFLoader();
-  const gltf = await new Promise((res, rej) => loader.load(dataURL, res, undefined, rej));
-  const model = gltf.scene;
-
-  const box = new THREE.Box3().setFromObject(model);
-  const center = box.getCenter(new THREE.Vector3());
-  const sz = box.getSize(new THREE.Vector3());
-  const s = PREVIEW_TARGET / Math.max(sz.x, sz.y, sz.z);
-  model.scale.multiplyScalar(s);
-  model.position.sub(center.multiplyScalar(s));
-
-  if (stlMesh) scene.remove(stlMesh);
-  stlMesh = model;
-  scene.add(stlMesh);
-  resetDots();
-}
-
-function onCanvasClick(e) {
-  if (!stlMesh || mode === 'done') return;
-  const rect = $canvas.getBoundingClientRect();
-  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObject(stlMesh, true);
-  if (!hits.length) return;
-  placeDot(mode, hits[0].point.clone());
-}
-
-function makeSphere(color) {
-  const m = new THREE.Mesh(
-    new THREE.SphereGeometry(0.1, 12, 12),
-    new THREE.MeshBasicMaterial({ color, depthTest: false })
-  );
-  m.renderOrder = 999;
-  return m;
-}
-
-function placeDot(type, pt) {
-  if (type === 'head') {
-    if (dotMeshes.head) scene.remove(dotMeshes.head);
-    const m = makeSphere(DOT_COLOR.head);
-    m.position.copy(pt); scene.add(m);
-    dotMeshes.head = m; dots.head = [pt.x, pt.y, pt.z];
-    setMode('tail');
-  } else if (type === 'tail') {
-    if (dotMeshes.tail) scene.remove(dotMeshes.tail);
-    const m = makeSphere(DOT_COLOR.tail);
-    m.position.copy(pt); scene.add(m);
-    dotMeshes.tail = m; dots.tail = [pt.x, pt.y, pt.z];
-    setMode('back');
-  } else if (type === 'back') {
-    if (dotMeshes.back) scene.remove(dotMeshes.back);
-    const m = makeSphere(DOT_COLOR.back);
-    m.position.copy(pt); scene.add(m);
-    dotMeshes.back = m; dots.back = [pt.x, pt.y, pt.z];
-    setMode('fin');
-  } else if (type === 'fin' && dots.fins.length < 2) {
-    const m = makeSphere(DOT_COLOR.fin);
-    m.position.copy(pt); scene.add(m);
-    dotMeshes.fins.push(m); dots.fins.push([pt.x, pt.y, pt.z]);
-    if (dots.fins.length >= 2) setMode('done');
-  }
-  syncDotData();
-  updateStatus();
-}
-
-function setMode(m) {
-  mode = m;
-  $guide.textContent = GUIDE[m];
-  $guide.className = `dot-guide dot-guide-${m}`;
-  [$headBtn, $tailBtn, $backBtn, $finBtn].forEach(b => b.classList.remove('active'));
-  if (m === 'head') $headBtn.classList.add('active');
-  else if (m === 'tail') $tailBtn.classList.add('active');
-  else if (m === 'back') $backBtn.classList.add('active');
-  else if (m === 'fin')  $finBtn.classList.add('active');
-}
-
-function updateStatus() {
-  $statHead.textContent = dots.head ? '🔴 Head ✓' : '🔴 Head';
-  $statHead.classList.toggle('placed', !!dots.head);
-  $statTail.textContent = dots.tail ? '🔵 Tail ✓' : '🔵 Tail';
-  $statTail.classList.toggle('placed', !!dots.tail);
-  $statBack.textContent = dots.back ? '🔺 Back ✓' : '🔺 Back';
-  $statBack.classList.toggle('placed', !!dots.back);
-  $statFin.textContent  = dots.fins.length ? `🟡 Fins ✓ (${dots.fins.length})` : '🟡 Fins';
-  $statFin.classList.toggle('placed', dots.fins.length > 0);
-}
-
-function resetDots() {
-  [dotMeshes.head, dotMeshes.tail, dotMeshes.back, ...dotMeshes.fins].forEach(m => m && scene && scene.remove(m));
-  dots      = { head: null, tail: null, back: null, fins: [] };
-  dotMeshes = { head: null, tail: null, back: null, fins: [] };
-  window.stlDotData = null;
-  updateStatus();
-}
-
-function syncDotData() {
-  if (dots.head && dots.tail) {
-    window.stlDotData = { scale: PREVIEW_TARGET, head: dots.head, tail: dots.tail, back: dots.back, fins: dots.fins };
-  }
-}
-
-$headBtn.addEventListener('click',  () => setMode('head'));
-$tailBtn.addEventListener('click',  () => setMode('tail'));
-$backBtn.addEventListener('click',  () => setMode('back'));
-$finBtn.addEventListener('click',   () => setMode('fin'));
-$resetBtn.addEventListener('click', () => { resetDots(); setMode('head'); });
-</script>
+<script type="module" src="assets/js/fish-upload.mjs"></script>
 <script src="assets/js/theme-registry.js"></script>
 <script src="assets/js/nav-mobile.js"></script>
 </body>

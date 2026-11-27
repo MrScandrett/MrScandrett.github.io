@@ -2,6 +2,7 @@ import { THREE, STLLoader, GLTFLoader, CSS2DRenderer, CSS2DObject } from '../ven
 import { createScene } from './sim-kit-three.mjs';
 import { buildHabitat } from './student-fishtank-habitat.mjs';
 import { SiteMusic } from './site-music.mjs';
+import { computeOrientationMatrix } from './scan3d/core.mjs';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const BOUNDS   = { x: 10, y: 5.5, z: 4.5 };  // tank half-extents
@@ -217,33 +218,10 @@ function makeSTLFish(geometry, colorHex, sizeMul, dots) {
   const geoScale = targetSize / Math.max(size.x, size.y, size.z);
   geometry.scale(geoScale, geoScale, geoScale);
 
-  // Orient model using student-placed dots
+  // Orient model using student-placed dots (shared scan3d math)
   if (dots?.head && dots?.tail) {
-    const toTank = targetSize / (dots.scale || 2.5);
-    const headV = new THREE.Vector3(...dots.head).multiplyScalar(toTank);
-    const tailV = new THREE.Vector3(...dots.tail).multiplyScalar(toTank);
-    const basisX = new THREE.Vector3().subVectors(headV, tailV).normalize(); // forward → +X
-
-    if (dots.back) {
-      // Full 3-point orientation: head + tail + back (dorsal) → no roll ambiguity
-      const backV  = new THREE.Vector3(...dots.back).multiplyScalar(toTank);
-      const upHint = new THREE.Vector3().subVectors(backV, tailV).normalize();
-      const basisZ = new THREE.Vector3().crossVectors(basisX, upHint).normalize(); // right
-      const basisY = new THREE.Vector3().crossVectors(basisZ, basisX).normalize(); // true up
-      // Rotation matrix whose columns are the fish's axes → transpose = inverse = what we apply
-      geometry.applyMatrix4(new THREE.Matrix4().makeBasis(basisX, basisY, basisZ).transpose());
-    } else {
-      // 2-point fallback: orient forward, then roll-correct by keeping original +Y as up
-      const q1 = new THREE.Quaternion().setFromUnitVectors(basisX, new THREE.Vector3(1, 0, 0));
-      geometry.applyQuaternion(q1);
-      const rotatedUp = new THREE.Vector3(0, 1, 0).applyQuaternion(q1);
-      const projUp = new THREE.Vector3(0, rotatedUp.y, rotatedUp.z);
-      if (projUp.lengthSq() > 0.001) {
-        geometry.applyQuaternion(
-          new THREE.Quaternion().setFromUnitVectors(projUp.normalize(), new THREE.Vector3(0, 1, 0))
-        );
-      }
-    }
+    const m4 = new THREE.Matrix4().fromArray(computeOrientationMatrix(dots, { forwardAxis: '+x' }));
+    geometry.applyMatrix4(m4);
   }
 
   const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
@@ -273,26 +251,10 @@ function makeGLBFish(gltfScene, sizeMul, dots) {
   gltfScene.scale.multiplyScalar(s);
   gltfScene.position.sub(center.multiplyScalar(s));
 
-  // Apply dot-based orientation (same math as STL, applied to the scene group)
+  // Apply dot-based orientation (shared scan3d math, applied to the scene group)
   if (dots?.head && dots?.tail) {
-    const toTank = targetSize / (dots.scale || 2.5);
-    const headV  = new THREE.Vector3(...dots.head).multiplyScalar(toTank);
-    const tailV  = new THREE.Vector3(...dots.tail).multiplyScalar(toTank);
-    const basisX = new THREE.Vector3().subVectors(headV, tailV).normalize();
-
-    if (dots.back) {
-      const backV  = new THREE.Vector3(...dots.back).multiplyScalar(toTank);
-      const upHint = new THREE.Vector3().subVectors(backV, tailV).normalize();
-      const basisZ = new THREE.Vector3().crossVectors(basisX, upHint).normalize();
-      const basisY = new THREE.Vector3().crossVectors(basisZ, basisX).normalize();
-      gltfScene.applyMatrix4(new THREE.Matrix4().makeBasis(basisX, basisY, basisZ).transpose());
-    } else {
-      gltfScene.applyMatrix4(
-        new THREE.Matrix4().makeRotationFromQuaternion(
-          new THREE.Quaternion().setFromUnitVectors(basisX, new THREE.Vector3(1, 0, 0))
-        )
-      );
-    }
+    const m4 = new THREE.Matrix4().fromArray(computeOrientationMatrix(dots, { forwardAxis: '+x' }));
+    gltfScene.applyMatrix4(m4);
   }
 
   gltfScene.traverse(m => { if (m.isMesh) m.castShadow = true; });

@@ -3,16 +3,57 @@
 // the networking in net.mjs, the drawing in render.mjs.
 
 import * as Car from './car-model.mjs';
-import { carveCar, segment } from './scan.mjs';
+import { scanCar } from './scan.mjs';
+import { mountScan3D } from '../scan3d/widget.mjs';
+import { createCalibrator, CAR_LANDMARKS } from '../scan3d/calibrator.mjs';
+import { encodeColoredGlb, encodeStl } from '../scan3d/core.mjs';
 import { TRACKS, buildTrack, gridSlot, pointAt } from './track.mjs';
 import { DT, newCar, stepCar, botInput, collideCars } from './physics.mjs';
 import { Bus, HostSession, GuestSession, findNeighborhood, watchLobbies, relayFromUrl, makeCode, cleanCode, cleanName, randomId } from './net.mjs';
 import { Scene3D } from './render.mjs';
 
 const STORE = 'classroomos:brick-rally:v1';
+const SCAN_DB = 'classroomos-brick-rally-scan';
+const SCAN_STORE = 'mesh';
 const MAX_PLAYERS = 8;
 const BOT_NAMES = ['Brickbot', 'Stud Muffin', 'Axle', 'Gearbox', 'Sprocket', 'Turbo Tile', 'Hinge', 'Baseplate Bob'];
 const SEND_HZ = 20;
+
+function openScanDb() {
+  return new Promise((resolve, reject) => {
+    if (!globalThis.indexedDB) { reject(new Error('no idb')); return; }
+    const req = indexedDB.open(SCAN_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(SCAN_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function persistScanMesh(mesh) {
+  try {
+    const db = await openScanDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(SCAN_STORE, 'readwrite');
+      const st = tx.objectStore(SCAN_STORE);
+      if (mesh) st.put(mesh, 'active'); else st.delete('active');
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch { /* optional persistence */ }
+}
+async function restoreScanMesh() {
+  try {
+    const db = await openScanDb();
+    const res = await new Promise((resolve) => {
+      const tx = db.transaction(SCAN_STORE, 'readonly');
+      const req = tx.objectStore(SCAN_STORE).get('active');
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+    db.close();
+    return res && res.positions && res.normals ? res : null;
+  } catch { return null; }
+}
 
 const $ = (root, sel) => root.querySelector(sel);
 const $$ = (root, sel) => [...root.querySelectorAll(sel)];
@@ -39,10 +80,10 @@ export function mount(root) {
     id: randomId(8),
     name: cleanName(saved.name || ''),
     cells: (saved.car && Car.decodeCar(saved.car)) || Car.preset('roadster'),
+    scanMesh: null,
   };
   let tool = 'add', color = 1, mirror = true;
   const undo = [], redo = [];
-  const shots = { side: null, front: null, top: null };
 
   let net = null;          // { bus, neighborhoods, watcher }
   let session = null;      // HostSession | GuestSession | null
@@ -116,10 +157,23 @@ export function mount(root) {
     statsEl.innerHTML = `${bar('Top speed', st.bars.speed)}${bar('Acceleration', st.bars.accel)}${bar('Grip', st.bars.grip)}${bar('Weight', st.bars.weight)}<p class="br-muted">${st.bricks} bricks</p>`;
   }
 
-  function setCells(cells, record) {
+  const scanBadge = $(root, '[data-br-scan-badge]');
+  function setScanMesh(mesh) {
+    me.scanMesh = mesh || null;
+    scanBadge.hidden = !me.scanMesh;
+    if (scene.mode === 'garage') scene.setGarageCar(me.cells, me.scanMesh);
+    persistScanMesh(me.scanMesh);
+  }
+  $(root, '[data-br-clear-scan]').addEventListener('click', () => {
+    setScanMesh(null);
+    toast('Switched back to brick build.');
+  });
+
+  function setCells(cells, record, { keepScan = false } = {}) {
+    if (!keepScan && me.scanMesh) setScanMesh(null);
     if (record) { undo.push(Car.encodeCar(me.cells)); if (undo.length > 60) undo.shift(); redo.length = 0; }
     me.cells = cells;
-    if (scene.mode === 'garage') scene.setGarageCar(cells);
+    if (scene.mode === 'garage') scene.setGarageCar(cells, me.scanMesh);
     renderStats();
     persist();
     $(root, '[data-br-undo]').disabled = !undo.length;
@@ -163,97 +217,105 @@ export function mount(root) {
     scene.showGhost(null);
   });
 
-  // ------------------------------------------------------------------ scanner
-  const shotBoxes = $$(root, '[data-br-shot]');
-  async function imageDataFrom(source) {
-    const max = 220;
-    const w0 = source.videoWidth || source.width, h0 = source.videoHeight || source.height;
-    const k = Math.min(1, max / Math.max(w0, h0));
-    const c = document.createElement('canvas');
-    c.width = Math.max(8, Math.round(w0 * k)); c.height = Math.max(8, Math.round(h0 * k));
-    const g = c.getContext('2d', { willReadFrequently: true });
-    g.drawImage(source, 0, 0, c.width, c.height);
-    return g.getImageData(0, 0, c.width, c.height);
-  }
-  function previewShot(view, img) {
-    const box = shotBoxes.find(b => b.dataset.brShot === view);
-    const c = $(box, 'canvas');
-    c.width = img.width; c.height = img.height;
-    const g = c.getContext('2d');
-    g.putImageData(img, 0, 0);
-    const seg = segment(img);
-    if (seg) {
-      // dim what the scanner thinks is background, outline what it kept
-      const over = g.getImageData(0, 0, img.width, img.height);
-      for (let p = 0; p < seg.mask.length; p++) if (!seg.mask[p]) { over.data[p * 4 + 3] = 70; }
-      g.clearRect(0, 0, c.width, c.height);
-      g.putImageData(over, 0, 0);
-      g.strokeStyle = '#ffd400'; g.lineWidth = 2;
-      g.strokeRect(seg.bbox.x0, seg.bbox.y0, seg.bbox.x1 - seg.bbox.x0, seg.bbox.y1 - seg.bbox.y0);
-    }
-    box.classList.add('has-shot');
-    box.classList.toggle('bad-shot', !seg);
-    $(box, '.br-shot-note').textContent = seg ? 'Got it' : 'Car not found: try a plainer background';
-    $(root, '[data-br-carve]').disabled = !shots.side;
-  }
-  for (const box of shotBoxes) {
-    const input = $(box, 'input[type=file]');
-    input.addEventListener('change', async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const bmp = await createImageBitmap(file);
-        const img = await imageDataFrom(bmp);
-        shots[box.dataset.brShot] = img;
-        previewShot(box.dataset.brShot, img);
-      } catch { toast('That file could not be read as a photo.'); }
-      input.value = '';
-    });
-  }
-
-  // webcam: snap into whichever slot is selected
-  const cam = $(root, '[data-br-cam]');
-  const video = $(cam, 'video');
-  let stream = null, camView = 'side';
-  async function openCam(view) {
-    camView = view;
-    $(cam, '[data-br-cam-label]').textContent = { side: 'Side: nose pointing right', front: 'Front: look at the nose', top: 'Top: nose pointing up' }[view];
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false });
-      video.srcObject = stream;
-      cam.hidden = false;
-      await video.play();
-    } catch { toast('No camera available. Use "Choose photo" instead.'); closeCam(); }
-  }
-  function closeCam() {
-    stream?.getTracks().forEach(t => t.stop());
-    stream = null; cam.hidden = true;
-  }
-  $$(root, '[data-br-webcam]').forEach(b => b.addEventListener('click', () => openCam(b.closest('[data-br-shot]').dataset.brShot)));
-  $(cam, '[data-br-snap]').addEventListener('click', async () => {
-    const img = await imageDataFrom(video);
-    shots[camView] = img;
-    previewShot(camView, img);
-    const order = ['side', 'front', 'top'];
-    const next = order[order.indexOf(camView) + 1];
-    if (next && !shots[next]) openCam(next); else closeCam();
+  // ------------------------------------------------------------------ scanner (shared scan3d engine)
+  const scanMount = $(root, '[data-br-scan-mount]');
+  const scanner = mountScan3D(scanMount, {
+    subject: 'car',
+    modes: ['views', 'turntable'],
+    defaultMode: 'views',
+    styleOptions: [
+      { id: 'mesh', label: '3D Scan' },
+      { id: 'bricks', label: 'Brick Car' },
+    ],
+    defaultStyle: 'mesh',
+    defaultProfile: 'rounded',
+    forwardAxis: '+z',
+    maxDim: 32,
+    buildLabel: 'Build my car from the photos',
+    showExport: true,
+    printPrepUrl: '../../../print-prep.html',
+    introText: 'Put your creation on a plain table or sheet of paper. Capture 3 views or a 360° spin.',
+    viewSlots: [
+      { key: 'side', title: 'Side', hint: 'Nose pointing right', camHint: 'Side: nose pointing right', required: true },
+      { key: 'front', title: 'Front', hint: 'Look at the nose', camHint: 'Front: look at the nose', required: false },
+      { key: 'top', title: 'Top', hint: 'Nose pointing up', camHint: 'Top: nose pointing up', required: false },
+    ],
+    onScan({ input, mode, style, segOpts }) {
+      const res = scanCar(input, { mode, style, segOpts });
+      setScanMesh(res.mesh);
+      setCells(res.cells, true, { keepScan: Boolean(res.mesh) });
+      const msg = style === 'mesh'
+        ? `Built 3D scan (${res.report.triangles} triangles from ${res.report.views.join(', ')}). Ready to race or export!`
+        : `Built ${res.report.bricks} bricks from ${res.report.views.join(', ')}. Fix anything it got wrong in Build.`;
+      scanner.setStatus(msg);
+      toast(style === 'mesh' ? '3D scan ready! Race it or export to Print Prep.' : 'Scanned! Tidy it up in Build, then race.');
+      return res;
+    },
   });
-  $(cam, '[data-br-cam-close]').addEventListener('click', closeCam);
-  if (!navigator.mediaDevices?.getUserMedia) $$(root, '[data-br-webcam]').forEach(b => { b.hidden = true; });
 
-  $(root, '[data-br-carve]').addEventListener('click', () => {
-    const status = $(root, '[data-br-scan-status]');
-    status.textContent = 'Carving bricks from your photos…';
-    requestAnimationFrame(() => {
-      try {
-        const { cells, report } = carveCar(shots);
-        setCells(cells, true);
-        status.textContent = `Built ${report.bricks} bricks from the ${report.views.join(', ')} photo${report.views.length > 1 ? 's' : ''}. Fix anything it got wrong in Build.`;
-        toast('Scanned! Tidy it up in Build, then race.');
-      } catch (e) {
-        status.textContent = e.message;
-      }
+  // STL / GLB import + Fish-Tank-style 3-dot orientation inside Scan tab
+  const importBox = $(root, '[data-br-import-box]');
+  const modelFileInput = $(root, '[data-br-model-file]');
+  const calWrap = $(root, '[data-br-cal-wrap]');
+  const calCanvas = $(root, '[data-br-cal-canvas]');
+  const calGuide = $(root, '[data-br-cal-guide]');
+  const dotButtons = $$(root, '[data-br-dot]');
+  let calibrator = null;
+
+  function ensureCalibrator() {
+    if (calibrator) return calibrator;
+    calibrator = createCalibrator(calCanvas, {
+      background: 0x0a0f17,
+      landmarks: CAR_LANDMARKS,
+      onGuide(activeMode, guide) {
+        calGuide.textContent = guide;
+        dotButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.brDot === activeMode)));
+      },
     });
+    return calibrator;
+  }
+
+  dotButtons.forEach((b) => b.addEventListener('click', () => ensureCalibrator().setMode(b.dataset.brDot)));
+  $(root, '[data-br-dot-reset]').addEventListener('click', () => ensureCalibrator().resetDots());
+
+  modelFileInput.addEventListener('change', async () => {
+    const file = modelFileInput.files?.[0];
+    if (!file) return;
+    try {
+      const buf = await file.arrayBuffer();
+      importBox.open = true;
+      calWrap.hidden = false;
+      const cal = ensureCalibrator();
+      cal.resize();
+      if (file.name.toLowerCase().endsWith('.glb')) await cal.loadGLB(buf);
+      else await cal.loadSTL(buf, '#ffd400');
+    } catch {
+      toast('Could not read that 3D model file.');
+    }
+    modelFileInput.value = '';
+  });
+
+  $(root, '[data-br-use-model]').addEventListener('click', () => {
+    if (!calibrator) return;
+    const mesh = calibrator.extractOrientedMesh({ forwardAxis: '+z', centerY: false });
+    if (!mesh) { toast('Load a 3D file first.'); return; }
+    // Build a matching-proportion brick proxy for stats, minimap color, and multiplayer fallback.
+    const [sx, sy, sz] = mesh.bounds.size;
+    const maxS = Math.max(sx, sy, sz) || 1;
+    const w = Math.max(4, Math.min(Car.W, Math.round((sx / maxS) * Car.L * 0.7)));
+    const h = Math.max(2, Math.min(Car.H, Math.round((sy / maxS) * Car.L * 0.7 / 1.2)));
+    const l = Math.max(6, Math.min(Car.L, Math.round((sz / maxS) * Car.L)));
+    const proxy = Car.emptyCar();
+    const x0 = Math.floor((Car.W - w) / 2);
+    const z0 = Math.floor((Car.L - l) / 2);
+    Car.fillBox(proxy, x0, 0, z0, x0 + w - 1, h - 1, z0 + l - 1, 3);
+    setScanMesh(mesh);
+    setCells(proxy, true, { keepScan: true });
+    scanner.showExportResult({
+      glbBytes: encodeColoredGlb(mesh, { name: 'BrickRallyImport' }),
+      stlBytes: encodeStl(mesh, { sizeMm: 90, header: 'Brick Rally Import' }),
+    });
+    toast('3D model mounted on wheels! Ready to race.');
   });
 
   // ------------------------------------------------------------------ play menu
@@ -502,7 +564,7 @@ export function mount(root) {
       const simulated = local || (g.bot && role !== 'guest');
       const entry = { id: g.id, name: cleanName(g.name), cells, color: Car.mainColor(cells), car: newCar(gridSlot(T, slot), stats), local, bot: !!g.bot, simulated, skill: +g.skill || 0.9, lane: +g.lane || 0, finishTime: null, net: null };
       race.cars.set(g.id, entry);
-      scene.addCar(g.id, cells, local ? null : entry.name, entry.color);
+      scene.addCar(g.id, cells, local ? null : entry.name, entry.color, local ? me.scanMesh : null);
       scene.poseCar(g.id, entry.car);
     });
     if (!race.cars.has(me.id)) { race.spectator = true; }
@@ -812,7 +874,7 @@ export function mount(root) {
   function showGarageScene() {
     if (scene.mode === 'garage') return;
     scene.showGarage();
-    scene.setGarageCar(me.cells);
+    scene.setGarageCar(me.cells, me.scanMesh);
     scene.setBuilding(root.dataset.brView === 'garage' && root.dataset.brTab === 'build');
   }
   function showGarage() { show('garage'); showGarageScene(); }
@@ -831,12 +893,19 @@ export function mount(root) {
   // ------------------------------------------------------------------ boot
   setTab('presets');
   showGarage();
-  setCells(me.cells, false);
+  setCells(me.cells, false, { keepScan: true });
+  restoreScanMesh().then((mesh) => {
+    if (mesh) {
+      me.scanMesh = mesh;
+      scanBadge.hidden = false;
+      if (scene.mode === 'garage') scene.setGarageCar(me.cells, me.scanMesh);
+    }
+  });
   schedule();
   const joinCode = cleanCode((location.hash.match(/join=([A-Za-z]{4})/) || [])[1]);
   if (joinCode) { show('play'); join(joinCode); }
   window.addEventListener('pagehide', () => { session?.close?.(); net?.bus?.close(); });
-  root.brickRally = { get race() { return race; }, get lobby() { return lobby; }, get role() { return role; }, me, scene };
+  root.brickRally = { get race() { return race; }, get lobby() { return lobby; }, get role() { return role; }, me, scene, scanner };
 }
 
 export { makeCode };

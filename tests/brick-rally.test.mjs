@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { WebSocket } from 'ws';
 import * as Car from '../assets/js/brick-rally/car-model.mjs';
-import { carveCar, segment, nearestPalette } from '../assets/js/brick-rally/scan.mjs';
+import { carveCar, scanCar, segment, nearestPalette } from '../assets/js/brick-rally/scan.mjs';
 import { TRACKS, buildTrack, locate, gridSlot, pointAt } from '../assets/js/brick-rally/track.mjs';
 import { newCar, stepCar, botInput, collideCars, DT } from '../assets/js/brick-rally/physics.mjs';
 import { encodeLength, readPackets, publishPacket, parsePublish, topicMatches, connectPacket, subscribePacket } from '../assets/js/lan-play/mqtt.mjs';
@@ -96,6 +96,26 @@ test('space carving: side + front + top make a wedge car with the right colours'
 
 test('carving without a side photo explains itself', () => {
   assert.throws(() => carveCar({}), /side photo/);
+});
+
+test('scanCar produces both smooth 3D mesh + GLB/STL and turntable brick cars via scan3d', () => {
+  const bg = [240, 240, 240];
+  const side = photo(160, 90, bg, (x, y) => (x > 16 && x < 144 && y > 24 && y < 74 ? [200, 30, 20] : null));
+  const front = photo(100, 90, bg, (x, y) => (x > 20 && x < 80 && y > 24 && y < 74 ? [200, 30, 20] : null));
+  const res = scanCar({ side, front }, { mode: 'views', style: 'mesh' });
+  assert.ok(res.mesh && res.mesh.triangleCount > 50);
+  assert.ok(res.glbBytes.byteLength > 200);
+  assert.ok(res.stlBytes.byteLength > 200);
+  assert.ok(Car.countBricks(res.cells) >= 12);
+
+  const tt = [0, 90, 180, 270].map((angleDeg) => ({
+    angleDeg,
+    img: angleDeg % 180 === 0 ? side : front,
+  }));
+  const ttBricks = scanCar(tt, { mode: 'turntable', style: 'bricks' });
+  assert.equal(ttBricks.mesh, null);
+  assert.equal(ttBricks.report.mode, 'turntable');
+  assert.ok(Car.countBricks(ttBricks.cells) >= 12);
 });
 
 // ---------------------------------------------------------------- tracks + physics

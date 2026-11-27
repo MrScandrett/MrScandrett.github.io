@@ -87,6 +87,43 @@ function bodyGeometry(cells, opts) {
   return geo;
 }
 
+function scanBodyGeometry(mesh, targetSize) {
+  const b = mesh.bounds || { min: [-0.5, 0, -0.5], max: [0.5, 1, 0.5], size: [1, 1, 1] };
+  const sx = Math.max(b.size[0], 1e-4);
+  const sy = Math.max(b.size[1], 1e-4);
+  const sz = Math.max(b.size[2], 1e-4);
+  const fitW = Math.max(targetSize.w, 1.4);
+  const fitH = Math.max(targetSize.h, 0.9);
+  const fitL = Math.max(targetSize.l, 2.2);
+  const s = Math.min(fitW / sx, fitH / sy, fitL / sz);
+  const cx = (b.min[0] + b.max[0]) / 2;
+  const cy = b.min[1];
+  const cz = (b.min[2] + b.max[2]) / 2;
+
+  const pos = new Float32Array(mesh.positions.length);
+  for (let i = 0; i < pos.length; i += 3) {
+    pos[i] = (mesh.positions[i] - cx) * s;
+    pos[i + 1] = (mesh.positions[i + 1] - cy) * s;
+    pos[i + 2] = (mesh.positions[i + 2] - cz) * s;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(mesh.normals), 3));
+  if (mesh.colors) {
+    const lin = new Float32Array(mesh.colors.length);
+    const tmp = new THREE.Color();
+    for (let i = 0; i < lin.length; i += 3) {
+      tmp.setRGB(mesh.colors[i], mesh.colors[i + 1], mesh.colors[i + 2], THREE.SRGBColorSpace);
+      lin[i] = tmp.r; lin[i + 1] = tmp.g; lin[i + 2] = tmp.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(lin, 3));
+  }
+  if (mesh.indices) geo.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
+  geo.computeBoundingSphere();
+  return { geo, height: sy * s };
+}
+
 const wheelGeo = new THREE.CylinderGeometry(WHEEL_R, WHEEL_R, 0.34, 18).rotateZ(Math.PI / 2);
 const hubGeo = new THREE.CylinderGeometry(WHEEL_R * 0.5, WHEEL_R * 0.5, 0.36, 12).rotateZ(Math.PI / 2);
 const treadGeo = new THREE.BoxGeometry(0.36, 0.08, 0.16);
@@ -103,13 +140,23 @@ const shadowTex = (() => {
 })();
 
 /** A drivable car object: body + four wheels + soft shadow. */
-export function makeCarObject(cells, { fixedOrigin = false, label = null } = {}) {
+export function makeCarObject(cells, { fixedOrigin = false, label = null, customMesh = null } = {}) {
   const root = new THREE.Group();
-  const body = new THREE.Mesh(bodyGeometry(cells, { fixedOrigin }), bodyMat);
+  const m = buildCarMesh(cells, { studs: false });
+  const useFixed = fixedOrigin && !customMesh;
+  let bodyGeo, bodyHeight = m.size.h;
+  if (customMesh) {
+    const built = scanBodyGeometry(customMesh, m.size);
+    bodyGeo = built.geo;
+    bodyHeight = built.height;
+  } else {
+    bodyGeo = bodyGeometry(cells, { fixedOrigin: useFixed });
+  }
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
   body.position.y = BODY_LIFT;
   root.add(body);
   const wheels = [];
-  for (const w of wheelLayout(cells, { fixedOrigin })) {
+  for (const w of wheelLayout(cells, { fixedOrigin: useFixed })) {
     const steer = new THREE.Group();
     steer.position.set(w.x, WHEEL_R, w.z);
     const spin = new THREE.Group();
@@ -119,11 +166,10 @@ export function makeCarObject(cells, { fixedOrigin = false, label = null } = {})
     root.add(steer);
     wheels.push({ steer, spin, front: w.front });
   }
-  const m = buildCarMesh(cells, { studs: false });
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(m.size.w + 1.2, m.size.l + 1.2).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
   shadow.position.y = 0.03;
   root.add(shadow);
-  if (label) { label.position.y = BODY_LIFT + m.size.h + 1.3; root.add(label); }
+  if (label) { label.position.y = BODY_LIFT + bodyHeight + 1.3; root.add(label); }
   return {
     root, body, wheels,
     pose(state) {
@@ -211,9 +257,9 @@ export class Scene3D {
     this.controls.enablePan = false;
   }
 
-  setGarageCar(cells) {
+  setGarageCar(cells, customMesh = null) {
     if (this.garageCar) { this.turntable.remove(this.garageCar.root); this.garageCar.dispose(); }
-    this.garageCar = makeCarObject(cells, { fixedOrigin: true });
+    this.garageCar = makeCarObject(cells, { fixedOrigin: true, customMesh });
     this.garageCar.pose({ x: 0, z: 0, h: 0 });
     this.turntable.add(this.garageCar.root);
     this.pickMesh?.geometry.dispose();
@@ -378,9 +424,9 @@ export class Scene3D {
     this.cam = null;
   }
 
-  addCar(id, cells, name, color) {
+  addCar(id, cells, name, color, customMesh = null) {
     this.removeCar(id);
-    const obj = makeCarObject(cells, { label: name ? labelSprite(name, color) : null });
+    const obj = makeCarObject(cells, { label: name ? labelSprite(name, color) : null, customMesh });
     this.scene.add(obj.root);
     this.cars.set(id, obj);
     return obj;

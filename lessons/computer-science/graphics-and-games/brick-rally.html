@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/scan3d.css" />
   <link rel="stylesheet" href="../../../assets/css/brick-rally.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -107,39 +108,32 @@
                 </div>
 
                 <div data-br-pane="scan" role="tabpanel" hidden>
-                  <p class="br-muted">Put your real brick car on a plain table or sheet of paper and take three photos. Fill the frame, keep the camera level.</p>
-                  <div class="br-shots">
-                    <div class="br-shot" data-br-shot="side">
-                      <canvas aria-hidden="true"></canvas>
-                      <strong>Side</strong><small>Nose pointing right</small>
-                      <span class="br-shot-note">Needed</span>
-                      <label class="br-filebtn">Choose photo<input type="file" accept="image/*" capture="environment" /></label>
-                      <button type="button" data-br-webcam>Camera</button>
+                  <div data-br-scan-mount></div>
+                  <details class="br-import-box" data-br-import-box>
+                    <summary>Or import a 3D file (.STL / .GLB)</summary>
+                    <div class="br-import-body">
+                      <label class="br-filebtn br-wide">Choose .STL or .GLB file<input type="file" accept=".stl,.glb" data-br-model-file /></label>
+                      <div data-br-cal-wrap hidden>
+                        <div class="br-cal-stage">
+                          <canvas data-br-cal-canvas aria-label="3D model orientation preview"></canvas>
+                          <div class="br-cal-guide" data-br-cal-guide role="status">Click the FRONT / NOSE of the model</div>
+                        </div>
+                        <div class="br-cal-dots" data-br-cal-dots>
+                          <button type="button" data-br-dot="front" aria-pressed="true">🔴 Nose</button>
+                          <button type="button" data-br-dot="rear" aria-pressed="false">🔵 Rear</button>
+                          <button type="button" data-br-dot="top" aria-pressed="false">🔺 Roof</button>
+                          <button type="button" data-br-dot-reset>↺ Reset</button>
+                        </div>
+                        <button type="button" class="br-primary br-wide" data-br-use-model>Race this 3D model</button>
+                      </div>
                     </div>
-                    <div class="br-shot" data-br-shot="front">
-                      <canvas aria-hidden="true"></canvas>
-                      <strong>Front</strong><small>Look at the nose</small>
-                      <span class="br-shot-note">Optional</span>
-                      <label class="br-filebtn">Choose photo<input type="file" accept="image/*" capture="environment" /></label>
-                      <button type="button" data-br-webcam>Camera</button>
-                    </div>
-                    <div class="br-shot" data-br-shot="top">
-                      <canvas aria-hidden="true"></canvas>
-                      <strong>Top</strong><small>Nose pointing up</small>
-                      <span class="br-shot-note">Optional</span>
-                      <label class="br-filebtn">Choose photo<input type="file" accept="image/*" capture="environment" /></label>
-                      <button type="button" data-br-webcam>Camera</button>
-                    </div>
-                  </div>
-                  <button type="button" class="br-primary br-wide" data-br-carve disabled>Build my car from the photos</button>
-                  <p class="br-muted" data-br-scan-status role="status"></p>
-                  <div class="br-cam" data-br-cam hidden>
-                    <video playsinline muted></video>
-                    <p data-br-cam-label></p>
-                    <div class="br-row"><button type="button" class="br-primary" data-br-snap>Snap</button><button type="button" data-br-cam-close>Close camera</button></div>
-                  </div>
+                  </details>
                 </div>
 
+                <div class="br-scan-badge" data-br-scan-badge hidden>
+                  <span>3D scan active</span>
+                  <button type="button" data-br-clear-scan>Use bricks</button>
+                </div>
                 <div class="br-stats" data-br-stats></div>
                 <button type="button" class="br-primary br-wide br-big" data-br-go-play>Race this car →</button>
               </section>
@@ -204,10 +198,10 @@
         <section class="br-section">
           <h2>How the scanner works: space carving</h2>
           <div class="br-cards">
-            <article><h3>Find the car</h3><p>The scanner reads the colour around the photo's edge as "background", measures how different every pixel is from it, and picks the cut-off automatically (Otsu's method). The biggest blob that's left is the car.</p></article>
-            <article><h3>Each photo is a stencil</h3><p>The side photo says which cells, looking from the side, have car in them. So do the front and top photos. A brick survives only if <em>all three</em> stencils cover it. Computer vision calls this shape the <em>visual hull</em>.</p></article>
-            <article><h3>Colour from whoever sees it</h3><p>Every pixel colour is matched to the nearest real brick colour. Roof bricks take their colour from the top photo, the nose from the front, the rest from the side.</p></article>
-            <article><h3>What it can't see</h3><p>A hollow no photo looks into (a cockpit seen only from the side) comes out solid. That's why the game drops you into <b>Build</b> afterwards: the scanner gets the shape, you fix the details.</p></article>
+            <article><h3>Find the creation</h3><p>The shared ClassroomOS 3D scanner reads the background color around the edge (or wherever you tap), runs Otsu's threshold with flood-fill so bright details inside the object stay solid, and keeps the main silhouette.</p></article>
+            <article><h3>Each photo is a stencil</h3><p>Take 3-View photos (side, front, top) or a 4–8 angle 360° turntable spin. Every photo carves away empty space until only the <em>visual hull</em> that fits all views remains.</p></article>
+            <article><h3>3D Scan or Brick Car</h3><p>Choose <b>3D Scan</b> to smooth the voxels into a full-color 3D model you can race or export to Print Prep, or <b>Brick Car</b> to snap it onto LEGO-style bricks you can edit in <b>Build</b>. The same engine powers 3D uploads in the Class Fish Tank.</p></article>
+            <article><h3>What it can't see</h3><p>A hollow no photo looks into (a cockpit seen only from the side) comes out solid. That's why you can refine the mask, add turntable angles, or finish details in <b>Build</b>.</p></article>
           </div>
         </section>
 
