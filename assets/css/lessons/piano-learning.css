@@ -229,24 +229,66 @@
 .piano-coach .pc-recall-bar { margin-top: .6rem; }
 .piano-coach .pc-recall-keys [data-feedback] { margin-left: .4rem; font-weight: 600; }
 
-/* Hanon: the sheet music gets the room, the words get one line each. */
-.piano-coach .pc-coach-bar > .pc-plan { margin: 0; }
-.piano-coach .pc-coach-bar > .pc-plan[open] { flex-basis: 100%; order: 9; }
-.piano-coach .pc-coach-bar > .pc-plan > summary { min-height: 36px; padding: 0 .4rem; }
+/* Coach bars: plan toggle shares the control row. */
 .piano-coach .pc-coach-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem 1rem; margin-block: .3rem; }
 .piano-coach .pc-coach-line > p { margin: 0; }
 .piano-coach .pc-coach-line > label { font-size: .9rem; white-space: nowrap; }
-/* The score's own title repeats the panel heading, and a few bars need no measure map or jump box. */
-@media screen {
-  .piano-coach [data-hanon-score] > .se-head { display: none; }
-  .piano-coach [data-hanon-score] .se-toolbar :is(.sn-goto, .sn-mini, .sn-map, .sn-follow) { display: none; }
+
+/* Hanon worksheet: an engraved sheet like a printed condensed Hanon, two exercises a row. */
+.hanon-ws .section-content > h2 { margin-bottom: .4rem; }
+.hanon-ws .hs-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .9rem; margin-bottom: .6rem; font-size: .92rem; }
+.hanon-ws .hs-bar label { display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap; }
+.hanon-ws .hs-bar select, .hanon-ws .hs-bar input[type=number], .hanon-ws .hs-bar input[type=text] { min-height: 36px; font: inherit; padding: .2rem .4rem; border: 1px solid #9caeb7; border-radius: 4px; background: var(--surface-elevated, #fff); color: inherit; }
+.hanon-ws .hs-bar input[type=number] { width: 4.2rem; }
+.hanon-ws .hs-bar input[type=text] { width: 11rem; }
+.hanon-ws .hs-bar .pc-btn { min-height: 36px; padding: .3rem .8rem; }
+.hanon-ws .hs-chips { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .2rem; }
+.hanon-ws .hs-chips > span:first-child { margin-right: .2rem; }
+.hanon-ws [data-hs-chips] { display: inline-flex; flex-wrap: wrap; gap: .2rem; }
+.hanon-ws .hs-chip { min-width: 2rem; min-height: 32px; padding: 0 .3rem; border: 1px solid #9caeb7; border-radius: 4px; background: transparent; color: inherit; font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+.hanon-ws .hs-chip[aria-pressed=true] { background: var(--text, #202629); border-color: var(--text, #202629); color: var(--bg, #fff); }
+.hanon-ws .hs-chip.hs-all { padding: 0 .6rem; }
+@media (pointer: coarse) { .hanon-ws .hs-chip { min-width: 2.6rem; min-height: 44px; } }
+
+.hanon-ws .hs-sheet { --hs-ink: #111; background: #fff; color: var(--hs-ink); border: 1px solid #d5d9dc; border-radius: 4px; padding: 1rem 1.25rem .7rem; font-family: "Times New Roman", Times, Georgia, serif; }
+.hanon-ws .hs-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 0 1rem; margin-bottom: .4rem; }
+.hanon-ws .hs-head h3 { grid-column: 2; margin: 0; font: 400 clamp(1.3rem, 1rem + 1.4vw, 1.9rem)/1.1 inherit; color: var(--hs-ink); text-align: center; }
+.hanon-ws .hs-tempo { grid-column: 1; grid-row: 1; font-weight: 700; font-size: .95rem; }
+.hanon-ws .hs-by { grid-column: 3; grid-row: 1; justify-self: end; font-size: .95rem; }
+.hanon-ws .hs-key { grid-column: 2; text-align: center; font-style: italic; font-size: 1rem; }
+.hanon-ws .hs-for { grid-column: 3; justify-self: end; font-style: italic; font-size: .95rem; }
+.hanon-ws .hs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .1rem 2.2rem; }
+.hanon-ws .hs-single .hs-grid { grid-template-columns: minmax(0, 1fr); max-width: 46rem; margin-inline: auto; }
+@media (max-width: 760px) { .hanon-ws .hs-grid { grid-template-columns: minmax(0, 1fr); } .hanon-ws .hs-sheet { padding-inline: .6rem; } }
+.hanon-ws .hs-ex { position: relative; margin: 0; padding-top: .1rem; }
+.hanon-ws .hs-ex svg { display: block; width: 100%; height: auto; overflow: visible; color: var(--hs-ink); }
+.hanon-ws .hs-num { position: absolute; left: 0; top: 0; z-index: 1; padding: 0 .2rem; min-height: 0; border: 0; border-radius: 3px; background: transparent; color: var(--hs-ink); font: 400 1.15rem/1 "Times New Roman", Times, serif; cursor: pointer; }
+.hanon-ws .hs-num:hover, .hanon-ws .hs-num:focus-visible { background: #e9eef1; }
+.hanon-ws .hs-num.is-playing { background: #202629; color: #fff; }
+.hanon-ws .hs-num.is-playing::after { content: " ■"; font-size: .7em; }
+.hanon-ws .hs-line, .hanon-ws .hs-ledger { stroke: currentColor; stroke-width: 1.3; }
+.hanon-ws .hs-ledger { stroke-width: 1.6; }
+.hanon-ws .hs-stem { stroke: currentColor; stroke-width: 1.2; }
+.hanon-ws .hs-barline { stroke: currentColor; stroke-width: 1.4; }
+.hanon-ws .hs-beam, .hanon-ws .hs-final { fill: currentColor; }
+.hanon-ws .hs-fingers { font: 12px "Times New Roman", Times, serif; text-anchor: middle; fill: currentColor; }
+.hanon-ws .hs-foot { display: flex; flex-wrap: wrap; gap: .1rem 1rem; justify-content: space-between; margin-top: .5rem; padding-top: .35rem; border-top: 1px solid #ccc; font-size: .8rem; font-style: italic; }
+.hanon-ws .hs-foot [data-hs-note]:empty { display: none; }
+
+/* Print worksheet: the sheet alone, on its own page. */
+@media print {
+  html[data-hanon-print] :is(body, [data-hanon-path]) > :not([data-hanon-path], .hs-sheet) { display: none !important; }
+  html[data-hanon-print] [data-hanon-path] { display: block !important; margin: 0 !important; padding: 0 !important; border: 0 !important; min-height: 0 !important; max-width: none !important; width: auto !important; }
+  .hanon-ws .hs-bar { display: none; }
+  .hanon-ws .hs-sheet { border: 0; padding: 0; }
+  .hanon-ws .hs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .3rem 1.6rem; }
+  .hanon-ws .hs-num { background: none !important; color: #000 !important; }
+  .hanon-ws .hs-num.is-playing::after { content: none; }
+  .hanon-ws .hs-sheet > :not(header, .hs-grid, footer), .hanon-ws .hs-screen { display: none !important; }
+  .hanon-ws .hs-ex { break-inside: avoid; }
+  .hanon-ws .hs-head { margin-bottom: .1rem; }
 }
-/* Projected full screen: drop the intro sentence so the music sits higher. */
-.instrument-workspace:is(:fullscreen, .creation-app-expanded) .piano-coach .section-content > p { display: none; }
-/* A short score shrinks its pane to the music, and the fit then scales the music to that pane:
-   give the exercise a real reading height so the staff is drawn large. */
-.piano-coach [data-hanon-score] .se-workspace > .se-paper { min-height: clamp(220px, 38vh, 460px); }
-/* With the measure map gone, zoom and settings fit on the Play row: two control rows, not three. */
-@media screen and (min-width: 700px) {
-  .piano-coach [data-hanon-score] .se-toolbar :is(.sn-zoom, .se-settings) { order: 6; }
-}
+
+/* The sheet is engraved paper: keep book type whatever the site skin or theme. */
+#hanon-coach .hs-sheet, #hanon-coach .hs-sheet :is(h3, span, button, header, footer) { font-family: "Times New Roman", Times, Georgia, serif !important; letter-spacing: 0; text-transform: none; }
+#hanon-coach .hs-sheet .hs-fingers { font-family: "Times New Roman", Times, serif; }
