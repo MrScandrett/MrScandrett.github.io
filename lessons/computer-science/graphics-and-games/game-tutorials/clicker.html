@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tutorial: Clicker Game · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Tiny-loop tutorial — play and customize a real Clicker Game with pre-built sprites and an upgrade system, see the exact architecture powering it, then build the same loop yourself in Scratch or from real scratch in JavaScript." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
@@ -68,36 +65,13 @@
           <p class="cl-lede">This is the exact <strong>Clicker Game</strong> archetype from <a href="../game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> — already built and running below. Play it, then swap the pre-built sprite, upgrade cost, and win goal using the panel underneath. You can't break the loop itself; that part is locked. Once you've tuned a version you like, you'll build this same architecture two more times: with Scratch's blocks, then from real scratch in JavaScript.</p>
         </section>
 
-        <!-- Architecture -->
-        <section class="cl-card">
-          <h2>🗺️ The Architecture</h2>
-          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Clicker Game's architecture:</p>
-
-          <div class="stages-flow">
-            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Click the sprite to earn points, spend points to click for even more.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Click → score increases → afford upgrade → buy it → click again, faster.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Click handler, score counter, click-power variable, upgrade shop.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the score goal to win. There's no lose state — just progress.</small></div>
-          </div>
-
-          <p><strong>The three systems, in order of execution on every click:</strong></p>
-          <ol class="systems-list">
-            <li><strong>Click system</strong> — detects a click on the target sprite and fires once per click (not held down).</li>
-            <li><strong>Score system</strong> — adds the current "click power" to the score, then checks the win condition.</li>
-            <li><strong>Upgrade system</strong> — spends score on an upgrade that permanently increases click power, and raises the next upgrade's cost.</li>
-          </ol>
-        </section>
-
         <!-- Play + Customize -->
         <section class="cl-card">
           <h2>🎮 Play &amp; Customize</h2>
-          <p>Click the sprite (or focus it and press <strong>Space</strong>) to earn points. Buy the upgrade when you can afford it to earn more per click. Reach the goal in as few clicks as you can. <em>When</em> you buy each upgrade is the whole strategy.</p>
+          <p>Click the sprite (or focus it and press <strong>Space</strong>, and press <strong>U</strong> to buy an upgrade) to earn points. Buy the upgrade when you can afford it to earn more per click. Reach the goal in as few clicks as you can. <em>When</em> you buy each upgrade is the whole strategy.</p>
 
           <div class="game-wrap">
-            <div class="game-hud">
+            <div class="game-hud" id="g-hud">
               <span class="hud-score" id="g-score">Score: 0</span>
               <span class="hud-group"><span class="hud-power" id="g-power">+1 / click</span><span id="g-clicks">0 clicks</span><span class="hud-best" id="g-best"></span></span>
             </div>
@@ -149,6 +123,112 @@
           </div>
         </section>
 
+        <!-- Architecture -->
+        <section class="cl-card">
+          <h2>🗺️ The Architecture</h2>
+          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Clicker Game's architecture:</p>
+
+          <div class="stages-flow">
+            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Click the sprite to earn points, spend points to click for even more.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Click → score increases → afford upgrade → buy it → click again, faster.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Click handler, score counter, click-power variable, upgrade shop.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the score goal to win. There's no lose state — just progress.</small></div>
+          </div>
+
+          <p><strong>The three systems, in order of execution on every click:</strong></p>
+          <ol class="systems-list">
+            <li><strong>Click system</strong> — detects a click on the target sprite and fires once per click (not held down).</li>
+            <li><strong>Score system</strong> — adds the current "click power" to the score, then checks the win condition.</li>
+            <li><strong>Upgrade system</strong> — spends score on an upgrade that permanently increases click power, and raises the next upgrade's cost.</li>
+          </ol>
+        </section>
+
+        <!-- Origin -->
+        <section class="cl-card">
+          <h2>🏛️ The Origin: Incremental &amp; Idle Game Economies (2002–2013)</h2>
+          <p>Unlike arcade games built around reflexes, clicker and incremental games turn pure <strong>resource math</strong> into gameplay—proving that watching numbers scale and optimizing payback curves is compelling on its own.</p>
+          <div class="gt-origin-grid">
+            <article class="gt-era-card">
+              <span class="gt-era-badge">2002 · Eric Fredricksen</span>
+              <h3><em>Progress Quest</em></h3>
+              <p>Built as a parody of RPG grinding, it ran entirely by itself while progress bars filled—unintentionally launching the "zero-player" incremental genre.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">2010 · Ian Bogost</span>
+              <h3><em>Cow Clicker</em></h3>
+              <p>Created as a satirical critique of social games, it boiled the entire core loop down to one sprite, one click counter, and upgrade timers—yet players genuinely competed to optimize it.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">2013 · Julien "Orteil" Thiennot</span>
+              <h3><em>Cookie Clicker</em></h3>
+              <p>Combined satisfying click feedback with exponential shop pricing (×1.15 to ×1.6 per tier), turning browser tabs worldwide into personal economic sandboxes.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Deep Dive Lab -->
+        <section class="cl-card">
+          <h2>📐 Deep Dive: Exponential Cost Curves &amp; Optimal Upgrade Strategy</h2>
+          <p>Why shouldn't you keep buying upgrades right up until the win goal? Because every upgrade costs <strong>1.6× more</strong> than the last, while only adding <strong>+1 click power</strong>. Once an upgrade costs more clicks than it saves before the finish line, buying it actually slows you down!</p>
+
+          <div class="gt-lab" id="clicker-economy-lab">
+            <div class="gt-lab-header">
+              <div>
+                <h3 class="gt-lab-title">Interactive Exponential Cost &amp; Optimal Stopping Lab</h3>
+                <p class="gt-lab-subtitle">Tune the growth multiplier, starting cost, and win goal to find the exact mathematically optimal number of upgrades</p>
+              </div>
+            </div>
+            <div class="gt-lab-canvas-wrap">
+              <canvas id="clicker-lab-canvas" width="540" height="240" aria-label="Graph comparing exponential upgrade cost to linear cost and showing optimal stopping point"></canvas>
+            </div>
+            <div class="gt-lab-controls">
+              <div class="gt-lab-sliders">
+                <div class="gt-lab-slider-field">
+                  <label for="clicker-lab-mult">Cost Multiplier <output id="clicker-lab-mult-out" for="clicker-lab-mult">1.6×</output></label>
+                  <input type="range" id="clicker-lab-mult" min="1.2" max="2.2" step="0.1" value="1.6" />
+                </div>
+                <div class="gt-lab-slider-field">
+                  <label for="clicker-lab-cost">Start Cost <output id="clicker-lab-cost-out" for="clicker-lab-cost">10 pts</output></label>
+                  <input type="range" id="clicker-lab-cost" min="5" max="40" step="5" value="10" />
+                </div>
+                <div class="gt-lab-slider-field">
+                  <label for="clicker-lab-goal">Win Goal <output id="clicker-lab-goal-out" for="clicker-lab-goal">100 pts</output></label>
+                  <input type="range" id="clicker-lab-goal" min="50" max="500" step="25" value="100" />
+                </div>
+              </div>
+            </div>
+            <div class="gt-telemetry-grid">
+              <div class="gt-telem-card"><span class="gt-telem-label">Never Upgrade</span><span class="gt-telem-val" id="clicker-telem-never">100 clicks</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Buy Every ASAP</span><span class="gt-telem-val" id="clicker-telem-asap">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Optimal Strategy</span><span class="gt-telem-val" id="clicker-telem-opt">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">5th Upgrade Cost</span><span class="gt-telem-val" id="clicker-telem-fifth">—</span></div>
+            </div>
+            <div class="gt-lab-insight" id="clicker-lab-insight" aria-live="polite">Adjust the sliders to compare upgrade strategies.</div>
+          </div>
+
+          <div class="gt-compare">
+            <div class="gt-compare-card is-amber">
+              <h3>🟡 Linear Pricing (Too Easy)</h3>
+              <ul>
+                <li><code>cost += 10</code> grows at a flat slope while click power grows linearly.</li>
+                <li>Upgrades always pay for themselves quickly, removing strategic tension.</li>
+                <li>Players never have to decide when to stop upgrading and push for the goal.</li>
+              </ul>
+            </div>
+            <div class="gt-compare-card is-sky">
+              <h3>🔵 Exponential Cost + Event-Driven Loop</h3>
+              <ul>
+                <li><code>cost = round(cost * 1.6)</code> bends upward steeply, creating a real payback puzzle.</li>
+                <li>Zero <code>requestAnimationFrame</code> needed: pure click events use 0% CPU while idle.</li>
+                <li>The payback formula (<code>upgradeCost / 1</code> extra clicks needed) guides smart buys.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         <!-- Peek at the code -->
         <section class="cl-card">
           <h2>👀 Peek at the Code</h2>
@@ -191,13 +271,14 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
         <!-- Remix -->
         <section class="cl-card">
           <h2>🧪 Remix Challenges</h2>
-          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Cards marked <strong>▶ playable</strong> switch the change on in the game above, so you can feel it before you build it. Try the rest in your own copy once you've built it in Lesson 2.</p>
           <div class="gt-remix">
             <details>
               <summary><span class="gt-tier tweak">Tweak</span><span><strong>Critical clicks</strong><small>Score system · one line</small></span></summary>
               <div class="gt-remix-body">
                 <p>Give every click a 10% chance to count double. The average barely changes, but the <em>feel</em> changes a lot. Randomness is one of the cheapest sources of excitement in game design.</p>
                 <div class="code-block"><pre>score += clickPower * (<span class="fn">Math.random</span>() &lt; <span class="num">0.1</span> ? <span class="num">2</span> : <span class="num">1</span>);</pre></div>
+                <button data-remix="crit">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -218,6 +299,39 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
 
         <!-- Build with Blockly -->
         <section class="cl-card" data-game-blockly="clicker"></section>
+
+        <!-- Check Your Understanding -->
+        <section class="cl-card gt-quiz-section">
+          <h2>🧠 Check Your Understanding</h2>
+          <p>Test your grasp of exponential economies, event-driven loops, and upgrade strategy:</p>
+          <article class="gt-quiz-card">
+            <h3>Question 1: Why does the Clicker Game use <code>Math.round(upgradeCost * 1.6)</code> instead of adding a flat +10 each time?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 1 options">
+              <button type="button" data-answer="correct" data-explain="Correct! Exponential cost scaling ensures upgrades eventually cost more clicks than they will pay back before the goal, turning mindless clicking into an optimization decision.">So upgrades get steeply more expensive, creating an optimal point to stop buying and save for the goal</button>
+              <button type="button" data-answer="wrong" data-explain="Addition and multiplication take essentially the same CPU time.">Because JavaScript cannot add numbers inside event listeners</button>
+              <button type="button" data-answer="wrong" data-explain="Click power always grows by +1 regardless of cost scaling.">So click power automatically doubles every click</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 2: Suppose you are at 85 points with a 100-point goal, clickPower = 3, and an upgrade costs 41 points. Should you buy it?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 2 options">
+              <button type="button" data-answer="wrong" data-explain="Buying drops you to 44 points (needing 56 more points at +4/click = 14 clicks), whereas just clicking 5 more times wins immediately!">Yes—always buy upgrades whenever the button lights up</button>
+              <button type="button" data-answer="correct" data-explain="Correct! You only need 5 more clicks (5 × 3 = 15 pts) to win from 85. Spending 41 points drops you back to 44 and forces 14 more clicks!">No—5 clicks at +3 wins immediately, whereas spending 41 points adds more clicks</button>
+              <button type="button" data-answer="wrong" data-explain="Upgrades only change clickPower (+1), not the winScore threshold.">Yes, because upgrades lower the win goal</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 3: Unlike Pong or Flappy, why doesn't the Clicker Game need a 60 FPS <code>requestAnimationFrame</code> loop?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 3 options">
+              <button type="button" data-answer="wrong" data-explain="Event-driven DOM updates work smoothly at any monitor refresh rate.">Because DOM buttons only run at 10 frames per second</button>
+              <button type="button" data-answer="correct" data-explain="Correct! State only changes when the player clicks the target or upgrade button, so an event-driven architecture runs zero code while waiting.">State only changes in response to discrete click events, not continuous frame-by-frame motion</button>
+              <button type="button" data-answer="wrong" data-explain="Audio and CSS transitions are optional; event listeners drive the entire game state.">Because browsers block loops on pages with sliders</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+        </section>
 
         <!-- Build it for real -->
         <section class="cl-card">
@@ -258,8 +372,9 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
           <p class="ll-pane-title">Learning Goals</p>
           <ul class="ll-guide-list">
             <li>Explain what a "core loop" is using the Clicker Game as an example</li>
+            <li>Compare exponential cost growth vs. linear growth in game economies</li>
+            <li>Identify when to stop buying upgrades and push for the goal</li>
             <li>Identify which parts of a game are "engine" vs. "content"</li>
-            <li>Tune a working game's economy without touching its logic</li>
             <li>Trace the same architecture across Scratch and JavaScript</li>
           </ul>
           <p class="ll-pane-title" style="margin-top:1rem;">Why the Limits?</p>
@@ -282,8 +397,10 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
     const target = $('g-target');
     const pad = $('g-pad');
     const upgradeBtn = $('g-upgrade');
+    const upgradeHint = $('g-upgrade-hint');
     const overlay = GameTutorial.overlay(stage.closest('.game-wrap'));
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    GameTutorial.sound.mountToggle($('g-hud'));
 
     let config;
     let score, clickPower, upgradeCost, clicks, upgrades, ended;
@@ -312,6 +429,9 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
       $('g-progress').style.width = Math.min(100, score / config.winScore * 100) + '%';
       upgradeBtn.textContent = 'Buy Upgrade (' + upgradeCost + ' pts)';
       upgradeBtn.disabled = score < upgradeCost || ended;
+      const payback = upgradeCost;
+      const remaining = Math.max(0, config.winScore - score);
+      upgradeHint.textContent = `+1 power · pays back in ${payback} clicks (${remaining} pts to go)`;
       const b = GameTutorial.best('clicker', 'clicks-' + config.winScore + '-' + config.upgradeCost).best;
       $('g-best').textContent = b ? 'Best ' + b + ' clicks' : '';
     }
@@ -327,6 +447,7 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
 
     function endGame() {
       ended = true;
+      GameTutorial.sound.play('win');
       const key = 'clicks-' + config.winScore + '-' + config.upgradeCost;
       const record = GameTutorial.best('clicker', key, clicks, true);
       updateHUD();
@@ -342,9 +463,12 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
     target.addEventListener('click', () => {
       if (ended) return;
       GameTutorial.markPlayed('clicker');
-      score += clickPower;            // 1. click adds current power
+      const crit = config.remix.crit && Math.random() < 0.1;
+      const gain = clickPower * (crit ? 2 : 1);
+      score += gain;                  // 1. click adds current power
       clicks++;
-      popText('+' + clickPower);
+      GameTutorial.sound.play(crit ? 'upgrade' : 'click');
+      popText((crit ? 'CRIT +' : '+') + gain);
       updateHUD();
       if (score >= config.winScore) endGame();   // 2. check win condition
     });
@@ -355,7 +479,12 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
       clickPower += 1;                           // permanently earn more per click
       upgrades++;
       upgradeCost = Math.round(upgradeCost * 1.6);
+      GameTutorial.sound.play('upgrade');
       updateHUD();
+    });
+
+    stage.closest('.game-wrap').addEventListener('keydown', e => {
+      if (e.code === 'KeyU' && !ended && !upgradeBtn.disabled) { e.preventDefault(); upgradeBtn.click(); }
     });
 
     config = GameTutorial.bindConfig({
@@ -370,6 +499,7 @@ upgradeBtn.<span class="fn">addEventListener</span>(<span class="str">'click'</s
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
+<script src="../../../../assets/js/lessons/game-tutorial-labs.js" defer></script>
 <script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>

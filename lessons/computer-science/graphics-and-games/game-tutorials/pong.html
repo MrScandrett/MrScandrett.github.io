@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tutorial: Pong / Paddle Game · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Tiny-loop tutorial — play and customize a real Pong / Paddle Game with pre-built sprites, see the exact architecture powering it, then build the same loop yourself in Scratch or from real scratch in JavaScript." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
@@ -51,30 +48,6 @@
             <span>Pre-built Sprites</span>
           </div>
           <p class="cl-lede">This is the exact <strong>Pong / Paddle Game</strong> archetype from <a href="../game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> — already built and running below, you vs. a simple computer opponent. Play it, then swap the pre-built ball, colors, and difficulty using the panel underneath. You can't break the loop itself; that part is locked. Once you've tuned a version you like, you'll build this same architecture two more times: with Scratch's blocks, then from real scratch in JavaScript.</p>
-        </section>
-
-        <!-- Architecture -->
-        <section class="cl-card">
-          <h2>🗺️ The Architecture</h2>
-          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Pong / Paddle Game's architecture:</p>
-
-          <div class="stages-flow">
-            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Bounce the ball past the CPU's paddle before it gets past yours.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Ball moves → bounces off a wall or paddle → someone misses → score → repeat.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Player input, CPU tracking, ball physics, scoring &amp; reset.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>First to the score goal wins the match.</small></div>
-          </div>
-
-          <p><strong>The four systems, in order of execution every frame:</strong></p>
-          <ol class="systems-list">
-            <li><strong>Input system</strong> — reads the arrow keys (or mouse) and moves the player's paddle up/down.</li>
-            <li><strong>AI system</strong> — moves the CPU's paddle toward the ball's y position, but capped at a limited speed so it's beatable.</li>
-            <li><strong>Physics system</strong> — the ball moves every frame and reflects its direction off the top/bottom walls and either paddle.</li>
-            <li><strong>Scoring system</strong> — when the ball passes a side completely, the other player scores and the ball resets to center.</li>
-          </ol>
         </section>
 
         <!-- Play + Customize -->
@@ -130,6 +103,30 @@
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how bounce reflection works" or "how the CPU tracks the ball." That's the engine, the part every version of this game shares. You're tuning content and a few numbers, not rewriting architecture. That limit is on purpose.</p>
             <p class="config-note"><strong>What the sliders actually touch in the engine:</strong> <strong>Ball Speed</strong> sets the serve speed (<code>1.5 + ballSpeed × 0.6</code>); every paddle hit then adds 5%, capped at double. <strong>CPU Difficulty</strong> caps how many pixels per tick the CPU paddle may move toward the ball (<code>clamp(dy, -aiSpeed, aiSpeed)</code>). The CPU always knows exactly where the ball is. The cap is the only thing that makes it beatable.</p>
           </div>
+        </section>
+
+        <!-- Architecture -->
+        <section class="cl-card">
+          <h2>🗺️ The Architecture</h2>
+          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Pong / Paddle Game's architecture:</p>
+
+          <div class="stages-flow">
+            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Bounce the ball past the CPU's paddle before it gets past yours.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Ball moves → bounces off a wall or paddle → someone misses → score → repeat.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Player input, CPU tracking, ball physics, scoring &amp; reset.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>First to the score goal wins the match.</small></div>
+          </div>
+
+          <p><strong>The four systems, in order of execution every frame:</strong></p>
+          <ol class="systems-list">
+            <li><strong>Input system</strong> — reads the arrow keys (or mouse) and moves the player's paddle up/down.</li>
+            <li><strong>AI system</strong> — moves the CPU's paddle toward the ball's y position, but capped at a limited speed so it's beatable.</li>
+            <li><strong>Physics system</strong> — the ball moves every frame and reflects its direction off the top/bottom walls and either paddle.</li>
+            <li><strong>Scoring system</strong> — when the ball passes a side completely, the other player scores and the ball resets to center.</li>
+          </ol>
         </section>
 
         <!-- The Origin: From Oscilloscopes to Discrete Silicon -->
@@ -205,7 +202,7 @@
         <!-- The Physics of Reflection: Alcorn's 8-Segment Model -->
         <section class="cl-card">
           <h2>📐 The Physics of Reflection: Alcorn's 8-Segment Deflection Model</h2>
-          <p>If you build a paddle game using textbook physics ($r = d - 2(d \cdot n)n$), you encounter an immediate design catastrophe: <strong>the flat physics deadlock</strong>. If an incoming ball travels horizontally ($v_y = 0$) and strikes a vertical flat paddle, the reflection keeps $v_y = 0$. The ball bounces back and forth on the exact same scanline forever!</p>
+          <p>If you build a paddle game using textbook physics (<em>r</em> = <em>d</em> − 2(<em>d</em> · <em>n</em>)<em>n</em>), you encounter an immediate design catastrophe: <strong>the flat physics deadlock</strong>. If an incoming ball travels horizontally (<em>v</em><sub>y</sub> = 0) and strikes a vertical flat paddle, the reflection keeps <em>v</em><sub>y</sub> = 0. The ball bounces back and forth on the exact same scanline forever!</p>
           <p>To turn Pong into a competitive game of skill, Allan Alcorn divided each paddle into <strong>8 discrete vertical segments</strong>. Where the ball makes contact dictates both the outgoing bounce angle and the velocity boost.</p>
 
           <figure class="pong-figure pong-figure--diagram" data-zoomable data-lightbox-group="pong-diagrams" data-full="../../../../assets/images/lessons/pong/pong-paddle-deflection-diagram.svg">
@@ -298,7 +295,7 @@
 
           <div class="pong-tech-comparison">
             <div class="pong-tech-card ttl-card">
-              <h4>🟡 1972: Discrete TTL Hardware State Machine</h4>
+              <h3>🟡 1972: Discrete TTL Hardware State Machine</h3>
               <ul>
                 <li><strong>Master Clock:</strong> A 7.159 MHz quartz crystal oscillator generates clock ticks.</li>
                 <li><strong>Raster Counters:</strong> Synchronous binary counters generate 15.75 kHz horizontal and 60 Hz vertical sync pulses to sweep the CRT electron gun.</li>
@@ -309,7 +306,7 @@
               </ul>
             </div>
             <div class="pong-tech-card soft-card">
-              <h4>🔵 Today: Modern Software Game Loop</h4>
+              <h3>🔵 Today: Modern Software Game Loop</h3>
               <ul>
                 <li><strong>Clock:</strong> The browser's <code>requestAnimationFrame()</code> fires ~60 to 120 times per second synchronized with monitor refresh.</li>
                 <li><strong>Phase 1 (Input):</strong> Event listeners (<code>keydown</code>, <code>pointermove</code>) update state variables (<code>player.y</code>).</li>
@@ -373,13 +370,14 @@
         <!-- Remix -->
         <section class="cl-card">
           <h2>🧪 Remix Challenges</h2>
-          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you have to change the engine. Each challenge below edits exactly one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you have to change the engine. Each challenge below edits exactly one system. Cards marked <strong>▶ playable</strong> switch the change on in the game above, so you can feel it before you build it. Try the rest in your own copy once you've built it in Lesson 2.</p>
           <div class="gt-remix">
             <details>
               <summary><span class="gt-tier tweak">Tweak</span><span><strong>Shrinking paddles</strong><small>Physics system · one line</small></span></summary>
               <div class="gt-remix-body">
                 <p>Make every point you score cost you paddle length, so a lead makes the game harder. What does that do to comebacks?</p>
                 <div class="code-block"><pre>player.h = <span class="fn">Math.max</span>(<span class="num">20</span>, <span class="num">50</span> - playerScore * <span class="num">6</span>);</pre></div>
+                <button data-remix="shrink">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -389,6 +387,7 @@
                 <div class="code-block"><pre><span class="cm">// replaces the AI system</span>
 <span class="kw">if</span> (keys.p2up)   cpu.y -= <span class="num">5</span>;   <span class="cm">// ↑</span>
 <span class="kw">if</span> (keys.p2down) cpu.y += <span class="num">5</span>;   <span class="cm">// ↓  (player 1 keeps W / S)</span></pre></div>
+                <button data-remix="twoPlayer">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -404,12 +403,12 @@
         <section class="cl-card" data-game-blockly="pong"></section>
 
         <!-- Check Your Understanding -->
-        <section class="cl-card">
+        <section class="cl-card gt-quiz-section pong-quiz-section">
           <h2>🧠 Check Your Understanding</h2>
           <p>Test your grasp of Pong's history, collision physics, and game architecture:</p>
 
           <article class="pong-quiz-card">
-            <h4>Question 1: How did Allan Alcorn execute the game loop in the original 1972 Atari Pong arcade cabinet?</h4>
+            <h3>Question 1: How did Allan Alcorn execute the game loop in the original 1972 Atari Pong arcade cabinet?</h3>
             <div class="pong-quiz-options" role="group" aria-label="Question 1 options">
               <button type="button" data-answer="wrong" data-explain="Microprocessors like the 8080 did not appear in arcade games until Gremlin's Blockade (1976) and Space Invaders (1978).">By running compiled C code on an Intel 8080 microprocessor</button>
               <button type="button" data-answer="correct" data-explain="Correct! Pong had no CPU, no ROM, and zero lines of code. It was constructed entirely from 66 discrete 7400-series TTL chips, sync counters, and logic gates that directly modulated the TV's electron beam.">It had no CPU or software at all—66 discrete 7400-series TTL chips and wire-wrapped counters generated the video signals directly in hardware</button>
@@ -420,7 +419,7 @@
           </article>
 
           <article class="pong-quiz-card">
-            <h4>Question 2: What fatal gameplay flaw occurs if a paddle game uses pure flat-surface physics reflection (angle of incidence = angle of reflection)?</h4>
+            <h3>Question 2: What fatal gameplay flaw occurs if a paddle game uses pure flat-surface physics reflection (angle of incidence = angle of reflection)?</h3>
             <div class="pong-quiz-options" role="group" aria-label="Question 2 options">
               <button type="button" data-answer="wrong" data-explain="Modern computers easily calculate vector reflections in fractions of a microsecond.">The mathematical calculations cause frame rate lag on modern computers</button>
               <button type="button" data-answer="correct" data-explain="Correct! When a ball travels horizontally (vy = 0), flat reflection leaves vy = 0 unchanged. The ball bounces back and forth across the exact same horizontal line forever, giving players no way to angle shots or force mistakes.">Horizontal shots bounce back and forth on the exact same scanline forever in an unbreakable, zero-skill deadlock</button>
@@ -431,7 +430,7 @@
           </article>
 
           <article class="pong-quiz-card">
-            <h4>Question 3: In the original 1972 arcade hardware, how was a collision between the ball and paddle detected?</h4>
+            <h3>Question 3: In the original 1972 arcade hardware, how was a collision between the ball and paddle detected?</h3>
             <div class="pong-quiz-options" role="group" aria-label="Question 3 options">
               <button type="button" data-answer="wrong" data-explain="There was no software or object memory in Pong; everything existed as electronic pulses in time.">A CPU function checked if the coordinates (x, y) overlapped in memory</button>
               <button type="button" data-answer="correct" data-explain="Correct! In raster video hardware, electron beams sweep from left-to-right, top-to-bottom. A single Boolean AND gate detected when the electrical pulse for the paddle and the pulse for the ball were HIGH simultaneously, immediately triggering a flip-flop to reverse horizontal motion.">A hardware Boolean AND gate detected when the electronic paddle pulse and ball pulse were HIGH at the exact same instant</button>
@@ -513,13 +512,14 @@
     const announce = msg => { $('pong-status').textContent = msg; };
 
     let config;
-    let player, cpu, ball, playerScore, cpuScore, rally, serveTimer, flash;
+    let player, cpu, ball, trail, playerScore, cpuScore, rally, serveTimer, flash;
 
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
     function reset() {
       player = { x: 14, y: H / 2 - PADDLE_H / 2, w: PADDLE_W, h: PADDLE_H };
       cpu = { x: W - 24, y: H / 2 - PADDLE_H / 2, w: PADDLE_W, h: PADDLE_H };
+      trail = [];
       playerScore = 0;
       cpuScore = 0;
       flash = { player: 0, cpu: 0 };
@@ -530,12 +530,13 @@
     function serve(dir) {
       const speed = 1.5 + config.ballSpeed * 0.6;
       ball = { x: W / 2, y: H / 2, vx: speed * dir, vy: speed * (Math.random() * 1.4 - 0.7), speed };
+      trail = [];
       serveTimer = SERVE_TICKS;
       rally = 0;
     }
 
     function updateHUD() {
-      $('g-score').textContent = `You ${playerScore} — ${cpuScore} CPU`;
+      $('g-score').textContent = config.remix.twoPlayer ? `P1 ${playerScore} — ${cpuScore} P2` : `You ${playerScore} — ${cpuScore} CPU`;
       $('g-rally').textContent = 'Rally ' + rally;
       const b = GameTutorial.best('pong', 'rally').best;
       $('g-best').textContent = b ? 'Best rally ' + b : '';
@@ -551,33 +552,49 @@
       ball.vx = Math.abs(ball.speed) * dir;
       ball.vy = clamp(ball.vy + (ball.y - (p.y + p.h / 2)) * 0.05, -ball.speed, ball.speed);
       rally++;
+      GameTutorial.sound.play('hit');
       GameTutorial.best('pong', 'rally', rally);
       updateHUD();
     }
 
     function point(toPlayer) {
       if (toPlayer) { playerScore++; flash.player = 20; } else { cpuScore++; flash.cpu = 20; }
-      announce(toPlayer ? `Your point. ${playerScore} to ${cpuScore}.` : `CPU point. ${playerScore} to ${cpuScore}.`);
+      if (config.remix.shrink) {           // a lead costs paddle length
+        const mid = player.y + player.h / 2;
+        player.h = Math.max(20, PADDLE_H - playerScore * 6);
+        player.y = clamp(mid - player.h / 2, 0, H - player.h);
+      }
+      const them = config.remix.twoPlayer ? 'Player 2' : 'CPU';
+      announce(toPlayer ? `Left point. ${playerScore} to ${cpuScore}.` : `${them} point. ${playerScore} to ${cpuScore}.`);
       if (playerScore >= config.winScore || cpuScore >= config.winScore) {
         const won = playerScore > cpuScore;
+        GameTutorial.sound.play(won ? 'win' : 'lose');
         updateHUD();
-        game.end({ title: won ? '🎉 You Won!' : 'CPU Wins', sub: `Final score: ${playerScore} — ${cpuScore}` });
-        announce(won ? 'You won the match.' : 'The CPU won the match.');
+        game.end({ title: won ? (config.remix.twoPlayer ? '🎉 Player 1 Wins!' : '🎉 You Won!') : `${them} Wins`, sub: `Final score: ${playerScore} — ${cpuScore}` });
+        announce(won ? 'The left paddle won the match.' : `${them} won the match.`);
         return;
       }
+      GameTutorial.sound.play(toPlayer ? 'good' : 'bad');
       serve(toPlayer ? 1 : -1);  // serve toward whoever just lost the point
       updateHUD();
     }
 
     function update(g) {
       // 1. INPUT
-      if (g.held('up'))   player.y -= 5;
-      if (g.held('down')) player.y += 5;
-      player.y = clamp(player.y, 0, H - PADDLE_H);
+      const two = config.remix.twoPlayer;   // 2P: W/S is player 1, arrows are player 2
+      if (g.held('up') || (!two && g.held('p2up')))     player.y -= 5;
+      if (g.held('down') || (!two && g.held('p2down'))) player.y += 5;
+      player.y = clamp(player.y, 0, H - player.h);
 
-      // 2. AI
-      const dy = ball.y - (cpu.y + PADDLE_H / 2);
-      cpu.y = clamp(cpu.y + clamp(dy, -config.aiSpeed, config.aiSpeed), 0, H - PADDLE_H);
+      // 2. AI (or a second player's keys, in the Two-player remix)
+      if (two) {
+        if (g.held('p2up'))   cpu.y -= 5;
+        if (g.held('p2down')) cpu.y += 5;
+        cpu.y = clamp(cpu.y, 0, H - PADDLE_H);
+      } else {
+        const dy = ball.y - (cpu.y + PADDLE_H / 2);
+        cpu.y = clamp(cpu.y + clamp(dy, -config.aiSpeed, config.aiSpeed), 0, H - PADDLE_H);
+      }
 
       if (flash.player > 0) flash.player--;
       if (flash.cpu > 0) flash.cpu--;
@@ -586,8 +603,12 @@
       // 3. PHYSICS
       ball.x += ball.vx;
       ball.y += ball.vy;
-      if (ball.y < BALL_R)     { ball.y = BALL_R;     ball.vy = Math.abs(ball.vy); }
-      if (ball.y > H - BALL_R) { ball.y = H - BALL_R; ball.vy = -Math.abs(ball.vy); }
+      if (!g.reducedMotion) {
+        trail.push({ x: ball.x, y: ball.y });
+        if (trail.length > 10) trail.shift();
+      }
+      if (ball.y < BALL_R)     { ball.y = BALL_R;     ball.vy = Math.abs(ball.vy); GameTutorial.sound.play('wall'); }
+      if (ball.y > H - BALL_R) { ball.y = H - BALL_R; ball.vy = -Math.abs(ball.vy); GameTutorial.sound.play('wall'); }
       if (ball.vx < 0 && collides(ball, player)) bounceOff(player, 1);
       if (ball.vx > 0 && collides(ball, cpu))    bounceOff(cpu, -1);
 
@@ -596,7 +617,7 @@
       else if (ball.x > W + BALL_R) point(true);
     }
 
-    function render(ctx) {
+    function render(ctx, g) {
       ctx.fillStyle = bgThemes[config.bg] || '#0a0a1f';
       ctx.fillRect(0, 0, W, H);
 
@@ -606,7 +627,7 @@
       ctx.setLineDash([]);
 
       // big faint score digits, arcade style
-      ctx.font = '700 44px Inter, system-ui, sans-serif';
+      ctx.font = '700 44px "IBM Plex Sans", system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = flash.player ? 'rgba(196,181,253,0.55)' : 'rgba(255,255,255,0.1)';
@@ -614,12 +635,41 @@
       ctx.fillStyle = flash.cpu ? 'rgba(252,165,165,0.55)' : 'rgba(255,255,255,0.1)';
       ctx.fillText(cpuScore, W / 2 + 50, 14);
 
-      ctx.fillStyle = '#c4b5fd';
-      ctx.fillRect(player.x, player.y, player.w, player.h);
+      if (g.xray) {
+        const segCols = ['#f43f5e', '#fb923c', '#facc15', '#38bdf8', '#38bdf8', '#facc15', '#fb923c', '#f43f5e'];
+        const sh = player.h / 8;
+        segCols.forEach((col, i) => {
+          ctx.fillStyle = col;
+          ctx.fillRect(player.x, player.y + i * sh, player.w, sh);
+        });
+        ctx.strokeStyle = 'rgba(252,165,165,0.65)';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(cpu.x + cpu.w / 2, cpu.y + cpu.h / 2); ctx.lineTo(ball.x, ball.y); ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        ctx.fillStyle = '#c4b5fd';
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+      }
       ctx.fillStyle = '#e2e8f0';
       ctx.fillRect(cpu.x, cpu.y, cpu.w, cpu.h);
 
+      trail.forEach((pt, idx) => {
+        ctx.fillStyle = `rgba(196,181,253,${(idx / trail.length) * 0.25})`;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2); ctx.fill();
+      });
+
+      if (g.xray) {
+        ctx.strokeStyle = '#fde047';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(ball.x, ball.y); ctx.lineTo(ball.x + ball.vx * 10, ball.y + ball.vy * 10); ctx.stroke();
+        ctx.fillStyle = '#7dd3fc';
+        ctx.font = '600 10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`X-RAY · v=(${ball.vx.toFixed(1)}, ${ball.vy.toFixed(1)}) · aiCap=${config.aiSpeed}`, 8, 8);
+      }
+
       ctx.font = '24px sans-serif';
+      ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       if (serveTimer > 0 && Math.floor(serveTimer / 6) % 2 === 0 && !game.reducedMotion) return;
       ctx.fillText(config.ball, ball.x, ball.y);
@@ -635,12 +685,13 @@
       slug: 'pong',
       canvas: $('pong-canvas'),
       width: W, height: H,
-      actions: { up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'] },
+      xray: true,
+      actions: { up: ['KeyW'], down: ['KeyS'], p2up: ['ArrowUp'], p2down: ['ArrowDown'] },
       touch: { buttons: [
         { label: '▲ Up', aria: 'Move paddle up', action: 'up', hold: true },
         { label: '▼ Down', aria: 'Move paddle down', action: 'down', hold: true }
       ] },
-      onPointerMove: (x, y) => { player.y = clamp(y - PADDLE_H / 2, 0, H - PADDLE_H); },
+      onPointerMove: (x, y) => { player.y = clamp(y - player.h / 2, 0, H - player.h); },
       readyTitle: '🏓 Pong',
       readySub: `First to ${config.winScore} wins. The CPU is fast but not perfect.`,
       keysHint: '<kbd>↑</kbd> <kbd>↓</kbd> or <kbd>W</kbd> <kbd>S</kbd> · mouse · touch',

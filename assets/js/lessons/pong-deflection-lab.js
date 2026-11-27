@@ -12,8 +12,6 @@
   if (!canvas) return;
 
   const ctx = canvas.getContext('2d');
-  // Waits while the court is scrolled away or the tab is hidden.
-  const nextFrame = (cb) => (window.SimKit ? SimKit.frame(canvas, cb) : requestAnimationFrame(cb));
   const modeBtns = [...document.querySelectorAll('[data-pong-lab-mode]')];
   const slider = document.getElementById('pong-impact-slider');
   const sliderOffsetOut = document.getElementById('pong-impact-offset');
@@ -26,8 +24,22 @@
   const insightBox = document.getElementById('pong-lab-insight');
 
   const W = 540, H = 260;
-  canvas.width = W;
-  canvas.height = H;
+  let dprScale = 1;
+  canvas.style.aspectRatio = W + ' / ' + H;
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const cssW = canvas.clientWidth || W;
+    dprScale = (cssW / W) * dpr;
+    const bw = Math.round(W * dprScale);
+    const bh = Math.round(H * dprScale);
+    if (canvas.width !== bw || canvas.height !== bh) {
+      canvas.width = bw;
+      canvas.height = bh;
+    }
+  }
+  if (window.ResizeObserver) new ResizeObserver(resizeCanvas).observe(canvas);
+  else window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
 
   // Paddle specifications (160px tall, 14px wide, centered vertically)
   const PADDLE_W = 14;
@@ -171,9 +183,9 @@
     }
   });
 
-  // Animation Loop
-  function step() {
-    // Physics update
+  // Animation Loop (fixed 60 Hz timestep, pauses automatically when off-screen)
+  const STEP = 1 / 60;
+  function stepPhysics() {
     if (ball.active) {
       ball.x += ball.vx;
       ball.y += ball.vy;
@@ -194,16 +206,13 @@
       // Left Paddle collision check
       const paddleRight = PADDLE_X + PADDLE_W;
       if (ball.vx < 0 && ball.x - ball.r <= paddleRight && ball.x + ball.r >= PADDLE_X) {
-        // Hit within paddle vertical bounds?
         if (ball.y >= PADDLE_Y - 4 && ball.y <= PADDLE_Y + PADDLE_H + 4) {
           ball.x = paddleRight + ball.r;
           ball.bounces++;
 
           if (currentMode === 'naive') {
-            // Naive physics: pure normal reflection (vx inverted, vy unchanged)
             ball.vx = Math.abs(ball.vx);
           } else {
-            // Alcorn 8-Segment Deflection
             const seg = SEG_CONFIG[currentSegment - 1];
             ball.vx = seg.vx;
             ball.vy = seg.vy;
@@ -215,10 +224,6 @@
       if (ball.x + ball.r >= W - 14) {
         ball.x = W - 14 - ball.r;
         ball.vx = -Math.abs(ball.vx);
-        // Add subtle variation if moving in Alcorn mode so rallies feel organic
-        if (currentMode === 'alcorn') {
-          // preserve general return
-        }
       }
 
       // Ball misses paddle (if misaligned)
@@ -226,13 +231,10 @@
         resetBall();
       }
     }
-
-    // Render Frame
-    render();
-    nextFrame(step);
   }
 
   function render() {
+    ctx.setTransform(dprScale, 0, 0, dprScale, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
     // Court boundaries
@@ -343,29 +345,29 @@
     }
   }
 
-  // Initialize
+  // Initialize with SimKit.loop when available so off-screen lab pauses
   updateTelemetry();
   launchTest();
-  nextFrame(step);
-
-  // =========================================================================
-  // 2. SELF-CHECK QUIZ COMPONENT
-  // =========================================================================
-  const quizCards = [...document.querySelectorAll('.pong-quiz-card')];
-  quizCards.forEach(card => {
-    const buttons = [...card.querySelectorAll('.pong-quiz-options button')];
-    const feedbackEl = card.querySelector('.pong-quiz-feedback');
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        buttons.forEach(b => b.removeAttribute('data-selected'));
-        const isCorrect = btn.dataset.answer === 'correct';
-        btn.dataset.selected = isCorrect ? 'correct' : 'wrong';
-        if (feedbackEl) {
-          feedbackEl.textContent = btn.dataset.explain || '';
-        }
-      });
-    });
-  });
-
+  let acc = 0;
+  function frame(dt) {
+    acc += Math.min(dt, 0.25);
+    let steps = 0;
+    while (acc >= STEP && steps < 5) {
+      stepPhysics();
+      acc -= STEP;
+      steps++;
+    }
+    render();
+  }
+  if (window.SimKit && window.SimKit.loop) {
+    window.SimKit.loop(frame, { el: window.SimKit.stage ? window.SimKit.stage(canvas) : canvas });
+  } else {
+    let last = null;
+    (function tick(t) {
+      frame(last == null ? 0 : (t - last) / 1000);
+      last = t;
+      requestAnimationFrame(tick);
+    }(performance.now()));
+  }
 })();
 

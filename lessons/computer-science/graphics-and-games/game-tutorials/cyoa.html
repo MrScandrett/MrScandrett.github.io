@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tutorial: Choose-Your-Own-Adventure · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Tiny-loop tutorial — play and customize a real Choose-Your-Own-Adventure with pre-built branching stories, see the exact architecture powering it, then build the same loop yourself in Scratch or from real scratch in JavaScript." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
@@ -65,6 +62,52 @@
           <p class="cl-lede">This is the exact <strong>Choose-Your-Own-Adventure</strong> archetype from <a href="../game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> — already built and running below. Play it, then swap the story and protagonist using the panel underneath. You can't break the loop itself; that part is locked. Once you've tuned a version you like, you'll build this same architecture two more times: with Scratch's blocks, then from real scratch in JavaScript.</p>
         </section>
 
+        <!-- Play + Customize -->
+        <section class="cl-card">
+          <h2>🎮 Play &amp; Customize</h2>
+          <p>Read the scene, then click a choice (or press <strong>1</strong> / <strong>2</strong>). Every choice leads somewhere, and some endings are better than others. Each story has four endings. Can you find them all? The HUD tracks which ones you've found.</p>
+
+          <div class="game-wrap">
+            <div class="game-hud" id="g-hud">
+              <span class="hud-score" id="g-score">Lost in Space</span>
+              <span class="hud-group"><span id="g-lives">Scene 1</span><span class="hud-best" id="g-found"></span></span>
+            </div>
+            <div class="game-stage" id="g-stage">
+              <div class="cyoa-avatar" id="g-avatar">🧑‍🚀</div>
+              <p class="cyoa-scene" id="g-scene" aria-live="polite">Loading…</p>
+              <div class="cyoa-choices" id="g-choices"></div>
+              <p class="cyoa-path" id="g-path" aria-label="Your path so far"></p>
+            </div>
+          </div>
+
+          <div class="config-panel" id="config-panel">
+            <h3>Tune the Game (limited, on purpose)</h3>
+            <p class="config-lede"><strong>Content</strong> settings change how it looks and apply instantly. <strong>Rule</strong> settings change how it plays, so the round restarts.</p>
+            <div class="config-grid">
+              <div class="config-field">
+                <label for="c-story">Story</label>
+                <select id="c-story" data-cfg="story" data-peek="cfg-story" data-rule>
+                  <option value="space">🚀 Lost in Space</option>
+                  <option value="forest">🌲 Forest Temple</option>
+                  <option value="time">⏳ Time Travel Lab</option>
+                </select>
+              </div>
+              <div class="config-field">
+                <label for="c-avatar">Protagonist Sprite</label>
+                <select id="c-avatar" data-cfg="avatar" data-peek="cfg-avatar">
+                  <option value="🧑‍🚀">🧑‍🚀 Astronaut</option>
+                  <option value="🧝">🧝 Explorer</option>
+                  <option value="🧑‍🔬">🧑‍🔬 Scientist</option>
+                  <option value="🤖">🤖 Robot</option>
+                </select>
+              </div>
+            </div>
+            <div class="config-actions"></div>
+            <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how branching works" or "how endings are detected." That's the engine — the part every version of this game shares. You're only choosing which story (content) plays through it. That's the limit, on purpose.</p>
+            <p class="config-note"><strong>What the two selects actually touch in the engine:</strong> <strong>Story</strong> only decides which entire scene-graph object <code>stories[config.story]</code> gets loaded — "Lost in Space," "Forest Temple," and "Time Travel Lab" have completely different scenes and endings, but they're all shaped exactly the same way (a <code>start</code> id, scenes with <code>choices</code>, endings marked <code>ending: true</code>), which is why the same <code>goTo()</code> function can walk any of them. <strong>Protagonist Sprite</strong> only sets <code>avatarEl.textContent</code> — it's never read by the branching logic at all.</p>
+          </div>
+        </section>
+
         <!-- Architecture -->
         <section class="cl-card">
           <h2>🗺️ The Architecture</h2>
@@ -106,49 +149,93 @@
           </ol>
         </section>
 
-        <!-- Play + Customize -->
+        <!-- Origin -->
         <section class="cl-card">
-          <h2>🎮 Play &amp; Customize</h2>
-          <p>Read the scene, then click a choice (or press <strong>1</strong> / <strong>2</strong>). Every choice leads somewhere, and some endings are better than others. Each story has four endings. Can you find them all? The HUD tracks which ones you've found.</p>
+          <h2>🏛️ The Origin: Interactive Fiction &amp; Branching Narratives (1976–2009)</h2>
+          <p>Long before 3D graphics, writers and programmers built rich interactive worlds using nothing but text, a dictionary of connected rooms, and player choices.</p>
+          <div class="gt-origin-grid">
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1976 · Will Crowther</span>
+              <h3><em>Colossal Cave Adventure</em></h3>
+              <p>Mapped real Kentucky cave passages into a directed graph of text rooms, inventing interactive fiction and state-driven exploration on mainframe terminals.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1979 · Bantam Books</span>
+              <h3><em>Choose Your Own Adventure</em></h3>
+              <p>Edward Packard and R. A. Montgomery brought hypertext branching to paperbacks ("Turn to page 42")—teaching a generation how non-linear graphs work.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">2009 · Chris Klimas</span>
+              <h3><em>Twine</em> &amp; Modern Visual Novels</h3>
+              <p>Gave writers a live node-and-arrow graph editor on top of HTML/JS, proving story state machines could power indie hits without heavy game engines.</p>
+            </article>
+          </div>
+        </section>
 
-          <div class="game-wrap">
-            <div class="game-hud">
-              <span class="hud-score" id="g-score">Lost in Space</span>
-              <span class="hud-group"><span id="g-lives">Scene 1</span><span class="hud-best" id="g-found"></span></span>
+        <!-- Deep Dive Lab -->
+        <section class="cl-card">
+          <h2>📐 Deep Dive: Scene Graphs &amp; Combinatorial Explosion</h2>
+          <p>Every story above is a <strong>directed graph</strong>: scenes are nodes and choices are edges. Notice below how switching stories or making choices above highlights your exact position in the live graph—and switch to <strong>Branching Explosion</strong> to see why writers fold branches back together instead of growing a pure tree!</p>
+
+          <div class="gt-lab" id="cyoa-graph-lab">
+            <div class="gt-lab-header">
+              <div>
+                <h3 class="gt-lab-title">Interactive Story Graph Inspector &amp; Branching Growth Lab</h3>
+                <p class="gt-lab-subtitle">Click any node in Live Story Graph to inspect its text &amp; edges, or explore why pure trees explode as b^d</p>
+              </div>
+              <div class="gt-mode-toggle" role="group" aria-label="Story graph view">
+                <button type="button" class="gt-mode-btn" data-lab-mode="live" aria-pressed="true">🗺️ Live Story Graph</button>
+                <button type="button" class="gt-mode-btn" data-lab-mode="tree" aria-pressed="false">📈 Branching Explosion</button>
+              </div>
             </div>
-            <div class="game-stage" id="g-stage">
-              <div class="cyoa-avatar" id="g-avatar">🧑‍🚀</div>
-              <p class="cyoa-scene" id="g-scene" aria-live="polite">Loading…</p>
-              <div class="cyoa-choices" id="g-choices"></div>
-              <p class="cyoa-path" id="g-path" aria-label="Your path so far"></p>
+            <div class="gt-lab-canvas-wrap">
+              <canvas id="cyoa-lab-canvas" width="540" height="250" aria-label="Interactive story node graph and branching growth chart"></canvas>
             </div>
+            <div class="gt-lab-controls">
+              <div id="cyoa-lab-ctrl-live">
+                <span style="font-size:0.78rem;color:#94a3b8;">Synced live with the game above — click any scene box on the graph to inspect it.</span>
+              </div>
+              <div class="gt-lab-sliders" id="cyoa-lab-ctrl-tree" hidden>
+                <div class="gt-lab-slider-field">
+                  <label for="cyoa-lab-branch">Choices / Scene <output id="cyoa-lab-branch-out" for="cyoa-lab-branch">2 choices</output></label>
+                  <input type="range" id="cyoa-lab-branch" min="2" max="4" step="1" value="2" />
+                </div>
+                <div class="gt-lab-slider-field">
+                  <label for="cyoa-lab-depth">Story Depth <output id="cyoa-lab-depth-out" for="cyoa-lab-depth">4 layers</output></label>
+                  <input type="range" id="cyoa-lab-depth" min="2" max="6" step="1" value="4" />
+                </div>
+                <div class="gt-lab-slider-field" style="display:flex;align-items:center;gap:0.45rem;padding-top:0.8rem;">
+                  <input type="checkbox" id="cyoa-lab-fold" />
+                  <label for="cyoa-lab-fold" style="margin:0;cursor:pointer;">Foldback Graph (Merge Hubs)</label>
+                </div>
+              </div>
+            </div>
+            <div class="gt-telemetry-grid">
+              <div class="gt-telem-card"><span class="gt-telem-label">Story / Formula</span><span class="gt-telem-val" id="cyoa-telem-a">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Node / Active</span><span class="gt-telem-val" id="cyoa-telem-b">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Total Scenes</span><span class="gt-telem-val" id="cyoa-telem-c">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Endings</span><span class="gt-telem-val" id="cyoa-telem-d">—</span></div>
+            </div>
+            <div class="gt-lab-insight" id="cyoa-lab-insight" aria-live="polite">Play a choice above or click any node in the graph to inspect its edges.</div>
           </div>
 
-          <div class="config-panel" id="config-panel">
-            <h3>Tune the Game (limited, on purpose)</h3>
-            <p class="config-lede"><strong>Content</strong> settings change how it looks and apply instantly. <strong>Rule</strong> settings change how it plays, so the round restarts.</p>
-            <div class="config-grid">
-              <div class="config-field">
-                <label for="c-story">Story</label>
-                <select id="c-story" data-cfg="story" data-peek="cfg-story" data-rule>
-                  <option value="space">🚀 Lost in Space</option>
-                  <option value="forest">🌲 Forest Temple</option>
-                  <option value="time">⏳ Time Travel Lab</option>
-                </select>
-              </div>
-              <div class="config-field">
-                <label for="c-avatar">Protagonist Sprite</label>
-                <select id="c-avatar" data-cfg="avatar" data-peek="cfg-avatar">
-                  <option value="🧑‍🚀">🧑‍🚀 Astronaut</option>
-                  <option value="🧝">🧝 Explorer</option>
-                  <option value="🧑‍🔬">🧑‍🔬 Scientist</option>
-                  <option value="🤖">🤖 Robot</option>
-                </select>
-              </div>
+          <div class="gt-compare">
+            <div class="gt-compare-card is-amber">
+              <h3>🟡 Pure Branching Tree (<code>b^d</code>)</h3>
+              <ul>
+                <li>Every choice splits into brand-new, unshared scenes—doubling work every chapter.</li>
+                <li>With 3 choices over 5 chapters, you must write <strong>364 separate scenes</strong>!</li>
+                <li>Hard to maintain pacing or remember earlier choices cleanly.</li>
+              </ul>
             </div>
-            <div class="config-actions"></div>
-            <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how branching works" or "how endings are detected." That's the engine — the part every version of this game shares. You're only choosing which story (content) plays through it. That's the limit, on purpose.</p>
-            <p class="config-note"><strong>What the two selects actually touch in the engine:</strong> <strong>Story</strong> only decides which entire scene-graph object <code>stories[config.story]</code> gets loaded — "Lost in Space," "Forest Temple," and "Time Travel Lab" have completely different scenes and endings, but they're all shaped exactly the same way (a <code>start</code> id, scenes with <code>choices</code>, endings marked <code>ending: true</code>), which is why the same <code>goTo()</code> function can walk any of them. <strong>Protagonist Sprite</strong> only sets <code>avatarEl.textContent</code> — it's never read by the branching logic at all.</p>
+            <div class="gt-compare-card is-sky">
+              <h3>🔵 Foldback &amp; State-Flag Graphs</h3>
+              <ul>
+                <li>Merges separate routes back into shared bottleneck scenes ("diamond" structure).</li>
+                <li>Uses boolean flags (<code>flags.hasKey = true</code>) so later hubs adapt without duplicating scenes.</li>
+                <li>Cycles ("Go back to hallway") turn a one-way tree into an explorable world.</li>
+              </ul>
+            </div>
           </div>
         </section>
 
@@ -202,12 +289,19 @@
         <!-- Remix -->
         <section class="cl-card">
           <h2>🧪 Remix Challenges</h2>
-          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Cards marked <strong>▶ playable</strong> switch the change on in the game above, so you can feel it before you build it. Try the rest in your own copy once you've built it in Lesson 2.</p>
           <div class="gt-remix">
             <details>
               <summary><span class="gt-tier tweak">Tweak</span><span><strong>Add a third choice</strong><small>Content only · zero engine changes</small></span></summary>
               <div class="gt-remix-body">
                 <p>Give the opening scene a third option that leads to a new scene of your own. The engine already loops over <code>scene.choices</code>, so it will draw a third button without being told. Count how many scenes the story has now. Why does adding choices make stories grow so fast?</p>
+                <div class="code-block"><pre>start: { text: <span class="str">'…'</span>, choices: [
+  { label: <span class="str">'Patch the leak yourself'</span>, next: <span class="str">'patch'</span> },
+  { label: <span class="str">'Call mission control for help'</span>, next: <span class="str">'call'</span> },
+  { label: <span class="str">'Read the emergency manual first'</span>, next: <span class="str">'manual'</span> }   <span class="cm">// new</span>
+] },
+manual: { text: <span class="str">'…'</span>, ending: <span class="kw">true</span>, good: <span class="kw">true</span> }              <span class="cm">// new scene</span></pre></div>
+                <button data-remix="third">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -230,6 +324,39 @@ scene.choices.<span class="fn">filter</span>(c =&gt; !c.requires || flags[c.requ
 
         <!-- Build with Blockly -->
         <section class="cl-card" data-game-blockly="cyoa"></section>
+
+        <!-- Check Your Understanding -->
+        <section class="cl-card gt-quiz-section">
+          <h2>🧠 Check Your Understanding</h2>
+          <p>Test your grasp of scene graphs, combinatorial explosion, and state flags:</p>
+          <article class="gt-quiz-card">
+            <h3>Question 1: Why does a pure branching story with 2 choices per scene become hard to write past 6 or 7 chapters?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 1 options">
+              <button type="button" data-answer="wrong" data-explain="JavaScript objects can hold hundreds of thousands of scene keys effortlessly.">Because JavaScript objects only allow 10 scenes</button>
+              <button type="button" data-answer="correct" data-explain="Correct! Every layer multiplies the scenes by 2 (2^d), so 7 chapters of 2 choices already demands 255 separate scenes for one short playthrough.">Because scene count grows exponentially (2^d), doubling the author's writing workload every chapter</button>
+              <button type="button" data-answer="wrong" data-explain="Each scene only shows two buttons regardless of depth.">Because the browser runs out of buttons to draw</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 2: How do professional interactive-fiction writers remember earlier player choices without multiplying scenes?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 2 options">
+              <button type="button" data-answer="correct" data-explain="Correct! Folding branches back to shared hubs and tracking state flags (like hasTorch) lets one scene react differently depending on what you picked earlier.">They merge paths back into shared hub scenes and track boolean state flags (like <code>hasTorch</code>)</button>
+              <button type="button" data-answer="wrong" data-explain="Random endings disconnect player agency from earlier choices.">They pick a random ending when the game starts</button>
+              <button type="button" data-answer="wrong" data-explain="Hiding choices reduces interactivity rather than solving state tracking.">They remove all choices after Scene 1</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 3: What turns a branching tree into a cyclic graph?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 3 options">
+              <button type="button" data-answer="wrong" data-explain="Adding more ending nodes still leaves a tree (directed acyclic graph).">Adding a third ending</button>
+              <button type="button" data-answer="correct" data-explain="Correct! Pointing a choice back to an earlier scene ID creates a cycle, letting players backtrack and explore rooms repeatedly.">A choice whose <code>next</code> points back to an earlier scene ID so players can revisit places</button>
+              <button type="button" data-answer="wrong" data-explain="Swapping the protagonist sprite only changes textContent.">Changing the protagonist's avatar sprite</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+        </section>
 
         <!-- Build it for real -->
         <section class="cl-card">
@@ -273,7 +400,8 @@ scene.choices.<span class="fn">filter</span>(c =&gt; !c.requires || flags[c.requ
           <p class="ll-pane-title">Learning Goals</p>
           <ul class="ll-guide-list">
             <li>Explain what a "core loop" is using the CYOA as an example</li>
-            <li>Read and describe a branch map (structure diagram) for a story</li>
+            <li>Read and trace a live directed scene graph (nodes and edges)</li>
+            <li>Explain why foldback graphs and state flags prevent combinatorial explosion</li>
             <li>Identify which parts of a game are "engine" vs. "content"</li>
             <li>Trace the same architecture across Scratch and JavaScript</li>
           </ul>
@@ -299,6 +427,7 @@ scene.choices.<span class="fn">filter</span>(c =&gt; !c.requires || flags[c.requ
     const sceneEl = $('g-scene');
     const choicesEl = $('g-choices');
     const overlay = GameTutorial.overlay(wrap);
+    GameTutorial.sound.mountToggle($('g-hud'));
 
     const stories = {
       space: {
@@ -399,10 +528,26 @@ scene.choices.<span class="fn">filter</span>(c =&gt; !c.requires || flags[c.requ
       }
     };
 
+    /* Add-a-third-choice remix: pure content, merged into a copy of the story. */
+    const THIRD = {
+      space: { id: 'manual', label: 'Read the emergency manual first', text: "The manual's checklist walks you through a clean repair with oxygen to spare. Calm beat fast. Mission success!", good: true },
+      forest: { id: 'secret', label: 'Search the walls for a third way in', text: "Behind loose stones you find a narrow passage — a dead end. The torches gutter out and you feel your way back, empty-handed.", good: false },
+      time: { id: 'stayPresent', label: 'Stay put and repair the machine', text: "You spend the afternoon tightening every bolt. No adventure today, but your next jump will be perfectly stable.", good: true }
+    };
+    function withRemix(key) {
+      const story = stories[key], x = THIRD[key];
+      if (!config.remix.third || !x) return story;
+      const start = story.scenes[story.start];
+      const scenes = Object.assign({}, story.scenes, { [x.id]: { text: x.text, ending: true, good: x.good } });
+      scenes[story.start] = Object.assign({}, start, { choices: start.choices.concat({ label: x.label, next: x.id }) });
+      return Object.assign({}, story, { scenes });
+    }
+
     let config;
     let currentStory, sceneCount, path;
 
     const endingsOf = story => Object.keys(story.scenes).filter(id => story.scenes[id].ending);
+    const foundHere = () => found(config.story).filter(id => currentStory.scenes[id] && currentStory.scenes[id].ending);
     function found(storyKey) {
       try { return JSON.parse(localStorage.getItem('gt-cyoa-' + storyKey)) || []; } catch (e) { return []; }
     }
@@ -413,11 +558,17 @@ scene.choices.<span class="fn">filter</span>(c =&gt; !c.requires || flags[c.requ
       return list;
     }
     function updateFound() {
-      $('g-found').textContent = `Endings ${found(config.story).length}/${endingsOf(currentStory).length}`;
+      $('g-found').textContent = `Endings ${foundHere().length}/${endingsOf(currentStory).length}`;
+    }
+
+    function emitGraphState(sceneId) {
+      const detail = { storyKey: config.story, story: currentStory, sceneId, path: path.slice(), found: foundHere() };
+      window.__gtCyoaState = detail;
+      window.dispatchEvent(new CustomEvent('gt:cyoa-state', { detail }));
     }
 
     function reset(moveFocus) {
-      currentStory = stories[config.story];
+      currentStory = withRemix(config.story);
       sceneCount = 1;
       path = [];
       overlay.hide();
@@ -431,6 +582,7 @@ scene.choices.<span class="fn">filter</span>(c =&gt; !c.requires || flags[c.requ
     function goTo(sceneId, countAsStep, moveFocus) {
       if (countAsStep) sceneCount++;
       const scene = currentStory.scenes[sceneId];
+      emitGraphState(sceneId);
 
       // 1. an ending scene stops the loop
       if (scene.ending) { endGame(sceneId, scene); return; }
@@ -453,6 +605,7 @@ scene.choices.<span class="fn">filter</span>(c =&gt; !c.requires || flags[c.requ
         btn.append(key, choice.label);
         btn.addEventListener('click', () => {
           GameTutorial.markPlayed('cyoa');
+          GameTutorial.sound.play('click');
           path.push(choice.label);
           goTo(choice.next, true, wrap.contains(document.activeElement));
         });
@@ -462,10 +615,13 @@ scene.choices.<span class="fn">filter</span>(c =&gt; !c.requires || flags[c.requ
     }
 
     function endGame(sceneId, scene) {
-      const before = found(config.story).length;
-      const list = remember(config.story, sceneId);
+      const before = foundHere().length;
+      remember(config.story, sceneId);
+      const list = foundHere();
       const total = endingsOf(currentStory).length;
       updateFound();
+      emitGraphState(sceneId);
+      GameTutorial.sound.play(scene.good ? 'win' : 'lose');
       const isNew = list.length > before;
       const tally = list.length === total
         ? `You've found all ${total} endings in this story. Try another story!`
@@ -499,6 +655,7 @@ scene.choices.<span class="fn">filter</span>(c =&gt; !c.requires || flags[c.requ
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
+<script src="../../../../assets/js/lessons/game-tutorial-labs.js" defer></script>
 <script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>

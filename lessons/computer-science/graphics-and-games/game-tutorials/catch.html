@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tutorial: Catch Game · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Tiny-loop tutorial — play and customize a real Catch Game with pre-built sprites, see the exact architecture powering it, then build the same loop yourself in Scratch or from real scratch in JavaScript." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
@@ -52,30 +49,6 @@
           <p class="cl-lede">This is the exact <strong>Catch Game</strong> archetype from <a href="../game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> — already built and running below. Play it, then swap the pre-built sprites, colors, and difficulty using the panel underneath. You can't break the loop itself; that part is locked. Once you've tuned a version you like, you'll build this same architecture two more times: with Scratch's blocks, then from real scratch in JavaScript.</p>
         </section>
 
-        <!-- Architecture -->
-        <section class="cl-card">
-          <h2>🗺️ The Architecture</h2>
-          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Catch Game's architecture:</p>
-
-          <div class="stages-flow">
-            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Move to catch the good things falling from the sky, avoid the bad ones.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Move → item falls → touch it → score or life changes → repeat.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Player movement, item spawner, collision check, score/lives tracker.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the score goal to win, run out of lives to lose.</small></div>
-          </div>
-
-          <p><strong>The four systems, in order of execution every frame:</strong></p>
-          <ol class="systems-list">
-            <li><strong>Input system</strong> — reads which arrow key is held and moves the player rectangle left/right.</li>
-            <li><strong>Spawner system</strong> — every ~1 second, drops a new item (good or bad) at a random x position at the top.</li>
-            <li><strong>Physics system</strong> — every falling item's y position increases each frame (gravity).</li>
-            <li><strong>Collision system</strong> — checks every item against the player's box (AABB); good touch → +1 score, bad touch or missed floor → −1 life.</li>
-          </ol>
-        </section>
-
         <!-- Play + Customize -->
         <section class="cl-card">
           <h2>🎮 Play &amp; Customize</h2>
@@ -84,7 +57,7 @@
           <div class="game-wrap">
             <div class="game-hud">
               <span class="hud-score" id="g-score">Score: 0</span>
-              <span class="hud-group"><span class="hud-best" id="g-best"></span><span class="hud-lives" id="g-lives">♥ ♥ ♥</span></span>
+              <span class="hud-group"><span id="g-streak">Streak 0</span><span class="hud-best" id="g-best"></span><span class="hud-lives" id="g-lives">♥ ♥ ♥</span></span>
             </div>
             <canvas id="catch-canvas" width="480" height="260" aria-label="Catch game. Use left and right arrows, A and D, the mouse, or the touch buttons to move." aria-describedby="catch-status"></canvas>
           </div>
@@ -145,6 +118,113 @@
           </div>
         </section>
 
+        <!-- Architecture -->
+        <section class="cl-card">
+          <h2>🗺️ The Architecture</h2>
+          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Catch Game's architecture:</p>
+
+          <div class="stages-flow">
+            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Move to catch the good things falling from the sky, avoid the bad ones.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Move → item falls → touch it → score or life changes → repeat.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Player movement, item spawner, collision check, score/lives tracker.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the score goal to win, run out of lives to lose.</small></div>
+          </div>
+
+          <p><strong>The four systems, in order of execution every frame:</strong></p>
+          <ol class="systems-list">
+            <li><strong>Input system</strong> — reads which arrow key is held and moves the player rectangle left/right.</li>
+            <li><strong>Spawner system</strong> — every ~1 second, drops a new item (good or bad) at a random x position at the top.</li>
+            <li><strong>Physics system</strong> — every falling item's y position increases each frame (gravity).</li>
+            <li><strong>Collision system</strong> — checks every item against the player's box (AABB); good touch → +1 score, bad touch → −1 life, and missing a good item resets your catch streak.</li>
+          </ol>
+        </section>
+
+        <!-- Origin -->
+        <section class="cl-card">
+          <h2>🏛️ The Origin: Catch-and-Dodge Arcade Loops (1980–Present)</h2>
+          <p>Moving horizontally along the bottom edge to intercept falling objects is one of video gaming's oldest and clearest verbs. Players understand the rules in two seconds without reading a single word of instructions.</p>
+          <div class="gt-origin-grid">
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1980 · Nintendo</span>
+              <h3>Gunpei Yokoi's <em>Game &amp; Watch: Ball</em></h3>
+              <p>On a tiny LCD calculator screen with fixed black segments, players shifted two hands left and right to juggle falling balls—proving pure timing and spatial anticipation needed zero scrolling worlds.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1981 · Atari 2600</span>
+              <h3>Larry Kaplan's <em>Kaboom!</em></h3>
+              <p>An analog paddle dial let players sweep buckets at lightning speed to catch falling bombs while accelerating spawn rates pushed reaction time to its limit.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">Today · Arcade Fairness</span>
+              <h3>Risk vs. Reward Spawning</h3>
+              <p>Mixing collectible stars with hazardous bombs forces split-second decisions: should you dash across the screen for a star, or hold position to dodge a bomb right above it?</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Deep Dive Lab -->
+        <section class="cl-card">
+          <h2>📐 The Physics of Hitboxes: AABB Collision &amp; Arcade Fairness</h2>
+          <p>In 2D games, rectangular sprites are tested for overlap using <strong>Axis-Aligned Bounding Boxes (AABB)</strong>—four fast inequalities checking X and Y ranges. Professional arcade games shrink hazard hitboxes to ~70% of the visible sprite so grazing corners feels fair instead of frustrating.</p>
+
+          <div class="gt-lab" id="catch-aabb-lab">
+            <div class="gt-lab-header">
+              <div>
+                <h3 class="gt-lab-title">Interactive AABB Collision &amp; Hitbox Forgiveness Lab</h3>
+                <p class="gt-lab-subtitle">Drag the bomb across the robot or use the sliders to compare full-sprite boxes vs. arcade 70% hitboxes</p>
+              </div>
+              <div class="gt-mode-toggle" role="group" aria-label="Hitbox sizing mode">
+                <button type="button" class="gt-mode-btn" data-lab-mode="forgiving" aria-pressed="true">✓ Arcade 70% Hitbox</button>
+                <button type="button" class="gt-mode-btn" data-lab-mode="full" aria-pressed="false">100% Full Sprite Box</button>
+              </div>
+            </div>
+            <div class="gt-lab-canvas-wrap">
+              <canvas id="catch-lab-canvas" width="540" height="240" aria-label="Interactive AABB collision box simulator"></canvas>
+            </div>
+            <div class="gt-lab-controls">
+              <div class="gt-lab-sliders">
+                <div class="gt-lab-slider-field">
+                  <label for="catch-lab-x">Item X Position <output id="catch-lab-x-out" for="catch-lab-x">256 px</output></label>
+                  <input type="range" id="catch-lab-x" min="160" max="340" step="2" value="256" />
+                </div>
+                <div class="gt-lab-slider-field">
+                  <label for="catch-lab-y">Item Y Position <output id="catch-lab-y-out" for="catch-lab-y">152 px</output></label>
+                  <input type="range" id="catch-lab-y" min="40" max="195" step="2" value="152" />
+                </div>
+              </div>
+            </div>
+            <div class="gt-telemetry-grid">
+              <div class="gt-telem-card"><span class="gt-telem-label">AABB Result</span><span class="gt-telem-val" id="catch-telem-overlap">SAFE</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">X-Axis Overlap</span><span class="gt-telem-val" id="catch-telem-x">TRUE</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Y-Axis Overlap</span><span class="gt-telem-val" id="catch-telem-y">FALSE</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Catchable Range</span><span class="gt-telem-val" id="catch-telem-range">±30 px</span></div>
+            </div>
+            <div class="gt-lab-insight" id="catch-lab-insight" aria-live="polite">Drag the bomb near the robot's corner to test hitbox forgiveness.</div>
+          </div>
+
+          <div class="gt-compare">
+            <div class="gt-compare-card is-amber">
+              <h3>🟡 Naive Sprite-Edge Collision</h3>
+              <ul>
+                <li>Tests the full emoji/sprite bounding rectangle including transparent corners.</li>
+                <li>Near-misses trigger unfair hits when corners barely graze empty space.</li>
+                <li>Randomly spawning items without spacing checks can drop overlapping hazards.</li>
+              </ul>
+            </div>
+            <div class="gt-compare-card is-sky">
+              <h3>🔵 Arcade-Tuned Catch Engine</h3>
+              <ul>
+                <li>Shrinks hazard hitboxes (~70%) so players feel clever dodging by a hair. The game above does this: a bad item's box is 20 px inside its 28 px sprite, while good items keep the full 28 px so catches feel generous.</li>
+                <li>Tracks a <strong>reachability cone</strong>: fall time × player speed limits how fast items may drop.</li>
+                <li>Turn on <strong>🔍 X-Ray</strong> in the game HUD above to see live AABB boxes while you play!</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         <!-- Peek at the code -->
         <section class="cl-card">
           <h2>👀 Peek at the Code</h2>
@@ -195,13 +275,14 @@
         <!-- Remix -->
         <section class="cl-card">
           <h2>🧪 Remix Challenges</h2>
-          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Cards marked <strong>▶ playable</strong> switch the change on in the game above, so you can feel it before you build it. Try the rest in your own copy once you've built it in Lesson 2.</p>
           <div class="gt-remix">
             <details>
               <summary><span class="gt-tier tweak">Tweak</span><span><strong>Speed ramp</strong><small>Movement system · one line</small></span></summary>
               <div class="gt-remix-body">
                 <p>Right now the game is exactly as hard at 9 points as at 0. Make items fall faster as your score climbs, so the game gets harder as you get better.</p>
                 <div class="code-block"><pre>items.<span class="fn">forEach</span>(i =&gt; i.y += config.speed + score * <span class="num">0.2</span>);</pre></div>
+                <button data-remix="speedRamp">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -212,6 +293,7 @@
 <span class="kw">const</span> type = roll &lt; <span class="num">0.05</span> ? <span class="str">'heart'</span> : roll &lt; <span class="num">0.65</span> ? <span class="str">'good'</span> : <span class="str">'bad'</span>;
 <span class="cm">// …then in the collision check:</span>
 <span class="kw">if</span> (i.type === <span class="str">'heart'</span>) lives = <span class="fn">Math.min</span>(lives + <span class="num">1</span>, <span class="num">5</span>);</pre></div>
+                <button data-remix="heart">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -225,6 +307,39 @@
 
         <!-- Build with Blockly -->
         <section class="cl-card" data-game-blockly="catch"></section>
+
+        <!-- Check Your Understanding -->
+        <section class="cl-card gt-quiz-section">
+          <h2>🧠 Check Your Understanding</h2>
+          <p>Test your grasp of AABB collision, arcade fairness, and the Catch Game loop:</p>
+          <article class="gt-quiz-card">
+            <h3>Question 1: What must be true for two Axis-Aligned Bounding Boxes (AABB) to collide?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 1 options">
+              <button type="button" data-answer="wrong" data-explain="One axis alone is not enough—an item high in the sky can share the same X column without touching the player.">Only their X ranges need to overlap</button>
+              <button type="button" data-answer="correct" data-explain="Correct! AABB collision requires BOTH the horizontal (X) intervals AND the vertical (Y) intervals to overlap simultaneously.">Both their X intervals AND their Y intervals must overlap at the same time</button>
+              <button type="button" data-answer="wrong" data-explain="Center pixels rarely align exactly; games test rectangle overlap instead.">Their exact center coordinates must be identical</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 2: Why do arcade games often make hazard hitboxes slightly smaller than the visible sprite?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 2 options">
+              <button type="button" data-answer="correct" data-explain="Correct! Transparent corners around round sprites like bombs would otherwise cause frustrating hits. Shrinking hazard hitboxes makes near-misses feel fair and rewarding.">So transparent corners don't cause unfair hits and close dodges feel rewarding</button>
+              <button type="button" data-answer="wrong" data-explain="AABB math takes the same 4 comparisons regardless of box size.">Smaller boxes run faster on the CPU</button>
+              <button type="button" data-answer="wrong" data-explain="Render order is independent of hitbox dimensions.">To stop emojis from drawing on top of the background</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 3: When you raise Fall Speed in the Catch Game, why do items also appear more frequently?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 3 options">
+              <button type="button" data-answer="wrong" data-explain="The game runs at a locked 60 Hz timestep on every screen.">The browser doubles the frame rate</button>
+              <button type="button" data-answer="correct" data-explain="Correct! The engine computes spawnRate = max(70 - speed * 8, 25), so higher Fall Speed shortens the delay between spawns as well as increasing downward pixels per tick.">The engine feeds speed into both y-velocity and the spawn timer formula</button>
+              <button type="button" data-answer="wrong" data-explain="Canvas dimensions remain fixed at 480×260.">The canvas shrinks vertically</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+        </section>
 
         <!-- Build it for real -->
         <section class="cl-card">
@@ -265,8 +380,9 @@
           <p class="ll-pane-title">Learning Goals</p>
           <ul class="ll-guide-list">
             <li>Explain what a "core loop" is using the Catch Game as an example</li>
+            <li>Test how AABB overlap checks both X and Y axes simultaneously</li>
+            <li>Explain why arcade games shrink hazard hitboxes for fairer game feel</li>
             <li>Identify which parts of a game are "engine" vs. "content"</li>
-            <li>Tune a working game's difficulty without touching its logic</li>
             <li>Trace the same architecture across Scratch and JavaScript</li>
           </ul>
           <p class="ll-pane-title" style="margin-top:1rem;">Why the Limits?</p>
@@ -292,13 +408,15 @@
     const announce = msg => { $('catch-status').textContent = msg; };
 
     let config;
-    let player, items, pops, score, lives, spawnTimer, hurt;
+    let player, items, pops, sparks, score, streak, lives, spawnTimer, hurt;
 
     function reset() {
       player = { x: W / 2 - 18, y: H - 42, w: 36, h: 36 };
       items = [];
       pops = [];
+      sparks = [];
       score = 0;
+      streak = 0;
       lives = START_LIVES;
       spawnTimer = 0;
       hurt = 0;
@@ -307,26 +425,40 @@
 
     function updateHUD() {
       $('g-score').textContent = 'Score: ' + score;
+      $('g-streak').textContent = 'Streak ' + streak;
       $('g-lives').textContent = '♥ '.repeat(Math.max(lives, 0)).trim() || '—';
       const b = GameTutorial.best('catch', 'score').best;
       $('g-best').textContent = b ? 'Best ' + b : '';
     }
 
     function spawnItem() {
-      const isGood = Math.random() < 0.65;
-      items.push({ x: 20 + Math.random() * (W - 40), y: -20, type: isGood ? 'good' : 'bad' });
+      const roll = Math.random();
+      const type = config.remix.heart && roll < 0.05 ? 'heart' : roll < 0.65 ? 'good' : 'bad';
+      items.push({ x: 20 + Math.random() * (W - 40), y: -20, type });
     }
 
+    // Good items keep their full 28 px box; hazards get a forgiving 20 px (~70%) one.
+    const half = i => i.type === 'bad' ? 10 : 14;
     function collides(a, b) {
-      return a.x < b.x + 14 && a.x + a.w > b.x - 14 &&
-             a.y < b.y + 14 && a.y + a.h > b.y - 14;
+      const r = half(b);
+      return a.x < b.x + r && a.x + a.w > b.x - r &&
+             a.y < b.y + r && a.y + a.h > b.y - r;
     }
 
-    function pop(x, y, text, color) { pops.push({ x, y, text, color, t: 36 }); }
+    function pop(x, y, text, color) {
+      pops.push({ x, y, text, color, t: 36 });
+      if (!game.reducedMotion) {
+        for (let k = 0; k < 6; k++) {
+          const ang = (Math.PI * 2 * k) / 6;
+          sparks.push({ x, y, vx: Math.cos(ang) * 2.2, vy: Math.sin(ang) * 2.2, color, t: 18 });
+        }
+      }
+    }
 
     function finish(won) {
       const record = GameTutorial.best('catch', 'score', score);
       updateHUD();
+      GameTutorial.sound.play(won ? 'win' : 'lose');
       game.end({
         title: won ? '🎉 You Won!' : 'Game Over',
         sub: (won ? `Reached ${config.winScore} points.` : `Final score: ${score}.`) + (record.isNew && score > 0 ? ' New personal best!' : '')
@@ -346,54 +478,102 @@
       if (spawnTimer > spawnRate) { spawnItem(); spawnTimer = 0; }
 
       // 3. MOVE: every falling item down
-      items.forEach(i => { i.y += config.speed; });
+      items.forEach(i => { i.y += config.speed + (config.remix.speedRamp ? score * 0.2 : 0); });
 
       // 4. COLLIDE: update score / lives
       items.forEach(i => {
         if (i.remove) return;
         if (collides(player, i)) {
           i.remove = true;
-          if (i.type === 'good') { score++; pop(i.x, i.y, '+1', '#86efac'); }
-          else { lives--; hurt = 18; pop(i.x, i.y, '−♥', '#fca5a5'); announce(`Ouch. ${lives} ${lives === 1 ? 'life' : 'lives'} left.`); }
+          if (i.type === 'heart') {
+            lives = Math.min(lives + 1, 5);
+            pop(i.x, i.y, '+♥', '#f9a8d4');
+            GameTutorial.sound.play('upgrade');
+          } else if (i.type === 'good') {
+            score++; streak++;
+            pop(i.x, i.y, streak >= 3 ? `+1 (${streak}×)` : '+1', '#86efac');
+            GameTutorial.sound.play('good');
+          } else {
+            lives--; streak = 0; hurt = 18;
+            pop(i.x, i.y, '−♥', '#fca5a5');
+            GameTutorial.sound.play('bad');
+            announce(`Ouch. ${lives} ${lives === 1 ? 'life' : 'lives'} left.`);
+          }
           updateHUD();
         } else if (i.y > H + 20) {
           i.remove = true;
+          if (i.type === 'good' && streak > 0) { streak = 0; updateHUD(); }
         }
       });
       items = items.filter(i => !i.remove);
 
       pops.forEach(p => { p.t--; p.y -= 0.6; });
       pops = pops.filter(p => p.t > 0);
+      sparks.forEach(s => { s.x += s.vx; s.y += s.vy; s.t--; });
+      sparks = sparks.filter(s => s.t > 0);
       if (hurt > 0) hurt--;
 
       if (lives <= 0) finish(false);
       else if (score >= config.winScore) finish(true);
     }
 
-    function render(ctx) {
+    function render(ctx, g) {
       ctx.fillStyle = bgThemes[config.bg] || '#0a0a1f';
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      // Subtle themed backdrop detail
+      if (config.bg === 'space') {
+        ctx.fillStyle = 'rgba(255,255,255,0.22)';
+        for (let s = 0; s < 18; s++) ctx.fillRect((s * 97) % W, (s * 53) % (H - 30), 2, 2);
+      } else if (config.bg === 'lab') {
+        ctx.strokeStyle = 'rgba(56,189,248,0.08)';
+        for (let gx = 40; gx < W; gx += 40) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+      } else {
+        ctx.fillStyle = 'rgba(34,197,94,0.08)';
+        ctx.fillRect(0, H - 36, W, 36);
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
       ctx.fillRect(0, H - 6, W, 6);
 
       ctx.font = '28px sans-serif';
-      ctx.fillStyle = '#fff';                     // emoji glyphs inherit fillStyle's alpha
+      ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      items.forEach(i => ctx.fillText(i.type === 'good' ? config.good : config.bad, i.x, i.y));
+      items.forEach(i => ctx.fillText(i.type === 'heart' ? '❤️' : i.type === 'good' ? config.good : config.bad, i.x, i.y));
 
       ctx.globalAlpha = hurt && Math.floor(hurt / 3) % 2 ? 0.35 : 1;
       ctx.font = '32px sans-serif';
       ctx.fillText(config.player, player.x + player.w / 2, player.y + player.h / 2);
       ctx.globalAlpha = 1;
 
-      ctx.font = '700 15px Inter, system-ui, sans-serif';
+      sparks.forEach(s => {
+        ctx.globalAlpha = s.t / 18;
+        ctx.fillStyle = s.color;
+        ctx.fillRect(s.x - 1.5, s.y - 1.5, 3, 3);
+      });
+      ctx.globalAlpha = 1;
+
+      ctx.font = '700 15px "IBM Plex Sans", system-ui, sans-serif';
       pops.forEach(p => {
         ctx.globalAlpha = Math.min(1, p.t / 18);
         ctx.fillStyle = p.color;
         ctx.fillText(p.text, p.x, p.y - 18);
       });
       ctx.globalAlpha = 1;
+
+      if (g.xray) {
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(player.x, player.y, player.w, player.h);
+        items.forEach(i => {
+          const r = half(i);
+          ctx.strokeStyle = i.type === 'bad' ? '#f43f5e' : '#4ade80';
+          ctx.strokeRect(i.x - r, i.y - r, r * 2, r * 2);
+        });
+        ctx.fillStyle = '#7dd3fc';
+        ctx.font = '600 10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`X-RAY · player(${Math.round(player.x)}, ${player.y}) · items:${items.length}`, 8, 16);
+      }
     }
 
     config = GameTutorial.bindConfig({
@@ -406,6 +586,7 @@
       slug: 'catch',
       canvas: $('catch-canvas'),
       width: W, height: H,
+      xray: true,
       actions: { left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'] },
       touch: { buttons: [
         { label: '◀ Left', aria: 'Move left', action: 'left', hold: true },
@@ -423,6 +604,7 @@
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
+<script src="../../../../assets/js/lessons/game-tutorial-labs.js" defer></script>
 <script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>

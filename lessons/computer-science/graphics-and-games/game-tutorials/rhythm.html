@@ -5,17 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tutorial: Rhythm Tap Game · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Tiny-loop tutorial — play and customize a real Rhythm Tap Game with pre-built note themes and timing accuracy, see the exact architecture powering it, then build the same loop yourself in Scratch or from real scratch in JavaScript." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
-  <style>
-    .gt-sound { background: transparent; border: 1px solid rgba(226,232,240,0.3); color: #e2e8f0; border-radius: 999px; padding: 0.12rem 0.55rem; font: 600 0.72rem Inter, system-ui, sans-serif; cursor: pointer; }
-    .gt-sound[aria-pressed="true"] { border-color: #86efac; color: #86efac; }
-    .gt-sound:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-  </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -56,39 +48,15 @@
           <p class="cl-lede">This is the exact <strong>Rhythm Tap Game</strong> archetype from <a href="../game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> — already built and running below. Play it, then swap the note theme, speed, and timing forgiveness using the panel underneath. You can't break the loop itself; that part is locked. Once you've tuned a version you like, you'll build this same architecture two more times: with Scratch's blocks, then from real scratch in JavaScript.</p>
         </section>
 
-        <!-- Architecture -->
-        <section class="cl-card">
-          <h2>🗺️ The Architecture</h2>
-          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Rhythm Tap Game's architecture:</p>
-
-          <div class="stages-flow">
-            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Tap the matching key exactly when the note reaches the line.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Note spawns → falls toward the line → key pressed → timing checked → repeat.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Note spawner, scroll, timing-window check, accuracy scoring.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the score goal to win. There's no lose state — just accuracy.</small></div>
-          </div>
-
-          <p><strong>The four systems, in order of execution every frame:</strong></p>
-          <ol class="systems-list">
-            <li><strong>Spawner system</strong> — every fixed interval, a new note appears in one of three lanes at the top.</li>
-            <li><strong>Scroll system</strong> — every note's y position increases each frame, so notes drift toward the target line.</li>
-            <li><strong>Timing-window system</strong> — a key press checks the closest note in that lane against the target line: very close counts as "Perfect," a bit farther counts as "Good," far away counts as a miss. A note that falls past the line untouched is a miss too.</li>
-            <li><strong>Scoring system</strong> — Perfect and Good hits add different point values, and every hit in a row grows your combo. A miss resets the combo to zero.</li>
-          </ol>
-        </section>
-
         <!-- Play + Customize -->
         <section class="cl-card">
           <h2>🎮 Play &amp; Customize</h2>
-          <p>Three lanes, three inputs: <strong>← (left lane), ↓ (middle lane), → (right lane)</strong>, or the matching touch buttons below the game. Press or tap exactly when a note crosses the glowing line. Notes arrive on a steady beat, so listen to the rhythm and don't just watch it. Sound is off by default. Turn it on with the 🔈 button.</p>
+          <p>Three lanes, three inputs: <strong>← / A / J (left lane), ↓ / S / K (middle lane), → / D / L (right lane)</strong>, or tap a lane directly. Press exactly when a note crosses the glowing line. Sound is off by default—toggle <strong>🔈 Sound off</strong> in the HUD to hear C4 / E4 / G4 triad notes.</p>
 
           <div class="game-wrap">
             <div class="game-hud">
               <span class="hud-score" id="g-score">Score: 0</span>
-              <span class="hud-group"><span id="g-combo">Combo 0</span><span class="hud-best" id="g-best"></span><button type="button" class="gt-sound" id="g-sound" aria-pressed="false">🔈 Sound off</button></span>
+              <span class="hud-group"><span id="g-combo">Combo 0</span><span class="hud-best" id="g-best"></span></span>
             </div>
             <canvas id="rhythm-canvas" width="480" height="300" aria-label="Rhythm tap game. Press left, down, or right when a note crosses the line in that lane." aria-describedby="rhythm-status"></canvas>
           </div>
@@ -123,6 +91,117 @@
             <div class="config-actions"></div>
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how Perfect vs. Good is decided" or "how notes are spawned." That's the engine — the part every version of this game shares. You're only tuning content, not rewriting architecture. That's the limit, on purpose.</p>
             <p class="config-note"><strong>What the sliders actually touch in the engine:</strong> <strong>Note Speed</strong> feeds two places at once — it shortens the spawn timer (<code>max(70 − speed×6, 30)</code>) and speeds up how fast notes fall (<code>1.2 + speed×0.9</code> pixels/frame) — so faster songs also arrive more often. <strong>Timing Forgiveness</strong> only widens the <code>perfectWindow</code> (<code>10 + window×8</code> pixels) that <code>onKeyPress()</code> compares your tap distance against — the Perfect/Good/Miss scoring math itself never changes.</p>
+          </div>
+        </section>
+
+        <!-- Architecture -->
+        <section class="cl-card">
+          <h2>🗺️ The Architecture</h2>
+          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Rhythm Tap Game's architecture:</p>
+
+          <div class="stages-flow">
+            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Tap the matching key exactly when the note reaches the line.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Note spawns → falls toward the line → key pressed → timing checked → repeat.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Note spawner, scroll, timing-window check, accuracy scoring.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the score goal to win. There's no lose state — just accuracy.</small></div>
+          </div>
+
+          <p><strong>The four systems, in order of execution every frame:</strong></p>
+          <ol class="systems-list">
+            <li><strong>Spawner system</strong> — every fixed interval, a new note appears in one of three lanes at the top.</li>
+            <li><strong>Scroll system</strong> — every note's y position increases each frame, so notes drift toward the target line.</li>
+            <li><strong>Timing-window system</strong> — a key press checks the closest note in that lane against the target line: very close counts as "Perfect," a bit farther counts as "Good," far away counts as a miss. A note that falls past the line untouched is a miss too.</li>
+            <li><strong>Scoring system</strong> — Perfect and Good hits add different point values, and every hit in a row grows your combo. A miss resets the combo to zero.</li>
+          </ol>
+        </section>
+
+        <!-- Origin -->
+        <section class="cl-card">
+          <h2>🏛️ The Origin: Music &amp; Timing Games (1996–2005)</h2>
+          <p>Rhythm games transformed controllers into musical instruments by turning <strong>millisecond precision</strong>—how close your input lands to an audio beat—into the core game mechanic.</p>
+          <div class="gt-origin-grid">
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1996 · NanaOn-Sha</span>
+              <h3>Masaya Matsuura's <em>PaRappa the Rapper</em></h3>
+              <p>Introduced the scrolling symbol bar and call-and-response beat grading, proving music timing could carry an entire video game.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1997–1998 · Konami</span>
+              <h3><em>Beatmania</em> &amp; <em>Dance Dance Revolution</em></h3>
+              <p>Locked notes into vertical lanes falling toward a static judgment line with graded Perfect / Great / Good / Miss windows—the exact visual language used here.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">2005 · Harmonix</span>
+              <h3><em>Guitar Hero</em> &amp; Highway Charts</h3>
+              <p>Synchronized handcrafted note charts to rock multitracks using audio-clock timestamps so frame-rate hiccups never drifted notes away from the song.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Deep Dive Lab -->
+        <section class="cl-card">
+          <h2>📐 Deep Dive: Timing Windows, BPM &amp; Audio-Clock Sync</h2>
+          <p>A subtle bug breaks almost every beginner rhythm game: counting frames instead of reading a real clock. If the browser drops a few frames, frame-counted notes drift behind the music forever. Try injecting a lag spike below to see why real rhythm engines use wall-clock timestamps.</p>
+
+          <div class="gt-lab" id="rhythm-timing-lab">
+            <div class="gt-lab-header">
+              <div>
+                <h3 class="gt-lab-title">Interactive Audio-Clock vs. Frame-Drift Timing Lab</h3>
+                <p class="gt-lab-subtitle">Tap on the beat (or press Space) to measure your millisecond early/late offset, and test lag-spike drift</p>
+              </div>
+              <div class="gt-mode-toggle" role="group" aria-label="Timing clock source">
+                <button type="button" class="gt-mode-btn" data-lab-mode="clock" aria-pressed="true">✓ Clock-Synced (ms)</button>
+                <button type="button" class="gt-mode-btn" data-lab-mode="frame" aria-pressed="false">✕ Frame-Counted (Drifts)</button>
+              </div>
+            </div>
+            <div class="gt-lab-canvas-wrap">
+              <canvas id="rhythm-lab-canvas" width="540" height="230" aria-label="Interactive rhythm timing window and early/late millisecond accuracy meter"></canvas>
+            </div>
+            <div class="gt-lab-controls">
+              <div class="gt-lab-sliders">
+                <div class="gt-lab-slider-field">
+                  <label for="rhythm-lab-bpm">Tempo <output id="rhythm-lab-bpm-out" for="rhythm-lab-bpm">105 BPM</output></label>
+                  <input type="range" id="rhythm-lab-bpm" min="80" max="150" step="5" value="105" />
+                </div>
+                <div class="gt-lab-slider-field">
+                  <label for="rhythm-lab-win">Perfect Window <output id="rhythm-lab-win-out" for="rhythm-lab-win">±45 ms</output></label>
+                  <input type="range" id="rhythm-lab-win" min="25" max="80" step="5" value="45" />
+                </div>
+              </div>
+              <div class="gt-lab-actions">
+                <button type="button" class="gt-lab-btn" id="rhythm-lab-tap">🥁 Tap on Beat</button>
+                <button type="button" class="gt-lab-btn is-ghost" id="rhythm-lab-lag">⚡ Inject 120ms Lag</button>
+              </div>
+            </div>
+            <div class="gt-telemetry-grid">
+              <div class="gt-telem-card"><span class="gt-telem-label">Beat Interval</span><span class="gt-telem-val" id="rhythm-telem-int">571 ms</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Last Tap Offset</span><span class="gt-telem-val" id="rhythm-telem-last">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Avg Error</span><span class="gt-telem-val" id="rhythm-telem-avg">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Clock Drift</span><span class="gt-telem-val" id="rhythm-telem-drift">0 ms (Locked)</span></div>
+            </div>
+            <div class="gt-lab-insight" id="rhythm-lab-insight" aria-live="polite">Tap when a blue beat crosses the glowing line!</div>
+          </div>
+
+          <div class="gt-compare">
+            <div class="gt-compare-card is-amber">
+              <h3>🟡 Frame-Counted Beats (Drifts)</h3>
+              <ul>
+                <li>Adding <code>speed</code> per frame assumes every frame takes exactly 16.67 ms.</li>
+                <li>One 120 ms browser stutter leaves every note permanently out of sync with the song.</li>
+                <li>Hard to author songs in BPM because frame counts rarely divide beats cleanly.</li>
+              </ul>
+            </div>
+            <div class="gt-compare-card is-sky">
+              <h3>🔵 Audio-Clock Synced + Nested Windows</h3>
+              <ul>
+                <li>Computes <code>note.y = targetY - (beatTime - audio.currentTime) * speed</code>.</li>
+                <li>Nested windows (<code>Perfect &lt; pw</code>, <code>Good &lt; 2*pw</code>) reward mastery without punishing beginners.</li>
+                <li>Turn on <strong>🔍 X-Ray</strong> above to see exact pixel &amp; millisecond timing zones live!</li>
+              </ul>
+            </div>
           </div>
         </section>
 
@@ -176,13 +255,14 @@
         <!-- Remix -->
         <section class="cl-card">
           <h2>🧪 Remix Challenges</h2>
-          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Cards marked <strong>▶ playable</strong> switch the change on in the game above, so you can feel it before you build it. Try the rest in your own copy once you've built it in Lesson 2.</p>
           <div class="gt-remix">
             <details>
               <summary><span class="gt-tier tweak">Tweak</span><span><strong>Combo multiplier</strong><small>Scoring system · one line</small></span></summary>
               <div class="gt-remix-body">
                 <p>Make streaks worth more: every 10 hits in a row adds ×1 to each hit's points. Now a single miss hurts a lot more. Is that more fun or just more stressful?</p>
                 <div class="code-block"><pre>score += (perfect ? <span class="num">3</span> : <span class="num">1</span>) * (<span class="num">1</span> + <span class="fn">Math.floor</span>(combo / <span class="num">10</span>));</pre></div>
+                <button data-remix="combo">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -191,6 +271,7 @@
                 <p>Real rhythm games don't pick lanes at random. A designer writes a <em>chart</em> that lines each note up with a song. Replace <code>spawnNote()</code>'s random lane with the next entry in an array, and you've gone from a game to a level editor.</p>
                 <div class="code-block"><pre><span class="kw">const</span> chart = [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">2</span>, <span class="num">2</span>];   <span class="cm">// lane per beat</span>
 <span class="kw">const</span> lane = chart[beat % chart.length];</pre></div>
+                <button data-remix="chart">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -204,6 +285,39 @@
 
         <!-- Build with Blockly -->
         <section class="cl-card" data-game-blockly="rhythm"></section>
+
+        <!-- Check Your Understanding -->
+        <section class="cl-card gt-quiz-section">
+          <h2>🧠 Check Your Understanding</h2>
+          <p>Test your grasp of timing windows, closest-note matching, and audio synchronization:</p>
+          <article class="gt-quiz-card">
+            <h3>Question 1: Why do professional rhythm games position notes using <code>AudioContext.currentTime</code> instead of counting rendered frames?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 1 options">
+              <button type="button" data-answer="wrong" data-explain="Browsers always know how many frames they have drawn.">Because JavaScript cannot count frames</button>
+              <button type="button" data-answer="correct" data-explain="Correct! Any brief CPU lag spike delays frames, causing frame counters to fall behind the audio track. Anchoring notes to the hardware audio clock prevents permanent drift.">Because frame lag spikes cause frame counters to permanently drift out of sync with the music</button>
+              <button type="button" data-answer="wrong" data-explain="AudioContext tracks exact playback time; it doesn't speed up BPM automatically.">Because AudioContext doubles the tempo automatically</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 2: What is the job of <code>closestNoteInLane(lane)</code> when you press a key?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 2 options">
+              <button type="button" data-answer="correct" data-explain="Correct! Several notes may be in the same lane at once. Testing only the closest one to targetY prevents a tap from accidentally hitting a note still high up the screen.">It picks the single note nearest the target line in that lane so distant notes aren't judged instead</button>
+              <button type="button" data-answer="wrong" data-explain="It inspects only the single lane matching the key you pressed.">It deletes every note across all three lanes</button>
+              <button type="button" data-answer="wrong" data-explain="Spawn rate is fixed by BPM/speed, not key presses.">It spawns a new note at the top of the lane</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 3: If <code>perfectWindow = 26 px</code>, when does a note count as "Good" instead of "Perfect" or "Miss"?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 3 options">
+              <button type="button" data-answer="wrong" data-explain="Distances under 26 px earn 'Perfect!' (+3 pts).">When distance from the line is under 26 px</button>
+              <button type="button" data-answer="correct" data-explain="Correct! goodWindow = perfectWindow * 2 (52 px). Since distance < 26 triggers Perfect first, the else-if catches notes from 26 px up to 52 px as Good!">When distance is between 26 px and 52 px (between perfectWindow and 2× perfectWindow)</button>
+              <button type="button" data-answer="wrong" data-explain="Notes farther than 52 px from the line count as Miss.">When distance is greater than 100 px</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+        </section>
 
         <!-- Build it for real -->
         <section class="cl-card">
@@ -247,8 +361,9 @@
           <p class="ll-pane-title">Learning Goals</p>
           <ul class="ll-guide-list">
             <li>Explain what a "core loop" is using the Rhythm Tap Game as an example</li>
+            <li>Compare nested Perfect / Good / Miss timing windows</li>
+            <li>Explain why rhythm games sync to an audio clock instead of counting frames</li>
             <li>Identify which parts of a game are "engine" vs. "content"</li>
-            <li>Tune a working game's difficulty without touching its logic</li>
             <li>Trace the same architecture across Scratch and JavaScript</li>
           </ul>
           <p class="ll-pane-title" style="margin-top:1rem;">Why the Limits?</p>
@@ -279,39 +394,12 @@
 
     const $ = id => document.getElementById(id);
     const announce = msg => { $('rhythm-status').textContent = msg; };
-
-    /* Sound: opt-in (a class of 30 laptops), remembered per viewer. */
-    let audio = null;
-    let soundOn = false;
-    try { soundOn = localStorage.getItem('gt-rhythm-sound') === '1'; } catch (e) { /* private mode */ }
-    function syncSoundBtn() {
-      $('g-sound').setAttribute('aria-pressed', String(soundOn));
-      $('g-sound').textContent = soundOn ? '🔊 Sound on' : '🔈 Sound off';
-    }
-    function blip(freq, gain, dur) {
-      if (!soundOn) return;
-      try {
-        audio = audio || new (window.AudioContext || window.webkitAudioContext)();
-        if (audio.state === 'suspended') audio.resume();
-        const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
-        o.type = 'triangle';
-        o.frequency.value = freq;
-        g.gain.setValueAtTime(gain, t);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        o.connect(g).connect(audio.destination);
-        o.start(t); o.stop(t + dur);
-      } catch (e) { /* no audio available */ }
-    }
-    $('g-sound').addEventListener('click', () => {
-      soundOn = !soundOn;
-      try { localStorage.setItem('gt-rhythm-sound', soundOn ? '1' : '0'); } catch (e) { /* ignore */ }
-      syncSoundBtn();
-      blip(523, 0.15, 0.12);
-    });
-    syncSoundBtn();
+    const blip = (freq, gain, dur) => GameTutorial.sound.tone(freq, gain, dur, 'triangle');
 
     let config;
-    let notes, score, combo, bestCombo, perfects, goods, misses, spawnTimer, flashText, flashColor, flashTimer, laneGlow, beatPulse;
+    const CHART = [0, 1, 2, 1, 0, 0, 2, 2];       // Write-a-real-chart remix: one lane per beat
+    let beat = 0;
+    let notes, score, combo, bestCombo, perfects, goods, misses, spawnTimer, flashText, flashColor, flashTimer, laneGlow, beatPulse, lastOffsetMs;
 
     function reset() {
       notes = [];
@@ -319,9 +407,11 @@
       combo = 0; bestCombo = 0;
       perfects = 0; goods = 0; misses = 0;
       spawnTimer = 0;
+      beat = 0;
       flashText = ''; flashTimer = 0;
       laneGlow = [0, 0, 0];
       beatPulse = 0;
+      lastOffsetMs = null;
       updateHUD();
     }
 
@@ -331,7 +421,7 @@
 
     function updateHUD() {
       $('g-score').textContent = 'Score: ' + score;
-      $('g-combo').textContent = 'Combo ' + combo;
+      $('g-combo').textContent = 'Combo ' + combo + (config.remix.combo && combo >= 10 ? ` ×${1 + Math.floor(combo / 10)}` : '');
       const b = GameTutorial.best('rhythm', 'combo').best;
       $('g-best').textContent = b ? 'Best combo ' + b : '';
     }
@@ -360,8 +450,10 @@
       if (!note) return;
       const distance = Math.abs(note.y - TARGET_Y);
       const pw = perfectWindow();
-      if (distance < pw) { score += 3; perfects++; flash('Perfect!', '#fde047'); blip(PITCH[lane] * 2, 0.2, 0.18); }
-      else if (distance < pw * 2) { score += 1; goods++; flash('Good', '#86efac'); blip(PITCH[lane], 0.15, 0.14); }
+      lastOffsetMs = Math.round(((note.y - TARGET_Y) / (fallSpeed() * 60)) * 1000);
+      const mult = config.remix.combo ? 1 + Math.floor(combo / 10) : 1;
+      if (distance < pw) { score += 3 * mult; perfects++; flash('Perfect!', '#fde047'); blip(PITCH[lane] * 2, 0.2, 0.18); }
+      else if (distance < pw * 2) { score += mult; goods++; flash('Good', '#86efac'); blip(PITCH[lane], 0.15, 0.14); }
       else { miss(); return; }
       notes = notes.filter(n => n !== note);
       combo++;
@@ -373,6 +465,7 @@
     function finish() {
       const record = GameTutorial.best('rhythm', 'combo', bestCombo);
       updateHUD();
+      GameTutorial.sound.play('win');
       const total = perfects + goods + misses;
       const acc = Math.round((perfects + goods * 0.5) / Math.max(total, 1) * 100);
       game.end({
@@ -385,7 +478,9 @@
     function update() {
       // 1. SPAWN on a steady beat
       if (++spawnTimer > spawnRate()) {
-        notes.push({ lane: Math.floor(Math.random() * 3), y: -20 });
+        const lane = config.remix.chart ? CHART[beat % CHART.length] : Math.floor(Math.random() * 3);
+        beat++;
+        notes.push({ lane, y: -20 });
         spawnTimer = 0;
       }
       // 2. SCROLL toward the line
@@ -403,7 +498,7 @@
       laneGlow = laneGlow.map(v => Math.max(0, v - 1));
     }
 
-    function render(ctx) {
+    function render(ctx, g) {
       const theme = themes[config.theme] || themes.drum;
       ctx.fillStyle = '#0a0a1f';
       ctx.fillRect(0, 0, W, H);
@@ -423,8 +518,15 @@
 
       // Perfect zone band + target line (pulses on the beat)
       const pw = perfectWindow();
-      ctx.fillStyle = 'rgba(255,255,255,0.05)';
-      ctx.fillRect(20, TARGET_Y - pw, W - 40, pw * 2);
+      if (g.xray) {
+        ctx.fillStyle = 'rgba(134,239,172,0.12)';
+        ctx.fillRect(20, TARGET_Y - pw * 2, W - 40, pw * 4);
+        ctx.fillStyle = 'rgba(250,204,21,0.18)';
+        ctx.fillRect(20, TARGET_Y - pw, W - 40, pw * 2);
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        ctx.fillRect(20, TARGET_Y - pw, W - 40, pw * 2);
+      }
       ctx.strokeStyle = theme.color;
       ctx.lineWidth = 3 + (game.reducedMotion ? 0 : beatPulse * 0.4);
       ctx.beginPath(); ctx.moveTo(20, TARGET_Y); ctx.lineTo(W - 20, TARGET_Y); ctx.stroke();
@@ -436,7 +538,7 @@
       ctx.fillStyle = '#fff';                     // emoji glyphs inherit fillStyle's alpha
       notes.forEach(n => ctx.fillText(theme.note, LANES[n.lane], n.y));
 
-      ctx.font = '700 13px Inter, system-ui, sans-serif';
+      ctx.font = '700 13px "IBM Plex Sans", system-ui, sans-serif';
       LANES.forEach((x, i) => {
         ctx.fillStyle = laneGlow[i] ? '#fff' : 'rgba(226,232,240,0.45)';
         ctx.fillText(LANE_KEYS[i], x, H - 22);
@@ -444,15 +546,24 @@
 
       if (flashTimer > 0) {
         ctx.globalAlpha = Math.min(1, flashTimer / 15);
-        ctx.font = '800 20px Inter, system-ui, sans-serif';
+        ctx.font = '800 20px "IBM Plex Sans", system-ui, sans-serif';
         ctx.fillStyle = flashColor;
         ctx.fillText(flashText, W / 2, TARGET_Y - 48);
         if (combo >= 5) {
-          ctx.font = '600 12px Inter, system-ui, sans-serif';
+          ctx.font = '600 12px "IBM Plex Sans", system-ui, sans-serif';
           ctx.fillStyle = '#e2e8f0';
           ctx.fillText(combo + ' combo', W / 2, TARGET_Y - 28);
         }
         ctx.globalAlpha = 1;
+      }
+
+      if (g.xray) {
+        const pwMs = Math.round((pw / (fallSpeed() * 60)) * 1000);
+        const offTxt = lastOffsetMs == null ? '—' : (lastOffsetMs >= 0 ? `+${lastOffsetMs}` : lastOffsetMs) + ' ms';
+        ctx.fillStyle = '#7dd3fc';
+        ctx.font = '600 10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`X-RAY · Perfect ±${pw}px (±${pwMs}ms) · Good ±${pw * 2}px · Last: ${offTxt}`, 8, 16);
       }
     }
 
@@ -466,6 +577,7 @@
       slug: 'rhythm',
       canvas: $('rhythm-canvas'),
       width: W, height: H,
+      xray: true,
       actions: { l0: ['ArrowLeft', 'KeyA', 'KeyJ'], l1: ['ArrowDown', 'KeyS', 'KeyK'], l2: ['ArrowRight', 'KeyD', 'KeyL'] },
       onPress: name => onLane(Number(name.slice(1))),
       onPointer: x => onLane(x < W / 3 ? 0 : x < W * 2 / 3 ? 1 : 2),
@@ -485,6 +597,7 @@
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
+<script src="../../../../assets/js/lessons/game-tutorial-labs.js" defer></script>
 <script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>

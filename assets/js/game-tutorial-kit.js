@@ -50,16 +50,254 @@
     try { global.localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* private mode */ }
   }
 
+  function loadRaw(key) {
+    try { return global.localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  /* ── Sound synthesizer (opt-in, off by default) ───────────────────── */
+  var soundOn = false;
+  (function initSoundPref() {
+    var stored = loadRaw('gt-sound');
+    if (stored == null) stored = loadRaw('gt-rhythm-sound');
+    soundOn = stored === '"1"' || stored === '1';
+  }());
+
+  var audioCtx = null;
+  var soundButtons = [];
+
+  function syncSoundButtons() {
+    soundButtons.forEach(function (btn) {
+      btn.setAttribute('aria-pressed', String(soundOn));
+      btn.textContent = soundOn ? '🔊 Sound on' : '🔈 Sound off';
+    });
+  }
+
+  function tone(freq, gain, dur, type, endFreq, delay) {
+    if (!soundOn) return;
+    try {
+      var Ctx = global.AudioContext || global.webkitAudioContext;
+      if (!Ctx) return;
+      audioCtx = audioCtx || new Ctx();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var start = audioCtx.currentTime + (delay || 0);
+      var o = audioCtx.createOscillator();
+      var g = audioCtx.createGain();
+      o.type = type || 'triangle';
+      o.frequency.setValueAtTime(Math.max(20, freq), start);
+      if (endFreq && endFreq > 0) {
+        o.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), start + dur);
+      }
+      g.gain.setValueAtTime(Math.max(0.001, gain || 0.1), start);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(start);
+      o.stop(start + dur + 0.01);
+    } catch (e) { /* audio blocked or unavailable */ }
+  }
+
+  function playSound(name) {
+    if (!soundOn) return;
+    switch (name) {
+      case 'good':
+        tone(523.25, 0.11, 0.08, 'triangle', null, 0);
+        tone(659.25, 0.11, 0.11, 'triangle', null, 0.06);
+        break;
+      case 'bad':
+        tone(165, 0.11, 0.18, 'sawtooth', 82, 0);
+        break;
+      case 'hit':
+        tone(460, 0.08, 0.05, 'square', null, 0);
+        break;
+      case 'wall':
+        tone(226, 0.06, 0.045, 'square', null, 0);
+        break;
+      case 'step':
+        tone(340, 0.05, 0.035, 'triangle', 260, 0);
+        break;
+      case 'bump':
+        tone(130, 0.08, 0.09, 'sawtooth', 75, 0);
+        break;
+      case 'flap':
+        tone(280, 0.09, 0.075, 'triangle', 460, 0);
+        break;
+      case 'pew':
+        tone(740, 0.06, 0.075, 'square', 280, 0);
+        break;
+      case 'pop':
+        tone(520, 0.1, 0.08, 'sine', 780, 0);
+        break;
+      case 'click':
+        tone(440, 0.07, 0.04, 'triangle', 540, 0);
+        break;
+      case 'upgrade':
+        tone(523.25, 0.09, 0.07, 'triangle', null, 0);
+        tone(659.25, 0.09, 0.07, 'triangle', null, 0.055);
+        tone(783.99, 0.11, 0.11, 'triangle', null, 0.11);
+        break;
+      case 'win':
+        tone(523.25, 0.1, 0.09, 'triangle', null, 0);
+        tone(659.25, 0.1, 0.09, 'triangle', null, 0.08);
+        tone(783.99, 0.1, 0.09, 'triangle', null, 0.16);
+        tone(1046.5, 0.12, 0.22, 'triangle', null, 0.24);
+        break;
+      case 'lose':
+        tone(329.63, 0.1, 0.11, 'sawtooth', null, 0);
+        tone(246.94, 0.1, 0.12, 'sawtooth', null, 0.1);
+        tone(174.61, 0.11, 0.2, 'sawtooth', null, 0.2);
+        break;
+      default:
+        tone(440, 0.08, 0.06, 'triangle', null, 0);
+    }
+  }
+
+  function ensureHudGroup(container) {
+    if (!container) return null;
+    if (container.classList.contains('hud-group')) return container;
+    var grp = container.querySelector('.hud-group');
+    if (!grp) {
+      grp = el('span', 'hud-group');
+      container.appendChild(grp);
+    }
+    return grp;
+  }
+
+  function mountSoundToggle(container) {
+    var host = ensureHudGroup(container);
+    if (!host) return null;
+    var existing = host.querySelector('.gt-sound-btn');
+    if (existing) return existing;
+    var btn = el('button', 'gt-hud-btn gt-sound-btn');
+    btn.type = 'button';
+    btn.addEventListener('click', function () {
+      soundOn = !soundOn;
+      save('gt-sound', soundOn ? '1' : '0');
+      syncSoundButtons();
+      if (soundOn) tone(523.25, 0.12, 0.11, 'triangle');
+    });
+    soundButtons.push(btn);
+    syncSoundButtons();
+    host.appendChild(btn);
+    return btn;
+  }
+
+  function mountXRay(container, onToggle) {
+    var host = ensureHudGroup(container);
+    if (!host) return null;
+    var active = false;
+    var btn = el('button', 'gt-hud-btn gt-xray-btn', '🔍 X-Ray');
+    btn.type = 'button';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.title = 'Toggle engine X-Ray overlay (hitboxes, vectors, and state)';
+    btn.addEventListener('click', function () {
+      active = !active;
+      btn.setAttribute('aria-pressed', String(active));
+      if (onToggle) onToggle(active);
+    });
+    host.appendChild(btn);
+    return btn;
+  }
+
+  /* ── Shared Self-Check Quizzes ────────────────────────────────────── */
+  function mountQuizzes(root) {
+    var scope = root || document;
+    var sections = Array.prototype.slice.call(scope.querySelectorAll('.gt-quiz-section, .pong-quiz-section'));
+    // Fallback for pages whose quiz cards live in a plain section
+    if (!sections.length) {
+      var seen = [];
+      Array.prototype.forEach.call(scope.querySelectorAll('.gt-quiz-card, .pong-quiz-card'), function (card) {
+        var sec = card.closest('section') || card.parentNode;
+        if (sec && seen.indexOf(sec) === -1) seen.push(sec);
+      });
+      sections = seen;
+    }
+
+    sections.forEach(function (section) {
+      var cards = Array.prototype.slice.call(section.querySelectorAll('.gt-quiz-card, .pong-quiz-card'));
+      if (!cards.length) return;
+
+      var bar = section.querySelector('.gt-quiz-bar');
+      var scoreEl, resetBtn;
+      if (!bar) {
+        bar = el('div', 'gt-quiz-bar');
+        scoreEl = el('span', 'gt-quiz-score');
+        resetBtn = el('button', 'gt-quiz-reset', '↺ Reset Quiz');
+        resetBtn.type = 'button';
+        bar.appendChild(scoreEl);
+        bar.appendChild(resetBtn);
+        section.appendChild(bar);
+      } else {
+        scoreEl = bar.querySelector('.gt-quiz-score');
+        resetBtn = bar.querySelector('.gt-quiz-reset');
+      }
+
+      function updateScore() {
+        var correct = 0;
+        var answered = 0;
+        cards.forEach(function (c) {
+          var sel = c.querySelector('button[data-selected]');
+          if (sel) {
+            answered++;
+            if (sel.getAttribute('data-selected') === 'correct') correct++;
+          }
+        });
+        if (scoreEl) {
+          scoreEl.textContent = answered === 0
+            ? 'Score: 0 / ' + cards.length + ' (select an answer above)'
+            : 'Score: ' + correct + ' / ' + cards.length + ' correct';
+        }
+      }
+
+      cards.forEach(function (card) {
+        if (card.dataset.gtQuizBound === '1') return;
+        card.dataset.gtQuizBound = '1';
+        var buttons = Array.prototype.slice.call(card.querySelectorAll('.gt-quiz-options button, .pong-quiz-options button'));
+        var feedback = card.querySelector('.gt-quiz-feedback, .pong-quiz-feedback');
+        buttons.forEach(function (btn) {
+          if (!btn.hasAttribute('aria-pressed')) btn.setAttribute('aria-pressed', 'false');
+          btn.addEventListener('click', function () {
+            buttons.forEach(function (b) {
+              b.removeAttribute('data-selected');
+              b.setAttribute('aria-pressed', 'false');
+            });
+            var ok = btn.dataset.answer === 'correct';
+            btn.setAttribute('data-selected', ok ? 'correct' : 'wrong');
+            btn.setAttribute('aria-pressed', 'true');
+            if (feedback) feedback.textContent = btn.dataset.explain || '';
+            updateScore();
+          });
+        });
+      });
+
+      if (resetBtn && resetBtn.dataset.gtQuizReset !== '1') {
+        resetBtn.dataset.gtQuizReset = '1';
+        resetBtn.addEventListener('click', function () {
+          cards.forEach(function (card) {
+            Array.prototype.forEach.call(card.querySelectorAll('button[data-selected], button[aria-pressed]'), function (b) {
+              b.removeAttribute('data-selected');
+              b.setAttribute('aria-pressed', 'false');
+            });
+            var fb = card.querySelector('.gt-quiz-feedback, .pong-quiz-feedback');
+            if (fb) fb.textContent = '';
+          });
+          updateScore();
+        });
+      }
+
+      updateScore();
+    });
+  }
+
   function markPlayed(slug) {
     var played = load('gt-played', []);
     if (played.indexOf(slug) === -1) { played.push(slug); save('gt-played', played); }
   }
 
   /* best(slug, 'score', 12) → { best, isNew }. lowerIsBetter for step counts. */
+  var remixActive = false;
   function best(slug, key, value, lowerIsBetter) {
     var storeKey = 'gt-best-' + slug + '-' + key;
     var prev = load(storeKey, null);
-    if (value == null) return { best: prev, isNew: false };
+    if (value == null || remixActive) return { best: prev, isNew: false };   // remixed rounds don't set records
     var isNew = prev == null || (lowerIsBetter ? value < prev : value > prev);
     if (isNew) save(storeKey, value);
     return { best: isNew ? value : prev, isNew: isNew };
@@ -197,6 +435,7 @@
     var state = realtime ? 'ready' : 'playing';
     var scale = 1;
     var visible = true;
+    var xrayOn = false;
     var ov = overlay(wrap);
     var touchBox = null;
     var lastPointer = 'mouse';   // keyboard focus only matters for mouse/keyboard players
@@ -221,6 +460,7 @@
       W: W, H: H, ctx: ctx, canvas: canvas,
       ticks: 0,
       reducedMotion: reducedMotion,
+      get xray() { return xrayOn; },
       get state() { return state; },
       held: function (name) { return !!held[name]; },
       start: start,
@@ -230,6 +470,20 @@
       end: end,
       focus: function () { canvas.focus({ preventScroll: true }); }
     };
+
+    var hudEl = wrap && wrap.querySelector('.game-hud');
+    if (hudEl) {
+      if (opts.sound !== false && (opts.xray || opts.sound)) {
+        mountSoundToggle(hudEl);
+      }
+      if (opts.xray) {
+        mountXRay(hudEl, function (active) {
+          xrayOn = active;
+          ctx.setTransform(scale, 0, 0, scale, 0, 0);
+          opts.render(ctx, game);
+        });
+      }
+    }
 
     function releaseAll() {
       Object.keys(held).forEach(function (k) { held[k] = false; });
@@ -523,6 +777,88 @@
       });
     });
 
+    /* Live remixes: <button data-remix="speedRamp"> inside a .gt-remix card switches
+       config.remix.speedRamp on/off in the real game, which restarts the round. The
+       engine reads the flag right where the card's code snippet says it goes. */
+    config.remix = {};
+    var remixBtns = Array.prototype.slice.call(document.querySelectorAll('.gt-remix [data-remix]'));
+    var playSection = panel.closest('section');
+    if (playSection && !playSection.id && remixBtns.length) playSection.id = 'play';
+    var startRemix = (params.get('remix') || '').split(',');
+
+    function remixLabel(name) {
+      var card = remixBtns.filter(function (b) { return b.dataset.remix === name; })[0];
+      var strong = card && card.closest('details') && card.closest('details').querySelector('summary strong');
+      return strong ? strong.textContent : name;
+    }
+    function syncRemix() {
+      remixActive = Object.keys(config.remix).some(function (k) { return config.remix[k]; });
+      remixBtns.forEach(function (btn) {
+        var on = !!config.remix[btn.dataset.remix];
+        btn.setAttribute('aria-pressed', String(on));
+        btn.textContent = on ? '✓ On in the game · turn off' : '▶ Try it in the game';
+        var card = btn.closest('details');
+        if (card) card.classList.toggle('is-live', on);
+      });
+      if (remixBar) {
+        var names = Object.keys(config.remix).filter(function (k) { return config.remix[k]; });
+        remixBar.hidden = !names.length;
+        remixList.textContent = names.map(remixLabel).join(' · ');
+      }
+    }
+    function setRemix(name, on, silent) {
+      config.remix[name] = !!on;
+      syncRemix();
+      if (silent) return;
+      var note = playSection ? ' Scroll up to play it.' : '';
+      status((on ? 'Remix on: ' : 'Remix off: ') + remixLabel(name) + ' → round restarted.');
+      var live = remixBtns.filter(function (b) { return b.dataset.remix === name; })[0];
+      var msg = live && live.parentNode.querySelector('.gt-remix-status');
+      if (msg) msg.textContent = on ? 'On. The round restarted with this change.' + note : 'Off. Back to the original engine.';
+      opts.onChange(config, { key: 'remix', rule: true, remix: name });
+    }
+
+    var remixBar = null, remixList = null;
+    if (remixBtns.length) {
+      remixBar = el('p', 'gt-remix-bar');
+      remixBar.appendChild(el('strong', null, '🧪 Remixes on: '));
+      remixList = el('span');
+      remixBar.appendChild(remixList);
+      remixBar.appendChild(el('small', 'gt-remix-bar-note', 'Personal bests pause while a remix is on.'));
+      var offBtn = el('button', null, 'Turn all off');
+      offBtn.type = 'button';
+      offBtn.addEventListener('click', function () {
+        Object.keys(config.remix).forEach(function (k) { config.remix[k] = false; });
+        syncRemix();
+        status('All remixes off → round restarted.');
+        opts.onChange(config, { key: 'remix', rule: true, remix: null });
+      });
+      remixBar.appendChild(offBtn);
+      var anchor = panel.querySelector('.config-actions');
+      panel.insertBefore(remixBar, anchor ? anchor.nextSibling : null);
+
+      remixBtns.forEach(function (btn) {
+        btn.type = 'button';
+        btn.classList.add('gt-remix-try');
+        var name = btn.dataset.remix;
+        config.remix[name] = startRemix.indexOf(name) !== -1;
+        var row = el('div', 'gt-remix-live');
+        btn.parentNode.insertBefore(row, btn);
+        row.appendChild(btn);
+        var msg = el('span', 'gt-remix-status');
+        msg.setAttribute('role', 'status');
+        row.appendChild(msg);
+        btn.addEventListener('click', function () { setRemix(name, !config.remix[name]); });
+        var summary = btn.closest('details') && btn.closest('details').querySelector('summary');
+        if (summary && !summary.querySelector('.gt-remix-playable')) {
+          var chip = el('span', 'gt-remix-playable', '▶ playable');
+          chip.title = 'This remix can be switched on in the game above.';
+          summary.lastElementChild.appendChild(chip);
+        }
+      });
+      syncRemix();
+    }
+
     var statusEl = null;
     var statusTimer = null;
     function status(msg) {
@@ -550,6 +886,8 @@
           if (out) out.textContent = f.value;
           syncPeek(f, true);
         });
+        Object.keys(config.remix).forEach(function (k) { config.remix[k] = false; });
+        syncRemix();
         status('Back to the original tuning.');
         opts.onChange(config, { key: null, rule: true });
       });
@@ -563,6 +901,8 @@
           var key = f.dataset.cfg;
           if (config[key] !== defaults[key]) p.set(key, String(config[key]));
         });
+        var onRemix = Object.keys(config.remix).filter(function (k) { return config.remix[k]; });
+        if (onRemix.length) p.set('remix', onRemix.join(','));
         var url = global.location.href.split('#')[0] + (p.toString() ? '#' + p.toString() : '');
         var done = function () { status('Link copied — anyone who opens it gets your tuning.'); };
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -581,6 +921,12 @@
     return config;
   }
 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { mountQuizzes(); });
+  } else {
+    mountQuizzes();
+  }
+
   global.GameTutorial = {
     SERIES: SERIES,
     canvasGame: canvasGame,
@@ -588,6 +934,21 @@
     bindConfig: bindConfig,
     mountSeries: mountSeries,
     markPlayed: markPlayed,
-    best: best
+    best: best,
+    mountXRay: mountXRay,
+    mountQuizzes: mountQuizzes,
+    sound: {
+      enabled: function () { return soundOn; },
+      toggle: function () {
+        soundOn = !soundOn;
+        save('gt-sound', soundOn ? '1' : '0');
+        syncSoundButtons();
+        if (soundOn) tone(523.25, 0.12, 0.11, 'triangle');
+        return soundOn;
+      },
+      tone: tone,
+      play: playSound,
+      mountToggle: mountSoundToggle
+    }
   };
 }(window));

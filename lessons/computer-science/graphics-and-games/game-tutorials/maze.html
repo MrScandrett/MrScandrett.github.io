@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tutorial: Maze Game · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Tiny-loop tutorial — play and customize a real Maze Game with pre-built sprites and wall layouts, see the exact architecture powering it, then build the same loop yourself in Scratch or from real scratch in JavaScript." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
@@ -49,30 +46,6 @@
             <span>Pre-built Sprites</span>
           </div>
           <p class="cl-lede">This is the exact <strong>Maze Game</strong> archetype from <a href="../game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> — already built and running below. Play it, then swap the pre-built sprites, wall theme, and maze layout using the panel underneath. You can't break the loop itself; that part is locked. Once you've tuned a version you like, you'll build this same architecture two more times: with Scratch's blocks, then from real scratch in JavaScript.</p>
-        </section>
-
-        <!-- Architecture -->
-        <section class="cl-card">
-          <h2>🗺️ The Architecture</h2>
-          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Maze Game's architecture:</p>
-
-          <div class="stages-flow">
-            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Navigate a grid of walls and reach the goal tile.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Press a direction → move one tile if it's open → repeat until you reach the goal.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Grid movement, wall collision, goal detection, step counter.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the goal tile to win. There's no lose state — just fewer or more steps.</small></div>
-          </div>
-
-          <p><strong>The four systems, in order of execution on every key press:</strong></p>
-          <ol class="systems-list">
-            <li><strong>Input system</strong> — reads the arrow key pressed and computes the one target tile in that direction.</li>
-            <li><strong>Wall collision system</strong> — checks whether the target tile is a wall; if it is, the move is cancelled and the player stays put.</li>
-            <li><strong>Step counter system</strong> — only counts a step when a move actually succeeds, and compares your total to <em>par</em>, the shortest possible route.</li>
-            <li><strong>Goal detection system</strong> — checks the player's tile against the goal tile every move; matching tiles ends the game.</li>
-          </ol>
         </section>
 
         <!-- Play + Customize -->
@@ -126,6 +99,7 @@
                   <option value="zigzag">Zigzag</option>
                   <option value="branching">Branching</option>
                   <option value="spiral">Spiral</option>
+                  <option value="random">🎲 Random (Generated)</option>
                 </select>
               </div>
               <div class="config-field">
@@ -136,6 +110,109 @@
             <div class="config-actions"></div>
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how wall collision works" or "how the goal is detected." That's the engine — the part every version of this game shares. You're only tuning content, not rewriting architecture. That's the limit, on purpose.</p>
             <p class="config-note"><strong>What Move Animation Speed actually touches in the engine:</strong> nothing in the rules, which is why it's tagged <em>content</em>. It only picks a <code>duration</code> from a lookup table (180ms / 110ms / 60ms) that the tile-slide animation plays over — the tile-by-tile logic in <code>tryMove()</code> that checks walls and the goal runs exactly the same either way. The Maze Layout and Wall Theme selects swap which grid string and color pair the locked renderer reads; the renderer never looks at what the strings mean, only where the <code>#</code> characters are.</p>
+          </div>
+        </section>
+
+        <!-- Architecture -->
+        <section class="cl-card">
+          <h2>🗺️ The Architecture</h2>
+          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Maze Game's architecture:</p>
+
+          <div class="stages-flow">
+            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Navigate a grid of walls and reach the goal tile.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Press a direction → move one tile if it's open → repeat until you reach the goal.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Grid movement, wall collision, goal detection, step counter.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the goal tile to win. There's no lose state — just fewer or more steps.</small></div>
+          </div>
+
+          <p><strong>The four systems, in order of execution on every key press:</strong></p>
+          <ol class="systems-list">
+            <li><strong>Input system</strong> — reads the arrow key pressed and computes the one target tile in that direction.</li>
+            <li><strong>Wall collision system</strong> — checks whether the target tile is a wall; if it is, the move is cancelled and the player stays put.</li>
+            <li><strong>Step counter system</strong> — only counts a step when a move actually succeeds, and compares your total to <em>par</em>, the shortest possible route.</li>
+            <li><strong>Goal detection system</strong> — checks the player's tile against the goal tile every move; matching tiles ends the game.</li>
+          </ol>
+        </section>
+
+        <!-- Origin -->
+        <section class="cl-card">
+          <h2>🏛️ The Origin: Tilemaps, Mazes &amp; Pathfinding (1973–1980)</h2>
+          <p>Before 3D polygons existed, game worlds were stored as compact 2D character grids—turning a few dozen bytes of RAM into entire labyrinths, dungeons, and arcade arenas.</p>
+          <div class="gt-origin-grid">
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1973 · NASA Ames</span>
+              <h3>Steve Colley's <em>Maze War</em></h3>
+              <p>Built on an Imlac PDS-1 vector display, players navigated a shared grid maze from a first-person view—inventing both tile-based level geometry and networked multiplayer.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1980 · Namco</span>
+              <h3>Toru Iwatani's <em>Pac-Man</em></h3>
+              <p>Every corridor, pellet, and ghost intersection lived inside a 28×31 tile grid. Ghost AI didn't "see" pixels—it ran tile-to-tile distance checks on the underlying array.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1980 · UC Santa Cruz</span>
+              <h3><em>Rogue</em> &amp; Procedural Dungeons</h3>
+              <p>Instead of hand-drawing fixed levels, Toy, Wichman, and Arnold generated fresh ASCII grids on every run—giving birth to procedural generation and the roguelike genre.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Deep Dive Lab -->
+        <section class="cl-card">
+          <h2>📐 Deep Dive: Breadth-First Search (Par) &amp; Procedural Mazes</h2>
+          <p>How does the HUD above always know the exact <strong>Par</strong> even on a brand-new random maze? It runs <strong>Breadth-First Search (BFS)</strong>—flooding outward one step at a time like ripples in water so the first path to touch the goal is guaranteed to be the shortest.</p>
+
+          <div class="gt-lab" id="maze-bfs-lab">
+            <div class="gt-lab-header">
+              <div>
+                <h3 class="gt-lab-title">Interactive BFS vs. DFS Pathfinding Lab</h3>
+                <p class="gt-lab-subtitle">Click interior tiles to build or erase walls, then watch BFS and DFS explore the grid</p>
+              </div>
+              <div class="gt-mode-toggle" role="group" aria-label="Search algorithm">
+                <button type="button" class="gt-mode-btn" data-lab-mode="bfs" aria-pressed="true">✓ BFS (Shortest Path)</button>
+                <button type="button" class="gt-mode-btn" data-lab-mode="dfs" aria-pressed="false">DFS (Depth-First)</button>
+              </div>
+            </div>
+            <div class="gt-lab-canvas-wrap">
+              <canvas id="maze-lab-canvas" width="540" height="250" aria-label="Interactive maze pathfinding grid comparing breadth-first search and depth-first search"></canvas>
+            </div>
+            <div class="gt-lab-controls">
+              <div class="gt-lab-actions">
+                <button type="button" class="gt-lab-btn" id="maze-lab-run">▶ Animate Search</button>
+                <button type="button" class="gt-lab-btn is-ghost" id="maze-lab-step">Step</button>
+                <button type="button" class="gt-lab-btn is-ghost" id="maze-lab-random">🎲 Random Maze</button>
+                <button type="button" class="gt-lab-btn is-ghost" id="maze-lab-reset">↺ Reset Grid</button>
+              </div>
+            </div>
+            <div class="gt-telemetry-grid">
+              <div class="gt-telem-card"><span class="gt-telem-label">Cells Explored</span><span class="gt-telem-val" id="maze-telem-explored">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Path Length</span><span class="gt-telem-val" id="maze-telem-path">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Guaranteed Par?</span><span class="gt-telem-val" id="maze-telem-optimal">YES (Par)</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Status</span><span class="gt-telem-val" id="maze-telem-status">Found!</span></div>
+            </div>
+            <div class="gt-lab-insight" id="maze-lab-insight" aria-live="polite">Click any wall or floor tile, then animate the search.</div>
+          </div>
+
+          <div class="gt-compare">
+            <div class="gt-compare-card is-amber">
+              <h3>🟡 Pixel-Color Collision (Fragile)</h3>
+              <ul>
+                <li>Checks RGB color under the sprite—breaks if you re-skin wall themes.</li>
+                <li>Hard for AI or pathfinders to plan routes through raw pixel buffers.</li>
+                <li>Turn one corner off by 1 px and the sprite snags on a wall edge.</li>
+              </ul>
+            </div>
+            <div class="gt-compare-card is-sky">
+              <h3>🔵 2D Tilemap Data + BFS (Clean)</h3>
+              <ul>
+                <li>Separates data (<code>maze[row][col] === '#'</code>) from visual theme colors.</li>
+                <li>Grid coordinates snap cleanly and never drift or get stuck on corners.</li>
+                <li>Turn on <strong>🔍 X-Ray</strong> in the game HUD above to reveal live BFS distances and the Par route!</li>
+              </ul>
+            </div>
           </div>
         </section>
 
@@ -184,13 +261,14 @@
         <!-- Remix -->
         <section class="cl-card">
           <h2>🧪 Remix Challenges</h2>
-          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Cards marked <strong>▶ playable</strong> switch the change on in the game above, so you can feel it before you build it. Try the rest in your own copy once you've built it in Lesson 2.</p>
           <div class="gt-remix">
             <details>
               <summary><span class="gt-tier tweak">Tweak</span><span><strong>Fog of war</strong><small>Renderer only · one condition</small></span></summary>
               <div class="gt-remix-body">
                 <p>Only draw tiles within 2 steps of the player. The maze is identical, but it <em>feels</em> completely different, because you've taken away the map. This is a pure rendering change. The engine never knows.</p>
                 <div class="code-block"><pre><span class="kw">if</span> (<span class="fn">Math.abs</span>(c - player.col) + <span class="fn">Math.abs</span>(r - player.row) &gt; <span class="num">2</span>) <span class="kw">continue</span>;</pre></div>
+                <button data-remix="fog">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -212,6 +290,39 @@
 
         <!-- Build with Blockly -->
         <section class="cl-card" data-game-blockly="maze"></section>
+
+        <!-- Check Your Understanding -->
+        <section class="cl-card gt-quiz-section">
+          <h2>🧠 Check Your Understanding</h2>
+          <p>Test your grasp of tilemaps, BFS shortest paths, and procedural maze generation:</p>
+          <article class="gt-quiz-card">
+            <h3>Question 1: Why is checking <code>maze[ty][tx] === '#'</code> in a 2D array superior to checking wall pixel colors on screen?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 1 options">
+              <button type="button" data-answer="wrong" data-explain="Browsers can read canvas pixels, though it's slower and tightly coupled to visuals.">Because JavaScript cannot draw colored rectangles on canvas</button>
+              <button type="button" data-answer="correct" data-explain="Correct! Separating collision data from artwork lets you swap Wall Themes freely and lets algorithms like BFS read the grid directly.">It decouples rules from artwork so themes can swap freely and pathfinding algorithms can read the map</button>
+              <button type="button" data-answer="wrong" data-explain="A 2D grid still requires bounds checks on row/column indices.">Because 2D arrays never need bounds checking</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 2: Why does Breadth-First Search (BFS) guarantee finding the shortest Par path while Depth-First Search (DFS) does not?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 2 options">
+              <button type="button" data-answer="correct" data-explain="Correct! BFS explores every cell at distance 1, then distance 2, then 3 in order (FIFO queue), so the first time it hits the goal it must be the minimum step count.">BFS explores cells layer by layer in order of distance from Start, whereas DFS dives down one branch first</button>
+              <button type="button" data-answer="wrong" data-explain="Both BFS and DFS avoid revisiting cells using a seen/visited set.">DFS ignores walls and walks diagonally</button>
+              <button type="button" data-answer="wrong" data-explain="BFS is deterministic and finds the exact optimal distance without guessing.">BFS tests random paths until one looks short</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 3: How does the Recursive Backtracker guarantee every cell in a random maze is reachable?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 3 options">
+              <button type="button" data-answer="wrong" data-explain="Randomly tossing walls down can easily seal off the goal.">By placing walls completely at random</button>
+              <button type="button" data-answer="correct" data-explain="Correct! Carving passages to unvisited neighbors and backtracking when trapped builds a spanning tree—every open tile connects to every other tile with no isolated islands.">It carves passages only to unvisited cells and backtracks from dead ends, forming one connected spanning tree</button>
+              <button type="button" data-answer="wrong" data-explain="The perimeter stays solid '#' while interior paths wind around.">By erasing the outer border walls</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+        </section>
 
         <!-- Build it for real -->
         <section class="cl-card">
@@ -252,8 +363,9 @@
           <p class="ll-pane-title">Learning Goals</p>
           <ul class="ll-guide-list">
             <li>Explain what a "core loop" is using the Maze Game as an example</li>
+            <li>Compare 2D tilemap collision data vs. pixel-color checks</li>
+            <li>Explain why BFS guarantees the shortest Par path</li>
             <li>Identify which parts of a game are "engine" vs. "content"</li>
-            <li>Tune a working game's layout without touching its logic</li>
             <li>Trace the same architecture across Scratch and JavaScript</li>
           </ul>
           <p class="ll-pane-title" style="margin-top:1rem;">Why the Limits?</p>
@@ -312,33 +424,60 @@
     const announce = msg => { $('maze-status').textContent = msg; };
 
     let config;
-    let maze, player, goal, steps, par, trail, anim, bump, won, holdTicks;
+    let maze, player, goal, steps, par, bfsInfo, trail, anim, bump, won, holdTicks;
 
-    /* Breadth-first search: the fewest steps from start to goal. */
+    function randomMaze(cols, rows) {
+      const g = Array.from({ length: rows }, () => Array(cols).fill('#'));
+      function carve(c, r) {
+        g[r][c] = '.';
+        const dirs = [[0, -2], [2, 0], [0, 2], [-2, 0]].sort(() => Math.random() - 0.5);
+        for (const [dc, dr] of dirs) {
+          const nc = c + dc, nr = r + dr;
+          if (nr > 0 && nr < rows - 1 && nc > 0 && nc < cols - 1 && g[nr][nc] === '#') {
+            g[r + dr / 2][c + dc / 2] = '.';
+            carve(nc, nr);
+          }
+        }
+      }
+      carve(1, 1);
+      g[rows - 2][cols - 2] = '.';
+      return g.map(r => r.join(''));
+    }
+
+    /* Breadth-first search: shortest path + distance map from start to goal. */
     function shortestPath(grid, from, to) {
-      const seen = new Set([from.col + ',' + from.row]);
-      let frontier = [from], dist = 0;
+      const distMap = { [from.col + ',' + from.row]: 0 };
+      const parent = {};
+      let frontier = [from];
       while (frontier.length) {
         const next = [];
         for (const p of frontier) {
-          if (p.col === to.col && p.row === to.row) return dist;
+          const pk = p.col + ',' + p.row;
+          if (p.col === to.col && p.row === to.row) {
+            const path = [];
+            let cur = pk;
+            while (cur) { const [c, r] = cur.split(',').map(Number); path.unshift({ col: c, row: r }); cur = parent[cur]; }
+            return { dist: distMap[pk], path, distMap };
+          }
           for (const [dx, dy] of Object.values(DIRS)) {
             const c = p.col + dx, r = p.row + dy, k = c + ',' + r;
-            if (grid[r] && grid[r][c] && grid[r][c] !== '#' && !seen.has(k)) { seen.add(k); next.push({ col: c, row: r }); }
+            if (grid[r] && grid[r][c] && grid[r][c] !== '#' && !(k in distMap)) {
+              distMap[k] = distMap[pk] + 1; parent[k] = pk; next.push({ col: c, row: r });
+            }
           }
         }
         frontier = next;
-        dist++;
       }
-      return null;
+      return { dist: null, path: [], distMap };
     }
 
     function reset() {
-      maze = layouts[config.layout] || layouts.zigzag;
+      maze = config.layout === 'random' ? randomMaze(11, 7) : (layouts[config.layout] || layouts.zigzag);
       player = { col: 1, row: 1 };
       goal = { col: maze[0].length - 2, row: maze.length - 2 };
       steps = 0;
-      par = shortestPath(maze, player, goal);
+      bfsInfo = shortestPath(maze, player, goal);
+      par = bfsInfo.dist;
       trail = new Set(['1,1']);
       anim = null;
       bump = null;
@@ -362,18 +501,21 @@
       // 1. WALL COLLISION: cancel the move if the target tile is a wall
       if (!maze[ty] || !maze[ty][tx] || maze[ty][tx] === '#') {
         bump = { dx, dy, start: performance.now() };
+        GameTutorial.sound.play('bump');
         return;
       }
       // 2. MOVE
       anim = { fromX: player.col, fromY: player.row, toX: tx, toY: ty, start: performance.now(), duration: duration() };
       player.col = tx; player.row = ty;
       trail.add(tx + ',' + ty);
+      GameTutorial.sound.play('step');
       // 3. COUNT only real steps
       steps++;
       updateHUD();
       // 4. GOAL
       if (tx === goal.col && ty === goal.row) {
         won = true;
+        GameTutorial.sound.play('win');
         const record = GameTutorial.best('maze', config.layout, steps, true);
         updateHUD();
         const verdict = steps === par ? 'Perfect route: you matched par!' : `Par is ${par}. Can you find a shorter route?`;
@@ -391,7 +533,7 @@
       if (++holdTicks >= HOLD_REPEAT && !anim) { holdTicks = 0; tryMove(...DIRS[held]); }
     }
 
-    function render(ctx) {
+    function render(ctx, g) {
       ctx.fillStyle = floorColors[config.wall] || '#0f2436';
       ctx.fillRect(0, 0, W, H);
       const offX = (W - maze[0].length * TILE) / 2;
@@ -405,17 +547,42 @@
         ctx.fill();
       });
 
-      ctx.fillStyle = wallColors[config.wall] || '#334155';
+      const fogged = (c, r) => config.remix.fog && Math.abs(c - player.col) + Math.abs(r - player.row) > 2;
       for (let r = 0; r < maze.length; r++) {
         for (let c = 0; c < maze[0].length; c++) {
+          if (fogged(c, r)) { ctx.fillStyle = '#05070d'; ctx.fillRect(offX + c * TILE, offY + r * TILE, TILE, TILE); continue; }
+          ctx.fillStyle = wallColors[config.wall] || '#334155';
           if (maze[r][c] === '#') ctx.fillRect(offX + c * TILE, offY + r * TILE, TILE, TILE);
+        }
+      }
+
+      if (g.xray && bfsInfo) {
+        ctx.font = '600 9px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(125,211,252,0.7)';
+        Object.entries(bfsInfo.distMap).forEach(([k, d]) => {
+          const [c, r] = k.split(',').map(Number);
+          ctx.fillText(String(d), offX + c * TILE + TILE / 2, offY + r * TILE + 10);
+        });
+        if (bfsInfo.path.length > 1) {
+          ctx.strokeStyle = 'rgba(56,189,248,0.85)';
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          bfsInfo.path.forEach((pt, idx) => {
+            const px = offX + pt.col * TILE + TILE / 2, py = offY + pt.row * TILE + TILE / 2;
+            if (idx === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          });
+          ctx.stroke();
+          ctx.setLineDash([]);
         }
       }
 
       ctx.font = '26px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(config.goal, offX + goal.col * TILE + TILE / 2, offY + goal.row * TILE + TILE / 2);
+      if (!fogged(goal.col, goal.row)) ctx.fillText(config.goal, offX + goal.col * TILE + TILE / 2, offY + goal.row * TILE + TILE / 2);
 
       let px = player.col, py = player.row;
       const now = performance.now();
@@ -444,6 +611,7 @@
       canvas: $('maze-canvas'),
       width: W, height: H,
       realtime: false,                            // turn-based: no start gate, nothing to pause
+      xray: true,
       actions: { up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'], left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'] },
       onPress: name => { holdTicks = 0; tryMove(...DIRS[name]); },
       touch: { dpad: true, buttons: [
@@ -460,6 +628,7 @@
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
+<script src="../../../../assets/js/lessons/game-tutorial-labs.js" defer></script>
 <script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>

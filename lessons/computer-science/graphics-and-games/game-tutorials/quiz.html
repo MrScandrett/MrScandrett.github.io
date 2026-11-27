@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tutorial: Quiz Adventure · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Tiny-loop tutorial — play and customize a real Quiz Adventure with pre-built question sets, see the exact architecture powering it, then build the same loop yourself in Scratch or from real scratch in JavaScript." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
@@ -61,39 +58,15 @@
           <p class="cl-lede">This is the exact <strong>Quiz Adventure</strong> archetype from <a href="../game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> — already built and running below. Play it, then swap the question set and avatar using the panel underneath. You can't break the loop itself; that part is locked. Once you've tuned a version you like, you'll build this same architecture two more times: with Scratch's blocks, then from real scratch in JavaScript.</p>
         </section>
 
-        <!-- Architecture -->
-        <section class="cl-card">
-          <h2>🗺️ The Architecture</h2>
-          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Quiz Adventure's architecture. Notice this one is different from the others: almost all of the design work is <strong>writing</strong>, not programming — the engine is short.</p>
-
-          <div class="stages-flow">
-            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Answer questions correctly to advance through the quest.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Question shown → pick an answer → correct advances, wrong gives a hint → repeat.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Question display, answer check, hint/retry, progress tracker.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Answer the final question to finish the quest. There's no lose state.</small></div>
-          </div>
-
-          <p><strong>The four systems, in order of execution on every answer:</strong></p>
-          <ol class="systems-list">
-            <li><strong>Question display system</strong> — shows the current question's text and its answer choices as buttons.</li>
-            <li><strong>Answer-check system</strong> — compares the clicked choice against the question's correct answer.</li>
-            <li><strong>Hint/retry system</strong> — a wrong answer shows a hint and uses up one retry; running out of retries reveals the answer so no one gets stuck. The buttons lock while the game moves on, so a fast double-click can't skip a question.</li>
-            <li><strong>Progress system</strong> — a correct (or revealed) answer advances the progress bar to the next question, or ends the quest on the last one.</li>
-          </ol>
-        </section>
-
         <!-- Play + Customize -->
         <section class="cl-card">
           <h2>🎮 Play &amp; Customize</h2>
           <p>Click an answer, or press <strong>1</strong>, <strong>2</strong>, or <strong>3</strong>. Correct answers advance the quest, and wrong answers give you a hint and another try. Getting it right on the first try earns a ⭐. The choices are shuffled every time you play.</p>
 
           <div class="game-wrap">
-            <div class="game-hud">
+            <div class="game-hud" id="g-hud">
               <span class="hud-score" id="g-score">Question 1 of 5</span>
-              <span class="hud-group"><span id="g-lives">3 retries left</span><span class="hud-best" id="g-stars"></span></span>
+              <span class="hud-group"><span class="gt-state-pill" id="g-state">STATE: ASKING</span><span id="g-lives">3 retries left</span><span class="hud-best" id="g-stars"></span></span>
             </div>
             <div class="game-stage" id="g-stage">
               <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="g-progress" style="width:20%"></div></div>
@@ -136,6 +109,112 @@
           </div>
         </section>
 
+        <!-- Architecture -->
+        <section class="cl-card">
+          <h2>🗺️ The Architecture</h2>
+          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Quiz Adventure's architecture. Notice this one is different from the others: almost all of the design work is <strong>writing</strong>, not programming — the engine is short.</p>
+
+          <div class="stages-flow">
+            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Answer questions correctly to advance through the quest.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Question shown → pick an answer → correct advances, wrong gives a hint → repeat.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Question display, answer check, hint/retry, progress tracker.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Answer the final question to finish the quest. There's no lose state.</small></div>
+          </div>
+
+          <p><strong>The four systems, in order of execution on every answer:</strong></p>
+          <ol class="systems-list">
+            <li><strong>Question display system</strong> — shows the current question's text and its answer choices as buttons.</li>
+            <li><strong>Answer-check system</strong> — compares the clicked choice against the question's correct answer.</li>
+            <li><strong>Hint/retry system</strong> — a wrong answer shows a hint and uses up one retry; running out of retries reveals the answer so no one gets stuck. The buttons lock while the game moves on, so a fast double-click can't skip a question.</li>
+            <li><strong>Progress system</strong> — a correct (or revealed) answer advances the progress bar to the next question, or ends the quest on the last one.</li>
+          </ol>
+        </section>
+
+        <!-- Origin -->
+        <section class="cl-card">
+          <h2>🏛️ The Origin: Data-Driven Trivia &amp; Quiz Engines (1985–2013)</h2>
+          <p>Quiz games proved a powerful engineering idea early on: if you separate the <strong>question database</strong> from the <strong>quiz engine</strong>, teachers, writers, and players can swap entire subjects without changing a single line of code.</p>
+          <div class="gt-origin-grid">
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1985 · Broderbund</span>
+              <h3><em>Where in the World Is Carmen Sandiego?</em></h3>
+              <p>Stored hundreds of geography clues in structured tables so a compact game engine could assemble fresh detective chases on early Apple II computers.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1995 · Jellyvision</span>
+              <h3><em>You Don't Know Jack</em></h3>
+              <p>Turned trivia into a snappy TV-show state machine: prompt → lock input → witty feedback → score reveal, proving UI pacing matters as much as questions.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">2013 · Classroom Tech</span>
+              <h3><em>Kahoot!</em> &amp; Quiz Platforms</h3>
+              <p>Scaled the exact content/engine split to millions of classrooms: one locked quiz state machine powered by infinite user-written question arrays.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Deep Dive Lab -->
+        <section class="cl-card">
+          <h2>📐 Deep Dive: Fisher-Yates Shuffling &amp; State Machine Guards</h2>
+          <p>Two hidden bugs ruin beginner quiz games: <strong>biased shuffling</strong> (using <code>sort(() =&gt; Math.random() - 0.5)</code> leaves Choice A appearing first too often) and <strong>double-click skips</strong> (clicking fast during a transition jumps past the next question). Test both below!</p>
+
+          <div class="gt-lab" id="quiz-shuffle-lab">
+            <div class="gt-lab-header">
+              <div>
+                <h3 class="gt-lab-title">Interactive Fisher-Yates Bias &amp; State Machine Guard Lab</h3>
+                <p class="gt-lab-subtitle">Run 1,000 shuffle trials to expose sort() bias, or test how the LOCKED state stops double-click bugs</p>
+              </div>
+              <div class="gt-mode-toggle" role="group" aria-label="Quiz engineering mode">
+                <button type="button" class="gt-mode-btn" data-lab-mode="shuffle" aria-pressed="true">🎲 Shuffle Bias (1,000 Trials)</button>
+                <button type="button" class="gt-mode-btn" data-lab-mode="fsm" aria-pressed="false">🔒 State Machine Guard</button>
+              </div>
+            </div>
+            <div class="gt-lab-canvas-wrap">
+              <canvas id="quiz-lab-canvas" width="540" height="230" aria-label="Interactive chart comparing Fisher-Yates shuffle fairness and quiz state machine transitions"></canvas>
+            </div>
+            <div class="gt-lab-controls">
+              <div class="gt-lab-actions" id="quiz-lab-ctrl-shuffle">
+                <button type="button" class="gt-lab-btn" id="quiz-lab-trials">🎲 Run 1,000 Trials</button>
+              </div>
+              <div class="gt-lab-actions" id="quiz-lab-ctrl-fsm" hidden>
+                <button type="button" class="gt-lab-btn" id="quiz-lab-ok">✓ Pick Correct</button>
+                <button type="button" class="gt-lab-btn is-ghost" id="quiz-lab-wrong">✕ Pick Wrong</button>
+                <button type="button" class="gt-lab-btn is-ghost" id="quiz-lab-spam">⚡ Double-Click Spam</button>
+                <button type="button" class="gt-lab-btn is-ghost" id="quiz-lab-reset-fsm">↺ Reset</button>
+              </div>
+            </div>
+            <div class="gt-telemetry-grid">
+              <div class="gt-telem-card"><span class="gt-telem-label">Fisher-Yates / State</span><span class="gt-telem-val" id="quiz-telem-a">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Naive Sort / Retries</span><span class="gt-telem-val" id="quiz-telem-b">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">FY Spread / Locked?</span><span class="gt-telem-val" id="quiz-telem-c">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Naive Spread / Blocked</span><span class="gt-telem-val" id="quiz-telem-d">—</span></div>
+            </div>
+            <div class="gt-lab-insight" id="quiz-lab-insight" aria-live="polite">Compare Fisher-Yates against naive sort(), or test the state machine guard.</div>
+          </div>
+
+          <div class="gt-compare">
+            <div class="gt-compare-card is-amber">
+              <h3>🟡 Hardcoded Questions &amp; Naive Sort</h3>
+              <ul>
+                <li>Writing a separate <code>if/else</code> function per question explodes code size.</li>
+                <li><code>choices.sort(() =&gt; Math.random() - 0.5)</code> is biased in JavaScript engines.</li>
+                <li>Missing a <code>locked</code> state lets rapid clicks skip two questions at once.</li>
+              </ul>
+            </div>
+            <div class="gt-compare-card is-sky">
+              <h3>🔵 Data-Driven Arrays + State Guard</h3>
+              <ul>
+                <li>Any <code>questions</code> array of <code>{ text, choices, correct, hint }</code> runs automatically.</li>
+                <li>Fisher-Yates swaps backward from <code>n - 1</code> to <code>1</code>, giving every order equal <code>1/n!</code> odds.</li>
+                <li>Watch the live <strong>STATE</strong> badge in the HUD above step through <code>ASKING → LOCKED</code>!</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         <!-- Peek at the code -->
         <section class="cl-card">
           <h2>👀 Peek at the Code</h2>
@@ -146,7 +225,7 @@
             <pre><span class="kw">const</span> config = { theme: <span class="str">'<span id="cfg-theme">math</span>'</span>, avatar: <span class="str">'<span id="cfg-avatar">🧙</span>'</span>, retries: <span class="num" id="cfg-retries">3</span> };
 
 <span class="kw">const</span> questions = [
-  { text: <span class="str">'5 + 7 = ?'</span>, choices: [<span class="str">'10'</span>, <span class="str">'12'</span>, <span class="str">'13'</span>], correct: <span class="num">1</span>, hint: <span class="str">'Count up from 7, four times.'</span> },
+  <span id="cfg-sample-q">{ text: <span class="str">'5 + 7 = ?'</span>, choices: [<span class="str">'10'</span>, <span class="str">'12'</span>, <span class="str">'13'</span>], correct: <span class="num">1</span>, hint: <span class="str">'Count up from 7, five times.'</span> }</span>,
   <span class="cm">// ...more questions</span>
 ];</pre>
           </div>
@@ -181,7 +260,7 @@
         <!-- Remix -->
         <section class="cl-card">
           <h2>🧪 Remix Challenges</h2>
-          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Cards marked <strong>▶ playable</strong> switch the change on in the game above, so you can feel it before you build it. Try the rest in your own copy once you've built it in Lesson 2.</p>
           <div class="gt-remix">
             <details>
               <summary><span class="gt-tier tweak">Tweak</span><span><strong>Write your own question set</strong><small>Content only · zero engine changes</small></span></summary>
@@ -194,6 +273,9 @@
               <summary><span class="gt-tier twist">Twist</span><span><strong>A countdown</strong><small>New system: time pressure</small></span></summary>
               <div class="gt-remix-body">
                 <p>Give each question 10 seconds. When time runs out, it counts as a wrong answer. Now the game rewards fluency as well as knowledge. Is that what you want for a learning game? Different subjects might answer that differently.</p>
+                <div class="code-block"><pre>timeLeft--;                          <span class="cm">// once a second</span>
+<span class="kw">if</span> (timeLeft === <span class="num">0</span>) <span class="fn">wrongAnswer</span>();   <span class="cm">// same path as a wrong click</span></pre></div>
+                <button data-remix="countdown">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -207,6 +289,39 @@
 
         <!-- Build with Blockly -->
         <section class="cl-card" data-game-blockly="quiz"></section>
+
+        <!-- Check Your Understanding -->
+        <section class="cl-card gt-quiz-section">
+          <h2>🧠 Check Your Understanding</h2>
+          <p>Test your grasp of state machines, Fisher-Yates shuffling, and content-engine separation:</p>
+          <article class="gt-quiz-card">
+            <h3>Question 1: Why does <code>onChoice()</code> set <code>locked = true</code> immediately after a correct answer?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 1 options">
+              <button type="button" data-answer="wrong" data-explain="locked stays true for ~650 ms only while advancing, then resets on renderQuestion().">To permanently disable the browser tab</button>
+              <button type="button" data-answer="correct" data-explain="Correct! While the 650 ms feedback timer is waiting to advance, locked = true blocks extra clicks so a fast double-click cannot skip the next question.">To ignore extra clicks during the feedback delay so a fast double-click can't skip a question</button>
+              <button type="button" data-answer="wrong" data-explain="Shuffling happens inside renderQuestion() before the user clicks.">To keep the choices from shuffling</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 2: Why is the Fisher-Yates loop better than <code>array.sort(() =&gt; Math.random() - 0.5)</code> for shuffling quiz answers?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 2 options">
+              <button type="button" data-answer="correct" data-explain="Correct! Random comparators violate sorting transitivity and leave certain slots biased. Fisher-Yates produces every permutation with exact uniform probability.">Fisher-Yates gives every choice an equal chance of landing in every slot, whereas random sort() is biased</button>
+              <button type="button" data-answer="wrong" data-explain="Both run in microseconds on a 3-element array.">Because JavaScript's sort() refuses to run on strings</button>
+              <button type="button" data-answer="wrong" data-explain="Shuffling only reorders display slots; q.correct is still tracked via data-choice.">Because Fisher-Yates automatically picks the correct answer</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 3: What makes switching from "Math Dungeon" to "Science Quest" require zero changes to <code>onChoice()</code>?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 3 options">
+              <button type="button" data-answer="wrong" data-explain="Both sets use the exact same 35-line engine function.">Because each subject runs a completely different engine</button>
+              <button type="button" data-answer="correct" data-explain="Correct! Every question set obeys the exact same data contract ({ text, choices, correct, hint }), so one locked engine plays any subject.">All question sets share the same data shape (text, choices, correct, hint), separating content from engine</button>
+              <button type="button" data-answer="wrong" data-explain="Questions are stored in an array, not read from localStorage.">Because the browser downloads new JavaScript from the internet</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+        </section>
 
         <!-- Build it for real -->
         <section class="cl-card">
@@ -247,8 +362,9 @@
           <p class="ll-pane-title">Learning Goals</p>
           <ul class="ll-guide-list">
             <li>Explain what a "core loop" is using the Quiz Adventure as an example</li>
+            <li>Explain why Fisher-Yates shuffling beats naive random <code>sort()</code></li>
+            <li>Trace how a state machine guard (<code>locked</code>) stops double-click skips</li>
             <li>Identify which parts of a game are "engine" vs. "content"</li>
-            <li>Recognize when a game archetype's design work is mostly writing, not code</li>
             <li>Trace the same architecture across Scratch and JavaScript</li>
           </ul>
           <p class="ll-pane-title" style="margin-top:1rem;">Why the Limits?</p>
@@ -274,13 +390,15 @@
     const choicesEl = $('g-choices');
     const hintEl = $('g-hint');
     const progressEl = $('g-progress');
+    const stateEl = $('g-state');
     const overlay = GameTutorial.overlay(wrap);
+    GameTutorial.sound.mountToggle($('g-hud'));
 
     const questionSets = {
       math: {
         bg: 'math',
         questions: [
-          { text: '5 + 7 = ?', choices: ['10', '12', '13'], correct: 1, hint: 'Count up from 7, four times.' },
+          { text: '5 + 7 = ?', choices: ['10', '12', '13'], correct: 1, hint: 'Count up from 7, five times.' },
           { text: '9 − 4 = ?', choices: ['4', '5', '6'], correct: 1, hint: 'Count backward from 9, four times.' },
           { text: '3 × 4 = ?', choices: ['7', '10', '12'], correct: 2, hint: 'Add 3 four times: 3+3+3+3.' },
           { text: 'Half of 20 is?', choices: ['10', '12', '15'], correct: 0, hint: 'Split 20 into two equal groups.' },
@@ -292,7 +410,7 @@
         questions: [
           { text: 'What planet do we live on?', choices: ['Mars', 'Earth', 'Venus'], correct: 1, hint: 'It’s the third planet from the Sun.' },
           { text: 'What gas do plants breathe in?', choices: ['Oxygen', 'Carbon dioxide', 'Nitrogen'], correct: 1, hint: 'It’s the gas we breathe out.' },
-          { text: 'How many legs does an insect have?', choices: ['4', '6', '8'], correct: 1, hint: 'Spiders have 8 — insects have two fewer pairs.' },
+          { text: 'How many legs does an insect have?', choices: ['4', '6', '8'], correct: 1, hint: 'Spiders have 8 — insects have one fewer pair (two fewer legs).' },
           { text: 'What state of matter is ice?', choices: ['Liquid', 'Gas', 'Solid'], correct: 2, hint: 'It holds its shape without a container.' },
           { text: 'What organ pumps blood through your body?', choices: ['Lungs', 'Heart', 'Stomach'], correct: 1, hint: 'You can feel it beating in your chest.' }
         ]
@@ -314,8 +432,30 @@
 
     const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
+    const TIME_LIMIT = 10;
+    let clock = null, timeLeft = 0;
+    function stopClock() { clearInterval(clock); clock = null; }
+    function startClock() {          // Countdown remix: a new system on its own timer
+      stopClock();
+      if (!config.remix.countdown) return;
+      timeLeft = TIME_LIMIT;
+      clock = setInterval(() => {
+        const r = stage.getBoundingClientRect();
+        if (locked || overlay.visible || document.hidden || r.bottom < 0 || r.top > innerHeight) return;   // paused off-screen
+        if (--timeLeft <= 0) { stopClock(); wrongAnswer(null); } else setRetriesText();
+      }, 1000);
+    }
+
+    function setFsm(label) { if (stateEl) stateEl.textContent = 'STATE: ' + label; }
+
     function reset() {
       questions = questionSets[config.theme].questions;
+      const sampleEl = $('cfg-sample-q');
+      if (sampleEl && questions[0]) {
+        const s = questions[0];
+        sampleEl.textContent = `{ text: '${s.text}', choices: ['${s.choices.join("', '")}'], correct: ${s.correct}, hint: '${s.hint}' }`;
+      }
+      stopClock();
       currentIndex = 0;
       stars = 0;
       overlay.hide();
@@ -325,13 +465,14 @@
     }
 
     function setRetriesText() {
-      $('g-lives').textContent = `${Math.max(retriesLeft, 0)} ${retriesLeft === 1 ? 'retry' : 'retries'} left`;
+      $('g-lives').textContent = `${Math.max(retriesLeft, 0)} ${retriesLeft === 1 ? 'retry' : 'retries'} left` + (clock ? ` · ⏱ ${timeLeft} s` : '');
     }
 
     function renderQuestion(moveFocus) {
       retriesLeft = config.retries;
       firstTry = true;
       locked = false;
+      setFsm('ASKING');
       const q = questions[currentIndex];
       order = shuffle(q.choices.map((_, i) => i));   // display slot → original choice index
       $('g-score').textContent = `Question ${currentIndex + 1} of ${questions.length}`;
@@ -355,6 +496,8 @@
         choicesEl.appendChild(btn);
       });
       if (moveFocus) choicesEl.firstChild.focus({ preventScroll: true });
+      startClock();
+      setRetriesText();
     }
 
     function onChoice(choiceIndex, btn) {
@@ -366,26 +509,39 @@
       // 1. check the answer
       if (choiceIndex === q.correct) {
         locked = true;
+        stopClock();
+        setFsm('LOCKED');
+        GameTutorial.sound.play('good');
         btn.classList.add('correct');
         if (firstTry) { stars++; hintEl.textContent = '⭐ First try!'; } else hintEl.textContent = '✓ Correct!';
         setTimeout(() => advance(hadFocus), 650);  // 2. correct: move on, or win
         return;
       }
 
-      // 3. wrong: show the hint, use up a retry
+      wrongAnswer(btn, hadFocus);
+    }
+
+    // 3. wrong (or out of time): show the hint, use up a retry
+    function wrongAnswer(btn, hadFocus) {
+      const q = questions[currentIndex];
       firstTry = false;
-      btn.classList.add('wrong');
-      btn.disabled = true;
+      if (btn) { btn.classList.add('wrong'); btn.disabled = true; }
       retriesLeft--;
       setRetriesText();
+      GameTutorial.sound.play('bad');
 
       if (retriesLeft <= 0) {                       // 4. out of retries: reveal & advance
         locked = true;
+        stopClock();
+        setFsm('REVEAL');
         hintEl.textContent = `The answer is "${q.choices[q.correct]}". ${q.hint}`;
         choicesEl.querySelector(`[data-choice="${q.correct}"]`).classList.add('correct');
         setTimeout(() => advance(hadFocus), 1800);
       } else {
-        hintEl.textContent = '💡 ' + q.hint;
+        setFsm('RETRY');
+        hintEl.textContent = (btn ? '💡 ' : '⏱ Time’s up! 💡 ') + q.hint;
+        startClock();
+        setRetriesText();
       }
     }
 
@@ -396,6 +552,8 @@
     }
 
     function endGame() {
+      setFsm('COMPLETE');
+      GameTutorial.sound.play('win');
       progressEl.style.width = '100%';
       $('g-stars').textContent = '⭐ ' + stars;
       const record = GameTutorial.best('quiz', config.theme, stars);
@@ -429,6 +587,7 @@
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
+<script src="../../../../assets/js/lessons/game-tutorial-labs.js" defer></script>
 <script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>

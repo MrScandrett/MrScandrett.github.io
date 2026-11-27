@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tutorial: Top-Down "Shooter" · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Tiny-loop tutorial — play and customize a real top-down target game with pre-built sprites and a projectile system, see the exact architecture powering it, then build the same loop yourself in Scratch or from real scratch in JavaScript." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../../assets/css/game-tutorial.css" />
@@ -52,34 +49,10 @@
           <p class="cl-lede">This is the exact <strong>Top-Down "Shooter"</strong> archetype from <a href="../game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> — already built and running below, kept nonviolent by design (pop balloons, zap viruses, spray out fires). Play it, then swap the pre-built sprites and pace using the panel underneath. You can't break the loop itself; that part is locked. Once you've tuned a version you like, you'll build this same architecture two more times: with Scratch's blocks, then from real scratch in JavaScript.</p>
         </section>
 
-        <!-- Architecture -->
-        <section class="cl-card">
-          <h2>🗺️ The Architecture</h2>
-          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Top-Down "Shooter"'s architecture:</p>
-
-          <div class="stages-flow">
-            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Aim and fire at targets before time or patience runs out.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Move → fire a projectile → it travels → hits a target → target disappears, score +1.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Player movement, projectile spawner, target spawner, hit detection.</small></div>
-            <div class="stages-arrow">→</div>
-            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the score goal to win. There's no lose state — just accuracy and speed.</small></div>
-          </div>
-
-          <p><strong>The four systems, in order of execution every frame:</strong></p>
-          <ol class="systems-list">
-            <li><strong>Input system</strong> — reads held arrow keys to move the player along the bottom, and a key press to fire.</li>
-            <li><strong>Projectile system</strong> — each fire press spawns one projectile at the player's position that travels straight up until it hits something or leaves the screen.</li>
-            <li><strong>Target spawner system</strong> — keeps three targets drifting side to side near the top, respawning a new one in a random slot a moment after one gets hit.</li>
-            <li><strong>Hit detection system</strong> — checks every projectile against every target with AABB; on a hit, the target disappears, the projectile is removed, and the score increases.</li>
-          </ol>
-        </section>
-
         <!-- Play + Customize -->
         <section class="cl-card">
           <h2>🎮 Play &amp; Customize</h2>
-          <p>Move with <strong>← / →</strong> or <strong>A / D</strong>. Fire with <strong>Space</strong> or <strong>↑</strong>, a click on the game, or the touch Fire button. Targets drift, so lead your shots. The clock is running: hit the score goal as fast as you can.</p>
+          <p>Move with <strong>← / →</strong>, <strong>A / D</strong>, or your mouse/finger. Fire with <strong>Space</strong>, <strong>↑</strong>, a click/tap on the game, or the touch Fire button. Targets drift, so lead your shots. The clock is running: hit the score goal as fast as you can.</p>
 
           <div class="game-wrap">
             <div class="game-hud">
@@ -125,6 +98,116 @@
             <div class="config-actions"></div>
             <p class="config-note">Notice what you <em>can't</em> change here: there's no field for "how targets respawn" or "how hits are detected." That's the engine — the part every version of this game shares. You're only tuning content, not rewriting architecture. That's the limit, on purpose.</p>
             <p class="config-note"><strong>What Projectile Speed actually touches in the engine:</strong> it's only how many pixels each projectile's <code>y</code> shrinks by per frame once it's already in flight (<code>p.y -= config.projectileSpeed</code>) — it doesn't touch how often you can fire (there's no cooldown; one key press is one projectile) or how close a projectile has to be to register a hit in <code>collides()</code>. Same fire rate and hit radius at every speed.</p>
+          </div>
+        </section>
+
+        <!-- Architecture -->
+        <section class="cl-card">
+          <h2>🗺️ The Architecture</h2>
+          <p>Every tiny-loop game starts as a concept, then gets broken into a core loop, a systems list, and a structure — before anyone touches sprites or colors. Here's the Top-Down "Shooter"'s architecture:</p>
+
+          <div class="stages-flow">
+            <div class="stages-step"><span class="stages-step-icon">🌱</span><strong>Concept</strong><small>Aim and fire at targets before time or patience runs out.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🔁</span><strong>Core Loop</strong><small>Move → fire a projectile → it travels → hits a target → target disappears, score +1.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🧩</span><strong>Systems</strong><small>Player movement, projectile spawner, target spawner, hit detection.</small></div>
+            <div class="stages-arrow">→</div>
+            <div class="stages-step"><span class="stages-step-icon">🏁</span><strong>Win/Lose</strong><small>Reach the score goal to win. There's no lose state — just accuracy and speed.</small></div>
+          </div>
+
+          <p><strong>The four systems, in order of execution every frame:</strong></p>
+          <ol class="systems-list">
+            <li><strong>Input system</strong> — reads held arrow keys to move the player along the bottom, and a key press to fire.</li>
+            <li><strong>Projectile system</strong> — each fire press spawns one projectile at the player's position that travels straight up until it hits something or leaves the screen.</li>
+            <li><strong>Target spawner system</strong> — keeps three targets drifting side to side near the top, respawning a new one in a random slot a moment after one gets hit.</li>
+            <li><strong>Hit detection system</strong> — checks every projectile against every target with AABB; on a hit, the target disappears, the projectile is removed, and the score increases.</li>
+          </ol>
+        </section>
+
+        <!-- Origin -->
+        <section class="cl-card">
+          <h2>🏛️ The Origin: Fixed Shooters &amp; Projectile Loops (1962–1981)</h2>
+          <p>Spawning short-lived projectiles from a player sprite and testing them against moving targets created one of the most influential loops in gaming history—and taught engineers how to manage dynamic object lists efficiently.</p>
+          <div class="gt-origin-grid">
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1962 · MIT</span>
+              <h3>Steve Russell's <em>Spacewar!</em></h3>
+              <p>Running on a PDP-1 minicomputer, two spaceships fired vector torpedoes across a CRT—pioneering projectile physics and real-time hit checks.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1978 · Taito</span>
+              <h3>Tomohiro Nishikado's <em>Space Invaders</em></h3>
+              <p>Locked the player to a horizontal track along the bottom and introduced wave-based target rows, shields, and escalating tempo as targets were cleared.</p>
+            </article>
+            <article class="gt-era-card">
+              <span class="gt-era-badge">1981 · Namco</span>
+              <h3><em>Galaga</em> &amp; Target Variety</h3>
+              <p>Added swooping dive paths, double-shot power-ups, and end-of-stage accuracy bonuses—rewarding smart aim over blind button mashing.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Deep Dive Lab -->
+        <section class="cl-card">
+          <h2>📐 Deep Dive: Predictive Lead Geometry &amp; Hit Pools</h2>
+          <p>Because projectiles take time to travel upward (<code>t = Δy / v_shot</code>), firing directly at a moving target aims at where it <em>was</em>. Smart players—and turret AI—aim ahead by <strong>Δx = v_target × t</strong> so shot and target arrive at the same spot together.</p>
+
+          <div class="gt-lab" id="shooter-lead-lab">
+            <div class="gt-lab-header">
+              <div>
+                <h3 class="gt-lab-title">Interactive Predictive Lead &amp; Intercept Lab</h3>
+                <p class="gt-lab-subtitle">Compare aiming directly at a drifting target vs. leading it by Δx = vx × t</p>
+              </div>
+              <div class="gt-mode-toggle" role="group" aria-label="Aiming strategy">
+                <button type="button" class="gt-mode-btn" data-lab-mode="lead" aria-pressed="true">✓ Lead Target (Intercept)</button>
+                <button type="button" class="gt-mode-btn" data-lab-mode="direct" aria-pressed="false">✕ Aim Directly</button>
+              </div>
+            </div>
+            <div class="gt-lab-canvas-wrap">
+              <canvas id="shooter-lab-canvas" width="540" height="240" aria-label="Interactive moving target lead geometry simulation"></canvas>
+            </div>
+            <div class="gt-lab-controls">
+              <div class="gt-lab-sliders">
+                <div class="gt-lab-slider-field">
+                  <label for="shooter-lab-tvx">Target Speed <output id="shooter-lab-tvx-out" for="shooter-lab-tvx">1.8 px/f</output></label>
+                  <input type="range" id="shooter-lab-tvx" min="0.5" max="3.0" step="0.1" value="1.8" />
+                </div>
+                <div class="gt-lab-slider-field">
+                  <label for="shooter-lab-pvy">Shot Speed <output id="shooter-lab-pvy-out" for="shooter-lab-pvy">4 px/f</output></label>
+                  <input type="range" id="shooter-lab-pvy" min="2" max="7" step="1" value="4" />
+                </div>
+              </div>
+              <div class="gt-lab-actions">
+                <button type="button" class="gt-lab-btn" id="shooter-lab-fire">⚡ Fire Test Shot</button>
+              </div>
+            </div>
+            <div class="gt-telemetry-grid">
+              <div class="gt-telem-card"><span class="gt-telem-label">Flight Time (t)</span><span class="gt-telem-val" id="shooter-telem-flight">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Lead Offset (Δx)</span><span class="gt-telem-val" id="shooter-telem-lead">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Intercept X</span><span class="gt-telem-val" id="shooter-telem-inter">—</span></div>
+              <div class="gt-telem-card"><span class="gt-telem-label">Shot Result</span><span class="gt-telem-val" id="shooter-telem-result">Ready</span></div>
+            </div>
+            <div class="gt-lab-insight" id="shooter-lab-insight" aria-live="polite">Fire a test shot to compare direct aim vs. predictive lead.</div>
+          </div>
+
+          <div class="gt-compare">
+            <div class="gt-compare-card is-amber">
+              <h3>🟡 Unfiltered Arrays &amp; Double Hits</h3>
+              <ul>
+                <li>Never deleting off-screen projectiles leaks memory and slows collision loops down.</li>
+                <li>Without a <code>p.hit</code> guard, one shot overlapping two targets could score twice!</li>
+                <li>Instant teleporting lasers remove all skill of reading target speed.</li>
+              </ul>
+            </div>
+            <div class="gt-compare-card is-sky">
+              <h3>🔵 Filtered Pools + <code>p.hit</code> Guard</h3>
+              <ul>
+                <li><code>projectiles.filter(p =&gt; p.y &gt; -10 &amp;&amp; !p.hit)</code> sweeps dead shots every tick.</li>
+                <li>Checking <code>!p.hit &amp;&amp; t.alive</code> ensures each shot scores at most once.</li>
+                <li>Turn on <strong>🔍 X-Ray</strong> in the HUD above to see the 44×44 hitboxes and drift vectors!</li>
+              </ul>
+            </div>
           </div>
         </section>
 
@@ -176,7 +259,7 @@
         <!-- Remix -->
         <section class="cl-card">
           <h2>🧪 Remix Challenges</h2>
-          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Try them in your own copy once you've built it in Lesson 2.</p>
+          <p>The panel can only turn the knobs the engine exposes. To change the <em>rules</em>, you change the engine. Each challenge edits one system. Cards marked <strong>▶ playable</strong> switch the change on in the game above, so you can feel it before you build it. Try the rest in your own copy once you've built it in Lesson 2.</p>
           <div class="gt-remix">
             <details>
               <summary><span class="gt-tier tweak">Tweak</span><span><strong>Fire cooldown</strong><small>Projectile system · two lines</small></span></summary>
@@ -184,12 +267,16 @@
                 <p>Right now, mashing Space is the best strategy. Add a cooldown so every shot has to count. How long before it feels sluggish instead of tactical?</p>
                 <div class="code-block"><pre><span class="kw">if</span> (firePressed &amp;&amp; cooldown &lt;= <span class="num">0</span>) { <span class="fn">fire</span>(); cooldown = <span class="num">15</span>; }  <span class="cm">// 15 ticks = ¼ second</span>
 cooldown--;</pre></div>
+                <button data-remix="cooldown">▶ Try it in the game</button>
               </div>
             </details>
             <details>
               <summary><span class="gt-tier twist">Twist</span><span><strong>Limited ammo</strong><small>Change the win condition</small></span></summary>
               <div class="gt-remix-body">
                 <p>Give the player 20 shots. When they're gone, the game ends and the score is your accuracy (<code>hits / shots</code>). It's the same engine, but now the design rewards patience instead of speed.</p>
+                <div class="code-block"><pre><span class="kw">if</span> (firePressed &amp;&amp; shots &lt; <span class="num">20</span>) <span class="fn">fire</span>();
+<span class="kw">if</span> (shots === <span class="num">20</span> &amp;&amp; projectiles.length === <span class="num">0</span>) <span class="fn">endGame</span>(score / shots);</pre></div>
+                <button data-remix="ammo">▶ Try it in the game</button>
               </div>
             </details>
             <details>
@@ -203,6 +290,39 @@ cooldown--;</pre></div>
 
         <!-- Build with Blockly -->
         <section class="cl-card" data-game-blockly="shooter"></section>
+
+        <!-- Check Your Understanding -->
+        <section class="cl-card gt-quiz-section">
+          <h2>🧠 Check Your Understanding</h2>
+          <p>Test your grasp of predictive lead geometry, projectile pools, and collision guards:</p>
+          <article class="gt-quiz-card">
+            <h3>Question 1: Why must you aim ahead of a horizontally moving target?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 1 options">
+              <button type="button" data-answer="wrong" data-explain="Projectiles travel straight up without sideways drift.">Because projectiles curve sideways in mid-air</button>
+              <button type="button" data-answer="correct" data-explain="Correct! While the projectile covers Δy vertically over t = Δy / v_shot frames, the target keeps moving sideways by Δx = v_target × t.">Because the target keeps drifting during the projectile's flight time t = Δy / v_shot</button>
+              <button type="button" data-answer="wrong" data-explain="Targets bounce cleanly off x = 24 and x = W - 24.">Because targets speed up near the center of the screen</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 2: What bug does the <code>!p.hit</code> guard prevent inside the nested collision loop?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 2 options">
+              <button type="button" data-answer="correct" data-explain="Correct! Without checking !p.hit, one projectile touching two overlapping targets on the same frame would destroy both and award 2 points.">It stops a single projectile from hitting and scoring on two targets in the same frame</button>
+              <button type="button" data-answer="wrong" data-explain="Off-screen cleanup is handled by p.y > -10.">It stops projectiles from flying off the top edge</button>
+              <button type="button" data-answer="wrong" data-explain="Player firing has no cooldown in this base engine.">It limits the player to one shot per second</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+          <article class="gt-quiz-card">
+            <h3>Question 3: Why does the engine filter out projectiles once <code>p.y &lt;= -10</code>?</h3>
+            <div class="gt-quiz-options" role="group" aria-label="Question 3 options">
+              <button type="button" data-answer="wrong" data-explain="Scoring happens when collides(p, t) is true, not when shots leave the top.">Because missed shots give bonus points</button>
+              <button type="button" data-answer="correct" data-explain="Correct! Removing off-screen shots keeps the projectiles array small so collision checks stay fast and memory doesn't leak.">To prevent the projectiles array from growing forever and slowing down collision checks</button>
+              <button type="button" data-answer="wrong" data-explain="Projectiles do not bounce off the top wall.">To bounce projectiles back down at the player</button>
+            </div>
+            <p class="gt-quiz-feedback" aria-live="polite"></p>
+          </article>
+        </section>
 
         <!-- Build it for real -->
         <section class="cl-card">
@@ -246,8 +366,9 @@ cooldown--;</pre></div>
           <p class="ll-pane-title">Learning Goals</p>
           <ul class="ll-guide-list">
             <li>Explain what a "core loop" is using this shooter archetype as an example</li>
+            <li>Calculate predictive lead (<code>Δx = vx × t</code>) for moving targets</li>
+            <li>Explain why filtering off-screen projectiles prevents slowdowns</li>
             <li>Identify which parts of a game are "engine" vs. "content"</li>
-            <li>Tune a working game's pace without touching its logic</li>
             <li>Trace the same architecture across Scratch and JavaScript</li>
           </ul>
           <p class="ll-pane-title" style="margin-top:1rem;">Why the Limits?</p>
@@ -278,7 +399,8 @@ cooldown--;</pre></div>
     const announce = msg => { $('shooter-status').textContent = msg; };
 
     let config;
-    let player, targets, projectiles, bursts, score, shots, firePressed, ticks;
+    let player, targets, projectiles, bursts, score, shots, firePressed, ticks, cooldown;
+    const AMMO = 20;
 
     function reset() {
       player = { x: W / 2, y: H - 30 };
@@ -291,6 +413,7 @@ cooldown--;</pre></div>
       score = 0;
       shots = 0;
       ticks = 0;
+      cooldown = 0;
       firePressed = false;
       updateHUD();
     }
@@ -299,7 +422,7 @@ cooldown--;</pre></div>
 
     function updateHUD() {
       $('g-score').textContent = 'Score: ' + score;
-      $('g-time').textContent = seconds(ticks) + ' s';
+      $('g-time').textContent = config.remix.ammo ? `🎯 ${AMMO - shots} left` : seconds(ticks) + ' s';
       const b = GameTutorial.best('shooter', 'ticks-' + config.winScore).best;
       $('g-best').textContent = b ? 'Best ' + seconds(b) + ' s' : '';
     }
@@ -318,7 +441,7 @@ cooldown--;</pre></div>
 
     function update(g) {
       ticks++;
-      if (ticks % 6 === 0) $('g-time').textContent = seconds(ticks) + ' s';
+      if (ticks % 6 === 0) updateHUD();
 
       // 1. INPUT
       if (g.held('left'))  player.x -= 5;
@@ -326,11 +449,15 @@ cooldown--;</pre></div>
       player.x = Math.max(20, Math.min(W - 20, player.x));
 
       // 2. PROJECTILES: one press = one shot, straight up
-      if (firePressed) {
+      const canFire = !(config.remix.cooldown && cooldown > 0) && !(config.remix.ammo && shots >= AMMO);
+      if (firePressed && canFire) {
         projectiles.push({ x: player.x, y: player.y - 14, hit: false });
         shots++;
-        firePressed = false;
+        if (config.remix.cooldown) cooldown = 15;   // 15 ticks = ¼ second
+        GameTutorial.sound.play('pew');
       }
+      firePressed = false;
+      cooldown--;
       projectiles.forEach(p => { p.y -= config.projectileSpeed; });
 
       // 3. TARGETS: drift, bounce, refill empty slots after a short delay
@@ -349,6 +476,7 @@ cooldown--;</pre></div>
             t.cooldown = RESPAWN_TICKS;
             p.hit = true;
             score++;
+            GameTutorial.sound.play('pop');
             bursts.push({ x: t.x, y: t.y, t: 18 });
             updateHUD();
           }
@@ -358,19 +486,27 @@ cooldown--;</pre></div>
       bursts.forEach(b => { b.t--; });
       bursts = bursts.filter(b => b.t > 0);
 
-      if (score >= config.winScore) {
+      if (config.remix.ammo && shots >= AMMO && !projectiles.length) {   // Limited-ammo remix: accuracy is the score
+        const accuracy = Math.round(score / AMMO * 100);
+        GameTutorial.sound.play(accuracy >= 50 ? 'win' : 'lose');
+        g.end({ title: '🎯 Out of Ammo', sub: `${score} hits from ${AMMO} shots · ${accuracy}% accuracy.` });
+        announce(`Out of ammo. ${accuracy} percent accuracy.`);
+      } else if (score >= config.winScore) {
         const record = GameTutorial.best('shooter', 'ticks-' + config.winScore, ticks, true);
         updateHUD();
+        GameTutorial.sound.play('win');
         const accuracy = Math.round(score / Math.max(shots, 1) * 100);
         g.end({ title: '🎉 You Won!', sub: `${config.winScore} hits in ${seconds(ticks)} s · ${accuracy}% accuracy.` + (record.isNew ? ' New best time!' : '') });
         announce(`You won in ${seconds(ticks)} seconds.`);
       }
     }
 
-    function render(ctx) {
+    function render(ctx, g) {
       const theme = themes[config.theme] || themes.balloons;
       ctx.fillStyle = theme.bg;
       ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      for (let s = 0; s < 16; s++) ctx.fillRect((s * 97) % W, (s * 43) % (H - 40), 2, 2);
 
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -391,6 +527,27 @@ cooldown--;</pre></div>
 
       ctx.font = '28px sans-serif';
       ctx.fillText(config.player, player.x, player.y);
+      if (config.remix.cooldown && cooldown > 0) {   // reload bar
+        ctx.fillStyle = 'rgba(253,224,71,0.85)';
+        ctx.fillRect(player.x - 14, player.y + 18, 28 * cooldown / 15, 3);
+      }
+
+      if (g.xray) {
+        ctx.lineWidth = 1.5;
+        targets.forEach(t => {
+          if (!t.alive) return;
+          ctx.strokeStyle = '#f43f5e';
+          ctx.strokeRect(t.x - 22, t.y - 22, 44, 44);
+          ctx.strokeStyle = '#fde047';
+          ctx.beginPath(); ctx.moveTo(t.x, t.y); ctx.lineTo(t.x + t.vx * 18, t.y); ctx.stroke();
+        });
+        ctx.strokeStyle = '#38bdf8';
+        projectiles.forEach(p => ctx.strokeRect(p.x - 8, p.y - 8, 16, 16));
+        ctx.fillStyle = '#7dd3fc';
+        ctx.font = '600 10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`X-RAY · shots:${projectiles.length} · projSpeed:${config.projectileSpeed}`, 8, 14);
+      }
     }
 
     config = GameTutorial.bindConfig({
@@ -403,8 +560,10 @@ cooldown--;</pre></div>
       slug: 'shooter',
       canvas: $('shooter-canvas'),
       width: W, height: H,
+      xray: true,
       actions: { left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], fire: ['Space', 'ArrowUp', 'KeyW'] },
       onPress: name => { if (name === 'fire') firePressed = true; },
+      onPointerMove: x => { player.x = Math.max(20, Math.min(W - 20, x)); },
       tapAction: 'fire',
       touch: { buttons: [
         { label: '◀ Left', aria: 'Move left', action: 'left', hold: true },
@@ -422,6 +581,7 @@ cooldown--;</pre></div>
 </script>
 <script src="../../../../assets/vendor/blockly.min.js"></script>
 <script src="../../../../assets/js/game-tutorial-blockly.js"></script>
+<script src="../../../../assets/js/lessons/game-tutorial-labs.js" defer></script>
 <script src="../../../../assets/js/lesson-layout.js"></script>
 <script src="../../../../assets/js/reveal.js"></script>
 <script src="../../../../assets/js/theme-registry.js"></script>
