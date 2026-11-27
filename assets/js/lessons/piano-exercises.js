@@ -147,7 +147,7 @@
     const link = el('a', 'px-link');
     checkBox.append(checkText, masterBtn);
     details.append(howBox, checkBox);
-    card.append(cardHead, transport, score, ear, details, tip, link);
+    card.append(cardHead, transport, score, ear, details, tip);
 
     /* ---------- Rendering ---------- */
     const handsList = () => state.hands === 'both' ? ['rh', 'lh'] : [state.hands];
@@ -257,8 +257,8 @@
       checkText.textContent = ex.check;
       tip.textContent = ex.tip || '';
       tip.hidden = !ex.tip;
-      link.hidden = !ex.link;
-      if (ex.link) { link.href = ex.link.href; link.textContent = ex.link.label + ' →'; }
+      // The link exists only when an exercise has one: an empty hidden <a> is an a11y error.
+      if (ex.link) { link.href = ex.link.href; link.textContent = ex.link.label + ' →'; card.append(link); } else link.remove();
       const isMastered = !!state.mastered[masteredKey(ex.id, state.tier)];
       masterBtn.setAttribute('aria-pressed', String(isMastered));
       masterBtn.textContent = isMastered ? '✓ Mastered at ' + tierLabel(state.tier) : 'I can do this';
