@@ -148,10 +148,49 @@
 .px-tip::before { content: "💡 "; }
 .px-link { justify-self: start; font-weight: 700; }
 
+/* Worksheet: the printed page itself, arranged on screen. Short exercises pair up on a line. */
+.px-ws { display: grid; gap: .5rem; padding: .65rem .75rem; border: 1px solid var(--px-line); border-radius: var(--px-radius); background: var(--px-soft); }
+.px-ws-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .7rem; }
+.px-ws-head { margin: 0 auto 0 0; font-size: 1rem; }
+.px-ws-bar input[type="text"] { min-height: var(--px-h); padding: .25rem .55rem; border: 1px solid var(--px-line); border-radius: 8px; background: var(--surface-elevated, #fff); color: inherit; width: 11rem; max-width: 100%; }
+.px-ws-bar .pc-btn { min-height: var(--px-h); }
+.px-ws-empty { margin: 0; font-size: .88rem; opacity: .8; }
+.px-ws-paper { padding: 1rem 1.1rem; border-radius: 8px; border: 1px solid rgba(27, 26, 46, .14); background: #fff; color: #1d1d1f; font-family: "Times New Roman", Times, Georgia, serif; }
+.px-ws-paper-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem 1rem; padding-bottom: .35rem; margin-bottom: .6rem; border-bottom: 1.5px solid #1d1d1f; }
+.px-ws-paper-head h4 { margin: 0 auto 0 0; font-size: 1.35rem; font-family: inherit; text-transform: none; letter-spacing: 0; }
+.px-ws-for:not(:empty)::before { content: "Name: "; opacity: .7; }
+.px-ws-date { opacity: .7; font-size: .9rem; }
+.px-ws-list { display: flex; flex-wrap: wrap; gap: .8rem 1.4rem; margin: 0; padding: 0; list-style: none; }
+.px-ws-item { flex: 1 1 var(--w, 100%); max-width: 100%; min-width: 0; border-radius: 6px; cursor: grab; }
+.px-ws-item.is-drag { opacity: .4; }
+.px-ws-item.is-over { outline: 2px dashed #4b3bb8; outline-offset: 3px; }
+.px-ws-top { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .7rem; font-size: .95rem; }
+.px-ws-name { flex: 1 1 auto; min-width: 0; }
+.px-ws-days { letter-spacing: .05em; font-size: 1rem; opacity: .75; }
+.px-ws-ctl { display: inline-flex; gap: .2rem; font-family: system-ui, sans-serif; }
+.px-ws-btn { width: 30px; height: 30px; border: 1px solid rgba(27, 26, 46, .25); border-radius: 6px; background: #fff; color: #1d1d1f; cursor: pointer; font-size: .9rem; line-height: 1; }
+.px-ws-btn:hover:not(:disabled) { background: #f1f0fa; }
+.px-ws-btn:disabled { opacity: .3; cursor: default; }
+.px-ws-btn:focus-visible { outline: 3px solid #4b3bb8; outline-offset: 1px; }
+.px-ws-goal { display: none; margin: .1rem 0 0; font-size: .88rem; font-style: italic; }
+.px-ws-paper.show-goals .px-ws-goal { display: block; }
+.px-ws-notes .pxs-svg { width: auto; max-width: 100%; height: auto; }
+.px-ws-paper[hidden] { display: none; }
+/* Engraved paper keeps book type whatever the site skin. */
+.px .px-ws-paper, .px .px-ws-paper :is(h4, span, b, p) { font-family: "Times New Roman", Times, Georgia, serif !important; letter-spacing: 0; text-transform: none; }
+.px .px-ws-paper .px-ws-btn { font-family: system-ui, sans-serif !important; background: #fff !important; color: #1d1d1f !important; box-shadow: none !important; }
+
 @media (prefers-reduced-motion: reduce) { .px-meter-fill, .pxs-svg .pxs-ev { transition: none; } }
 @media print {
   .px-bar, .px-presets, .px-routine, .px-nav, .px-transport, .px-ear-ctl, .px-ear-keys, .px-master, .px-link { display: none !important; }
   .px-main { display: block; }
   .px-score { overflow: visible; border: 0; }
   .pxs-svg { max-width: 100%; height: auto; }
+  /* A lesson printout leaves the worksheet out; its own Print button prints the paper alone. */
+  html:not([data-px-print]) .px-ws { display: none !important; }
+  html[data-px-print] :is(body, [data-px-path]) > :not([data-px-path], .px-ws-paper) { display: none !important; }
+  html[data-px-print] [data-px-path] { display: block !important; margin: 0 !important; padding: 0 !important; border: 0 !important; min-height: 0 !important; max-width: none !important; width: auto !important; background: none !important; box-shadow: none !important; }
+  .px-ws-paper { border: 0; padding: 0; }
+  .px-ws-ctl { display: none !important; }
+  .px-ws-item { break-inside: avoid; outline: 0 !important; opacity: 1 !important; }
 }

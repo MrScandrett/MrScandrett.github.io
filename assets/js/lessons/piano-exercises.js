@@ -20,10 +20,16 @@
       ex: X.exerciseById(saved.ex) ? saved.ex : 'scale',
       hands: ['both', 'rh', 'lh'].includes(saved.hands) ? saved.hands : 'both',
       mastered: saved.mastered && typeof saved.mastered === 'object' ? saved.mastered : {},
+      sheet: Array.isArray(saved.sheet) ? saved.sheet.filter(okItem).slice(0, 30) : [],
+      goals: !!saved.goals,
       variant: {}, tempo: null, loop: false, routine: null, ear: null, current: null,
     };
+    function okItem(it) {
+      const e = it && X.exerciseById(it.ex);
+      return !!e && !e.interactive && X.KEYS.some(k => k.id === it.key) && [1, 2, 3, 4].includes(it.tier);
+    }
     const save = () => {
-      try { localStorage.setItem(STORE, JSON.stringify({ tier: state.tier, key: state.key, ex: state.ex, hands: state.hands, mastered: state.mastered })); } catch (e) { /* private mode */ }
+      try { localStorage.setItem(STORE, JSON.stringify({ tier: state.tier, key: state.key, ex: state.ex, hands: state.hands, mastered: state.mastered, sheet: state.sheet, goals: state.goals })); } catch (e) { /* private mode */ }
     };
 
     const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
@@ -67,8 +73,9 @@
     const routineSteps = el('ol', 'px-routine-steps');
     const routinePrev = btn('pc-btn', '◀ Back'), routineNext = btn('pc-btn pc-btn-primary', 'Next ▶'), routineEnd = btn('pc-btn', 'End');
     const routineTimer = el('span', 'px-timer');
+    const routineAdd = btn('pc-btn', '＋ Worksheet', { title: 'Put every step of this routine on the worksheet' });
     const routineCtl = el('div', 'px-routine-ctl');
-    routineCtl.append(routineTimer, routinePrev, routineNext, routineEnd);
+    routineCtl.append(routineTimer, routinePrev, routineNext, routineAdd, routineEnd);
     routineBar.append(routineText, routineSteps, routineCtl);
 
     const main = el('div', 'px-main');
@@ -76,7 +83,36 @@
     nav.setAttribute('aria-label', 'Exercises');
     const card = el('article', 'px-card');
     main.append(nav, card);
-    host.append(bar, presetWrap, routineBar, main);
+
+    /* Worksheet: exercises the teacher adds, shown as the printed page, in print order. */
+    const ws = el('section', 'px-ws');
+    ws.setAttribute('aria-label', 'Worksheet');
+    const wsBar = el('div', 'px-ws-bar');
+    const wsHead = el('h3', 'px-ws-head');
+    const wsName = el('input'); wsName.type = 'text'; wsName.maxLength = 40; wsName.placeholder = 'Student name';
+    wsName.setAttribute('aria-label', 'Student name (printed on the sheet)');
+    const wsGoals = el('label', 'px-check');
+    const wsGoalsIn = el('input'); wsGoalsIn.type = 'checkbox'; wsGoalsIn.checked = state.goals;
+    wsGoals.append(wsGoalsIn, el('span', '', 'Goals'));
+    wsGoals.title = 'Print one line under each exercise saying what it trains';
+    const wsPrint = btn('pc-btn pc-btn-primary', '🖨 Print');
+    const wsClear = btn('pc-btn', 'Clear');
+    wsBar.append(wsHead, wsName, wsGoals, wsPrint, wsClear);
+    const wsEmpty = el('p', 'px-ws-empty', 'Press ＋ Worksheet on any exercise to add it here.');
+    const paper = el('div', 'px-ws-paper');
+    paper.setAttribute('data-night-keep', '');
+    paper.setAttribute('data-skin-keep', '');
+    paper.setAttribute('data-present', 'off');
+    paper.setAttribute('data-no-glossary', '');
+    const paperHead = el('header', 'px-ws-paper-head');
+    const paperTitle = el('h4', '', 'Piano practice');
+    const paperFor = el('span', 'px-ws-for');
+    const paperDate = el('span', 'px-ws-date', new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }));
+    paperHead.append(paperTitle, paperFor, paperDate);
+    const paperList = el('ol', 'px-ws-list');
+    paper.append(paperHead, paperList);
+    ws.append(wsBar, wsEmpty, paper);
+    host.append(bar, presetWrap, routineBar, main, ws);
 
     /* ---------- Card parts (built once, filled per exercise) ---------- */
     const cardHead = el('header', 'px-card-head');
@@ -111,7 +147,8 @@
     variantLabel.append(el('span', '', 'Version'));
     const variantSel = el('select');
     variantLabel.append(variantSel);
-    transport.append(playBtn, handGroup, tempoWrap, loopLabel, variantLabel);
+    const addBtn = btn('pc-btn px-add', '＋ Worksheet');
+    transport.append(playBtn, handGroup, tempoWrap, loopLabel, variantLabel, addBtn);
 
     const score = el('div', 'px-score');
     score.setAttribute('data-night-keep', '');
@@ -279,6 +316,8 @@
       loopLabel.hidden = isEar;
       playBtn.hidden = isEar;
       tempoWrap.hidden = false;
+      addBtn.hidden = isEar;
+      syncAdd();
       if (isEar) newTune(); else drawScore();
     }
 
@@ -297,7 +336,115 @@
       ladderBtns.forEach(b => b.setAttribute('aria-pressed', String(ex && Math.abs(Math.round(ex.tempo * Number(b.dataset.f)) - v) <= 1)));
     }
 
-    function renderAll() { renderBar(); renderPresets(); renderNav(); renderRoutine(); renderCard(); }
+    /* ---------- Worksheet ---------- */
+    const sameItem = (a, b) => a.ex === b.ex && a.key === b.key && a.tier === b.tier && (a.variant || null) === (b.variant || null);
+    const currentItem = () => state.current && !state.current.interactive
+      ? { ex: state.current.id, key: state.current.key, tier: state.current.tier, variant: state.current.variant || null, tempo: Number(tempoIn.value) || state.current.tempo }
+      : null;
+    function syncAdd() {
+      const it = currentItem();
+      const on = !!it && state.sheet.some(x => sameItem(x, it));
+      addBtn.textContent = on ? '✓ On worksheet' : '＋ Worksheet';
+      addBtn.setAttribute('aria-pressed', String(on));
+    }
+    function toggleCurrent() {
+      const it = currentItem();
+      if (!it) return;
+      const i = state.sheet.findIndex(x => sameItem(x, it));
+      if (i >= 0) state.sheet.splice(i, 1); else state.sheet.push(it);
+      save(); syncAdd(); renderSheet();
+    }
+    function moveItem(from, to) {
+      if (to < 0 || to >= state.sheet.length || from === to) return;
+      const [it] = state.sheet.splice(from, 1);
+      state.sheet.splice(to, 0, it);
+      save(); renderSheet();
+    }
+    function renderSheet(focusIdx, focusSel) {
+      const n = state.sheet.length;
+      wsHead.textContent = 'Worksheet' + (n ? ' · ' + n : '');
+      ws.classList.toggle('is-empty', !n);
+      wsEmpty.hidden = !!n;
+      paper.hidden = wsPrint.disabled = wsClear.disabled = !n;
+      paper.classList.toggle('show-goals', state.goals);
+      paperFor.textContent = wsName.value.trim();
+      paperList.innerHTML = '';
+      state.sheet.forEach((it, i) => {
+        const ex = X.build(it.ex, it.key, it.tier, it.variant);
+        const meta = X.exerciseById(it.ex);
+        const vLabel = ex.variants && (ex.variants.find(v => v[0] === ex.variant) || [])[1];
+        const r = X.engrave(ex, MN, { label: ex.title + ' in ' + ex.keyLabel });
+        const li = el('li', 'px-ws-item');
+        li.dataset.printKeep = '';
+        li.draggable = true;
+        li.style.setProperty('--w', r.width + 'px');
+        const top = el('div', 'px-ws-top');
+        const name = el('span', 'px-ws-name');
+        name.append(el('b', '', (i + 1) + '. ' + ex.title), document.createTextNode('\u2003' + [vLabel, ex.title.includes(ex.keyLabel) ? '' : ex.keyLabel, '♩ = ' + (it.tempo || ex.tempo)].filter(Boolean).join(' · ')));
+        const days = el('span', 'px-ws-days', '☐ ☐ ☐ ☐ ☐');
+        days.setAttribute('aria-hidden', 'true');
+        days.title = 'Tick a box each day you practise it';
+        const ctl = el('span', 'px-ws-ctl');
+        const up = btn('px-ws-btn', '↑', { 'aria-label': 'Move ' + ex.title + ' up', 'data-act': 'up' });
+        const dn = btn('px-ws-btn', '↓', { 'aria-label': 'Move ' + ex.title + ' down', 'data-act': 'down' });
+        const rm = btn('px-ws-btn', '✕', { 'aria-label': 'Remove ' + ex.title, 'data-act': 'rm' });
+        up.disabled = i === 0; dn.disabled = i === n - 1;
+        up.addEventListener('click', () => { moveItem(i, i - 1); renderFocus(i - 1, 'up'); });
+        dn.addEventListener('click', () => { moveItem(i, i + 1); renderFocus(i + 1, 'down'); });
+        rm.addEventListener('click', () => { state.sheet.splice(i, 1); save(); renderSheet(); syncAdd(); renderFocus(Math.min(i, state.sheet.length - 1), 'rm'); });
+        [up, dn, rm].forEach(b => b.setAttribute('data-skin-keep', ''));
+        ctl.append(up, dn, rm);
+        top.append(name, days, ctl);
+        const goalLine = el('p', 'px-ws-goal', meta.goal);
+        const notes = el('div', 'px-ws-notes');
+        notes.innerHTML = r.svg;
+        li.append(top, goalLine, notes);
+        li.addEventListener('dragstart', e => { li.classList.add('is-drag'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(i)); });
+        li.addEventListener('dragend', () => li.classList.remove('is-drag'));
+        li.addEventListener('dragover', e => { e.preventDefault(); li.classList.add('is-over'); });
+        li.addEventListener('dragleave', () => li.classList.remove('is-over'));
+        li.addEventListener('drop', e => { e.preventDefault(); li.classList.remove('is-over'); const from = Number(e.dataTransfer.getData('text/plain')); if (Number.isInteger(from)) moveItem(from, i); });
+        paperList.append(li);
+      });
+    }
+    function renderFocus(i, act) {
+      const item = paperList.children[i];
+      if (!item) { addBtn.focus(); return; }
+      const b = item.querySelector('[data-act="' + act + '"]:not(:disabled)') || item.querySelector('.px-ws-btn:not(:disabled)');
+      if (b) b.focus();
+    }
+    addBtn.addEventListener('click', toggleCurrent);
+    routineAdd.addEventListener('click', () => {
+      const r = state.routine;
+      if (!r) return;
+      r.steps.forEach(s => {
+        const e = X.exerciseById(s.id);
+        if (e.interactive) return;
+        const ex = X.build(s.id, state.key, state.tier, state.variant[s.id]);
+        const it = { ex: s.id, key: ex.key, tier: ex.tier, variant: ex.variant || null, tempo: ex.tempo };
+        if (!state.sheet.some(x => sameItem(x, it))) state.sheet.push(it);
+      });
+      save(); syncAdd(); renderSheet();
+      routineAdd.textContent = '✓ Added';
+      setTimeout(() => { routineAdd.textContent = '＋ Worksheet'; }, 1800);
+    });
+    wsGoalsIn.addEventListener('change', () => { state.goals = wsGoalsIn.checked; save(); paper.classList.toggle('show-goals', state.goals); });
+    wsName.addEventListener('input', () => { paperFor.textContent = wsName.value.trim(); });
+    wsClear.addEventListener('click', () => {
+      if (!confirm('Take all ' + state.sheet.length + ' exercises off the worksheet?')) return;
+      state.sheet = []; save(); renderSheet(); syncAdd();
+    });
+    wsPrint.addEventListener('click', () => {
+      /* Print the paper alone: everything off its path to <body> leaves the layout. */
+      const html = document.documentElement, path = [];
+      for (let n = paper.parentElement; n && n !== document.body; n = n.parentElement) { n.setAttribute('data-px-path', ''); path.push(n); }
+      html.setAttribute('data-px-print', '');
+      const done = () => { html.removeAttribute('data-px-print'); path.forEach(n => n.removeAttribute('data-px-path')); window.removeEventListener('afterprint', done); };
+      window.addEventListener('afterprint', done);
+      window.print();
+    });
+
+    function renderAll() { renderBar(); renderPresets(); renderNav(); renderRoutine(); renderCard(); renderSheet(); }
 
     /* ---------- Sound ---------- */
     let timers = [];
