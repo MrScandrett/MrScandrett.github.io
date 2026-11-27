@@ -192,3 +192,17 @@ test('the thumb-tuck drill never puts the thumb on a black key, and every group 
   assert.deepEqual(fingers(g.rh).slice(24, 29), ['1', '2', '3', '4', '1']);
   assert.deepEqual(fingers(g.lh).slice(8, 13), ['2', '3', '1', '2', '3']);
 });
+
+test('worksheet note help: colored heads and named heads', () => {
+  const ex = X.build('scale', 'G', 1);
+  const plain = X.engrave(ex, MN).svg;
+  assert.ok(!/pxs-nhead|pxs-chead/.test(plain), 'plain by default');
+  const colored = X.engrave(ex, MN, { colors: true }).svg;
+  assert.match(colored, /class="pxs-chead" style="color:#/);
+  const named = X.engrave(ex, MN, { names: true }).svg;
+  assert.match(named, /class="pxs-nhead[^"]*"/);
+  assert.match(named, /<text class="pxs-nhead-t"[^>]*>F</, 'letters printed in the heads');
+  assert.ok(!/NaN|undefined/.test(named + colored));
+  const both = X.engrave(ex, MN, { names: true, colors: true }).svg;
+  assert.match(both, /fill="#e0244f"|stroke="#e0244f"/, 'colored named heads');
+});

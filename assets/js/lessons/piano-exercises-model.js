@@ -880,7 +880,9 @@
      lines, beams by the beat, fingering above the right hand and below the left, chord
      labels, dynamics and hairpins between the staves, slurs, staccato/accents, triplet
      marks and a pedal line. Every event is a <g class="pxs-ev" data-t data-hand> so the page
-     can light up what is sounding. */
+     can light up what is sounding. opts.names draws each head as a lettered oval
+     (MusicNotation.namedHead, the Fake Book's teaching head); opts.colors tints heads by
+     letter in the site's shared rainbow (C red … B violet). */
   function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
   function baseDur(e) {
     if (e.tup) return { base: 0.5, dot: false };
@@ -895,6 +897,7 @@
       .map(([hand, clef]) => ({ hand, clef, ev: ex[hand], bottomStep: MN.clefs[clef].bottom }));
     if (!staves.length) return { svg: '', width: 0, height: 0 };
     const headW = 295 * s, wholeW = 426 * s;
+    const names = !!opts.names && typeof MN.namedHead === 'function', colors = !!opts.colors;
     const sigAlt = [0, 0, 0, 0, 0, 0, 0];
     const SHARP_L = [3, 0, 4, 1, 5, 2, 6], FLAT_L = [6, 2, 5, 1, 4, 0, 3];
     (ex.sig > 0 ? SHARP_L : FLAT_L).slice(0, Math.abs(ex.sig || 0)).forEach(l => { sigAlt[l] = Math.sign(ex.sig); });
@@ -1054,12 +1057,17 @@
         const shifted = {};
         order.forEach((i, j) => { if (j > 0 && Math.abs(e._steps[i] - e._steps[order[j - 1]]) === 1 && !shifted[order[j - 1]]) shifted[i] = true; });
         let accN = 0;
+        const named = [];
+        // A named head is a wider oval: move accidentals clear of it.
+        const accGap = names ? Math.max(0, (bd.base >= 4 ? 1.05 : 0.92) * sp - w / 2) : 0;
         order.slice().sort((a, b) => e._steps[b] - e._steps[a]).forEach(i => {
           const step = e._steps[i], hy = yOf(st, step);
           const hx = cx - w / 2 + (shifted[i] ? (e._up ? headW - 1 : -headW + 1) : 0);
           MN.ledgerSteps(step).forEach(ls => out.push('<line class="pxs-ledger" x1="' + (hx - 3.5) + '" x2="' + (hx + w + 3.5) + '" y1="' + yOf(st, ls) + '" y2="' + yOf(st, ls) + '"/>'));
-          if (e._acc[i] !== null) { out.push(MN.accidental(e._acc[i], cx - w / 2 - 9 - accN * 8, hy, sp)); accN++; }
-          out.push(MN.glyph(head, hx, hy, sp, 'pxs-head'));
+          if (e._acc[i] !== null) { out.push(MN.accidental(e._acc[i], cx - w / 2 - 9 - accGap - accN * 8, hy, sp)); accN++; }
+          if (names) named.push(MN.namedHead(e._p[i], hx + w / 2, hy, bd.base, sigAlt[e._p[i].l], sp, 'pxs-nhead', colors));
+          else if (colors) out.push('<g class="pxs-chead" style="color:' + MN.solfegeColor(e._p[i]) + '">' + MN.glyph(head, hx, hy, sp, 'pxs-head') + '</g>');
+          else out.push(MN.glyph(head, hx, hy, sp, 'pxs-head'));
           if (bd.dot) out.push('<circle class="pxs-dot" cx="' + (cx + w / 2 + 4.5) + '" cy="' + (hy - (step % 2 === 0 ? hs : 0)) + '" r="1.6"/>');
         });
         // Stem, flags or beam.
@@ -1072,6 +1080,8 @@
           out.push('<line class="pxs-stem" x1="' + sx + '" x2="' + sx + '" y1="' + near + '" y2="' + tip + '"/>');
           if (!e._group && bd.base < 1) out.push(MN.glyph('flag' + (bd.base === 0.5 ? '8' : '16') + (e._up ? 'Up' : 'Down'), sx - 0.6, tip, sp, 'pxs-flag'));
         }
+        // Named heads go over their stems so the letter stays whole.
+        out.push(...named);
         // Articulation on the head side away from the stem.
         if (e.art) {
           const ys = e._steps.map(k => yOf(st, k));

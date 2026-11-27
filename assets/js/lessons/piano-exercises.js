@@ -95,9 +95,19 @@
     const wsGoalsIn = el('input'); wsGoalsIn.type = 'checkbox'; wsGoalsIn.checked = state.goals;
     wsGoals.append(wsGoalsIn, el('span', '', 'Goals'));
     wsGoals.title = 'Print one line under each exercise saying what it trains';
+    // Note names / colors are the site's shared notation preferences (score players use the same ones).
+    const check = (label, title, on) => {
+      const l = el('label', 'px-check'), i = el('input');
+      i.type = 'checkbox'; i.checked = on; l.title = title;
+      l.append(i, el('span', '', label));
+      return [l, i];
+    };
+    const prefs = () => MN.preferences || {};
+    const [wsNames, wsNamesIn] = check('Note names', 'Print the letter name inside every note head', !!prefs().pitchNames);
+    const [wsColors, wsColorsIn] = check('Note colors', 'Color each note by its letter: C red, D orange, E yellow, F green, G teal, A blue, B violet', !!prefs().noteColors);
     const wsPrint = btn('pc-btn pc-btn-primary', '🖨 Print');
     const wsClear = btn('pc-btn', 'Clear');
-    wsBar.append(wsHead, wsName, wsGoals, wsPrint, wsClear);
+    wsBar.append(wsHead, wsName, wsGoals, wsNames, wsColors, wsPrint, wsClear);
     const wsEmpty = el('p', 'px-ws-empty', 'Press ＋ Worksheet on any exercise to add it here.');
     const paper = el('div', 'px-ws-paper');
     paper.setAttribute('data-night-keep', '');
@@ -373,7 +383,7 @@
         const ex = X.build(it.ex, it.key, it.tier, it.variant);
         const meta = X.exerciseById(it.ex);
         const vLabel = ex.variants && (ex.variants.find(v => v[0] === ex.variant) || [])[1];
-        const r = X.engrave(ex, MN, { label: ex.title + ' in ' + ex.keyLabel });
+        const r = X.engrave(ex, MN, { label: ex.title + ' in ' + ex.keyLabel, names: !!prefs().pitchNames, colors: !!prefs().noteColors });
         const li = el('li', 'px-ws-item');
         li.dataset.printKeep = '';
         li.draggable = true;
@@ -428,6 +438,10 @@
       routineAdd.textContent = '✓ Added';
       setTimeout(() => { routineAdd.textContent = '＋ Worksheet'; }, 1800);
     });
+    const setPref = (k, v) => { if (MN.setPreferences) MN.setPreferences({ [k]: v }); else { MN.preferences = Object.assign({}, prefs(), { [k]: v }); renderSheet(); } };
+    wsNamesIn.addEventListener('change', () => setPref('pitchNames', wsNamesIn.checked));
+    wsColorsIn.addEventListener('change', () => setPref('noteColors', wsColorsIn.checked));
+    if (MN.onPreferencesChange) MN.onPreferencesChange(p => { wsNamesIn.checked = !!p.pitchNames; wsColorsIn.checked = !!p.noteColors; renderSheet(); });
     wsGoalsIn.addEventListener('change', () => { state.goals = wsGoalsIn.checked; save(); paper.classList.toggle('show-goals', state.goals); });
     wsName.addEventListener('input', () => { paperFor.textContent = wsName.value.trim(); });
     wsClear.addEventListener('click', () => {
