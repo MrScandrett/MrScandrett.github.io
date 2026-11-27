@@ -70,3 +70,27 @@ test('self-intersecting shapes are caught', () => {
 test('random cities are deterministic per seed', () => {
   assert.deepEqual(C.serializeCity({ vx: 0, vy: 0, D: 44, buildings: C.randomCity(7) }), C.serializeCity({ vx: 0, vy: 0, D: 44, buildings: C.randomCity(7) }));
 });
+
+test('a city becomes a valid Workbench Architecture project', async () => {
+  const W = await import('../assets/js/workbench/model.mjs');
+  const { cityProject } = await import('../assets/js/workbench/city.mjs');
+  const buildings = [
+    ...C.sampleCity(),
+    ...C.wordBuildings('AB', 2, 2, { h: 5 }),
+    C.makeBuilding(C.STAMPS.hex.make(12, 12, 3), { h: 9, tiers: 3, roof: 'spire' })
+  ];
+  const project = cityProject({ buildings });
+  assert.equal(project.preset, 'building');
+  assert.equal(project.objects.length, buildings.length);
+  const back = W.validateProject(JSON.parse(JSON.stringify(project)));
+  assert.deepEqual(back.objects, project.objects, 'validation must not clamp or drop anything');
+  const ids = [];
+  W.walk(project.objects, (n) => { ids.push(n.id); });
+  assert.equal(new Set(ids).size, ids.length, 'ids are unique');
+  const holes = [];
+  W.walk(project.objects, (n, parent) => { if (n.hole) holes.push(parent); });
+  assert.ok(holes.length >= 3 && holes.every(Boolean), 'courtyards are holes inside their own tower');
+  const spire = project.objects.at(-1).children.find((n) => n.name === 'Spire');
+  assert.equal(spire.params.top, 0);
+  assert.ok(Math.abs(spire.pos[2] - (9 + C.spireHeight(buildings.at(-1)) / 2)) < 1e-6, 'spire sits on the top tier');
+});
