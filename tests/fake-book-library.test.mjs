@@ -70,3 +70,15 @@ test('seasonal melodies retain the source phrases and distinct cadences', () => 
   assert.equal(bars(byId['we-wish-you-a-merry-christmas'].melody)[13].join(' '), 'E4q D4e D4e C4e C4e');
   assert.equal(bars(byId['up-on-the-housetop'].melody)[8].join(' '), 'F4q F4q A4h', 'chorus "Ho, ho, ho" is Bb Bb D in Hanby’s F major, so F F A in C');
 });
+
+// Every tune shows an emoji before its title in the picker: the flag of the country it comes
+// from, or an emoji for what it is when no one place owns it. `origin` names it on hover.
+test('every library tune has one origin emoji and a readable origin', () => {
+  const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+  for (const tune of tunes) {
+    assert.equal(typeof tune.icon, 'string', `${tune.id}: icon`);
+    assert.equal([...segmenter.segment(tune.icon)].length, 1, `${tune.id}: icon must be a single emoji, got ${tune.icon}`);
+    assert.match(tune.icon, /\p{Extended_Pictographic}|\p{Regional_Indicator}/u, `${tune.id}: icon must be an emoji`);
+    assert.ok(typeof tune.origin === 'string' && tune.origin.length >= 4 && !tune.origin.includes(tune.icon), `${tune.id}: origin`);
+  }
+});
