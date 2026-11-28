@@ -1,5 +1,5 @@
 // Public-domain / CC0 images from Wikimedia Commons. Generated data: k=real (what it looks like) | name (behind the name).
-window.ELEMENT_IMAGES = {
+export const ELEMENT_IMAGES = {
 "H": [
 {
 "k": "real",
@@ -1206,3 +1206,4 @@ window.ELEMENT_IMAGES = {
 }
 ]
 };
+

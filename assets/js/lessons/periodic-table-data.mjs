@@ -6,9 +6,7 @@
  * Schema per symbol:
  * [meltK, boilK, densityGcm3, electronegativityPauling, covalentRadiusPm, ionization1kJmol, stdPhase, configSemantic, oxidationStates]
  */
-(function (root) {
-  'use strict';
-  root.ELEMENT_PROPERTIES = {
+export const ELEMENT_PROPERTIES = {
     H:  [14.01,   20.28,   0.0000899, 2.20, 31,  1312, 'gas',    '1s¹',                   '-1, +1'],
     He: [null,    4.22,    0.0001785, null, 28,  2372, 'gas',    '1s²',                   '0'],
     Li: [453.65,  1615,    0.534,     0.98, 128, 520,  'solid',  '[He] 2s¹',              '+1'],
@@ -135,4 +133,3 @@
     Ts: [null, null, null, null, null, null, 'predicted', '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵',     '-1, +1'],
     Og: [null, null, null, null, null, null, 'predicted', '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶',     '0, +2']
   };
-}(window));
