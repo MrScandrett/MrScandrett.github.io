@@ -2404,6 +2404,7 @@
     };
   }
 
+  var tapeSerial = 0;
   function installPianoRoll(workspace, bar, model, player, onSwitch, notation) {
     var panel = el('div', { class: 'se-roll', hidden: '', tabindex: '0', role: 'region',
       'aria-label': 'Piano roll. Notes fall onto the keyboard. Press Space to play or pause.' });
@@ -2456,7 +2457,7 @@
       var shadeLabel = el('label', { class: 'se-graph-shades' });
       var shadeToggle = el('input', { type: 'checkbox', checked: '' });
       shadeLabel.append(shadeToggle, document.createTextNode(' Interval shading'));
-      var explanation = el('p', {}, 'Brighter shades mean larger pitch changes from the previous attack’s highest note in that voice. First notes use the base shade.');
+      var explanation = el('p', {}, 'Brighter shades mean larger pitch changes from the previous attack’s highest note in that voice. First notes use the base shade. Louder notes stand taller on the tape, and each note is pressed flat as it passes the head.');
       var shadeKey = el('ul', { class: 'se-graph-shade-key', 'aria-label': 'Interval shades' });
       ['Repeated pitch', '1–2 semitones', '3–5 semitones', '6+ semitones'].forEach(function (label, index) {
         var item = el('li', { class: 'se-roll-part' }, label);
@@ -2479,7 +2480,7 @@
         handLegend.forEach(function (item) { item.hidden = horizontal; });
         panel.classList.toggle('se-roll-horizontal', horizontal);
         panel.setAttribute('aria-label', horizontal
-          ? 'Horizontal score. Higher bars are higher pitches. Longer bars are longer notes. Voice colors and interval shades are listed under Parts. Press Space to play or pause.'
+          ? 'Horizontal score. Higher bars are higher pitches. Longer bars are longer notes. Louder notes stand taller. Voice colors and interval shades are listed under Parts. Press Space to play or pause.'
           : 'Piano roll. Notes fall onto the keyboard. Press Space to play or pause.');
         viewWidth = null;
         paint(currentPerformanceBeat(player));
@@ -2488,7 +2489,8 @@
 
     var open = false, stripOn = false, followStrip = true, lastSystem, lastLayout, lastWrittenBar, lastKeys;
     var stripOffsets = new Map(), stripCursor, stripSystem, stripColumns, stripColumnTimes, stripScale;
-    var viewWidth, viewHeight, hit, locations, svg, lanes, falling, whites, blacks;
+    var viewWidth, viewHeight, hit, locations, svg, lanes, falling, whites, blacks, sprockets;
+    var tapeId = 'se-tape-' + (++tapeSerial);
     var ns = 'http://www.w3.org/2000/svg';
     function layer() { return document.createElementNS(ns, 'g'); }
     function rect(x, y, w, h, fill, radius, extra) {
@@ -2500,6 +2502,9 @@
       // Brighter shades indicate wider changes in pitch within the same voice.
       var lightness = [49, 62, 74, 87][shade];
       return 'hsl(' + hue + ' 80% ' + lightness + '%)';
+    }
+    function graphSide(hue, shade) {
+      return 'hsl(' + hue + ' 55% ' + [22, 28, 34, 40][shade] + '%)';
     }
 
     function prepareGraph(list) {
@@ -2517,7 +2522,12 @@
       graphParts = model.staves.map(function (staff, si) {
         return staff.voices.map(function (_, vi) {
           var hue = hueOrder[index++ % hueOrder.length];
-          var part = { color: graphColor(hue, 1), shades: [0, 1, 2, 3].map(function (shade) { return graphColor(hue, shade); }) };
+          var part = {
+            color: graphColor(hue, 1),
+            shades: [0, 1, 2, 3].map(function (shade) { return graphColor(hue, shade); }),
+            // The darker side wall of each raised note, so it reads as a solid block on the tape.
+            sides: [0, 1, 2, 3].map(function (shade) { return graphSide(hue, shade); })
+          };
           var label = staff.label || 'Staff ' + (si + 1);
           if (staff.voices.length > 1) label += ' · Voice ' + (vi + 1);
           var item = el('li', { class: 'se-roll-part' }, label);
@@ -2552,39 +2562,100 @@
         ' Q' + start + ' ' + top + ' ' + (start + radius) + ' ' + top + ' Z';
     }
 
+    // The horizontal score is drawn as a tape transport: the notes are raised blocks on a
+    // moving strip of tape (like the pins of a music-box drum or a barrel organ's punched
+    // book), and the playhead is a fixed tape head. A louder note stands taller, and the
+    // head presses each note flat while it sounds.
+    var TAPE_RAIL = 20, TAPE_FOOT = 14, SPROCKET = 18;
     function paintGraph(beat, width, height) {
+      var head = Math.round(width * .32);
+      var tapeTop = TAPE_RAIL, tapeBottom = height - TAPE_FOOT;
       if (width !== viewWidth || height !== viewHeight) {
         viewWidth = width; viewHeight = height;
         svg = document.createElementNS(ns, 'svg');
         svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
-        falling = layer();
-        var pitchGrid = layer();
-        pitchGrid.classList.add('se-graph-pitch-grid');
-        var pitchLines = '';
+        var id = tapeId, wrap = Math.min(64, width * .07) / width;
+        var defs = document.createElementNS(ns, 'defs');
+        defs.innerHTML =
+          '<linearGradient id="' + id + '-tape" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0" stop-color="#3d2c20"/><stop offset=".45" stop-color="#2e2119"/><stop offset="1" stop-color="#211812"/></linearGradient>' +
+          '<linearGradient id="' + id + '-bevel" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0" stop-color="#fff" stop-opacity=".62"/><stop offset=".2" stop-color="#fff" stop-opacity=".16"/>' +
+            '<stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient>' +
+          '<linearGradient id="' + id + '-rail" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0" stop-color="#5a6067"/><stop offset=".18" stop-color="#3b4046"/><stop offset="1" stop-color="#1c1f23"/></linearGradient>' +
+          '<linearGradient id="' + id + '-chrome" x1="0" y1="0" x2="1" y2="0">' +
+            '<stop offset="0" stop-color="#4c535a"/><stop offset=".35" stop-color="#eef2f5"/><stop offset=".6" stop-color="#a3acb4"/><stop offset="1" stop-color="#4a5057"/></linearGradient>' +
+          // Where the tape curls over the reels at each end it falls into shadow.
+          '<linearGradient id="' + id + '-wrap" x1="0" y1="0" x2="1" y2="0">' +
+            '<stop offset="0" stop-color="#000" stop-opacity=".78"/><stop offset="' + wrap * .55 + '" stop-color="#fff" stop-opacity=".05"/>' +
+            '<stop offset="' + wrap + '" stop-color="#000" stop-opacity="0"/><stop offset="' + (1 - wrap) + '" stop-color="#000" stop-opacity="0"/>' +
+            '<stop offset="' + (1 - wrap * .55) + '" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".78"/></linearGradient>' +
+          '<linearGradient id="' + id + '-lamp" gradientUnits="userSpaceOnUse" x1="' + (head - 110) + '" y1="0" x2="' + (head + 110) + '" y2="0">' +
+            '<stop offset="0" stop-color="#ffd59a" stop-opacity="0"/><stop offset=".5" stop-color="#ffd59a" stop-opacity=".11"/><stop offset="1" stop-color="#ffd59a" stop-opacity="0"/></linearGradient>' +
+          '<pattern id="' + id + '-grain" patternUnits="userSpaceOnUse" width="6" height="3">' +
+            '<rect width="6" height="1" fill="#fff" opacity=".03"/></pattern>' +
+          '<pattern id="' + id + '-holes" patternUnits="userSpaceOnUse" width="' + SPROCKET + '" height="' + TAPE_FOOT + '" y="' + tapeBottom + '">' +
+            '<rect x="5" y="4" width="8" height="6" rx="1.6" fill="#080605"/>' +
+            '<rect x="5.5" y="9.3" width="7" height=".8" fill="#fff" opacity=".16"/></pattern>';
+        var deck = layer(), overlay = layer();
+        deck.classList.add('se-graph-pitch-grid');
+        overlay.classList.add('se-graph-overlay');
+        var base = rect(0, tapeTop, width, tapeBottom - tapeTop, 'url(#' + id + '-tape)');
+        var labels = '';
         for (var midi = Math.ceil(graphLow / 12) * 12; midi <= graphHigh; midi += 12) {
           var y = graphPitchY(midi, height);
-          if (midi % 24 === 0) pitchLines += rect(0, graphPitchY(midi + 12, height), width, y - graphPitchY(midi + 12, height), '#1a2935');
-          pitchLines += rect(0, y, width, 1, '#334554') +
-            '<text x="8" y="' + (y - 4) + '">C' + (midi / 12 - 1) + '</text>';
+          var above = Math.max(tapeTop, graphPitchY(midi + 12, height));
+          if (midi % 24 === 0 && y > above) base += rect(0, above, width, y - above, '#fff', 0, ' opacity=".03"');
+          // Octave lines are pressed into the tape: a dark groove with a lit lower lip.
+          base += rect(0, y - 1, width, 1, '#0d0906', 0, ' opacity=".85"') + rect(0, y, width, 1, '#fff', 0, ' opacity=".07"');
+          labels += '<text x="8" y="' + (y - 4) + '">C' + (midi / 12 - 1) + '</text>';
         }
-        pitchGrid.innerHTML = pitchLines;
-        svg.append(pitchGrid, falling);
+        base += rect(0, tapeTop, width, tapeBottom - tapeTop, 'url(#' + id + '-grain)') +
+          rect(0, 0, width, TAPE_RAIL, 'url(#' + id + '-rail)') +
+          rect(0, tapeBottom, width, TAPE_FOOT, 'url(#' + id + '-rail)') +
+          rect(0, tapeTop, width, 1, '#000', 0, ' opacity=".6"') + rect(0, tapeBottom - 1, width, 1, '#000', 0, ' opacity=".6"');
+        deck.innerHTML = base;
+        sprockets = document.createElementNS(ns, 'rect');
+        ['x', 'y', 'width', 'height', 'fill'].forEach(function (name, k) {
+          sprockets.setAttribute(name, [0, tapeBottom, width, TAPE_FOOT, 'url(#' + id + '-holes)'][k]);
+        });
+        deck.appendChild(sprockets);
+        overlay.innerHTML =
+          rect(0, tapeTop, width, tapeBottom - tapeTop, 'url(#' + id + '-lamp)') +
+          rect(0, 0, width, height, 'url(#' + id + '-wrap)') +
+          // The read gap of the head across the tape, then the head's two chrome blocks.
+          rect(head - 4, tapeTop, 9, tapeBottom - tapeTop, '#ffcf87', 0, ' opacity=".07"') +
+          rect(head, tapeTop, 1, tapeBottom - tapeTop, '#ffd9a0', 0, ' opacity=".7"') +
+          rect(head - 10, -3, 21, TAPE_RAIL + 7, 'url(#' + id + '-chrome)', 3, ' stroke="#22262a" stroke-width=".8"') +
+          rect(head - 10, tapeBottom - 4, 21, TAPE_FOOT + 7, 'url(#' + id + '-chrome)', 3, ' stroke="#22262a" stroke-width=".8"') +
+          rect(head - .5, TAPE_RAIL - 2, 2, 6, '#1a1d20', .5) + rect(head - .5, tapeBottom - 4, 2, 6, '#1a1d20', .5) +
+          '<circle cx="' + (head + .5) + '" cy="7" r="1.8" fill="#3a3f45"/>' +
+          '<g class="se-graph-labels">' + labels + '</g>';
+        falling = layer();
+        svg.append(defs, deck, falling, overlay);
         scene.replaceChildren(svg);
       }
       // Past notes remain to the left of a stationary playhead.
       var scale = width / Math.max(2, 6 * player.qpm() / 60);
-      var head = Math.round(width * .32), from = beat - head / scale;
+      var from = beat - head / scale;
       var span = player.span(), until = Math.min(span.to, from + width / scale);
       var xAt = function (time) { return head + (time - beat) * scale; };
-      var grid = '', notes = '', sounding = '';
+      // The sprocket holes are punched in the tape, so they travel with it.
+      var travel = ((head - beat * scale) % SPROCKET + SPROCKET) % SPROCKET;
+      sprockets.setAttribute('transform', 'translate(' + (travel - SPROCKET).toFixed(2) + ' 0)');
+      sprockets.setAttribute('width', width + SPROCKET);
+      var grid = '', past = '', notes = '', sounding = '';
       for (var barIndex = Math.max(0, floorIndex(model.perfStart, from)); model.perfStart[barIndex] <= until; barIndex++) {
-        var x = xAt(model.perfStart[barIndex]);
+        var x = Math.round(xAt(model.perfStart[barIndex]));
         if (x < 0) continue;
-        grid += rect(Math.round(x), 0, 1, height, '#31343b') +
-          '<text x="' + (x + 5) + '" y="16">' + barNumber(model, model.order[barIndex]) + '</text>';
+        grid += rect(x, tapeTop, 1, tapeBottom - tapeTop, '#0d0906', 0, ' opacity=".8"') +
+          rect(x + 1, tapeTop, 1, tapeBottom - tapeTop, '#fff', 0, ' opacity=".06"') +
+          '<text class="se-graph-bar" x="' + (x + 5) + '" y="14">' + barNumber(model, model.order[barIndex]) + '</text>';
       }
       var spacing = (graphPitchY(graphLow, height) - graphPitchY(graphHigh, height)) / Math.max(1, graphHigh - graphLow);
       var half = Math.min(10, Math.max(3, spacing * .7));
+      var tallest = Math.min(5, half * .9 + 1);
       for (var i = Math.max(0, floorIndex(graphEnds, from - EPS)); i < graphNotes.length && graphNotes[i].start <= until; i++) {
         var note = graphNotes[i];
         if (player.mutes[note.staff] || note.start < span.from || note.start >= span.to) continue;
@@ -2593,20 +2664,25 @@
         var startX = xAt(note.start), endX = Math.max(startX + 3, xAt(end));
         var part = graphParts[note.staff][note.voice];
         var y = graphPitchY(note.midi + transpose, height);
-        var ink = shadeIntervals ? part.shades[note.shade] : part.color;
+        var shade = shadeIntervals ? note.shade : 1;
+        var ink = part.shades[shade], side = part.sides[shade];
         var active = note.start <= beat + EPS && end > beat && player.playing;
-        var glyph = '<path class="se-graph-note" d="' + graphBar(startX, endX, y, half) + '" fill="' + ink + '"';
-        var attack = '<circle cx="' + (startX + half / 2) + '" cy="' + y + '" r="' + Math.max(1, half * .55) + '"/>';
-        if (active) {
-          sounding += glyph + ' stroke="#d7f2ff" stroke-width=".65"/>' +
-            '<g class="se-graph-attack se-graph-attack-active" fill="' + ink + '">' + attack + '</g>';
-        } else {
-          notes += glyph + ' stroke="' + ink + '" stroke-width=".7" opacity="' + (end <= beat ? '.55' : '.94') + '"/>' +
-            '<g class="se-graph-attack" fill="' + ink + '">' + attack + '</g>';
-        }
+        // Height of the raised block: louder notes stand taller; the head presses a sounding note down.
+        var lift = active ? .7 : Math.min(tallest, 1.2 + (Number.isFinite(note.vel) ? note.vel : .7) * 3.6);
+        var topY = y - lift / 2, baseY = y + lift / 2;
+        var block = '<path d="' + graphBar(startX + lift * .45, endX + lift * .45, baseY + lift * .55, half) + '" fill="#000" opacity=".45"/>' +
+          '<path d="' + graphBar(startX, endX, baseY, half) + '" fill="' + side + '"/>' +
+          '<path class="se-graph-note" d="' + graphBar(startX, endX, topY, half) + '" fill="' + ink + '"' +
+            (active ? ' stroke="#fff3d6" stroke-width=".9"' : '') + '/>' +
+          '<path d="' + graphBar(startX, endX, topY, half) + '" fill="url(#' + tapeId + '-bevel)"/>' +
+          // The attack is a punched hole at the note's front edge.
+          '<circle class="se-graph-attack" cx="' + (startX + half / 2 + .5) + '" cy="' + topY + '" r="' + Math.max(1, half * .42) + '" fill="' + side + '"/>';
+        if (active) sounding += block;
+        else if (end <= beat) past += block;
+        else notes += block;
       }
-      falling.innerHTML = grid + rect(head - 3, 0, 7, height, '#78cfed', 0, ' opacity=".10"') +
-        rect(head, 0, 1, height, '#78cfed') + notes + sounding;
+      falling.innerHTML = grid + '<g opacity=".5">' + past + '</g>' + notes +
+        '<g class="se-graph-sounding">' + sounding + '</g>';
     }
 
     function graphPitchY(midi, height) {
